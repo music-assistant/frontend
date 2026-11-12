@@ -94,7 +94,11 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
-import { ImageType, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
@@ -164,9 +168,12 @@ useIntersectionObserver(
 );
 
 // a phone shows the item's own artwork across the top, fading into black just
-// above the title in both themes
+// above the title in both themes; a collection's images are the covers of its
+// stack, which it shows instead
 const phoneArtwork = computed(() =>
-  isPhone.value ? getImageThumbForItem(props.item, ImageType.THUMB) : undefined,
+  isPhone.value && props.item?.media_type !== MediaType.COLLECTION
+    ? getImageThumbForItem(props.item, ImageType.THUMB)
+    : undefined,
 );
 const artworkLayout = computed(() => !!phoneArtwork.value);
 
@@ -179,6 +186,10 @@ const backdropStyle = computed(() =>
 );
 
 watch(() => props.item, buildMenu, { immediate: true });
+watch(
+  () => props.editableRows,
+  () => buildMenu(props.item),
+);
 
 // pinning or unpinning the item in the sidebar changes its menu entry
 const { getPreference } = useUserPreferences();

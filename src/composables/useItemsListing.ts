@@ -1,5 +1,6 @@
 import { computed, onScopeDispose, ref } from "vue";
 
+import { useCollectionMetadata } from "@/composables/useCollectionMetadata";
 import { useLibrarySorting } from "@/composables/useLibrarySorting";
 import {
   ListingType,
@@ -9,6 +10,13 @@ import {
   SortField,
   SortOptionInfo,
 } from "@/plugins/api/interfaces";
+
+// A load that returns more than this many items fewer (or more) than it asked
+// for reached the end of the listing.
+const PAGE_END_TOLERANCE = 10;
+
+const isLastPage = (received: number, requested: number) =>
+  Math.abs(received - requested) > PAGE_END_TOLERANCE;
 
 export type LoadPagedDataFn = (
   params: LoadDataParams,
@@ -34,6 +42,7 @@ export interface LoadDataParams {
   hideEmptyFilter?: boolean | null;
   hideFullyPlayed?: boolean;
   refresh?: boolean;
+  randomSeed?: number;
   albumType?: string[];
   provider?: string[];
   collapseCollections?: boolean;
@@ -45,8 +54,8 @@ export interface StoredState {
   // artist's albums use "artistalbums"), so the parent's uri scopes the
   // restore to the item that was actually on screen
   parentUri?: string;
-  // the listing was left on a provider carried in by a link, one the user has
-  // not picked: only going back shows that visit again
+  // the listing was left on a provider or album types carried in by a link,
+  // ones the user has not picked: only going back shows that visit again
   carried: boolean;
   scrollPos: number;
   pagedItems: MediaItemType[];
@@ -79,6 +88,7 @@ export function useItemsListing(
     genreIds: undefined,
   });
   const pagedItems = ref<MediaItemType[]>([]);
+  useCollectionMetadata(() => pagedItems.value);
   const displayedSort = ref<
     Pick<LoadDataParams, "sortField" | "sortDirection">
   >({});
@@ -92,14 +102,7 @@ export function useItemsListing(
   const sortOptionsLoaded = ref(false);
   const sortOptions = computed(() =>
     serverSortOptions.value.filter(
-      (option) =>
-        !(props.sortOptionExcludeFields ?? []).includes(option.field) &&
-        !(
-          props.sortListing &&
-          props.loadPagedData &&
-          (option.field === SortField.RANDOM ||
-            option.field === SortField.RANDOM_PLAY_COUNT)
-        ),
+      (option) => !(props.sortOptionExcludeFields ?? []).includes(option.field),
     ),
   );
   const librarySorting = useLibrarySorting(
@@ -116,11 +119,26 @@ export function useItemsListing(
   let pendingRefresh = false;
   let pendingParamsChange = false;
   let retryFromStart = false;
+  // counts the loads that replace the rows, so a reload can tell a newer one
+  // replaced them meanwhile
+  let loadGeneration = 0;
+  // a reload was asked for while a page was loading; it runs once that is in,
+  // and the reloads that asked for it finish with it
+  let pendingReload: { done: Promise<void>; finish: () => void } | undefined;
+  const queueReload = () => {
+    if (!pendingReload) {
+      let finish = () => {};
+      const done = new Promise<void>((resolve) => (finish = resolve));
+      pendingReload = { done, finish };
+    }
+    return pendingReload.done;
+  };
   // lets async work tell that the listing it is working for is already gone
   let disposed = false;
 
   onScopeDispose(() => {
     disposed = true;
+    pendingReload?.finish();
   });
 
   const isDisposed = () => disposed;
@@ -170,6 +188,7 @@ export function useItemsListing(
       allItemsReceived.value = false;
       newContentAvailable.value = false;
     }
+    if (offset === 0) loadGeneration++;
 
     const previousOffset = params.value.offset;
     try {
@@ -179,6 +198,18 @@ export function useItemsListing(
       const currentSort = librarySorting.current.value;
       const selectedSortOption = librarySorting.selectedOption.value;
       params.value.sortField = currentSort.field as SortField;
+      if (
+        clear ||
+        refresh ||
+        filterParamsChanged ||
+        params.value.randomSeed === undefined
+      ) {
+        params.value.randomSeed =
+          currentSort.field === SortField.RANDOM ||
+          currentSort.field === SortField.RANDOM_PLAY_COUNT
+            ? Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+            : undefined;
+      }
       params.value.sortDirection =
         selectedSortOption?.supports_direction === false
           ? undefined
@@ -194,7 +225,7 @@ export function useItemsListing(
         else pagedItems.value = nextItems;
         displayedSort.value = requestedSort;
         retryFromStart = false;
-        if (Math.abs(nextItems.length - props.limit) > 10) {
+        if (isLastPage(nextItems.length, props.limit)) {
           allItemsReceived.value = true;
         }
       }
@@ -221,6 +252,13 @@ export function useItemsListing(
       pendingRefresh = false;
       pendingParamsChange = false;
       await loadData(replayClear, replayRefresh, replayParamsChange);
+    }
+
+    if (pendingReload && !loading.value) {
+      const { finish } = pendingReload;
+      pendingReload = undefined;
+      await reloadLoadedItems();
+      finish();
     }
   };
 
@@ -266,6 +304,49 @@ export function useItemsListing(
     }
   };
 
+  // re-reads the listed items without clearing them, so the rows stay mounted
+  // and the scroll position holds; rows that can't be read again are dropped
+  // and loaded from the start, so none keeps showing what the source changed
+  const reloadLoadedItems = async function (): Promise<void> {
+    const activeTab = props.toolBarTabs?.length ? getActiveTab() : undefined;
+    const loadPagedData = activeTab?.loadPagedData ?? props.loadPagedData;
+    if (!loadPagedData || disposed) return;
+    // a page that is loading was read from the old rows
+    if (loading.value) return queueReload();
+    const generation = ++loadGeneration;
+    // every page loaded so far, so the next page still follows on
+    const offset = params.value.offset;
+    const limit = offset + props.limit;
+    const requestedSort = {
+      sortField: params.value.sortField,
+      sortDirection: params.value.sortDirection,
+    };
+    let items: MediaItemType[] | undefined;
+    try {
+      items = await loadPagedData({ ...params.value, offset: 0, limit });
+    } catch {
+      // the api already reports the failure to the user
+    }
+    if (disposed) return;
+    // a page appended meanwhile followed the old rows, so read them all again
+    if (loading.value) return queueReload();
+    const replaced = generation !== loadGeneration;
+    // a load that replaced the rows meanwhile has the newer items
+    if (replaced && !loadError.value) return;
+    if (items && !replaced) {
+      if (params.value.offset !== offset) return reloadLoadedItems();
+      pagedItems.value = items;
+      displayedSort.value = requestedSort;
+      allItemsReceived.value = isLastPage(items.length, limit);
+      newContentAvailable.value = false;
+      loadError.value = false;
+      retryFromStart = false;
+      return;
+    }
+    pagedItems.value = [];
+    await loadData(true);
+  };
+
   return {
     allItemsReceived,
     displayedSort,
@@ -279,6 +360,7 @@ export function useItemsListing(
     newContentAvailable,
     pagedItems,
     params,
+    reloadLoadedItems,
     retryLoad,
     serverSortOptions,
     sortOptions,

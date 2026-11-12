@@ -121,11 +121,10 @@
               <!-- explicit icon -->
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
-                  <v-icon
+                  <ExplicitIcon
                     v-if="parseBool(item.metadata.explicit || false)"
                     v-bind="props"
-                    icon="mdi-alpha-e-box"
-                    width="35"
+                    class="inline-block size-6 shrink-0 scale-90 align-middle [&_text]:fill-background"
                   />
                 </template>
                 <span>{{ $t("tooltip.explicit") }}</span>
@@ -386,31 +385,6 @@
               />
               <!-- slot for extra action buttons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
-              <!-- merge genre button (admin only) -->
-              <Button
-                v-if="canManageGenre"
-                type="button"
-                variant="ghost-icon"
-                size="icon-xs"
-                :aria-label="$t('merge_into')"
-                :title="$t('merge_into')"
-                @click="mergeGenre"
-              >
-                <Merge class="size-5.5" />
-              </Button>
-              <!-- delete genre button (admin only) -->
-              <Button
-                v-if="canManageGenre"
-                type="button"
-                variant="ghost-icon"
-                size="icon-xs"
-                class="ml-2"
-                :aria-label="$t('delete_genre')"
-                :title="$t('delete_genre')"
-                @click="deleteGenre"
-              >
-                <Trash2 class="size-5.5" />
-              </Button>
             </div>
           </div>
           <div
@@ -487,6 +461,7 @@
 
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import ItemSourceBadge from "@/components/ItemSourceBadge.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
@@ -542,8 +517,9 @@ import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
+import { ArrowLeft } from "@lucide/vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
+import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
@@ -683,19 +659,7 @@ const backButtonClick = function () {
   backFromMediaDetails(router);
 };
 
-// Resolve the queue playMedia targets directly, since activePlayerQueue is
-// undefined while an external source is active.
-const playActionInProgress = computed(() => {
-  const player = store.activePlayer;
-  if (!player) return false;
-  const queueId =
-    player.active_source && player.active_source in api.queues
-      ? player.active_source
-      : player.player_id;
-  return (
-    api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const playActionInProgress = usePlayActionInProgress();
 
 const playButtonText = computed(() => {
   if (!store.activePlayer) return $t("play");
@@ -758,31 +722,6 @@ const artistLogo = computed(() => {
 const canManageLibrary = computed(() =>
   authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
-// merging and deleting a genre is limited to library genres and library managers
-const canManageGenre = computed(
-  () =>
-    compProps.item?.media_type === MediaType.GENRE &&
-    compProps.item.provider === "library" &&
-    canManageLibrary.value,
-);
-
-const mergeGenre = () => {
-  if (!compProps.item) return;
-  eventbus.emit("mergeGenreDialog", {
-    genreIds: [compProps.item.item_id],
-    genreNames: [compProps.item.name],
-    genreContentTypes: [(compProps.item as Genre).content_type],
-  });
-};
-
-const deleteGenre = () => {
-  if (!compProps.item) return;
-  eventbus.emit("deleteGenreDialog", {
-    genreIds: [compProps.item.item_id],
-    navigateBack: true,
-  });
-};
-
 const collectionMediaType = computed(() => {
   if (compProps.item?.media_type != MediaType.COLLECTION)
     return MediaType.UNKNOWN;

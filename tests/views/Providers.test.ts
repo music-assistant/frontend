@@ -7,6 +7,7 @@ import {
   ProviderSharing,
   ProviderStage,
   ProviderStatus,
+  ProviderTier,
   ProviderType,
   type Scope,
   type User,
@@ -48,6 +49,7 @@ const {
         name: "Spotify",
         self_service: true,
         stage: "stable",
+        tier: "core",
       },
       builtin: {
         allow_disable: false,
@@ -221,10 +223,11 @@ const ProviderRowStub = {
     "description",
     "accessSummary",
     "statusVariant",
+    "statusIcon",
     "statusLabel",
     "isError",
     "errorText",
-    "stageLabel",
+    "community",
   ],
   emits: ["open", "menu", "reconfigure"],
   template: `<div data-testid="provider-row">{{ name }}</div>`,
@@ -244,6 +247,7 @@ beforeEach(() => {
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.self_service = true;
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
+  apiMock.providerManifests.spotify.tier = ProviderTier.CORE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
@@ -493,20 +497,18 @@ describe("Providers", () => {
     ).not.toContain("settings.reconfigure");
   });
 
-  it("labels the stage badge from the translated stage key", async () => {
-    apiMock.providerManifests.spotify.stage = ProviderStage.DEPRECATED;
+  it("marks a community provider", async () => {
+    apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
 
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(onlyRow(wrapper).props("stageLabel")).toBe(
-      "settings.stage.options.deprecated",
-    );
+    expect(onlyRow(wrapper).props("community")).toBe(true);
   });
 
-  it("hides the stage badge for a stable provider", async () => {
+  it("leaves a core provider unmarked", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(onlyRow(wrapper).props("stageLabel")).toBe("");
+    expect(onlyRow(wrapper).props("community")).toBe(false);
   });
 
   it("summarizes a music source without an access record as a household one", async () => {
@@ -1087,9 +1089,31 @@ describe("Providers loading", () => {
     const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED);
 
     expect(onlyRow(wrapper).props("statusVariant")).toBe("destructive");
+    expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
     expect(onlyRow(wrapper).props("statusLabel")).toBe(
       "settings.provider_status_auth_required",
     );
+  });
+
+  it.each([
+    [ProviderStatus.LOADING, "loading", "settings.provider_status_loading"],
+    [ProviderStatus.DISABLED, "disabled", "settings.provider_status_disabled"],
+  ])(
+    "shows a %s source as an icon instead of a badge",
+    async (status, icon, label) => {
+      const wrapper = await mountProviders(status);
+
+      expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
+      expect(onlyRow(wrapper).props("statusIcon")).toBe(icon);
+      expect(onlyRow(wrapper).props("statusLabel")).toBe(label);
+    },
+  );
+
+  it("shows a running source without a status", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
+    expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
   });
 
   it("shows no empty state until the providers are loaded", async () => {

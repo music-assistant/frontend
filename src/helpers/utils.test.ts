@@ -59,7 +59,7 @@ describe("getMediaItemImage", () => {
 
   it("applies the same rule to the single image on a summary item", () => {
     // summary/playlog items carry one image only, so a discarded image leaves
-    // no second candidate and the item falls back to a generated avatar
+    // no second candidate and the item falls back to its media type icon
     const img = image("theaudiodb", true, "https://r2.theaudiodb.com/a.jpg");
     const summaryItem = { name: "Berserker", image: img } as MediaItemType;
     expect(getMediaItemImage(summaryItem)).toEqual(img);

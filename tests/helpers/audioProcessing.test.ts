@@ -3,9 +3,15 @@ import { reactive } from "vue";
 import {
   areDSPConfigsEqual,
   areDSPSettingsEqual,
+  dspFilterPosition,
+  parseDSPStage,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
-import { type DSPConfig, DSPFilterType } from "@/plugins/api/interfaces";
+import {
+  type DSPConfig,
+  type DSPFilter,
+  DSPFilterType,
+} from "@/plugins/api/interfaces";
 
 describe("sanitizeDSPPresetConfig", () => {
   it("strips preset identity from a deep copy", () => {
@@ -80,5 +86,51 @@ describe("sanitizeDSPPresetConfig", () => {
       right.input_gain = -3;
       expect(areDSPSettingsEqual(left, right)).toBe(false);
     });
+  });
+});
+
+const peq = (preamp: number): DSPFilter => ({
+  type: DSPFilterType.PARAMETRIC_EQ,
+  enabled: true,
+  preamp,
+  per_channel_preamp: {},
+  bands: [],
+});
+
+describe("dspFilterPosition", () => {
+  it("finds a filter past the ones the signal path leaves out", () => {
+    const filters: DSPFilter[] = [
+      { type: DSPFilterType.BALANCE, enabled: true, balance: 0 },
+      { type: DSPFilterType.GAIN, enabled: false, gain: 3 },
+      peq(-2),
+    ];
+
+    expect(dspFilterPosition(filters, peq(-2), 0)).toBe(2);
+  });
+
+  it("matches identical filters by how many came before", () => {
+    const filters = [peq(-2), peq(-1), peq(-2)];
+
+    expect(dspFilterPosition(filters, peq(-2), 0)).toBe(0);
+    expect(dspFilterPosition(filters, peq(-2), 1)).toBe(2);
+  });
+
+  it("finds nothing once the filter has changed", () => {
+    expect(dspFilterPosition([peq(-2)], peq(-3), 0)).toBeUndefined();
+    expect(dspFilterPosition([peq(-2)], peq(-2), 1)).toBeUndefined();
+  });
+});
+
+describe("parseDSPStage", () => {
+  it.each([
+    ["input", "input"],
+    ["output", "output"],
+    ["1", 1],
+  ])("reads %s", (value, expected) => {
+    expect(parseDSPStage(value, 2)).toBe(expected);
+  });
+
+  it.each([undefined, "2", "-1", "1.5", "eq", ["1"]])("ignores %s", (value) => {
+    expect(parseDSPStage(value, 2)).toBeUndefined();
   });
 });
