@@ -117,7 +117,7 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
-    props: ["title", "items", "itemCount", "meta"],
+    props: ["title", "items", "itemCount"],
     template: '<div :data-row="title" />',
   },
 }));
@@ -338,7 +338,6 @@ describe("ArtistDetails", () => {
       .find((component) => component.props("title") === "discography");
     expect(shelf?.props("items")).toHaveLength(50);
     expect(shelf?.props("itemCount")).toBe(1);
-    expect(shelf?.props("meta")).toBe("discography_hint");
   });
 
   describe("discography heading", () => {

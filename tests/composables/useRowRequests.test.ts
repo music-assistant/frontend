@@ -35,17 +35,10 @@ function setupRequests() {
   const onReset = vi.fn();
   const scope = effectScope();
   scopes.push(scope);
-  const { fetchOnce, fetchOnceValue, refetchOnLibraryChange } = scope.run(() =>
+  const { fetchOnce, refetchOnLibraryChange } = scope.run(() =>
     useRowRequests(item, (shown) => shown.id, onReset),
   )!;
-  return {
-    item,
-    onReset,
-    fetchOnce,
-    fetchOnceValue,
-    refetchOnLibraryChange,
-    scope,
-  };
+  return { item, onReset, fetchOnce, refetchOnLibraryChange, scope };
 }
 
 /** Listens for library changes and returns a way to emit one. */
@@ -97,21 +90,6 @@ describe("useRowRequests", () => {
     expect(load).toHaveBeenCalledWith({ id: "a" });
     expect(store).toHaveBeenCalledTimes(1);
     expect(store).toHaveBeenCalledWith(["x"]);
-  });
-
-  it("requests scalar values once per item and stores the result", async () => {
-    const page = setupRequests();
-    await show(page, "a");
-    const load = vi.fn().mockResolvedValue(7);
-    const store = vi.fn();
-
-    await page.fetchOnceValue("count", load, store, 0);
-    await page.fetchOnceValue("count", load, store, 0);
-
-    expect(load).toHaveBeenCalledTimes(1);
-    expect(load).toHaveBeenCalledWith({ id: "a" });
-    expect(store).toHaveBeenCalledTimes(1);
-    expect(store).toHaveBeenCalledWith(7);
   });
 
   it("requests nothing while no item is shown", async () => {

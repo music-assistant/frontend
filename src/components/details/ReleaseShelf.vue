@@ -30,7 +30,7 @@
         />
       </DetailSectionTitle>
     </template>
-    <template v-if="viewAllTo" #actions>
+    <template v-if="viewAllTo && itemCount !== 0" #actions>
       <RouterLink
         :to="viewAllTo"
         class="release-shelf__more"

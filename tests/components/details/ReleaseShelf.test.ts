@@ -95,13 +95,10 @@ describe("ReleaseShelf subtitles", () => {
     );
   });
 
-  it("leaves the view-all action unchanged without a count", () => {
-    const wrapper = mountShelf([]);
+  it("hides the view-all action when the count is zero", () => {
+    const wrapper = mountShelf([], { itemCount: 0 });
 
-    expect(wrapper.get(".release-shelf__more").text()).toBe("view_all");
-    expect(wrapper.get(".release-shelf__more").attributes("aria-label")).toBe(
-      "tooltip.view_all",
-    );
+    expect(wrapper.find(".release-shelf__more").exists()).toBe(false);
   });
 
   it("says a release is not in the library instead of naming its type", () => {

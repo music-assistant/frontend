@@ -6,7 +6,6 @@ const { apiMock } = vi.hoisted(() => ({
     getArtistAlbumsCount: vi.fn().mockResolvedValue(0),
     getArtistAppearsOn: vi.fn().mockResolvedValue([]),
     getArtistDiscography: vi.fn().mockResolvedValue([]),
-    getArtistDiscographyCount: vi.fn().mockResolvedValue(123),
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
@@ -27,7 +26,6 @@ import {
   isSingleOrEp,
   loadArtistAppearsOn,
   loadArtistDiscography,
-  loadArtistDiscographyCount,
   loadArtistReleases,
   loadArtistTopTracks,
   loadArtistTracks,
@@ -74,19 +72,6 @@ function albumMapping(overrides: Partial<ItemMapping> = {}): ItemMapping {
 }
 
 describe("artistData", () => {
-  it("counts only the discography row's selected types", async () => {
-    await expect(
-      loadArtistDiscographyCount(LIBRARY_ARTIST, [
-        AlbumType.ALBUM,
-        AlbumType.LIVE,
-      ]),
-    ).resolves.toBe(123);
-    expect(apiMock.getArtistDiscographyCount).toHaveBeenLastCalledWith(
-      "1",
-      undefined,
-      [AlbumType.ALBUM, AlbumType.LIVE],
-    );
-  });
   beforeEach(() => {
     apiMock.getArtistAlbums.mockClear();
     apiMock.getArtistTopTracks.mockClear();

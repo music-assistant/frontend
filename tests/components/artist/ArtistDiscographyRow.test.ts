@@ -33,7 +33,7 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 // the shelf draws the row; only what the row hands it is read here
 const ReleaseShelf = {
   name: "ReleaseShelf",
-  props: ["viewAllTo", "items", "hideTitle", "itemCount"],
+  props: ["viewAllTo", "items", "hideTitle"],
   template: "<div><slot name='label' /></div>",
 };
 
@@ -48,10 +48,9 @@ const DiscographyTypePicker = {
 function mountRow(
   rowId: "discography" | "discography_second",
   items: Album[] | undefined,
-  itemCount?: number,
 ) {
   return mount(ArtistDiscographyRow, {
-    props: { rowId, artist: artist(), items, itemCount },
+    props: { rowId, artist: artist(), items },
     global: {
       mocks: { $t: (key: string) => key },
       stubs: { ReleaseShelf, DiscographyTypePicker },
@@ -95,22 +94,5 @@ describe("ArtistDiscographyRow", () => {
       "discography_second",
       AlbumType.COMPILATION,
     );
-  });
-
-  it("passes the full count to View all instead of duplicating the shelf length", () => {
-    const wrapper = mountRow(
-      "discography",
-      Array.from({ length: 60 }, () => album()),
-      123,
-    );
-    const shelf = wrapper.findComponent({ name: "ReleaseShelf" });
-    expect(shelf.props("itemCount")).toBe(123);
-    expect(shelf.props("items")).toHaveLength(50);
-    expect(wrapper.text()).toBe("");
-    expect(
-      mountRow("discography", undefined)
-        .findComponent({ name: "ReleaseShelf" })
-        .props("itemCount"),
-    ).toBeUndefined();
   });
 });

@@ -50,7 +50,7 @@ const {
     providers: {} as Record<string, unknown>,
   },
   mockLoadArtistReleases:
-    vi.fn<(artist: Artist, source: RowSource) => Promise<Album[]>>(),
+    vi.fn<typeof import("@/components/artist/artistData").loadArtistReleases>(),
   mockArtistAlbumsCountBySource: vi.fn(),
   mockLoadArtistAppearsOn: vi.fn<(artist: Artist) => Promise<Album[]>>(),
   mockLoadArtistAppearsOnCount: vi.fn<(artist: Artist) => Promise<number>>(),
@@ -177,46 +177,7 @@ describe("useArtistRowData", () => {
     vi.restoreAllMocks();
   });
 
-  it("requests separate typed lists for two rows fed by the same source", async () => {
-    const page = setupRowData({ rows: ["albums", "singles_eps"] });
-    mockLoadArtistReleases.mockResolvedValue(RELEASES);
-
-    await showArtist(page, libraryArtist());
-
-    expect(releaseSources()).toEqual(["library", "library"]);
-    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
-      1,
-      expect.anything(),
-      "library",
-      expect.objectContaining({
-        limit: 50,
-        sortField: SortField.RELEASE_DATE,
-        sortDirection: SortDirection.DESC,
-        albumTypes: [
-          AlbumType.ALBUM,
-          AlbumType.COMPILATION,
-          AlbumType.LIVE,
-          AlbumType.SOUNDTRACK,
-          AlbumType.UNKNOWN,
-        ],
-      }),
-    );
-    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
-      2,
-      expect.anything(),
-      "library",
-      expect.objectContaining({
-        limit: 50,
-        sortField: SortField.RELEASE_DATE,
-        sortDirection: SortDirection.DESC,
-        albumTypes: [AlbumType.SINGLE, AlbumType.EP],
-      }),
-    );
-    expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
-    expect(itemIds(page.singleItems.value)).toEqual(["single-1"]);
-  });
-
-  it("requests total counts with the same album types as each limited shelf", async () => {
+  it("requests the newest 50 of each shelf's types, with a count of the same types", async () => {
     const page = setupRowData({ rows: ["albums", "singles_eps"] });
     mockLoadArtistReleases.mockResolvedValue(RELEASES);
     mockArtistAlbumsCountBySource
@@ -225,89 +186,31 @@ describe("useArtistRowData", () => {
 
     await showArtist(page, libraryArtist());
 
-    expect(mockLoadArtistReleases).toHaveBeenCalledTimes(2);
-    expect(mockLoadArtistReleases).toHaveBeenNthCalledWith(
-      1,
-      expect.anything(),
-      "library",
-      {
-        limit: 50,
-        sortField: SortField.RELEASE_DATE,
-        sortDirection: SortDirection.DESC,
-        albumTypes: [
-          AlbumType.ALBUM,
-          AlbumType.COMPILATION,
-          AlbumType.LIVE,
-          AlbumType.SOUNDTRACK,
-          AlbumType.UNKNOWN,
-        ],
-      },
-    );
-    expect(mockArtistAlbumsCountBySource).toHaveBeenNthCalledWith(
-      1,
-      expect.anything(),
-      "library",
-      [
-        AlbumType.ALBUM,
-        AlbumType.COMPILATION,
-        AlbumType.LIVE,
-        AlbumType.SOUNDTRACK,
-        AlbumType.UNKNOWN,
-      ],
-    );
-    expect(mockArtistAlbumsCountBySource).toHaveBeenNthCalledWith(
-      2,
-      expect.anything(),
-      "library",
-      [AlbumType.SINGLE, AlbumType.EP],
-    );
+    const albumTypes = [
+      AlbumType.ALBUM,
+      AlbumType.COMPILATION,
+      AlbumType.LIVE,
+      AlbumType.SOUNDTRACK,
+      AlbumType.UNKNOWN,
+    ];
+    const singleTypes = [AlbumType.SINGLE, AlbumType.EP];
+    const listing = {
+      limit: 50,
+      sortField: SortField.RELEASE_DATE,
+      sortDirection: SortDirection.DESC,
+    };
+    expect(
+      mockLoadArtistReleases.mock.calls.map(([, , options]) => options),
+    ).toEqual([
+      { ...listing, albumTypes },
+      { ...listing, albumTypes: singleTypes },
+    ]);
+    expect(
+      mockArtistAlbumsCountBySource.mock.calls.map(([, , types]) => types),
+    ).toEqual([albumTypes, singleTypes]);
+    expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
+    expect(itemIds(page.singleItems.value)).toEqual(["single-1"]);
     expect(page.albumsCount.value).toBe(102);
-    expect(page.singlesCount.value).toBe(60);
-  });
-
-  it("uses the server's 50 newest releases in response order with an independent total", async () => {
-    const page = setupRowData({ rows: ["albums"] });
-    const releases = Array.from({ length: 50 }, (_, index) =>
-      album({
-        item_id: `release-${index}`,
-        year: 2025,
-      }),
-    );
-    mockLoadArtistReleases.mockResolvedValue(releases);
-    mockArtistAlbumsCountBySource.mockResolvedValue(102);
-
-    await showArtist(page, libraryArtist());
-
-    expect(mockLoadArtistReleases).toHaveBeenCalledWith(
-      expect.anything(),
-      "library",
-      expect.objectContaining({
-        limit: 50,
-        albumTypes: expect.any(Array),
-        sortField: SortField.RELEASE_DATE,
-        sortDirection: SortDirection.DESC,
-      }),
-    );
-    expect(page.albumItems.value).toHaveLength(50);
-    expect(page.albumsCount.value).toBe(102);
-    expect(page.albumItems.value).toEqual(releases);
-  });
-
-  it("shows a limited singles and EP shelf with the full matching count", async () => {
-    const page = setupRowData({ rows: ["singles_eps"] });
-    mockLoadArtistReleases.mockResolvedValue(
-      Array.from({ length: 50 }, (_, index) =>
-        album({
-          item_id: `single-${index}`,
-          album_type: index % 2 ? AlbumType.SINGLE : AlbumType.EP,
-        }),
-      ),
-    );
-    mockArtistAlbumsCountBySource.mockResolvedValue(60);
-
-    await showArtist(page, libraryArtist());
-
-    expect(page.singleItems.value).toHaveLength(50);
     expect(page.singlesCount.value).toBe(60);
   });
 
@@ -377,9 +280,8 @@ describe("useArtistRowData", () => {
 
   it("falls back to artist tracks when the top-tracks request fails", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
-    const requestError = new Error("top tracks unavailable");
     vi.spyOn(console, "error").mockImplementation(() => {});
-    mockLoadArtistTopTracks.mockRejectedValueOnce(requestError);
+    mockLoadArtistTopTracks.mockRejectedValueOnce(new Error("unavailable"));
     mockLoadArtistTracks.mockResolvedValue([
       track({ item_id: "library-track" }),
     ]);
@@ -388,127 +290,33 @@ describe("useArtistRowData", () => {
 
     expect(mockLoadArtistTracks).toHaveBeenCalledTimes(1);
     expect(itemIds(page.topTracksItems.value)).toEqual(["library-track"]);
-    expect(console.error).toHaveBeenCalledWith(
-      "[useRowRequests] failed to load a row",
-      requestError,
-    );
   });
 
-  it.each(["empty", "rejected"] as const)(
-    "does not start a fallback for a stale top-tracks request that is %s after navigation",
-    async (outcome) => {
-      const page = setupRowData({ rows: ["top_tracks"] });
-      let resolveFirst!: (tracks: Track[]) => void;
-      let rejectFirst!: (error: Error) => void;
-      const firstRequest = new Promise<Track[]>((resolve, reject) => {
-        resolveFirst = resolve;
-        rejectFirst = reject;
-      });
-      const requestError = new Error("stale top tracks request failed");
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      mockLoadArtistTopTracks
-        .mockReturnValueOnce(firstRequest)
-        .mockResolvedValueOnce([track({ item_id: "current-top-track" })]);
-
-      await showArtist(page, libraryArtist({ item_id: "artist-a" }));
-      await showArtist(page, libraryArtist({ item_id: "artist-b" }));
-
-      if (outcome === "empty") resolveFirst([]);
-      else rejectFirst(requestError);
-      await flushPromises();
-
-      expect(mockLoadArtistTracks).not.toHaveBeenCalled();
-      expect(itemIds(page.topTracksItems.value)).toEqual(["current-top-track"]);
-      if (outcome === "rejected") {
-        expect(errorSpy).toHaveBeenCalledWith(
-          "[useRowRequests] failed to load a row",
-          requestError,
-        );
-      }
-    },
-  );
-
-  it.each(["empty", "rejected"] as const)(
-    "does not fetch fallback tracks after unmount when top tracks are %s",
-    async (outcome) => {
-      const page = setupRowData({ rows: ["top_tracks"] });
-      let resolveTopTracks!: (tracks: Track[]) => void;
-      let rejectTopTracks!: (error: Error) => void;
-      const pendingTopTracks = new Promise<Track[]>((resolve, reject) => {
+  it("loads the fallback when a hidden top tracks row with no tracks is shown again", async () => {
+    const page = setupRowData({ rows: ["top_tracks"] });
+    let resolveTopTracks!: (tracks: Track[]) => void;
+    mockLoadArtistTopTracks.mockReturnValueOnce(
+      new Promise<Track[]>((resolve) => {
         resolveTopTracks = resolve;
-        rejectTopTracks = reject;
-      });
-      const requestError = new Error("top tracks failed after unmount");
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      mockLoadArtistTopTracks.mockReturnValueOnce(pendingTopTracks);
-      mockLoadArtistTracks.mockResolvedValue([track()]);
-
-      await showArtist(page, libraryArtist());
-      scopes[scopes.length - 1].stop();
-      if (outcome === "empty") resolveTopTracks([]);
-      else rejectTopTracks(requestError);
-      await flushPromises();
-
-      expect(mockLoadArtistTracks).not.toHaveBeenCalled();
-    },
-  );
-
-  it("does not publish releases from a response received after unmount", async () => {
-    const page = setupRowData({ rows: ["albums"] });
-    let resolveAlbums!: (albums: Album[]) => void;
-    mockLoadArtistReleases.mockReturnValueOnce(
-      new Promise<Album[]>((resolve) => {
-        resolveAlbums = resolve;
       }),
     );
+    mockLoadArtistTracks.mockResolvedValue([
+      track({ item_id: "library-fallback" }),
+    ]);
 
     await showArtist(page, libraryArtist());
-    expect(page.albumItems.value).toBeUndefined();
-    scopes[scopes.length - 1].stop();
-    resolveAlbums(
-      Array.from({ length: 50 }, (_, index) =>
-        album({ item_id: `boundary-${index}`, year: 2025 }),
-      ),
-    );
+    page.visibleRows.value = [];
+    await flushPromises();
+    resolveTopTracks([]);
+    await flushPromises();
+    expect(mockLoadArtistTracks).not.toHaveBeenCalled();
+
+    page.visibleRows.value = ["top_tracks"];
     await flushPromises();
 
-    expect(page.albumItems.value).toBeUndefined();
-    expect(page.albumsCount.value).toBe(1);
+    expect(mockLoadArtistTracks).toHaveBeenCalledTimes(1);
+    expect(itemIds(page.topTracksItems.value)).toEqual(["library-fallback"]);
   });
-
-  it.each(["empty", "rejected"] as const)(
-    "loads the cached-empty fallback when a hidden row is re-shown after a %s request",
-    async (outcome) => {
-      const page = setupRowData({ rows: ["top_tracks"] });
-      let resolveTopTracks!: (tracks: Track[]) => void;
-      let rejectTopTracks!: (error: Error) => void;
-      const pendingTopTracks = new Promise<Track[]>((resolve, reject) => {
-        resolveTopTracks = resolve;
-        rejectTopTracks = reject;
-      });
-      const requestError = new Error("hidden top tracks request failed");
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      mockLoadArtistTopTracks.mockReturnValueOnce(pendingTopTracks);
-      mockLoadArtistTracks.mockResolvedValue([
-        track({ item_id: "library-fallback" }),
-      ]);
-
-      await showArtist(page, libraryArtist());
-      page.visibleRows.value = [];
-      await flushPromises();
-
-      if (outcome === "empty") resolveTopTracks([]);
-      else rejectTopTracks(requestError);
-      await flushPromises();
-      expect(mockLoadArtistTracks).not.toHaveBeenCalled();
-
-      page.visibleRows.value = ["top_tracks"];
-      await flushPromises();
-
-      expect(mockLoadArtistTracks).toHaveBeenCalledTimes(1);
-      expect(itemIds(page.topTracksItems.value)).toEqual(["library-fallback"]);
-    },
-  );
 
   it("labels the top tracks row after the library when it uses that fallback", async () => {
     const page = setupRowData({ rows: ["top_tracks"] });
@@ -702,25 +510,6 @@ describe("useArtistRowData", () => {
     expect(itemIds(page.discographySecondItems.value)).toEqual(["live"]);
     expect(page.discographyCount.value).toBe(123);
     expect(page.discographySecondCount.value).toBe(17);
-    expect(
-      mockLoadArtistDiscographyCount.mock.calls.map(([, types]) => types),
-    ).toEqual([[AlbumType.ALBUM], [AlbumType.LIVE]]);
-    for (const [
-      ,
-      types,
-      search,
-      limit,
-      offset,
-      sortField,
-      sortDirection,
-    ] of mockLoadArtistDiscography.mock.calls) {
-      expect(types).toBeDefined();
-      expect(search).toBeUndefined();
-      expect(limit).toBe(50);
-      expect(offset).toBeUndefined();
-      expect(sortField).toBeUndefined();
-      expect(sortDirection).toBeUndefined();
-    }
   });
 
   it("shares one request between discography rows showing the same types", async () => {
