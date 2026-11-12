@@ -46,6 +46,13 @@ const sortOption = (
   label_key: field,
 });
 
+const tracks = (count: number, prefix = "t") =>
+  Array.from({ length: count }, (_, index) =>
+    track({ item_id: `${prefix}${index}` }),
+  );
+
+const ids = (items: { item_id: string }[]) => items.map((item) => item.item_id);
+
 describe("useItemsListing", () => {
   afterEach(() => {
     scopes.splice(0).forEach((scope) => scope.stop());
@@ -374,11 +381,6 @@ describe("useItemsListing", () => {
   });
 
   describe("reloadLoadedItems", () => {
-    const tracks = (count: number, prefix = "t") =>
-      Array.from({ length: count }, (_, index) =>
-        track({ item_id: `${prefix}${index}` }),
-      );
-
     it("re-reads every loaded page in one request without clearing the list", async () => {
       const loadPagedData = vi.fn<LoadPagedDataFn>();
       loadPagedData
@@ -580,6 +582,182 @@ describe("useItemsListing", () => {
         sortField: SortField.SORT_NAME,
         sortDirection: SortDirection.DESC,
       });
+    });
+  });
+
+  describe("loadRow", () => {
+    it("resolves right away for a row that is already loaded", async () => {
+      const loadPagedData = vi
+        .fn<LoadPagedDataFn>()
+        .mockResolvedValue(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+
+      await expect(listing.loadRow(1)).resolves.toBe(true);
+      expect(loadPagedData).toHaveBeenCalledTimes(1);
+    });
+
+    it("loads the rows from a page above the row to a page below it", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2))
+        .mockResolvedValueOnce(tracks(4, "jump-"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+
+      await expect(listing.loadRow(10)).resolves.toBe(true);
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 8, limit: 4, refresh: false }),
+      );
+      expect(ids(listing.pagedItems.value)).toEqual(ids(tracks(4, "jump-")));
+      expect(listing.baseOffset.value).toBe(8);
+      // the next page follows on from the loaded rows
+      expect(listing.params.value.offset).toBe(10);
+      expect(listing.allItemsReceived.value).toBe(false);
+    });
+
+    it("marks the end of the listing when the rows below run out", async () => {
+      const loadPagedData = vi
+        .fn<LoadPagedDataFn>()
+        .mockResolvedValue(tracks(60));
+      const listing = setupItemsListing({ limit: 50, loadPagedData });
+
+      await listing.loadRow(100);
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 50, limit: 100 }),
+      );
+      expect(listing.allItemsReceived.value).toBe(true);
+    });
+
+    it("only loads the latest row asked for while a page is loading", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      let finishPage: (items: Track[]) => void = () => {};
+      loadPagedData.mockImplementationOnce(
+        () => new Promise((resolve) => (finishPage = resolve)),
+      );
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      const page = listing.loadData();
+      const first = listing.loadRow(10);
+      const second = listing.loadRow(20);
+      loadPagedData.mockResolvedValueOnce(tracks(4, "jump-"));
+
+      await expect(first).resolves.toBe(false);
+      finishPage(tracks(2));
+      await page;
+
+      await expect(second).resolves.toBe(true);
+      expect(loadPagedData).toHaveBeenCalledTimes(2);
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 18, limit: 4 }),
+      );
+      expect(listing.baseOffset.value).toBe(18);
+    });
+
+    it("keeps the loaded rows when the row fails to load", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2))
+        .mockRejectedValueOnce(new Error("offline"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+
+      await expect(listing.loadRow(10)).resolves.toBe(false);
+
+      expect(ids(listing.pagedItems.value)).toEqual(ids(tracks(2)));
+      expect(listing.baseOffset.value).toBe(0);
+      expect(listing.params.value.offset).toBe(0);
+      expect(listing.loading.value).toBe(false);
+    });
+
+    it("keeps the loaded rows when the row is past the end", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(2))
+        .mockResolvedValueOnce(tracks(1, "short-"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+
+      await expect(listing.loadRow(10)).resolves.toBe(false);
+
+      expect(ids(listing.pagedItems.value)).toEqual(ids(tracks(2)));
+      expect(listing.baseOffset.value).toBe(0);
+      expect(listing.params.value.offset).toBe(0);
+    });
+  });
+
+  describe("loadPreviousPage", () => {
+    // loads the rows around row 10 with a page size of 2, so row 8 is first
+    async function listingAtRow10(loadPagedData = vi.fn<LoadPagedDataFn>()) {
+      loadPagedData.mockResolvedValueOnce(tracks(4, "jump-"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadRow(10);
+      return { listing, loadPagedData };
+    }
+
+    it("does nothing at the top of the listing", async () => {
+      const loadPagedData = vi
+        .fn<LoadPagedDataFn>()
+        .mockResolvedValue(tracks(2));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadData();
+      const onPrepend = vi.fn();
+
+      await expect(listing.loadPreviousPage(onPrepend)).resolves.toBe(false);
+
+      expect(loadPagedData).toHaveBeenCalledTimes(1);
+      expect(onPrepend).not.toHaveBeenCalled();
+    });
+
+    it("does nothing while another page is loading", async () => {
+      const { listing, loadPagedData } = await listingAtRow10();
+      loadPagedData.mockImplementationOnce(() => new Promise(() => {}));
+      void listing.loadNextPage({ done: () => {} });
+
+      await expect(listing.loadPreviousPage(vi.fn())).resolves.toBe(false);
+      expect(loadPagedData).toHaveBeenCalledTimes(2);
+    });
+
+    it("puts the page above in front of the loaded rows", async () => {
+      const { listing, loadPagedData } = await listingAtRow10();
+      loadPagedData.mockResolvedValueOnce(tracks(2, "above-"));
+      const onPrepend = vi.fn(() => {
+        // the rows are in place by the time it runs
+        expect(listing.pagedItems.value).toHaveLength(6);
+        expect(listing.baseOffset.value).toBe(6);
+      });
+
+      await expect(listing.loadPreviousPage(onPrepend)).resolves.toBe(true);
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 6, limit: 2, refresh: false }),
+      );
+      expect(onPrepend).toHaveBeenCalledTimes(1);
+      expect(ids(listing.pagedItems.value)).toEqual([
+        ...ids(tracks(2, "above-")),
+        ...ids(tracks(4, "jump-")),
+      ]);
+      // paging down still follows on from the rows loaded by the jump
+      expect(listing.params.value.offset).toBe(10);
+    });
+
+    it("stops the page above at the first row", async () => {
+      const loadPagedData = vi.fn<LoadPagedDataFn>();
+      loadPagedData
+        .mockResolvedValueOnce(tracks(4, "jump-"))
+        .mockResolvedValueOnce(tracks(1, "above-"));
+      const listing = setupItemsListing({ limit: 2, loadPagedData });
+      await listing.loadRow(3);
+      expect(listing.baseOffset.value).toBe(1);
+
+      await listing.loadPreviousPage(() => {});
+
+      expect(loadPagedData).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, limit: 1 }),
+      );
+      expect(listing.baseOffset.value).toBe(0);
+      expect(listing.pagedItems.value).toHaveLength(5);
     });
   });
 });
