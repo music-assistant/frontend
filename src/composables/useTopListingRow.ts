@@ -36,7 +36,7 @@ export function useTopListingRow(
   function measure() {
     const el = scrollerEl.value;
     const rows = toValue(content);
-    if (!el || !rows) return;
+    if (!el || !rows || !toValue(enabled)) return;
     const rect = el.getBoundingClientRect();
     let index: number | undefined;
     let covered = false;

@@ -118,16 +118,20 @@ describe("useTopListingRow", () => {
     expect(topIndex.value).toBe(9);
   });
 
-  it("forgets the row when tracking is turned off", async () => {
+  it("forgets the row and stops measuring when tracking is turned off", async () => {
     rowAtTop(5);
     const enabled = ref(true);
-    const { topIndex } = setupTracker(enabled);
+    const { scroller, topIndex } = setupTracker(enabled);
     await frame();
     expect(topIndex.value).toBe(5);
 
     enabled.value = false;
     await frame();
+    rowAtTop(8);
+    scroller.dispatchEvent(new Event("scroll"));
+    await frame();
 
     expect(topIndex.value).toBeUndefined();
+    expect(document.elementFromPoint).not.toHaveBeenCalled();
   });
 });

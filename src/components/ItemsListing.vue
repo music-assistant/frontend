@@ -538,6 +538,7 @@ import { useListingCount } from "@/composables/useListingCount";
 import { useListingSaves } from "@/composables/useListingSaves";
 import { useListingWindow } from "@/composables/useListingWindow";
 import { useTopListingRow } from "@/composables/useTopListingRow";
+import { useCurrentLetter } from "@/composables/useCurrentLetter";
 import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
 import { useTrackReorderRows } from "@/composables/useTrackReorderRows";
 import type {
@@ -1104,50 +1105,17 @@ const rowElement = function (index: number) {
   );
 };
 
-// the bar marks the letter of the row at the top of the screen; while the row
-// a jump went to is still on screen below it, that is the letter jumped to:
-// its items may share the top grid row with the next letter's, or sit too
-// near the end of the list to reach the top
 const { topIndex } = useTopListingRow(scroller, listContainer, showLetterBar);
 const letterBar =
   useTemplateRef<InstanceType<typeof AlphabetIndexBar>>("letterBar");
-const jumpedRow = ref<number>();
-// a new index comes with a new order, in which the row means something else
-watch(letterEntries, () => {
-  jumpedRow.value = undefined;
-});
-// the row a jump went to keeps its letter while it stays where the jump put
-// it: at the top of the screen, within its own height, or anywhere on screen
-// when the list is scrolled to its end and the row could not reach the top.
-// The bar spans the part of the scroller not under the bars at the bottom.
-const jumpedRowInPlace = function (jumped: number) {
-  const el = rowElement(jumped - baseOffset.value);
-  const area = scroller();
-  const bar = letterBar.value?.$el as HTMLElement | undefined;
-  if (!el || !area) return false;
-  const top = area.getBoundingClientRect().top;
-  const bottom =
-    bar?.getBoundingClientRect().bottom ?? area.getBoundingClientRect().bottom;
-  const rect = el.getBoundingClientRect();
-  if (rect.bottom <= top || rect.top >= bottom) return false;
-  const atEnd = area.scrollTop + area.clientHeight >= area.scrollHeight - 1;
-  return atEnd || rect.top < top + rect.height;
-};
-// once scrolled away from, the jump is over: coming back past the row later
-// does not light its letter again
-watch(topIndex, () => {
-  const jumped = jumpedRow.value;
-  if (jumped !== undefined && !jumpedRowInPlace(jumped)) {
-    jumpedRow.value = undefined;
-  }
-});
-const currentLetter = computed(() => {
-  if (topIndex.value === undefined) return null;
-  const topRow = baseOffset.value + topIndex.value;
-  const jumped = jumpedRow.value;
-  const row =
-    jumped !== undefined && jumpedRowInPlace(jumped) ? jumped : topRow;
-  return letterAt(row) ?? null;
+const { currentLetter, markJump } = useCurrentLetter({
+  scroller,
+  bar: () => letterBar.value?.$el as HTMLElement | undefined,
+  rowElement,
+  baseOffset,
+  topIndex,
+  letterAt,
+  entries: letterEntries,
 });
 // changes to the library move the letters' rows
 watch(newContentAvailable, (available) => {
@@ -1166,7 +1134,7 @@ const { jumpToRow, loadAllAbove } = useListingWindow({
 const jumpToLetter = async function (label: string) {
   const row = rowFor(label);
   if (row === undefined) return;
-  jumpedRow.value = row;
+  markJump(row);
   const failed = loadError.value;
   await jumpToRow(row);
   // rows loaded after a failed page let the scroller page on again
