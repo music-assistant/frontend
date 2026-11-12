@@ -11,7 +11,6 @@
     <template #title-info>
       <StatisticsLibraryInfo
         v-if="activeTab === MediaType.ALBUM"
-        :statistic="$t('statistics_top_albums')"
         :explanation="$t('statistics_library_based_albums')"
       />
     </template>

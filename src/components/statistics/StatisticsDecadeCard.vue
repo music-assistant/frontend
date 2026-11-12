@@ -8,7 +8,6 @@
   >
     <template #title-info>
       <StatisticsLibraryInfo
-        :statistic="$t('statistics_release_years')"
         :explanation="$t('statistics_library_based_decades')"
       />
     </template>

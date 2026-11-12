@@ -11,7 +11,6 @@
   >
     <template #title-info>
       <StatisticsLibraryInfo
-        :statistic="$t('statistics_artist_time')"
         :explanation="$t('statistics_library_based_listening_time')"
       />
     </template>

@@ -170,22 +170,18 @@ describe("StatisticsView", () => {
 
       const explanations = () =>
         wrapper.findAllComponents(StatisticsLibraryInfo).map((badge) => ({
-          statistic: badge.props("statistic"),
           explanation: badge.props("explanation"),
         }));
       const baseExplanations = [
         {
-          statistic: "Top genre",
           explanation:
             "Includes plays linked to library tracks with genre information. Other plays may be missing.",
         },
         {
-          statistic: "Release years",
           explanation:
             "Includes plays linked to library tracks with an album release year. Other plays may be missing.",
         },
         {
-          statistic: "Top artists by listening time",
           explanation:
             "Calculated from completed plays linked to library tracks with a known duration. Other plays may be missing.",
         },
@@ -198,7 +194,6 @@ describe("StatisticsView", () => {
       expect(explanations()).toEqual([
         ...baseExplanations,
         {
-          statistic: "Top albums",
           explanation:
             "Includes plays linked to library tracks with album information. Other plays may be missing.",
         },

@@ -8,7 +8,6 @@
   >
     <template #title-info>
       <StatisticsLibraryInfo
-        :statistic="$t('statistics_top_genre')"
         :explanation="$t('statistics_library_based_genres')"
       />
     </template>
