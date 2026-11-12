@@ -772,6 +772,10 @@
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
         },
+        "show_letter_index": {
+            "label": "Show A to Z index",
+            "description": "Adds a letter bar to the artists, albums and tracks lists so you can jump straight to a letter. Only shown when the list is sorted by name and you are not searching."
+        },
         "audiobook_chapter_progress": {
             "label": "Show audiobook chapter progress",
             "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."

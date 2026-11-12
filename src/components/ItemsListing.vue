@@ -346,7 +346,7 @@
             :item-height="showTrackTable ? TRACK_ROW_HEIGHT : 70"
             height="100%"
             :items="listDisplayItems"
-            :item-key="loadLetterIndex ? 'uri' : undefined"
+            :item-key="letterIndexLoader ? 'uri' : undefined"
             style="height: 100%; overflow: hidden"
           >
             <template #default="{ item, index }">
@@ -792,7 +792,7 @@ const router = useRouter();
 const route = useRoute();
 const { t, te } = useI18n();
 const { open: openCommandCenter } = useCommandCenter();
-const { getItemsListingPreferences } = useUserPreferences();
+const { getItemsListingPreferences, getPreference } = useUserPreferences();
 const { setItemsListingPreference, setItemsListingPreferences, holdRestore } =
   useListingSaves(() => reconcileSavedSettings());
 
@@ -1066,12 +1066,17 @@ const gridColumnCount = computed(() =>
 
 const INFINITE_SCROLL_MARGIN = 600;
 
+// the letter index is opt-in: without the preference it is never requested
+const showLetterIndex = getPreference("show_letter_index", false);
+const letterIndexLoader = computed(() =>
+  showLetterIndex.value ? props.loadLetterIndex : undefined,
+);
 const {
   entries: letterEntries,
   letters: indexLetters,
   load: reloadLetterIndex,
   rowFor,
-} = useLetterIndex(() => props.loadLetterIndex, params);
+} = useLetterIndex(() => letterIndexLoader.value, params);
 const showLetterBar = computed(
   () => letterEntries.value.length > 1 && pagedItems.value.length > 0,
 );
