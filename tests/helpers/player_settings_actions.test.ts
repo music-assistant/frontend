@@ -1,9 +1,8 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
-  confirmRemoveUnavailablePlayers,
   getPlayerSettingsMenuItems,
   getSetupRequiredPlayerMenuItems,
-  getUnavailablePlayers,
+  removeUnavailablePlayers,
   renamePlayer,
   setPlayerEnabled,
 } from "@/helpers/player_settings_actions";
@@ -12,7 +11,6 @@ import {
   ProviderFeature,
   ProviderType,
   Scope,
-  type OutputProtocol,
   type Player,
   type PlayerOption,
   type ProviderInstance,
@@ -53,6 +51,7 @@ const {
   },
   toastMock: {
     error: vi.fn(),
+    info: vi.fn(),
     success: vi.fn(),
   },
 }));
@@ -386,51 +385,7 @@ describe("getPlayerSettingsMenuItems from the stored config", () => {
   });
 });
 
-describe("getUnavailablePlayers", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    apiMock.getProvider.mockImplementation((id: string) =>
-      id === "stopped" ? undefined : providerInstance(),
-    );
-  });
-
-  it("lists a player whose device is gone", () => {
-    registerPlayer({
-      available: false,
-      output_protocols: [outputProtocol({ available: false })],
-    });
-
-    expect(playerIds(getUnavailablePlayers())).toEqual(["kitchen"]);
-  });
-
-  it.each([
-    ["is available", { available: true }],
-    ["still needs setup", { available: false, needs_setup: true }],
-    [
-      "has an output that reaches its device",
-      { available: false, output_protocols: [outputProtocol()] },
-    ],
-    [
-      "has a provider that is not running",
-      { available: false, provider: "stopped" },
-    ],
-    [
-      "plays through a provider that is not running",
-      {
-        available: false,
-        output_protocols: [
-          outputProtocol({ available: false, protocol_domain: "stopped" }),
-        ],
-      },
-    ],
-  ] as const)("leaves out a player that %s", (_, overrides) => {
-    registerPlayer(overrides as Partial<Player>);
-
-    expect(getUnavailablePlayers()).toEqual([]);
-  });
-});
-
-describe("confirmRemoveUnavailablePlayers", () => {
+describe("removeUnavailablePlayers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     registerPlayer({ available: false });
@@ -441,26 +396,36 @@ describe("confirmRemoveUnavailablePlayers", () => {
     storeMock.activePlayerId = undefined;
   });
 
-  it("says how many players it concerns before it removes anything", () => {
-    confirmRemoveUnavailablePlayers(3);
+  it("asks with the count the server reports before it removes anything", async () => {
+    apiMock.removeUnavailablePlayers.mockResolvedValueOnce([
+      "kitchen",
+      "garage",
+      "attic",
+    ]);
 
+    await removeUnavailablePlayers();
+
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledWith(true);
     expect(emitEvent).toHaveBeenCalledWith(
       "deleteConfirmationDialog",
       expect.objectContaining({
         message: "settings.remove_unavailable_players_confirmation (3)",
       }),
     );
-    expect(apiMock.removeUnavailablePlayers).not.toHaveBeenCalled();
   });
 
   it("removes the players and reports the ones the server removed", async () => {
-    apiMock.removeUnavailablePlayers.mockResolvedValue(["kitchen"]);
+    apiMock.removeUnavailablePlayers
+      .mockResolvedValueOnce(["kitchen"])
+      .mockResolvedValueOnce(["kitchen"]);
     storeMock.activePlayerId = "kitchen";
     const onRemoved = vi.fn();
 
-    confirmRemoveUnavailablePlayers(1, onRemoved);
+    await removeUnavailablePlayers(onRemoved);
     await confirmation().onConfirm();
 
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenLastCalledWith();
     expect(onRemoved).toHaveBeenCalledWith(["kitchen"]);
     expect(toastMock.success).toHaveBeenCalledWith(
       "settings.unavailable_players_removed (1)",
@@ -468,19 +433,40 @@ describe("confirmRemoveUnavailablePlayers", () => {
     expect(storeMock.activePlayerId).toBe("office");
   });
 
-  it("removes nothing when the server refuses, and leaves its reason to the api", async () => {
-    apiMock.removeUnavailablePlayers.mockRejectedValue(
-      new Error("Players are still being found, try again in 42 seconds"),
-    );
+  it("removes nothing when the user does not confirm", async () => {
+    apiMock.removeUnavailablePlayers.mockResolvedValueOnce(["kitchen"]);
     const onRemoved = vi.fn();
 
-    confirmRemoveUnavailablePlayers(1, onRemoved);
-    await confirmation().onConfirm();
+    await removeUnavailablePlayers(onRemoved);
 
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
     expect(onRemoved).not.toHaveBeenCalled();
-    expect(toastMock.success).not.toHaveBeenCalled();
+  });
+
+  it("says so when there is nothing to remove, without asking", async () => {
+    apiMock.removeUnavailablePlayers.mockResolvedValueOnce([]);
+
+    await removeUnavailablePlayers();
+
+    expect(toastMock.info).toHaveBeenCalledWith(
+      "settings.no_unavailable_players",
+    );
+    expect(emitEvent).not.toHaveBeenCalled();
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
+  });
+
+  it("asks nothing when the server refuses, and leaves its reason to the api", async () => {
+    apiMock.removeUnavailablePlayers.mockRejectedValueOnce(
+      new Error("Players are still being found, try again in 42 seconds"),
+    );
+
+    await removeUnavailablePlayers();
+
+    expect(emitEvent).not.toHaveBeenCalled();
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
     // the api layer toasts the server's reason, so this must not toast a second time
     expect(toastMock.error).not.toHaveBeenCalled();
+    expect(toastMock.info).not.toHaveBeenCalled();
   });
 });
 
@@ -694,10 +680,6 @@ function visibleLabels(menuItems: ContextMenuItem[]): string[] {
   return menuItems.filter((item) => !item.hide).map((item) => item.label);
 }
 
-function playerIds(players: Player[]): string[] {
-  return players.map((player) => player.player_id);
-}
-
 function sectionLabels(): string[] {
   return visibleLabels(
     getPlayerSettingsMenuItems(playerConfig(), { includeSections: true }),
@@ -744,24 +726,8 @@ function player(overrides: Partial<Player> = {}): Player {
     hide_in_ui: false,
     synced_to: null,
     options: [{ key: "eq", name: "EQ" } as PlayerOption],
-    output_protocols: [],
     ...overrides,
   } as Player;
-}
-
-function outputProtocol(
-  overrides: Partial<OutputProtocol> = {},
-): OutputProtocol {
-  return {
-    output_protocol_id: "native",
-    name: "Chromecast",
-    is_native: true,
-    protocol_domain: "chromecast",
-    priority: 0,
-    available: true,
-    derived_from: null,
-    ...overrides,
-  };
 }
 
 function providerInstance(

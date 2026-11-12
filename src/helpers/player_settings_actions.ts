@@ -5,7 +5,7 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getPlayerName } from "@/helpers/player_config";
 import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
-import { isPlayerUnavailable, isSelectablePlayer } from "@/helpers/players";
+import { isSelectablePlayer } from "@/helpers/players";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { setUserPreference } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
@@ -202,38 +202,34 @@ export const getSetupRequiredPlayerMenuItems = (
 };
 
 /**
- * The players whose device is gone while every provider they play through is
- * running: the ones "remove unavailable players" removes. A disabled player is
- * never one of them.
- */
-export const getUnavailablePlayers = (): Player[] =>
-  Object.values(api.players).filter(
-    (player) =>
-      isPlayerUnavailable(player) &&
-      !player.output_protocols.some((protocol) => protocol.available) &&
-      [
-        player.provider,
-        ...player.output_protocols.map((protocol) => protocol.protocol_domain),
-      ].every((provider) => !!api.getProvider(provider)),
-  );
-
-/**
- * Ask before removing every player whose device is gone, then remove them.
+ * Remove every player whose device is gone, after asking: the confirmation says
+ * how many players the server would remove, or that there are none.
  *
- * @param count How many players the confirmation says it concerns.
  * @param onRemoved Called with the ids of the players the server removed.
  */
-export const confirmRemoveUnavailablePlayers = (
-  count: number,
+export const removeUnavailablePlayers = async (
   onRemoved?: (playerIds: string[]) => void,
-) => {
+): Promise<void> => {
+  let candidates: string[];
+  try {
+    candidates = await api.removeUnavailablePlayers(true);
+  } catch {
+    // the api layer reports the failure with the server's reason, such as
+    // providers that have only just started and are still finding their devices
+    return;
+  }
+  const count = candidates.length;
+  if (!count) {
+    toast.info($t("settings.no_unavailable_players"));
+    return;
+  }
   eventbus.emit("deleteConfirmationDialog", {
     title: $t("settings.remove_unavailable_players_title"),
     message: $t("settings.remove_unavailable_players_confirmation", count, {
       named: { count },
     }),
     confirmLabel: $t("remove"),
-    onConfirm: () => removeUnavailablePlayers(onRemoved),
+    onConfirm: () => removeUnavailablePlayersConfirmed(onRemoved),
   });
 };
 
@@ -303,15 +299,14 @@ async function deletePlayer(playerId: string, onDeleted?: () => void) {
   }
 }
 
-async function removeUnavailablePlayers(
+async function removeUnavailablePlayersConfirmed(
   onRemoved?: (playerIds: string[]) => void,
 ) {
   let removed: string[];
   try {
     removed = await api.removeUnavailablePlayers();
   } catch {
-    // the api layer reports the failure with the server's reason, such as
-    // providers that have only just started and are still finding their devices
+    // a failed command is already reported by the api layer
     return;
   }
   removed.forEach(selectFallbackPlayer);

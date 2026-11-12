@@ -860,6 +860,7 @@
         "remove_unavailable_players": "Remove unavailable players",
         "remove_unavailable_players_title": "Remove unavailable players?",
         "remove_unavailable_players_confirmation": "This removes one player whose device can no longer be found, along with its settings. | This removes {count} players whose devices can no longer be found, along with their settings.",
+        "no_unavailable_players": "There are no unavailable players to remove",
         "unavailable_players_removed": "No unavailable players were found | Removed one unavailable player | Removed {count} unavailable players",
         "queue_settings_description": "Playback settings for the queue this player plays from",
         "dsp_description": "Filters and gain applied to everything this player plays",

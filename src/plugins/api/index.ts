@@ -118,7 +118,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 105;
+export const MIN_SERVER_SCHEMA_VERSION = 109;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
@@ -2630,9 +2630,13 @@ export class MusicAssistantApi {
     return this.sendCommand("players/remove", { player_id: playerId });
   }
 
-  /** Remove every player whose device is gone, and return the ids of those removed. */
-  public removeUnavailablePlayers(): Promise<string[]> {
-    return this.sendCommand("players/remove_unavailable");
+  /**
+   * Remove every player whose device is gone, and return the ids of those removed.
+   *
+   * @param dry_run Remove nothing, and return the ids of the players it would remove.
+   */
+  public removeUnavailablePlayers(dry_run = false): Promise<string[]> {
+    return this.sendCommand("players/remove_unavailable", { dry_run });
   }
 
   // Sleep timer related functions/commands

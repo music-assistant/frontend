@@ -1071,6 +1071,26 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [true, true],
+    [undefined, false],
+  ])(
+    "asks the server to remove unavailable players (dry run %s)",
+    async (dryRun, sent) => {
+      const request = api.removeUnavailablePlayers(dryRun);
+
+      expect(transport.lastCommand.command).toBe("players/remove_unavailable");
+      expect(transport.lastCommand.args).toEqual({ dry_run: sent });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: ["kitchen"],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual(["kitchen"]);
+    },
+  );
+
   it("flags a server below the minimum schema version as outdated", () => {
     // before server_info arrives there is nothing to judge yet
     api.serverInfo.value = undefined;

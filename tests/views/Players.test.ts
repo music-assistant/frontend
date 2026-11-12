@@ -1,15 +1,13 @@
 import Players from "@/views/settings/Players.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type {
-  confirmRemoveUnavailablePlayers as confirmRemoval,
   getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems,
-  getUnavailablePlayers as listUnavailablePlayers,
+  removeUnavailablePlayers as removeUnavailable,
 } from "@/helpers/player_settings_actions";
 import {
   PlayerType,
   ProviderType,
   Scope,
-  type Player,
   type PlayerConfig,
 } from "@/plugins/api/interfaces";
 import { webPlayer } from "@/plugins/web_player";
@@ -21,11 +19,10 @@ import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const {
   apiMock,
-  confirmRemoveUnavailablePlayers,
   emitEvent,
   getPlayerSettingsMenuItems,
-  getUnavailablePlayers,
   hasScope,
+  removeUnavailablePlayers,
   routerPush,
 } = vi.hoisted(() => ({
   apiMock: {
@@ -46,11 +43,10 @@ const {
     providers: {},
     subscribe_multi: vi.fn(),
   },
-  confirmRemoveUnavailablePlayers: vi.fn<typeof confirmRemoval>(),
   emitEvent: vi.fn(),
   getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
-  getUnavailablePlayers: vi.fn<typeof listUnavailablePlayers>(),
   hasScope: vi.fn<(scope: Scope) => boolean>(),
+  removeUnavailablePlayers: vi.fn<typeof removeUnavailable>(),
   routerPush: vi.fn(),
 }));
 
@@ -76,9 +72,8 @@ vi.mock("@/helpers/player_config", async (importOriginal) => ({
 
 // the menu itself is covered where it is built; here it only has to arrive
 vi.mock("@/helpers/player_settings_actions", () => ({
-  confirmRemoveUnavailablePlayers,
   getPlayerSettingsMenuItems,
-  getUnavailablePlayers,
+  removeUnavailablePlayers,
 }));
 
 vi.mock("@/helpers/utils", () => ({
@@ -153,7 +148,6 @@ describe("Players", () => {
     apiMock.getProviderManifest.mockReturnValue(providerManifest());
     apiMock.subscribe_multi.mockReturnValue(vi.fn());
     getPlayerSettingsMenuItems.mockReturnValue([{ label: "settings.delete" }]);
-    getUnavailablePlayers.mockReturnValue([]);
   });
 
   it("points an admin to the player providers", async () => {
@@ -301,33 +295,23 @@ describe("Players", () => {
     expect(wrapper.find(".player-row").exists()).toBe(false);
   });
 
-  it("offers to remove the unavailable players while there are any, to who may change player settings", async () => {
+  it("offers to remove the unavailable players to who may change player settings", async () => {
     const offersRemoval = async () =>
       (await mountPlayers("list")).find(REMOVE_UNAVAILABLE).exists();
 
-    expect(await offersRemoval()).toBe(false);
-
-    getUnavailablePlayers.mockReturnValue([unavailablePlayer()]);
     expect(await offersRemoval()).toBe(true);
 
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
     expect(await offersRemoval()).toBe(false);
   });
 
-  it("asks before removing the unavailable players and drops the removed ones", async () => {
-    getUnavailablePlayers.mockReturnValue([
-      unavailablePlayer(),
-      unavailablePlayer(),
-    ]);
+  it("drops the players the server removed from the list", async () => {
     const wrapper = await mountPlayers("list");
 
     await wrapper.get(REMOVE_UNAVAILABLE).trigger("click");
-    expect(confirmRemoveUnavailablePlayers).toHaveBeenCalledWith(
-      2,
-      expect.any(Function),
-    );
+    expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
 
-    confirmRemoveUnavailablePlayers.mock.calls[0][1]!(["kitchen"]);
+    removeUnavailablePlayers.mock.calls[0][0]!(["kitchen"]);
     await flushPromises();
     expect(wrapper.find(".player-row").exists()).toBe(false);
   });
@@ -344,10 +328,6 @@ describe("Players", () => {
 });
 
 const REMOVE_UNAVAILABLE = '[data-testid="remove-unavailable-players"]';
-
-function unavailablePlayer(): Player {
-  return { player_id: "kitchen", available: false } as Player;
-}
 
 async function mountPlayers(viewMode: "list" | "card") {
   const wrapper = mount(Players, {

@@ -17,10 +17,10 @@
           {{ $t("settings.add_group_player") }}
         </Button>
         <Button
-          v-if="canRemovePlayers && unavailablePlayerCount > 0"
+          v-if="canRemovePlayers"
           variant="outline"
           data-testid="remove-unavailable-players"
-          @click="removeUnavailablePlayers"
+          @click="removeUnavailablePlayers(dropPlayerConfigs)"
         >
           <Trash2 class="size-4" />
           {{ $t("settings.remove_unavailable_players") }}
@@ -100,9 +100,8 @@ import {
   playerBelongsToProviders,
 } from "@/helpers/player_config";
 import {
-  confirmRemoveUnavailablePlayers,
   getPlayerSettingsMenuItems,
-  getUnavailablePlayers,
+  removeUnavailablePlayers,
 } from "@/helpers/player_settings_actions";
 
 import { api } from "@/plugins/api";
@@ -167,7 +166,6 @@ const canAddPlayerProviders = computed(() =>
 const canRemovePlayers = computed(() =>
   authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
 );
-const unavailablePlayerCount = computed(() => getUnavailablePlayers().length);
 
 // methods
 const loadItems = async function () {
@@ -214,12 +212,10 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   });
 };
 
-const removeUnavailablePlayers = function () {
-  confirmRemoveUnavailablePlayers(unavailablePlayerCount.value, (removed) => {
-    playerConfigs.value = playerConfigs.value.filter(
-      (x) => !removed.includes(x.player_id),
-    );
-  });
+const dropPlayerConfigs = function (playerIds: string[]) {
+  playerConfigs.value = playerConfigs.value.filter(
+    (x) => !playerIds.includes(x.player_id),
+  );
 };
 
 const filteredPlayers = computed(() => {
