@@ -337,7 +337,7 @@ const resetForm = () => {
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
     form.setFieldValue("playerFilter", props.user.player_filter);
-    form.setFieldValue("allowExplicit", props.user.allow_explicit ?? true);
+    form.setFieldValue("allowExplicit", props.user.allow_explicit);
   }
 };
 
