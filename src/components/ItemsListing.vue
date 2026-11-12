@@ -535,6 +535,7 @@ import {
   providerServiceName,
 } from "@/plugins/api/helpers";
 import {
+  ArtistType,
   EventMessage,
   EventType,
   ItemMapping,
@@ -1736,6 +1737,13 @@ const musicProviders = computed(() => {
         return provider.available;
       }
       if (provider.type !== ProviderType.MUSIC) return false;
+      // audiobook providers offer artists as authors/narrators only
+      if (
+        props.itemtype === "artists" &&
+        !provider.supported_artist_types.includes(ArtistType.SINGER)
+      ) {
+        return false;
+      }
       // If we have required feature(s) for this itemtype, filter by them
       if (requiredFeatures) {
         return requiredFeatures.some((feature) =>

@@ -13,9 +13,12 @@ import { useEscapeBack } from "@/composables/useEscapeBack";
 import { defineComponent, h, nextTick, ref, type SetupContext } from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
+  ArtistType,
   EventType,
   ListingType,
   MediaType,
+  ProviderFeature,
+  ProviderType,
   SortDirection,
   SortField,
   type Album,
@@ -1488,6 +1491,46 @@ describe("ItemsListing source selector", () => {
     expect(loadItems).toHaveBeenCalledWith(
       expect.objectContaining({ provider: ["library"] }),
     );
+  });
+
+  it("leaves audiobook providers out of the artist filter", async () => {
+    const provider = (instanceId: string, artistTypes: ArtistType[]) =>
+      ({
+        instance_id: instanceId,
+        name: instanceId,
+        domain: instanceId,
+        type: ProviderType.MUSIC,
+        supported_features: [ProviderFeature.LIBRARY_ARTISTS],
+        supported_artist_types: artistTypes,
+        available: true,
+      }) as ProviderInstance;
+    for (const key of Object.keys(api.providers)) delete api.providers[key];
+    api.providers.spotify = provider("spotify", [ArtistType.SINGER]);
+    api.providers.deezer = provider("deezer", [
+      ArtistType.SINGER,
+      ArtistType.AUTHOR,
+    ]);
+    api.providers.audiobookshelf = provider("audiobookshelf", [
+      ArtistType.AUTHOR,
+      ArtistType.NARRATOR,
+    ]);
+    const listing = mountListingRaw({
+      itemtype: "artists",
+      path: "libraryartists",
+      showProviderFilter: true,
+    });
+    await flushPromises();
+
+    const filter = (
+      listing.findComponent({ name: "Toolbar" }).props("menuItems") as {
+        label?: string;
+        subItems?: { label?: string }[];
+      }[]
+    ).find((item) => item.label === "tooltip.filter_provider");
+    expect(filter?.subItems?.map((option) => option.label)).toEqual([
+      "deezer",
+      "spotify",
+    ]);
   });
 
   it("starts on the source the page asked for", async () => {
