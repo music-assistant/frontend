@@ -304,7 +304,7 @@ const form = useForm({
       ) {
         updates.player_filter = value.playerFilter;
       }
-      if (value.allowExplicit !== (props.user.allow_explicit ?? true)) {
+      if (value.allowExplicit !== props.user.allow_explicit) {
         updates.allow_explicit = value.allowExplicit;
       }
 
