@@ -55,6 +55,7 @@ import {
   type SetupFlowStep,
   type SuccessResultMessage,
   type TaskSchedule,
+  type LetterIndexEntry,
   type Track,
   type SortOptionInfo,
   type User,
@@ -140,6 +141,18 @@ export interface PlayMediaOptions {
   shuffle?: boolean;
   /** Keep the global error toast quiet for a caller that reports the failure itself. */
   suppressGlobalError?: CommandOptions["suppressGlobalError"];
+}
+
+export interface LetterIndexFilters {
+  favorite?: boolean;
+  search?: string;
+  sort_field?: SortField;
+  sort_direction?: SortDirection;
+  provider?: string | string[];
+  genre?: number | number[];
+  album_artists_only?: boolean;
+  album_types?: Array<AlbumType | string>;
+  artist_type?: ArtistType;
 }
 
 export enum ConnectionState {
@@ -676,6 +689,17 @@ export class MusicAssistantApi {
     favorite_only: boolean = false,
   ): Promise<number> {
     return this.sendCommand("music/tracks/count", { favorite_only });
+  }
+
+  /**
+   * The first row of each letter in the library listing sorted by name, for
+   * the same filters as its listing. Empty for any other sort or a search.
+   */
+  public getLibraryLetterIndex(
+    media: "artists" | "albums" | "tracks",
+    filters: LetterIndexFilters,
+  ): Promise<LetterIndexEntry[]> {
+    return this.sendCommand(`music/${media}/letter_index`, { ...filters });
   }
 
   public getSortOptions(listing: ListingType): Promise<SortOptionInfo[]> {
@@ -1512,14 +1536,19 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     favorite?: boolean,
+    options?: CommandOptions,
   ): Promise<MediaCollection<Audiobook>> {
-    return this.sendCommand("music/audiobooks/get_collection", {
-      item_id,
-      search,
-      limit,
-      offset,
-      favorite,
-    });
+    return this.sendCommand(
+      "music/audiobooks/get_collection",
+      {
+        item_id,
+        search,
+        limit,
+        offset,
+        favorite,
+      },
+      options,
+    );
   }
 
   public getAudiobookVersions(
@@ -2791,18 +2820,10 @@ export class MusicAssistantApi {
     option?: QueueOption,
     options: PlayMediaOptions = {},
   ): Promise<void> {
-    let queue_id = options.queue_id;
-    if (
-      !queue_id &&
-      store.activePlayer?.active_source &&
-      store.activePlayer.active_source in this.queues
-    ) {
-      queue_id = store.activePlayer.active_source;
-    } else if (!queue_id) {
-      queue_id = store.activePlayer?.player_id;
-    }
     const payload = {
-      queue_id,
+      // a player's own queue id is its player id; the server routes a grouped
+      // or synced player's request to the queue that should handle it
+      queue_id: options.queue_id ?? store.activePlayer?.player_id,
       media,
       option,
       start_item: options.start_item,

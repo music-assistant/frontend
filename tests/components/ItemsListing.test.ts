@@ -118,6 +118,8 @@ vi.mock("@/composables/userPreferences", async () => {
               `itemsListing.${path}.${itemtype}`
             ] ?? {},
         ),
+      getPreference: (key: string, defaultValue?: unknown) =>
+        computed(() => store.currentUser?.preferences?.[key] ?? defaultValue),
       setItemsListingPreference: mockSetItemsListingPreference,
       setItemsListingPreferences: mockSetItemsListingPreferences,
     }),
@@ -285,8 +287,9 @@ describe("ItemsListing unmount cleanup", () => {
     await flushPromises();
 
     expect(clearSelectionHandlers()).toBe(1);
-    // the media item events and the user's own favorite changes
-    expect(events.listeners).toHaveLength(2);
+    // the media item events, the user's own favorite changes and the played
+    // state of the listed collections
+    expect(events.listeners).toHaveLength(3);
 
     listing.unmount();
 
@@ -3938,5 +3941,15 @@ describe("ItemsListing library toolbar", () => {
     await flushPromises();
 
     expect(listing.find(".toolbar-stub").text()).not.toContain("128");
+  });
+
+  it("asks for the letter index only for a user who turned it on", async () => {
+    const loadLetterIndex = vi.fn().mockResolvedValue([]);
+    await mountLibraryPage({ loadLetterIndex });
+    expect(loadLetterIndex).not.toHaveBeenCalled();
+
+    store.currentUser = user({ preferences: { show_letter_index: true } });
+    await mountLibraryPage({ loadLetterIndex });
+    expect(loadLetterIndex).toHaveBeenCalled();
   });
 });
