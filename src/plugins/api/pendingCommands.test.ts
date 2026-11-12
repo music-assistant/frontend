@@ -4,6 +4,7 @@ import {
   ConnectionState,
   MusicAssistantApi,
 } from "./index";
+import { MessageTooLargeError } from "../remote/transport";
 
 type FakeTransport = {
   send: ReturnType<typeof vi.fn>;
@@ -105,6 +106,18 @@ describe("commands in flight when the connection drops", () => {
     await expect(
       api.sendCommand("ai_radio/stations/list"),
     ).rejects.toBeInstanceOf(ConnectionLostError);
+    expect(api["commands"].size).toBe(0);
+  });
+
+  it("passes a too-large message error through instead of reporting a lost connection", async () => {
+    const { api, transport } = connectedApi();
+    transport.send.mockImplementation(() => {
+      throw new MessageTooLargeError();
+    });
+
+    await expect(
+      api.sendCommand("config/dsp/impulse_responses/upload"),
+    ).rejects.toBeInstanceOf(MessageTooLargeError);
     expect(api["commands"].size).toBe(0);
   });
 

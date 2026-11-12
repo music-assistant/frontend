@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebRTCTransport } from "./webrtc-transport";
-import { TransportState } from "./transport";
+import { MessageTooLargeError, TransportState } from "./transport";
 
 /** Private members this suite drives. */
 type TransportInternals = {
@@ -240,7 +240,9 @@ describe("WebRTCTransport.send chunking", () => {
   it("refuses a message at the gateway's size cap", () => {
     const { transport, send } = setup();
 
-    expect(() => transport.send("x".repeat(INBOUND_MAX_BYTES))).toThrow();
+    expect(() => transport.send("x".repeat(INBOUND_MAX_BYTES))).toThrow(
+      MessageTooLargeError,
+    );
     expect(send).not.toHaveBeenCalled();
 
     transport.send("x".repeat(INBOUND_MAX_BYTES - 1));

@@ -7,7 +7,11 @@
  * Security: Uses DTLS certificate pinning for server authentication.
  */
 
-import { BaseTransport, TransportState } from "./transport";
+import {
+  BaseTransport,
+  MessageTooLargeError,
+  TransportState,
+} from "./transport";
 import { SignalingClient, IceServerConfig } from "./signaling";
 import {
   verifyAndSanitizeSdp,
@@ -203,7 +207,7 @@ export class WebRTCTransport extends BaseTransport {
     }
     const bytes = new TextEncoder().encode(data);
     if (bytes.length >= DATA_CHANNEL_INBOUND_MAX_BYTES) {
-      throw new Error("Message exceeds the remote access size limit");
+      throw new MessageTooLargeError();
     }
     // Chunk only what cannot go whole: an older gateway closes the session on a chunk frame.
     const limit =
