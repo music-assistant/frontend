@@ -243,7 +243,7 @@ const form = useForm({
         value.role,
         value.displayName || undefined,
         value.playerFilter.length > 0 ? value.playerFilter : undefined,
-        value.allowExplicit ? undefined : false,
+        value.allowExplicit,
         { suppressGlobalError: true },
       );
 
