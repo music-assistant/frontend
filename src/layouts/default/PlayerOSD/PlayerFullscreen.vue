@@ -254,9 +254,7 @@
                 :ref="measureRow"
                 :data-index="row.index"
                 class="queue-virt-row"
-                :style="{
-                  transform: `translateY(${row.vItem.start + rowOffset(row.index)}px)`,
-                }"
+                :style="{ transform: `translateY(${row.vItem.start}px)` }"
               >
                 <!-- section divider (Now playing / Up next) -->
                 <div v-if="row.divider" class="queue-divider">
@@ -273,31 +271,42 @@
                 </div>
                 <!-- queue mode banner (radio mix / autoplay state) under Up next -->
                 <QueueModeBanner v-if="row.divider === 'up_next'" />
-                <!-- loaded item -->
-                <QueueListItem
-                  v-if="row.item"
-                  :item="row.item"
-                  :state="row.state"
-                  :is-playing="playerActive"
-                  :dragging="draggingIndex === row.index"
-                  :marquee-sync="
-                    row.state === 'playing'
-                      ? playerMarqueeSync
-                      : hoveredMarqueeSync
-                  "
-                  :request-badge-color="requestBadgeColor"
-                  :boost-badge-color="boostBadgeColor"
-                  @menu="(e: Event) => openQueueItemMenu(e, row.index)"
-                  @dragstart="(e: PointerEvent) => startItemDrag(e, row.index)"
-                />
-                <!-- placeholder while the page loads -->
-                <div v-else class="queue-skeleton">
-                  <div class="queue-skeleton__thumb"></div>
-                  <div class="queue-skeleton__lines">
-                    <div class="queue-skeleton__line"></div>
-                    <div
-                      class="queue-skeleton__line queue-skeleton__line--sub"
-                    ></div>
+                <!-- only the item slides aside during a drag, so the divider
+                     and banner above it stay where they are -->
+                <div
+                  class="queue-virt-item"
+                  :style="{
+                    transform: `translateY(${rowOffset(row.index)}px)`,
+                  }"
+                >
+                  <!-- loaded item -->
+                  <QueueListItem
+                    v-if="row.item"
+                    :item="row.item"
+                    :state="row.state"
+                    :is-playing="playerActive"
+                    :dragging="draggingIndex === row.index"
+                    :marquee-sync="
+                      row.state === 'playing'
+                        ? playerMarqueeSync
+                        : hoveredMarqueeSync
+                    "
+                    :request-badge-color="requestBadgeColor"
+                    :boost-badge-color="boostBadgeColor"
+                    @menu="(e: Event) => openQueueItemMenu(e, row.index)"
+                    @dragstart="
+                      (e: PointerEvent) => startItemDrag(e, row.index)
+                    "
+                  />
+                  <!-- placeholder while the page loads -->
+                  <div v-else class="queue-skeleton">
+                    <div class="queue-skeleton__thumb"></div>
+                    <div class="queue-skeleton__lines">
+                      <div class="queue-skeleton__line"></div>
+                      <div
+                        class="queue-skeleton__line queue-skeleton__line--sub"
+                      ></div>
+                    </div>
                   </div>
                 </div>
                 <QueueChapterList
@@ -1545,8 +1554,14 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-/* While dragging, the rows slide smoothly as the landing gap opens/moves. */
-.queue-virt--dragging .queue-virt-row {
+/* Outside a drag nothing may animate, so a slide still running on drop stops
+   at once and the items land in place. */
+.queue-virt-item {
+  transition-property: none;
+}
+
+/* While dragging, the items slide smoothly as the landing gap opens/moves. */
+.queue-virt--dragging .queue-virt-item {
   transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1);
 }
 

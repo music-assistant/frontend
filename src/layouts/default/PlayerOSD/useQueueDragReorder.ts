@@ -16,12 +16,27 @@ interface QueueDragReorderOptions {
   getVirtualItems: () => VirtualItem[];
   // Resolves the (sparsely loaded) queue item at an absolute index.
   itemAt: (index: number) => QueueItem | undefined;
+  // Box of the item within its row, which may also hold a divider and banner
+  // above it. Undefined while the row is not rendered.
+  itemBoxInRow: (index: number) => { top: number; height: number } | undefined;
   // Called when a drag begins (e.g. to stop the list following playback).
   onDragStart?: () => void;
+  // Called when a drop moves the item, with its old and new absolute index.
+  onMove?: (from: number, to: number) => void;
+  // Called when the server refuses a move that onMove already reported.
+  onMoveFailed?: () => void;
 }
 
 export function useQueueDragReorder(options: QueueDragReorderOptions) {
-  const { scrollEl, getVirtualItems, itemAt, onDragStart } = options;
+  const {
+    scrollEl,
+    getVirtualItems,
+    itemAt,
+    itemBoxInRow,
+    onDragStart,
+    onMove,
+    onMoveFailed,
+  } = options;
 
   // Absolute index of the row being dragged (null when idle) and the index the
   // item would be inserted *before* on drop. While dragging, the source row
@@ -64,6 +79,14 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
     return buffer + 1;
   };
 
+  // Middle of a row's item in content space. Whatever else the row holds does
+  // not count, so the item gives way once the pointer is over its upper half.
+  const itemMiddle = (row: VirtualItem): number => {
+    const box = itemBoxInRow(row.index);
+    if (!box) return row.start + row.size / 2;
+    return row.start + box.top + box.height / 2;
+  };
+
   // Resolve the insertion index (drop *before* this absolute index) for a given
   // pointer Y, clamped to the reorderable up-next region.
   const computeDropIndex = (clientY: number): number => {
@@ -75,7 +98,7 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
     let dropIndex = totalItems();
     let matched = false;
     for (const row of rows) {
-      if (y < row.start + row.size / 2) {
+      if (y < itemMiddle(row)) {
         dropIndex = row.index;
         matched = true;
         break;
@@ -164,7 +187,11 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
     const finalIndex = drop > source ? drop - 1 : drop;
     const shift = finalIndex - source;
     if (shift === 0) return;
-    api.queueCommandMoveItem(queue.queue_id, itemId, shift);
+    onMove?.(source, finalIndex);
+    // the failure itself is reported by the api's global error toast
+    api
+      .queueCommandMoveItem(queue.queue_id, itemId, shift)
+      .catch(() => onMoveFailed?.());
   };
 
   // Begin dragging an up-next row from its drag handle.
