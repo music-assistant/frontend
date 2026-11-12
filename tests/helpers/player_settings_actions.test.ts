@@ -1,7 +1,9 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
+  confirmRemoveUnavailablePlayers,
   getPlayerSettingsMenuItems,
   getSetupRequiredPlayerMenuItems,
+  getUnavailablePlayers,
   renamePlayer,
   setPlayerEnabled,
 } from "@/helpers/player_settings_actions";
@@ -10,6 +12,7 @@ import {
   ProviderFeature,
   ProviderType,
   Scope,
+  type OutputProtocol,
   type Player,
   type PlayerOption,
   type ProviderInstance,
@@ -36,6 +39,7 @@ const {
     players: {} as Record<string, unknown>,
     queues: {} as Record<string, unknown>,
     removePlayer: vi.fn(),
+    removeUnavailablePlayers: vi.fn(),
     savePlayerConfig: vi.fn(),
   },
   emitEvent: vi.fn(),
@@ -68,8 +72,10 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
+// a count, where one is passed, shows in the text so a test can read it back
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: (key: string, count?: unknown) =>
+    typeof count === "number" ? `${key} (${count})` : key,
 }));
 
 vi.mock("@/plugins/router", () => ({
@@ -275,14 +281,14 @@ describe("getPlayerSettingsMenuItems actions", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
-  it("offers no deletion for a provider that cannot remove the player", () => {
+  it("offers deletion whatever the provider advertises", () => {
     apiMock.getProvider.mockReturnValue(
       providerInstance({ supported_features: [] }),
     );
 
-    expect(
-      visibleLabels(getPlayerSettingsMenuItems(playerConfig())),
-    ).not.toContain("settings.delete");
+    expect(visibleLabels(getPlayerSettingsMenuItems(playerConfig()))).toContain(
+      "settings.delete",
+    );
   });
 
   it.each(["settings.disable", "settings.delete"])(
@@ -334,6 +340,147 @@ describe("getPlayerSettingsMenuItems actions", () => {
     expect(storeMock.activePlayerId).toBe("office");
     // it was not the player that left, so nothing about the selection changes
     expect(setPreference).not.toHaveBeenCalled();
+  });
+});
+
+describe("getPlayerSettingsMenuItems from the stored config", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  it("manages a player whose provider is not running", () => {
+    registerPlayer({ available: false });
+    apiMock.getProvider.mockReturnValue(undefined);
+
+    const menuItems = getPlayerSettingsMenuItems(playerConfig(), {
+      includeSections: true,
+    });
+
+    expect(menuItem(menuItems, "open_player_settings").disabled).toBeFalsy();
+    expect(visibleLabels(menuItems)).toEqual(
+      expect.arrayContaining(["settings.disable", "settings.delete"]),
+    );
+    menuItem(menuItems, "open_player_settings").action?.();
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
+  it("manages a disabled player, which has no live state, without its provider", () => {
+    apiMock.players = {};
+    apiMock.queues = {};
+    apiMock.getProvider.mockReturnValue(undefined);
+
+    const menuItems = getPlayerSettingsMenuItems(
+      playerConfig({ enabled: false }),
+      { includeSections: true },
+    );
+
+    expect(menuItem(menuItems, "open_player_settings").disabled).toBeFalsy();
+    expect(visibleLabels(menuItems)).toEqual(
+      expect.arrayContaining(["settings.enable", "settings.delete"]),
+    );
+    // the sections that only live state fills have nothing to show
+    for (const section of SECTION_LABELS.slice(1)) {
+      expect(visibleLabels(menuItems)).not.toContain(section);
+    }
+  });
+});
+
+describe("getUnavailablePlayers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.getProvider.mockImplementation((id: string) =>
+      id === "stopped" ? undefined : providerInstance(),
+    );
+  });
+
+  it("lists a player whose device is gone", () => {
+    registerPlayer({
+      available: false,
+      output_protocols: [outputProtocol({ available: false })],
+    });
+
+    expect(playerIds(getUnavailablePlayers())).toEqual(["kitchen"]);
+  });
+
+  it.each([
+    ["is available", { available: true }],
+    ["still needs setup", { available: false, needs_setup: true }],
+    [
+      "has an output that reaches its device",
+      { available: false, output_protocols: [outputProtocol()] },
+    ],
+    [
+      "has a provider that is not running",
+      { available: false, provider: "stopped" },
+    ],
+    [
+      "plays through a provider that is not running",
+      {
+        available: false,
+        output_protocols: [
+          outputProtocol({ available: false, protocol_domain: "stopped" }),
+        ],
+      },
+    ],
+  ] as const)("leaves out a player that %s", (_, overrides) => {
+    registerPlayer(overrides as Partial<Player>);
+
+    expect(getUnavailablePlayers()).toEqual([]);
+  });
+});
+
+describe("confirmRemoveUnavailablePlayers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer({ available: false });
+    apiMock.players = {
+      ...apiMock.players,
+      office: player({ player_id: "office" }),
+    };
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("says how many players it concerns before it removes anything", () => {
+    confirmRemoveUnavailablePlayers(3);
+
+    expect(emitEvent).toHaveBeenCalledWith(
+      "deleteConfirmationDialog",
+      expect.objectContaining({
+        message: "settings.remove_unavailable_players_confirmation (3)",
+      }),
+    );
+    expect(apiMock.removeUnavailablePlayers).not.toHaveBeenCalled();
+  });
+
+  it("removes the players and reports the ones the server removed", async () => {
+    apiMock.removeUnavailablePlayers.mockResolvedValue(["kitchen"]);
+    storeMock.activePlayerId = "kitchen";
+    const onRemoved = vi.fn();
+
+    confirmRemoveUnavailablePlayers(1, onRemoved);
+    await confirmation().onConfirm();
+
+    expect(onRemoved).toHaveBeenCalledWith(["kitchen"]);
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "settings.unavailable_players_removed (1)",
+    );
+    expect(storeMock.activePlayerId).toBe("office");
+  });
+
+  it("removes nothing when the server refuses, and leaves its reason to the api", async () => {
+    apiMock.removeUnavailablePlayers.mockRejectedValue(
+      new Error("Players are still being found, try again in 42 seconds"),
+    );
+    const onRemoved = vi.fn();
+
+    confirmRemoveUnavailablePlayers(1, onRemoved);
+    await confirmation().onConfirm();
+
+    expect(onRemoved).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+    // the api layer toasts the server's reason, so this must not toast a second time
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 });
 
@@ -547,6 +694,10 @@ function visibleLabels(menuItems: ContextMenuItem[]): string[] {
   return menuItems.filter((item) => !item.hide).map((item) => item.label);
 }
 
+function playerIds(players: Player[]): string[] {
+  return players.map((player) => player.player_id);
+}
+
 function sectionLabels(): string[] {
   return visibleLabels(
     getPlayerSettingsMenuItems(playerConfig(), { includeSections: true }),
@@ -593,8 +744,24 @@ function player(overrides: Partial<Player> = {}): Player {
     hide_in_ui: false,
     synced_to: null,
     options: [{ key: "eq", name: "EQ" } as PlayerOption],
+    output_protocols: [],
     ...overrides,
   } as Player;
+}
+
+function outputProtocol(
+  overrides: Partial<OutputProtocol> = {},
+): OutputProtocol {
+  return {
+    output_protocol_id: "native",
+    name: "Chromecast",
+    is_native: true,
+    protocol_domain: "chromecast",
+    priority: 0,
+    available: true,
+    derived_from: null,
+    ...overrides,
+  };
 }
 
 function providerInstance(

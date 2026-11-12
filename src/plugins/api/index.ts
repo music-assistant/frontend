@@ -2630,6 +2630,11 @@ export class MusicAssistantApi {
     return this.sendCommand("players/remove", { player_id: playerId });
   }
 
+  /** Remove every player whose device is gone, and return the ids of those removed. */
+  public removeUnavailablePlayers(): Promise<string[]> {
+    return this.sendCommand("players/remove_unavailable");
+  }
+
   // Sleep timer related functions/commands
 
   public getSleepTimer(playerId: string): Promise<number | null> {

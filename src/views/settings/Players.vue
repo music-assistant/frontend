@@ -16,6 +16,15 @@
           <Plus class="size-4" />
           {{ $t("settings.add_group_player") }}
         </Button>
+        <Button
+          v-if="canRemovePlayers && unavailablePlayerCount > 0"
+          variant="outline"
+          data-testid="remove-unavailable-players"
+          @click="removeUnavailablePlayers"
+        >
+          <Trash2 class="size-4" />
+          {{ $t("settings.remove_unavailable_players") }}
+        </Button>
       </div>
     </div>
 
@@ -90,7 +99,11 @@ import {
   getPlayerName,
   playerBelongsToProviders,
 } from "@/helpers/player_config";
-import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import {
+  confirmRemoveUnavailablePlayers,
+  getPlayerSettingsMenuItems,
+  getUnavailablePlayers,
+} from "@/helpers/player_settings_actions";
 
 import { api } from "@/plugins/api";
 import {
@@ -102,7 +115,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { Info, Plus, VolumeOff } from "@lucide/vue";
+import { Info, Plus, Trash2, VolumeOff } from "@lucide/vue";
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
@@ -151,6 +164,10 @@ const providersWithCreateGroupSupport = computed(() => {
 const canAddPlayerProviders = computed(() =>
   authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
 );
+const canRemovePlayers = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+);
+const unavailablePlayerCount = computed(() => getUnavailablePlayers().length);
 
 // methods
 const loadItems = async function () {
@@ -159,11 +176,8 @@ const loadItems = async function () {
   );
 };
 
-const editPlayer = function (playerId: string, provider: string) {
-  if (api.getProvider(provider)) {
-    // only allow edit if provider is available
-    router.push(`/settings/editplayer/${playerId}`);
-  }
+const editPlayer = function (playerId: string) {
+  router.push(`/settings/editplayer/${playerId}`);
 };
 
 const startPlayerSetup = function (playerId: string) {
@@ -178,7 +192,7 @@ const handlePlayerClick = function (playerConfig: PlayerConfig) {
     startPlayerSetup(playerConfig.player_id);
     return;
   }
-  editPlayer(playerConfig.player_id, playerConfig.provider);
+  editPlayer(playerConfig.player_id);
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
@@ -197,6 +211,14 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
     items: menuItems,
     posX: position.x,
     posY: position.y,
+  });
+};
+
+const removeUnavailablePlayers = function () {
+  confirmRemoveUnavailablePlayers(unavailablePlayerCount.value, (removed) => {
+    playerConfigs.value = playerConfigs.value.filter(
+      (x) => !removed.includes(x.player_id),
+    );
   });
 };
 
@@ -274,6 +296,7 @@ watch(
 
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;

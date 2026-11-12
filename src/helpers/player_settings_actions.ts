@@ -5,7 +5,7 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getPlayerName } from "@/helpers/player_config";
 import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
-import { isSelectablePlayer } from "@/helpers/players";
+import { isPlayerUnavailable, isSelectablePlayer } from "@/helpers/players";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { setUserPreference } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
@@ -13,7 +13,6 @@ import {
   Player,
   PlayerConfig,
   PlayerType,
-  ProviderFeature,
   Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -75,7 +74,6 @@ export const getPlayerSettingsMenuItems = (
       label: "open_player_settings",
       action: () => router.push(`/settings/editplayer/${playerId}`),
       icon: markRaw(Settings),
-      disabled: !provider,
     });
     if (sections.queue) {
       menuItems.push({
@@ -137,7 +135,6 @@ export const getPlayerSettingsMenuItems = (
         confirmDisablePlayer(playerId, getPlayerName(config));
       },
       icon: markRaw(config.enabled ? CircleOff : Power),
-      hide: !provider,
     },
     {
       label: "settings.delete",
@@ -150,7 +147,6 @@ export const getPlayerSettingsMenuItems = (
       },
       icon: markRaw(Trash2),
       color: "error",
-      hide: !playerCanBeDeleted(playerId),
     },
   );
 
@@ -205,17 +201,40 @@ export const getSetupRequiredPlayerMenuItems = (
   return menuItems;
 };
 
-/** Whether the player's provider offers to remove it. */
-export const playerCanBeDeleted = (playerId: string): boolean => {
-  const player = api.players[playerId];
-  if (!player) return true;
-  const feature =
-    player.type === PlayerType.GROUP
-      ? ProviderFeature.REMOVE_GROUP_PLAYER
-      : ProviderFeature.REMOVE_PLAYER;
-  return !!api
-    .getProvider(player.provider)
-    ?.supported_features.includes(feature);
+/**
+ * The players whose device is gone while every provider they play through is
+ * running: the ones "remove unavailable players" removes. A disabled player is
+ * never one of them.
+ */
+export const getUnavailablePlayers = (): Player[] =>
+  Object.values(api.players).filter(
+    (player) =>
+      isPlayerUnavailable(player) &&
+      !player.output_protocols.some((protocol) => protocol.available) &&
+      [
+        player.provider,
+        ...player.output_protocols.map((protocol) => protocol.protocol_domain),
+      ].every((provider) => !!api.getProvider(provider)),
+  );
+
+/**
+ * Ask before removing every player whose device is gone, then remove them.
+ *
+ * @param count How many players the confirmation says it concerns.
+ * @param onRemoved Called with the ids of the players the server removed.
+ */
+export const confirmRemoveUnavailablePlayers = (
+  count: number,
+  onRemoved?: (playerIds: string[]) => void,
+) => {
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("settings.remove_unavailable_players_title"),
+    message: $t("settings.remove_unavailable_players_confirmation", count, {
+      named: { count },
+    }),
+    confirmLabel: $t("remove"),
+    onConfirm: () => removeUnavailablePlayers(onRemoved),
+  });
 };
 
 /**
@@ -282,6 +301,26 @@ async function deletePlayer(playerId: string, onDeleted?: () => void) {
   } catch {
     // a failed command is already reported by the api layer
   }
+}
+
+async function removeUnavailablePlayers(
+  onRemoved?: (playerIds: string[]) => void,
+) {
+  let removed: string[];
+  try {
+    removed = await api.removeUnavailablePlayers();
+  } catch {
+    // the api layer reports the failure with the server's reason, such as
+    // providers that have only just started and are still finding their devices
+    return;
+  }
+  removed.forEach(selectFallbackPlayer);
+  onRemoved?.(removed);
+  toast.success(
+    $t("settings.unavailable_players_removed", removed.length, {
+      named: { count: removed.length },
+    }),
+  );
 }
 
 /** Hands the player bar to another player, so it does not point at one that just left. */
