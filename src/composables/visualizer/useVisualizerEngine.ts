@@ -284,9 +284,6 @@ export async function createVisualizerEngine(
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
-      // Every engine holds its own WebGL2 context and rebuilds are routine;
-      // Chrome drops the oldest live context on overflow.
-      visualizer.loseGLContext();
     },
   };
 }

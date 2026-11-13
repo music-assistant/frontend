@@ -19,7 +19,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const ZERO_LEVEL = 0x80;
 
 const loadPreset = vi.hoisted(() => vi.fn(async () => true));
-const loseGLContext = vi.hoisted(() => vi.fn());
 const renderedSamples = vi.hoisted(() => [] as Uint8Array[]);
 
 vi.mock("butterchurn", () => {
@@ -30,7 +29,6 @@ vi.mock("butterchurn", () => {
       renderedSamples.push(new Uint8Array(audioLevels.timeByteArray)),
     loadPreset,
     setRendererSize: vi.fn(),
-    loseGLContext,
   });
   // Named as well as default: the module probe reads both, and vitest throws
   // on an export a mock does not define.
@@ -215,15 +213,6 @@ describe("createVisualizerEngine pause envelope", () => {
     loadPreset.mockResolvedValueOnce(false);
 
     expect(await engine!.loadPresetByName("known")).toBe("");
-  });
-
-  // Every engine holds its own WebGL2 context and rebuilds are routine;
-  // Chrome drops the oldest live context once they pile up.
-  it("releases the GL context on destroy", () => {
-    engine!.destroy();
-    engine = null;
-
-    expect(loseGLContext).toHaveBeenCalled();
   });
 });
 
