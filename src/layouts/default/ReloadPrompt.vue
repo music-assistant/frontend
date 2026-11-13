@@ -1,23 +1,8 @@
 <script setup lang="ts">
-import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { useRegisterSW } from "virtual:pwa-register/vue";
-import { watch } from "vue";
 
 const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW();
-
-// A dashboard display (cast TV, kiosk) has no one to press "reload", so a
-// waiting update would leave it running the previous build forever: apply
-// updates immediately there instead of prompting. Immediate, in case the
-// flag was already set before this watcher registered.
-const isDashboardViewer = authManager.isDashboardViewer();
-watch(
-  needRefresh,
-  (refresh) => {
-    if (refresh && isDashboardViewer) void updateServiceWorker(true);
-  },
-  { immediate: true },
-);
 
 const close = async () => {
   offlineReady.value = false;
@@ -27,7 +12,7 @@ const close = async () => {
 
 <template>
   <div
-    v-if="(offlineReady || needRefresh) && !isDashboardViewer"
+    v-if="offlineReady || needRefresh"
     :class="['pwa-toast', { 'pwa-toast--frameless': store.frameless }]"
     role="alert"
   >
