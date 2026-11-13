@@ -83,24 +83,25 @@ const viewerPreferences = ref<Record<string, unknown>>({});
 let viewerPreferencesSyncStarted = false;
 
 // The viewer identifies its session by the dashboard_id the server put in its
-// launched url and proves it with the url's viewer_key; re-fetched on the sessions-updated event, which the server also
-// signals when the casting user changes their preferences.
+// launched url and proves it with the url's viewer_key; re-fetched on the
+// sessions-updated event, which the server also signals when the casting user
+// changes their preferences.
 function startViewerPreferencesSync(): void {
   if (viewerPreferencesSyncStarted) return;
   viewerPreferencesSyncStarted = true;
   effectScope(true).run(() => {
     const fetchViewerPreferences = async () => {
-      const dashboardId = router.currentRoute.value.query.dashboard_id;
-      const viewerKey = router.currentRoute.value.query.viewer_key;
+      const { dashboard_id: dashboardId, viewer_key: viewerKey } =
+        router.currentRoute.value.query;
+      // the server rejects a request without both
+      if (typeof dashboardId !== "string" || typeof viewerKey !== "string") {
+        return;
+      }
       try {
         viewerPreferences.value =
           (await api.sendCommand<Record<string, unknown>>(
             "dashboard/viewer_preferences",
-            {
-              dashboard_id:
-                typeof dashboardId === "string" ? dashboardId : undefined,
-              viewer_key: typeof viewerKey === "string" ? viewerKey : undefined,
-            },
+            { dashboard_id: dashboardId, viewer_key: viewerKey },
             // a failing fetch would otherwise toast on a display nobody can reach
             { suppressGlobalError: true },
           )) ?? {};

@@ -60,19 +60,16 @@ vi.mock("@/plugins/api", () => ({
   },
 }));
 
-vi.mock("@/plugins/router", async () => {
-  // Imported inside the factory: the hoisted mock runs before this module's
-  // own vue import binding is initialized.
+const routerMock = await vi.hoisted(async () => {
   const { ref } = await import("vue");
   return {
-    default: {
-      currentRoute: ref({
-        path: "/party",
-        query: {} as Record<string, string>,
-      }),
-    },
+    currentRoute: ref({
+      path: "/party",
+      query: {} as Record<string, string>,
+    }),
   };
 });
+vi.mock("@/plugins/router", () => ({ default: routerMock }));
 
 // The module keeps singleton watch state; a fresh import per test keeps the
 // tests order-independent.
@@ -199,6 +196,11 @@ describe("visualizer dashboard default", () => {
   });
 });
 
+// The launched url carries the display's id and key in the route query.
+function viewerQuery(query: Record<string, string>) {
+  routerMock.currentRoute.value.query = query;
+}
+
 describe("viewer preferences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -207,6 +209,7 @@ describe("viewer preferences", () => {
     relayMocks.visualizerShownOnDashboards.mockResolvedValue(false);
     apiMocks.sendCommand.mockResolvedValue({});
     apiMocks.state.value = "authenticated";
+    viewerQuery({ dashboard_id: "chromecast_abc", viewer_key: "secret-key" });
   });
 
   it("renders with the casting user's preferences", async () => {
@@ -215,10 +218,6 @@ describe("viewer preferences", () => {
       visualizer_opacity: 55,
     });
     const { useVisualizer } = await importComposable();
-    // the launched url carries the display's dashboard id in the route query
-    const router = (await import("@/plugins/router")).default;
-    router.currentRoute.value.query.dashboard_id = "chromecast_abc";
-    router.currentRoute.value.query.viewer_key = "secret-key";
     const { visualizerPresetPref, visualizerOpacityPref } = useVisualizer();
     await flushPromises();
 
@@ -233,6 +232,33 @@ describe("viewer preferences", () => {
     );
     expect(visualizerPresetPref.value).toBe("martin - mandelbox explorer");
     expect(visualizerOpacityPref.value).toBe(55);
+  });
+
+  it.each([
+    ["no params", {}],
+    ["no viewer key", { dashboard_id: "chromecast_abc" }],
+    ["no dashboard id", { viewer_key: "secret-key" }],
+  ])("does not request preferences with %s", async (_name, query) => {
+    viewerQuery(query);
+    const { useVisualizer } = await importComposable();
+    useVisualizer();
+    await flushPromises();
+    expect(apiMocks.sendCommand).not.toHaveBeenCalled();
+  });
+
+  it("does not request preferences outside a dashboard viewer", async () => {
+    authMocks.authManager.isDashboardViewer.mockReturnValue(false);
+    const { useVisualizer } = await importComposable();
+    useVisualizer();
+    await flushPromises();
+    expect(apiMocks.sendCommand).not.toHaveBeenCalled();
+  });
+
+  it("requests preferences once with both params", async () => {
+    const { useVisualizer } = await importComposable();
+    useVisualizer();
+    await flushPromises();
+    expect(apiMocks.sendCommand).toHaveBeenCalledTimes(1);
   });
 
   it("waits for the connection before fetching", async () => {
