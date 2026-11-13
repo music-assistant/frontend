@@ -90,6 +90,7 @@ function startViewerPreferencesSync(): void {
   if (viewerPreferencesSyncStarted) return;
   viewerPreferencesSyncStarted = true;
   effectScope(true).run(() => {
+    let fetchRequestId = 0;
     const fetchViewerPreferences = async () => {
       const { dashboard_id: dashboardId, viewer_key: viewerKey } =
         router.currentRoute.value.query;
@@ -97,14 +98,18 @@ function startViewerPreferencesSync(): void {
       if (typeof dashboardId !== "string" || typeof viewerKey !== "string") {
         return;
       }
+      // Only the latest request may land, whatever order responses arrive in.
+      const requestId = ++fetchRequestId;
       try {
-        viewerPreferences.value =
-          (await api.sendCommand<Record<string, unknown>>(
-            "dashboard/viewer_preferences",
-            { dashboard_id: dashboardId, viewer_key: viewerKey },
-            // a failing fetch would otherwise toast on a display nobody can reach
-            { suppressGlobalError: true },
-          )) ?? {};
+        const preferences = await api.sendCommand<Record<string, unknown>>(
+          "dashboard/viewer_preferences",
+          { dashboard_id: dashboardId, viewer_key: viewerKey },
+          // a failing fetch would otherwise toast on a display nobody can reach
+          { suppressGlobalError: true },
+        );
+        if (requestId === fetchRequestId) {
+          viewerPreferences.value = preferences ?? {};
+        }
       } catch (error) {
         console.warn("[visualizer] could not fetch viewer preferences:", error);
       }

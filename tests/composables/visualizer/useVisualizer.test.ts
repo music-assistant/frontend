@@ -328,6 +328,29 @@ describe("viewer preferences", () => {
     expect(visualizerPresetPref.value).toBe("new pick");
   });
 
+  it("keeps the latest response when fetches resolve out of order", async () => {
+    const resolvers: ((value: Record<string, unknown>) => void)[] = [];
+    apiMocks.sendCommand.mockImplementation(
+      () =>
+        new Promise<Record<string, unknown>>((resolve) => {
+          resolvers.push(resolve);
+        }),
+    );
+    const { useVisualizer } = await importComposable();
+    const { visualizerPresetPref } = useVisualizer();
+    await flushPromises();
+    apiMocks.subscribe.mock.calls[0][1]();
+    await flushPromises();
+    expect(resolvers).toHaveLength(2);
+
+    resolvers[1]({ visualizer_preset: "newer pick" });
+    await flushPromises();
+    resolvers[0]({ visualizer_preset: "stale pick" });
+    await flushPromises();
+
+    expect(visualizerPresetPref.value).toBe("newer pick");
+  });
+
   it("falls back to the plugin default when no session owner is known", async () => {
     apiMocks.sendCommand.mockResolvedValue({});
     relayMocks.visualizerShownOnDashboards.mockResolvedValue(true);
