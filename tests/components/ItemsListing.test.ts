@@ -10,7 +10,14 @@ import type {
   ListingToggleFilter,
 } from "@/helpers/listing_filters";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { defineComponent, h, nextTick, ref, type SetupContext } from "vue";
+import {
+  defineComponent,
+  h,
+  nextTick,
+  reactive,
+  ref,
+  type SetupContext,
+} from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   ArtistType,
@@ -121,6 +128,8 @@ vi.mock("@/composables/userPreferences", async () => {
               `itemsListing.${path}.${itemtype}`
             ] ?? {},
         ),
+      getPreference: (key: string, defaultValue?: unknown) =>
+        computed(() => store.currentUser?.preferences?.[key] ?? defaultValue),
       setItemsListingPreference: mockSetItemsListingPreference,
       setItemsListingPreferences: mockSetItemsListingPreferences,
     }),
@@ -3001,6 +3010,36 @@ describe("ItemsListing server sort options", () => {
   });
 });
 
+describe("ItemsListing provider icon", () => {
+  const plainProviders = api.providers;
+
+  beforeEach(() => {
+    mockGetLibraryGenres.mockResolvedValue([]);
+    api.providers = reactive({});
+  });
+
+  afterEach(() => {
+    api.providers = plainProviders;
+  });
+
+  it("shows the provider icon once the providers load", async () => {
+    const listing = mountListingRaw();
+    await flushPromises();
+    const showProviderIcon = () =>
+      (listing.vm as unknown as { showProviderIcon: boolean }).showProviderIcon;
+    expect(showProviderIcon()).toBe(false);
+
+    api.providers["spotify--1"] = {
+      instance_id: "spotify--1",
+    } as ProviderInstance;
+    api.providers["tidal--1"] = {
+      instance_id: "tidal--1",
+    } as ProviderInstance;
+
+    expect(showProviderIcon()).toBe(true);
+  });
+});
+
 describe("ItemsListing playlist reorder", () => {
   type LoadPagedData = NonNullable<
     InstanceType<typeof ItemsListing>["$props"]["loadPagedData"]
@@ -3982,5 +4021,15 @@ describe("ItemsListing library toolbar", () => {
     await flushPromises();
 
     expect(listing.find(".toolbar-stub").text()).not.toContain("128");
+  });
+
+  it("asks for the letter index only for a user who turned it on", async () => {
+    const loadLetterIndex = vi.fn().mockResolvedValue([]);
+    await mountLibraryPage({ loadLetterIndex });
+    expect(loadLetterIndex).not.toHaveBeenCalled();
+
+    store.currentUser = user({ preferences: { show_letter_index: true } });
+    await mountLibraryPage({ loadLetterIndex });
+    expect(loadLetterIndex).toHaveBeenCalled();
   });
 });

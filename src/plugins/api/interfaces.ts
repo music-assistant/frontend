@@ -251,6 +251,7 @@ export enum SortField {
   PROVIDER = "provider",
   FAVORITE_TIMESTAMP = "favorite_timestamp",
   ORIGINAL = "original",
+  RELEASE_DATE = "release_date",
 }
 
 export enum SortDirection {
@@ -263,6 +264,13 @@ export interface SortOptionInfo {
   supports_direction: boolean;
   default_direction: SortDirection | null;
   label_key: string | null;
+}
+
+// where a letter starts in a library listing sorted by name: the letter ("#"
+// for numbers and symbols) and the row of its first item in the listing order
+export interface LetterIndexEntry {
+  letter: string;
+  offset: number;
 }
 
 export enum LinkType {
@@ -2227,6 +2235,7 @@ export interface SmartPlaylistRules {
   album_ids: number[];
   folder_paths?: string[];
   favorites_only: boolean;
+  exclude_favorites?: boolean;
   explicit?: boolean | null;
   seed_track_uris?: string[];
   seed_artist_uris?: string[];

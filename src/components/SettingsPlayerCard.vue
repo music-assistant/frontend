@@ -1,7 +1,7 @@
 <template>
   <Card
     v-hold="onHold"
-    class="player-card min-h-[120px] cursor-pointer gap-3 rounded-(--radius-xl) p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    class="player-card card-hover min-h-[120px] gap-3 rounded-(--radius-xl) p-5"
     :class="{
       'player-disabled opacity-60': !playerConfig.enabled,
       'player-unavailable opacity-70': isUnavailable,

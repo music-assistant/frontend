@@ -95,9 +95,4 @@ describe("ArtistDiscographyRow", () => {
       AlbumType.COMPILATION,
     );
   });
-
-  it("shows how many releases the row holds once loaded", () => {
-    expect(mountRow("discography", [album(), album()]).text()).toBe("2");
-    expect(mountRow("discography", undefined).text()).toBe("");
-  });
 });

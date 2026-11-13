@@ -25,6 +25,15 @@ function setup(
 }
 
 describe("useDiscographyRows", () => {
+  it("uses full filtered totals rather than the capped shelf length in the editor", () => {
+    const rows = useDiscographyRows(
+      ref<ArtistRowId[]>(["discography"]),
+      { discography: ref([album()]), discography_second: ref(undefined) },
+      { discography: ref(123), discography_second: ref(undefined) },
+    );
+    expect(rows.meta("discography")).toBe("album_type_plural.album · 123");
+    expect(rows.meta("discography_second")).toBe("album_type_plural.live");
+  });
   beforeEach(() => {
     store.currentUser = undefined;
   });
