@@ -103,7 +103,13 @@ vi.mock("@/plugins/auth", () => ({ authManager: authMock, default: authMock }));
 
 vi.mock("@/plugins/router", () => ({ default: routerMock }));
 
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+// the step counter shows its numbers, so a test can read where the wizard is
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, named?: { current?: number; total?: number }) =>
+    key === "onboarding.step_counter"
+      ? `${named?.current}/${named?.total}`
+      : key,
+}));
 
 vi.mock("vue-sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
@@ -277,6 +283,24 @@ function signInAsMember(scopes: readonly Scope[] = MEMBER_WITHOUT_OWN_SCOPES) {
 
 function heading(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
   return wrapper.find("[data-testid=onboarding-heading]").text();
+}
+
+/**
+ * The step counter as "current/total", checked against the progress list it
+ * counts; null when the step on screen is not part of the numbered setup.
+ */
+function stepCount(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
+  const counter = wrapper.find("[data-testid=onboarding-step-counter]");
+  if (!counter.exists()) {
+    expect(wrapper.find("[data-testid=onboarding-progress]").exists()).toBe(
+      false,
+    );
+    return null;
+  }
+  const dots = wrapper.findAll("[data-testid=onboarding-progress-step]");
+  const current = dots.findIndex((dot) => dot.attributes("aria-current"));
+  expect(counter.text()).toBe(`${current + 1}/${dots.length}`);
+  return counter.text();
 }
 
 /**
@@ -487,9 +511,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     ).toBe(false);
     expect(wrapper.text()).not.toContain("onboarding.still_to_do");
     expect(wrapper.text()).toContain("onboarding.all_done");
-    expect(
-      wrapper.findAll("[data-testid=onboarding-summary-done]")[0].text(),
-    ).toContain("onboarding.steps.intent.phone_apps.label");
+    // the recap names the choice made, not the question that asked for it
+    const choice = wrapper.findAll("[data-testid=onboarding-summary-done]")[0];
+    expect(choice.text()).toContain("onboarding.steps.intent.summary_title");
+    expect(choice.text()).toContain("onboarding.steps.intent.phone_apps.label");
+    expect(choice.text()).not.toContain("onboarding.steps.intent.title");
     expect(wrapper.text()).toContain(
       "onboarding.steps.finish.phone_apps_description",
     );
@@ -515,17 +541,17 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await flushPromises();
 
     expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
-    expect(
-      wrapper.findAll("[data-testid=onboarding-progress-step]"),
-    ).toHaveLength(4);
-    for (const title of [
-      "onboarding.steps.players.title",
-      "onboarding.steps.plugins.phone_apps_title",
-      "onboarding.steps.finish.title",
+    // the choice comes before the setup it leads into, so it is not counted
+    expect(stepCount(wrapper)).toBeNull();
+    for (const [title, count] of [
+      ["onboarding.steps.players.title", "1/3"],
+      ["onboarding.steps.plugins.phone_apps_title", "2/3"],
+      ["onboarding.steps.finish.title", "3/3"],
     ]) {
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe(title);
+      expect(stepCount(wrapper)).toBe(count);
     }
 
     expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
@@ -573,7 +599,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
   });
 
   describe("on a fresh server's first run", () => {
-    it("opens on the account step, as the first of the whole setup", async () => {
+    it("opens on the unnumbered account step", async () => {
       const wrapper = await mountFirstRunWizard();
       await flushPromises();
 
@@ -583,11 +609,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
         false,
       );
-      // the account leads the admin track, which is this session's from
-      // before it can sign in: the setup reads as one list
-      expect(
-        wrapper.findAll("[data-testid=onboarding-progress-step]"),
-      ).toHaveLength(8);
+      // making the account comes before the setup it opens, so it is not
+      // counted as part of it
+      expect(stepCount(wrapper)).toBeNull();
       // nothing was asked of a server nobody is signed in to
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
       expect(apiMock.getAllUsers).not.toHaveBeenCalled();
@@ -610,6 +634,16 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(apiMock.getAllUsers).toHaveBeenCalledOnce();
       expect(apiMock.subscribe_multi).toHaveBeenCalledOnce();
       expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+      expect(stepCount(wrapper)).toBeNull();
+
+      // the numbered setup starts after the choice, the account not counted
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+      expect(stepCount(wrapper)).toBe("1/6");
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(stepCount(wrapper)).toBe("2/6");
       // the music source that is set up counts, now that it can be seen
       const progress = wrapper.findAll(
         "[data-testid=onboarding-progress-step]",
@@ -617,11 +651,37 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(progress[0].attributes("aria-label")).toBe(
         "onboarding.step_completed",
       );
-      expect(progress[2].attributes("aria-label")).toBe(
-        "onboarding.step_completed",
-      );
 
       wrapper.unmount();
+    });
+
+    it("counts only the three existing-app setup screens after creating an account", async () => {
+      const wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+        signInAsNewAdmin();
+        await flushPromises();
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+        await wrapper
+          .find("[data-testid=onboarding-intent-phone_apps]")
+          .trigger("click");
+        await flushPromises();
+        expect(stepCount(wrapper)).toBeNull();
+
+        for (const [title, count] of [
+          ["onboarding.steps.players.title", "1/3"],
+          ["onboarding.steps.plugins.phone_apps_title", "2/3"],
+          ["onboarding.steps.finish.title", "3/3"],
+        ]) {
+          await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+          await flushPromises();
+          expect(heading(wrapper)).toBe(title);
+          expect(stepCount(wrapper)).toBe(count);
+        }
+      } finally {
+        wrapper.unmount();
+      }
     });
   });
 
@@ -968,15 +1028,15 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // the completed steps behind the current one are the way back; the current
     // one and everything still ahead is not
     expect(steps[0].attributes("disabled")).toBeUndefined();
-    expect(steps[1].attributes("disabled")).toBeUndefined();
+    expect(steps[1].attributes("disabled")).toBeDefined();
     expect(steps[2].attributes("disabled")).toBeDefined();
-    expect(steps[3].attributes("disabled")).toBeDefined();
 
     await steps[0].trigger("click");
     await flushPromises();
 
     // clicking one behind takes the wizard back to it
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+    expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+    expect(stepCount(wrapper)).toBe("1/6");
 
     wrapper.unmount();
   });
@@ -996,6 +1056,44 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     // back lands on the step right before, not wherever the wizard started
     expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+
+    // and back from the first counted step is the setup choice again
+    await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+    expect(stepCount(wrapper)).toBeNull();
+
+    wrapper.unmount();
+  });
+
+  it("keeps the setup choice out of the numbered setup, whatever is chosen", async () => {
+    preferenceState.intent.value = "music_hub";
+    const wrapper = await mountWizard({ step: "intent" });
+    await flushPromises();
+
+    // reopened with an answer saved, and after each pick, still unnumbered
+    expect(stepCount(wrapper)).toBeNull();
+    for (const intent of ["phone_apps", "music_hub"]) {
+      await wrapper
+        .find(`[data-testid=onboarding-intent-${intent}]`)
+        .trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+      expect(stepCount(wrapper)).toBeNull();
+    }
+
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+    expect(stepCount(wrapper)).toBe("1/6");
+    wrapper.unmount();
+  });
+
+  it("counts the summary as the last step of the full setup", async () => {
+    const wrapper = await mountWizard({ step: "finish" });
+    await flushPromises();
+
+    expect(stepCount(wrapper)).toBe("6/6");
 
     wrapper.unmount();
   });
@@ -1387,11 +1485,14 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
+      // the welcome has nothing before it, so it is counted from its question
+      expect(stepCount(wrapper)).toBe("1/4");
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
 
       // the players, then the music, one short step at a time
       expect(heading(wrapper)).toBe("onboarding.steps.your_players.title");
+      expect(stepCount(wrapper)).toBe("2/4");
       expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
         "onboarding.next",
       );
@@ -1403,6 +1504,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
+      expect(stepCount(wrapper)).toBe("4/4");
 
       // the summary looks back at the one thing the welcome asked, and the
       // answer they gave is the only one written: moving on never waved the

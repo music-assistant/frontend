@@ -2967,19 +2967,19 @@
                 "ready": "Signed in as {name}."
             },
             "intent": {
-                "title": "Where will you usually choose what to play?",
-                "description": "We'll tailor the setup to where you usually pick your music. Every feature stays available, whichever you choose.",
+                "title": "How would you like to use Music Assistant?",
+                "description": "Choose your starting point. You can use every feature with either option.",
+                "summary_title": "Your setup choice",
                 "phone_apps": {
-                    "label": "Keep using my existing music apps",
-                    "description": "Connect your usual music apps to your speakers through Music Assistant, without setting up a music library.",
+                    "label": "Connect my music apps to my speakers",
+                    "description": "Keep choosing music in apps like Spotify, or use AirPlay. Music Assistant works in the background to connect them to your speakers, without setting up a music library.",
                     "preview": "Next, we'll add your speakers, connect your music apps and show you how to start listening."
                 },
                 "music_hub": {
                     "label": "The full Music Assistant experience",
-                    "description": "Browse your streaming services and local music together. You can also set up Spotify Connect and AirPlay to play from other apps.",
-                    "preview": "Next, we'll connect your music sources and add your speakers, then explore extra features."
-                },
-                "settings_note": "This only guides the setup. You can explore more features later."
+                    "description": "Bring your music services, local music and speakers together in one place. Browse, search and build playlists in Music Assistant. You can still play from Spotify Connect and AirPlay.",
+                    "preview": "Next, we'll connect your music services and add your speakers, then explore more features."
+                }
             },
             "music_sources": {
                 "title": "Add your music sources",

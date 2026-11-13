@@ -30,20 +30,21 @@
             {{ stepTitle }}
           </h1>
         </div>
-        <div class="flex items-center gap-3">
+        <div v-if="progressIndex >= 0" class="flex items-center gap-3">
           <OnboardingProgress
             class="min-w-0 flex-1"
             :steps="progressSteps"
-            :current="currentIndex"
+            :current="progressIndex"
             @navigate="jumpTo"
           />
           <span
             class="text-muted-foreground sr-only shrink-0 text-sm sm:not-sr-only"
+            data-testid="onboarding-step-counter"
           >
             {{
               $t("onboarding.step_counter", {
-                current: stepNumber,
-                total: steps.length,
+                current: progressIndex + 1,
+                total: progressSteps.length,
               })
             }}
           </span>
@@ -178,6 +179,12 @@ const STEP_VIEWS: Record<
   all_set: { component: markRaw(FinishStep), props: { stepId: "all_set" } },
 };
 
+// Do not announce a setup length before the user confirms their choice.
+const PRE_SETUP_STEPS: ReadonlySet<OnboardingStepId> = new Set([
+  "account",
+  "intent",
+]);
+
 // The step being shown is page state: the wizard never moves by itself while
 // providers arrive, only when the user (or the step it opens on) says so. It
 // stays unresolved until the onboarding data lands, so the wizard never opens
@@ -222,18 +229,23 @@ const currentIndex = computed(() =>
 );
 const currentStep = computed(() => steps.value[currentIndex.value]);
 const canGoBack = computed(() => currentIndex.value > 0);
-const stepNumber = computed(() => Math.max(currentIndex.value + 1, 1));
 // the progress list, done state and all, in the same order the wizard walks
 // a review has nothing to tick off, so one the user has been past counts as
 // looked over
 const progressSteps = computed(() =>
-  steps.value.map((step) => ({
-    id: step.id,
-    titleKey: stepTitleKey(step.id, ctx.value.answers),
-    done:
-      step.isDone(ctx.value) ||
-      (step.kind === "review" && passedSteps.value.has(step.id)),
-  })),
+  steps.value
+    .filter((step) => !PRE_SETUP_STEPS.has(step.id))
+    .map((step) => ({
+      id: step.id,
+      titleKey: stepTitleKey(step.id, ctx.value.answers),
+      done:
+        step.isDone(ctx.value) ||
+        (step.kind === "review" && passedSteps.value.has(step.id)),
+    })),
+);
+// Navigation includes the introductory screens; numbered progress does not.
+const progressIndex = computed(() =>
+  progressSteps.value.findIndex((step) => step.id === currentId.value),
 );
 const stepTitle = computed(() =>
   currentId.value ? $t(stepTitleKey(currentId.value, ctx.value.answers)) : "",
