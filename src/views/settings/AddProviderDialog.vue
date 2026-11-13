@@ -7,7 +7,7 @@
       class="flex h-[calc(100dvh-2rem)] flex-col gap-0 p-0 sm:h-[85dvh] sm:max-w-[calc(100%-2rem)] lg:max-w-[900px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
-      <DialogHeader class="border-b px-5 py-4 pr-12 text-left">
+      <DialogHeader class="border-b px-5 py-4 pr-12">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
       </DialogHeader>
 
@@ -65,6 +65,15 @@
                 </Badge>
               </ItemTitle>
               <ItemDescription>{{ provider.description }}</ItemDescription>
+              <ProviderMaintainerMarker
+                v-if="
+                  isCommunityProvider(provider) ||
+                  getProviderMaintainers(provider).length
+                "
+                variant="line"
+                :community="isCommunityProvider(provider)"
+                :maintainers="getProviderMaintainers(provider)"
+              />
             </ItemContent>
             <ItemActions>
               <ChevronRight class="text-muted-foreground size-4" />
@@ -89,6 +98,7 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -116,7 +126,9 @@ import { SearchInput } from "@/components/ui/search-input";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
+  getProviderMaintainers,
   getProviderStageTranslationKey,
+  isCommunityProvider,
   shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";

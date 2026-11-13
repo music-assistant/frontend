@@ -140,6 +140,103 @@ describe("userPreferences - itemsListing", () => {
 
     expect(readPrefs("librarygenres", "genres").favoriteFilter).toBeUndefined();
   });
+
+  it("keeps both of two filters saved without waiting for the first", async () => {
+    const { setItemsListingPreference } = useUserPreferences();
+
+    await Promise.all([
+      setItemsListingPreference(
+        "librarygenres",
+        "genres",
+        "favoriteFilter",
+        true,
+      ),
+      setItemsListingPreference(
+        "librarygenres",
+        "genres",
+        "hideEmptyFilter",
+        null,
+      ),
+    ]);
+
+    expect(readPrefs("librarygenres", "genres")).toEqual({
+      favoriteFilter: true,
+      hideEmptyFilter: null,
+    });
+  });
+
+  it("saves a selection as it was when the save was asked for", async () => {
+    const { setItemsListingPreference } = useUserPreferences();
+    const picked = ["spotify--1"];
+
+    const save = setItemsListingPreference(
+      "libraryartists",
+      "artists",
+      "providerFilter",
+      picked,
+    );
+    // the listing picks another source while the first save waits its turn
+    picked.push("tidal--1");
+    await save;
+
+    expect(readPrefs("libraryartists", "artists").providerFilter).toEqual([
+      "spotify--1",
+    ]);
+  });
+
+  it("saves several filters of a listing in one write", async () => {
+    storeMock.currentUser = {
+      user_id: "u1",
+      preferences: {
+        "itemsListing.libraryartists.artists": {
+          viewMode: "panel",
+          favoriteFilter: true,
+          providerFilter: ["deezer--1"],
+        },
+      },
+    };
+    const { setItemsListingPreferences } = useUserPreferences();
+
+    await setItemsListingPreferences("libraryartists", "artists", {
+      favoriteFilter: false,
+      providerFilter: undefined,
+    });
+
+    expect(mockUpdateUser).toHaveBeenCalledOnce();
+    expect(readPrefs("libraryartists", "artists")).toEqual({
+      viewMode: "panel",
+      favoriteFilter: false,
+    });
+  });
+
+  it("preserves compact mode's action preference when changing views", async () => {
+    storeMock.currentUser!.preferences = {
+      "itemsListing.libraryalbums.albums": { viewMode: "panel_compact" },
+    };
+    await useUserPreferences().setItemsListingPreference(
+      "libraryalbums",
+      "albums",
+      "viewMode",
+      "list",
+    );
+    expect(readPrefs("libraryalbums", "albums")).toEqual({
+      viewMode: "list",
+      showActions: false,
+    });
+  });
+
+  it("keeps the genres default of hidden actions when changing views", async () => {
+    await useUserPreferences().setItemsListingPreference(
+      "librarygenres",
+      "genres",
+      "viewMode",
+      "list",
+    );
+    expect(readPrefs("librarygenres", "genres")).toEqual({
+      viewMode: "list",
+      showActions: false,
+    });
+  });
 });
 
 /** Wait for the writes in flight to have reached the server. */

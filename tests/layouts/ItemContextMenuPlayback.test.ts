@@ -4,11 +4,17 @@ import {
   type ContextMenuItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
-import { QueueOption } from "@/plugins/api/interfaces";
+import {
+  QueueOption,
+  SortDirection,
+  SortField,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { album } from "../fixtures/album";
 import { audioSource } from "../fixtures/audioSource";
 import { podcast } from "../fixtures/podcast";
+import { playlist } from "../fixtures/playlist";
 import { podcastEpisode } from "../fixtures/podcastEpisode";
 import { providerMapping } from "../fixtures/providerMapping";
 import { radio } from "../fixtures/radio";
@@ -140,6 +146,55 @@ describe("showPlayMenuForMediaItem", () => {
 
     expect(emittedItems().map((x) => x.label)).not.toContain(
       "play_from_here_to_latest",
+    );
+  });
+});
+
+describe("playback in the order an album or playlist page lists its tracks", () => {
+  const listingSort = {
+    sort_field: SortField.DURATION,
+    sort_direction: SortDirection.DESC,
+  };
+
+  it.each([
+    { parent: playlist({ item_id: "pl1" }), label: "play_playlist_from" },
+    { parent: album({ item_id: "al1" }), label: "play_album_from" },
+  ])("plays on from a track with $label", async ({ parent, label }) => {
+    const item = track({ item_id: "t2", provider_mappings: mappings });
+
+    const items = await getPlaybackContextMenuItems(
+      [item],
+      parent,
+      undefined,
+      SortField.DURATION,
+      SortDirection.DESC,
+    );
+    items.find((x) => x.label == label)?.action?.();
+
+    expect(apiMock.playMedia).toHaveBeenCalledWith(parent.uri, undefined, {
+      start_item: "t2",
+      ...listingSort,
+    });
+  });
+
+  it("plays an album from its play menu", async () => {
+    const item = album({ item_id: "al1" });
+
+    await showPlayMenuForMediaItem(
+      item,
+      undefined,
+      0,
+      0,
+      undefined,
+      SortField.DURATION,
+      SortDirection.DESC,
+    );
+    emittedMenus[0].items[0].action?.();
+
+    expect(apiMock.playMedia).toHaveBeenCalledWith(
+      [item.uri],
+      QueueOption.PLAY,
+      listingSort,
     );
   });
 });

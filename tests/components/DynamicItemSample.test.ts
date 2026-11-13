@@ -142,4 +142,49 @@ describe("DynamicItemSample", () => {
     expect(wrapper.text()).toContain("dynamic_radio_empty_desc");
     expect(wrapper.find('[data-slot="button"]').exists()).toBe(false);
   });
+
+  it("lists a finite station in full under a neutral heading", async () => {
+    mockGetRadioTracks.mockResolvedValue(
+      Array.from({ length: 30 }, (_, i) =>
+        track({ item_id: String(i), name: `Track ${i}` }),
+      ),
+    );
+    const wrapper = mountSample(
+      radio({ is_dynamic: false, is_endless: false }),
+    );
+    await flushPromises();
+
+    expect(wrapper.findAll(".listview-item-stub")).toHaveLength(30);
+    expect(wrapper.text()).toContain("tracklist_heading");
+    expect(wrapper.text()).not.toContain("dynamic_radio_heading");
+    expect(wrapper.text()).not.toContain("smart_playlist.dynamic_sample_note");
+  });
+
+  it("keeps the sample presentation for a finite but dynamic radio", async () => {
+    mockGetRadioTracks.mockResolvedValue(
+      Array.from({ length: 30 }, (_, i) =>
+        track({ item_id: String(i), name: `Track ${i}` }),
+      ),
+    );
+    const wrapper = mountSample(radio({ is_dynamic: true, is_endless: false }));
+    await flushPromises();
+
+    expect(wrapper.findAll(".listview-item-stub")).toHaveLength(25);
+    expect(wrapper.text()).toContain("dynamic_radio_heading");
+    expect(wrapper.text()).toContain("smart_playlist.dynamic_sample_note");
+    expect(wrapper.text()).not.toContain("tracklist_heading");
+  });
+
+  it("caps a dynamic radio sample at 25 tracks and keeps its note", async () => {
+    mockGetRadioTracks.mockResolvedValue(
+      Array.from({ length: 30 }, (_, i) =>
+        track({ item_id: String(i), name: `Track ${i}` }),
+      ),
+    );
+    const wrapper = mountSample(radio({ is_dynamic: true }));
+    await flushPromises();
+
+    expect(wrapper.findAll(".listview-item-stub")).toHaveLength(25);
+    expect(wrapper.text()).toContain("smart_playlist.dynamic_sample_note");
+  });
 });

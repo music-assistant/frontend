@@ -7,6 +7,7 @@ import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
+import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
 import { Scope } from "@/plugins/api/interfaces";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -57,6 +58,9 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/helpers/open_musicbrainz_item", () => ({
+  openMusicBrainzItem: vi.fn(),
+}));
 
 // a release as the discography sends it: the MusicBrainz release group id, the
 // library artist, and no provider mappings at all
@@ -88,6 +92,17 @@ describe("the context menu of a MusicBrainz release", () => {
 
     expect(labels).toContain("show_info");
     expect(labels).toContain("add_library");
+  });
+
+  it("opens it through the lookup that finds it on a music service", async () => {
+    const showInfo = (await openMenu()).find(
+      (entry) => entry.label === "show_info",
+    );
+
+    expect(showInfo).toBeDefined();
+    showInfo?.action?.();
+
+    expect(openMusicBrainzItem).toHaveBeenCalledWith(release);
   });
 
   it("offers nothing that needs an item on a music service", async () => {

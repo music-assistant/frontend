@@ -34,10 +34,9 @@
           tabindex="0"
           :class="{ 'explicit-icon-align': !showCheckboxes }"
         >
-          <v-icon
+          <ExplicitIcon
+            class="inline-block size-6 shrink-0 scale-90 align-middle [&_text]:fill-background"
             :class="{ 'explicit-icon-margin-left': showCheckboxes }"
-            icon="mdi-alpha-e-box"
-            width="35"
           />
         </span>
       </TooltipTrigger>
@@ -49,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import { parseBool } from "@/helpers/parse";
 import { getBrowseFolderName, getTrackReleaseYear } from "@/helpers/utils";
 import {

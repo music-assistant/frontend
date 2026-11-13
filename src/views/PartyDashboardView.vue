@@ -292,7 +292,7 @@
     <!-- Guest Access Toggle Dialog -->
     <AlertDialog v-model:open="showGuestAccessDialog">
       <AlertDialogContent class="sm:max-w-[480px]">
-        <AlertDialogHeader class="text-left">
+        <AlertDialogHeader>
           <AlertDialogTitle>
             {{
               qrAvailable

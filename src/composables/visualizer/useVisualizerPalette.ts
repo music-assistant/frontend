@@ -9,13 +9,13 @@
  */
 
 import { computed, toValue, type MaybeRefOrGetter, type Ref } from "vue";
+import { isDark } from "@/composables/useThemePreference";
 import { visualizerPreference } from "@/composables/visualizer/useVisualizer";
 import {
   VISUALIZER_PALETTE_COLORS_DEFAULT,
   VISUALIZER_PALETTE_RAMP_DEFAULT,
 } from "@/composables/visualizer/state";
 import type { ColorPalette } from "@/plugins/visualizer-relay";
-import vuetify from "@/plugins/vuetify";
 
 type Rgb = [number, number, number];
 
@@ -45,9 +45,7 @@ export function useVisualizerPalette(options: VisualizerPaletteOptions) {
 
   // Which side of the palette this view shows; every colour below picks from
   // one side only, so two contrast families can never land on screen at once.
-  const useDark = computed(
-    () => toValue(options.forceDark) || vuetify.theme.current.value.dark,
-  );
+  const useDark = computed(() => toValue(options.forceDark) || isDark.value);
 
   // Backgrounds stay unused here, they are not meant for the thin foreground
   // elements these colors land on. on_dark is the variant meant to be drawn on

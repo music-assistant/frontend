@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="audiobooks"
     path="libraryaudiobooks"
     :show-duration="false"
@@ -7,7 +8,9 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_AUDIOBOOKS"
+    library-toolbar
+    :sort-option-exclude-fields="audiobookSortOptionExclusions"
     :update-available="updateAvailable"
     :title="$t('audiobooks')"
     :allow-key-hooks="true"
@@ -28,13 +31,16 @@ import ItemsListing, {
   ToolBarTab,
 } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   ArtistType,
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
   ProviderFeature,
+  SortField,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -46,36 +52,27 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref(store.libraryAudiobooksCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryAudiobooksCount,
+);
 const supportedArtistTypes = ref<ArtistType[]>([]);
-
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "timestamp_modified",
-  "timestamp_modified_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryAudiobooks(
     params.favoritesOnly || undefined,
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
     params.collapseCollections,
+    params.randomSeed,
   );
 };
 
@@ -84,18 +81,22 @@ const loadItemsAuthorsNarrators = async (
   artistType: ArtistType,
 ) => {
   updateAvailable.value = false;
-  setTotals(params, artistType);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params, artistType);
 
   return await api.getLibraryArtists(
     params.favoritesOnly || undefined,
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     false,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
     artistType,
+    params.randomSeed,
   );
 };
 
@@ -112,24 +113,24 @@ const setTotals = async function (
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
   if (artistType !== undefined) {
-    total.value = await api.getLibraryArtistsCount(
-      params.favoritesOnly || false,
-      false,
-      artistType,
+    await loadTotal(
+      api.getLibraryArtistsCount(
+        params.favoritesOnly || false,
+        false,
+        artistType,
+      ),
     );
     return;
   }
   if (!params.favoritesOnly) {
-    total.value = store.libraryAudiobooksCount;
+    setTotal(store.libraryAudiobooksCount);
     return;
   }
-  total.value = await api.getLibraryAudiobooksCount(
-    params.favoritesOnly || false,
-  );
+  await loadTotal(api.getLibraryAudiobooksCount(params.favoritesOnly || false));
 };
 
 // we switch to a tabbed view if more than just singers are supported
@@ -186,6 +187,10 @@ const artistTabs = computed(() => {
 
   return tabs.length > 0 ? tabs : undefined;
 });
+
+const audiobookSortOptionExclusions = computed(() =>
+  artistTabs.value && artistTabs.value.length > 1 ? [SortField.DURATION] : [],
+);
 
 const refreshArtistTypes = async function () {
   supportedArtistTypes.value = await api.getLibraryArtistTypes();

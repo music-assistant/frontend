@@ -407,6 +407,26 @@ describe("getProviderSettingsSections", () => {
     );
     expect(getProviderSettingsSections(config).players).toBe(true);
   });
+
+  it("offers the storage location of a Local files source only", () => {
+    expect(
+      getProviderSettingsSections(
+        providerConfig({ domain: "filesystem_local" }),
+      ).storage,
+    ).toBe(true);
+    expect(
+      getProviderSettingsSections(providerConfig({ domain: "spotify" }))
+        .storage,
+    ).toBe(false);
+  });
+
+  it("offers the storage location of a disabled source as well", () => {
+    expect(
+      getProviderSettingsSections(
+        providerConfig({ domain: "filesystem_local", enabled: false }),
+      ).storage,
+    ).toBe(true);
+  });
 });
 
 describe("getProviderAccessLabel", () => {

@@ -300,36 +300,21 @@
                     ></div>
                   </div>
                 </div>
-                <!-- chapters for the current audiobook item -->
-                <div
+                <QueueChapterList
                   v-if="
                     row.state === 'playing' &&
-                    row.item?.media_item?.metadata?.chapters?.length
+                    row.item?.media_item &&
+                    (queueChapterGroups.length || canAddBookmark)
                   "
-                  class="queue-chapters"
-                >
-                  <button
-                    v-for="chapter in row.item.media_item.metadata.chapters"
-                    :key="chapter.position"
-                    type="button"
-                    class="queue-chapter"
-                    :class="{
-                      'queue-chapter--active': isActiveChapter(
-                        row.item,
-                        chapter,
-                      ),
-                    }"
-                    :aria-current="
-                      isActiveChapter(row.item, chapter) ? 'true' : undefined
-                    "
-                    @click.stop="chapterClicked(row.item.media_item, chapter)"
-                  >
-                    <span class="queue-chapter__name">{{ chapter.name }}</span>
-                    <span v-if="chapter.end" class="queue-chapter__time">
-                      {{ formatDuration(chapter.end - chapter.start) }}
-                    </span>
-                  </button>
-                </div>
+                  :item="row.item"
+                  :groups="queueChapterGroups"
+                  :active-position="activeChapterPosition(row.item)"
+                  :can-add="canAddBookmark"
+                  :position="playingPosition"
+                  @seek="
+                    (target) => chapterClicked(row.item!.media_item!, target)
+                  "
+                />
               </div>
               <!-- floating ghost of the dragged item; tracks the pointer -->
               <div
@@ -385,24 +370,39 @@
             :show-labels="true"
             :color="sliderColor"
             :waveform="waveformData"
+            :bookmarks="playingBookmarks"
           />
         </div>
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
           <div class="media-controls-item favorite-btn-wrapper">
+            <!-- no hover box, like the transport buttons beside them -->
             <FavoriteMenuBtn
+              variant="ghost-icon"
               style="max-height: 30px; min-height: 0; min-width: 0"
-              icon-class="size-4.5"
+              icon-class="size-5.5"
             />
           </div>
-          <ShuffleBtn
-            v-if="$vuetify.display.mdAndUp"
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="30px"
-          />
+          <!-- side slots keep their width when empty so the row never shifts -->
+          <div class="media-controls-item side-slot">
+            <!-- stroke scaled so lines match the 28px previous/next icons -->
+            <SkipBtn
+              v-if="showSkip"
+              :player-queue="store.activePlayerQueue"
+              direction="back"
+              max-height="45px"
+              :size="30"
+              :stroke-width="(2 * 28) / 30"
+            />
+            <ShuffleBtn
+              v-else-if="$vuetify.display.mdAndUp"
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              max-height="30px"
+              :size="24"
+            />
+          </div>
           <PreviousBtn
             :player="store.activePlayer"
             :player-queue="store.activePlayerQueue"
@@ -427,17 +427,28 @@
             max-height="45px"
             :size="28"
           />
-          <RepeatBtn
-            v-if="$vuetify.display.mdAndUp"
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="35px"
-          />
+          <div class="media-controls-item side-slot">
+            <SkipBtn
+              v-if="showSkip"
+              :player-queue="store.activePlayerQueue"
+              direction="forward"
+              max-height="45px"
+              :size="30"
+              :stroke-width="(2 * 28) / 30"
+            />
+            <RepeatBtn
+              v-else-if="$vuetify.display.mdAndUp"
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              max-height="35px"
+              :size="26"
+            />
+          </div>
           <div class="media-controls-item queue-btn-wrapper">
             <QueueBtn
+              variant="ghost-icon"
               style="max-height: 30px; min-height: 0; min-width: 0"
-              :size="18"
+              :size="22"
             />
           </div>
         </div>
@@ -505,6 +516,7 @@ import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
+import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
@@ -526,18 +538,30 @@ import PlayBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PlayBtn.vue";
 import PreviousBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/PreviousBtn.vue";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
+import SkipBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipBtn.vue";
 import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import PlayerFullscreenHeaderControls from "@/layouts/default/PlayerOSD/PlayerFullscreenHeaderControls.vue";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
+import QueueChapterList from "@/layouts/default/PlayerOSD/QueueChapterList.vue";
 import QueueListItem from "@/layouts/default/PlayerOSD/QueueListItem.vue";
 import QueueModeBanner from "@/layouts/default/PlayerOSD/QueueModeBanner.vue";
 import { useFullscreenQueue } from "@/layouts/default/PlayerOSD/useFullscreenQueue";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
+import { useSkipControls } from "@/composables/useSkipControls";
+import {
+  BOOKMARK_EDIT_FEATURES,
+  newBookmarkOfPlayingItem,
+  useBookmarks,
+} from "@/composables/useBookmarks";
 import {
   resolveActiveElapsedTime,
   resolveQueueElapsedTime,
 } from "@/helpers/activeElapsedTime";
-import { resolveCurrentChapter } from "@/helpers/chapters";
+import {
+  chaptersFitBookmarks,
+  groupBookmarksByChapter,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
 import api from "@/plugins/api";
 import {
   MediaItemChapter,
@@ -556,6 +580,7 @@ import { store } from "@/plugins/store";
 import vuetify from "@/plugins/vuetify";
 import { ChevronDownIcon, EllipsisVerticalIcon } from "@lucide/vue";
 import Color from "color";
+import { toast } from "vue-sonner";
 import {
   computed,
   markRaw,
@@ -573,6 +598,7 @@ import QueueBtn from "./PlayerControlBtn/QueueBtn.vue";
 import PlayerTimeline from "./PlayerTimeline.vue";
 
 const { name, mdAndUp } = useDisplay();
+const { showSkip } = useSkipControls();
 const { open: openCommandCenter } = useCommandCenter();
 
 const MIN_HEIGHT_SHOW_FULL_DETAILS = 750;
@@ -624,9 +650,11 @@ const currentChapter = computed(() => {
 
 const activeChapter = computed(() => currentChapter.value?.chapter);
 
-const isActiveChapter = (item: QueueItem, chapter: MediaItemChapter) =>
-  item.queue_item_id === chapterQueueItem.value?.queue_item_id &&
-  chapter.position === activeChapter.value?.position;
+// the playing chapter of the item, for its chapter list
+const activeChapterPosition = (item: QueueItem) =>
+  item.queue_item_id === chapterQueueItem.value?.queue_item_id
+    ? activeChapter.value?.position
+    : undefined;
 
 const updateChapterTimer = (needed: boolean) => {
   if (needed && chapterTimer === null) {
@@ -639,13 +667,21 @@ const updateChapterTimer = (needed: boolean) => {
   }
 };
 
+// the playing item takes a new bookmark at its current position
+const canAddBookmark = computed(() => !!newBookmarkOfPlayingItem());
+
+const playingPosition = computed(() => {
+  void nowTick.value;
+  return Math.floor(resolveActiveElapsedTime() ?? 0);
+});
+
 const chapterTimerNeeded = computed(
   () =>
     store.showFullscreenPlayer &&
     store.showQueueItems &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
-    !!chapterQueueItem.value &&
-    showChapterProgress.value,
+    ((!!chapterQueueItem.value && showChapterProgress.value) ||
+      canAddBookmark.value),
 );
 
 watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
@@ -657,8 +693,7 @@ interface Props {
 const compProps = defineProps<Props>();
 
 const playBtnStyle = computed(() => {
-  const isDark = vuetify.theme.current.value.dark;
-  const color = isDark
+  const color = isDark.value
     ? compProps.colorPalette.darkColor
     : compProps.colorPalette.lightColor;
   if (!color) return {};
@@ -1094,7 +1129,6 @@ const onAlbumClick = async function () {
   } else {
     // Radio or non-library item - try to find in library first
     try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, album_types, provider)
       const results = await api.getLibraryAlbums(
         undefined, // favorite
         albumSubtitle.value, // search
@@ -1177,7 +1211,6 @@ const onArtistClick = async function () {
   } else {
     // Radio or non-library item - try to find in library first
     try {
-      // Call with positional parameters: (favorite, search, limit, offset, order_by, album_artists_only, provider)
       const results = await api.getLibraryArtists(
         undefined, // favorite
         currentMedia.artist, // search
@@ -1229,9 +1262,51 @@ const playbackSpeedDialogOpen = ref(false);
 watch(
   () => store.showFullscreenPlayer,
   (open) => {
-    if (!open) playbackSpeedDialogOpen.value = false;
+    if (open) return;
+    playbackSpeedDialogOpen.value = false;
   },
 );
+
+const { bookmarks: itemBookmarks } = useBookmarks(() => {
+  const media = store.curQueueItem?.media_item;
+  const streamdetails = store.curQueueItem?.streamdetails;
+  if (
+    !store.showFullscreenPlayer ||
+    !media ||
+    !(media.media_type in BOOKMARK_EDIT_FEATURES) ||
+    !streamdetails
+  ) {
+    return undefined;
+  }
+  return {
+    mediaType: media.media_type,
+    itemId: media.item_id,
+    provider: media.provider,
+    uri: media.uri,
+    copyUris: [
+      `${streamdetails.provider}://${media.media_type}/${streamdetails.item_id}`,
+    ],
+  };
+});
+
+// only the copy that is playing: a bookmark's position does not fit another copy
+const playingBookmarks = computed(() => {
+  const streamdetails = store.curQueueItem?.streamdetails;
+  return itemBookmarks.value.filter(
+    (x) =>
+      x.provider_instance === streamdetails?.provider &&
+      x.item_id === streamdetails?.item_id,
+  );
+});
+
+const queueChapterGroups = computed(() => {
+  const media = store.curQueueItem?.media_item;
+  return groupBookmarksByChapter(
+    media?.metadata?.chapters,
+    playingBookmarks.value,
+    !media || chaptersFitBookmarks(media),
+  );
+});
 
 const speedSupported = computed(() =>
   playbackSpeedSupported(store.curQueueItem),
@@ -1244,7 +1319,7 @@ const openQueueMenu = function (evt: Event) {
     store.activePlayerQueue,
     {
       context: "queue",
-      hideShuffleRepeat: mdAndUp.value,
+      hideShuffleRepeat: mdAndUp.value && !showSkip.value,
     },
   );
   // playback speed only means something for spoken-word content, which is also
@@ -1362,7 +1437,7 @@ watchEffect(() => {
     backgroundColor.value = `linear-gradient(to bottom, ${darkBase.lighten(0.25).hex()}, ${darkBase.darken(0.25).hex()})`;
     return;
   }
-  const isDarkTheme = vuetify.theme.current.value.dark;
+  const isDarkTheme = isDark.value;
   const bgHex = isDarkTheme
     ? compProps.colorPalette.darkColor || "#000"
     : compProps.colorPalette.lightColor || "#fff";
@@ -1566,61 +1641,6 @@ onBeforeUnmount(() => {
   );
 }
 
-/* Audiobook chapters under the current item. */
-.queue-chapters {
-  display: flex;
-  flex-direction: column;
-  margin: 2px 0 6px 60px;
-}
-
-.queue-chapter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 6px 8px;
-  border-radius: 6px;
-  text-align: left;
-  color: var(--text-color, currentColor);
-  background: transparent;
-  cursor: pointer;
-  transition: background-color 0.12s ease;
-}
-
-.queue-chapter:hover {
-  background: color-mix(
-    in srgb,
-    var(--text-color, currentColor) 8%,
-    transparent
-  );
-}
-
-.queue-chapter--active {
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
-  box-shadow: inset 3px 0 0 var(--primary);
-  font-weight: 600;
-}
-
-.queue-chapter--active:hover {
-  background: color-mix(in srgb, var(--primary) 20%, transparent);
-}
-
-.queue-chapter__name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--queue-subtitle-size, 0.8rem);
-}
-
-.queue-chapter__time {
-  flex: 0 0 auto;
-  font-size: 0.72rem;
-  opacity: 0.6;
-}
-
 .queue-empty {
   display: flex;
   align-items: center;
@@ -1728,7 +1748,8 @@ onBeforeUnmount(() => {
 }
 
 .queue-btn-wrapper,
-.favorite-btn-wrapper {
+.favorite-btn-wrapper,
+.side-slot {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1777,6 +1798,28 @@ onBeforeUnmount(() => {
 .media-controls > .queue-btn-wrapper,
 .media-controls > .favorite-btn-wrapper {
   margin: 0;
+}
+
+/* phones: buttons keep their natural size and share the spare room evenly */
+@media (max-width: 539px) {
+  .media-controls {
+    justify-content: space-between;
+    padding: 15px 10px;
+  }
+
+  .media-controls > div {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .media-controls-item {
+    margin: 0;
+  }
+
+  /* reserve a button's width when empty so the row never shifts */
+  .side-slot {
+    min-width: 44px;
+  }
 }
 
 .mediacontrols-right {

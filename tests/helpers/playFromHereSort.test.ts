@@ -3,6 +3,7 @@
  * through handlePlayBtnClick and handleMenuBtnClick to the API / context menu.
  */
 import type { MusicAssistantApi } from "@/plugins/api";
+import { SortDirection, SortField } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const {
@@ -109,6 +110,7 @@ beforeEach(() => {
   mockPlayMedia.mockResolvedValue(undefined);
   mockShowContextMenu.mockReset();
   mockShowPlayMenu.mockReset();
+  mockShowPlayMenu.mockResolvedValue(undefined);
   mockGetCoreConfigValue.mockReset();
   mockGetCoreConfigValue.mockResolvedValue("play_from_here");
 });
@@ -182,6 +184,130 @@ describe("handlePlayBtnClick with sortBy", () => {
   });
 });
 
+describe("handlePlayBtnClick with typed sort fields", () => {
+  it("plays from a track using the server listing's typed sort", async () => {
+    const playedTrack = makePlaylistTrack("track1");
+    const parentPlaylist = makePlaylist("pl1");
+
+    await handlePlayBtnClick(
+      playedTrack,
+      0,
+      0,
+      parentPlaylist,
+      false,
+      undefined,
+      undefined,
+      SortField.DURATION,
+      SortDirection.DESC,
+    );
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_field: SortField.DURATION,
+      sort_direction: SortDirection.DESC,
+    });
+  });
+
+  it("plays a container from its hero using its tracks sort fields", async () => {
+    const albumItem = makeAlbum("album-1");
+
+    await handlePlayBtnClick(
+      albumItem,
+      0,
+      0,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      SortField.SORT_NAME,
+      SortDirection.ASC,
+    );
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(albumItem, undefined, {
+      sort_field: SortField.SORT_NAME,
+      sort_direction: SortDirection.ASC,
+    });
+  });
+
+  it("passes typed sorts to the context-menu play-from-here action", () => {
+    const playedTrack = makePlaylistTrack("track1");
+    const parentPlaylist = makePlaylist("pl1");
+
+    handleMenuBtnClick(
+      playedTrack,
+      100,
+      200,
+      parentPlaylist,
+      true,
+      undefined,
+      SortField.NAME,
+      SortDirection.ASC,
+    );
+
+    expect(mockShowContextMenu).toHaveBeenCalledWith(
+      [playedTrack],
+      parentPlaylist,
+      100,
+      200,
+      true,
+      true,
+      undefined,
+      undefined,
+      SortField.NAME,
+      SortDirection.ASC,
+    );
+  });
+});
+
+describe("handlePlayBtnClick with tracksSortBy", () => {
+  it("plays a playlist in the order its page lists the tracks", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 0, 0, undefined, false, undefined, "name");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(pl, undefined, {
+      sort_by: "name",
+    });
+  });
+
+  it("plays an album in the order its page lists the tracks", async () => {
+    const al = makeAlbum("al1");
+
+    await handlePlayBtnClick(al, 0, 0, undefined, false, undefined, "duration");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(al, undefined, {
+      sort_by: "duration",
+    });
+  });
+
+  it("ignores the sort of the listing the item is shown in", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 0, 0, undefined, false, "name");
+
+    expect(mockPlayMedia).toHaveBeenCalledWith(pl);
+  });
+
+  it("hands tracksSortBy to the play menu", async () => {
+    const pl = makePlaylist("pl1");
+
+    await handlePlayBtnClick(pl, 1, 2, undefined, true, undefined, "artist");
+
+    expect(mockShowPlayMenu).toHaveBeenCalledWith(
+      pl,
+      undefined,
+      1,
+      2,
+      "artist",
+      undefined,
+      undefined,
+    );
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+});
+
 describe("handleMenuBtnClick with sortBy", () => {
   it("passes sortBy to showContextMenuForMediaItem", () => {
     const playedTrack = makePlaylistTrack("track1");
@@ -197,6 +323,9 @@ describe("handleMenuBtnClick with sortBy", () => {
       true,
       true,
       "duration",
+      undefined,
+      undefined,
+      undefined,
     );
   });
 
@@ -213,6 +342,9 @@ describe("handleMenuBtnClick with sortBy", () => {
       200,
       true,
       true,
+      undefined,
+      undefined,
+      undefined,
       undefined,
     );
   });

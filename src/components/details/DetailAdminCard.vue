@@ -4,6 +4,12 @@
   </div>
 </template>
 
+<script setup lang="ts">
+import { provideDetailAdminCard } from "@/composables/useDetailAdminCard";
+
+provideDetailAdminCard();
+</script>
+
 <style scoped>
 /* the shared admin sections keep their own toolbar and content, but take the
    page's row title and gutter and sit in a card each; their inline bottom margin
@@ -23,9 +29,6 @@
   display: none;
 }
 /* the lists and image tiles inside sit on the card instead of painting their own surface */
-.detail-admin :deep(.v-container) {
-  padding: 0 12px 12px;
-}
 .detail-admin :deep(.v-list),
 .detail-admin :deep(.panel-item) {
   background: transparent;

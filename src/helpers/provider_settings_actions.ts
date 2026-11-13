@@ -2,6 +2,7 @@
 // menu on the sources list and the menu on the settings page of a source. Both build
 // their menu from here so the two never drift apart.
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { LOCAL_FILES_DOMAIN } from "@/helpers/provider_domain";
 import {
   canConfigureSourceAccess,
   canReconfigureSource,
@@ -57,6 +58,7 @@ export const getProviderSettingsSections = (config: ProviderConfig) => {
       authManager.hasScope(Scope.LIBRARY_MANAGE) &&
       !!provider?.available,
     players: config.type === ProviderType.PLAYER && !!provider,
+    storage: config.domain === LOCAL_FILES_DOMAIN,
   };
 };
 

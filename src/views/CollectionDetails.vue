@@ -1,40 +1,47 @@
 <template>
-  <InfoHeader :item="itemDetails" />
-  <ItemsListing
-    :itemtype="collectionMediaType"
-    :parent-item="itemDetails"
-    :show-refresh-button="false"
-    :load-items="loadCollectionItems"
-    :sort-keys="[]"
-    :title="title"
-    :empty-message="emptyMessage"
-    :allow-collapse="false"
-  />
+  <section>
+    <CollectionHero :item="audiobookCollection" />
+    <ItemsListing
+      :key="`${provider}:${itemId}`"
+      :itemtype="collectionMediaType"
+      :parent-item="itemDetails"
+      :show-refresh-button="false"
+      library-toolbar
+      :show-count="false"
+      detail-row
+      :load-paged-data="loadCollectionItems"
+      :title="title"
+      :empty-message="emptyMessage"
+      :allow-collapse="false"
+    />
+  </section>
 </template>
 
 <script setup lang="ts">
-import InfoHeader from "@/components/InfoHeader.vue";
+import CollectionHero from "@/components/collection/CollectionHero.vue";
 import ItemsListing from "@/components/ItemsListing.vue";
-import { api } from "@/plugins/api";
+import { useCollectionDetails } from "@/composables/useCollectionDetails";
 import {
-  type MediaCollection,
-  type MediaItemType,
   MediaType,
+  type Audiobook,
+  type MediaCollection,
 } from "@/plugins/api/interfaces";
-import { ref, computed } from "vue";
+import { computed } from "vue";
 import { $t } from "@/plugins/i18n";
-import { getCollectionMediaTypeFromItemId } from "@/plugins/api/helpers";
 
 export interface Props {
   itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
-const itemDetails = ref<MediaCollection<MediaItemType>>();
+const { itemDetails, collectionMediaType, loadCollectionItems } =
+  useCollectionDetails(() => props);
 
-const collectionMediaType = computed(() => {
-  return getCollectionMediaTypeFromItemId(props.itemId);
-});
+const audiobookCollection = computed(() =>
+  collectionMediaType.value === MediaType.AUDIOBOOK
+    ? (itemDetails.value as MediaCollection<Audiobook> | undefined)
+    : undefined,
+);
 
 const title = computed(() => {
   if (collectionMediaType.value === MediaType.AUDIOBOOK) {
@@ -49,12 +56,4 @@ const emptyMessage = computed(() => {
   }
   return "";
 });
-
-const loadCollectionItems = async function () {
-  if (collectionMediaType.value === MediaType.AUDIOBOOK) {
-    itemDetails.value = await api.getAudiobookCollection(props.itemId);
-    return itemDetails.value.items;
-  }
-  return [];
-};
 </script>

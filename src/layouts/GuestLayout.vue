@@ -108,6 +108,7 @@ import {
   useGuestEntryResolver,
 } from "@/composables/guest/useGuestEntryResolver";
 import {
+  isDark,
   isThemePreference,
   THEME_PREFERENCES,
   useThemePreference,
@@ -119,7 +120,6 @@ import { store } from "@/plugins/store";
 import { ArrowLeft, LogOut, Palette, UserRound } from "@lucide/vue";
 import { computed, provide } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useTheme } from "vuetify";
 
 const { state } = useGuestEntryResolver();
 provide(guestEntryStateKey, state);
@@ -140,9 +140,8 @@ const menuLabel = computed(() =>
 const userInitial = computed(() => menuLabel.value.charAt(0).toUpperCase());
 
 const { themePreference, setGuestThemePreference } = useThemePreference();
-const theme = useTheme();
 const logoSrc = computed(() =>
-  theme.current.value.dark
+  isDark.value
     ? new URL("@/assets/logo/logo.svg", import.meta.url).href
     : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
 );

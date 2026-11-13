@@ -11,12 +11,16 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 const {
   mockPlayMedia,
   mockGetCoreConfigValue,
+  mockGetItem,
   mockRouterPush,
+  mockCurrentRoute,
   mockItemIsAvailable,
 } = vi.hoisted(() => ({
   mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
   mockGetCoreConfigValue: vi.fn(),
+  mockGetItem: vi.fn<MusicAssistantApi["getItem"]>(),
   mockRouterPush: vi.fn(),
+  mockCurrentRoute: { value: { fullPath: "" } },
   mockItemIsAvailable: vi.fn(() => true),
 }));
 
@@ -26,6 +30,7 @@ vi.mock("@/plugins/api", () => ({
     players: {},
     playMedia: mockPlayMedia,
     getCoreConfigValue: mockGetCoreConfigValue,
+    getItem: mockGetItem,
   },
 }));
 
@@ -54,7 +59,7 @@ vi.mock("@/plugins/breakpoint", () => ({
 }));
 
 vi.mock("@/plugins/router", () => ({
-  default: { push: mockRouterPush },
+  default: { push: mockRouterPush, currentRoute: mockCurrentRoute },
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -107,6 +112,8 @@ beforeEach(() => {
   mockPlayMedia.mockResolvedValue(undefined);
   mockGetCoreConfigValue.mockReset();
   mockRouterPush.mockReset();
+  mockGetItem.mockReset();
+  mockCurrentRoute.value.fullPath = "/artists/library/1";
   mockItemIsAvailable.mockReset().mockReturnValue(true);
   vi.mocked(showContextMenuForMediaItem).mockClear();
   vi.mocked(authManager.hasScope).mockImplementation(
@@ -310,17 +317,26 @@ describe("handleMediaItemClick on a MusicBrainz release", () => {
     provider: "musicbrainz",
     provider_mappings: [],
   });
+  // the same album on one of the user's music services
+  const resolvedAlbum = album({ item_id: "sp-1", provider: "spotify" });
 
   beforeEach(() => {
     mockItemIsAvailable.mockReturnValue(false);
   });
 
-  it("opens the album page instead of the menu an unavailable item gets", async () => {
+  it("opens the page of the album it resolves to instead of the menu an unavailable item gets", async () => {
+    mockGetItem.mockResolvedValue(resolvedAlbum);
+
     await handleMediaItemClick(release, 0, 0);
 
+    expect(mockGetItem).toHaveBeenCalledWith(
+      release.media_type,
+      "rg-1",
+      "musicbrainz",
+    );
     expect(mockRouterPush).toHaveBeenCalledWith({
-      name: release.media_type,
-      params: { itemId: "rg-1", provider: "musicbrainz" },
+      name: resolvedAlbum.media_type,
+      params: { itemId: "sp-1", provider: "spotify" },
     });
     expect(showContextMenuForMediaItem).not.toHaveBeenCalled();
     expect(mockPlayMedia).not.toHaveBeenCalled();
@@ -328,6 +344,7 @@ describe("handleMediaItemClick on a MusicBrainz release", () => {
 
   it("never plays it, whatever the click-action setting says", async () => {
     mockGetCoreConfigValue.mockResolvedValue("play");
+    mockGetItem.mockResolvedValue(resolvedAlbum);
 
     await handleMediaItemClick(release, 0, 0);
 

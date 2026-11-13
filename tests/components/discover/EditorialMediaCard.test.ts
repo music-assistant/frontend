@@ -5,14 +5,17 @@
  * an episode.
  */
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
+import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import {
   ImageType,
   type Album,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { Disc3, Podcast } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { album } from "../../fixtures/album";
+import { artist } from "../../fixtures/artist";
 import { podcast } from "../../fixtures/podcast";
 import { podcastEpisode } from "../../fixtures/podcastEpisode";
 
@@ -111,14 +114,32 @@ describe("EditorialMediaCard", () => {
     expect(wrapper.classes()).not.toContain("ed-card--not-in-library");
   });
 
-  it("falls back to the initials placeholder when the cover fails to load", async () => {
+  it("falls back to the album icon when the cover fails to load", async () => {
     const wrapper = mountCard(release());
     expect(wrapper.get("img").attributes("src")).toBe(COVER);
 
     await wrapper.get("img").trigger("error");
 
     expect(wrapper.find("img").exists()).toBe(false);
-    expect(wrapper.get(".ed-card__initials").text()).toBe("GR");
+    expect(
+      wrapper.get(".ed-card__placeholder").findComponent(Disc3).exists(),
+    ).toBe(true);
+  });
+
+  it("shows the artist icon for an artist without a picture", () => {
+    const wrapper = mountCard(artist());
+
+    expect(
+      wrapper.get(".ed-card__placeholder").findComponent(ArtistIcon).exists(),
+    ).toBe(true);
+  });
+
+  it("shows the podcast icon for an episode without a cover", () => {
+    const wrapper = mountCard(podcastEpisode());
+
+    expect(
+      wrapper.get(".ed-card__placeholder").findComponent(Podcast).exists(),
+    ).toBe(true);
   });
 
   it("offers no play button for a release that is not in the library", () => {
@@ -146,7 +167,7 @@ describe("EditorialMediaCard", () => {
     });
 
     expect(wrapper.get("img").attributes("src")).toBe(COVER);
-    expect(wrapper.find(".ed-card__initials").exists()).toBe(false);
+    expect(wrapper.find(".ed-card__placeholder").exists()).toBe(false);
   });
 
   it("marks a fully played episode on its cover", () => {

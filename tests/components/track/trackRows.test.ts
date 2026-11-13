@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, providersMock } = vi.hoisted(() => ({
+const {
+  storeMock,
+  mockSetUserPreference,
+  mockSetUserPreferences,
+  providersMock,
+} = vi.hoisted(() => ({
   storeMock: {
     currentUser: null as { preferences?: Record<string, unknown> } | null,
   },
   mockSetUserPreference: vi.fn(),
+  mockSetUserPreferences: vi.fn(),
   providersMock: {} as Record<string, unknown>,
 }));
 
@@ -18,6 +24,7 @@ vi.mock("@/plugins/api", () => ({
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
+  setUserPreferences: mockSetUserPreferences,
 }));
 
 import {
@@ -54,6 +61,7 @@ function addProvider(instanceId: string, features: ProviderFeature[]) {
 describe("trackRows", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
+    mockSetUserPreferences.mockReset();
     setPreferences({});
     for (const key of Object.keys(providersMock)) delete providersMock[key];
   });
@@ -113,11 +121,10 @@ describe("trackRows", () => {
 
     it("clears the rows preference and no other", async () => {
       await trackRows.reset();
-      expect(mockSetUserPreference).toHaveBeenCalledTimes(1);
-      expect(mockSetUserPreference).toHaveBeenCalledWith(
-        TRACK_ROWS_PREFERENCE_KEY,
-        { hidden: [], shown: [], order: [] },
-      );
+      expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+      expect(mockSetUserPreferences).toHaveBeenCalledWith({
+        [TRACK_ROWS_PREFERENCE_KEY]: { hidden: [], shown: [], order: [] },
+      });
     });
   });
 });

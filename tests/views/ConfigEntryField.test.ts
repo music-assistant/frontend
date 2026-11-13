@@ -289,6 +289,41 @@ describe("ConfigEntryField", () => {
       increment: true,
     });
   });
+
+  // the server falls back to the default for a missing value, but rejects an empty string
+  // it cannot read as a number
+  it.each([ConfigEntryType.INTEGER, ConfigEntryType.FLOAT])(
+    "leaves an emptied optional %s field without a value",
+    async (type) => {
+      const wrapper = mountField(numberEntry(type));
+
+      await wrapper.get("input").setValue("");
+
+      expect(wrapper.emitted("update:value")).toEqual([[null]]);
+    },
+  );
+
+  it("puts the default back into an emptied required number field", async () => {
+    const wrapper = mountField({
+      ...numberEntry(ConfigEntryType.INTEGER),
+      required: true,
+      value: 9000,
+    });
+
+    await wrapper.get("input").setValue("");
+
+    expect(wrapper.emitted("update:value")).toEqual([[8095]]);
+  });
+
+  it("keeps an emptied optional text field as an empty string", async () => {
+    const wrapper = mountField(
+      entry({ key: "name", type: ConfigEntryType.STRING, value: "Kitchen" }),
+    );
+
+    await wrapper.get("input").setValue("");
+
+    expect(wrapper.emitted("update:value")).toEqual([[""]]);
+  });
 });
 
 function entry(
@@ -312,6 +347,10 @@ function entry(
 
 function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
   return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
+}
+
+function numberEntry(type: ConfigEntryType): ConfigEntryUI {
+  return entry({ key: "port", type, default_value: 8095, value: 8095 });
 }
 
 function expandedOptionsEntry(): ConfigEntryUI {

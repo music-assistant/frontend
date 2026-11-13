@@ -1,8 +1,8 @@
 <template>
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-[560px]">
-      <DialogHeader class="text-left">
-        <DialogTitle class="text-center">
+      <DialogHeader>
+        <DialogTitle>
           {{ $t("settings.dsp.convolution.library") }}
         </DialogTitle>
         <DialogDescription>

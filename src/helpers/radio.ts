@@ -5,6 +5,7 @@
 // tracks). The "Go to <type> Radio" action navigates to that playlist's details
 // view, where it behaves like any dynamic playlist (sample / enqueue / add to
 // library).
+import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import api from "@/plugins/api";
 import {
   MediaItemTypeOrItemMapping,
@@ -50,7 +51,8 @@ export const radioRelevant = (item: MediaItemTypeOrItemMapping): boolean => {
   if (item.media_type === MediaType.PLAYLIST && (item as Playlist).is_dynamic) {
     return false;
   }
-  return true;
+  // the radio is seeded from tracks, which an author or narrator has none of
+  return !isAuthorOrNarrator(item);
 };
 
 // Whether a radio playlist can actually be generated from the given item right

@@ -40,6 +40,7 @@
         :available-fields="availableFields"
         :genre-options="genreOptions"
         :album-type-options="albumTypeOptions"
+        :allow-favorites-only="mode === 'library'"
         :invalid="invalidRuleUids.has(rule.uid)"
         @change-field="(field) => onChangeField(rule, field)"
         @change-operator="(op) => onChangeOperator(rule, op)"
@@ -61,6 +62,17 @@
           : $t("smart_playlist.no_rules")
       }}
     </div>
+
+    <p
+      v-if="
+        rules.some(
+          (rule) => rule.field === 'favorite' && rule.operator === 'is_not',
+        )
+      "
+      class="text-xs text-muted-foreground"
+    >
+      {{ $t("smart_playlist.favorites_exclude_hint") }}
+    </p>
 
     <div>
       <DropdownMenu>
@@ -121,6 +133,7 @@ import type {
   RuleField,
   RuleOperator,
   RuleRow,
+  RuleValue,
 } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -129,7 +142,7 @@ import { match } from "ts-pattern";
 import { fieldIcon } from "./fieldIcon";
 import SmartPlaylistRuleRow from "./SmartPlaylistRuleRow.vue";
 
-defineProps<{
+const props = defineProps<{
   mode: "library" | "seed";
   rules: RuleRow[];
   logic: "AND" | "OR";
@@ -152,6 +165,7 @@ function fieldLabel(field: RuleField): string {
     .with("album_type", () => $t("album_type_label"))
     .with("artist", () => $t("artist"))
     .with("album", () => $t("album"))
+    .with("folder", () => $t("smart_playlist.field_folder"))
     .with("favorite", () => $t("smart_playlist.field_favorite"))
     .with("explicit", () => $t("smart_playlist.field_explicit"))
     .with("year", () => $t("smart_playlist.field_year"))
@@ -163,7 +177,7 @@ function fieldLabel(field: RuleField): string {
 function onChangeField(rule: RuleRow, field: RuleField) {
   emit("update-rule", rule.uid, {
     field,
-    operator: "is",
+    operator: field === "favorite" && props.mode === "seed" ? "is_not" : "is",
     values: [],
     yearFrom: undefined,
     yearTo: undefined,
@@ -196,7 +210,7 @@ function onChangeLastPlayed(
   });
 }
 
-function onAddValue(rule: RuleRow, v: { id: number; name: string }) {
+function onAddValue(rule: RuleRow, v: RuleValue) {
   if (rule.values.some((x) => x.id === v.id)) return;
   emit("update-rule", rule.uid, { values: [...rule.values, v] });
 }

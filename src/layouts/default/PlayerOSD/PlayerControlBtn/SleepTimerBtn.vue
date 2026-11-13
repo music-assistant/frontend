@@ -1,6 +1,7 @@
 <!--
   Sleep timer indicator. Only rendered while the active player has a running
-  sleep timer; shows a live countdown and opens the sleep timer menu (presets +
+  sleep timer; shows a live countdown (or, while paused, the item or chapter end
+  the timer waits for) and opens the sleep timer menu (presets, item/chapter end,
   cancel) on click.
 -->
 <template>
@@ -16,12 +17,13 @@
           @click.stop="openMenu"
         >
           <Moon :size="16" class="moon-rocking" />
-          <span>{{ remaining }}</span>
+          <span>{{ remaining || $t(modeLabel!) }}</span>
         </Button>
       </TooltipTrigger>
       <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">
         <p class="font-medium">{{ $t("sleep_timer") }}</p>
-        <p class="mt-1 opacity-80">
+        <p v-if="modeLabel" class="mt-1 opacity-80">{{ $t(modeLabel) }}</p>
+        <p v-if="remaining" class="mt-1 opacity-80">
           {{ $t("sleep_timer_remaining", [remaining]) }}
         </p>
       </TooltipContent>
@@ -38,7 +40,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { serverNow } from "@/composables/useServerTime";
-import { getSleepTimerMenuItems } from "@/helpers/sleep_timer";
+import {
+  getSleepTimerMenuItems,
+  sleepTimerModeLabel,
+} from "@/helpers/sleep_timer";
 import { formatDuration } from "@/helpers/utils";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -69,12 +74,16 @@ const now = ref(serverNow());
 const expiresAt = computed(
   () => store.activePlayer?.sleep_timer_expires_at ?? null,
 );
-const active = computed(
+const counting = computed(
   () => expiresAt.value != null && expiresAt.value > now.value,
 );
 const remaining = computed(() =>
-  active.value ? formatDuration(expiresAt.value! - now.value) : "",
+  counting.value ? formatDuration(expiresAt.value! - now.value) : "",
 );
+// set while the timer waits for the end of an item or chapter, which has no
+// countdown while paused
+const modeLabel = computed(() => sleepTimerModeLabel(store.activePlayer));
+const active = computed(() => counting.value || modeLabel.value != null);
 
 let ticker: ReturnType<typeof setInterval> | undefined;
 const stopTicking = () => {
@@ -84,11 +93,11 @@ const stopTicking = () => {
   }
 };
 watch(
-  active,
-  (isActive) => {
-    if (isActive && !ticker) {
+  counting,
+  (isCounting) => {
+    if (isCounting && !ticker) {
       ticker = setInterval(() => (now.value = serverNow()), 1000);
-    } else if (!isActive) {
+    } else if (!isCounting) {
       stopTicking();
     }
   },

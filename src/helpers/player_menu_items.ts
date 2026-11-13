@@ -23,7 +23,6 @@ import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuCon
 import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
 import { h, markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
-import { useShows } from "@/composables/ai-radio/useShows";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -300,17 +299,11 @@ export const getPlayerMenuItems = (
   // hosts submenu, which would otherwise show the (now irrelevant) sticky
   // queue-DJ assignment.
   const { hosts, queueDjStatus, aiRadioAvailable } = useHosts();
-  const { sessions, shows } = useShows();
   if (isQueue && playerQueue && aiRadioAvailable.value && canUseQueueDj()) {
     const queueId = playerQueue.queue_id;
-    const runningSession = sessions.value.find(
-      (session) => session.status === "running" && session.queue_id === queueId,
-    );
-    if (runningSession) {
-      const show = shows.value.find((s) => s.id === runningSession.station_id);
-      const host = show
-        ? hosts.value.find((h) => h.id === show.host_id)
-        : undefined;
+    const queueDj = queueDjStatus.value[queueId];
+    if (queueDj?.station_id) {
+      const host = hosts.value.find((h) => h.id === queueDj.host_id);
       menuItems.push({
         label: host ? "ai_dj_show_on_air" : "ai_dj_show_on_air_unknown",
         labelArgs: host ? [host.name] : [],
@@ -318,7 +311,7 @@ export const getPlayerMenuItems = (
         disabled: true,
       });
     } else {
-      const activeHostId = queueDjStatus.value[queueId];
+      const activeHostId = queueDj?.host_id;
       menuItems.push({
         label: "ai_dj",
         labelArgs: [],

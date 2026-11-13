@@ -115,8 +115,8 @@ vi.mock("@/plugins/api", async () => {
 
 vi.mock("@/plugins/store", () => ({ store: { showFullscreenPlayer: false } }));
 
-vi.mock("@/plugins/vuetify", () => ({
-  default: { theme: { current: { value: { dark: false } } } },
+vi.mock("@/composables/useThemePreference", () => ({
+  isDark: { value: false },
 }));
 
 // The options the canvas handed the engine on the most recent build.

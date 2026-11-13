@@ -297,7 +297,9 @@ const emit = defineEmits<{
 }>();
 
 const artworkFailed = ref(false);
-const { activeSource } = useActiveSource(toRef(props, "player"));
+const { activeSource, canRestartSource } = useActiveSource(
+  toRef(props, "player"),
+);
 
 const playerQueue = computed(() => resolvePlayerQueue(props.player));
 
@@ -344,7 +346,7 @@ const useStackedMediaLayout = computed(
 );
 
 const canPlayPause = computed(
-  () => activeSource.value?.can_play_pause === true,
+  () => activeSource.value?.can_play_pause === true || canRestartSource.value,
 );
 
 const playActionInProgress = computed(

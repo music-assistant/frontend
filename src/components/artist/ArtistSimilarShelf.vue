@@ -5,13 +5,10 @@
     :tiles-per-view="tilesPerView"
   >
     <template #header>
-      <div
-        v-hold="onHold"
-        class="artist-similar__titles"
-        @touchstart.passive="onTouchStart"
-        @click.capture="swallowClickAfterHold"
+      <DetailSectionTitle
+        :title="title ?? $t('similar_artists')"
+        @edit-rows="emit('edit-rows')"
       >
-        <h2 class="artist-similar__title">{{ $t("similar_artists") }}</h2>
         <RowSourceBadge
           v-if="sourceLabel"
           :label="sourceLabel"
@@ -20,7 +17,7 @@
           :selected="sourceValue"
           @select="(source) => emit('select-source', source)"
         />
-      </div>
+      </DetailSectionTitle>
     </template>
 
     <template v-if="items">
@@ -47,21 +44,23 @@
 </template>
 
 <script setup lang="ts">
+import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
 import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
-import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { itemIsAvailable } from "@/plugins/api/helpers";
-import type { Artist } from "@/plugins/api/interfaces";
+import type { Artist, ItemMapping } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";
 
 export interface Props {
   // undefined while the row is still loading
-  items?: Artist[];
+  items?: Array<Artist | ItemMapping>;
+  // the row heading, "Similar artists" unless set
+  title?: string;
   // source label for the row's badge, e.g. "All sources" or "On Spotify"
   sourceLabel?: string;
   // provider domain behind `sourceLabel`, for its icon
@@ -87,29 +86,9 @@ const tilesPerView = computed(() =>
     ? 3.2
     : panelViewItemResponsive(0) + 2.5,
 );
-
-const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
-  emit("edit-rows"),
-);
 </script>
 
 <style scoped>
-.artist-similar__titles {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-.artist-similar__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: rgb(var(--v-theme-on-background));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .artist-similar__empty {
   align-self: center;
   padding: 8px 4px;
@@ -119,11 +98,5 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(() =>
 /* the round cards read as portraits, so their captions are centred */
 .artist-similar :deep(.ed-card--round .ed-card__meta) {
   text-align: center;
-}
-
-@media (max-width: 768px) {
-  .artist-similar__title {
-    font-size: 19px;
-  }
 }
 </style>

@@ -19,10 +19,7 @@ const emit = defineEmits<{
   (e: "navigate", step: OnboardingStepId): void;
 }>();
 
-// a completed step behind the current one is a jump target; Back reaches the
-// rest one at a time, so a step still to do is not offered as a shortcut
-const canRevisit = (index: number): boolean =>
-  index < props.current && props.steps[index].done;
+const canRevisit = (index: number): boolean => index < props.current;
 
 const onClick = function (index: number, id: OnboardingStepId): void {
   if (canRevisit(index)) emit("navigate", id);
@@ -53,7 +50,9 @@ const stepLabel = function (step: ProgressStep, index: number): string {
             ? 'border-primary bg-primary text-primary-foreground'
             : index < current
               ? 'border-primary bg-primary/10 text-primary hover:bg-primary/20'
-              : 'border-input text-muted-foreground bg-transparent',
+              : step.done
+                ? 'border-primary/40 text-primary bg-transparent'
+                : 'border-input text-muted-foreground bg-transparent',
         ]"
         data-testid="onboarding-progress-step"
         @click="onClick(index, step.id)"

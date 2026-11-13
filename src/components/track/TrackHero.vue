@@ -15,7 +15,7 @@
 
     <template v-if="item" #main>
       <div class="track-hero__main">
-        <div class="track-hero__cover">
+        <div class="track-hero__cover detail-hero-cover">
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
@@ -25,14 +25,10 @@
             <span v-if="item.version" class="track-hero__version">
               ({{ item.version }})
             </span>
-            <span
+            <ExplicitBadge
               v-if="item.metadata?.explicit"
-              class="track-hero__explicit"
-              role="img"
-              :title="$t('tooltip.explicit')"
-              :aria-label="$t('tooltip.explicit')"
-              >E</span
-            >
+              class="track-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
+            />
           </h1>
 
           <div class="track-hero__meta">
@@ -83,7 +79,7 @@
           </div>
 
           <div class="track-hero__actions">
-            <DetailHeroPlayButton class="track-hero__play" :item="item" />
+            <DetailHeroPlayButton :item="item" />
             <DetailHeroButton
               v-if="radioRelevant(item)"
               :icon="Orbit"
@@ -91,9 +87,7 @@
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
-            <span class="track-hero__badge" :title="providerBadgeTitle">
-              <ProviderIcon :domain="providerDomain" :size="20" />
-            </span>
+            <DetailHeroSourceBadge :item="item" />
             <span
               v-if="
                 item.audio_metadata?.bpm || item.audio_metadata?.musical_key
@@ -123,8 +117,9 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   audioFormatLabel,
   bestAudioFormat,
@@ -132,11 +127,8 @@ import {
 } from "@/components/track/trackData";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatDuration } from "@/helpers/utils";
-import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type { Track } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { $t } from "@/plugins/i18n";
 import { Disc, Music, Orbit } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -161,16 +153,6 @@ const isPhone = computed(() => isPhoneSizedScreen());
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
-
-const providerDomain = computed(() =>
-  props.item ? getProviderIconDomain(props.item) : "",
-);
-
-const providerBadgeTitle = computed(() => {
-  const domain = providerDomain.value;
-  if (domain === "library") return $t("in_library");
-  return api.getProviderManifest(domain)?.name ?? domain;
-});
 
 const qualityLabel = computed(() => {
   const format = props.item && bestAudioFormat(props.item);
@@ -218,7 +200,7 @@ const gotoItem = function (
   font-size: 44px;
   font-weight: 500;
   letter-spacing: -1.1px;
-  line-height: 1.05;
+  line-height: 1.2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -232,19 +214,7 @@ const gotoItem = function (
   color: rgba(255, 255, 255, 0.7);
 }
 .track-hero__explicit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
   margin-left: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1;
-  text-shadow: none;
   vertical-align: middle;
 }
 
@@ -338,16 +308,12 @@ const gotoItem = function (
   .track-hero__name {
     font-size: 30px;
     letter-spacing: -0.7px;
-    line-height: 1.1;
   }
   .track-hero__meta {
     font-size: 14px;
   }
   .track-hero__actions {
     gap: 10px;
-  }
-  .track-hero__actions .track-hero__play {
-    flex: 1;
   }
   .track-hero__badge {
     width: 44px;

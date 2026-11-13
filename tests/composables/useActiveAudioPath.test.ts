@@ -10,6 +10,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { audioFidelity, audioOutputDetails } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { itemMapping } from "../fixtures/itemMapping";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
 import { queueItem } from "../fixtures/queueItem";
@@ -59,10 +60,11 @@ describe("useActiveAudioPath", () => {
       },
     });
     storeMock.curQueueItem = queueItem({ streamdetails: details });
-    storeMock.activePlayerQueue = playerQueue({
+    const queue = playerQueue({
       crossfade_enabled: true,
       smart_fades_active: true,
     });
+    storeMock.activePlayerQueue = queue;
     // a source snapshot is present too, but the queue item must win
     storeMock.activePlayer = player({
       active_source_audio: {
@@ -81,7 +83,33 @@ describe("useActiveAudioPath", () => {
       streamDetails: details,
       audioProcessing: details.audio_processing,
       crossfadeIntent: CrossfadeMode.SMART_CROSSFADE,
+      queueId: queue.queue_id,
     });
+  });
+
+  it.each([
+    ["an item it was played from", itemMapping({ name: "Midnight Avenue" })],
+    // an audiobook or episode played on its own is pinned to its copy only
+    ["no item it was played from", null],
+  ])("passes on %s", (_label, container) => {
+    storeMock.curQueueItem = queueItem({
+      streamdetails: streamDetails({
+        audio_processing: {
+          input_fidelity: audioFidelity(),
+          queue_processing: null,
+          outputs: [],
+        },
+      }),
+      origin: {
+        container,
+        provider_instance: "podcastfeed--1",
+        item_id: "episode-1",
+      },
+    });
+
+    const { activeAudioPath } = useActiveAudioPath();
+
+    expect(activeAudioPath.value?.container).toEqual(container ?? undefined);
   });
 
   it("resolves a live source snapshot when no queue item is active", () => {

@@ -11,6 +11,7 @@
       align="end"
       :side-offset="0"
       class="z-[999999] min-w-[300px] max-w-[350px] max-h-[85vh] overflow-y-auto"
+      @close-auto-focus="onCloseAutoFocus"
     >
       <!-- play menu header -->
       <template v-if="showPlayMenuHeader">
@@ -205,6 +206,13 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
 // clearing it for the dialog underneath
 let dialogActiveBeforeOpen = false;
 
+// the menu opens without a trigger element, so on close focus goes back to
+// whatever held it when the menu opened. Only for keyboard users: a touch
+// long-press (or a click in Safari) leaves focus where it was, which may be an
+// unrelated input that would scroll the page or bring up the on-screen keyboard
+let focusBeforeOpen: HTMLElement | null = null;
+let usingKeyboard = false;
+
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
@@ -212,16 +220,26 @@ onMounted(() => {
     posY.value = evt.posY || 0;
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
     nextTick(() => {
-      if (!show.value) dialogActiveBeforeOpen = store.dialogActive;
+      if (!show.value) {
+        dialogActiveBeforeOpen = store.dialogActive;
+        focusBeforeOpen =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+      }
       show.value = true;
       store.dialogActive = true;
     });
   });
+  document.addEventListener("keydown", markKeyboardInteraction, true);
+  document.addEventListener("pointerdown", markPointerInteraction, true);
   document.addEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
 onBeforeUnmount(() => {
   eventbus.off("contextmenu");
+  document.removeEventListener("keydown", markKeyboardInteraction, true);
+  document.removeEventListener("pointerdown", markPointerInteraction, true);
   document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
@@ -230,6 +248,20 @@ const onOpenChange = function (value: boolean) {
   // the dialog underneath may have closed on its own in the meantime, so
   // only a flag that is still set is restored
   store.dialogActive = value || (dialogActiveBeforeOpen && store.dialogActive);
+};
+
+const onCloseAutoFocus = function (event: Event) {
+  event.preventDefault();
+  const target = focusBeforeOpen;
+  focusBeforeOpen = null;
+  if (!usingKeyboard || !target) return;
+  // deferred like reka's own restore, so the closing interaction settles first
+  setTimeout(() => {
+    // an action may have moved focus on purpose (e.g. into a dialog)
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    if (target.isConnected) target.focus();
+  }, 0);
 };
 
 function closeOnOutsidePointer(event: PointerEvent) {
@@ -256,6 +288,14 @@ function closeOnOutsidePointer(event: PointerEvent) {
     if (!show.value)
       store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
   });
+}
+
+function markKeyboardInteraction() {
+  usingKeyboard = true;
+}
+
+function markPointerInteraction() {
+  usingKeyboard = false;
 }
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
@@ -298,12 +338,14 @@ import {
 } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
+import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
 import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,
   canEditPlaylistItems,
   canManagePlaylist,
+  canReorderPlaylistItems,
   canSharePlaylist,
 } from "@/helpers/playlist_access";
 import {
@@ -319,6 +361,7 @@ import {
   isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
+  providerSupportsPlaylistMove,
 } from "@/plugins/api/helpers";
 import {
   Album,
@@ -334,6 +377,8 @@ import {
   ProviderMapping,
   QueueOption,
   Radio,
+  SortDirection,
+  SortField,
   Scope,
   Track,
 } from "@/plugins/api/interfaces";
@@ -343,9 +388,17 @@ import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
+  canSavePlaylistMoves,
+  isPlaylistEditPending,
+  sendPlaylistEdit,
+  untilTaskEnds,
+} from "@/composables/usePlaylistTrackReorder";
+import {
   ArrowDown,
+  ArrowDownToLine,
   ArrowRightLeft,
   ArrowUp,
+  ArrowUpToLine,
   Disc3,
   Download,
   Folder,
@@ -394,6 +447,8 @@ export const showContextMenuForMediaItem = async function (
   showPlayMenuHeader = false,
   sortBy?: string,
   options?: ContextMenuOptions,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   // show ContextMenu for given MediaItem(s)
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
@@ -432,6 +487,8 @@ export const showContextMenuForMediaItem = async function (
       menuTargets,
       parentItem,
       sortBy,
+      sortField,
+      sortDirection,
     );
     menuItems.push(...contextMenuItems);
   } else {
@@ -463,6 +520,9 @@ export const showPlayMenuForMediaItem = async function (
   parentItem?: MediaItemType,
   posX = 0,
   posY = 0,
+  tracksSortBy?: string,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ) {
   // open the play menu by emitting the event
 
@@ -494,7 +554,14 @@ export const showPlayMenuForMediaItem = async function (
     );
   } else {
     playMenuItems.push(
-      ...buildEnqueueMenuItems(playableItems, defaultEnqueueOption),
+      ...buildEnqueueMenuItems(
+        playableItems,
+        defaultEnqueueOption,
+        // the order of a single album/playlist's own tracks
+        playableItems.length == 1 ? tracksSortBy : undefined,
+        playableItems.length == 1 ? tracksSortField : undefined,
+        playableItems.length == 1 ? tracksSortDirection : undefined,
+      ),
     );
   }
   // Starting the media shuffled is its own action rather than a state indicator:
@@ -567,6 +634,10 @@ export const getContextMenuItems = async function (
       label: "show_info",
       labelArgs: [],
       action: () => {
+        if (isMusicBrainzItem(firstItem)) {
+          openMusicBrainzItem(firstItem);
+          return;
+        }
         router.push({
           name: firstItem.media_type,
           params: {
@@ -997,6 +1068,10 @@ export const getContextMenuItems = async function (
     parentItem.media_type === MediaType.PLAYLIST
   ) {
     const playlist = parentItem as Playlist;
+    // while another edit is pending the listed positions are out of date, and
+    // while reconnecting an edit cannot be sent
+    const canEditOrder = () =>
+      canSavePlaylistMoves() && !isPlaylistEditPending(playlist.item_id);
     if (
       (firstItem.media_type === MediaType.TRACK ||
         firstItem.media_type === MediaType.RADIO ||
@@ -1007,13 +1082,74 @@ export const getContextMenuItems = async function (
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
+        disabled: !canEditOrder(),
         action: () => {
-          api.removePlaylistTracks(
-            playlist.item_id,
-            items.map((x) => ("position" in x ? x.position : 0) as number),
+          if (!canEditOrder()) return;
+          // the removal runs as a background task; the positions hold until
+          // it is done and read back
+          void sendPlaylistEdit(playlist.item_id, () =>
+            untilTaskEnds(() =>
+              api.removePlaylistTracks(
+                playlist.item_id,
+                items.map((x) => ("position" in x ? x.position : 0) as number),
+              ),
+            ),
           );
+          // the rows read back after it would select the tracks taking the
+          // removed ones' places
+          eventbus.emit("clearSelection");
         },
         icon: MinusCircle,
+      });
+    }
+    // move to the playlist's top or bottom; the listing reloads once the
+    // playlist reports the change
+    const positions = items.map((x) =>
+      "position" in x && typeof x.position === "number" ? x.position : 0,
+    );
+    const atTop = [...new Set(positions)]
+      .sort((a, b) => a - b)
+      .every((position, index) => position === index + 1);
+    if (
+      positions.every((position) => position > 0) &&
+      canReorderPlaylistItems(
+        playlist,
+        store.currentUser,
+        managesLibrary,
+        providerSupportsPlaylistMove,
+      )
+    ) {
+      if (!atTop) {
+        contextMenuItems.push({
+          label: "playlist_move_to_top",
+          labelArgs: [],
+          disabled: !canEditOrder(),
+          action: () => {
+            if (!canEditOrder()) return;
+            void sendPlaylistEdit(playlist.item_id, () =>
+              api.movePlaylistTracks(playlist.item_id, positions, 1),
+            ).then((moved) => {
+              if (moved) toast.success($t("playlist_moved_to_top"));
+            });
+            eventbus.emit("clearSelection");
+          },
+          icon: ArrowUpToLine,
+        });
+      }
+      contextMenuItems.push({
+        label: "playlist_move_to_bottom",
+        labelArgs: [],
+        disabled: !canEditOrder(),
+        action: () => {
+          if (!canEditOrder()) return;
+          void sendPlaylistEdit(playlist.item_id, () =>
+            api.movePlaylistTracks(playlist.item_id, positions),
+          ).then((moved) => {
+            if (moved) toast.success($t("playlist_moved_to_bottom"));
+          });
+          eventbus.emit("clearSelection");
+        },
+        icon: ArrowDownToLine,
       });
     }
   }
@@ -1065,7 +1201,7 @@ export const getContextMenuItems = async function (
           icon: RotateCcw,
           action: () => {
             api.playMedia(item.uri, QueueOption.PLAY, {
-              start_from_beginning: true,
+              start_position: 0,
             });
           },
           disabled: !store.activePlayer,
@@ -1399,6 +1535,8 @@ export const getPlaybackContextMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItemType,
   sortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
   if (items.length == 0 || !itemIsAvailable(items[0])) {
@@ -1436,7 +1574,11 @@ export const getPlaybackContextMenuItems = async function (
         action: () => {
           api.playMedia(parentItem.uri, undefined, {
             start_item: playableItems[0].item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           });
         },
         icon: PlayCircle,
@@ -1451,7 +1593,11 @@ export const getPlaybackContextMenuItems = async function (
         action: () => {
           api.playMedia(parentItem.uri, undefined, {
             start_item: firstItem.item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           });
         },
         icon: PlayCircle,
@@ -1606,11 +1752,15 @@ const getDefaultEnqueueOption = async function (
 
 /**
  * Menu entries for every way the given items can be started or queued, with the
- * configured default, when known, marked as selected.
+ * configured default, when known, marked as selected. tracksSortBy orders the
+ * tracks of an album or playlist the way its page shows them.
  */
 const buildEnqueueMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
   defaultEnqueueOption: QueueOption | undefined,
+  tracksSortBy?: string,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ): ContextMenuItem[] {
   return [
     QueueOption.PLAY,
@@ -1621,10 +1771,17 @@ const buildEnqueueMenuItems = function (
   ].map((option) => ({
     label: $t(`queue_option.${option}`),
     action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        option,
-      );
+      const uris = items.map((x) => x.uri);
+      if (tracksSortField) {
+        api.playMedia(uris, option, {
+          sort_field: tracksSortField,
+          sort_direction: tracksSortDirection,
+        });
+      } else if (tracksSortBy) {
+        api.playMedia(uris, option, { sort_by: tracksSortBy });
+      } else {
+        api.playMedia(uris, option);
+      }
     },
     icon: queueOptionIconMap[option],
     labelArgs: [],

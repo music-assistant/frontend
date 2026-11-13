@@ -8,8 +8,8 @@ import type { ColorPalette } from "@/plugins/visualizer-relay";
 import { describe, expect, it, vi } from "vitest";
 
 const themeDark = vi.hoisted(() => ({ value: false }));
-vi.mock("@/plugins/vuetify", () => ({
-  default: { theme: { current: { value: themeDark } } },
+vi.mock("@/composables/useThemePreference", () => ({
+  isDark: themeDark,
 }));
 
 const prefs = vi.hoisted(

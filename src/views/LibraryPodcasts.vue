@@ -1,5 +1,6 @@
 <template>
   <ItemsListing
+    fill-height
     itemtype="podcasts"
     path="librarypodcasts"
     :show-duration="false"
@@ -7,7 +8,8 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_PODCASTS"
+    library-toolbar
     :update-available="updateAvailable"
     :title="$t('podcasts')"
     :allow-key-hooks="true"
@@ -23,8 +25,14 @@
 <script setup lang="ts">
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
-import { EventMessage, EventType, MediaType } from "@/plugins/api/interfaces";
+import {
+  EventMessage,
+  EventType,
+  ListingType,
+  MediaType,
+} from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { Podcast } from "@lucide/vue";
 import { onBeforeUnmount, onMounted, ref } from "vue";
@@ -34,51 +42,40 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref(store.libraryPodcastsCount);
-
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "timestamp_modified",
-  "timestamp_modified_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryPodcastsCount,
+);
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryPodcasts(
     params.favoritesOnly || undefined,
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.randomSeed,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
   if (!params.favoritesOnly && !params.provider) {
-    total.value = store.libraryPodcastsCount;
+    setTotal(store.libraryPodcastsCount);
     return;
   }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryPodcastsCount(
-    params.favoritesOnly || false,
-  );
+  await loadTotal(api.getLibraryPodcastsCount(params.favoritesOnly || false));
 };
 
 onMounted(() => {
