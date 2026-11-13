@@ -11,8 +11,7 @@ let loading: Promise<PresetMap> | null = null;
 
 // The UMD packs may arrive plain, under `default`, or under `default.default`
 // depending on the bundler's CJS interop; probe all nestings. The packs export
-// the preset map itself; presets are told apart from interop wrappers by their
-// `baseVals` field.
+// the preset map itself, recognised by `baseVals`.
 function packPresets(module: unknown): PresetMap {
   const record = module as Record<string, unknown>;
   const candidates = [
@@ -20,8 +19,7 @@ function packPresets(module: unknown): PresetMap {
     record.default,
     (record.default as Record<string, unknown> | undefined)?.default,
   ];
-  // deepest nesting first: an interop wrapper's own keys would otherwise
-  // match before the preset map it wraps
+  // deepest first, so a wrapper never matches before the map it wraps
   for (const candidate of [...candidates].reverse()) {
     if (!candidate || typeof candidate !== "object") continue;
     const entries = Object.entries(candidate).filter(
@@ -77,10 +75,7 @@ export async function randomPresetName(): Promise<string> {
   return names[Math.floor(Math.random() * names.length)];
 }
 
-/**
- * Favourites are stored by name and can outlive the preset (v3 dropped a few
- * v2 presets), so only the ones still in the library count.
- */
+/** Favourites still in the library; a stored name can outlive its preset. */
 export function availableFavorites(
   favorites: string[],
   names: string[],
