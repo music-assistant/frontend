@@ -22,6 +22,8 @@ import {
   reportVisualizerCapability,
 } from "@/plugins/visualizer-relay";
 
+const REMOTE_CONNECTION_REASON = "relay unreachable over a remote connection";
+
 export interface VisualizerCanvasEngineOptions {
   canvas: Ref<HTMLCanvasElement | undefined>;
   /** The player whose group to visualize; empty until the host resolves it. */
@@ -180,7 +182,14 @@ export function useVisualizerCanvasEngine(
     if (initialized) return;
     // Remote (WebRTC) sessions cannot reach the relay route; starting up would
     // only produce an endless connect/retry loop.
-    if (api.isRemoteConnection.value) return;
+    if (api.isRemoteConnection.value) {
+      void reportVisualizerCapability(
+        "none",
+        undefined,
+        REMOTE_CONNECTION_REASON,
+      );
+      return;
+    }
     runWhenSized(() => void initialize());
   };
 

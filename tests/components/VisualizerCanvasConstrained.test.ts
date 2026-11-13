@@ -8,6 +8,8 @@
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import type { VisualizerEngineOptions } from "@/composables/visualizer/useVisualizerEngine";
 import { TV_MAX_FPS, TV_PROFILE } from "@/helpers/visualizer/quality";
+import api from "@/plugins/api";
+import { reportVisualizerCapability } from "@/plugins/visualizer-relay";
 import { flushPromises, mount } from "@vue/test-utils";
 import {
   afterAll,
@@ -230,5 +232,21 @@ describe("VisualizerCanvas on a cast dashboard", () => {
       [0, 0, 255],
       [10, 10, 10],
     ]);
+  });
+
+  it("reports why it shows nothing over a remote connection", async () => {
+    api.isRemoteConnection.value = true;
+    try {
+      await mountCanvas();
+    } finally {
+      api.isRemoteConnection.value = false;
+    }
+
+    expect(createVisualizerEngine).not.toHaveBeenCalled();
+    expect(reportVisualizerCapability).toHaveBeenCalledWith(
+      "none",
+      undefined,
+      "relay unreachable over a remote connection",
+    );
   });
 });
