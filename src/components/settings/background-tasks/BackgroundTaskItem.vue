@@ -103,7 +103,7 @@
 
   <Card
     v-else
-    class="flex h-full min-h-[170px] cursor-pointer flex-col gap-3 py-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+    class="flex h-full card-hover min-h-[170px] flex-col gap-3 py-4"
     :class="{ 'opacity-75': isScheduled && !task.schedule?.enabled }"
     @click="emit('click', task)"
   >

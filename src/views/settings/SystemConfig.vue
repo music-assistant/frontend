@@ -5,7 +5,7 @@
       <Card
         v-for="item in sortedCoreConfigs"
         :key="item.domain"
-        class="setting-card"
+        class="setting-card card-hover"
         @click="handleItemClick(item)"
       >
         <CardHeader>
@@ -35,7 +35,7 @@
       <Card
         v-for="item in extraSystemEntries"
         :key="item.domain"
-        class="setting-card"
+        class="setting-card card-hover"
         @click="handleItemClick(item)"
       >
         <CardHeader>
@@ -338,23 +338,10 @@ onMounted(async () => {
 }
 
 .setting-card {
-  cursor: pointer;
   position: relative;
-  transition:
-    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   padding: 6px 0 0 0;
-}
-
-.setting-card:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.15),
-    0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: rgba(var(--v-theme-primary), 0.3);
 }
 
 .setting-header-top {
@@ -371,20 +358,14 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
-}
-
-.setting-card:hover .setting-icon {
-  transform: scale(1.1) rotate(5deg);
 }
 
 .setting-chevron {
   opacity: 0.4;
   transition:
     opacity 0.2s ease,
-    transform 0.2s ease,
     background 0.2s ease,
     color 0.2s ease;
   display: flex;
@@ -399,7 +380,6 @@ onMounted(async () => {
 
 .setting-card:hover .setting-chevron {
   opacity: 1;
-  transform: translateX(4px);
   background: rgba(var(--v-theme-primary), 0.1);
   color: rgb(var(--v-theme-primary));
 }
