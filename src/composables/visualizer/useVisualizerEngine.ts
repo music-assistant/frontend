@@ -16,21 +16,15 @@ import {
   qualityProfile,
   type QualityProfile,
 } from "@/helpers/visualizer/quality";
-import {
-  createTickEstimator,
-  pacedIntervalMs,
-  pacingThresholdMs,
-} from "@/helpers/visualizer/framePacing";
-import {
-  createPerfSampler,
-  type VisualizerPerfSample,
-} from "@/helpers/visualizer/perfSampler";
 
 const N_SAMPLES = 1024;
 const ZERO_LEVEL = 0x80;
 const SILENCE = new Uint8Array(N_SAMPLES).fill(ZERO_LEVEL);
 const STARVATION_MS = 300;
 const PRESET_BLEND_SEC = 2.7;
+// rAF fires on the panel's tick grid; admitting a little early keeps a cap
+// that is not a whole divisor of the panel rate from skipping a tick too many
+const PACING_SLACK = 0.75;
 // The waveform is ramped down to silence over DECAY_MS before the loop halts,
 // and back up over ATTACK_MS on resume. Exported so the layer fades in step.
 export const DECAY_MS = 1500;
@@ -50,11 +44,6 @@ export interface VisualizerEngine {
    * @param ramp - ramp the waveform down/up first; false switches on the spot.
    */
   setPaused(paused: boolean, ramp?: boolean): void;
-  /**
-   * Retune the drawing-buffer size in place. Only valid for profiles that
-   * share the running engine's mesh and FXAA settings (see `needsRebuild`).
-   */
-  setProfile(profile: QualityProfile): void;
   /**
    * Color the preset's own waveform and borders from the artwork palette,
    * instead of washing the whole frame in a single hue. A no-op on engines
@@ -167,15 +156,9 @@ function resolveButterchurnModule(module: unknown): ButterchurnStatic {
 }
 
 export interface VisualizerEngineOptions {
-  // upper bound on render rate; the loop renders on a whole vsync divisor at or below it
+  // upper bound on render rate
   maxFps?: number;
-  // called with achieved render performance roughly every 2s of visible rendering
-  onPerfSample?: (sample: VisualizerPerfSample) => void;
 }
-
-// samples taken while a preset blend renders both presets (or while the new
-// one compiles) measure a workload that is about to vanish; skip them
-const PERF_BLEND_SETTLE_MS = 500;
 
 /**
  * Create the engine on a canvas. Returns null when WebGL2 is unavailable.
@@ -196,7 +179,8 @@ export async function createVisualizerEngine(
   const paletteColorsSupported = butterchurn.supportsPaletteColors === true;
   const paletteRampSupported = butterchurn.supportsPaletteRamp === true;
   sharedAudioContext ??= new AudioContext();
-  let profile = typeof quality === "object" ? quality : qualityProfile(quality);
+  const profile =
+    typeof quality === "object" ? quality : qualityProfile(quality);
 
   // Butterchurn's screen pass sets the GL viewport to exactly the width and
   // height it was given (its pixelRatio option only scales internal render
@@ -216,7 +200,6 @@ export async function createVisualizerEngine(
       profile,
     );
   };
-  let currentPresetName = "";
 
   let { width, height } = deviceSize();
   canvas.width = width;
@@ -264,10 +247,6 @@ export async function createVisualizerEngine(
   const stopLoop = () => {
     if (rafHandle !== null) cancelAnimationFrame(rafHandle);
     rafHandle = null;
-    // A halted stretch must not read as slow when the loop resumes: drop the
-    // open sample window and cadence marks, as the hidden-tab path does.
-    sampler.reset();
-    lastTickAt = 0;
     lastRenderAt = 0;
   };
 
@@ -313,38 +292,19 @@ export async function createVisualizerEngine(
     return scaledFrame;
   };
 
-  // Pacing is a time gate on the measured tick; see pacingThresholdMs. Until
-  // the estimator's first window lands the divisor rests on an assumed 60Hz,
-  // which is not worth measuring against.
-  const ticks = createTickEstimator();
   const maxFps = options?.maxFps ?? 0;
-  const targetIntervalMs = maxFps ? 1000 / maxFps : 0;
-  let lastTickAt = 0;
+  const pacingGateMs = maxFps ? (1000 / maxFps) * PACING_SLACK : 0;
   let lastRenderAt = 0;
-
-  // perf sampling for adaptive hosts; a no-op sampler everywhere else
-  const sampler = createPerfSampler(options?.onPerfSample);
 
   const renderLoop = () => {
     if (destroyed) return;
     rafHandle = requestAnimationFrame(renderLoop);
     if (document.visibilityState !== "visible") {
-      // a background stretch must not read as slow
-      sampler.reset();
-      lastTickAt = 0;
       lastRenderAt = 0;
       return;
     }
     const now = performance.now();
-    ticks.observe(now, lastTickAt);
-    lastTickAt = now;
-    if (
-      targetIntervalMs &&
-      lastRenderAt &&
-      now - lastRenderAt < pacingThresholdMs(targetIntervalMs, ticks.tickMs)
-    ) {
-      return;
-    }
+    if (lastRenderAt && now - lastRenderAt < pacingGateMs) return;
 
     const gain = currentGain();
     if (paused && gain <= 0) {
@@ -363,32 +323,8 @@ export async function createVisualizerEngine(
         lastFrame = SILENCE;
       }
     }
-    // timed from here, not from the callback's entry: the tick estimator and
-    // the frame fetch above are not what renderMs is meant to report
-    const renderStart = performance.now();
     renderFrame(applyGain(lastFrame, gain));
-    const renderCost = performance.now() - renderStart;
-
-    const renderedAt = lastRenderAt;
     lastRenderAt = now;
-    if (!sampler.enabled) return;
-    if (!ticks.estimated) {
-      sampler.reset();
-      return;
-    }
-    sampler.onRender({
-      now,
-      renderedAt,
-      renderMs: renderCost,
-      // measured against the cadence the loop actually paces at, not the
-      // maxFps cap: the two differ whenever the cap is not a whole divisor of
-      // the panel
-      expectedIntervalMs: pacedIntervalMs(targetIntervalMs, ticks.tickMs),
-      tickMs: ticks.tickMs,
-      pixels: width * height,
-      preset: currentPresetName,
-      gpu: () => visualizer.getGpuTimings?.() ?? undefined,
-    });
   };
 
   const resizeObserver = new ResizeObserver(() => applySize());
@@ -411,15 +347,9 @@ export async function createVisualizerEngine(
         preset = loadedName ? await getPreset(loadedName) : undefined;
       }
       if (!preset || destroyed) return "";
-      currentPresetName = loadedName;
       // A halted loop has no frames to blend across.
       const blend = rafHandle === null ? 0 : blendSec;
       await visualizer.loadPreset(preset, blend);
-      // the WASM equation compile stalls the loop; keep it out of the open sample window
-      sampler.reset();
-      sampler.guardUntil(
-        performance.now() + blend * 1000 + PERF_BLEND_SETTLE_MS,
-      );
       redrawIfHalted();
       return loadedName;
     },
@@ -427,10 +357,7 @@ export async function createVisualizerEngine(
       const name = await randomPresetName();
       const preset = await getPreset(name);
       if (preset && !destroyed) {
-        currentPresetName = name;
         await visualizer.loadPreset(preset, 0);
-        sampler.reset();
-        sampler.guardUntil(performance.now() + PERF_BLEND_SETTLE_MS);
         redrawIfHalted();
       }
       return name;
@@ -460,19 +387,10 @@ export async function createVisualizerEngine(
       if (destroyed) return;
       visualizer.setPaletteRamp?.(colors, strength);
     },
-    setProfile(next: QualityProfile) {
-      if (destroyed) return;
-      profile = next;
-      applySize();
-      // a resize mid-measurement would be blamed on the new size
-      sampler.reset();
-      lastRenderAt = 0;
-    },
     destroy() {
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
-      sampler.destroy();
       // Every engine holds its own WebGL2 context and rebuilds are routine;
       // Chrome drops the oldest live context on overflow.
       visualizer.loseGLContext?.();

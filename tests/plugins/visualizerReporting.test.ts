@@ -6,10 +6,7 @@
  * error toast: a display with nobody in front of it cannot dismiss one, and
  * the render report repeats every minute.
  */
-import {
-  reportVisualizerCapability,
-  reportVisualizerRender,
-} from "@/plugins/visualizer-relay";
+import { reportVisualizerCapability } from "@/plugins/visualizer-relay";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const apiMock = vi.hoisted(() => ({
@@ -40,16 +37,6 @@ vi.mock("@/composables/visualizer/useVisualizerEngine", () => ({
   isVisualizerSupported: () => true,
 }));
 
-const sample = {
-  fps: 30,
-  targetFps: 30,
-  lateRatio: 0,
-  pixels: 1_000_000,
-  renderMs: 5,
-  blockedRatio: 0,
-  preset: "some preset",
-};
-
 describe("visualizer capability reporting", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,9 +45,8 @@ describe("visualizer capability reporting", () => {
 
   it("keeps every report out of the global error toast", async () => {
     await reportVisualizerCapability("butterchurn", "stub gpu");
-    await reportVisualizerRender(sample, 1, "settled");
 
-    expect(apiMock.sendCommand).toHaveBeenCalledTimes(2);
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(1);
     for (const call of apiMock.sendCommand.mock.calls) {
       expect(call[2]).toEqual({ suppressGlobalError: true });
     }
@@ -70,7 +56,6 @@ describe("visualizer capability reporting", () => {
     authMock.isDashboardViewer.mockReturnValue(false);
 
     await reportVisualizerCapability("butterchurn");
-    await reportVisualizerRender(sample, 1, "settled");
 
     expect(apiMock.sendCommand).not.toHaveBeenCalled();
   });

@@ -12,7 +12,6 @@ import { parseVisualizerBinary } from "@/helpers/visualizer/binaryFrames";
 import { FrameScheduler } from "@/helpers/visualizer/frameScheduler";
 import { ClockSync, computeTimeSample } from "@/helpers/visualizer/timeSync";
 import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
-import type { VisualizerPerfSample } from "@/helpers/visualizer/perfSampler";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
@@ -147,8 +146,6 @@ export async function reportVisualizerCapability(
 const MAX_ERROR_REPORTS_PER_WINDOW = 3;
 const ERROR_REPORT_WINDOW_MS = 60 * 60 * 1000;
 const MAX_ERROR_MESSAGE_CHARS = 500;
-// preset names are author-supplied and occasionally enormous
-const PRESET_NAME_REPORT_CHARS = 120;
 let errorReportTimes: number[] = [];
 let errorReportingInstalled = false;
 
@@ -177,48 +174,6 @@ export function installVisualizerErrorReporting(): void {
   });
   window.addEventListener("unhandledrejection", (event) => {
     send(`unhandled rejection: ${String(event.reason)}`);
-  });
-}
-
-/**
- * Record how a display is actually rendering, in the server log.
- *
- * Cast receivers have no reachable console and no devtools, so an adaptive
- * display otherwise gives no way to tell what it settled on or why. Sent on
- * every ladder move plus a heartbeat every TV_STEADY_REPORT_EVERY samples, so
- * a resting display still reports about once a minute.
- *
- * @param sample - the measured render performance behind this report.
- * @param level - the adaptive ladder level in use when it was measured.
- * @param note - what prompted the report, e.g. "settled".
- */
-export async function reportVisualizerRender(
-  sample: VisualizerPerfSample,
-  level: number,
-  note: string,
-): Promise<void> {
-  // the hardcoded capability fields below only hold for a rendering display
-  await sendCapabilityReport("render performance", {
-    webgl2: true,
-    renderer: "butterchurn",
-    render: {
-      note,
-      preset: sample.preset?.slice(0, PRESET_NAME_REPORT_CHARS) ?? "",
-      level,
-      fps: Math.round(sample.fps * 10) / 10,
-      target_fps: Math.round(sample.targetFps * 10) / 10,
-      late_ratio: Math.round(sample.lateRatio * 100) / 100,
-      pixels: sample.pixels,
-      render_ms: Math.round(sample.renderMs * 10) / 10,
-      blocked_ratio: Math.round(sample.blockedRatio * 100) / 100,
-      ...(sample.gpu
-        ? {
-            gpu_warp: Math.round((sample.gpu.warp ?? 0) * 10) / 10,
-            gpu_blur: Math.round((sample.gpu.blur ?? 0) * 10) / 10,
-            gpu_comp: Math.round((sample.gpu.comp ?? 0) * 10) / 10,
-          }
-        : {}),
-    },
   });
 }
 

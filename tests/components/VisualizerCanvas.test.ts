@@ -36,7 +36,6 @@ vi.mock("@/plugins/visualizer-relay", () => ({
   },
   installVisualizerErrorReporting: vi.fn(),
   reportVisualizerCapability: vi.fn(async () => {}),
-  reportVisualizerRender: vi.fn(async () => {}),
   visualizerCanRender: () => true,
   visualizerProviderAvailable: () => true,
   visualizerShownOnDashboards: vi.fn(async () => true),

@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  ADAPTIVE_LADDER,
-  ADAPTIVE_START_LEVEL,
-  adaptiveProfile,
   boundedRenderSize,
   DEFAULT_QUALITY,
-  needsRebuild,
   QUALITY_PROFILES,
   qualityProfile,
+  TV_PROFILE,
+  type QualityProfile,
 } from "./quality";
 
 describe("qualityProfile", () => {
@@ -40,9 +38,7 @@ describe("qualityProfile", () => {
 });
 
 describe("boundedRenderSize", () => {
-  const profile = (
-    overrides: Partial<(typeof ADAPTIVE_LADDER)[number]>,
-  ): (typeof ADAPTIVE_LADDER)[number] => ({
+  const profile = (overrides: Partial<QualityProfile>): QualityProfile => ({
     ...QUALITY_PROFILES.high,
     ...overrides,
   });
@@ -95,42 +91,11 @@ describe("boundedRenderSize", () => {
     });
   });
 
-  it("caps every adaptive ladder step to a square render", () => {
-    for (const step of ADAPTIVE_LADDER) {
-      expect(step.maxAspect).toBe(1);
-    }
-  });
-});
-
-describe("the adaptive ladder", () => {
-  it("descends in pixel budget without ever asking for more mesh work", () => {
-    for (let i = 1; i < ADAPTIVE_LADDER.length; i++) {
-      const above = ADAPTIVE_LADDER[i - 1];
-      const step = ADAPTIVE_LADDER[i];
-      expect(step.maxPixels!).toBeLessThan(above.maxPixels!);
-      expect(step.meshWidth * step.meshHeight).toBeLessThanOrEqual(
-        above.meshWidth * above.meshHeight,
-      );
-    }
-  });
-
-  it("keeps every step but the last an in-place resize", () => {
-    const rebuilds = ADAPTIVE_LADDER.filter(
-      (step, i) => i > 0 && needsRebuild(ADAPTIVE_LADDER[i - 1], step),
-    );
-    expect(rebuilds).toHaveLength(1);
-    expect(rebuilds[0]).toBe(ADAPTIVE_LADDER[ADAPTIVE_LADDER.length - 1]);
-  });
-
-  it("starts below the top so there is somewhere to climb", () => {
-    expect(ADAPTIVE_START_LEVEL).toBeGreaterThan(0);
-    expect(ADAPTIVE_START_LEVEL).toBeLessThan(ADAPTIVE_LADDER.length - 1);
-  });
-
-  it("clamps levels beyond either end of the ladder", () => {
-    expect(adaptiveProfile(-5)).toBe(ADAPTIVE_LADDER[0]);
-    expect(adaptiveProfile(99)).toBe(
-      ADAPTIVE_LADDER[ADAPTIVE_LADDER.length - 1],
-    );
+  it("renders the TV profile as a budgeted square", () => {
+    expect(TV_PROFILE.maxAspect).toBe(1);
+    expect(boundedRenderSize(3840, 2160, TV_PROFILE)).toEqual({
+      width: 1014,
+      height: 1014,
+    });
   });
 });

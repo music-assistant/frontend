@@ -7,12 +7,7 @@
  */
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import type { VisualizerEngineOptions } from "@/composables/visualizer/useVisualizerEngine";
-import type { VisualizerPerfSample } from "@/helpers/visualizer/perfSampler";
-import {
-  ADAPTIVE_LADDER,
-  ADAPTIVE_START_LEVEL,
-} from "@/helpers/visualizer/quality";
-import { TV_TARGET_FPS } from "@/helpers/visualizer/adaptiveQuality";
+import { TV_MAX_FPS, TV_PROFILE } from "@/helpers/visualizer/quality";
 import { flushPromises, mount } from "@vue/test-utils";
 import {
   afterAll,
@@ -47,7 +42,6 @@ vi.mock("@/plugins/visualizer-relay", () => ({
   },
   installVisualizerErrorReporting: vi.fn(),
   reportVisualizerCapability: vi.fn(async () => {}),
-  reportVisualizerRender: vi.fn(async () => {}),
   visualizerCanRender: () => true,
   visualizerProviderAvailable: () => true,
   visualizerShownOnDashboards: vi.fn(async () => true),
@@ -67,7 +61,6 @@ const engine = vi.hoisted(() => ({
   loadPresetByName: vi.fn(async (name: string) => name),
   loadRandomPreset: vi.fn(async () => "preset"),
   setPaused: vi.fn(),
-  setProfile: vi.fn(),
   setPaletteColors: vi.fn(),
   setPaletteRamp: vi.fn(),
   destroy: vi.fn(),
@@ -122,23 +115,6 @@ vi.mock("@/composables/useThemePreference", () => ({
 // The options the canvas handed the engine on the most recent build.
 const engineOptions = (): VisualizerEngineOptions =>
   createVisualizerEngine.mock.lastCall![3] as VisualizerEngineOptions;
-
-const feed = (sample: Partial<VisualizerPerfSample>) =>
-  engineOptions().onPerfSample!({
-    fps: 40,
-    targetFps: 40,
-    lateRatio: 0,
-    pixels: 1_000_000,
-    renderMs: 5,
-    blockedRatio: 0,
-    preset: "some preset",
-    ...sample,
-  });
-
-// warm-up samples are ignored outright, so every test has to clear them first
-const warmUp = () => {
-  for (let i = 0; i < 3; i++) feed({});
-};
 
 const mountCanvas = async () => {
   const wrapper = mount(VisualizerCanvas, { props: { playerId: "p1" } });
@@ -208,42 +184,14 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     expect(relayPlayerIds).toEqual(["p1"]);
   });
 
-  it("renders on the adaptive ladder, not the quality preference", async () => {
+  it("renders on the fixed TV profile, not the quality preference", async () => {
     await mountCanvas();
-    expect(createVisualizerEngine.mock.lastCall![2]).toBe(ADAPTIVE_LADDER[1]);
+    expect(createVisualizerEngine.mock.lastCall![2]).toBe(TV_PROFILE);
   });
 
-  it("paces to the TV target and reports its performance", async () => {
+  it("caps the render rate at the TV maximum", async () => {
     await mountCanvas();
-    const options = engineOptions();
-    expect(options.maxFps).toBe(TV_TARGET_FPS);
-    expect(options.onPerfSample).toBeTypeOf("function");
-  });
-
-  it("resizes in place rather than rebuilding when the ladder steps", async () => {
-    await mountCanvas();
-    warmUp();
-    const builds = createVisualizerEngine.mock.calls.length;
-    // two struggling samples in a row is what the controller steps on
-    feed({ fps: 20 });
-    feed({ fps: 20 });
-    expect(engine.setProfile).toHaveBeenCalledWith(ADAPTIVE_LADDER[2]);
-    expect(createVisualizerEngine).toHaveBeenCalledTimes(builds);
-  });
-
-  it("reports every ladder move, for a display with no console", async () => {
-    const { reportVisualizerRender } =
-      await import("@/plugins/visualizer-relay");
-    await mountCanvas();
-    warmUp();
-    feed({ fps: 20 });
-    feed({ fps: 20 });
-    // the level in the report is the one now on screen, not the one left
-    expect(reportVisualizerRender).toHaveBeenCalledWith(
-      expect.objectContaining({ fps: 20 }),
-      ADAPTIVE_START_LEVEL + 1,
-      "stepped down",
-    );
+    expect(engineOptions().maxFps).toBe(TV_MAX_FPS);
   });
 
   it("hands the engine palette ramp anchors ordered dark to light", async () => {

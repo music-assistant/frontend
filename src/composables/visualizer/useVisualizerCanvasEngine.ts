@@ -1,8 +1,7 @@
 /**
  * Engine and relay lifecycle for the visualizer canvas.
  *
- * Owns the butterchurn instance, the relay connection and the adaptive quality
- * ladder, so the component is left with rendering and preferences. Startup is
+ * Owns the butterchurn instance and the relay connection, so the component is left with rendering and preferences. Startup is
  * deferred until the canvas has real layout size, and everything is torn down
  * while another view covers it.
  */
@@ -14,17 +13,13 @@ import {
   type VisualizerEngine,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { currentVisualizerPreset } from "@/composables/visualizer/state";
-import {
-  createAdaptiveQualityController,
-  TV_TARGET_FPS,
-} from "@/helpers/visualizer/adaptiveQuality";
+import { TV_MAX_FPS, TV_PROFILE } from "@/helpers/visualizer/quality";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
 import {
   type ColorPalette,
   VisualizerRelayClient,
   reportVisualizerCapability,
-  reportVisualizerRender,
 } from "@/plugins/visualizer-relay";
 
 export interface VisualizerCanvasEngineOptions {
@@ -33,7 +28,7 @@ export interface VisualizerCanvasEngineOptions {
   playerId: () => string;
   /** Another view is on top; release the GPU and socket while it is. */
   covered: () => boolean;
-  /** The user-facing quality tier, ignored on adaptive displays. */
+  /** The user-facing quality tier, ignored on constrained displays. */
   quality: () => string;
   /** Put the current preset on screen. Called once per engine. */
   applyPreset: (blendSec?: number) => Promise<void>;
@@ -54,8 +49,8 @@ export function useVisualizerCanvasEngine(
   const paletteRampSupported = ref(false);
   const faded = ref(options.paused());
 
-  // A dashboard viewer is a cast receiver or TV: quality adapts to measured
-  // performance rather than a preference nobody there can reach.
+  // A dashboard viewer is a cast receiver or TV: a fixed profile rather than a
+  // preference nobody there can reach.
   const constrainedDisplay = authManager.isDashboardViewer();
 
   let engine: VisualizerEngine | null = null;
@@ -66,22 +61,6 @@ export function useVisualizerCanvasEngine(
   let pauseTimer: number | null = null;
 
   const currentEngine = () => engine;
-
-  // Its state deliberately survives engine rebuilds and cover cycles; the
-  // hardware does not change between them.
-  const adaptive = createAdaptiveQualityController({
-    applyProfile: (profile, rebuild) => {
-      // mesh density and FXAA are fixed at construction, the rest resizes
-      if (engine && !rebuild) {
-        engine.setProfile(profile);
-        return;
-      }
-      void createEngine();
-    },
-    report: (sample, level, note) => {
-      void reportVisualizerRender(sample, level, note);
-    },
-  });
 
   const clearPauseTimer = () => {
     if (pauseTimer === null) return;
@@ -127,10 +106,8 @@ export function useVisualizerCanvasEngine(
       created = await createVisualizerEngine(
         options.canvas.value,
         () => (relay ? relay.currentFrame() : null),
-        constrainedDisplay ? adaptive.currentProfile() : options.quality(),
-        constrainedDisplay
-          ? { maxFps: TV_TARGET_FPS, onPerfSample: adaptive.onPerfSample }
-          : undefined,
+        constrainedDisplay ? TV_PROFILE : options.quality(),
+        constrainedDisplay ? { maxFps: TV_MAX_FPS } : undefined,
       );
     } catch (error) {
       console.error("[visualizer] engine init failed:", error);
@@ -226,7 +203,7 @@ export function useVisualizerCanvasEngine(
     faded.value = false;
   };
 
-  /** Rebuild at a new quality tier. Adaptive displays ignore the preference. */
+  /** Rebuild at a new quality tier. Constrained displays ignore the preference. */
   const rebuildForQuality = () => {
     if (constrainedDisplay) return;
     // Not while covered: the uncover path recreates it at the current quality.

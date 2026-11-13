@@ -10,8 +10,6 @@ declare module "butterchurn" {
   export interface ButterchurnVisualizer {
     render(opts?: { audioLevels?: ButterchurnAudioLevels }): void;
     loadPreset(preset: object, blendTimeSec?: number): Promise<void>;
-    // present from the gpu-pipeline fork builds; null when unsupported
-    getGpuTimings?(): Record<string, number> | null;
     // present from the palette-colors fork branch; callers optional-call it
     setPaletteColors?(
       colors: readonly (readonly [number, number, number])[] | null,
