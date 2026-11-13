@@ -55,10 +55,7 @@ import { loadRoles } from "@/composables/roles";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
-import {
-  restoreStrayViewerParams,
-  sanitizeDashboardViewerPath,
-} from "@/helpers/dashboard_viewer_access";
+import { sanitizeDashboardViewerPath } from "@/helpers/dashboard_viewer_access";
 import {
   BROWSER_MEDIA_CONTROLS,
   BrowserMediaControlsMode,
@@ -444,16 +441,9 @@ const completeInitialization = async () => {
   } else if (isGuestAccessSession) {
     router.push("/guest");
   } else if (isDashboardViewer) {
-    // A re-cast to a session that is still authenticated never reaches the login
-    // flow, so the url it was launched with is what re-pins it; the stored path
-    // only covers a plain reload, whose url no longer carries one.
-    const launchedPath = urlParams.get("path");
     const pinnedPath = sanitizeDashboardViewerPath(
-      launchedPath === null
-        ? sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY)
-        : restoreStrayViewerParams(launchedPath, window.location.search),
+      sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY),
     );
-    sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, pinnedPath);
     router.replace(pinnedPath);
   } else if (shouldOpenWelcome()) {
     // someone who has just been given an account of their own is welcomed into
