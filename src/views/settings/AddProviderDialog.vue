@@ -165,6 +165,8 @@ const POPULAR_PROVIDERS = [
   "sonos",
   "chromecast",
   "airplay",
+  "spotify_connect",
+  "airplay_receiver",
 ];
 
 const emit = defineEmits<{

@@ -4,82 +4,103 @@
       {{ $t("onboarding.steps.core_settings.intro") }}
     </p>
 
-    <!-- the addresses in use, each with what this browser found out about it -->
-    <ItemGroup class="gap-2">
-      <Item
-        v-for="address in addresses"
-        :key="address.id"
-        variant="outline"
-        size="sm"
-        :data-testid="`onboarding-address-${address.id}`"
-      >
-        <ItemMedia variant="icon">
-          <component :is="address.icon" aria-hidden="true" />
-        </ItemMedia>
-        <ItemContent>
-          <ItemTitle>
-            {{ $t(`onboarding.steps.core_settings.${address.id}_address`) }}
-          </ItemTitle>
-          <ItemDescription>
+    <Accordion
+      v-model="networkDetails"
+      type="single"
+      collapsible
+      data-testid="onboarding-network-details"
+    >
+      <AccordionItem :value="NETWORK_DETAILS_PANEL" class="border-b-0">
+        <AccordionTrigger>
+          {{ $t("onboarding.steps.core_settings.network_details") }}
+        </AccordionTrigger>
+        <AccordionContent class="space-y-3">
+          <!-- the addresses in use, each with what this browser found out about it -->
+          <ItemGroup class="gap-2">
+            <Item
+              v-for="address in addresses"
+              :key="address.id"
+              variant="outline"
+              size="sm"
+              :data-testid="`onboarding-address-${address.id}`"
+            >
+              <ItemMedia variant="icon">
+                <component :is="address.icon" aria-hidden="true" />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>
+                  {{
+                    $t(`onboarding.steps.core_settings.${address.id}_address`)
+                  }}
+                </ItemTitle>
+                <ItemDescription>
+                  {{
+                    $t(
+                      `onboarding.steps.core_settings.${address.id}_address_hint`,
+                    )
+                  }}
+                </ItemDescription>
+                <code
+                  v-if="address.url"
+                  class="text-sm break-all"
+                  data-testid="onboarding-address-url"
+                >
+                  {{ address.url }}
+                </code>
+                <!-- an address still being asked for is not one that is missing -->
+                <span
+                  v-else-if="!address.pending"
+                  class="text-muted-foreground text-sm"
+                  data-testid="onboarding-address-unknown"
+                >
+                  {{ $t("onboarding.steps.core_settings.address_unknown") }}
+                </span>
+              </ItemContent>
+              <ItemActions v-if="address.url">
+                <Badge
+                  :variant="CHECK_BADGES[address.check].variant"
+                  :class="CHECK_BADGES[address.check].class"
+                  :data-check="address.check"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  data-testid="onboarding-address-check"
+                >
+                  <component
+                    :is="CHECK_BADGES[address.check].icon"
+                    :class="CHECK_BADGES[address.check].iconClass"
+                    aria-hidden="true"
+                  />
+                  {{
+                    $t(`onboarding.steps.core_settings.check.${address.check}`)
+                  }}
+                </Badge>
+              </ItemActions>
+            </Item>
+          </ItemGroup>
+
+          <p class="text-muted-foreground text-sm">
             {{
-              $t(`onboarding.steps.core_settings.${address.id}_address_hint`)
+              $t("onboarding.steps.core_settings.override_hint", {
+                system: $t("settings.system"),
+                webserver: $t("settings.core_module.webserver.name"),
+                streams: $t("settings.core_module.streams.name"),
+              })
             }}
-          </ItemDescription>
-          <code
-            v-if="address.url"
-            class="text-sm break-all"
-            data-testid="onboarding-address-url"
-          >
-            {{ address.url }}
-          </code>
-          <!-- an address still being asked for is not one that is missing -->
-          <span
-            v-else-if="!address.pending"
-            class="text-muted-foreground text-sm"
-            data-testid="onboarding-address-unknown"
-          >
-            {{ $t("onboarding.steps.core_settings.address_unknown") }}
-          </span>
-        </ItemContent>
-        <ItemActions v-if="address.url">
-          <Badge
-            :variant="CHECK_BADGES[address.check].variant"
-            :class="CHECK_BADGES[address.check].class"
-            :data-check="address.check"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-            data-testid="onboarding-address-check"
-          >
-            <component
-              :is="CHECK_BADGES[address.check].icon"
-              :class="CHECK_BADGES[address.check].iconClass"
-              aria-hidden="true"
-            />
-            {{ $t(`onboarding.steps.core_settings.check.${address.check}`) }}
-          </Badge>
-        </ItemActions>
-      </Item>
-    </ItemGroup>
+          </p>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
 
     <!-- players are on the same network as this browser, so an address it
          could not reach is the one thing here worth a word of advice -->
     <p
       v-if="anyUnreachable"
-      class="text-muted-foreground text-sm"
+      class="text-destructive text-sm"
+      role="status"
       data-testid="onboarding-address-unreachable-hint"
     >
       {{ $t("onboarding.steps.core_settings.unreachable_hint") }}
-    </p>
-
-    <p class="text-muted-foreground text-sm">
-      {{
-        $t("onboarding.steps.core_settings.override_hint", {
-          system: $t("settings.system"),
-          webserver: $t("settings.core_module.webserver.name"),
-          streams: $t("settings.core_module.streams.name"),
-        })
-      }}
     </p>
 
     <div class="flex flex-col gap-3">
@@ -185,6 +206,12 @@
 
 <script setup lang="ts">
 import RemoteAccessCard from "@/components/onboarding/RemoteAccessCard.vue";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge, type BadgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -268,6 +295,7 @@ const DOMAINS = Object.keys(ADVANCED_SETTINGS) as CoreDomain[];
 // has answered, and says nothing once it is up again, so the address is asked
 // for again a few times until it has moved.
 const STREAM_REFRESH_DELAYS_MS = [1500, 3000, 5000];
+const NETWORK_DETAILS_PANEL = "network-details";
 
 /** What an address row shows about its check: the outcome, or that it is under way. */
 type CheckState = AddressCheck | "checking";
@@ -378,6 +406,14 @@ const addresses = computed(() => [
 ]);
 const anyUnreachable = computed(() =>
   addresses.value.some((address) => address.check === "unreachable"),
+);
+const networkDetails = ref<string>();
+watch(
+  anyUnreachable,
+  (unreachable) => {
+    networkDetails.value = unreachable ? NETWORK_DETAILS_PANEL : undefined;
+  },
+  { immediate: true },
 );
 
 const showAdvanced = ref(false);

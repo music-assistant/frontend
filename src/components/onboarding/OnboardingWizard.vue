@@ -121,6 +121,7 @@ import { useOnboarding } from "@/composables/useOnboarding";
 import { useTour } from "@/composables/useTour";
 import {
   firstStep,
+  stepTitleKey,
   type OnboardingStepId,
   type StepLeaveOptions,
 } from "@/helpers/onboarding";
@@ -210,8 +211,7 @@ const stepRef = ref<StepInstance | null>(null);
 const leaveStep = async (options?: StepLeaveOptions) =>
   (await stepRef.value?.beforeLeave?.(options)) ?? true;
 
-// whether the step on screen is saving a choice of its own; the wizard's Next
-// stands aside while it is, so a choice and a Next cannot both move on
+// Next waits for the selected answer to reach the server.
 const stepBusy = computed(() => stepRef.value?.busy ?? false);
 
 // steps the user has been past, so a review stays ticked after going back
@@ -229,13 +229,14 @@ const stepNumber = computed(() => Math.max(currentIndex.value + 1, 1));
 const progressSteps = computed(() =>
   steps.value.map((step) => ({
     id: step.id,
+    titleKey: stepTitleKey(step.id, ctx.value.answers),
     done:
       step.isDone(ctx.value) ||
       (step.kind === "review" && passedSteps.value.has(step.id)),
   })),
 );
 const stepTitle = computed(() =>
-  currentId.value ? $t(`onboarding.steps.${currentId.value}.title`) : "",
+  currentId.value ? $t(stepTitleKey(currentId.value, ctx.value.answers)) : "",
 );
 // the eyebrow above the step says which wizard this is: the server's setup, or
 // the welcome someone who lives here is being given
@@ -264,14 +265,19 @@ const stepView = computed(() => {
 const showForwardAction = computed(
   () => currentStep.value != null && !stepRef.value?.ownsForwardAction,
 );
-// a step that does not hold the wizard up is skipped rather than moved on from,
-// whether it is optional by nature or one the answers deferred
+// an optional step that is not set up yet offers a skip instead of Next
 const skipping = computed(() => {
   const step = currentStep.value;
-  return !!(step?.optional || step?.deferred) && !step.isDone(ctx.value);
+  return !!step?.optional && !step.isDone(ctx.value);
 });
 const forwardLabel = computed(() =>
-  skipping.value ? $t("onboarding.skip") : $t("onboarding.next"),
+  skipping.value
+    ? $t("onboarding.skip")
+    : $t(
+        currentId.value === "intent" || currentId.value === "welcome"
+          ? "onboarding.continue"
+          : "onboarding.next",
+      ),
 );
 
 const goTo = function (id: OnboardingStepId) {
@@ -305,8 +311,7 @@ const jumpTo = async function (id: OnboardingStepId) {
 // user sees is the order they move through. A question walked past answers
 // itself with its recommended option, which the step does on its way out.
 const next = async function () {
-  // a choice being saved on the step owns the move: standing aside keeps Next
-  // from advancing a second step or waving a default over the answer
+  // a choice being saved must land before Next can leave the question
   if (moving.value || stepBusy.value) return;
   moving.value = true;
   try {
