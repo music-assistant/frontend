@@ -187,9 +187,15 @@ function mountStep() {
   });
 }
 
+/** Mount the loaded step with network details open. */
 async function mountLoadedStep() {
   const wrapper = mountStep();
   await flushPromises();
+  const trigger = networkDetailsTrigger(wrapper);
+  if (trigger.attributes("aria-expanded") !== "true") {
+    await trigger.trigger("click");
+    await flushPromises();
+  }
   return wrapper;
 }
 
@@ -197,6 +203,12 @@ type Wrapper = ReturnType<typeof mountStep>;
 
 function form(wrapper: Wrapper) {
   return wrapper.findComponent({ name: "EditConfig" });
+}
+
+function networkDetailsTrigger(wrapper: Wrapper) {
+  return wrapper.find(
+    "[data-testid=onboarding-network-details] button[aria-expanded]",
+  );
 }
 
 function addressRow(wrapper: Wrapper, id: "internal" | "stream") {
@@ -329,12 +341,23 @@ describe("CoreSettingsStep", () => {
         "reachable",
       );
       expect(unreachableHint(wrapper).exists()).toBe(false);
-      const details = wrapper.find("[data-testid=onboarding-network-details]");
-      expect(details.exists()).toBe(true);
-      expect(details.attributes("open")).toBeUndefined();
+    });
+
+    it("keeps healthy network details folded and lets them be opened", async () => {
+      const wrapper = mountStep();
+      await flushPromises();
+
+      const trigger = networkDetailsTrigger(wrapper);
+      expect(trigger.exists()).toBe(true);
+      expect(trigger.attributes("aria-expanded")).toBe("false");
       expect(
         wrapper.find("[data-testid=onboarding-reverse-proxy]").isVisible(),
       ).toBe(true);
+
+      await trigger.trigger("click");
+      expect(trigger.attributes("aria-expanded")).toBe("true");
+      expect(addressUrl(wrapper, "internal").text()).toBe(INTERNAL_URL);
+      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
     });
 
     it("flags an address this browser could not reach, with one word of advice", async () => {
@@ -345,8 +368,11 @@ describe("CoreSettingsStep", () => {
         }),
       );
 
-      const wrapper = await mountLoadedStep();
+      const wrapper = mountStep();
+      await flushPromises();
 
+      const trigger = networkDetailsTrigger(wrapper);
+      expect(trigger.attributes("aria-expanded")).toBe("true");
       expect(addressCheck(wrapper, "internal").attributes("data-check")).toBe(
         "unreachable",
       );
@@ -357,11 +383,10 @@ describe("CoreSettingsStep", () => {
       expect(
         wrapper.findAll("[data-testid=onboarding-address-unreachable-hint]"),
       ).toHaveLength(1);
-      expect(
-        wrapper
-          .find("[data-testid=onboarding-network-details]")
-          .attributes("open"),
-      ).toBeDefined();
+      expect(unreachableHint(wrapper).isVisible()).toBe(true);
+
+      await trigger.trigger("click");
+      expect(trigger.attributes("aria-expanded")).toBe("false");
       expect(unreachableHint(wrapper).isVisible()).toBe(true);
     });
 

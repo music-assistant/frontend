@@ -1131,7 +1131,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // moving on from it is all the footer offers
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
     expect(
-      wrapper.find("[data-testid=onboarding-address-internal]").exists(),
+      wrapper.find("[data-testid=onboarding-network-details]").exists(),
     ).toBe(true);
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
       "onboarding.next",
