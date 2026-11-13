@@ -10,7 +10,14 @@ import type {
   ListingToggleFilter,
 } from "@/helpers/listing_filters";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { defineComponent, h, nextTick, ref, type SetupContext } from "vue";
+import {
+  defineComponent,
+  h,
+  nextTick,
+  reactive,
+  ref,
+  type SetupContext,
+} from "vue";
 import { api, type MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -2957,6 +2964,36 @@ describe("ItemsListing server sort options", () => {
         sortDirection: SortDirection.ASC,
       }),
     );
+  });
+});
+
+describe("ItemsListing provider icon", () => {
+  const plainProviders = api.providers;
+
+  beforeEach(() => {
+    mockGetLibraryGenres.mockResolvedValue([]);
+    api.providers = reactive({});
+  });
+
+  afterEach(() => {
+    api.providers = plainProviders;
+  });
+
+  it("shows the provider icon once the providers load", async () => {
+    const listing = mountListingRaw();
+    await flushPromises();
+    const showProviderIcon = () =>
+      (listing.vm as unknown as { showProviderIcon: boolean }).showProviderIcon;
+    expect(showProviderIcon()).toBe(false);
+
+    api.providers["spotify--1"] = {
+      instance_id: "spotify--1",
+    } as ProviderInstance;
+    api.providers["tidal--1"] = {
+      instance_id: "tidal--1",
+    } as ProviderInstance;
+
+    expect(showProviderIcon()).toBe(true);
   });
 });
 
