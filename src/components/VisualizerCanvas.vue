@@ -206,8 +206,12 @@ const applyPreset = async (blendSec?: number, forceRandom = false) => {
   const name = await pickPresetName(forceRandom);
   if (requestId !== presetRequestId || !name || !engine) return;
   lastPresetSwitchAt = performance.now();
-  currentVisualizerPreset.value = name;
-  await engine.loadPresetByName(name, blendSec);
+  // The engine substitutes a random preset for a name the packs no longer
+  // carry, so what is showing is whatever it reports back, not what was asked
+  // for.
+  const loaded = await engine.loadPresetByName(name, blendSec);
+  if (requestId !== presetRequestId || !loaded) return;
+  currentVisualizerPreset.value = loaded;
 };
 
 // Preset auto-switch on downbeats (MA's neural beat tracker), rate-limited

@@ -44,7 +44,7 @@ vi.mock(
     ...(await importOriginal<object>()),
     isVisualizerSupported: () => true,
     createVisualizerEngine: vi.fn(async () => ({
-      loadPresetByName: vi.fn(async () => {}),
+      loadPresetByName: vi.fn(async (name: string) => name),
       loadRandomPreset: vi.fn(async () => "preset"),
       setPaused,
       destroy: vi.fn(),

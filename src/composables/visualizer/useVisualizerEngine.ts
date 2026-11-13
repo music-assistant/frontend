@@ -24,7 +24,12 @@ export const DECAY_MS = 1500;
 export const ATTACK_MS = 1000;
 
 export interface VisualizerEngine {
-  loadPresetByName(name: string, blendSec?: number): Promise<void>;
+  /**
+   * Load a preset by name, falling back to a random one when the name is not
+   * in the loaded packs. Resolves with the name actually put on screen, or ""
+   * when nothing could be loaded.
+   */
+  loadPresetByName(name: string, blendSec?: number): Promise<string>;
   loadRandomPreset(): Promise<string>;
   /**
    * Suspend the render loop (playback paused/stopped) or resume it.
@@ -125,6 +130,8 @@ export async function createVisualizerEngine(
       meshWidth: profile.meshWidth,
       meshHeight: profile.meshHeight,
       outputFXAA: profile.outputFXAA,
+      // v3 presets ship eel-compiled equations only; never fall back to the JS interpreter
+      onlyUseWASM: true,
     },
   );
 
@@ -230,17 +237,27 @@ export async function createVisualizerEngine(
 
   return {
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
-      const preset = await getPreset(name);
-      if (!preset || destroyed) return;
+      // A stored preset name outlives the pack that held it: the v3 packs
+      // renamed and dropped presets, so a fixed or favourited choice saved
+      // against v2 can be gone. Fall back rather than leaving the canvas blank.
+      let loadedName = name;
+      let preset = await getPreset(name);
+      if (!preset) {
+        loadedName = await randomPresetName();
+        preset = loadedName ? await getPreset(loadedName) : undefined;
+      }
+      if (!preset || destroyed) return "";
       // A halted loop has no frames to blend across.
-      visualizer.loadPreset(preset, rafHandle === null ? 0 : blendSec);
+      const blend = rafHandle === null ? 0 : blendSec;
+      await visualizer.loadPreset(preset, blend);
       redrawIfHalted();
+      return loadedName;
     },
     async loadRandomPreset() {
       const name = await randomPresetName();
       const preset = await getPreset(name);
       if (preset && !destroyed) {
-        visualizer.loadPreset(preset, 0);
+        await visualizer.loadPreset(preset, 0);
         redrawIfHalted();
       }
       return name;
@@ -266,6 +283,9 @@ export async function createVisualizerEngine(
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
+      // Every engine holds its own WebGL2 context and rebuilds are routine;
+      // Chrome drops the oldest live context on overflow.
+      visualizer.loseGLContext();
     },
   };
 }
