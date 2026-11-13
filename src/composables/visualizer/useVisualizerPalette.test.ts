@@ -1,7 +1,5 @@
 /**
- * The palette composable picks one side of the artwork palette per view. The
- * dark side is the one cast dashboards actually run on, and it used to be
- * covered only indirectly through a canvas mount pinned to the light theme.
+ * The palette composable picks one side of the artwork palette per view.
  */
 import { ref } from "vue";
 import type { ColorPalette } from "@/plugins/visualizer-relay";
