@@ -20,7 +20,8 @@ export { isPlayerGrouped } from "@/helpers/player_grouping";
 const SETUP_REASON_LABELS: Record<string, string> = {
   pairing_required: "settings.setup_reason.pairing_required",
   password_required: "settings.setup_reason.password_required",
-  provider_not_installed: "settings.setup_reason.provider_not_installed",
+  // a player whose provider is not there is described like any other unavailable one
+  provider_not_installed: "settings.player_not_available",
 };
 
 /**

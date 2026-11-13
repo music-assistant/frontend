@@ -162,8 +162,7 @@
         },
         "setup_reason": {
             "pairing_required": "Pairing required",
-            "password_required": "Password required",
-            "provider_not_installed": "Player provider not installed"
+            "password_required": "Password required"
         },
         "player_status_label": "Status",
         "player_type_label": "Player type",
@@ -862,6 +861,7 @@
         },
         "delete_player_title": "Delete {0}?",
         "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
+        "hide_unavailable_players": "Hide unavailable players",
         "remove_unavailable_players": "Remove unavailable players",
         "remove_unavailable_players_title": "Remove unavailable players?",
         "remove_unavailable_players_confirmation": "This removes one player whose device can no longer be found, along with its settings. | This removes {count} players whose devices can no longer be found, along with their settings.",

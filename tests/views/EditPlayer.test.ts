@@ -259,27 +259,34 @@ describe("EditPlayer", () => {
     expect(wrapper.text()).toContain("settings.player_not_available");
   });
 
-  it.each([
-    [true, "settings.setup_reason.pairing_required"],
-    [false, "settings.setup_reason.provider_not_installed"],
-  ])(
-    "says why the player needs setup or can not be reached (needs setup %s)",
-    async (needsSetup, reason) => {
-      apiMock.players = {
-        "player-1": playerState({
-          available: false,
-          needsSetup,
-          setupReason: reason.split(".").at(-1),
-        }),
-      };
+  it("says why the player needs setup", async () => {
+    apiMock.players = {
+      "player-1": playerState({
+        available: false,
+        needsSetup: true,
+        setupReason: "pairing_required",
+      }),
+    };
 
-      const wrapper = await mountPlayerPage();
+    const wrapper = await mountPlayerPage();
 
-      expect(wrapper.text()).toContain(reason);
-      expect(wrapper.text()).not.toContain("settings.player_needs_setup");
-      expect(wrapper.text()).not.toContain("settings.player_not_available");
-    },
-  );
+    expect(wrapper.text()).toContain("settings.setup_reason.pairing_required");
+    expect(wrapper.text()).not.toContain("settings.player_needs_setup");
+  });
+
+  it("calls a player whose provider is not installed not available", async () => {
+    apiMock.players = {
+      "player-1": playerState({
+        available: false,
+        setupReason: "provider_not_installed",
+      }),
+    };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.text()).toContain("settings.player_not_available");
+    expect(wrapper.text()).not.toContain("provider_not_installed");
+  });
 
   it("offers to enable a disabled player", async () => {
     apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));

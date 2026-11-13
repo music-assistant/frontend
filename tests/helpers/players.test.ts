@@ -562,7 +562,8 @@ describe("getPlayerSetupReason", () => {
   it.each([
     ["pairing_required", "Pairing required"],
     ["password_required", "Password required"],
-    ["provider_not_installed", "Player provider not installed"],
+    // the same words as any other player that is not available
+    ["provider_not_installed", "This player is not (yet) available"],
   ])("names the reason %s", (reason, text) => {
     expect(getPlayerSetupReason(createPlayer({ setup_reason: reason }))).toBe(
       text,

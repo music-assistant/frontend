@@ -16,15 +16,6 @@
           <Plus class="size-4" />
           {{ $t("settings.add_group_player") }}
         </Button>
-        <Button
-          v-if="canRemovePlayers"
-          variant="outline"
-          data-testid="remove-unavailable-players"
-          @click="removeUnavailablePlayers(dropPlayerConfigs)"
-        >
-          <Trash2 class="size-4" />
-          {{ $t("settings.remove_unavailable_players") }}
-        </Button>
       </div>
     </div>
 
@@ -93,12 +84,16 @@ import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { ItemGroup } from "@/components/ui/item";
 
+import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { useUserPreferences } from "@/composables/userPreferences";
 import {
   getListedPlayerConfigs,
   getPlayerName,
   playerBelongsToProviders,
 } from "@/helpers/player_config";
+import { isPlayerUnavailable } from "@/helpers/players";
 import {
   getPlayerSettingsMenuItems,
   removeUnavailablePlayers,
@@ -114,8 +109,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { Info, Plus, Trash2, VolumeOff } from "@lucide/vue";
-import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
+import { EyeOff, Info, Plus, Trash2, VolumeOff } from "@lucide/vue";
+import { computed, inject, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
 
@@ -128,6 +123,12 @@ const playersViewMode = inject<{
 }>("playersViewMode")!;
 
 const viewMode = computed(() => playersViewMode.viewMode.value);
+
+const { getPreference, setPreference } = useUserPreferences();
+const hideUnavailable = getPreference<boolean>(
+  "settings.players.hideUnavailable",
+  false,
+);
 
 // local refs
 const playerConfigs = ref<PlayerConfig[]>([]);
@@ -166,6 +167,41 @@ const canAddPlayerProviders = computed(() =>
 const canRemovePlayers = computed(() =>
   authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
 );
+
+const toolbarMenu = useSettingsToolbarMenu();
+const toolbarMenuItems = computed<ToolBarMenuItem[]>(() => {
+  const items: ToolBarMenuItem[] = [
+    {
+      label: "settings.hide_unavailable_players",
+      icon: markRaw(EyeOff),
+      action: () =>
+        setPreference(
+          "settings.players.hideUnavailable",
+          !hideUnavailable.value,
+        ),
+      active: hideUnavailable.value,
+    },
+  ];
+  if (canRemovePlayers.value) {
+    items.push({
+      label: "settings.remove_unavailable_players",
+      icon: markRaw(Trash2),
+      // the server decides which players it removes, whatever the list shows
+      action: () => removeUnavailablePlayers(dropPlayerConfigs),
+    });
+  }
+  return items;
+});
+watch(
+  toolbarMenuItems,
+  (items) => {
+    toolbarMenu.value = items;
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => {
+  toolbarMenu.value = [];
+});
 
 // methods
 const loadItems = async function () {
@@ -220,6 +256,14 @@ const dropPlayerConfigs = function (playerIds: string[]) {
 
 const filteredPlayers = computed(() => {
   let filtered = [...playerConfigs.value];
+
+  // a disabled player has no player object, but it is disabled rather than unavailable
+  if (hideUnavailable.value) {
+    filtered = filtered.filter(
+      (item) =>
+        !item.enabled || !isPlayerUnavailable(api.players[item.player_id]),
+    );
+  }
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();

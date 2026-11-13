@@ -138,7 +138,7 @@ describe("SettingsPlayerCard", () => {
     expect(wrapper.text()).not.toContain("settings.player_needs_setup");
   });
 
-  it("names why an unavailable player can not play", () => {
+  it("calls a player whose provider is not installed not available", () => {
     apiMock.players = {
       kitchen: {
         player_id: "kitchen",
@@ -151,7 +151,7 @@ describe("SettingsPlayerCard", () => {
     const wrapper = mountCard();
 
     expect(wrapper.get('[data-testid="player-setup-reason"]').text()).toBe(
-      "Player provider not installed",
+      "This player is not (yet) available",
     );
   });
 
