@@ -261,6 +261,21 @@ describe("viewer preferences", () => {
     expect(apiMocks.sendCommand).toHaveBeenCalledTimes(1);
   });
 
+  it("leaves the reads free of side effects until useVisualizer starts them", async () => {
+    const { useVisualizer, visualizerEnabledForPlayer, visualizerPreference } =
+      await importComposable();
+    visualizerEnabledForPlayer("p1");
+    expect(visualizerPreference("visualizer_preset", "").value).toBe("");
+    await flushPromises();
+    expect(apiMocks.sendCommand).not.toHaveBeenCalled();
+    expect(relayMocks.visualizerShownOnDashboards).not.toHaveBeenCalled();
+
+    useVisualizer();
+    await flushPromises();
+    expect(apiMocks.sendCommand).toHaveBeenCalledTimes(1);
+    expect(relayMocks.visualizerShownOnDashboards).toHaveBeenCalledTimes(1);
+  });
+
   it("waits for the connection before fetching", async () => {
     apiMocks.state.value = "connecting";
     const { useVisualizer } = await importComposable();

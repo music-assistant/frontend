@@ -139,9 +139,6 @@ export function visualizerPreference<T>(
 ): ComputedRef<T> {
   const { getPreference } = useUserPreferences();
   const ownPreference = getPreference<T>(key, fallback);
-  // Started here rather than inside the computed, keeping the getter free of
-  // side effects.
-  if (authManager.isDashboardViewer()) startViewerPreferencesSync();
   return computed(() => {
     if (authManager.isDashboardViewer()) {
       return (viewerPreferences.value[key] as T | undefined) ?? fallback;
@@ -153,15 +150,11 @@ export function visualizerPreference<T>(
 /**
  * Whether the visualizer is on for this player (standalone: also usable from
  * plain functions like the player menu builder). Reads reactive store state,
- * so it stays reactive when called inside a computed.
+ * so it stays reactive when called inside a computed. Free of side effects: a
+ * dashboard viewer's sources are started by useVisualizer.
  */
 export function visualizerEnabledForPlayer(playerId?: string): boolean {
-  // Both sources this reads are lazily started singletons, and this is also
-  // called from plain functions (the player menu builder) that never go
-  // through useVisualizer.
-  startDashboardDefaultWatch();
   if (authManager.isDashboardViewer()) {
-    startViewerPreferencesSync();
     // The casting user's GLOBAL toggle describes their own screens, not the
     // display they deliberately cast to: only their per-player override and
     // the plugin's show_on_dashboards setting decide here.
@@ -189,9 +182,9 @@ export function toggleVisualizerForPlayer(playerId?: string): void {
 }
 
 export function useVisualizer(playerId?: MaybeRefOrGetter<string | undefined>) {
+  // Every dashboard view hosting a visualizer goes through here, before its
+  // canvas reads any preference.
   startDashboardDefaultWatch();
-  // A viewer session's preferences come from the server: start the fetch right
-  // away rather than on the first (lazy) preference read.
   if (authManager.isDashboardViewer()) startViewerPreferencesSync();
   const visualizerPresetPref = visualizerPreference("visualizer_preset", "");
   const visualizerBlurPref = visualizerPreference(
