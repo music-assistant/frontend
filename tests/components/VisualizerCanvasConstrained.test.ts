@@ -1,9 +1,9 @@
 /**
  * A cast dashboard is the case the canvas cannot be told about in advance: it
- * runs as the dashboard viewer, so it tints in a shader instead of through the
- * CSS compositor and walks the adaptive ladder instead of trusting a quality
- * preference nobody can reach to change. These cover that wiring, which the
- * sibling suite deliberately mocks away by pinning isDashboardViewer to false.
+ * runs as the dashboard viewer, so it renders on a fixed TV profile instead of
+ * trusting a quality preference nobody can reach to change. These cover that
+ * wiring, which the sibling suite deliberately mocks away by pinning
+ * isDashboardViewer to false.
  */
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import type { VisualizerEngineOptions } from "@/composables/visualizer/useVisualizerEngine";

@@ -3,9 +3,7 @@
  * the preset's own element colours, and the luminance ramp that remaps the
  * whole image.
  *
- * Both are engine capabilities, so both are gated on what the running engine
- * reports it supports, and the two can be live at once. A one-anchor ramp is
- * mathematically the old flat tint, so no separate tint path is kept.
+ * The two can be live at once.
  */
 
 import { computed, toValue, type MaybeRefOrGetter, type Ref } from "vue";
@@ -45,9 +43,8 @@ export function useVisualizerPalette(options: VisualizerPaletteOptions) {
 
   // Backgrounds stay unused here, they are not meant for the thin foreground
   // elements these colors land on. on_dark is the variant meant to be drawn on
-  // a dark background, so it is the one a dark treatment takes: the flat tint
-  // can take either (its blend keeps the source luminance and only shifts hue)
-  // but a waveform line is drawn at its own brightness and has to contrast.
+  // a dark background, so it is the one a dark treatment takes: a waveform line
+  // is drawn at its own brightness and has to contrast.
   const paletteColors = computed<Rgb[] | null>(() => {
     if (!paletteColorsPref.value) return null;
     const wire = options.palette.value;

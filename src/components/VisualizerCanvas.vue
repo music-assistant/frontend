@@ -9,7 +9,7 @@
   underneath stays visible. Pausing or stopping the player winds it down
   (waveform to silence, layer faded out) and suspends the render loop.
 
-  Engine, relay and adaptive quality lifecycle lives in
+  Engine and relay lifecycle lives in
   useVisualizerCanvasEngine; this file is presentation and preferences.
 -->
 <template>
@@ -70,7 +70,7 @@ const props = withDefaults(
     // Suspend while another view covers this one (e.g. the fullscreen player
     // opened on top of a dashboard), so only one engine renders at a time.
     coveredWhenFullscreen?: boolean;
-    // Which palette side to tint with; the host view knows whether it forces
+    // Which palette side to use; the host view knows whether it forces
     // a dark treatment regardless of theme.
     forceDarkPalette?: boolean;
   }>(),

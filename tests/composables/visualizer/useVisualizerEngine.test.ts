@@ -191,8 +191,8 @@ describe("createVisualizerEngine pause envelope", () => {
     expect(loadPreset).toHaveBeenCalledWith(expect.anything(), 0);
   });
 
-  // Every engine holds its own WebGL2 context and the adaptive ladder rebuilds
-  // routinely; Chrome drops the oldest live context once they pile up.
+  // Every engine holds its own WebGL2 context and rebuilds are routine;
+  // Chrome drops the oldest live context once they pile up.
   it("releases the GL context on destroy", () => {
     engine!.destroy();
     engine = null;

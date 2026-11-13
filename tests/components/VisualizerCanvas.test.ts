@@ -245,7 +245,7 @@ describe("VisualizerCanvas artwork recoloring", () => {
       { playback_state: PlaybackState.PLAYING };
   });
 
-  // Tint/scrim only show once streaming, like the relay's real onState.
+  // The scrim only shows once streaming, like the relay's real onState.
   function emitStreaming() {
     const onState = relayConstructor.mock.calls.at(-1)?.[0]?.onState as
       ((state: string) => void) | undefined;
