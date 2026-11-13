@@ -24,6 +24,12 @@ describe("VisualizerSliderRow", () => {
 
     expect(wrapper.text()).toContain("80%");
   });
+
+  it("names the slider thumb after the visible label", () => {
+    const wrapper = mountRow();
+
+    expect(wrapper.findComponent(Slider).props("thumbLabel")).toBe("Opacity");
+  });
 });
 
 function mountRow() {
