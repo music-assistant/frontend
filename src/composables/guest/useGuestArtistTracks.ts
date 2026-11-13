@@ -27,8 +27,13 @@ export function useGuestArtistTracks() {
 
     try {
       // Use the artist's own identity so a library artist returns its in-library tracks.
-      const tracks = await api.getArtistTracks(artist.item_id, artist.provider);
+      let tracks = await api.getArtistTracks(artist.item_id, artist.provider);
       if (currentRequestId !== requestId) return;
+      // Most streaming providers offer no full artist tracks listing.
+      if (!tracks.length) {
+        tracks = await api.getArtistTopTracks(artist.item_id, artist.provider);
+        if (currentRequestId !== requestId) return;
+      }
       artistTracks.value = tracks;
     } catch (error) {
       if (currentRequestId !== requestId) return;
