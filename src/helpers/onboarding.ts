@@ -32,6 +32,11 @@ export type OnboardingStepId =
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
 
+export const APP_RECEIVER_INSTRUCTIONS: Readonly<Record<string, string>> = {
+  spotify_connect: "onboarding.spotify_connect_hint",
+  airplay_receiver: "onboarding.airplay_receiver_hint",
+};
+
 /** How the wizard leaves a step: moving on, or pausing the setup. */
 export interface StepLeaveOptions {
   pausing?: boolean;
@@ -178,7 +183,15 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     kind: "step",
     optional: true,
     appliesTo: onAdminTrack,
-    isDone: (ctx) => hasConfiguredProvider(ctx, ProviderType.PLUGIN),
+    isDone: (ctx) =>
+      ctx.answers.intent === "phone_apps"
+        ? ctx.providers.some(
+            (provider) =>
+              provider.type === ProviderType.PLUGIN &&
+              !provider.builtin &&
+              Object.hasOwn(APP_RECEIVER_INSTRUCTIONS, provider.domain),
+          )
+        : hasConfiguredProvider(ctx, ProviderType.PLUGIN),
   },
   {
     id: "core_settings",
@@ -232,6 +245,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   {
     id: "own_sources",
     kind: "step",
+    optional: true,
     // a member-track step, but only for a role that may add its own sources
     appliesTo: (ctx) => ctx.isMember && ctx.canOwnSources,
     isDone: (ctx) => ctx.ownedMusicSourceCount > 0,
@@ -245,10 +259,10 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
 ];
 
 /**
- * Apply the answers to the running order. Answers only reorder and de-emphasize
- * steps, they never take one away: someone who came for the players can still
- * add a music source from the same wizard. Only the admin track has anything
- * to reorder, so the member track comes back exactly as it went in.
+ * Apply the answers to the running order and emphasis. They never take a step
+ * away: someone who came for the players can still add a music source from the
+ * same wizard. Only the admin track has anything to reorder, so the member
+ * track comes back exactly as it went in.
  */
 export function orderSteps(
   steps: readonly OnboardingStep[],
@@ -261,7 +275,11 @@ export function orderSteps(
 
   // streaming from phone apps works without a music source in Music Assistant,
   // so it moves behind the plugins and stops blocking the finish
-  const ordered = steps.filter((step) => step.id !== "music_sources");
+  const ordered = steps
+    .filter((step) => step.id !== "music_sources")
+    .map((step) =>
+      step.id === "plugins" ? { ...step, optional: false } : step,
+    );
   ordered.splice(deferredIndex(ordered), 0, {
     ...musicSources,
     deferred: true,
@@ -288,7 +306,18 @@ export function applicableSteps(ctx: OnboardingContext): OnboardingStep[] {
   );
 }
 
-/** The steps still to do — what the wizard's summary lists. */
+/** The translation key for a step's title in this setup. */
+export function stepTitleKey(
+  id: OnboardingStepId,
+  answers: OnboardingAnswers = {},
+): string {
+  if (id === "plugins" && answers.intent === "phone_apps") {
+    return "onboarding.steps.plugins.phone_apps_title";
+  }
+  return `onboarding.steps.${id}.title`;
+}
+
+/** The steps not set up, including optional and deferred invitations. */
 export function pendingSteps(ctx: OnboardingContext): OnboardingStep[] {
   return applicableSteps(ctx).filter(
     (step) => isTodo(step) && !step.isDone(ctx),

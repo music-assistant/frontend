@@ -5,6 +5,7 @@ import {
   firstStep,
   orderSteps,
   pendingSteps,
+  stepTitleKey,
   type OnboardingContext,
   type OnboardingProvider,
 } from "@/helpers/onboarding";
@@ -74,6 +75,18 @@ function step(ctx: OnboardingContext, id: string) {
 }
 
 describe("onboarding step order", () => {
+  it("uses a contextual app-connection title without changing other steps", () => {
+    expect(stepTitleKey("plugins", { intent: "phone_apps" })).toBe(
+      "onboarding.steps.plugins.phone_apps_title",
+    );
+    expect(stepTitleKey("plugins", { intent: "music_hub" })).toBe(
+      "onboarding.steps.plugins.title",
+    );
+    expect(stepTitleKey("music_sources", { intent: "phone_apps" })).toBe(
+      "onboarding.steps.music_sources.title",
+    );
+  });
+
   it("runs the admin track in its base order without an answer", () => {
     expect(stepIds(applicableSteps(context()))).toEqual([...BASE_ORDER]);
   });
@@ -189,10 +202,10 @@ describe("onboarding step order", () => {
     ]);
   });
 
-  it("keeps the plugins optional in every order", () => {
+  it("makes app connections essential only when listening from other apps", () => {
     for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
       const ctx = context({ answers: intent ? { intent } : {} });
-      expect(step(ctx, "plugins").optional).toBe(true);
+      expect(step(ctx, "plugins").optional).toBe(intent !== "phone_apps");
     }
   });
 
@@ -202,6 +215,23 @@ describe("onboarding step order", () => {
 });
 
 describe("onboarding step completion", () => {
+  it("only counts an app receiver as connecting music apps", () => {
+    const party = context({
+      answers: { intent: "phone_apps" },
+      providers: [provider(ProviderType.PLUGIN, "party")],
+    });
+    expect(step(party, "plugins").isDone(party)).toBe(false);
+    for (const domain of ["spotify_connect", "airplay_receiver"]) {
+      const connected = {
+        ...party,
+        providers: [provider(ProviderType.PLUGIN, domain)],
+      };
+      expect(step(connected, "plugins").isDone(connected)).toBe(true);
+    }
+    const hub = { ...party, answers: { intent: "music_hub" as const } };
+    expect(step(hub, "plugins").isDone(hub)).toBe(true);
+  });
+
   it("marks the intent done once it is answered", () => {
     expect(step(context(), "intent").isDone(context())).toBe(false);
 
@@ -381,7 +411,7 @@ describe("the step the wizard opens on", () => {
       providers: [
         provider(ProviderType.MUSIC, "spotify"),
         provider(ProviderType.PLAYER, "sonos"),
-        provider(ProviderType.PLUGIN, "party"),
+        provider(ProviderType.PLUGIN, "spotify_connect"),
       ],
       memberCount: 2,
     });
@@ -526,8 +556,9 @@ describe("the own-sources invitation", () => {
     ]);
   });
 
-  it("is pending until it is done, since it is never optional", () => {
+  it("keeps the optional invitation pending until a source is connected", () => {
     const open = ownMemberContext();
+    expect(step(open, "own_sources").optional).toBe(true);
     expect(stepIds(pendingSteps(open))).toContain("own_sources");
 
     // no longer pending once a source of their own is connected

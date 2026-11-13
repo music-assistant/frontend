@@ -4,82 +4,92 @@
       {{ $t("onboarding.steps.core_settings.intro") }}
     </p>
 
-    <!-- the addresses in use, each with what this browser found out about it -->
-    <ItemGroup class="gap-2">
-      <Item
-        v-for="address in addresses"
-        :key="address.id"
-        variant="outline"
-        size="sm"
-        :data-testid="`onboarding-address-${address.id}`"
-      >
-        <ItemMedia variant="icon">
-          <component :is="address.icon" aria-hidden="true" />
-        </ItemMedia>
-        <ItemContent>
-          <ItemTitle>
-            {{ $t(`onboarding.steps.core_settings.${address.id}_address`) }}
-          </ItemTitle>
-          <ItemDescription>
-            {{
-              $t(`onboarding.steps.core_settings.${address.id}_address_hint`)
-            }}
-          </ItemDescription>
-          <code
-            v-if="address.url"
-            class="text-sm break-all"
-            data-testid="onboarding-address-url"
-          >
-            {{ address.url }}
-          </code>
-          <!-- an address still being asked for is not one that is missing -->
-          <span
-            v-else-if="!address.pending"
-            class="text-muted-foreground text-sm"
-            data-testid="onboarding-address-unknown"
-          >
-            {{ $t("onboarding.steps.core_settings.address_unknown") }}
-          </span>
-        </ItemContent>
-        <ItemActions v-if="address.url">
-          <Badge
-            :variant="CHECK_BADGES[address.check].variant"
-            :class="CHECK_BADGES[address.check].class"
-            :data-check="address.check"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-            data-testid="onboarding-address-check"
-          >
-            <component
-              :is="CHECK_BADGES[address.check].icon"
-              :class="CHECK_BADGES[address.check].iconClass"
-              aria-hidden="true"
-            />
-            {{ $t(`onboarding.steps.core_settings.check.${address.check}`) }}
-          </Badge>
-        </ItemActions>
-      </Item>
-    </ItemGroup>
+    <details
+      :open="anyUnreachable"
+      class="flex flex-col"
+      data-testid="onboarding-network-details"
+    >
+      <summary class="cursor-pointer text-sm font-medium">
+        {{ $t("onboarding.steps.core_settings.network_details") }}
+      </summary>
+      <!-- the addresses in use, each with what this browser found out about it -->
+      <ItemGroup class="mt-3 gap-2">
+        <Item
+          v-for="address in addresses"
+          :key="address.id"
+          variant="outline"
+          size="sm"
+          :data-testid="`onboarding-address-${address.id}`"
+        >
+          <ItemMedia variant="icon">
+            <component :is="address.icon" aria-hidden="true" />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>
+              {{ $t(`onboarding.steps.core_settings.${address.id}_address`) }}
+            </ItemTitle>
+            <ItemDescription>
+              {{
+                $t(`onboarding.steps.core_settings.${address.id}_address_hint`)
+              }}
+            </ItemDescription>
+            <code
+              v-if="address.url"
+              class="text-sm break-all"
+              data-testid="onboarding-address-url"
+            >
+              {{ address.url }}
+            </code>
+            <!-- an address still being asked for is not one that is missing -->
+            <span
+              v-else-if="!address.pending"
+              class="text-muted-foreground text-sm"
+              data-testid="onboarding-address-unknown"
+            >
+              {{ $t("onboarding.steps.core_settings.address_unknown") }}
+            </span>
+          </ItemContent>
+          <ItemActions v-if="address.url">
+            <Badge
+              :variant="CHECK_BADGES[address.check].variant"
+              :class="CHECK_BADGES[address.check].class"
+              :data-check="address.check"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              data-testid="onboarding-address-check"
+            >
+              <component
+                :is="CHECK_BADGES[address.check].icon"
+                :class="CHECK_BADGES[address.check].iconClass"
+                aria-hidden="true"
+              />
+              {{ $t(`onboarding.steps.core_settings.check.${address.check}`) }}
+            </Badge>
+          </ItemActions>
+        </Item>
+      </ItemGroup>
+
+      <p class="text-muted-foreground mt-3 text-sm">
+        {{
+          $t("onboarding.steps.core_settings.override_hint", {
+            system: $t("settings.system"),
+            webserver: $t("settings.core_module.webserver.name"),
+            streams: $t("settings.core_module.streams.name"),
+          })
+        }}
+      </p>
+    </details>
 
     <!-- players are on the same network as this browser, so an address it
          could not reach is the one thing here worth a word of advice -->
     <p
       v-if="anyUnreachable"
-      class="text-muted-foreground text-sm"
+      class="text-destructive text-sm"
+      role="status"
       data-testid="onboarding-address-unreachable-hint"
     >
       {{ $t("onboarding.steps.core_settings.unreachable_hint") }}
-    </p>
-
-    <p class="text-muted-foreground text-sm">
-      {{
-        $t("onboarding.steps.core_settings.override_hint", {
-          system: $t("settings.system"),
-          webserver: $t("settings.core_module.webserver.name"),
-          streams: $t("settings.core_module.streams.name"),
-        })
-      }}
     </p>
 
     <div class="flex flex-col gap-3">

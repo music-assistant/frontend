@@ -2922,6 +2922,7 @@
         "step_counter": "Step {current} of {total}",
         "step_completed": "{step}, completed",
         "next": "Next",
+        "continue": "Continue",
         "skip": "Skip for now",
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
@@ -2929,7 +2930,11 @@
         "needs_attention": "Needs attention",
         "set_up": "Done",
         "still_to_do": "Still to do",
-        "all_done": "Everything on the list is set up.",
+        "explore_more": "Explore more",
+        "all_done": "You can finish setup now and add more features whenever you like.",
+        "listen_from_apps": "Try playing from your music apps",
+        "spotify_connect_hint": "In Spotify Connect's settings, choose the speakers you want to use. Then open Spotify's device picker and select one of those speakers.",
+        "airplay_receiver_hint": "In AirPlay Receiver's settings, choose the speakers you want to use. Then open the AirPlay audio picker on your Apple device and select the receiver for your speaker.",
         "players_count": "{count} player | {count} players",
         "music_sources_count": "{count} music source | {count} music sources",
         "plugins_count": "{count} plugin | {count} plugins",
@@ -2962,21 +2967,24 @@
                 "ready": "Signed in as {name}."
             },
             "intent": {
-                "title": "Choose how you want to use Music Assistant",
-                "description": "This sets what Music Assistant does first. Everything stays available, whichever you pick.",
+                "title": "Where will you usually choose what to play?",
+                "description": "We'll tailor the setup to where you usually pick your music. Every feature stays available, whichever you choose.",
                 "phone_apps": {
-                    "label": "From the apps on my phone",
-                    "description": "Stream from Spotify, AirPlay and other apps to the speakers in your home."
+                    "label": "Keep using my existing music apps",
+                    "description": "Connect your usual music apps to your speakers through Music Assistant, without setting up a music library.",
+                    "preview": "Next, we'll add your speakers and connect your music apps. Adding a music library is optional."
                 },
                 "music_hub": {
-                    "label": "As my music hub",
-                    "description": "Bring your streaming services and local music together in one library."
+                    "label": "The full Music Assistant experience",
+                    "description": "Browse your streaming services and local music together. You can also set up Spotify Connect and AirPlay to play from other apps.",
+                    "preview": "Next, we'll connect your music sources and add your speakers, then explore extra features."
                 },
-                "settings_note": "You can change this later from the settings."
+                "settings_note": "This only guides the setup. You can explore more features later."
             },
             "music_sources": {
                 "title": "Add your music sources",
-                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play."
+                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play.",
+                "deferred_description": "Want to browse music in Music Assistant too? Add a streaming service or local music files. You can skip this when playing from your other apps."
             },
             "players": {
                 "title": "Add your players",
@@ -2991,11 +2999,15 @@
             },
             "plugins": {
                 "title": "Add plugins",
-                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later."
+                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later.",
+                "phone_apps_title": "Connect your music apps",
+                "phone_apps_description": "Add Spotify Connect or the AirPlay receiver, then open its settings to choose your speakers. Other plugins are available here too.",
+                "connect": "Connect a music app"
             },
             "core_settings": {
-                "title": "Check your server settings",
-                "intro": "The addresses Music Assistant is using right now. They are worked out automatically and are normally right, so you can simply move on.",
+                "title": "Access Music Assistant",
+                "intro": "Music Assistant works on your home network automatically. Set up remote access if you'd also like to listen when you're away.",
+                "network_details": "Network details",
                 "internal_address": "Internal address",
                 "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
                 "stream_address": "Stream server address",

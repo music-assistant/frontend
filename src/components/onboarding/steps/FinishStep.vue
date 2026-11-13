@@ -4,6 +4,20 @@
       {{ $t(`onboarding.steps.${stepId}.description`) }}
     </p>
 
+    <div v-if="receiverInstructions.length > 0" class="flex flex-col gap-2">
+      <h3 class="text-sm font-semibold">
+        {{ $t("onboarding.listen_from_apps") }}
+      </h3>
+      <p
+        v-for="instruction in receiverInstructions"
+        :key="instruction"
+        class="text-muted-foreground text-sm"
+        data-testid="onboarding-receiver-instructions"
+      >
+        {{ $t(instruction) }}
+      </p>
+    </div>
+
     <div v-if="done.length > 0" class="flex flex-col gap-2">
       <h3 class="text-sm font-semibold">{{ $t(doneHeadingKey) }}</h3>
       <ItemGroup class="gap-2">
@@ -18,9 +32,14 @@
             <CircleCheck class="text-primary size-4" aria-hidden="true" />
           </ItemMedia>
           <ItemContent>
-            <ItemTitle>{{ $t(`onboarding.steps.${step.id}.title`) }}</ItemTitle>
+            <ItemTitle>{{ $t(stepTitleKey(step.id, ctx.answers)) }}</ItemTitle>
             <ItemDescription v-if="countLabels[step.id]">
               {{ countLabels[step.id] }}
+            </ItemDescription>
+            <ItemDescription
+              v-else-if="step.id === 'intent' && ctx.answers.intent"
+            >
+              {{ $t(`onboarding.steps.intent.${ctx.answers.intent}.label`) }}
             </ItemDescription>
             <!-- the welcome asked one thing; the summary says what came of it -->
             <ItemDescription
@@ -35,25 +54,38 @@
       </ItemGroup>
     </div>
 
-    <div v-if="pending.length > 0" class="flex flex-col gap-2">
-      <h3 class="text-sm font-semibold">{{ $t("onboarding.still_to_do") }}</h3>
+    <!-- the member track sets nothing up, so it has no list to be at the end
+         of and nothing to say is done -->
+    <p
+      v-if="essentials.length === 0 && !isMemberSummary"
+      class="text-muted-foreground text-sm"
+    >
+      {{ $t("onboarding.all_done") }}
+    </p>
+
+    <div
+      v-for="group in pendingGroups"
+      :key="group.titleKey"
+      class="flex flex-col gap-2"
+    >
+      <h3 class="text-sm font-semibold">{{ $t(group.titleKey) }}</h3>
       <ItemGroup class="gap-2">
         <Item
-          v-for="step in pending"
+          v-for="step in group.steps"
           :key="step.id"
           as="button"
           type="button"
           variant="outline"
           size="sm"
           class="hover:bg-accent/50 w-full cursor-pointer text-left transition-colors"
-          data-testid="onboarding-summary-pending"
+          :data-testid="group.testId"
           @click="emit('navigate', step.id)"
         >
           <ItemMedia>
             <Circle class="text-muted-foreground size-4" aria-hidden="true" />
           </ItemMedia>
           <ItemContent>
-            <ItemTitle>{{ $t(`onboarding.steps.${step.id}.title`) }}</ItemTitle>
+            <ItemTitle>{{ $t(stepTitleKey(step.id, ctx.answers)) }}</ItemTitle>
           </ItemContent>
           <ItemActions>
             <Badge v-if="step.optional || step.deferred" variant="outline">
@@ -67,12 +99,6 @@
         </Item>
       </ItemGroup>
     </div>
-
-    <!-- the member track sets nothing up, so it has no list to be at the end
-         of and nothing to say is done -->
-    <p v-else-if="!isMemberSummary" class="text-muted-foreground text-sm">
-      {{ $t("onboarding.all_done") }}
-    </p>
 
     <Item variant="muted" data-testid="onboarding-tour-offer">
       <ItemMedia variant="icon">
@@ -114,8 +140,10 @@ import {
   useOnboarding,
 } from "@/composables/useOnboarding";
 import {
+  APP_RECEIVER_INSTRUCTIONS,
   experienceOf,
   isTodo,
+  stepTitleKey,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
@@ -145,6 +173,35 @@ const emit = defineEmits<{
 
 const { ctx, steps, pending, expertMode } = useOnboarding();
 
+const essentials = computed(() =>
+  pending.value.filter((step) => !step.optional && !step.deferred),
+);
+const pendingGroups = computed(() =>
+  [
+    {
+      titleKey: "onboarding.still_to_do",
+      testId: "onboarding-summary-pending",
+      steps: essentials.value,
+    },
+    {
+      titleKey: "onboarding.explore_more",
+      testId: "onboarding-summary-optional",
+      steps: pending.value.filter((step) => step.optional || step.deferred),
+    },
+  ].filter((group) => group.steps.length > 0),
+);
+
+const receiverInstructions = computed(() =>
+  ctx.value.isMember
+    ? []
+    : configuredProviders(ProviderType.PLUGIN)
+        .filter((provider) => !provider.needsAttention)
+        .flatMap((provider) => {
+          const key = APP_RECEIVER_INSTRUCTIONS[provider.domain];
+          return key ? [key] : [];
+        }),
+);
+
 // A review is nothing to set up and nothing to do, so it is on neither list.
 // Neither is a welcome the member only closed: being done with them is not the
 // same as an answer on the account, and there is nothing to look back at when
@@ -154,7 +211,7 @@ const done = computed(() =>
     (step) =>
       isTodo(step) &&
       step.isDone(ctx.value) &&
-      // own_sources is an invitation, surfaced under "still to do" while it is
+      // own_sources is an invitation, surfaced under "Explore more" while it is
       // open, not a choice to look back on once it is done
       step.id !== "own_sources" &&
       (step.id !== "welcome" || expertMode.value != null),

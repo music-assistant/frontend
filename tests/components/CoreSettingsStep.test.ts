@@ -329,6 +329,12 @@ describe("CoreSettingsStep", () => {
         "reachable",
       );
       expect(unreachableHint(wrapper).exists()).toBe(false);
+      const details = wrapper.find("[data-testid=onboarding-network-details]");
+      expect(details.exists()).toBe(true);
+      expect(details.attributes("open")).toBeUndefined();
+      expect(
+        wrapper.find("[data-testid=onboarding-reverse-proxy]").isVisible(),
+      ).toBe(true);
     });
 
     it("flags an address this browser could not reach, with one word of advice", async () => {
@@ -351,6 +357,12 @@ describe("CoreSettingsStep", () => {
       expect(
         wrapper.findAll("[data-testid=onboarding-address-unreachable-hint]"),
       ).toHaveLength(1);
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-network-details]")
+          .attributes("open"),
+      ).toBeDefined();
+      expect(unreachableHint(wrapper).isVisible()).toBe(true);
     });
 
     it("says when an address could not be checked from this page", async () => {
