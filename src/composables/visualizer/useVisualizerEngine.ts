@@ -249,19 +249,6 @@ export async function createVisualizerEngine(
     if (rafHandle === null && !destroyed) renderFrame(SILENCE);
   };
 
-  const applySize = () => {
-    const size = deviceSize();
-    if (!size.width || !size.height) return;
-    if (size.width === width && size.height === height) return;
-    width = size.width;
-    height = size.height;
-    canvas.width = width;
-    canvas.height = height;
-    visualizer.setRendererSize(width, height, { pixelRatio: 1 });
-    // Resizing clears the drawing buffer, taking the frozen picture with it.
-    redrawIfHalted();
-  };
-
   // Squared both ways: the wind-down drops off quickly, the return builds
   // gently. An interrupted ramp carries on from where the envelope stands.
   const currentGain = (): number => {
@@ -320,7 +307,18 @@ export async function createVisualizerEngine(
     lastRenderAt = now;
   };
 
-  const resizeObserver = new ResizeObserver(() => applySize());
+  const resizeObserver = new ResizeObserver(() => {
+    const size = deviceSize();
+    if (!size.width || !size.height) return;
+    if (size.width === width && size.height === height) return;
+    width = size.width;
+    height = size.height;
+    canvas.width = width;
+    canvas.height = height;
+    visualizer.setRendererSize(width, height, { pixelRatio: 1 });
+    // Resizing clears the drawing buffer, taking the frozen picture with it.
+    redrawIfHalted();
+  });
   resizeObserver.observe(canvas);
 
   rafHandle = requestAnimationFrame(renderLoop);
