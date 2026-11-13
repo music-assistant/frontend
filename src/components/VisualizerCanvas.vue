@@ -118,8 +118,6 @@ const playbackPaused = computed(() => {
 const {
   streaming,
   colorPalette,
-  paletteColorsSupported,
-  paletteRampSupported,
   faded,
   currentEngine,
   setPaused,
@@ -142,8 +140,6 @@ const { paletteColors, paletteRamp, paletteRampStrength } =
   useVisualizerPalette({
     palette: colorPalette,
     forceDark: () => props.forceDarkPalette,
-    paletteColorsSupported,
-    paletteRampSupported,
   });
 
 const canvasStyle = computed(() => ({
@@ -216,15 +212,12 @@ const onDownbeat = () => {
   void applyPreset(undefined, true);
 };
 
-// Gated on support, not on having colors: a null palette is how the engine is
-// told to fade the recoloring back out.
+// A null palette is how the engine is told to fade the recoloring back out.
 const applyPaletteColors = () => {
-  if (!paletteColorsSupported.value) return;
   currentEngine()?.setPaletteColors(paletteColors.value);
 };
 
 const applyPaletteRamp = () => {
-  if (!paletteRampSupported.value) return;
   currentEngine()?.setPaletteRamp(paletteRamp.value, paletteRampStrength.value);
 };
 

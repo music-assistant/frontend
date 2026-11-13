@@ -27,10 +27,6 @@ export interface VisualizerPaletteOptions {
   palette: Ref<ColorPalette>;
   /** The host view forces a dark treatment regardless of the app theme. */
   forceDark: MaybeRefOrGetter<boolean>;
-  /** Whether the running engine can colour the preset's own elements. */
-  paletteColorsSupported: Ref<boolean>;
-  /** Whether the running engine can remap the image to a palette ramp. */
-  paletteRampSupported: Ref<boolean>;
 }
 
 export function useVisualizerPalette(options: VisualizerPaletteOptions) {
@@ -81,19 +77,9 @@ export function useVisualizerPalette(options: VisualizerPaletteOptions) {
     () => Math.min(Math.max(paletteRampPref.value, 0), 100) / 100,
   );
 
-  const paletteActive = computed(
-    () => options.paletteColorsSupported.value && paletteColors.value !== null,
-  );
-
-  const rampActive = computed(
-    () => options.paletteRampSupported.value && paletteRamp.value !== null,
-  );
-
   return {
     paletteColors,
-    paletteActive,
     paletteRamp,
     paletteRampStrength,
-    rampActive,
   };
 }

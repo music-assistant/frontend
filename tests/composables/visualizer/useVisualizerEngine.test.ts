@@ -29,13 +29,10 @@ vi.mock("butterchurn", () => {
     loseGLContext,
   });
   // Named as well as default: the module probe reads both, and vitest throws
-  // on an export a mock does not define. The capability flags are read
-  // unguarded, so they have to be present even when false.
+  // on an export a mock does not define.
   return {
     createVisualizer,
-    supportsPaletteColors: false,
-    supportsPaletteRamp: false,
-    default: { createVisualizer, supportsPaletteColors: false },
+    default: { createVisualizer },
   };
 });
 

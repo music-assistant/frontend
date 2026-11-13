@@ -44,8 +44,6 @@ const build = (forceDark: boolean, palette: ColorPalette = PALETTE) =>
   useVisualizerPalette({
     palette: ref(palette),
     forceDark,
-    paletteColorsSupported: ref(true),
-    paletteRampSupported: ref(true),
   });
 
 describe("useVisualizerPalette element colours", () => {
@@ -66,12 +64,11 @@ describe("useVisualizerPalette element colours", () => {
   });
 
   it("takes no colours at all when a variant is missing", () => {
-    const { paletteColors, paletteActive } = build(true, {
+    const { paletteColors } = build(true, {
       ...PALETTE,
       primary: null,
     });
     expect(paletteColors.value).toBeNull();
-    expect(paletteActive.value).toBe(false);
   });
 });
 

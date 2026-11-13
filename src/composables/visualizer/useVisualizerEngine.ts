@@ -46,8 +46,7 @@ export interface VisualizerEngine {
   setPaused(paused: boolean, ramp?: boolean): void;
   /**
    * Color the preset's own waveform and borders from the artwork palette,
-   * instead of washing the whole frame in a single hue. A no-op on engines
-   * without the capability. Transitions over 1.5s.
+   * instead of washing the whole frame in a single hue. Transitions over 1.5s.
    *
    * :param colors: Four 0-255 rgb triples (waveform, outer border, inner
    *   border, motion vectors), or null to fade them back to the preset's own
@@ -58,7 +57,7 @@ export interface VisualizerEngine {
   ): void;
   /**
    * Remap the whole image into a palette ramp, keeping the preset's own
-   * luminance. A no-op on engines without the capability.
+   * luminance.
    *
    * :param colors: Ramp anchors ordered dark to light as 0-255 rgb triples,
    *   or null to fade the remap out.
@@ -68,10 +67,6 @@ export interface VisualizerEngine {
     colors: readonly (readonly [number, number, number])[] | null,
     strength: number,
   ): void;
-  // whether this engine can take palette colors at all
-  readonly paletteColorsSupported: boolean;
-  // whether this engine can remap the image to a palette ramp
-  readonly paletteRampSupported: boolean;
   // what the GL context reports it is drawing with
   readonly renderer: string;
   destroy(): void;
@@ -176,8 +171,6 @@ export async function createVisualizerEngine(
 ): Promise<VisualizerEngine | null> {
   if (!isVisualizerSupported()) return null;
   const butterchurn = resolveButterchurnModule(await import("butterchurn"));
-  const paletteColorsSupported = butterchurn.supportsPaletteColors === true;
-  const paletteRampSupported = butterchurn.supportsPaletteRamp === true;
   sharedAudioContext ??= new AudioContext();
   const profile =
     typeof quality === "object" ? quality : qualityProfile(quality);
@@ -334,8 +327,6 @@ export async function createVisualizerEngine(
 
   return {
     renderer,
-    paletteColorsSupported,
-    paletteRampSupported,
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
       // A stored preset name outlives the pack that held it: the v3 packs
       // renamed and dropped presets, so a fixed or favourited choice saved
@@ -381,11 +372,11 @@ export async function createVisualizerEngine(
     },
     setPaletteColors(colors) {
       if (destroyed) return;
-      visualizer.setPaletteColors?.(colors);
+      visualizer.setPaletteColors(colors);
     },
     setPaletteRamp(colors, strength) {
       if (destroyed) return;
-      visualizer.setPaletteRamp?.(colors, strength);
+      visualizer.setPaletteRamp(colors, strength);
     },
     destroy() {
       destroyed = true;
@@ -393,7 +384,7 @@ export async function createVisualizerEngine(
       resizeObserver.disconnect();
       // Every engine holds its own WebGL2 context and rebuilds are routine;
       // Chrome drops the oldest live context on overflow.
-      visualizer.loseGLContext?.();
+      visualizer.loseGLContext();
     },
   };
 }

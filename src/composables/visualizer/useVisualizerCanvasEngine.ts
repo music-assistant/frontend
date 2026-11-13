@@ -45,8 +45,6 @@ export function useVisualizerCanvasEngine(
 ) {
   const streaming = ref(false);
   const colorPalette = ref<ColorPalette>({});
-  const paletteColorsSupported = ref(false);
-  const paletteRampSupported = ref(false);
   const faded = ref(options.paused());
 
   // A dashboard viewer is a cast receiver or TV: a fixed profile rather than a
@@ -117,8 +115,6 @@ export function useVisualizerCanvasEngine(
       return;
     }
     engine = created;
-    paletteColorsSupported.value = engine?.paletteColorsSupported ?? false;
-    paletteRampSupported.value = engine?.paletteRampSupported ?? false;
     if (!engine) return;
     // Started up paused: nothing on screen to wind down.
     if (options.paused() && pauseTimer === null) {
@@ -264,8 +260,6 @@ export function useVisualizerCanvasEngine(
   return {
     streaming,
     colorPalette,
-    paletteColorsSupported,
-    paletteRampSupported,
     faded,
     currentEngine,
     setPaused,

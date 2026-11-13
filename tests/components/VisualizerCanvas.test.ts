@@ -58,8 +58,6 @@ vi.mock(
       setPaused,
       setPaletteColors,
       setPaletteRamp,
-      paletteColorsSupported: true,
-      paletteRampSupported: true,
       destroy: vi.fn(),
     })),
   }),

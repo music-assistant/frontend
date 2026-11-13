@@ -10,11 +10,10 @@ declare module "butterchurn" {
   export interface ButterchurnVisualizer {
     render(opts?: { audioLevels?: ButterchurnAudioLevels }): void;
     loadPreset(preset: object, blendTimeSec?: number): Promise<void>;
-    // present from the palette-colors fork branch; callers optional-call it
-    setPaletteColors?(
+    setPaletteColors(
       colors: readonly (readonly [number, number, number])[] | null,
     ): void;
-    setPaletteRamp?(
+    setPaletteRamp(
       colors: readonly (readonly [number, number, number])[] | null,
       strength: number,
     ): void;
@@ -26,14 +25,10 @@ declare module "butterchurn" {
     connectAudio(node: AudioNode): void;
     // releases the internal OffscreenCanvas' WebGL2 context; the visualizer is
     // unusable afterwards
-    loseGLContext?(): void;
+    loseGLContext(): void;
   }
 
   export interface ButterchurnStatic {
-    // fork builds that can color the preset's own waveform and borders
-    supportsPaletteColors?: boolean;
-    // fork builds that can remap the image to a palette ramp
-    supportsPaletteRamp?: boolean;
     createVisualizer(
       context: AudioContext,
       canvas: HTMLCanvasElement,

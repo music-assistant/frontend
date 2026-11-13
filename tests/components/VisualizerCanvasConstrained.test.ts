@@ -63,8 +63,6 @@ const engine = vi.hoisted(() => ({
   setPaletteRamp: vi.fn(),
   destroy: vi.fn(),
   renderer: "stub gpu",
-  paletteColorsSupported: false,
-  paletteRampSupported: true,
 }));
 const createVisualizerEngine = vi.hoisted(() => vi.fn());
 vi.mock(
@@ -157,7 +155,6 @@ describe("VisualizerCanvas on a cast dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     relayPlayerIds.length = 0;
-    engine.paletteColorsSupported = false;
     createVisualizerEngine.mockImplementation(async () => engine);
   });
 
@@ -213,9 +210,8 @@ describe("VisualizerCanvas on a cast dashboard", () => {
   });
 
   it("colors the preset's own elements without being asked to", async () => {
-    // on by default, so a supporting engine gets the colors with no preference
-    // written; only one side of the palette is ever used
-    engine.paletteColorsSupported = true;
+    // on by default, so the engine gets the colors with no preference written;
+    // only one side of the palette is ever used
     await mountCanvas();
     relayCallbacks.onColor!({
       primary: [200, 0, 0],
