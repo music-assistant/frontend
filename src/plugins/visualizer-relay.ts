@@ -241,8 +241,7 @@ export class VisualizerRelayClient {
       this.clearBeatTimers();
       this.clock.clear();
       this.scheduler.clear();
-      // No onColor: the canvas keeps its palette across a reconnect on purpose;
-      // stream/start clears it when the server no longer serves color.
+      // No onColor: the canvas keeps its palette across a reconnect on purpose.
       this.colorPalette = {};
       if (this.closed) return;
       if (event.code === AUTH_FAILED_CODE) {
@@ -316,17 +315,6 @@ export class VisualizerRelayClient {
           for (const ts of pending) this.scheduleDownbeat(ts);
         }
       } else if (message.type === "stream/start") {
-        // The server advertises the message types it will serve. Without
-        // "color" (color_tint disabled) no color message will ever replace a
-        // palette kept across a reconnect, so it has to be dropped here or the
-        // engine goes on recoloring from a dead track's artwork.
-        const types = (
-          message.payload as { visualizer?: { types?: unknown } } | undefined
-        )?.visualizer?.types;
-        if (Array.isArray(types) && !types.includes("color")) {
-          this.colorPalette = {};
-          this.callbacks.onColor?.({});
-        }
         this.setState("streaming");
       } else if (
         message.type === "stream/clear" ||
