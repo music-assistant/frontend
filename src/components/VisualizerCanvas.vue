@@ -116,8 +116,7 @@ const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
   // Oversize slightly when blurred so the edge vignette stays off-screen.
   transform: props.blur > 0 ? "scale(1.12)" : undefined,
-  // the engine recolors in its own pass, so there is no second layer to fade
-  // in step with and the opacity sits on the canvas itself
+  // The engine recolors in its own pass, so opacity applies to the canvas alone.
   opacity: props.opacity < 100 ? String(props.opacity / 100) : undefined,
 }));
 

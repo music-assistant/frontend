@@ -292,8 +292,6 @@ describe("VisualizerCanvas artwork recoloring", () => {
   }
 
   it("fades the canvas itself, per the opacity setting", async () => {
-    // The engine recolors in its own pass, so there is no second layer that
-    // has to fade in step with the canvas.
     const wrapper = mount(VisualizerCanvas, {
       props: { playerId: "kitchen", opacity: 40 },
     });
