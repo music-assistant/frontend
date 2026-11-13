@@ -32,7 +32,6 @@ import {
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
 import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
-import { dashboardKindForPath } from "@/helpers/dashboard_viewer_access";
 import { expertModeSetting } from "@/helpers/expert_mode";
 import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
@@ -84,16 +83,13 @@ const viewerPreferences = ref<Record<string, unknown>>({});
 let viewerPreferencesSyncStarted = false;
 
 // The viewer identifies its session by the dashboard_id the server put in its
-// launched url (plus what it is showing) and proves it with the url's
-// viewer_key; re-fetched on the sessions-updated event, which the server also
+// launched url and proves it with the url's viewer_key; re-fetched on the sessions-updated event, which the server also
 // signals when the casting user changes their preferences.
 function startViewerPreferencesSync(): void {
   if (viewerPreferencesSyncStarted) return;
   viewerPreferencesSyncStarted = true;
   effectScope(true).run(() => {
     const fetchViewerPreferences = async () => {
-      const dashboard = dashboardKindForPath(router.currentRoute.value.path);
-      const playerId = router.currentRoute.value.query.player;
       const dashboardId = router.currentRoute.value.query.dashboard_id;
       const viewerKey = router.currentRoute.value.query.viewer_key;
       try {
@@ -101,8 +97,6 @@ function startViewerPreferencesSync(): void {
           (await api.sendCommand<Record<string, unknown>>(
             "dashboard/viewer_preferences",
             {
-              dashboard,
-              player_id: typeof playerId === "string" ? playerId : undefined,
               dashboard_id:
                 typeof dashboardId === "string" ? dashboardId : undefined,
               viewer_key: typeof viewerKey === "string" ? viewerKey : undefined,

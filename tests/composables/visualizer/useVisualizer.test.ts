@@ -225,8 +225,6 @@ describe("viewer preferences", () => {
     expect(apiMocks.sendCommand).toHaveBeenCalledWith(
       "dashboard/viewer_preferences",
       {
-        dashboard: "party",
-        player_id: undefined,
         dashboard_id: "chromecast_abc",
         viewer_key: "secret-key",
       },
