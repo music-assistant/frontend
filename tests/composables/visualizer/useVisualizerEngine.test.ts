@@ -10,12 +10,18 @@ import {
   DECAY_MS,
   type VisualizerEngine,
 } from "@/composables/visualizer/useVisualizerEngine";
+import {
+  getPreset,
+  randomPresetName,
+} from "@/helpers/visualizer/presetLibrary";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ZERO_LEVEL = 0x80;
 
 const loadPreset = vi.hoisted(() => vi.fn());
 const loseGLContext = vi.hoisted(() => vi.fn());
+const setPaletteColors = vi.hoisted(() => vi.fn());
+const setPaletteRamp = vi.hoisted(() => vi.fn());
 const renderedSamples = vi.hoisted(() => [] as Uint8Array[]);
 
 vi.mock("butterchurn", () => {
@@ -27,13 +33,12 @@ vi.mock("butterchurn", () => {
     loadPreset,
     setRendererSize: vi.fn(),
     loseGLContext,
+    setPaletteColors,
+    setPaletteRamp,
   });
   // Named as well as default: the module probe reads both, and vitest throws
   // on an export a mock does not define.
-  return {
-    createVisualizer,
-    default: { createVisualizer },
-  };
+  return { createVisualizer, default: { createVisualizer } };
 });
 
 vi.mock("@/helpers/visualizer/presetLibrary", () => ({
@@ -191,6 +196,25 @@ describe("createVisualizerEngine pause envelope", () => {
     expect(loadPreset).toHaveBeenCalledWith(expect.anything(), 0);
   });
 
+  it("reports the preset it loaded", async () => {
+    expect(await engine!.loadPresetByName("known")).toBe("known");
+  });
+
+  it("falls back to a random preset when the name is gone", async () => {
+    vi.mocked(getPreset).mockResolvedValueOnce(undefined);
+
+    expect(await engine!.loadPresetByName("dropped")).toBe("preset");
+    expect(loadPreset).toHaveBeenCalled();
+  });
+
+  it("loads nothing when no preset is available", async () => {
+    vi.mocked(getPreset).mockResolvedValueOnce(undefined);
+    vi.mocked(randomPresetName).mockResolvedValueOnce("");
+
+    expect(await engine!.loadPresetByName("dropped")).toBe("");
+    expect(loadPreset).not.toHaveBeenCalled();
+  });
+
   // Every engine holds its own WebGL2 context and rebuilds are routine;
   // Chrome drops the oldest live context once they pile up.
   it("releases the GL context on destroy", () => {
@@ -198,5 +222,25 @@ describe("createVisualizerEngine pause envelope", () => {
     engine = null;
 
     expect(loseGLContext).toHaveBeenCalled();
+  });
+
+  it("passes the artwork palette through to butterchurn", () => {
+    const ramp: [number, number, number][] = [
+      [0, 0, 0],
+      [255, 255, 255],
+    ];
+    engine!.setPaletteColors([[1, 2, 3]]);
+    engine!.setPaletteRamp(ramp, 0.5);
+
+    expect(setPaletteColors).toHaveBeenCalledWith([[1, 2, 3]]);
+    expect(setPaletteRamp).toHaveBeenCalledWith(ramp, 0.5);
+  });
+
+  it("ignores palette changes once destroyed", () => {
+    engine!.destroy();
+    engine!.setPaletteRamp(null, 0);
+
+    expect(setPaletteRamp).not.toHaveBeenCalled();
+    engine = null;
   });
 });
