@@ -27,7 +27,7 @@ export interface VisualizerEngine {
   /**
    * Load a preset by name, falling back to a random one when the name is not
    * in the loaded packs. Resolves with the name actually put on screen, or ""
-   * when nothing could be loaded.
+   * when nothing could be loaded (no preset, or the engine rejected it).
    */
   loadPresetByName(name: string, blendSec?: number): Promise<string>;
   loadRandomPreset(): Promise<string>;
@@ -64,7 +64,7 @@ export interface VisualizerEngine {
 }
 
 /**
- * Whether the browser can run butterchurn (WebGL2 required).
+ * Whether the browser can run butterchurn (WebGL2 and WebAssembly required).
  *
  * Probed once and cached: this runs inside every hosting view's
  * visualizerActive computed, which re-evaluates on each preference write.
@@ -76,7 +76,9 @@ let webgl2Supported: boolean | null = null;
 export function isVisualizerSupported(): boolean {
   if (webgl2Supported === null) {
     try {
-      webgl2Supported = !!document.createElement("canvas").getContext("webgl2");
+      webgl2Supported =
+        typeof WebAssembly === "object" &&
+        !!document.createElement("canvas").getContext("webgl2");
     } catch {
       webgl2Supported = false;
     }
@@ -260,9 +262,9 @@ export async function createVisualizerEngine(
 
   return {
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
-      // A stored preset name outlives the pack that held it: the v3 packs
-      // renamed and dropped presets, so a fixed or favourited choice saved
-      // against v2 can be gone. Fall back rather than leaving the canvas blank.
+      // A stored preset name can be missing from the pack (v3 dropped a few
+      // v2 presets), so a fixed or favourited choice saved earlier can be
+      // gone. Fall back rather than leaving the canvas blank.
       let loadedName = name;
       let preset = await getPreset(name);
       if (!preset) {
@@ -272,18 +274,17 @@ export async function createVisualizerEngine(
       if (!preset || destroyed) return "";
       // A halted loop has no frames to blend across.
       const blend = rafHandle === null ? 0 : blendSec;
-      await visualizer.loadPreset(preset, blend);
+      const loaded = await visualizer.loadPreset(preset, blend);
       redrawIfHalted();
-      return loadedName;
+      return loaded ? loadedName : "";
     },
     async loadRandomPreset() {
       const name = await randomPresetName();
       const preset = await getPreset(name);
-      if (preset && !destroyed) {
-        await visualizer.loadPreset(preset, 0);
-        redrawIfHalted();
-      }
-      return name;
+      if (!preset || destroyed) return "";
+      const loaded = await visualizer.loadPreset(preset, 0);
+      redrawIfHalted();
+      return loaded ? name : "";
     },
     setPaused(value: boolean, ramp = true) {
       if (destroyed || value === paused) return;
@@ -314,9 +315,6 @@ export async function createVisualizerEngine(
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
-      // Every engine holds its own WebGL2 context and rebuilds are routine;
-      // Chrome drops the oldest live context on overflow.
-      visualizer.loseGLContext();
     },
   };
 }

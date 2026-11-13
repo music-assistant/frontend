@@ -18,8 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ZERO_LEVEL = 0x80;
 
-const loadPreset = vi.hoisted(() => vi.fn());
-const loseGLContext = vi.hoisted(() => vi.fn());
+const loadPreset = vi.hoisted(() => vi.fn(async () => true));
 const setPaletteColors = vi.hoisted(() => vi.fn());
 const setPaletteRamp = vi.hoisted(() => vi.fn());
 const renderedSamples = vi.hoisted(() => [] as Uint8Array[]);
@@ -32,7 +31,6 @@ vi.mock("butterchurn", () => {
       renderedSamples.push(new Uint8Array(audioLevels.timeByteArray)),
     loadPreset,
     setRendererSize: vi.fn(),
-    loseGLContext,
     setPaletteColors,
     setPaletteRamp,
   });
@@ -215,13 +213,10 @@ describe("createVisualizerEngine pause envelope", () => {
     expect(loadPreset).not.toHaveBeenCalled();
   });
 
-  // Every engine holds its own WebGL2 context and rebuilds are routine;
-  // Chrome drops the oldest live context once they pile up.
-  it("releases the GL context on destroy", () => {
-    engine!.destroy();
-    engine = null;
+  it("reports nothing when the engine fails to load the preset", async () => {
+    loadPreset.mockResolvedValueOnce(false);
 
-    expect(loseGLContext).toHaveBeenCalled();
+    expect(await engine!.loadPresetByName("known")).toBe("");
   });
 
   it("passes the artwork palette through to butterchurn", () => {
@@ -242,5 +237,35 @@ describe("createVisualizerEngine pause envelope", () => {
 
     expect(setPaletteRamp).not.toHaveBeenCalled();
     engine = null;
+  });
+});
+
+describe("isVisualizerSupported", () => {
+  // The verdict is cached per module load, so each case imports a fresh one.
+  const probe = async () => {
+    vi.resetModules();
+    const module = await import("@/composables/visualizer/useVisualizerEngine");
+    return module.isVisualizerSupported();
+  };
+
+  beforeEach(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      {} as unknown as RenderingContext,
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("is supported with WebGL2 and WebAssembly", async () => {
+    expect(await probe()).toBe(true);
+  });
+
+  it("is unsupported without WebAssembly", async () => {
+    vi.stubGlobal("WebAssembly", undefined);
+
+    expect(await probe()).toBe(false);
   });
 });

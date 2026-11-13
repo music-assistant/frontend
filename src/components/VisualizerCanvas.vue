@@ -42,7 +42,11 @@ import {
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
 import { useVisualizerPalette } from "@/composables/visualizer/useVisualizerPalette";
-import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
+import {
+  availableFavorites,
+  listPresetNames,
+  randomPresetName,
+} from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
@@ -170,9 +174,13 @@ let lastPresetSwitchAt = 0;
 const pickPresetName = async (forceRandom = false): Promise<string | null> => {
   if (!forceRandom && presetModePref.value === "fixed" && props.preset)
     return props.preset;
-  const favorites = favoritesPref.value;
-  if (presetModePref.value === "random_favorites" && favorites.length > 0) {
-    return favorites[Math.floor(Math.random() * favorites.length)];
+  if (presetModePref.value === "random_favorites") {
+    const favorites = availableFavorites(
+      favoritesPref.value,
+      await listPresetNames(),
+    );
+    if (favorites.length > 0)
+      return favorites[Math.floor(Math.random() * favorites.length)];
   }
   return await randomPresetName();
 };
@@ -246,12 +254,12 @@ const initialize = async () => {
   connectRelay();
   await createEngine();
   if (!engine) {
-    // WebGL2 unavailable or init failure: leave the layer transparent. Report it
+    // WebGL2 or WebAssembly unavailable or init failure: leave the layer transparent. Report it
     // over the relay before closing, so displays with no reachable console (cast
     // receivers, kiosks) still say why they are showing a plain background.
     const reason = isVisualizerSupported()
       ? "visualizer engine failed to start"
-      : "WebGL2 unavailable in this browser";
+      : "WebGL2 or WebAssembly unavailable in this browser";
     console.warn(`[visualizer] ${reason}, falling back to gradient`);
     relay?.reportError(reason);
     relay?.close();

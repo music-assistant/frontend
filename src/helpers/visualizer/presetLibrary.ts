@@ -76,3 +76,15 @@ export async function randomPresetName(): Promise<string> {
   if (names.length === 0) return "";
   return names[Math.floor(Math.random() * names.length)];
 }
+
+/**
+ * Favourites are stored by name and can outlive the preset (v3 dropped a few
+ * v2 presets), so only the ones still in the library count.
+ */
+export function availableFavorites(
+  favorites: string[],
+  names: string[],
+): string[] {
+  const known = new Set(names);
+  return favorites.filter((name) => known.has(name));
+}

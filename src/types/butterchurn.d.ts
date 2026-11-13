@@ -9,7 +9,9 @@ declare module "butterchurn" {
 
   export interface ButterchurnVisualizer {
     render(opts?: { audioLevels?: ButterchurnAudioLevels }): void;
-    loadPreset(preset: object, blendTimeSec?: number): Promise<void>;
+    // false when the preset failed to compile, a newer load superseded it, or
+    // it cannot run without the JS interpreter
+    loadPreset(preset: object, blendTimeSec?: number): Promise<boolean>;
     setPaletteColors(
       colors: readonly (readonly [number, number, number])[] | null,
     ): void;
@@ -23,9 +25,6 @@ declare module "butterchurn" {
       opts?: { pixelRatio?: number },
     ): void;
     connectAudio(node: AudioNode): void;
-    // releases the internal OffscreenCanvas' WebGL2 context; the visualizer is
-    // unusable afterwards
-    loseGLContext(): void;
   }
 
   export interface ButterchurnStatic {
