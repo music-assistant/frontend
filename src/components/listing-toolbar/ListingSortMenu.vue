@@ -6,10 +6,10 @@
       <Button
         variant="outline"
         class="max-w-48 min-w-0 gap-3 px-3"
-        :aria-label="$t('sort.sort_by_current', [triggerLabel])"
+        :aria-label="triggerAriaLabel"
         :disabled="!hasMenu"
       >
-        <span class="flex min-w-0 items-center gap-1">
+        <span v-if="hasSortOptions" class="flex min-w-0 items-center gap-1">
           <span class="min-w-0 truncate">{{ currentLabel }}</span>
           <component
             :is="directionIcon"
@@ -28,20 +28,26 @@
       <Button
         variant="ghost"
         size="icon-lg"
-        :title="$t('tooltip.sort_options')"
-        :aria-label="$t('tooltip.sort_options')"
+        :title="compactLabel"
+        :aria-label="compactLabel"
         :disabled="!hasMenu"
       >
-        <ArrowUpDown class="size-[22px]" />
+        <component :is="compactIcon" class="size-[22px]" />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="min-w-56">
-      <DropdownMenuLabel v-if="titled" :class="MENU_SECTION_LABEL_CLASS">
+      <DropdownMenuLabel
+        v-if="titled && hasSortOptions"
+        :class="MENU_SECTION_LABEL_CLASS"
+      >
         {{ $t("sort.sort_by") }}
       </DropdownMenuLabel>
       <!-- picking the sort it is on flips its order, as the arrow shows; the
            menu stays open for another pick until a click outside closes it -->
-      <DropdownMenuRadioGroup :model-value="current.field">
+      <DropdownMenuRadioGroup
+        v-if="hasSortOptions"
+        :model-value="current.field"
+      >
         <DropdownMenuRadioItem
           v-for="option in options"
           :key="option.field"
@@ -64,7 +70,7 @@
         </DropdownMenuRadioItem>
       </DropdownMenuRadioGroup>
       <template v-if="showViewSection">
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator v-if="hasSortOptions" />
         <ListingViewModeRow
           v-if="!fixedView"
           :model-value="viewMode"
@@ -161,9 +167,10 @@ const showViewSection = computed(
   () => !props.fixedView || showGridControls.value,
 );
 
-const hasMenu = computed(
-  () => props.options.length > 0 || showViewSection.value,
-);
+// a listing the server keeps in its own order has only the view to pick
+const hasSortOptions = computed(() => props.options.length > 0);
+
+const hasMenu = computed(() => hasSortOptions.value || showViewSection.value);
 
 // with more than the sort in it, or opened from the field, each part gets a title
 const titled = computed(() => !props.compact || showViewSection.value);
@@ -173,6 +180,22 @@ const currentView = computed(() =>
   props.fixedView
     ? undefined
     : VIEW_MODES.find((view) => view.value === props.viewMode),
+);
+
+const triggerAriaLabel = computed(() => {
+  if (hasSortOptions.value)
+    return t("sort.sort_by_current", [triggerLabel.value]);
+  return currentView.value
+    ? t("tooltip.view_mode_current", [t(currentView.value.label)])
+    : t("tooltip.view_mode");
+});
+
+const compactLabel = computed(() =>
+  hasSortOptions.value ? t("tooltip.sort_options") : t("tooltip.view_mode"),
+);
+
+const compactIcon = computed(() =>
+  hasSortOptions.value ? ArrowUpDown : (currentView.value?.icon ?? ArrowUpDown),
 );
 
 const pickSortOption = (event: Event, option: SortOptionInfo) => {
