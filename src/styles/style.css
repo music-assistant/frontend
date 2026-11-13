@@ -10,6 +10,10 @@
   translate: 6% 0;
 }
 
+@utility card-hover {
+  @apply cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg;
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

@@ -69,7 +69,12 @@
               />
             </span>
             <span class="artist-top-tracks__text">
-              <span class="artist-top-tracks__name">{{ track.name }}</span>
+              <span class="artist-top-tracks__name">
+                {{ track.name }}
+                <span v-if="track.version" class="artist-top-tracks__version"
+                  >({{ track.version }})</span
+                >
+              </span>
               <span class="artist-top-tracks__album">{{
                 albumLine(track)
               }}</span>
@@ -348,6 +353,9 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
 }
 .artist-top-tracks__track--playing .artist-top-tracks__name {
   color: rgb(var(--v-theme-primary));
+}
+.artist-top-tracks__version {
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .artist-top-tracks__album {
   display: block;

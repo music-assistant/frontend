@@ -1,4 +1,4 @@
-import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -11,9 +11,9 @@ vi.mock("@/plugins/i18n", () => ({ $t: i18nMock.t }));
 
 enableAutoUnmount(afterEach);
 
-describe("CommunityProviderMarker", () => {
+describe("ProviderMaintainerMarker", () => {
   it("labels the icon without naming the maintainers", () => {
-    const wrapper = mount(CommunityProviderMarker, {
+    const wrapper = mount(ProviderMaintainerMarker, {
       props: { variant: "icon", maintainers: ["@jane"] },
     });
 
@@ -25,12 +25,16 @@ describe("CommunityProviderMarker", () => {
     expect(marker.find('[data-slot="badge"]').exists()).toBe(false);
   });
 
-  it("names the maintainers after the badge on the line", () => {
-    const wrapper = mount(CommunityProviderMarker, {
-      props: { variant: "line", maintainers: ["@jane", "@john"] },
+  it("names the maintainers after the badge on the line of a community provider", () => {
+    const wrapper = mount(ProviderMaintainerMarker, {
+      props: {
+        variant: "line",
+        community: true,
+        maintainers: ["@jane", "@john"],
+      },
     });
 
-    const marker = wrapper.get('[data-testid="community-marker"]');
+    const marker = wrapper.get('[data-testid="provider-maintainers"]');
     expect(marker.get('[data-slot="badge"]').text()).toBe(
       "settings.provider_community",
     );
@@ -43,14 +47,27 @@ describe("CommunityProviderMarker", () => {
     });
   });
 
+  it("names the maintainers without a badge on the line of a core provider", () => {
+    const wrapper = mount(ProviderMaintainerMarker, {
+      props: { variant: "line", maintainers: ["@jane"] },
+    });
+
+    const marker = wrapper.get('[data-testid="provider-maintainers"]');
+    expect(marker.find('[data-slot="badge"]').exists()).toBe(false);
+    expect(marker.text()).toBe("settings.provider_maintained_by");
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_maintained_by", {
+      maintainers: "@jane",
+    });
+  });
+
   it.each([[[]], [undefined]])(
     "shows only the badge without maintainers (%j)",
     (maintainers) => {
-      const wrapper = mount(CommunityProviderMarker, {
-        props: { variant: "line", maintainers },
+      const wrapper = mount(ProviderMaintainerMarker, {
+        props: { variant: "line", community: true, maintainers },
       });
 
-      expect(wrapper.get('[data-testid="community-marker"]').text()).toBe(
+      expect(wrapper.get('[data-testid="provider-maintainers"]').text()).toBe(
         "settings.provider_community",
       );
     },
