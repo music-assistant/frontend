@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ZERO_LEVEL = 0x80;
 
-const loadPreset = vi.hoisted(() => vi.fn());
+const loadPreset = vi.hoisted(() => vi.fn(async () => true));
 const loseGLContext = vi.hoisted(() => vi.fn());
 const setPaletteColors = vi.hoisted(() => vi.fn());
 const setPaletteRamp = vi.hoisted(() => vi.fn());
@@ -213,6 +213,12 @@ describe("createVisualizerEngine pause envelope", () => {
 
     expect(await engine!.loadPresetByName("dropped")).toBe("");
     expect(loadPreset).not.toHaveBeenCalled();
+  });
+
+  it("reports nothing when the engine fails to load the preset", async () => {
+    loadPreset.mockResolvedValueOnce(false);
+
+    expect(await engine!.loadPresetByName("known")).toBe("");
   });
 
   // Every engine holds its own WebGL2 context and rebuilds are routine;
