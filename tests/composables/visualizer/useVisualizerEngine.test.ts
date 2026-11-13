@@ -226,3 +226,33 @@ describe("createVisualizerEngine pause envelope", () => {
     expect(loseGLContext).toHaveBeenCalled();
   });
 });
+
+describe("isVisualizerSupported", () => {
+  // The verdict is cached per module load, so each case imports a fresh one.
+  const probe = async () => {
+    vi.resetModules();
+    const module = await import("@/composables/visualizer/useVisualizerEngine");
+    return module.isVisualizerSupported();
+  };
+
+  beforeEach(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      {} as unknown as RenderingContext,
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("is supported with WebGL2 and WebAssembly", async () => {
+    expect(await probe()).toBe(true);
+  });
+
+  it("is unsupported without WebAssembly", async () => {
+    vi.stubGlobal("WebAssembly", undefined);
+
+    expect(await probe()).toBe(false);
+  });
+});
