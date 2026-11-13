@@ -38,7 +38,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { useResizeObserver } from "@vueuse/core";
+import { useMutationObserver, useResizeObserver } from "@vueuse/core";
 import {
   computed,
   nextTick,
@@ -120,6 +120,10 @@ const measure = function () {
 
 onMounted(measure);
 useResizeObserver(() => wrapper.value?.parentElement, measure);
+// a badge entering or leaving the row changes the room without resizing the row
+useMutationObserver(() => wrapper.value?.parentElement, measure, {
+  childList: true,
+});
 watch(playSentence, () => nextTick(measure));
 
 const playActionInProgress = usePlayActionInProgress();

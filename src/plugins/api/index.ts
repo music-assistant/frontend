@@ -55,6 +55,7 @@ import {
   type SetupFlowStep,
   type SuccessResultMessage,
   type TaskSchedule,
+  type LetterIndexEntry,
   type Track,
   type SortOptionInfo,
   type User,
@@ -140,6 +141,18 @@ export interface PlayMediaOptions {
   shuffle?: boolean;
   /** Keep the global error toast quiet for a caller that reports the failure itself. */
   suppressGlobalError?: CommandOptions["suppressGlobalError"];
+}
+
+export interface LetterIndexFilters {
+  favorite?: boolean;
+  search?: string;
+  sort_field?: SortField;
+  sort_direction?: SortDirection;
+  provider?: string | string[];
+  genre?: number | number[];
+  album_artists_only?: boolean;
+  album_types?: Array<AlbumType | string>;
+  artist_type?: ArtistType;
 }
 
 export enum ConnectionState {
@@ -678,6 +691,17 @@ export class MusicAssistantApi {
     return this.sendCommand("music/tracks/count", { favorite_only });
   }
 
+  /**
+   * The first row of each letter in the library listing sorted by name, for
+   * the same filters as its listing. Empty for any other sort or a search.
+   */
+  public getLibraryLetterIndex(
+    media: "artists" | "albums" | "tracks",
+    filters: LetterIndexFilters,
+  ): Promise<LetterIndexEntry[]> {
+    return this.sendCommand(`music/${media}/letter_index`, { ...filters });
+  }
+
   public getSortOptions(listing: ListingType): Promise<SortOptionInfo[]> {
     const cached = this._librarySortOptions.get(listing);
     if (cached) return cached;
@@ -806,6 +830,22 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistTracksCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+    favorite?: boolean,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_tracks_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
+      favorite,
+    });
+  }
+
   public getArtistTopTracks(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -854,6 +894,24 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistAlbumsCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+    album_types?: AlbumType[],
+    favorite?: boolean,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_albums_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
+      album_types,
+      favorite,
+    });
+  }
+
   public getArtistAppearsOn(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -873,6 +931,20 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+    });
+  }
+
+  public getArtistAppearsOnCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_appears_on_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
     });
   }
 
@@ -924,6 +996,19 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      album_types,
+    });
+  }
+
+  public getArtistDiscographyCount(
+    item_id: string,
+    search?: string,
+    album_types?: AlbumType[],
+  ): Promise<number> {
+    return this.sendCommand("music/artists/discography_count", {
+      item_id,
+      provider_instance_id_or_domain: "library",
+      search,
       album_types,
     });
   }
@@ -1451,14 +1536,19 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     favorite?: boolean,
+    options?: CommandOptions,
   ): Promise<MediaCollection<Audiobook>> {
-    return this.sendCommand("music/audiobooks/get_collection", {
-      item_id,
-      search,
-      limit,
-      offset,
-      favorite,
-    });
+    return this.sendCommand(
+      "music/audiobooks/get_collection",
+      {
+        item_id,
+        search,
+        limit,
+        offset,
+        favorite,
+      },
+      options,
+    );
   }
 
   public getAudiobookVersions(
@@ -2730,18 +2820,10 @@ export class MusicAssistantApi {
     option?: QueueOption,
     options: PlayMediaOptions = {},
   ): Promise<void> {
-    let queue_id = options.queue_id;
-    if (
-      !queue_id &&
-      store.activePlayer?.active_source &&
-      store.activePlayer.active_source in this.queues
-    ) {
-      queue_id = store.activePlayer.active_source;
-    } else if (!queue_id) {
-      queue_id = store.activePlayer?.player_id;
-    }
     const payload = {
-      queue_id,
+      // a player's own queue id is its player id; the server routes a grouped
+      // or synced player's request to the queue that should handle it
+      queue_id: options.queue_id ?? store.activePlayer?.player_id,
       media,
       option,
       start_item: options.start_item,

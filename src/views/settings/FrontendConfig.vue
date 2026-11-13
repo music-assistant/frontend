@@ -102,6 +102,8 @@ onMounted(() => {
   const storedTheme = localStorage.getItem("frontend.settings.theme") || "auto";
 
   const configEntries: ConfigEntry[] = [
+    // the "preferences" category holds per-user settings only: they are saved
+    // to the account and follow the user to every device
     {
       key: "theme",
       type: ConfigEntryType.STRING,
@@ -150,6 +152,31 @@ onMounted(() => {
       value: null,
     },
     {
+      key: "show_waveform",
+      type: ConfigEntryType.BOOLEAN,
+      label: "show_waveform",
+      default_value: expertMode(),
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "preferences",
+      value: expertModeSetting("show_waveform"),
+    },
+    {
+      key: "show_letter_index",
+      type: ConfigEntryType.BOOLEAN,
+      label: "show_letter_index",
+      default_value: false,
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "preferences",
+      value:
+        (store.currentUser?.preferences?.show_letter_index as boolean) ?? false,
+    },
+    // the "display_settings" category holds per-browser settings only: each
+    // key is listed in DEVICE_SETTING_KEYS and stays on this device
+    {
       key: BROWSER_MEDIA_CONTROLS,
       type: ConfigEntryType.STRING,
       label: "enable_browser_controls",
@@ -186,17 +213,6 @@ onMounted(() => {
       value:
         localStorage.getItem("frontend.settings.force_mobile_layout") ===
         "true",
-    },
-    {
-      key: "show_waveform",
-      type: ConfigEntryType.BOOLEAN,
-      label: "show_waveform",
-      default_value: expertMode(),
-      required: false,
-      options: [],
-      multi_value: false,
-      category: "display_settings",
-      value: expertModeSetting("show_waveform"),
     },
     {
       key: "audiobook_chapter_progress",

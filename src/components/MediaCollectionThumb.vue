@@ -8,7 +8,7 @@
   >
     <div
       v-for="(mediaItem, index) in visibleItems"
-      :key="mediaItem.item_id ?? index"
+      :key="index"
       class="thumb"
       :style="thumbStyle(index)"
     >
@@ -30,7 +30,6 @@ import {
   type MediaCollection,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
-import { getImageThumbForItem } from "@/helpers/utils";
 
 interface Props {
   item: MediaCollection<MediaItemType>;
@@ -45,18 +44,14 @@ const props = withDefaults(defineProps<Props>(), {
   thumbOffset: 19,
 });
 
+// the server picks the covers over all items, so a filtered listing keeps them;
+// without any, the collection itself shows a placeholder
 const visibleItems = computed(() => {
-  const items = props.item.items;
-  const withThumb = items.filter(
-    (item) => getImageThumbForItem(item, ImageType.THUMB) !== undefined,
+  const covers = (props.item.metadata.images ?? []).filter(
+    (image) => image.type === ImageType.THUMB,
   );
-
-  if (withThumb.length >= 3) {
-    return withThumb.slice(0, 3);
-  }
-
-  // If there are fewer than 3 thumbnails, preserve order.
-  return items.slice(0, 3);
+  if (!covers.length) return [props.item];
+  return covers.map((image) => ({ ...props.item, image }));
 });
 
 const thumbScale = computed(() => {
