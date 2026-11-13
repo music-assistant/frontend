@@ -80,18 +80,18 @@ export interface VisualizerEngine {
  * An uncached probe would spawn a throwaway WebGL2 context per call, and
  * Chrome drops the oldest live context on overflow — the running visualizer.
  */
-let webgl2Supported: boolean | null = null;
+let visualizerSupported: boolean | null = null;
 const UNKNOWN_RENDERER = "unknown";
 let probedRenderer = UNKNOWN_RENDERER;
 
 export function isVisualizerSupported(): boolean {
-  if (webgl2Supported === null) {
+  if (visualizerSupported === null) {
     let gl: WebGL2RenderingContext | null = null;
     try {
       gl = document.createElement("canvas").getContext("webgl2");
-      webgl2Supported = typeof WebAssembly === "object" && !!gl;
+      visualizerSupported = typeof WebAssembly === "object" && !!gl;
     } catch {
-      webgl2Supported = false;
+      visualizerSupported = false;
     }
     // Separately guarded: the unmasked string names the actual driver (a
     // software rasterizer also reports WebGL2), but a driver that throws on
@@ -109,7 +109,7 @@ export function isVisualizerSupported(): boolean {
       }
     }
   }
-  return webgl2Supported;
+  return visualizerSupported;
 }
 
 /**
