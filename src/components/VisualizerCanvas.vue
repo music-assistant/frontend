@@ -196,9 +196,7 @@ const applyPreset = async (blendSec?: number, forceRandom = false) => {
   const name = await pickPresetName(forceRandom);
   if (requestId !== presetRequestId || !name || !engine) return;
   lastPresetSwitchAt = performance.now();
-  // The engine substitutes a random preset for a name the packs no longer
-  // carry, so what is showing is whatever it reports back, not what was asked
-  // for.
+  // Show what the engine loaded; it falls back for a missing name.
   const loaded = await engine.loadPresetByName(name, blendSec);
   if (requestId !== presetRequestId || !loaded) return;
   currentVisualizerPreset.value = loaded;
