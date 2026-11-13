@@ -78,9 +78,8 @@ export async function randomPresetName(): Promise<string> {
 }
 
 /**
- * Favourites are stored by name and outlive the pack that held them (the v3
- * packs renamed and dropped presets), so only the ones still in the library
- * count.
+ * Favourites are stored by name and can outlive the preset (v3 dropped a few
+ * v2 presets), so only the ones still in the library count.
  */
 export function availableFavorites(
   favorites: string[],

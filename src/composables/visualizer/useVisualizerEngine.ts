@@ -239,9 +239,9 @@ export async function createVisualizerEngine(
 
   return {
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
-      // A stored preset name outlives the pack that held it: the v3 packs
-      // renamed and dropped presets, so a fixed or favourited choice saved
-      // against v2 can be gone. Fall back rather than leaving the canvas blank.
+      // A stored preset name can be missing from the pack (v3 dropped a few
+      // v2 presets), so a fixed or favourited choice saved earlier can be
+      // gone. Fall back rather than leaving the canvas blank.
       let loadedName = name;
       let preset = await getPreset(name);
       if (!preset) {
