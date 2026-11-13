@@ -146,11 +146,6 @@ const configured = computed(() => configuredProviders(props.providerType));
 const descriptionKey = computed(() => {
   if (connectingApps.value)
     return "onboarding.steps.plugins.phone_apps_description";
-  if (
-    props.providerType === ProviderType.MUSIC &&
-    intent.value === "phone_apps"
-  )
-    return "onboarding.steps.music_sources.deferred_description";
   return match(props.providerType)
     .with(ProviderType.PLUGIN, () => "onboarding.steps.plugins.description")
     .otherwise(() => "onboarding.steps.music_sources.description");

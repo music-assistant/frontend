@@ -265,11 +265,10 @@ const stepView = computed(() => {
 const showForwardAction = computed(
   () => currentStep.value != null && !stepRef.value?.ownsForwardAction,
 );
-// a step that does not hold the wizard up is skipped rather than moved on from,
-// whether it is optional by nature or one the answers deferred
+// an optional step that is not set up yet offers a skip instead of Next
 const skipping = computed(() => {
   const step = currentStep.value;
-  return !!(step?.optional || step?.deferred) && !step.isDone(ctx.value);
+  return !!step?.optional && !step.isDone(ctx.value);
 });
 const forwardLabel = computed(() =>
   skipping.value

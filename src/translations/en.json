@@ -2972,7 +2972,7 @@
                 "phone_apps": {
                     "label": "Keep using my existing music apps",
                     "description": "Connect your usual music apps to your speakers through Music Assistant, without setting up a music library.",
-                    "preview": "Next, we'll add your speakers and connect your music apps. Adding a music library is optional."
+                    "preview": "Next, we'll add your speakers, connect your music apps and show you how to start listening."
                 },
                 "music_hub": {
                     "label": "The full Music Assistant experience",
@@ -2983,8 +2983,7 @@
             },
             "music_sources": {
                 "title": "Add your music sources",
-                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play.",
-                "deferred_description": "Want to browse music in Music Assistant too? Add a streaming service or local music files. You can skip this when playing from your other apps."
+                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play."
             },
             "players": {
                 "title": "Add your players",
@@ -3048,7 +3047,8 @@
             },
             "finish": {
                 "title": "Finish setup",
-                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings."
+                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings.",
+                "phone_apps_description": "Here's a recap of your speakers and app connections. You can add a music library and other features later from the settings."
             },
             "welcome": {
                 "title": "Make yourself at home",

@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-5">
     <p class="text-muted-foreground text-sm">
-      {{ $t(`onboarding.steps.${stepId}.description`) }}
+      {{ $t(descriptionKey) }}
     </p>
 
     <div v-if="receiverInstructions.length > 0" class="flex flex-col gap-2">
@@ -88,7 +88,7 @@
             <ItemTitle>{{ $t(stepTitleKey(step.id, ctx.answers)) }}</ItemTitle>
           </ItemContent>
           <ItemActions>
-            <Badge v-if="step.optional || step.deferred" variant="outline">
+            <Badge v-if="step.optional" variant="outline">
               {{ $t("optional") }}
             </Badge>
             <ChevronRight
@@ -100,7 +100,7 @@
       </ItemGroup>
     </div>
 
-    <Item variant="muted" data-testid="onboarding-tour-offer">
+    <Item v-if="!appFirst" variant="muted" data-testid="onboarding-tour-offer">
       <ItemMedia variant="icon">
         <Route aria-hidden="true" />
       </ItemMedia>
@@ -173,8 +173,17 @@ const emit = defineEmits<{
 
 const { ctx, steps, pending, expertMode } = useOnboarding();
 
+const isMemberSummary = computed(() => props.stepId === "all_set");
+const appFirst = computed(
+  () => !isMemberSummary.value && ctx.value.answers.intent === "phone_apps",
+);
+const descriptionKey = computed(() =>
+  appFirst.value
+    ? "onboarding.steps.finish.phone_apps_description"
+    : `onboarding.steps.${props.stepId}.description`,
+);
 const essentials = computed(() =>
-  pending.value.filter((step) => !step.optional && !step.deferred),
+  pending.value.filter((step) => !step.optional),
 );
 const pendingGroups = computed(() =>
   [
@@ -186,7 +195,7 @@ const pendingGroups = computed(() =>
     {
       titleKey: "onboarding.explore_more",
       testId: "onboarding-summary-optional",
-      steps: pending.value.filter((step) => step.optional || step.deferred),
+      steps: pending.value.filter((step) => step.optional),
     },
   ].filter((group) => group.steps.length > 0),
 );
@@ -231,7 +240,6 @@ const countLabels = computed<Partial<Record<OnboardingStepId, string>>>(() => ({
   ),
 }));
 
-const isMemberSummary = computed(() => props.stepId === "all_set");
 // a member set nothing up: what their summary looks back at is the answer they
 // gave, so it is not headed as a list of things that are now in place
 const doneHeadingKey = computed(() =>

@@ -703,19 +703,13 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     );
   });
 
-  it("keeps a deferred music source in what is pending", async () => {
+  it("only asks for app connections once the speakers are set up in existing-app setup", async () => {
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
 
     const { pending } = await loadOnboarding();
     preferenceState.intent.value = "phone_apps";
 
-    // the music sources moved behind the plugins for this answer, but stay in
-    // what is pending rather than dropped
-    expect(pending.value.map((step) => step.id)).toEqual([
-      "plugins",
-      "music_sources",
-      "invite_members",
-    ]);
+    expect(pending.value.map((step) => step.id)).toEqual(["plugins"]);
   });
 
   it("leaves only the optional steps pending once the core is set up", async () => {

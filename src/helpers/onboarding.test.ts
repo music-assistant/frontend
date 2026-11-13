@@ -3,7 +3,6 @@ import {
   applicableSteps,
   experienceOf,
   firstStep,
-  orderSteps,
   pendingSteps,
   stepTitleKey,
   type OnboardingContext,
@@ -109,16 +108,19 @@ describe("onboarding step order", () => {
     expect(firstStep(ctx)).toBe("intent");
   });
 
-  it("keeps the account ahead of a deferred music sources step", () => {
+  it("keeps the account ahead of existing-app setup on a fresh server", () => {
     const ctx = context({
       firstRun: true,
       signedIn: false,
       answers: { intent: "phone_apps" },
     });
 
-    expect(stepIds(applicableSteps(ctx)).slice(0, 2)).toEqual([
+    expect(stepIds(applicableSteps(ctx))).toEqual([
       "account",
       "intent",
+      "players",
+      "plugins",
+      "finish",
     ]);
   });
 
@@ -134,41 +136,24 @@ describe("onboarding step order", () => {
     expect(step(ctx, "music_sources").optional).toBeFalsy();
   });
 
-  it("defers the music sources for someone streaming from phone apps", () => {
+  it("only asks for speakers and app connections when using existing apps", () => {
     const ctx = context({ answers: { intent: "phone_apps" } });
 
-    // behind the plugins and ahead of the review, which is no place to leave
-    // something that is still to do
     expect(stepIds(applicableSteps(ctx))).toEqual([
       "intent",
       "players",
       "plugins",
-      "music_sources",
-      "core_settings",
-      "invite_members",
       "finish",
     ]);
-    // deferred, not dropped: it is still offered and still asked for, it just
-    // no longer holds the wizard up, which is not the same as being optional
-    expect(step(ctx, "music_sources").deferred).toBe(true);
-    expect(step(ctx, "music_sources").optional).toBeFalsy();
   });
 
-  it("changes order and emphasis only, never which steps are available", () => {
-    const deferred = applicableSteps(
-      context({ answers: { intent: "phone_apps" } }),
-    );
-    expect(stepIds(deferred).sort()).toEqual([...BASE_ORDER].sort());
-  });
+  it("keeps full setup available after choosing the existing-app path", () => {
+    applicableSteps(context({ answers: { intent: "phone_apps" } }));
 
-  it("leaves the step registry untouched when it reorders", () => {
-    orderSteps(ONBOARDING_STEPS, { intent: "phone_apps" });
-
-    const registered = ONBOARDING_STEPS.find(
-      (candidate) => candidate.id === "music_sources",
-    );
-    expect(registered?.optional).toBeUndefined();
-    expect(registered?.deferred).toBeUndefined();
+    expect(
+      stepIds(applicableSteps(context({ answers: { intent: "music_hub" } }))),
+    ).toEqual([...BASE_ORDER]);
+    expect(step(context(), "plugins").optional).toBe(true);
     // the registry carries the account step ahead of the admin track, which
     // only a first run is offered, and the own-sources step between the music
     // and the summary, whether or not a given member is offered it
@@ -180,25 +165,6 @@ describe("onboarding step order", () => {
       "your_music",
       "own_sources",
       "all_set",
-    ]);
-  });
-
-  it("still keeps a deferred step out of the tail without the plugins", () => {
-    // nothing to sit behind: the deferred music sources land ahead of the
-    // review, which is no place to leave something that is still to do
-    const withoutPlugins = applicableSteps(context()).filter(
-      (candidate) => candidate.id !== "plugins",
-    );
-
-    expect(
-      stepIds(orderSteps(withoutPlugins, { intent: "phone_apps" })),
-    ).toEqual([
-      "intent",
-      "players",
-      "music_sources",
-      "core_settings",
-      "invite_members",
-      "finish",
     ]);
   });
 
@@ -284,7 +250,7 @@ describe("onboarding step completion", () => {
   it("never marks the review of the server settings done", () => {
     // nothing is missing from settings the server ships working values for, so
     // the wizard walks the user past it instead of skipping over it
-    for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
+    for (const intent of [undefined, "music_hub"] as const) {
       const ctx = context({ answers: intent ? { intent } : {} });
       expect(step(ctx, "core_settings").kind).toBe("review");
       expect(step(ctx, "core_settings").isDone(ctx)).toBe(false);
@@ -303,8 +269,8 @@ describe("onboarding step completion", () => {
     expect(step(ctx, "invite_members").isDone(ctx)).toBe(done);
   });
 
-  it("keeps the household optional, whatever the answer", () => {
-    for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
+  it("keeps the household invitation optional in full setup", () => {
+    for (const intent of [undefined, "music_hub"] as const) {
       const ctx = context({ answers: intent ? { intent } : {} });
       expect(step(ctx, "invite_members").optional).toBe(true);
     }
@@ -356,6 +322,20 @@ describe("pending onboarding steps", () => {
     expect(pendingSteps(ctx)).toEqual([]);
   });
 
+  it("finishes existing-app setup without music sources or other user accounts", () => {
+    const ctx = context({
+      answers: { intent: "phone_apps" },
+      providers: [
+        provider(ProviderType.PLAYER, "sonos"),
+        provider(ProviderType.PLUGIN, "spotify_connect"),
+      ],
+      memberCount: 1,
+    });
+
+    expect(pendingSteps(ctx)).toEqual([]);
+    expect(firstStep(ctx)).toBe("finish");
+  });
+
   it("is empty for someone on neither track", () => {
     expect(pendingSteps(context({ isAdmin: false }))).toEqual([]);
   });
@@ -386,6 +366,14 @@ describe("the step the wizard opens on", () => {
   it("honours a deep link to a step that is only there to be looked over", () => {
     expect(firstStep(context(), "core_settings")).toBe("core_settings");
   });
+
+  it.each(["music_sources", "core_settings", "invite_members"])(
+    "resumes existing-app setup on a relevant step instead of %s",
+    (requested) => {
+      const ctx = context({ answers: { intent: "phone_apps" } });
+      expect(firstStep(ctx, requested)).toBe("players");
+    },
+  );
 
   it("never opens on the server settings by itself", () => {
     // a review is nothing to do, so it is never what is left to do

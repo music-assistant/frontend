@@ -461,12 +461,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
-    await flushPromises();
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
-    await flushPromises();
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
-    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
 
     const link = wrapper
       .findAll("[data-testid=onboarding-summary-pending]")
@@ -480,7 +475,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
-  it("does not list a deliberately skipped library as unfinished setup", async () => {
+  it("finishes existing-app setup without library, user setup or a tour offer", async () => {
     preferenceState.intent.value = "phone_apps";
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
     addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
@@ -495,13 +490,60 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     expect(
       wrapper.findAll("[data-testid=onboarding-summary-done]")[0].text(),
     ).toContain("onboarding.steps.intent.phone_apps.label");
+    expect(wrapper.text()).toContain(
+      "onboarding.steps.finish.phone_apps_description",
+    );
+    expect(wrapper.text()).toContain("onboarding.spotify_connect_hint");
     expect(
-      wrapper
-        .findAll("[data-testid=onboarding-summary-optional]")
-        .some((item) =>
-          item.text().includes("onboarding.steps.music_sources.title"),
-        ),
-    ).toBe(true);
+      wrapper.find("[data-testid=onboarding-summary-optional]").exists(),
+    ).toBe(false);
+    expect(wrapper.find("[data-testid=onboarding-tour-offer]").exists()).toBe(
+      false,
+    );
+    wrapper.unmount();
+  });
+
+  it("walks existing-app setup from the choice through speakers and apps to the finish", async () => {
+    addProvider("sonos--1", "sonos", ProviderType.PLAYER);
+    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
+    const wrapper = await mountWizard({ step: "intent" });
+    await flushPromises();
+
+    await wrapper
+      .find("[data-testid=onboarding-intent-phone_apps]")
+      .trigger("click");
+    await flushPromises();
+
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+    expect(
+      wrapper.findAll("[data-testid=onboarding-progress-step]"),
+    ).toHaveLength(4);
+    for (const title of [
+      "onboarding.steps.players.title",
+      "onboarding.steps.plugins.phone_apps_title",
+      "onboarding.steps.finish.title",
+    ]) {
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe(title);
+    }
+
+    expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
+    expect(apiMock.getStreamServerInfo).not.toHaveBeenCalled();
+    expect(apiMock.getRemoteAccessInfo).not.toHaveBeenCalled();
+    await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.plugins.phone_apps_title");
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+    await wrapper.find("[data-testid=onboarding-finish]").trigger("click");
+    await flushPromises();
+    expect(apiMock.sendCommand).toHaveBeenCalledWith(
+      "config/onboard_complete",
+      undefined,
+      { suppressGlobalError: true },
+    );
+    expect(startTourMock).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 
@@ -631,19 +673,15 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
-  it("offers to skip the music sources once they are deferred", async () => {
+  it("resumes a removed setup step on the next relevant existing-app step", async () => {
     preferenceState.intent.value = "phone_apps";
 
     const wrapper = await mountWizard({ step: "music_sources" });
     await flushPromises();
 
-    // deferred is not optional, but it is not something to hold the wizard up
-    expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
-    expect(wrapper.text()).toContain(
-      "onboarding.steps.music_sources.deferred_description",
-    );
+    expect(heading(wrapper)).toBe("onboarding.steps.players.title");
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
-      "onboarding.skip",
+      "onboarding.next",
     );
 
     wrapper.unmount();
@@ -776,7 +814,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await flushPromises();
 
     // Next tries the pick again instead of walking on with the old answer;
-    // phone_apps defers the music sources, so one step on is the players
+    // existing-app setup starts with the players
     expect(setUserPreferenceMock).toHaveBeenLastCalledWith(
       "onboarding.intent",
       "phone_apps",
@@ -795,8 +833,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       .trigger("click");
     await flushPromises();
 
-    // the answer stands, and the default never lands on top of it; the music
-    // sources are deferred behind the plugins, so one step on is the players
+    // the answer stands, and the default never lands on top of it; existing-app
+    // setup starts with the players
     expect(setUserPreferenceMock).toHaveBeenCalledOnce();
     expect(setUserPreferenceMock).toHaveBeenCalledWith(
       "onboarding.intent",
@@ -906,7 +944,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     expect(next.attributes("disabled")).toBeUndefined();
     await next.trigger("click");
     await flushPromises();
-    // phone_apps defers the music sources, so one step on is the players
+    // existing-app setup starts with the players
     expect(heading(wrapper)).toBe("onboarding.steps.players.title");
 
     wrapper.unmount();
@@ -1389,6 +1427,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     it("starts the tour from the summary once the welcome has closed", async () => {
       preferenceState.expertMode.value = false;
+      preferenceState.intent.value = "phone_apps";
 
       const wrapper = await mountWizard();
       await flushPromises();
