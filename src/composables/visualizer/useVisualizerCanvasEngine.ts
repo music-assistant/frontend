@@ -140,12 +140,12 @@ export function useVisualizerCanvasEngine(
       void reportVisualizerCapability("butterchurn", engine.renderer);
       return;
     }
-    // WebGL2 unavailable or init failure: leave the layer transparent, but say
+    // WebGL2 or WebAssembly unavailable or init failure: leave the layer transparent, but say
     // why to the server first, for displays with no reachable console.
     const supported = isVisualizerSupported();
     const reason = supported
       ? "visualizer engine failed to start"
-      : "WebGL2 unavailable in this browser";
+      : "WebGL2 or WebAssembly unavailable in this browser";
     console.warn(`[visualizer] ${reason}, falling back to gradient`);
     void reportVisualizerCapability("none", undefined, reason);
     relay?.close();

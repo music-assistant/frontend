@@ -73,7 +73,7 @@ export interface VisualizerEngine {
 }
 
 /**
- * Whether the browser can run butterchurn (WebGL2 required).
+ * Whether the browser can run butterchurn (WebGL2 and WebAssembly required).
  *
  * Probed once and cached: this runs inside every hosting view's
  * visualizerActive computed, which re-evaluates on each preference write.
@@ -89,7 +89,7 @@ export function isVisualizerSupported(): boolean {
     let gl: WebGL2RenderingContext | null = null;
     try {
       gl = document.createElement("canvas").getContext("webgl2");
-      webgl2Supported = !!gl;
+      webgl2Supported = typeof WebAssembly === "object" && !!gl;
     } catch {
       webgl2Supported = false;
     }
