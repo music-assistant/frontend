@@ -121,21 +121,25 @@
                 ></span>
                 {{ providerStatusLabel }}
               </Badge>
+              <ProviderMaintainerMarker
+                v-if="isCommunityProvider(providerManifest)"
+                variant="icon"
+              />
             </div>
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
             </CardDescription>
             <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
             <div
-              v-if="providerManifest.codeowners.length"
+              v-if="showCodeowners"
+              data-testid="provider-codeowners"
               class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
-              v-html="
-                markdownToHtml(getAuthorsMarkdown(providerManifest.codeowners))
-              "
+              v-html="markdownToHtml(getAuthorsMarkdown(providerMaintainers))"
             ></div>
             <div
               v-if="providerManifest.credits.length"
-              class="mt-1 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              class="text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              :class="showCodeowners ? 'mt-1' : 'mt-3'"
               v-html="
                 markdownToHtml(getCreditsMarkdown(providerManifest.credits))
               "
@@ -187,6 +191,17 @@
           >
             <CircleAlert class="size-4" />
             {{ $t("settings.known_issues") }}
+          </Button>
+          <Button
+            as="a"
+            data-testid="provider-get-help"
+            variant="outline"
+            :href="helpUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <LifeBuoy class="size-4" />
+            {{ $t("settings.provider_get_help") }}
           </Button>
         </CardContent>
       </Card>
@@ -283,6 +298,7 @@ import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
 import ProviderSettingsLinks from "@/components/settings/providers/ProviderSettingsLinks.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -298,8 +314,11 @@ import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
+  getProviderHelpUrl,
+  getProviderMaintainers,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isCommunityProvider,
   providerDisplayName,
 } from "@/helpers/provider_config";
 import {
@@ -324,6 +343,7 @@ import { eventbus } from "@/plugins/eventbus";
 import {
   BookOpen,
   CircleAlert,
+  LifeBuoy,
   MoreVertical,
   Pencil,
   RotateCw,
@@ -417,6 +437,17 @@ const providerStatusClass = computed(() =>
 const knownIssuesUrl = computed(() =>
   getProviderSupportIssuesUrl(config.value?.domain ?? ""),
 );
+
+const helpUrl = computed(() =>
+  providerManifest.value ? getProviderHelpUrl(providerManifest.value) : "",
+);
+
+const providerMaintainers = computed(() =>
+  providerManifest.value ? getProviderMaintainers(providerManifest.value) : [],
+);
+
+// a provider owned only by the project names no maintainers
+const showCodeowners = computed(() => providerMaintainers.value.length > 0);
 
 const documentationUrl = computed(() => {
   return getExternalLinkUrl(providerManifest.value?.documentation);
@@ -652,10 +683,7 @@ const getAuthorsMarkdown = function (authors: string[]) {
   const allAuthors: string[] = [];
   for (const author of authors) {
     if (author.includes("@")) {
-      let authorName = author.replace("@", "");
-      if (authorName == "music-assistant") {
-        authorName = "the Music Assistant team";
-      }
+      const authorName = author.replace("@", "");
       allAuthors.push(
         `[${authorName}](https://github.com/${author.replace("@", "")})`,
       );

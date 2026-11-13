@@ -251,6 +251,7 @@ export enum SortField {
   PROVIDER = "provider",
   FAVORITE_TIMESTAMP = "favorite_timestamp",
   ORIGINAL = "original",
+  RELEASE_DATE = "release_date",
 }
 
 export enum SortDirection {
@@ -263,6 +264,13 @@ export interface SortOptionInfo {
   supports_direction: boolean;
   default_direction: SortDirection | null;
   label_key: string | null;
+}
+
+// where a letter starts in a library listing sorted by name: the letter ("#"
+// for numbers and symbols) and the row of its first item in the listing order
+export interface LetterIndexEntry {
+  letter: string;
+  offset: number;
 }
 
 export enum LinkType {
@@ -421,6 +429,12 @@ export enum PlaybackState {
   IDLE = "idle",
   PAUSED = "paused",
   PLAYING = "playing",
+}
+
+export enum SleepTimerMode {
+  DURATION = "duration",
+  END_OF_ITEM = "end_of_item",
+  END_OF_CHAPTER = "end_of_chapter",
 }
 
 export enum PlayerType {
@@ -690,6 +704,8 @@ export interface ErrorResultMessage extends ResultMessageBase {
 
   error_code: number;
   details: string | null;
+  // context a client can act on without parsing `details`; the keys depend on the error
+  data: Record<string, unknown> | null;
 }
 
 export interface EventMessage {
@@ -900,6 +916,8 @@ export interface SetupFlowStep {
   last_step?: boolean | null;
   // url [EXTERNAL]: url the user must open (e.g. an OAuth authorize url)
   url?: string | null;
+  // copy_text [FORM, EXTERNAL]: optional value the user can copy to the clipboard
+  copy_text?: string | null;
   // progress_text [PROGRESS]: localized status message
   progress_text?: string | null;
   // progress [PROGRESS]: optional completion fraction between 0 and 1
@@ -1134,6 +1152,13 @@ export type StatisticsGranularity = "hour" | "day" | "week" | "month";
 /** How `statistics/listening_time` groups its minutes. */
 export type StatisticsGroupBy = "artist" | "genre";
 
+/** Whose plays the statistics commands combine; empty is the current user. */
+export interface StatisticsUsers {
+  // user ids or usernames
+  users?: string[];
+  all_users?: boolean;
+}
+
 /** A ranked media item and its completed-play count from statistics endpoints. */
 export interface StatisticsTopItemResult {
   item: ItemMapping;
@@ -1317,8 +1342,17 @@ export interface RecommendationFolder extends BrowseFolder {
   supports_provider_filter: boolean;
 }
 
+// computed over all items of a collection, also when it holds a filtered subset
+export interface MediaCollectionMetadata extends MediaItemMetadata {
+  total_items: number | null;
+  duration: number | null;
+  fully_played: boolean | null;
+  in_progress: boolean | null;
+}
+
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {
   items: M[];
+  metadata: MediaCollectionMetadata;
 }
 
 // unlike the server alias of the same name this includes BrowseFolder, because
@@ -1708,6 +1742,11 @@ export interface Player {
   // will stop playback, or null when no sleep timer is set.
   sleep_timer_expires_at: number | null;
 
+  // sleep_timer_mode: the point at which the active sleep timer stops playback, or
+  // null when no sleep timer is set. For END_OF_ITEM/END_OF_CHAPTER,
+  // sleep_timer_expires_at is an estimate while playing and null while paused.
+  sleep_timer_mode: SleepTimerMode | null;
+
   // active_source_audio: audio-path snapshot for a live external source (e.g.
   // Spotify Connect) playing on active_source; null while a queue item is
   // playing instead, or while nothing is known yet.
@@ -1745,6 +1784,10 @@ export interface ProviderManifest {
   // this provider itself, instead of only a user who manages every music source
   self_service: boolean;
   stage: ProviderStage;
+  // tier: who builds and maintains the provider
+  tier: ProviderTier;
+  // support_url: where the maintainer takes reports, null = the project's support repository
+  support_url: string | null;
   // icon: material design icon
   icon: string | null;
   // icon_images: which icon variants this provider supplies as image files.
@@ -1760,6 +1803,11 @@ export enum ProviderStage {
   EXPERIMENTAL = "experimental",
   UNMAINTAINED = "unmaintained",
   DEPRECATED = "deprecated",
+}
+
+export enum ProviderTier {
+  CORE = "core",
+  COMMUNITY = "community",
 }
 
 export enum ProviderStatus {
@@ -2186,6 +2234,7 @@ export interface SmartPlaylistRules {
   album_ids: number[];
   folder_paths?: string[];
   favorites_only: boolean;
+  exclude_favorites?: boolean;
   explicit?: boolean | null;
   seed_track_uris?: string[];
   seed_artist_uris?: string[];

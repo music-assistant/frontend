@@ -5,7 +5,7 @@ import {
   type MediaItemType,
   type Player,
 } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock, storeMock, mockHandlePlayBtnClick } = vi.hoisted(() => ({
@@ -143,6 +143,24 @@ describe("DetailHeroPlayButton", () => {
     expect(visible(wrapper).attributes("label")).toBe(
       'play_on_player:{"player":"Kitchen ceiling speaker left"}',
     );
+  });
+
+  it("drops to the player's name once a badge beside it takes the room", async () => {
+    storeMock.activePlayer = player({ name: "Kitchen ceiling speaker left" });
+    const wrapper = mountButton();
+    await wrapper.vm.$nextTick();
+    expect(visible(wrapper).text()).toBe(
+      'play_on_player:{"player":"Kitchen ceiling speaker left"}',
+    );
+
+    // the badge appears in the row without the row changing size
+    row.room = -1;
+    wrapper
+      .get("div")
+      .element.parentElement?.appendChild(document.createElement("span"));
+    await flushPromises();
+
+    expect(visible(wrapper).text()).toBe("Kitchen ceiling speaker left");
   });
 
   it("calls the player of this device by that name when space is short", async () => {

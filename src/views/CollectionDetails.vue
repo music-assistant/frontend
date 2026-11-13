@@ -1,26 +1,19 @@
 <template>
   <section>
     <CollectionHero :item="audiobookCollection" />
-    <!-- the listing keeps its own toolbar, but takes the title and gutter of the hero above -->
     <ItemsListing
       :key="`${provider}:${itemId}`"
-      class="px-4 pt-3 max-md:px-1 max-md:pt-2 [&>.v-divider]:hidden"
       :itemtype="collectionMediaType"
       :parent-item="itemDetails"
       :show-refresh-button="false"
+      library-toolbar
+      :show-count="false"
+      detail-row
       :load-paged-data="loadCollectionItems"
       :title="title"
       :empty-message="emptyMessage"
       :allow-collapse="false"
-    >
-      <template #title>
-        <span
-          class="text-[22px] font-bold tracking-[-0.4px] max-md:text-[19px]"
-        >
-          {{ title }}
-        </span>
-      </template>
-    </ItemsListing>
+    />
   </section>
 </template>
 

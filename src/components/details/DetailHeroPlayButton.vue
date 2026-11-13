@@ -27,10 +27,10 @@
 
 <script setup lang="ts">
 import MenuButton from "@/components/MenuButton.vue";
+import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
 import { handlePlayBtnClick } from "@/helpers/media_item_actions";
 import { getPlayerName, isBuiltinPlayer } from "@/helpers/players";
 import { roomInRow } from "@/helpers/room_in_row";
-import { api } from "@/plugins/api";
 import {
   type MediaItemType,
   type SortDirection,
@@ -38,7 +38,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { useResizeObserver } from "@vueuse/core";
+import { useMutationObserver, useResizeObserver } from "@vueuse/core";
 import {
   computed,
   nextTick,
@@ -120,21 +120,13 @@ const measure = function () {
 
 onMounted(measure);
 useResizeObserver(() => wrapper.value?.parentElement, measure);
+// a badge entering or leaving the row changes the room without resizing the row
+useMutationObserver(() => wrapper.value?.parentElement, measure, {
+  childList: true,
+});
 watch(playSentence, () => nextTick(measure));
 
-// The queue playMedia targets are resolved directly, since activePlayerQueue is
-// undefined while an external source is active.
-const playActionInProgress = computed(() => {
-  const player = store.activePlayer;
-  if (!player) return false;
-  const queueId =
-    player.active_source && player.active_source in api.queues
-      ? player.active_source
-      : player.player_id;
-  return (
-    api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const playActionInProgress = usePlayActionInProgress();
 
 const playButtonClick = function (forceMenu = false) {
   // the play menu hangs from the play button, like on the other detail pages

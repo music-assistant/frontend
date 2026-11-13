@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistAlbumsCount: vi.fn().mockResolvedValue(0),
     getArtistAppearsOn: vi.fn().mockResolvedValue([]),
     getArtistDiscography: vi.fn().mockResolvedValue([]),
     getArtistTracks: vi.fn().mockResolvedValue([]),
@@ -20,6 +21,7 @@ vi.mock("@/plugins/api", () => ({
 
 import {
   artistAlbumsBySource,
+  artistAlbumsCountBySource,
   artistProvidersForFeature,
   isSingleOrEp,
   loadArtistAppearsOn,
@@ -143,6 +145,32 @@ describe("artistData", () => {
     });
   });
 
+  describe("artistAlbumsCountBySource", () => {
+    it("uses the same provider artist and album types as the shelf", async () => {
+      apiMock.getArtistAlbumsCount.mockClear();
+      await artistAlbumsCountBySource(LIBRARY_ARTIST, "spotify--abc", [
+        AlbumType.SINGLE,
+      ]);
+      expect(apiMock.getArtistAlbumsCount).toHaveBeenCalledWith(
+        "sp1",
+        "spotify--abc",
+        undefined,
+        undefined,
+        [AlbumType.SINGLE],
+      );
+    });
+
+    it("does not fetch an unmapped source", async () => {
+      apiMock.getArtistAlbumsCount.mockClear();
+      expect(
+        await artistAlbumsCountBySource(LIBRARY_ARTIST, "tidal--def", [
+          AlbumType.ALBUM,
+        ]),
+      ).toBe(0);
+      expect(apiMock.getArtistAlbumsCount).not.toHaveBeenCalled();
+    });
+  });
+
   describe("loadArtistDiscography", () => {
     it("asks for the whole discography unless a page is asked for", async () => {
       await loadArtistDiscography(LIBRARY_ARTIST);
@@ -153,9 +181,10 @@ describe("artistData", () => {
         undefined,
         undefined,
         undefined,
+        undefined,
       );
 
-      await loadArtistDiscography(LIBRARY_ARTIST, "live", 20, 40);
+      await loadArtistDiscography(LIBRARY_ARTIST, undefined, "live", 20, 40);
       expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
         "1",
         "live",
@@ -163,6 +192,23 @@ describe("artistData", () => {
         40,
         undefined,
         undefined,
+        undefined,
+      );
+    });
+
+    it("asks for the given release types only", async () => {
+      await loadArtistDiscography(LIBRARY_ARTIST, [
+        AlbumType.ALBUM,
+        AlbumType.LIVE,
+      ]);
+      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
+        "1",
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
+        [AlbumType.ALBUM, AlbumType.LIVE],
       );
     });
   });

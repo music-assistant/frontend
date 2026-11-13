@@ -8,6 +8,8 @@ export interface ListingFilterOption {
   value: string;
   // the provider whose icon marks the option, on a source filter
   domain?: string;
+  // marks an option that is no provider, such as the library
+  icon?: Component;
 }
 
 /** A filter that is either on or off, such as "Only favorites". */
@@ -43,8 +45,10 @@ export interface ListingChoiceFilter {
   label: string;
   options: ListingFilterOption[];
   selected: string;
-  // the choice that leaves the listing unfiltered
-  unfiltered: string;
+  // the choice that leaves the listing unfiltered; without one, as for a
+  // required source, no choice counts as a filter
+  unfiltered?: string;
+  // called on every pick, the current choice included
   select: (value: string) => void;
 }
 
@@ -61,7 +65,13 @@ export function activeFilterCount(filters: ListingFilter[]): number {
       case "multi":
         return count + filter.selected.length;
       case "choice":
-        return count + Number(filter.selected !== filter.unfiltered);
+        return (
+          count +
+          Number(
+            filter.unfiltered !== undefined &&
+              filter.selected !== filter.unfiltered,
+          )
+        );
     }
   }, 0);
 }

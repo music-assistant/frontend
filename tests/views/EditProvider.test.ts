@@ -1,4 +1,5 @@
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +11,7 @@ import {
   ProviderFeature,
   ProviderSharing,
   ProviderStatus,
+  ProviderTier,
   ProviderType,
   type ProviderConfig,
   type Scope,
@@ -42,13 +44,16 @@ const {
       spotify: {
         allow_disable: true,
         builtin: false,
-        codeowners: [],
+        codeowners: [] as string[],
         credits: [],
         description: "Spotify music provider",
         documentation: "https://example.com/spotify",
+        domain: "spotify",
         has_setup_flow: true,
         name: "Spotify",
         self_service: true,
+        support_url: null as string | null,
+        tier: "core" as ProviderTier,
       },
     },
     providers: {},
@@ -178,10 +183,13 @@ beforeEach(() => {
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
+  apiMock.providerManifests.spotify.codeowners = [];
   apiMock.providerManifests.spotify.documentation =
     "https://example.com/spotify";
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.self_service = true;
+  apiMock.providerManifests.spotify.support_url = null;
+  apiMock.providerManifests.spotify.tier = ProviderTier.CORE;
   apiMock.getAllUsers.mockResolvedValue([]);
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.getShareCandidates.mockResolvedValue([]);
@@ -235,6 +243,106 @@ describe("EditProvider", () => {
       rel: "noopener noreferrer",
       target: "_blank",
     });
+    expect(
+      wrapper.get('[data-testid="provider-get-help"]').attributes(),
+    ).toMatchObject({
+      href: "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage%2Cspotify&title=Spotify%3A+",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+    expect(wrapper.findComponent(ProviderMaintainerMarker).exists()).toBe(
+      false,
+    );
+  });
+
+  it("marks a community provider, names its maintainers and sends Get help to them", async () => {
+    apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
+    apiMock.providerManifests.spotify.codeowners = [
+      "@jane",
+      "@music-assistant",
+    ];
+    apiMock.providerManifests.spotify.support_url =
+      "https://github.com/jane/spotify/issues";
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.getComponent(ProviderMaintainerMarker).props("variant"),
+    ).toBe("icon");
+    const codeowners = wrapper.get('[data-testid="provider-codeowners"]');
+    expect(codeowners.html()).toContain("https://github.com/jane");
+    expect(codeowners.html()).not.toContain("music-assistant");
+    expect(
+      wrapper.get('[data-testid="provider-get-help"]').attributes("href"),
+    ).toBe("https://github.com/jane/spotify/issues");
+  });
+
+  it("names the maintainers of a core provider without marking it community", async () => {
+    apiMock.providerManifests.spotify.codeowners = [
+      "@music-assistant",
+      "@jane",
+    ];
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.findComponent(ProviderMaintainerMarker).exists()).toBe(
+      false,
+    );
+    const codeowners = wrapper.get('[data-testid="provider-codeowners"]');
+    expect(codeowners.html()).toContain("https://github.com/jane");
+    expect(codeowners.html()).not.toContain("music-assistant");
+  });
+
+  it("names no maintainers for a provider only the project owns", async () => {
+    apiMock.providerManifests.spotify.codeowners = ["@music-assistant"];
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="provider-codeowners"]').exists()).toBe(
+      false,
+    );
   });
 
   it("shows the custom name of a source that is not loaded, and hands the settings frame the same one", async () => {

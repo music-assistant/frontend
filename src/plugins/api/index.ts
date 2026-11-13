@@ -3,6 +3,10 @@ import { store } from "../store";
 import { computed, reactive, ref } from "vue";
 import { toast } from "vue-sonner";
 import { resolveActiveSourceId } from "@/composables/activeSource";
+import {
+  getIngressClientKey,
+  hasHomeAssistantIngressPath,
+} from "@/helpers/ingress";
 import { resolveProviderDomain } from "@/helpers/provider_domain";
 import {
   resetServerTime,
@@ -17,6 +21,7 @@ import { AccountApi } from "./account";
 import type { CommandOptions } from "./commandOptions";
 export type { CommandOptions } from "./commandOptions";
 import { ApiCommandError } from "./errors";
+import { eventbus } from "../eventbus";
 import { getDeviceName, itemSupportsPlayLog } from "./helpers";
 import { StatisticsApi } from "./statistics";
 import {
@@ -50,6 +55,7 @@ import {
   type SetupFlowStep,
   type SuccessResultMessage,
   type TaskSchedule,
+  type LetterIndexEntry,
   type Track,
   type SortOptionInfo,
   type User,
@@ -91,12 +97,14 @@ import {
   Scope,
   NetworkShareSettings,
   SearchResults,
+  SleepTimerMode,
   ShareType,
   SortDirection,
   SortField,
   SmartPlaylistRules,
   SoundEffect,
   StatisticsTopItemResult,
+  StatisticsUsers,
   SourceFolder,
   StorageInfo,
   StorageLocation,
@@ -111,11 +119,14 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 102;
+export const MIN_SERVER_SCHEMA_VERSION = 105;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
 const AUTHENTICATION_FAILED_ERROR_CODE = 21;
+// Server error code of a playback refused because another player's playback holds the
+// only stream of a provider; answered with the stream held dialog instead of a toast
+const PROVIDER_STREAM_HELD_ERROR_CODE = 29;
 
 export interface PlayMediaOptions {
   start_item?: PlayableMediaItemType | string;
@@ -130,6 +141,18 @@ export interface PlayMediaOptions {
   shuffle?: boolean;
   /** Keep the global error toast quiet for a caller that reports the failure itself. */
   suppressGlobalError?: CommandOptions["suppressGlobalError"];
+}
+
+export interface LetterIndexFilters {
+  favorite?: boolean;
+  search?: string;
+  sort_field?: SortField;
+  sort_direction?: SortDirection;
+  provider?: string | string[];
+  genre?: number | number[];
+  album_artists_only?: boolean;
+  album_types?: Array<AlbumType | string>;
+  artist_type?: ArtistType;
 }
 
 export enum ConnectionState {
@@ -194,6 +217,8 @@ export class MusicAssistantApi {
   private commands: Map<
     string,
     {
+      command: string;
+      args?: Record<string, unknown>;
       resolve: (result: unknown) => void;
       reject: (err: unknown) => void;
       suppressGlobalError?: CommandOptions["suppressGlobalError"];
@@ -257,6 +282,11 @@ export class MusicAssistantApi {
 
       if (!wsUrl.endsWith("/ws")) {
         wsUrl += "/ws";
+      }
+
+      // lets the server link the web player of this browser to this connection
+      if (hasHomeAssistantIngressPath()) {
+        wsUrl += `?${new URLSearchParams({ ingress_client_key: getIngressClientKey() })}`;
       }
 
       transport = new WebSocketTransport({ url: wsUrl });
@@ -536,6 +566,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Track[]> {
     return this.sendCommand("music/tracks/library_items", {
       favorite,
@@ -546,6 +577,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -659,6 +691,17 @@ export class MusicAssistantApi {
     return this.sendCommand("music/tracks/count", { favorite_only });
   }
 
+  /**
+   * The first row of each letter in the library listing sorted by name, for
+   * the same filters as its listing. Empty for any other sort or a search.
+   */
+  public getLibraryLetterIndex(
+    media: "artists" | "albums" | "tracks",
+    filters: LetterIndexFilters,
+  ): Promise<LetterIndexEntry[]> {
+    return this.sendCommand(`music/${media}/letter_index`, { ...filters });
+  }
+
   public getSortOptions(listing: ListingType): Promise<SortOptionInfo[]> {
     const cached = this._librarySortOptions.get(listing);
     if (cached) return cached;
@@ -734,6 +777,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     artist_type?: ArtistType,
+    random_seed?: number,
   ): Promise<Artist[]> {
     return this.sendCommand("music/artists/library_items", {
       favorite,
@@ -746,6 +790,7 @@ export class MusicAssistantApi {
       provider,
       genre,
       artist_type,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -781,6 +826,22 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      favorite,
+    });
+  }
+
+  public getArtistTracksCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+    favorite?: boolean,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_tracks_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
       favorite,
     });
   }
@@ -833,6 +894,24 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistAlbumsCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+    album_types?: AlbumType[],
+    favorite?: boolean,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_albums_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
+      album_types,
+      favorite,
+    });
+  }
+
   public getArtistAppearsOn(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -852,6 +931,20 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+    });
+  }
+
+  public getArtistAppearsOnCount(
+    item_id: string,
+    provider_instance_id_or_domain: string,
+    provider_filter?: string,
+    search?: string,
+  ): Promise<number> {
+    return this.sendCommand("music/artists/artist_appears_on_count", {
+      item_id,
+      provider_instance_id_or_domain,
+      provider_filter,
+      search,
     });
   }
 
@@ -883,7 +976,8 @@ export class MusicAssistantApi {
    * Only library artists are supported; the list is empty when MusicBrainz doesn't know
    * the artist. The releases that are not in the library come back as MusicBrainz items
    * (provider "musicbrainz", without provider mappings), which the server resolves to a
-   * real album when one is opened or added.
+   * real album when one is opened or added. `album_types` limits the list to
+   * releases of those types.
    */
   public getArtistDiscography(
     item_id: string,
@@ -892,6 +986,7 @@ export class MusicAssistantApi {
     offset?: number,
     sort_field?: SortField,
     sort_direction?: SortDirection,
+    album_types?: AlbumType[],
   ): Promise<Album[]> {
     return this.sendCommand("music/artists/discography", {
       item_id,
@@ -901,6 +996,20 @@ export class MusicAssistantApi {
       offset,
       sort_field,
       sort_direction,
+      album_types,
+    });
+  }
+
+  public getArtistDiscographyCount(
+    item_id: string,
+    search?: string,
+    album_types?: AlbumType[],
+  ): Promise<number> {
+    return this.sendCommand("music/artists/discography_count", {
+      item_id,
+      provider_instance_id_or_domain: "library",
+      search,
+      album_types,
     });
   }
 
@@ -980,6 +1089,7 @@ export class MusicAssistantApi {
     album_types?: Array<AlbumType | string>,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Album[]> {
     return this.sendCommand("music/albums/library_items", {
       favorite,
@@ -991,6 +1101,7 @@ export class MusicAssistantApi {
       album_types,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1068,6 +1179,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Playlist[]> {
     return this.sendCommand("music/playlists/library_items", {
       favorite,
@@ -1078,6 +1190,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1314,6 +1427,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Radio[]> {
     return this.sendCommand("music/radios/library_items", {
       favorite,
@@ -1324,6 +1438,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1389,6 +1504,7 @@ export class MusicAssistantApi {
     provider?: string | string[],
     genre?: number | number[],
     collapse_collections?: boolean,
+    random_seed?: number,
   ): Promise<(Audiobook | MediaCollection<Audiobook>)[]> {
     return this.sendCommand("music/audiobooks/library_items", {
       favorite,
@@ -1400,6 +1516,7 @@ export class MusicAssistantApi {
       provider,
       genre,
       collapse_collections,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1419,14 +1536,19 @@ export class MusicAssistantApi {
     limit?: number,
     offset?: number,
     favorite?: boolean,
+    options?: CommandOptions,
   ): Promise<MediaCollection<Audiobook>> {
-    return this.sendCommand("music/audiobooks/get_collection", {
-      item_id,
-      search,
-      limit,
-      offset,
-      favorite,
-    });
+    return this.sendCommand(
+      "music/audiobooks/get_collection",
+      {
+        item_id,
+        search,
+        limit,
+        offset,
+        favorite,
+      },
+      options,
+    );
   }
 
   public getAudiobookVersions(
@@ -1522,6 +1644,7 @@ export class MusicAssistantApi {
     sort_direction?: SortDirection,
     provider?: string | string[],
     genre?: number | number[],
+    random_seed?: number,
   ): Promise<Podcast[]> {
     return this.sendCommand("music/podcasts/library_items", {
       favorite,
@@ -1532,6 +1655,7 @@ export class MusicAssistantApi {
       sort_direction,
       provider,
       genre,
+      ...(random_seed === undefined ? {} : { random_seed }),
     });
   }
 
@@ -1562,6 +1686,7 @@ export class MusicAssistantApi {
       hide_empty?: boolean | null;
       media_type?: MediaType;
       content_type?: MediaType | "music";
+      random_seed?: number;
     } = {},
   ): Promise<Genre[]> {
     return this.sendCommand("music/genres/library_items", opts);
@@ -2040,43 +2165,49 @@ export class MusicAssistantApi {
     media_type: MediaType,
     period: StatisticsPeriod = "week",
     limit = 50,
+    users?: StatisticsUsers,
   ): Promise<StatisticsTopItemResult[]> {
-    return this.statisticsApi.getTopItems(media_type, period, limit);
+    return this.statisticsApi.getTopItems(media_type, period, limit, users);
   }
 
   public async getPlaysOverTime(
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
+    users?: StatisticsUsers,
   ): Promise<StatisticsTimeSeriesPoint[]> {
-    return this.statisticsApi.getPlaysOverTime(period, granularity);
+    return this.statisticsApi.getPlaysOverTime(period, granularity, users);
   }
 
   public async getListeningActivity(
     period: StatisticsPeriod = "week",
+    users?: StatisticsUsers,
   ): Promise<StatisticsHeatmapPoint[]> {
-    return this.statisticsApi.getListeningActivity(period);
+    return this.statisticsApi.getListeningActivity(period, users);
   }
 
   public async getListeningTime(
     period: StatisticsPeriod = "week",
     group_by: StatisticsGroupBy = "artist",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsListeningTimeItem[]> {
-    return this.statisticsApi.getListeningTime(period, group_by, limit);
+    return this.statisticsApi.getListeningTime(period, group_by, limit, users);
   }
 
   public async getGenreDistribution(
     period: StatisticsPeriod = "week",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getGenreDistribution(period, limit);
+    return this.statisticsApi.getGenreDistribution(period, limit, users);
   }
 
   public async getDecadeDistribution(
     period: StatisticsPeriod = "all_time",
     limit = 10,
+    users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
-    return this.statisticsApi.getDecadeDistribution(period, limit);
+    return this.statisticsApi.getDecadeDistribution(period, limit, users);
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
@@ -2171,9 +2302,15 @@ export class MusicAssistantApi {
     // Clear all items in the queue.
     this.playerQueueCommand(queueId, "clear");
   }
-  public queueCommandPlayIndex(queueId: string, index: number | string) {
+  public queueCommandPlayIndex(
+    queueId: string,
+    index: number | string,
+  ): Promise<void> {
     // Play item at index (or item_id) X in queue.
-    this.playerQueueCommand(queueId, "play_index", { index });
+    return this.sendCommand("player_queues/play_index", {
+      queue_id: queueId,
+      index,
+    });
   }
   public queueCommandMoveItem(
     queueId: string,
@@ -2287,6 +2424,10 @@ export class MusicAssistantApi {
       queue_id,
       ...args,
     });
+  }
+  public queueCommandStop(queueId: string): Promise<void> {
+    // Stop the queue; resolves once the server has stopped it.
+    return this.sendCommand("player_queues/stop", { queue_id: queueId });
   }
   public queueCommandTransfer(
     sourceQueue: string,
@@ -2585,14 +2726,20 @@ export class MusicAssistantApi {
     });
   }
 
-  public setSleepTimer(playerId: string, seconds: number): Promise<number> {
+  public setSleepTimer(
+    playerId: string,
+    seconds?: number,
+    mode?: SleepTimerMode,
+  ): Promise<number | null> {
     /*
-      Set a sleep timer that stops playback after the given number of seconds.
-      Returns the expiry (unix utc timestamp).
+      Set a sleep timer that stops playback after the given number of seconds, or
+      at the end of the current queue item or chapter (mode).
+      Returns the (estimated) expiry (unix utc timestamp), null while paused.
     */
     return this.sendCommand("players/sleep_timer/set", {
       player_id: playerId,
       seconds,
+      mode,
     });
   }
 
@@ -2673,18 +2820,10 @@ export class MusicAssistantApi {
     option?: QueueOption,
     options: PlayMediaOptions = {},
   ): Promise<void> {
-    let queue_id = options.queue_id;
-    if (
-      !queue_id &&
-      store.activePlayer?.active_source &&
-      store.activePlayer.active_source in this.queues
-    ) {
-      queue_id = store.activePlayer.active_source;
-    } else if (!queue_id) {
-      queue_id = store.activePlayer?.player_id;
-    }
     const payload = {
-      queue_id,
+      // a player's own queue id is its player id; the server routes a grouped
+      // or synced player's request to the queue that should handle it
+      queue_id: options.queue_id ?? store.activePlayer?.player_id,
       media,
       option,
       start_item: options.start_item,
@@ -3468,7 +3607,7 @@ export class MusicAssistantApi {
           msg.error_code === AUTHENTICATION_REQUIRED_ERROR_CODE ||
           msg.error_code === AUTHENTICATION_FAILED_ERROR_CODE;
 
-        if (!isAuthError) {
+        if (!isAuthError && !this.offerStreamHeldDialog(msg, resultPromise)) {
           toast.error(msg.details || String(msg.error_code));
         }
       }
@@ -3501,6 +3640,7 @@ export class MusicAssistantApi {
           msg.details || String(msg.error_code),
           msg.error_code,
           msg.details || undefined,
+          msg.data || undefined,
         ),
       );
     } else {
@@ -3862,6 +4002,8 @@ export class MusicAssistantApi {
     const cmdId = this._genCmdId();
     return new Promise((resolve, reject) => {
       this.commands.set(cmdId, {
+        command,
+        args,
         resolve: resolve as (result: unknown) => void,
         reject,
         suppressGlobalError: options?.suppressGlobalError,
@@ -3988,6 +4130,36 @@ export class MusicAssistantApi {
       console.error("[resultMessage] suppression check failed", err);
       return false;
     }
+  }
+
+  /**
+   * Offer to stop the player holding a provider's only stream and run the command again.
+   *
+   * Returns whether the error is a refusal the dialog can act on, and so needs no toast.
+   */
+  private offerStreamHeldDialog(
+    msg: ErrorResultMessage,
+    pending?: { command: string; args?: Record<string, unknown> },
+  ): boolean {
+    const { queue_id, player_name, provider_instance } = msg.data ?? {};
+    if (
+      msg.error_code !== PROVIDER_STREAM_HELD_ERROR_CODE ||
+      !pending ||
+      // layouts without the dialog, such as the party guest pages, keep the toast
+      !eventbus.all.get("streamHeldDialog")?.length ||
+      typeof queue_id !== "string" ||
+      typeof player_name !== "string" ||
+      typeof provider_instance !== "string"
+    ) {
+      return false;
+    }
+    eventbus.emit("streamHeldDialog", {
+      holderQueueId: queue_id,
+      holderName: player_name,
+      providerName: this.getProviderName(provider_instance),
+      retry: () => this.sendCommand(pending.command, pending.args),
+    });
+    return true;
   }
 
   /**

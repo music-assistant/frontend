@@ -4,8 +4,18 @@
     :gap="14"
     :tiles-per-view="tilesPerView"
   >
-    <template #header>
+    <!-- with a label, the title heads the shelf from above the label's line -->
+    <template v-if="$slots.label && !hideTitle" #heading>
       <DetailSectionTitle
+        :title="title"
+        :meta="meta"
+        @edit-rows="emit('edit-rows')"
+      />
+    </template>
+    <template #header>
+      <slot v-if="$slots.label" name="label"></slot>
+      <DetailSectionTitle
+        v-else
         :title="title"
         :meta="sourceLabel ? undefined : meta"
         @edit-rows="emit('edit-rows')"
@@ -20,13 +30,13 @@
         />
       </DetailSectionTitle>
     </template>
-    <template v-if="viewAllTo" #actions>
+    <template v-if="viewAllTo && itemCount !== 0" #actions>
       <RouterLink
         :to="viewAllTo"
         class="release-shelf__more"
-        :aria-label="$t('tooltip.view_all', { name: title })"
+        :aria-label="viewAllAriaLabel"
       >
-        {{ $t("view_all") }}
+        {{ viewAllLabel }}
       </RouterLink>
     </template>
 
@@ -101,9 +111,15 @@ export interface Props {
   // undefined while the row is still loading
   items?: Array<Album | ItemMapping>;
   viewAllTo?: RouteLocationRaw;
+  itemCount?: number;
+  // what "View all" opens, for screen readers, when the title doesn't say it
+  viewAllName?: string;
   // shown in place of the tiles when the row loaded nothing
   emptyMessage?: string;
   parentItem?: MediaItemType;
+  // with a label, leaves the title out, for a shelf continuing the one above;
+  // the source badge is not shown with a label either
+  hideTitle?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   meta: undefined,
@@ -113,8 +129,11 @@ const props = withDefaults(defineProps<Props>(), {
   sourceValue: undefined,
   items: undefined,
   viewAllTo: undefined,
+  itemCount: undefined,
+  viewAllName: undefined,
   emptyMessage: undefined,
   parentItem: undefined,
+  hideTitle: false,
 });
 
 const emit = defineEmits<{
@@ -122,9 +141,29 @@ const emit = defineEmits<{
   (e: "select-source", source: RowSource): void;
 }>();
 
+defineSlots<{
+  // in place of the title on the line with "View all", e.g. a filter; the
+  // title then sits above that line. It replaces the source badge, so the two
+  // don't combine
+  label?: () => unknown;
+}>();
+
 const SKELETONS = 6;
 
 const tilesPerView = computed(() => shelfTilesPerView());
+const viewAllAriaLabel = computed(() =>
+  props.itemCount === undefined
+    ? $t("tooltip.view_all", { name: props.viewAllName ?? props.title })
+    : $t("tooltip.view_all_count", {
+        name: props.viewAllName ?? props.title,
+        count: props.itemCount,
+      }),
+);
+const viewAllLabel = computed(() =>
+  props.itemCount === undefined
+    ? $t("view_all")
+    : $t("view_all_count", { count: props.itemCount }),
+);
 
 // the item's type, so every card says what it is; the year already sits on the
 // artwork, so it isn't repeated here. A release that is not in the library says

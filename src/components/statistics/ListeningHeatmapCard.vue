@@ -1,7 +1,13 @@
 <template>
   <StatisticsCard
     prominent
-    :title="$t('statistics_heatmap')"
+    :title="
+      $t(
+        includesOtherUsers
+          ? 'statistics_heatmap_other_users'
+          : 'statistics_heatmap',
+      )
+    "
     :subtitle="$t('statistics_heatmap_subtitle')"
     :loading="loading"
     :error="error"
@@ -36,7 +42,13 @@
         <thead>
           <tr>
             <th scope="col" class="w-[34px] max-sm:w-[30px]">
-              <span class="sr-only">{{ $t("statistics_heatmap") }}</span>
+              <span class="sr-only">{{
+                $t(
+                  includesOtherUsers
+                    ? "statistics_heatmap_other_users"
+                    : "statistics_heatmap",
+                )
+              }}</span>
             </th>
             <th
               v-for="hour in hours"
@@ -94,6 +106,7 @@ const props = defineProps<{
   data: StatisticsHeatmapPoint[];
   loading?: boolean;
   error?: boolean;
+  includesOtherUsers?: boolean;
 }>();
 
 const AXIS_HOUR_STEP = 6;

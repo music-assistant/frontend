@@ -137,6 +137,20 @@ describe("useRowRequests", () => {
     expect(store).not.toHaveBeenCalled();
   });
 
+  it("drops a response that arrives after scope disposal", async () => {
+    const page = setupRequests();
+    await show(page, "a");
+    const response = Promise.withResolvers<string[]>();
+    const store = vi.fn();
+    const pending = page.fetchOnce("rows", () => response.promise, store);
+
+    page.scope.stop();
+    response.resolve(["late"]);
+    await pending;
+
+    expect(store).not.toHaveBeenCalled();
+  });
+
   it("stores an empty list when the request fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const page = setupRequests();
