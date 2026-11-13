@@ -90,91 +90,45 @@ function reportingDashboardId(): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-/**
- * Send one capability report with the envelope and gating every report shares.
- *
- * Central so no reporter can forget one, the toast suppression especially: a
- * failing report would otherwise toast on a display nobody can reach.
- *
- * :param context: what the report was about, for the warning.
- * :param fields: the report body, merged over the shared envelope.
- */
-async function sendCapabilityReport(
-  context: string,
-  fields: Record<string, unknown>,
-): Promise<void> {
-  if (!authManager.isDashboardViewer()) return;
-  try {
-    await api.sendCommand(
-      "milkdrop_visualizer/report_capability",
-      {
-        user_agent: navigator.userAgent,
-        dashboard_id: reportingDashboardId(),
-        ...fields,
-      },
-      { suppressGlobalError: true },
-    );
-  } catch (error) {
-    console.warn(`[visualizer] could not report ${context}:`, error);
-  }
-}
+let capabilityReported = false;
 
 /**
- * Report this display's render capabilities to the server.
+ * Report this display's render capabilities to the server, once per page load.
  *
  * Cast and TV receivers vary wildly in graphics support and have no reachable
- * console; the server logs these reports so it is knowable which devices can
+ * console; the server logs this report so it is knowable which devices can
  * render MilkDrop and which cannot. Sent over the main API socket, so a
  * display that cannot render (and thus never opens a relay connection) still
  * gets its probe result recorded.
+ *
+ * :param renderer: Which renderer the display ended up with.
+ * :param gpu: What the GL context reports it draws with.
+ * :param error: Why the engine failed to start, if it did.
  */
 export async function reportVisualizerCapability(
   renderer: "butterchurn" | "none",
   gpu?: string,
+  error?: string,
 ): Promise<void> {
-  await sendCapabilityReport("capability", {
-    webgl2: isVisualizerSupported(),
-    renderer,
-    gpu,
-  });
-}
-
-// Rate cap so a per-frame exception storm cannot flood the server log. A
-// rolling window rather than a lifetime cap: these displays run for weeks, and
-// a lifetime cap would permanently mute the only diagnostics they have after
-// the first few errors.
-const MAX_ERROR_REPORTS_PER_WINDOW = 3;
-const ERROR_REPORT_WINDOW_MS = 60 * 60 * 1000;
-const MAX_ERROR_MESSAGE_CHARS = 500;
-let errorReportTimes: number[] = [];
-let errorReportingInstalled = false;
-
-/**
- * Forward uncaught page errors to the server log, for displays with no
- * reachable console. Installed once; only the first few errors are sent.
- */
-export function installVisualizerErrorReporting(): void {
-  if (errorReportingInstalled) return;
-  if (!authManager.isDashboardViewer()) return;
-  errorReportingInstalled = true;
-  const send = (message: string) => {
-    const now = Date.now();
-    errorReportTimes = errorReportTimes.filter(
-      (at) => now - at < ERROR_REPORT_WINDOW_MS,
+  if (capabilityReported || !authManager.isDashboardViewer()) return;
+  capabilityReported = true;
+  try {
+    await api.sendCommand(
+      "milkdrop_visualizer/report_capability",
+      {
+        webgl2: isVisualizerSupported(),
+        renderer,
+        user_agent: navigator.userAgent,
+        gpu,
+        error,
+        dashboard_id: reportingDashboardId(),
+      },
+      // a failing report would otherwise toast on a display nobody can reach
+      { suppressGlobalError: true },
     );
-    if (errorReportTimes.length >= MAX_ERROR_REPORTS_PER_WINDOW) return;
-    errorReportTimes.push(now);
-    void sendCapabilityReport("a page error", {
-      error: message.slice(0, MAX_ERROR_MESSAGE_CHARS),
-    });
-  };
-  window.addEventListener("error", (event) => {
-    const src = event.filename ? ` (${event.filename}:${event.lineno})` : "";
-    send(`${event.message}${src}`);
-  });
-  window.addEventListener("unhandledrejection", (event) => {
-    send(`unhandled rejection: ${String(event.reason)}`);
-  });
+  } catch (reportError) {
+    console.warn("[visualizer] could not report capability:", reportError);
+  }
 }
 
 /**
@@ -460,17 +414,6 @@ export class VisualizerRelayClient {
       this.reconnectTimer = null;
       if (!this.closed) this.openSocket();
     }, RECONNECT_DELAY_MS);
-  }
-
-  /**
-   * Tell the server why this viewer cannot render.
-   *
-   * Cast displays and kiosks have no reachable console, so an engine that fails
-   * to start would otherwise be indistinguishable from a broken relay.
-   */
-  reportError(message: string): void {
-    if (this.ws?.readyState !== WebSocket.OPEN) return;
-    this.ws.send(JSON.stringify({ type: "client/error", message }));
   }
 
   private clearTimers(): void {

@@ -32,9 +32,7 @@ vi.mock("@/plugins/visualizer-relay", () => ({
     currentFrame() {
       return null;
     }
-    reportError() {}
   },
-  installVisualizerErrorReporting: vi.fn(),
   reportVisualizerCapability: vi.fn(async () => {}),
   visualizerCanRender: () => true,
   visualizerProviderAvailable: () => true,

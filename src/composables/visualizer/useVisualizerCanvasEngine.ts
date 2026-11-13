@@ -143,12 +143,13 @@ export function useVisualizerCanvasEngine(
       return;
     }
     // WebGL2 unavailable or init failure: leave the layer transparent, but say
-    // why over the relay first, for displays with no reachable console.
-    const reason = isVisualizerSupported()
+    // why to the server first, for displays with no reachable console.
+    const supported = isVisualizerSupported();
+    const reason = supported
       ? "visualizer engine failed to start"
       : "WebGL2 unavailable in this browser";
     console.warn(`[visualizer] ${reason}, falling back to gradient`);
-    relay?.reportError(reason);
+    void reportVisualizerCapability("none", undefined, reason);
     relay?.close();
     relay = null;
     // Let the mount/uncover/resize paths retry from scratch, relay included.

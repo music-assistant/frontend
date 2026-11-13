@@ -1,12 +1,11 @@
 /**
  * Capability reporting gates.
  *
- * These reports go out from cast receivers and TVs, so every one of them has to
- * stay silent on a session that should not report at all, and in the global
- * error toast: a display with nobody in front of it cannot dismiss one, and
- * the render report repeats every minute.
+ * The report goes out from cast receivers and TVs, so it has to stay silent on
+ * a session that should not report at all, stay out of the global error toast
+ * (a display with nobody in front of it cannot dismiss one), and go out once.
  */
-import { reportVisualizerCapability } from "@/plugins/visualizer-relay";
+import type { reportVisualizerCapability } from "@/plugins/visualizer-relay";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const apiMock = vi.hoisted(() => ({
@@ -28,7 +27,9 @@ const authMock = vi.hoisted(() => ({ isDashboardViewer: vi.fn(() => true) }));
 vi.mock("@/plugins/auth", () => ({ authManager: authMock }));
 
 vi.mock("@/plugins/router", () => ({
-  default: { currentRoute: { value: { path: "/party", query: {} } } },
+  default: {
+    currentRoute: { value: { path: "/party", query: { dashboard_id: "d1" } } },
+  },
 }));
 
 vi.mock("@/plugins/store", () => ({ store: { isIngressSession: true } }));
@@ -37,25 +38,48 @@ vi.mock("@/composables/visualizer/useVisualizerEngine", () => ({
   isVisualizerSupported: () => true,
 }));
 
+// The report is once per page load, so each test needs a fresh module.
+const freshReporter = async () => {
+  vi.resetModules();
+  return (await import("@/plugins/visualizer-relay"))
+    .reportVisualizerCapability as typeof reportVisualizerCapability;
+};
+
 describe("visualizer capability reporting", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authMock.isDashboardViewer.mockReturnValue(true);
   });
 
-  it("keeps every report out of the global error toast", async () => {
-    await reportVisualizerCapability("butterchurn", "stub gpu");
+  it("sends the capability fields and keeps out of the global error toast", async () => {
+    const report = await freshReporter();
+    await report("butterchurn", "stub gpu");
 
     expect(apiMock.sendCommand).toHaveBeenCalledTimes(1);
-    for (const call of apiMock.sendCommand.mock.calls) {
-      expect(call[2]).toEqual({ suppressGlobalError: true });
-    }
+    const [command, args, options] = apiMock.sendCommand.mock.calls[0];
+    expect(command).toBe("milkdrop_visualizer/report_capability");
+    expect(args).toMatchObject({
+      webgl2: true,
+      renderer: "butterchurn",
+      gpu: "stub gpu",
+      dashboard_id: "d1",
+    });
+    expect(options).toEqual({ suppressGlobalError: true });
+  });
+
+  it("reports only once per page load", async () => {
+    const report = await freshReporter();
+    await report("butterchurn");
+    await report("none", undefined, "engine failed");
+
+    expect(apiMock.sendCommand).toHaveBeenCalledTimes(1);
   });
 
   it("says nothing on a session that is not a dashboard viewer", async () => {
     authMock.isDashboardViewer.mockReturnValue(false);
+    const report = await freshReporter();
 
-    await reportVisualizerCapability("butterchurn");
+    await report("butterchurn");
 
     expect(apiMock.sendCommand).not.toHaveBeenCalled();
   });
@@ -63,11 +87,10 @@ describe("visualizer capability reporting", () => {
   it("swallows a failed report rather than rejecting into the caller", async () => {
     apiMock.sendCommand.mockRejectedValueOnce(new Error("plugin exploded"));
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const report = await freshReporter();
 
     try {
-      await expect(
-        reportVisualizerCapability("butterchurn"),
-      ).resolves.toBeUndefined();
+      await expect(report("butterchurn")).resolves.toBeUndefined();
     } finally {
       warn.mockRestore();
     }
