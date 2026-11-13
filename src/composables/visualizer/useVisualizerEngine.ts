@@ -48,19 +48,19 @@ export interface VisualizerEngine {
  * An uncached probe would spawn a throwaway WebGL2 context per call, and
  * Chrome drops the oldest live context on overflow — the running visualizer.
  */
-let webgl2Supported: boolean | null = null;
+let visualizerSupported: boolean | null = null;
 
 export function isVisualizerSupported(): boolean {
-  if (webgl2Supported === null) {
+  if (visualizerSupported === null) {
     try {
-      webgl2Supported =
+      visualizerSupported =
         typeof WebAssembly === "object" &&
         !!document.createElement("canvas").getContext("webgl2");
     } catch {
-      webgl2Supported = false;
+      visualizerSupported = false;
     }
   }
-  return webgl2Supported;
+  return visualizerSupported;
 }
 
 // One never-resumed AudioContext satisfies butterchurn's constructor; the
