@@ -10,6 +10,13 @@ declare module "butterchurn" {
   export interface ButterchurnVisualizer {
     render(opts?: { audioLevels?: ButterchurnAudioLevels }): void;
     loadPreset(preset: object, blendTimeSec?: number): Promise<void>;
+    setPaletteColors(
+      colors: readonly (readonly [number, number, number])[] | null,
+    ): void;
+    setPaletteRamp(
+      colors: readonly (readonly [number, number, number])[] | null,
+      strength: number,
+    ): void;
     setRendererSize(
       width: number,
       height: number,

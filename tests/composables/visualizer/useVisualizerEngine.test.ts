@@ -20,6 +20,8 @@ const ZERO_LEVEL = 0x80;
 
 const loadPreset = vi.hoisted(() => vi.fn());
 const loseGLContext = vi.hoisted(() => vi.fn());
+const setPaletteColors = vi.hoisted(() => vi.fn());
+const setPaletteRamp = vi.hoisted(() => vi.fn());
 const renderedSamples = vi.hoisted(() => [] as Uint8Array[]);
 
 vi.mock("butterchurn", () => {
@@ -31,6 +33,8 @@ vi.mock("butterchurn", () => {
     loadPreset,
     setRendererSize: vi.fn(),
     loseGLContext,
+    setPaletteColors,
+    setPaletteRamp,
   });
   // Named as well as default: the module probe reads both, and vitest throws
   // on an export a mock does not define.
@@ -218,5 +222,25 @@ describe("createVisualizerEngine pause envelope", () => {
     engine = null;
 
     expect(loseGLContext).toHaveBeenCalled();
+  });
+
+  it("passes the artwork palette through to butterchurn", () => {
+    const ramp: [number, number, number][] = [
+      [0, 0, 0],
+      [255, 255, 255],
+    ];
+    engine!.setPaletteColors([[1, 2, 3]]);
+    engine!.setPaletteRamp(ramp, 0.5);
+
+    expect(setPaletteColors).toHaveBeenCalledWith([[1, 2, 3]]);
+    expect(setPaletteRamp).toHaveBeenCalledWith(ramp, 0.5);
+  });
+
+  it("ignores palette changes once destroyed", () => {
+    engine!.destroy();
+    engine!.setPaletteRamp(null, 0);
+
+    expect(setPaletteRamp).not.toHaveBeenCalled();
+    engine = null;
   });
 });

@@ -2,8 +2,8 @@
   MilkDrop (butterchurn) visualizer layer.
 
   Renders behind the view content (absolute, z-index 0, no pointer events),
-  fed by MA core's visualizer relay. A tint layer recolors toward the track's
-  artwork color; a subtle scrim keeps overlaid text legible; the blur option
+  fed by MA core's visualizer relay. The engine recolors toward the track's
+  artwork palette; a subtle scrim keeps overlaid text legible; the blur option
   previews the "ambient background" treatment. Renders nothing (transparent)
   while unsupported or disconnected, so the regular gradient background
   underneath stays visible. Pausing or stopping the player winds it down
@@ -11,17 +11,12 @@
 -->
 <template>
   <div class="visualizer-layer" aria-hidden="true" :style="layerStyle">
-    <div class="visualizer-layer__stack" :style="stackStyle">
+    <div class="visualizer-layer__stack">
       <canvas
         ref="canvasRef"
         class="visualizer-layer__canvas"
         :style="canvasStyle"
       ></canvas>
-      <div
-        v-if="streaming"
-        class="visualizer-layer__tint"
-        :style="tintStyle"
-      ></div>
     </div>
     <div
       v-if="streaming"
@@ -40,18 +35,17 @@ import {
   type VisualizerEngine,
   isVisualizerSupported,
 } from "@/composables/visualizer/useVisualizerEngine";
-import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
+import { useVisualizerPalette } from "@/composables/visualizer/useVisualizerPalette";
 import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
-import { paletteFromServer } from "@/helpers/utils";
 import api from "@/plugins/api";
-import { MediaItemPalette, PlaybackState } from "@/plugins/api/interfaces";
+import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
   type ColorPalette,
@@ -79,7 +73,7 @@ const props = withDefaults(
     // Suspend while another view covers this one (e.g. the fullscreen player
     // opened on top of a dashboard), so only one engine renders at a time.
     coveredWhenFullscreen?: boolean;
-    // Which palette side to tint with; the host view knows whether it forces
+    // Which palette side to use; the host view knows whether it forces
     // a dark treatment regardless of theme.
     forceDarkPalette?: boolean;
   }>(),
@@ -118,11 +112,8 @@ const canvasStyle = computed(() => ({
   filter: props.blur > 0 ? `blur(${props.blur}px)` : undefined,
   // Oversize slightly when blurred so the edge vignette stays off-screen.
   transform: props.blur > 0 ? "scale(1.12)" : undefined,
-}));
-
-// Fades canvas and tint as one unit: the tint has to blend against an
-// opaque canvas, or it composites its own raw color over the background.
-const stackStyle = computed(() => ({
+  // the engine recolors in its own pass, so there is no second layer to fade
+  // in step with and the opacity sits on the canvas itself
   opacity: props.opacity < 100 ? String(props.opacity / 100) : undefined,
 }));
 
@@ -141,32 +132,23 @@ const playbackPaused = computed(() => {
 
 const colorPalette = ref<ColorPalette>({});
 
-// Hand the relay's palette (validated there, absent fields as null) to the
-// same helper the OSD uses, so the two can only ever pick the same color.
-const serverPalette = computed<MediaItemPalette>(() => {
-  const wire = colorPalette.value;
-  return {
-    background_dark: wire.background_dark ?? null,
-    background_light: wire.background_light ?? null,
-    primary: wire.primary ?? null,
-    accent: wire.accent ?? null,
-    on_dark: wire.on_dark ?? null,
-    on_light: wire.on_light ?? null,
-  };
-});
+const { paletteColors, paletteRamp, paletteRampStrength } =
+  useVisualizerPalette({
+    palette: colorPalette,
+    forceDark: () => props.forceDarkPalette,
+  });
 
-// The theme pick mirrors Player.vue's artwork tint; a missing variant means no
-// tint rather than a stand-in color the rest of the app would never show.
-const tintColor = computed(() => {
-  const { lightColor, darkColor } = paletteFromServer(serverPalette.value);
-  const useDark = props.forceDarkPalette || isDark.value;
-  return (useDark ? darkColor : lightColor) || null;
-});
+// A null palette is how the engine is told to fade the recoloring back out.
+const applyPaletteColors = () => {
+  engine?.setPaletteColors(paletteColors.value);
+};
 
-// mix-blend-mode: color keeps the preset's own luminance, just shifts hue.
-const tintStyle = computed(() => ({
-  backgroundColor: tintColor.value ?? "transparent",
-}));
+const applyPaletteRamp = () => {
+  engine?.setPaletteRamp(paletteRamp.value, paletteRampStrength.value);
+};
+
+watch(paletteColors, applyPaletteColors);
+watch([paletteRamp, paletteRampStrength], applyPaletteRamp);
 
 // Fading the layer as a whole multiplies with the opacity preference rather
 // than fighting it, and takes the scrim with it. Seeded from the gate, so a
@@ -233,7 +215,7 @@ let sizeObserver: ResizeObserver | null = null;
 const connectRelay = () => {
   relay?.close();
   relay = null;
-  // Don't carry the old player's tint over until the new relay speaks.
+  // Don't carry the old player's palette over until the new relay speaks.
   colorPalette.value = {};
   // Without a player the server would pick one itself (whichever Sendspin
   // player happens to be playing), so a canvas mounted before its view has
@@ -311,6 +293,8 @@ const createEngine = async () => {
       engine.setPaused(true, false);
       faded.value = true;
     }
+    applyPaletteColors();
+    applyPaletteRamp();
     await applyPreset(0);
   }
 };
@@ -444,21 +428,12 @@ onBeforeUnmount(() => {
 .visualizer-layer__stack {
   position: absolute;
   inset: 0;
-  /* Isolate so the tint blends against the canvas alone, not the backdrop. */
-  isolation: isolate;
 }
 
 .visualizer-layer__canvas {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.visualizer-layer__tint {
-  position: absolute;
-  inset: 0;
-  mix-blend-mode: color;
-  transition: background-color 1.5s ease;
 }
 
 .visualizer-layer__scrim {
