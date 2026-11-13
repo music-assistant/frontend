@@ -65,6 +65,15 @@ describe("activeFilterCount", () => {
       ]),
     ).toBe(4);
   });
+
+  it("does not count a required choice, which always has one picked", () => {
+    const requiredSource: ListingChoiceFilter = {
+      ...choiceFilter("spotify--1"),
+      id: "required_source",
+      unfiltered: undefined,
+    };
+    expect(activeFilterCount([requiredSource])).toBe(0);
+  });
 });
 
 describe("listingItemCount", () => {

@@ -18,7 +18,7 @@ const LIBRARY_CHANGE_DELAY_MS = 2000;
  * `identity` is what the rows are loaded from; when it changes, the requests
  * made so far are forgotten and `onReset` runs so the page can clear its caches
  * and reload. A response that arrives after the identity changed, or after its
- * key was refetched, is dropped.
+ * key was refetched, or after the scope ended, is dropped.
  */
 export function useRowRequests<Item>(
   item: Ref<Item | undefined>,
@@ -28,6 +28,7 @@ export function useRowRequests<Item>(
   // the requests already sent for the item currently shown, each with a token
   // that tells its response apart from one of a later request for the same key
   let requested = new Map<string, object>();
+  onScopeDispose(() => requested.clear());
 
   watch(
     () => item.value && identity(item.value),
@@ -46,18 +47,27 @@ export function useRowRequests<Item>(
     load: (item: Item) => Promise<T[]>,
     store: (items: T[]) => void,
   ): Promise<void> {
+    return fetchOnceValue(key, load, store, []);
+  }
+
+  async function fetchOnceValue<T>(
+    key: string,
+    load: (item: Item) => Promise<T>,
+    store: (value: T) => void,
+    fallback: T,
+  ): Promise<void> {
     const shown = item.value;
     if (!shown || requested.has(key)) return;
     const request = {};
     requested.set(key, request);
     const requestedFor = identity(shown);
-    const items = await orEmpty(load(shown));
+    const value = await orDefault(load(shown), fallback);
     if (
       requested.get(key) === request &&
       item.value &&
       identity(item.value) === requestedFor
     ) {
-      store(items);
+      store(value);
     }
   }
 
@@ -125,7 +135,7 @@ export function useRowRequests<Item>(
     }
   }
 
-  return { fetchOnce, refetchOnLibraryChange };
+  return { fetchOnce, fetchOnceValue, refetchOnLibraryChange };
 }
 
 /** What a media item's rows are loaded from: the item and the providers it is mapped to. */
@@ -140,11 +150,11 @@ export function mappingsIdentity(item: {
 }
 
 /** A failing provider must not blank the page, so its row just stays empty. */
-async function orEmpty<T>(request: Promise<T[]>): Promise<T[]> {
+async function orDefault<T>(request: Promise<T>, fallback: T): Promise<T> {
   try {
     return await request;
   } catch (err) {
     console.error("[useRowRequests] failed to load a row", err);
-    return [];
+    return fallback;
   }
 }

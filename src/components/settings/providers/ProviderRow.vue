@@ -47,7 +47,7 @@
         >
           {{ statusLabel }}
         </Badge>
-        <CommunityProviderMarker v-if="community" variant="icon" />
+        <ProviderMaintainerMarker v-if="community" variant="icon" />
       </ItemTitle>
       <ItemDescription v-if="isError" class="text-destructive">
         {{ errorText }}
@@ -96,8 +96,7 @@
     v-hold="onManageableHold"
     class="provider-card flex h-full min-h-[200px] flex-col gap-3 rounded-(--radius-xl) py-4"
     :class="{
-      'cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:shadow-lg':
-        manageable,
+      'card-hover': manageable,
       'opacity-60': !config.enabled,
     }"
     data-testid="provider-row"
@@ -139,7 +138,7 @@
           >
             {{ statusLabel }}
           </Badge>
-          <CommunityProviderMarker v-if="community" variant="icon" />
+          <ProviderMaintainerMarker v-if="community" variant="icon" />
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-1">
@@ -207,7 +206,7 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
 import TooltipIcon from "@/components/TooltipIcon.vue";
 import { Badge, type BadgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

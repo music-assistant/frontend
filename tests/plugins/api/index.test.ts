@@ -533,6 +533,47 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it("sends the artist listing count commands the server offers", () => {
+    const types = [AlbumType.SINGLE, AlbumType.EP];
+    const sent = () => [
+      transport.lastCommand.command,
+      transport.lastCommand.args,
+    ];
+
+    void api.getArtistTracksCount("artist-1", "library");
+    expect(sent()).toEqual([
+      "music/artists/artist_tracks_count",
+      expect.objectContaining({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+      }),
+    ]);
+    void api.getArtistAlbumsCount(
+      "artist-1",
+      "spotify--1",
+      undefined,
+      undefined,
+      types,
+    );
+    expect(sent()).toEqual([
+      "music/artists/artist_albums_count",
+      expect.objectContaining({
+        provider_instance_id_or_domain: "spotify--1",
+        album_types: types,
+      }),
+    ]);
+    void api.getArtistAppearsOnCount("artist-1", "library");
+    expect(sent()[0]).toBe("music/artists/artist_appears_on_count");
+    void api.getArtistDiscographyCount("artist-1", undefined, types);
+    expect(sent()).toEqual([
+      "music/artists/discography_count",
+      expect.objectContaining({
+        provider_instance_id_or_domain: "library",
+        album_types: types,
+      }),
+    ]);
+  });
+
   it("sends a random seed with library track listings", async () => {
     const request = api.getLibraryTracks(
       undefined,
