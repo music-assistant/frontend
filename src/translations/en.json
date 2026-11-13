@@ -20,6 +20,7 @@
         "soundtrack": "Soundtrack"
     },
     "albums": "Albums",
+    "alphabet_jump": "Jump to letter",
     "appears_on": "Appears on",
     "artist": "Artist",
     "artist_albums": "Albums",
@@ -772,6 +773,10 @@
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
         },
+        "show_letter_index": {
+            "label": "Show A to Z index",
+            "description": "Adds a letter bar to the artists, albums and tracks lists so you can jump straight to a letter. Only shown when the list is sorted by name and you are not searching."
+        },
         "audiobook_chapter_progress": {
             "label": "Show audiobook chapter progress",
             "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."
@@ -985,6 +990,7 @@
         "sort_name": "Alphabetically by sort name",
         "track_number": "Track number",
         "year": "Release year",
+        "release_date": "Release date",
         "position_desc": "Position (descending)",
         "album": "Album (alphabetical)",
         "album_name": "Album",
@@ -1111,6 +1117,7 @@
         "user_options": "User options",
         "help": "Help",
         "view_all": "View all {name}",
+        "view_all_count": "View all {name} ({count})",
         "artwork": "Artwork",
         "import_file": "Import file",
         "bpm": "Tempo (beats per minute)",
@@ -2405,6 +2412,9 @@
         "empty_desc": "No tracks match your current rules. Loosen a filter or pick a different seed to get started.",
         "empty_title": "Nothing to play yet",
         "favorites_yes": "Yes",
+        "favorites_only": "Only favorites",
+        "favorites_exclude": "Exclude favorites",
+        "favorites_exclude_hint": "Your liked tracks are always excluded, even when they match another rule.",
         "field_album_is": "Album is",
         "field_album_is_not": "Album is not",
         "field_artist_is": "Artist is",
@@ -2608,6 +2618,7 @@
     },
     "singles_eps": "Singles & EPs",
     "view_all": "View all",
+    "view_all_count": "View all ({count})",
     "n_in_library": "{count} in library",
     "album_radio": "Album endless mix",
     "playlist_radio": "Playlist endless mix",

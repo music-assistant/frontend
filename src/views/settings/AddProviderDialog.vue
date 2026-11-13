@@ -65,9 +65,13 @@
                 </Badge>
               </ItemTitle>
               <ItemDescription>{{ provider.description }}</ItemDescription>
-              <CommunityProviderMarker
-                v-if="isCommunityProvider(provider)"
+              <ProviderMaintainerMarker
+                v-if="
+                  isCommunityProvider(provider) ||
+                  getProviderMaintainers(provider).length
+                "
                 variant="line"
+                :community="isCommunityProvider(provider)"
                 :maintainers="getProviderMaintainers(provider)"
               />
             </ItemContent>
@@ -94,7 +98,7 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import CommunityProviderMarker from "@/components/settings/providers/CommunityProviderMarker.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
