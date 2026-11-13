@@ -6,17 +6,13 @@
 
 type PresetMap = Record<string, object>;
 
-interface PresetPack {
-  getPresets: () => PresetMap;
-}
-
 let cache: PresetMap | null = null;
 let loading: Promise<PresetMap> | null = null;
 
 // The UMD packs may arrive plain, under `default`, or under `default.default`
-// depending on the bundler's CJS interop; probe all nestings. v2 packs expose
-// getPresets(), v3 packs export the preset map itself; presets are told apart
-// from interop wrappers by their `baseVals` field.
+// depending on the bundler's CJS interop; probe all nestings. The packs export
+// the preset map itself; presets are told apart from interop wrappers by their
+// `baseVals` field.
 function packPresets(module: unknown): PresetMap {
   const record = module as Record<string, unknown>;
   const candidates = [
@@ -24,10 +20,6 @@ function packPresets(module: unknown): PresetMap {
     record.default,
     (record.default as Record<string, unknown> | undefined)?.default,
   ];
-  for (const candidate of candidates) {
-    if (candidate && typeof (candidate as PresetPack).getPresets === "function")
-      return (candidate as PresetPack).getPresets();
-  }
   // deepest nesting first: an interop wrapper's own keys would otherwise
   // match before the preset map it wraps
   for (const candidate of [...candidates].reverse()) {

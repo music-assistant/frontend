@@ -1,16 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// getPresets is declared (as undefined) at the top level so the loader's
-// shape-probing can touch it without vitest's strict namespace throwing.
+// the packs export the preset map itself, recognised by `baseVals`
 vi.mock("butterchurn-presets", () => ({
-  getPresets: undefined,
   default: {
-    getPresets: () => ({ "Alpha - one": { a: 1 }, "beta - two": { b: 2 } }),
+    "Alpha - one": { baseVals: { a: 1 } },
+    "beta - two": { baseVals: { b: 2 } },
   },
 }));
-// the v3 packs export the preset map itself, recognised by `baseVals`
 vi.mock("butterchurn-presets/dist/extra.min.js", () => ({
-  getPresets: undefined,
   default: { "Gamma - three": { baseVals: { c: 3 } } },
 }));
 
