@@ -25,9 +25,8 @@ export const ATTACK_MS = 1000;
 
 export interface VisualizerEngine {
   /**
-   * Load a preset by name, falling back to a random one when the name is not
-   * in the loaded packs. Resolves with the name actually put on screen, or ""
-   * when nothing could be loaded (no preset, or the engine rejected it).
+   * Load a preset by name, or a random one if it is gone. Resolves with the
+   * loaded name, or "" if none loaded.
    */
   loadPresetByName(name: string, blendSec?: number): Promise<string>;
   loadRandomPreset(): Promise<string>;
@@ -239,9 +238,7 @@ export async function createVisualizerEngine(
 
   return {
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
-      // A stored preset name can be missing from the pack (v3 dropped a few
-      // v2 presets), so a fixed or favourited choice saved earlier can be
-      // gone. Fall back rather than leaving the canvas blank.
+      // A stored name can be a preset v3 dropped.
       let loadedName = name;
       let preset = await getPreset(name);
       if (!preset) {
