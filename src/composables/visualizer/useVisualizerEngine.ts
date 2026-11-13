@@ -27,7 +27,7 @@ export interface VisualizerEngine {
   /**
    * Load a preset by name, falling back to a random one when the name is not
    * in the loaded packs. Resolves with the name actually put on screen, or ""
-   * when nothing could be loaded.
+   * when nothing could be loaded (no preset, or the engine rejected it).
    */
   loadPresetByName(name: string, blendSec?: number): Promise<string>;
   loadRandomPreset(): Promise<string>;
@@ -249,18 +249,17 @@ export async function createVisualizerEngine(
       if (!preset || destroyed) return "";
       // A halted loop has no frames to blend across.
       const blend = rafHandle === null ? 0 : blendSec;
-      await visualizer.loadPreset(preset, blend);
+      const loaded = await visualizer.loadPreset(preset, blend);
       redrawIfHalted();
-      return loadedName;
+      return loaded ? loadedName : "";
     },
     async loadRandomPreset() {
       const name = await randomPresetName();
       const preset = await getPreset(name);
-      if (preset && !destroyed) {
-        await visualizer.loadPreset(preset, 0);
-        redrawIfHalted();
-      }
-      return name;
+      if (!preset || destroyed) return "";
+      const loaded = await visualizer.loadPreset(preset, 0);
+      redrawIfHalted();
+      return loaded ? name : "";
     },
     setPaused(value: boolean, ramp = true) {
       if (destroyed || value === paused) return;

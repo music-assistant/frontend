@@ -9,7 +9,9 @@ declare module "butterchurn" {
 
   export interface ButterchurnVisualizer {
     render(opts?: { audioLevels?: ButterchurnAudioLevels }): void;
-    loadPreset(preset: object, blendTimeSec?: number): Promise<void>;
+    // false when the preset failed to compile, a newer load superseded it, or
+    // it cannot run without the JS interpreter
+    loadPreset(preset: object, blendTimeSec?: number): Promise<boolean>;
     setRendererSize(
       width: number,
       height: number,
