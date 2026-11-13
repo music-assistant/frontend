@@ -44,7 +44,7 @@
             }}:
             {{ accessiblePlayerLabel }}
             <template v-if="player.needs_setup">
-              . {{ $t("settings.setup_required") }}
+              . {{ setupReason ?? $t("settings.setup_required") }}
             </template>
             <template v-else-if="playerStatus">
               . {{ $t(playerStatus) }}
@@ -114,7 +114,7 @@
                 :style="{ color: 'rgb(var(--v-theme-warning))' }"
               >
                 <TriangleAlert class="size-3" />
-                {{ $t("settings.setup_required") }}
+                {{ setupReason ?? $t("settings.setup_required") }}
               </Badge>
               <p
                 v-if="player.type === PlayerType.SOURCE"
@@ -245,6 +245,7 @@ import {
   getPlayerDisplayName,
   getPlayerGroupMemberCount,
   getPlayerName,
+  getPlayerSetupReason,
   isBuiltinPlayer,
 } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
@@ -302,6 +303,8 @@ const { activeSource, canRestartSource } = useActiveSource(
 );
 
 const playerQueue = computed(() => resolvePlayerQueue(props.player));
+
+const setupReason = computed(() => getPlayerSetupReason(props.player));
 
 // a set-up audio input can't be selected for playback; its row only informs
 const isInformationalSource = computed(

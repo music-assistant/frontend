@@ -10,9 +10,9 @@ export const getPlayerName = (config: PlayerConfig): string =>
   config.default_name ||
   config.player_id;
 
-/** The players the players settings list shows, disabled ones included. */
+/** The players the players settings list shows: every player, also unavailable and disabled ones. */
 export const getListedPlayerConfigs = (): Promise<PlayerConfig[]> =>
-  api.getPlayerConfigs(undefined, false, false, true);
+  api.getPlayerConfigs();
 
 /**
  * Whether the player belongs to one of the given provider instances: it is one

@@ -20,6 +20,7 @@ import {
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
 import { expertModeSetting } from "@/helpers/expert_mode";
+import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import {
   visualizerCanRender,
@@ -34,8 +35,12 @@ import {
 export function visualizerEnabledForPlayer(playerId?: string): boolean {
   const prefs = store.currentUser?.preferences;
   if (playerId) {
-    const override = prefs?.[`visualizer_enabled.${playerId}`];
-    if (override !== undefined) return Boolean(override);
+    // a player merged into this one brings its preference along
+    const playerIds = [playerId, ...(api.players[playerId]?.legacy_ids ?? [])];
+    for (const id of playerIds) {
+      const override = prefs?.[`visualizer_enabled.${id}`];
+      if (override !== undefined) return Boolean(override);
+    }
   }
   return expertModeSetting("visualizer_enabled");
 }

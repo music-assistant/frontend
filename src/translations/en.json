@@ -160,6 +160,11 @@
             "unavailable": "Unavailable",
             "disabled": "Disabled"
         },
+        "setup_reason": {
+            "pairing_required": "Pairing required",
+            "password_required": "Password required",
+            "provider_not_installed": "Player provider not installed"
+        },
         "player_status_label": "Status",
         "player_type_label": "Player type",
         "playerproviders": "Player providers",

@@ -121,7 +121,9 @@ vi.mock("@/composables/userPreferences", async () => {
   };
 });
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  resolvePlayer: (await importOriginal<typeof import("@/helpers/players")>())
+    .resolvePlayer,
   canEditPlayerGroup: (player: Player) => player.can_group_with.length > 0,
   getPlayerDisplayName: (player: Player) =>
     player.player_id === "builtin" ? "This device" : player.name,
@@ -278,6 +280,8 @@ function createPlayer(
     mute_control: "mute",
     needs_setup: false,
     has_setup_flow: false,
+    setup_reason: null,
+    legacy_ids: [],
     output_protocols: [],
     active_output_protocol: null,
     elapsed_time: null,
@@ -475,6 +479,21 @@ describe("PlayerSelect", () => {
     await nextTick();
 
     expect(store.activePlayerId).toBe(remembered.player_id);
+  });
+
+  it("selects the player a remembered player was merged into", () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    kitchen.legacy_ids = ["absorbed"];
+    const attic = createPlayer("attic", "Attic", PlaybackState.PLAYING);
+    setActivePlayerPreference("absorbed");
+    api.players = {
+      [attic.player_id]: attic,
+      [kitchen.player_id]: kitchen,
+    };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(kitchen.player_id);
   });
 
   it("waits for the built-in player when it is the remembered one", async () => {

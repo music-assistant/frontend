@@ -25,6 +25,7 @@ import { providerInstance } from "../fixtures/providerInstance";
 vi.mock("@/plugins/api", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
   const api = reactive({
+    players: {},
     queues: {},
     queueElapsedTime: {},
     // the menu's ai dj entry derives availability from the provider list

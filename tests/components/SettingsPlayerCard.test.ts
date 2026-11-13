@@ -122,6 +122,56 @@ describe("SettingsPlayerCard", () => {
     expect(wrapper.classes()).toContain("player-unavailable");
   });
 
+  it("names why a player needs setup in its setup warning", () => {
+    apiMock.players = {
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: true,
+        setup_reason: "password_required",
+        output_protocols: [],
+      },
+    };
+    const wrapper = mountCard();
+
+    expect(wrapper.text()).toContain("Password required");
+    expect(wrapper.text()).not.toContain("settings.player_needs_setup");
+  });
+
+  it("names why an unavailable player can not play", () => {
+    apiMock.players = {
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: false,
+        setup_reason: "provider_not_installed",
+        output_protocols: [],
+      },
+    };
+    const wrapper = mountCard();
+
+    expect(wrapper.get('[data-testid="player-setup-reason"]').text()).toBe(
+      "Player provider not installed",
+    );
+  });
+
+  it("names no reason for a disabled player", () => {
+    apiMock.players = {
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: false,
+        setup_reason: "provider_not_installed",
+        output_protocols: [],
+      },
+    };
+    const wrapper = mountCard({ enabled: false });
+
+    expect(wrapper.find('[data-testid="player-setup-reason"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("dims a disabled card even when the player is available", () => {
     apiMock.players = {
       kitchen: {

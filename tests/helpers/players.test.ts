@@ -4,12 +4,14 @@ import {
   getPlayerDisplayName,
   getPlayerGroupMemberCount,
   getPlayerName,
+  getPlayerSetupReason,
   getWebPlayerName,
   groupMemberPickerVisible,
   isBuiltinPlayer,
   isPlayerGrouped,
   isSelectablePlayer,
   playerVisible,
+  resolvePlayer,
 } from "@/helpers/players";
 import {
   IdentifierType,
@@ -79,6 +81,8 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     mute_control: "mute",
     needs_setup: false,
     has_setup_flow: false,
+    setup_reason: null,
+    legacy_ids: [],
     playback_state: PlaybackState.IDLE,
     output_protocols: [],
     active_output_protocol: null,
@@ -391,6 +395,18 @@ describe("playerVisible", () => {
     expect(playerVisible(createPlayer({ player_id: "player" }))).toBe(true);
   });
 
+  it("shows a player that the user filter names by an id it was known under before", () => {
+    // a connected session keeps the filter it signed in with, also after the
+    // server moved it to the player another one was merged into
+    store.currentUser = createAdminUser(["absorbed"]);
+
+    expect(
+      playerVisible(
+        createPlayer({ player_id: "player", legacy_ids: ["absorbed"] }),
+      ),
+    ).toBe(true);
+  });
+
   it("shows all players when the user filter is empty", () => {
     store.currentUser = createAdminUser([]);
 
@@ -509,6 +525,56 @@ describe("isSelectablePlayer", () => {
 
   it("rejects a missing player", () => {
     expect(isSelectablePlayer(undefined)).toBe(false);
+  });
+});
+
+describe("resolvePlayer", () => {
+  it("finds a player by its own id", () => {
+    const player = createPlayer({ player_id: "kitchen" });
+    api.players = { kitchen: player };
+
+    expect(resolvePlayer("kitchen")).toBe(player);
+  });
+
+  it("finds a player by an id it was known under before", () => {
+    const player = createPlayer({ player_id: "kitchen", legacy_ids: ["old"] });
+    api.players = { kitchen: player };
+
+    expect(resolvePlayer("old")).toBe(player);
+  });
+
+  it("prefers the player that has the id itself", () => {
+    const merged = createPlayer({ player_id: "merged", legacy_ids: ["attic"] });
+    const attic = createPlayer({ player_id: "attic" });
+    api.players = { merged, attic };
+
+    expect(resolvePlayer("attic")).toBe(attic);
+  });
+
+  it("finds nothing for an id no player goes by", () => {
+    api.players = { kitchen: createPlayer({ player_id: "kitchen" }) };
+
+    expect(resolvePlayer("attic")).toBeUndefined();
+  });
+});
+
+describe("getPlayerSetupReason", () => {
+  it.each([
+    ["pairing_required", "Pairing required"],
+    ["password_required", "Password required"],
+    ["provider_not_installed", "Player provider not installed"],
+  ])("names the reason %s", (reason, text) => {
+    expect(getPlayerSetupReason(createPlayer({ setup_reason: reason }))).toBe(
+      text,
+    );
+  });
+
+  it("names nothing for a reason it does not know, or none", () => {
+    expect(
+      getPlayerSetupReason(createPlayer({ setup_reason: "something_new" })),
+    ).toBeUndefined();
+    expect(getPlayerSetupReason(createPlayer())).toBeUndefined();
+    expect(getPlayerSetupReason(undefined)).toBeUndefined();
   });
 });
 

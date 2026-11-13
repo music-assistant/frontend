@@ -3435,13 +3435,13 @@ export class MusicAssistantApi {
       this.players[player.player_id] = player;
     } else if (msg.event == EventType.PLAYER_UPDATED) {
       const player = msg.data as Player;
-      if (player.player_id in this.players)
+      // a disabled player leaves the server with this last update, and its queue with it
+      if (!player.enabled) this.dropPlayer(player.player_id);
+      else if (player.player_id in this.players)
         Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
     } else if (msg.event == EventType.PLAYER_REMOVED) {
-      delete this.players[msg.object_id!];
-      delete this.queues[msg.object_id!];
-      delete this.queueElapsedTime[msg.object_id!];
+      this.dropPlayer(msg.object_id!);
     } else if (msg.event == EventType.CORE_STATE_UPDATED) {
       // Update serverInfo with the new server state
       this.serverInfo.value = msg.data as ServerInfoMessage;
@@ -3455,6 +3455,13 @@ export class MusicAssistantApi {
     // signal + log all events
     if (DEBUG) console.log("[event]", msg);
     this.signalEvent(msg);
+  }
+
+  /** Forget a player that left the server, and its queue. */
+  private dropPlayer(playerId: string): void {
+    delete this.players[playerId];
+    delete this.queues[playerId];
+    delete this.queueElapsedTime[playerId];
   }
 
   private handleTransportStateChange(state: string): void {

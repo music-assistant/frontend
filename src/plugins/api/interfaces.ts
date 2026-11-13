@@ -1718,8 +1718,14 @@ export interface Player {
   volume_control: string;
   mute_control: string;
   needs_setup: boolean;
+  // setup_reason: why the player needs setup or has no way to play at all, such as
+  // "pairing_required" or "provider_not_installed"; null when it gave no reason
+  setup_reason: string | null;
   // this player (or a wrapped protocol child) offers a setup flow that can be re-run on demand
   has_setup_flow: boolean;
+  // legacy_ids: ids the player was known under before (such as a player merged into it),
+  // which it keeps answering to
+  legacy_ids: string[];
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
