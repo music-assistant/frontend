@@ -39,4 +39,14 @@ describe("presetLibrary", () => {
     const names = await listPresetNames();
     expect(names).toContain(await randomPresetName());
   });
+
+  it("keeps only favourites that are still in the library", async () => {
+    const { availableFavorites } = await import("./presetLibrary");
+    expect(
+      availableFavorites(
+        ["gone", "Alpha - one"],
+        ["Alpha - one", "beta - two"],
+      ),
+    ).toEqual(["Alpha - one"]);
+  });
 });

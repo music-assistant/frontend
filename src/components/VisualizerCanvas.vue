@@ -47,7 +47,11 @@ import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
-import { randomPresetName } from "@/helpers/visualizer/presetLibrary";
+import {
+  availableFavorites,
+  listPresetNames,
+  randomPresetName,
+} from "@/helpers/visualizer/presetLibrary";
 import { DEFAULT_QUALITY } from "@/helpers/visualizer/quality";
 import { paletteFromServer } from "@/helpers/utils";
 import api from "@/plugins/api";
@@ -188,9 +192,13 @@ let lastPresetSwitchAt = 0;
 const pickPresetName = async (forceRandom = false): Promise<string | null> => {
   if (!forceRandom && presetModePref.value === "fixed" && props.preset)
     return props.preset;
-  const favorites = favoritesPref.value;
-  if (presetModePref.value === "random_favorites" && favorites.length > 0) {
-    return favorites[Math.floor(Math.random() * favorites.length)];
+  if (presetModePref.value === "random_favorites") {
+    const favorites = availableFavorites(
+      favoritesPref.value,
+      await listPresetNames(),
+    );
+    if (favorites.length > 0)
+      return favorites[Math.floor(Math.random() * favorites.length)];
   }
   return await randomPresetName();
 };

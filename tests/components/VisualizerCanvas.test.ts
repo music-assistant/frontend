@@ -37,6 +37,7 @@ vi.mock("@/plugins/visualizer-relay", () => ({
 }));
 
 const setPaused = vi.hoisted(() => vi.fn());
+const loadPresetByName = vi.hoisted(() => vi.fn(async (name: string) => name));
 // The real module keeps the timing constants; only the engine itself is faked.
 vi.mock(
   "@/composables/visualizer/useVisualizerEngine",
@@ -44,7 +45,7 @@ vi.mock(
     ...(await importOriginal<object>()),
     isVisualizerSupported: () => true,
     createVisualizerEngine: vi.fn(async () => ({
-      loadPresetByName: vi.fn(async (name: string) => name),
+      loadPresetByName,
       loadRandomPreset: vi.fn(async () => "preset"),
       setPaused,
       destroy: vi.fn(),
@@ -52,13 +53,18 @@ vi.mock(
   }),
 );
 
+const preferenceOverrides = vi.hoisted(() => ({}) as Record<string, unknown>);
 vi.mock("@/composables/userPreferences", () => ({
   useUserPreferences: () => ({
-    getPreference: (_key: string, fallback: unknown) => ({ value: fallback }),
+    getPreference: (key: string, fallback: unknown) => ({
+      value: key in preferenceOverrides ? preferenceOverrides[key] : fallback,
+    }),
   }),
 }));
 
-vi.mock("@/helpers/visualizer/presetLibrary", () => ({
+vi.mock("@/helpers/visualizer/presetLibrary", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  listPresetNames: vi.fn(async () => ["kept", "also kept"]),
   randomPresetName: vi.fn(async () => "preset"),
 }));
 
@@ -223,6 +229,40 @@ describe("VisualizerCanvas playback gating", () => {
 
     // No wind-down to run: there is nothing on screen yet.
     expect(setPaused).toHaveBeenCalledWith(true, false);
+    wrapper.unmount();
+  });
+});
+
+describe("VisualizerCanvas favourites", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    preferenceOverrides.visualizer_preset_mode = "random_favorites";
+    preferenceOverrides.visualizer_favorites = ["gone", "kept"];
+  });
+
+  afterEach(() => {
+    for (const key of Object.keys(preferenceOverrides))
+      delete preferenceOverrides[key];
+  });
+
+  it("never picks a favourite the library no longer has", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+
+    expect(loadPresetByName).toHaveBeenCalledWith("kept", expect.anything());
+    expect(loadPresetByName).not.toHaveBeenCalledWith(
+      "gone",
+      expect.anything(),
+    );
+    wrapper.unmount();
+  });
+
+  it("falls back to a random preset when no favourite is left", async () => {
+    preferenceOverrides.visualizer_favorites = ["gone"];
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+
+    expect(loadPresetByName).toHaveBeenCalledWith("preset", expect.anything());
     wrapper.unmount();
   });
 });

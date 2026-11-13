@@ -91,7 +91,7 @@
           <Check v-if="selectValue === RANDOM_VALUE" class="ml-auto size-4" />
         </DropdownMenuItem>
         <DropdownMenuItem
-          v-if="favoritesPref.length > 0"
+          v-if="usableFavorites.length > 0"
           @select.prevent="onPresetChange(RANDOM_FAVORITES_VALUE)"
         >
           <span class="flex-1 truncate min-w-0">
@@ -142,7 +142,10 @@ import {
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
-import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
+import {
+  availableFavorites,
+  listPresetNames,
+} from "@/helpers/visualizer/presetLibrary";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
@@ -194,6 +197,11 @@ const toggleExpanded = () => {
   }
   presetsExpanded.value = !presetsExpanded.value;
 };
+
+// The stored list can name presets the library no longer has.
+const usableFavorites = computed(() =>
+  availableFavorites(favoritesPref.value, presetNames.value),
+);
 
 // Favourites float to the top of the picker.
 const sortedPresetNames = computed(() => {
