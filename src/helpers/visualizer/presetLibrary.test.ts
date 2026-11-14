@@ -1,16 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// getPresets is declared (as undefined) at the top level so the loader's
-// shape-probing can touch it without vitest's strict namespace throwing.
+// the packs export the preset map itself, recognised by `baseVals`
 vi.mock("butterchurn-presets", () => ({
-  getPresets: undefined,
   default: {
-    getPresets: () => ({ "Alpha - one": { a: 1 }, "beta - two": { b: 2 } }),
+    "Alpha - one": { baseVals: { a: 1 } },
+    "beta - two": { baseVals: { b: 2 } },
   },
 }));
-vi.mock("butterchurn-presets/lib/butterchurnPresetsExtra.min.js", () => ({
-  getPresets: undefined,
-  default: { getPresets: () => ({ "Gamma - three": { c: 3 } }) },
+vi.mock("butterchurn-presets/dist/extra.min.js", () => ({
+  default: { "Gamma - three": { baseVals: { c: 3 } } },
 }));
 
 describe("presetLibrary", () => {
@@ -31,7 +29,7 @@ describe("presetLibrary", () => {
 
   it("returns presets by name", async () => {
     const { getPreset } = await import("./presetLibrary");
-    expect(await getPreset("Gamma - three")).toEqual({ c: 3 });
+    expect(await getPreset("Gamma - three")).toEqual({ baseVals: { c: 3 } });
     expect(await getPreset("nope")).toBeUndefined();
   });
 
@@ -40,5 +38,15 @@ describe("presetLibrary", () => {
       await import("./presetLibrary");
     const names = await listPresetNames();
     expect(names).toContain(await randomPresetName());
+  });
+
+  it("keeps only favourites that are still in the library", async () => {
+    const { availableFavorites } = await import("./presetLibrary");
+    expect(
+      availableFavorites(
+        ["gone", "Alpha - one"],
+        ["Alpha - one", "beta - two"],
+      ),
+    ).toEqual(["Alpha - one"]);
   });
 });
