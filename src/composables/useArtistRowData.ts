@@ -112,8 +112,25 @@ export function useArtistRowData(
     return artistRows.effectiveSource(rowId, artist.value);
   };
 
-  const albumsSource = computed(() => rowSource("albums"));
-  const singlesSource = computed(() => rowSource("singles_eps"));
+  /** The source feeding a release row; undefined while "auto" waits for the library count. */
+  const releaseRowSource = function (
+    rowId: "albums" | "singles_eps",
+  ): RowSource | undefined {
+    if (!artist.value) return undefined;
+    const counts = rowId === "albums" ? albumCounts.value : singlesCounts.value;
+    const libraryCount = counts.get("library");
+    return artistRows.resolveSource(
+      rowId,
+      artist.value,
+      libraryCount === undefined ? undefined : libraryCount > 0,
+    );
+  };
+
+  // the source the user chose for a release row, "auto" included
+  const albumsSelectedSource = computed(() => rowSource("albums"));
+  const singlesSelectedSource = computed(() => rowSource("singles_eps"));
+  const albumsSource = computed(() => releaseRowSource("albums"));
+  const singlesSource = computed(() => releaseRowSource("singles_eps"));
   const topTracksSource = computed(() => rowSource("top_tracks"));
   const similarArtistsSource = computed(() => rowSource("similar_artists"));
   const discographyKey = computed(() => typesKey("discography"));
@@ -177,11 +194,12 @@ export function useArtistRowData(
     sourceItems(similarArtists.value, similarArtistsSource.value),
   );
 
+  // an automatic row's badge reads "Automatic" until its source is known
   const albumsSourceDisplay = computed(() =>
-    rowSourceDisplay(albumsSource.value),
+    rowSourceDisplay(albumsSource.value ?? albumsSelectedSource.value),
   );
   const singlesSourceDisplay = computed(() =>
-    rowSourceDisplay(singlesSource.value),
+    rowSourceDisplay(singlesSource.value ?? singlesSelectedSource.value),
   );
 
   // on that fallback, only a library artist's badge switches to the library
@@ -234,12 +252,10 @@ export function useArtistRowData(
     if (!artist.value) return;
     const rows = visibleRows.value;
     if (rows.includes("albums")) {
-      fetchReleases("albums", albumsSource.value!);
-      fetchReleaseCount("albums", albumsSource.value!);
+      loadReleaseRow("albums", albumsSource.value);
     }
     if (rows.includes("singles_eps")) {
-      fetchReleases("singles_eps", singlesSource.value!);
-      fetchReleaseCount("singles_eps", singlesSource.value!);
+      loadReleaseRow("singles_eps", singlesSource.value);
     }
     if (rows.includes("appears_on")) {
       fetchAppearsOn();
@@ -260,6 +276,19 @@ export function useArtistRowData(
     if (rows.includes("similar_artists")) {
       fetchSimilarArtists(similarArtistsSource.value!);
     }
+  }
+
+  /**
+   * A release row's releases and count. An automatic row still waiting for its
+   * source loads the library's, which settle it and are what it shows when the
+   * library has releases.
+   */
+  function loadReleaseRow(
+    rowId: "albums" | "singles_eps",
+    source: RowSource | undefined,
+  ) {
+    fetchReleases(rowId, source ?? "library");
+    fetchReleaseCount(rowId, source ?? "library");
   }
 
   function fetchReleases(rowId: "albums" | "singles_eps", source: RowSource) {
@@ -400,6 +429,8 @@ export function useArtistRowData(
     albumsMeta,
     albumsSource,
     singlesSource,
+    albumsSelectedSource,
+    singlesSelectedSource,
     topTracksSource,
     similarArtistsSource,
     albumsSourceDisplay,

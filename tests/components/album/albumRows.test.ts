@@ -24,6 +24,7 @@ vi.mock("@/composables/userPreferences", () => ({
 import {
   ALBUM_ROW_SOURCES_PREFERENCE_KEY,
   ALBUM_ROWS_PREFERENCE_KEY,
+  albumArtistSourcesKnown,
   albumRows,
   availableAlbumRowIds,
   type AlbumRowId,
@@ -156,7 +157,7 @@ describe("albumRows", () => {
   });
 
   describe("sources", () => {
-    it("offers the library and the capable providers of a loaded library artist", () => {
+    it("offers automatic, the library and the capable providers of a loaded library artist", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       addProvider("tidal--def", []);
 
@@ -165,7 +166,17 @@ describe("albumRows", () => {
           "more_from_artist",
           albumByLibraryArtist("spotify--abc", "tidal--def"),
         ),
-      ).toEqual(["library", "spotify--abc"]);
+      ).toEqual(["auto", "library", "spotify--abc"]);
+    });
+
+    it("offers only the library when no provider can list the artist's albums", () => {
+      addProvider("tidal--def", []);
+      expect(
+        albumRows.sources(
+          "more_from_artist",
+          albumByLibraryArtist("tidal--def"),
+        ),
+      ).toEqual(["library"]);
     });
 
     it("offers nothing until the full artist has been loaded", () => {
@@ -199,6 +210,27 @@ describe("albumRows", () => {
       ).toBe("library");
     });
 
+    it("defaults a library artist a provider can list albums for to automatic", () => {
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
+      expect(
+        albumRows.effectiveSource(
+          "more_from_artist",
+          albumByLibraryArtist("spotify--abc"),
+        ),
+      ).toBe("auto");
+    });
+
+    it("stays automatic until the full artist has been loaded", () => {
+      expect(
+        albumRows.effectiveSource("more_from_artist", albumBySlimArtist()),
+      ).toBe("auto");
+      expect(albumArtistSourcesKnown(albumBySlimArtist())).toBe(false);
+      expect(albumArtistSourcesKnown(albumByLibraryArtist())).toBe(true);
+      expect(
+        albumArtistSourcesKnown(albumByProviderArtist("spotify--abc")),
+      ).toBe(true);
+    });
+
     it("keeps a provider artist on its own provider", () => {
       expect(
         albumRows.effectiveSource(
@@ -224,7 +256,7 @@ describe("albumRows", () => {
       ).toBe("spotify--abc");
     });
 
-    it("falls back to the library when the saved provider is gone", () => {
+    it("falls back to automatic when the saved provider is gone", () => {
       setPreferences({
         [ALBUM_ROW_SOURCES_PREFERENCE_KEY]: {
           more_from_artist: "spotify--gone",
@@ -236,6 +268,34 @@ describe("albumRows", () => {
         albumRows.effectiveSource(
           "more_from_artist",
           albumByLibraryArtist("spotify--abc"),
+        ),
+      ).toBe("auto");
+    });
+  });
+
+  describe("resolveSource", () => {
+    it("shows the library while it holds other releases, else the first provider", () => {
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
+      const item = albumByLibraryArtist("spotify--abc");
+
+      expect(albumRows.resolveSource("more_from_artist", item, true)).toBe(
+        "library",
+      );
+      expect(albumRows.resolveSource("more_from_artist", item, false)).toBe(
+        "spotify--abc",
+      );
+    });
+
+    it("keeps an explicit choice", () => {
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
+      setPreferences({
+        [ALBUM_ROW_SOURCES_PREFERENCE_KEY]: { more_from_artist: "library" },
+      });
+      expect(
+        albumRows.resolveSource(
+          "more_from_artist",
+          albumByLibraryArtist("spotify--abc"),
+          false,
         ),
       ).toBe("library");
     });

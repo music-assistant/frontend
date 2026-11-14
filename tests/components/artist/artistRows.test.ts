@@ -119,12 +119,19 @@ describe("artistRows", () => {
   });
 
   describe("sources", () => {
-    it("lists the library and the capable providers for a release row, never every provider at once", () => {
+    it("lists automatic, the library and the capable providers for a release row, never every provider at once", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       addProvider("tidal--def", []);
       expect(
         artistRows.sources("albums", mappedTo("spotify--abc", "tidal--def")),
-      ).toEqual(["library", "spotify--abc"]);
+      ).toEqual(["auto", "library", "spotify--abc"]);
+    });
+
+    it("lists only the library for a release row no provider can supply", () => {
+      addProvider("tidal--def", []);
+      expect(artistRows.sources("albums", mappedTo("tidal--def"))).toEqual([
+        "library",
+      ]);
     });
 
     it("adds capable metadata providers to the aggregated rows, without the library", () => {
@@ -395,6 +402,99 @@ describe("artistRows", () => {
       expect(artistRows.effectiveSource("albums", providerArtist)).toBe(
         "spotify--abc",
       );
+    });
+  });
+
+  // the release rows of a library artist a provider can list albums for
+  describe("resolveSource of a release row", () => {
+    const ROWS = ["albums", "singles_eps"] as const;
+
+    beforeEach(() => {
+      addProvider("tidal--def", [ProviderFeature.ARTIST_ALBUMS], undefined, {
+        name: "Tidal",
+      });
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS], undefined, {
+        name: "Spotify",
+      });
+    });
+
+    it.each(ROWS)("defaults %s to automatic", (rowId) => {
+      expect(artistRows.effectiveSource(rowId, mappedTo("spotify--abc"))).toBe(
+        "auto",
+      );
+    });
+
+    it.each(ROWS)(
+      "shows the library for %s when it holds releases for the row",
+      (rowId) => {
+        expect(
+          artistRows.resolveSource(rowId, mappedTo("spotify--abc"), true),
+        ).toBe("library");
+      },
+    );
+
+    it.each(ROWS)(
+      "turns %s to the first provider in picker order when the library holds none",
+      (rowId) => {
+        const mapped = mappedTo("tidal--def", "spotify--abc");
+        expect(artistRows.resolveSource(rowId, mapped, false)).toBe(
+          "spotify--abc",
+        );
+      },
+    );
+
+    it.each(ROWS)(
+      "keeps %s on the library for an artist no provider can list albums for",
+      (rowId) => {
+        const unmapped = artist();
+        expect(artistRows.effectiveSource(rowId, unmapped)).toBe("library");
+        expect(artistRows.resolveSource(rowId, unmapped, false)).toBe(
+          "library",
+        );
+        expect(artistRows.resolveSource(rowId, unmapped)).toBe("library");
+      },
+    );
+
+    it.each(ROWS)("waits with %s until the library count is known", (rowId) => {
+      expect(
+        artistRows.resolveSource(rowId, mappedTo("spotify--abc")),
+      ).toBeUndefined();
+    });
+
+    it.each(ROWS)("keeps an explicit choice for %s in every case", (rowId) => {
+      const mapped = mappedTo("spotify--abc");
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { [rowId]: "library" },
+      });
+      expect(artistRows.resolveSource(rowId, mapped, false)).toBe("library");
+      expect(artistRows.resolveSource(rowId, mapped)).toBe("library");
+
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { [rowId]: "spotify--abc" },
+      });
+      expect(artistRows.resolveSource(rowId, mapped, true)).toBe(
+        "spotify--abc",
+      );
+      expect(artistRows.resolveSource(rowId, artist(), false)).toBe("library");
+    });
+
+    it.each(ROWS)("goes back to automatic for %s", async (rowId) => {
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { [rowId]: "library" },
+      });
+      await artistRows.setSource(rowId, "auto");
+      expect(mockSetUserPreference).toHaveBeenLastCalledWith(
+        ARTIST_ROW_SOURCES_PREFERENCE_KEY,
+        {},
+      );
+
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]:
+          mockSetUserPreference.mock.lastCall![1],
+      });
+      expect(
+        artistRows.resolveSource(rowId, mappedTo("spotify--abc"), false),
+      ).toBe("spotify--abc");
     });
   });
 });

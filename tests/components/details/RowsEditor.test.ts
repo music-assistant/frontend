@@ -242,7 +242,7 @@ describe("RowsEditor", () => {
     expect(mockSetSource).toHaveBeenCalledWith("albums", "spotify--1");
   });
 
-  it("offers the library to a release row and every provider at once to an aggregated one", () => {
+  it("offers automatic and the library to a release row and every provider at once to an aggregated one", () => {
     const sources = (wrapper: VueWrapper) =>
       rows(wrapper).map((row) =>
         row
@@ -251,7 +251,7 @@ describe("RowsEditor", () => {
       );
 
     expect(sources(mountEditor(["albums", "top_tracks"]))).toEqual([
-      ["library", "spotify--1"],
+      ["auto", "library", "spotify--1"],
       ["all", "spotify--1"],
     ]);
   });

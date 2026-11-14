@@ -64,7 +64,7 @@
           :source-label="moreFromArtistSourceDisplay?.label"
           :source-domain="moreFromArtistSourceDisplay?.domain"
           :source-options="moreFromArtistOptions"
-          :source-value="moreFromArtistSource"
+          :source-value="moreFromArtistSelectedSource"
           :items="artistReleaseItems"
           :view-all-to="artistAlbumsRoute"
           :empty-message="$t('artist_row_empty')"
@@ -204,6 +204,7 @@ const {
   versionItems,
   artistReleaseItems,
   moreFromArtistSource,
+  moreFromArtistSelectedSource,
   moreFromArtistSourceDisplay,
 } = useAlbumRowData(albumForRows, visibleRows);
 

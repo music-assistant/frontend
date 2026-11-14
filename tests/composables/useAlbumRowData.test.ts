@@ -1,11 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockLoadAlbumVersions, mockLoadArtistReleases, mockEffectiveSource } =
-  vi.hoisted(() => ({
-    mockLoadAlbumVersions: vi.fn(),
-    mockLoadArtistReleases: vi.fn(),
-    mockEffectiveSource: vi.fn(() => "library" as string),
-  }));
+const {
+  mockLoadAlbumVersions,
+  mockLoadArtistReleases,
+  mockEffectiveSource,
+  mockResolveSource,
+  mockSourcesKnown,
+} = vi.hoisted(() => ({
+  mockLoadAlbumVersions: vi.fn(),
+  mockLoadArtistReleases: vi.fn(),
+  mockEffectiveSource: vi.fn(() => "library" as string),
+  mockResolveSource:
+    vi.fn<
+      (
+        id: string,
+        item: unknown,
+        libraryHasItems?: boolean,
+      ) => string | undefined
+    >(),
+  mockSourcesKnown: vi.fn(() => true),
+}));
 
 vi.mock("@/components/album/albumData", () => ({
   loadAlbumVersions: mockLoadAlbumVersions,
@@ -15,7 +29,11 @@ vi.mock("@/components/album/albumData", () => ({
 // the effective source is the row registry's job (tested there); here it is
 // mocked so the composable's per-source loading can be driven directly
 vi.mock("@/components/album/albumRows", () => ({
-  albumRows: { effectiveSource: mockEffectiveSource },
+  albumArtistSourcesKnown: mockSourcesKnown,
+  albumRows: {
+    effectiveSource: mockEffectiveSource,
+    resolveSource: mockResolveSource,
+  },
 }));
 
 import type { AlbumRowId } from "@/components/album/albumRows";
@@ -55,6 +73,11 @@ describe("useAlbumRowData", () => {
     mockLoadArtistReleases.mockReset();
     mockLoadArtistReleases.mockResolvedValue([album({ item_id: "3" })]);
     mockEffectiveSource.mockReset().mockReturnValue("library");
+    // a saved source is resolved as it is
+    mockResolveSource
+      .mockReset()
+      .mockImplementation(() => mockEffectiveSource());
+    mockSourcesKnown.mockReset().mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -151,5 +174,68 @@ describe("useAlbumRowData", () => {
     await showAlbum(page);
 
     expect(page.artistReleaseItems.value).toEqual([]);
+  });
+
+  describe("an automatic source", () => {
+    beforeEach(() => {
+      mockEffectiveSource.mockReturnValue("auto");
+      // the registry's resolution, with a provider to turn to
+      mockResolveSource.mockImplementation((_id, _item, libraryHasItems) =>
+        libraryHasItems === undefined
+          ? undefined
+          : libraryHasItems
+            ? "library"
+            : "spotify--abc",
+      );
+      mockLoadArtistReleases.mockImplementation(async (_album, from) =>
+        from === "library" ? [] : [album({ item_id: "spotify-release" })],
+      );
+    });
+
+    it("shows the library when it holds other releases", async () => {
+      mockLoadArtistReleases.mockResolvedValue([album({ item_id: "3" })]);
+      const page = setupRowData();
+      await showAlbum(page);
+
+      expect(mockLoadArtistReleases).toHaveBeenCalledTimes(1);
+      expect(page.moreFromArtistSource.value).toBe("library");
+      expect(page.moreFromArtistSelectedSource.value).toBe("auto");
+    });
+
+    it("turns to the provider when the library holds no other release", async () => {
+      const page = setupRowData();
+      await showAlbum(page);
+
+      expect(mockLoadArtistReleases.mock.calls.map(([, from]) => from)).toEqual(
+        ["library", "spotify--abc"],
+      );
+      expect(page.moreFromArtistSource.value).toBe("spotify--abc");
+      expect(page.artistReleaseItems.value).toEqual([
+        album({ item_id: "spotify-release" }),
+      ]);
+    });
+
+    it("keeps loading an empty library until the artist's providers are known", async () => {
+      mockSourcesKnown.mockReturnValue(false);
+      const page = setupRowData();
+      await showAlbum(page);
+
+      expect(mockLoadArtistReleases).toHaveBeenCalledTimes(1);
+      expect(page.moreFromArtistSource.value).toBeUndefined();
+      expect(page.artistReleaseItems.value).toBeUndefined();
+      expect(page.moreFromArtistSourceDisplay.value).toEqual({
+        label: "Automatic",
+      });
+
+      // the full artist arrives in artists[0]
+      mockSourcesKnown.mockReturnValue(true);
+      page.album.value = { ...page.album.value! };
+      await flushPromises();
+
+      expect(page.moreFromArtistSource.value).toBe("spotify--abc");
+      expect(page.artistReleaseItems.value).toEqual([
+        album({ item_id: "spotify-release" }),
+      ]);
+    });
   });
 });

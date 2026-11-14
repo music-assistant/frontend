@@ -2,7 +2,11 @@ import {
   loadAlbumVersions,
   loadArtistReleases,
 } from "@/components/album/albumData";
-import { albumRows, type AlbumRowId } from "@/components/album/albumRows";
+import {
+  albumArtistSourcesKnown,
+  albumRows,
+  type AlbumRowId,
+} from "@/components/album/albumRows";
 import {
   rowSourceDisplay,
   type RowSource,
@@ -47,11 +51,32 @@ export function useAlbumRowData(
     () => loadRowData(),
   );
 
+  // the source the user chose for "more from this artist", "auto" included
+  const moreFromArtistSelectedSource = computed<RowSource | undefined>(() =>
+    album.value
+      ? albumRows.effectiveSource("more_from_artist", album.value)
+      : undefined,
+  );
+
+  // whether the library holds other releases of the artist, which settles an
+  // automatic source; an empty library only does once the artist's providers
+  // are known, so the row does not show it on the way to a provider
+  const libraryHasReleases = computed(() => {
+    const items = artistReleases.value.get("library");
+    if (items === undefined || !album.value) return undefined;
+    if (items.length) return true;
+    return albumArtistSourcesKnown(album.value) ? false : undefined;
+  });
+
   // the source feeding "more from this artist"; it follows the full album artist
   // once loaded into album.artists[0], so a saved provider becomes effective then
   const moreFromArtistSource = computed<RowSource | undefined>(() =>
     album.value
-      ? albumRows.effectiveSource("more_from_artist", album.value)
+      ? albumRows.resolveSource(
+          "more_from_artist",
+          album.value,
+          libraryHasReleases.value,
+        )
       : undefined,
   );
 
@@ -61,8 +86,11 @@ export function useAlbumRowData(
       : undefined,
   );
 
+  // an automatic row's badge reads "Automatic" until its source is known
   const moreFromArtistSourceDisplay = computed(() =>
-    rowSourceDisplay(moreFromArtistSource.value),
+    rowSourceDisplay(
+      moreFromArtistSource.value ?? moreFromArtistSelectedSource.value,
+    ),
   );
 
   // unhiding a row in the editor, or switching the artist source, loads what it
@@ -80,8 +108,10 @@ export function useAlbumRowData(
         (items) => (versionItems.value = items),
       );
     }
-    if (rows.includes("more_from_artist") && moreFromArtistSource.value) {
-      fetchArtistReleases(moreFromArtistSource.value);
+    // an automatic source still being worked out loads the library's releases,
+    // which settle it
+    if (rows.includes("more_from_artist")) {
+      fetchArtistReleases(moreFromArtistSource.value ?? "library");
     }
   }
 
@@ -97,6 +127,7 @@ export function useAlbumRowData(
     versionItems,
     artistReleaseItems,
     moreFromArtistSource,
+    moreFromArtistSelectedSource,
     moreFromArtistSourceDisplay,
   };
 }

@@ -45,8 +45,9 @@ export function availableAlbumRowIds(managesLibrary: boolean): AlbumRowId[] {
  * The only row with a source is "more from this artist": its sources belong to
  * the album artist, so they read album.artists[0] once the full artist has been
  * loaded into it. A library artist offers the library and each provider it is
- * mapped to that lists albums; a provider (non-library) artist offers no choice
- * and stays on its own provider.
+ * mapped to that lists albums, with "auto" first and the default when there is
+ * such a provider; a provider (non-library) artist offers no choice and stays
+ * on its own provider.
  */
 export const albumRows = createRowRegistry<AlbumRowId, Album>({
   rows: ALBUM_ROWS,
@@ -55,6 +56,17 @@ export const albumRows = createRowRegistry<AlbumRowId, Album>({
   sourceCandidates: albumRowSourceCandidates,
   defaultSource: albumRowDefaultSource,
 });
+
+/**
+ * Whether the album artist's sources are known: a library artist's only once
+ * the full artist has been loaded into album.artists[0].
+ */
+export function albumArtistSourcesKnown(album: Album): boolean {
+  const artist = album.artists[0];
+  return (
+    !artist || artist.provider !== "library" || "provider_mappings" in artist
+  );
+}
 
 /** The sources the album artist's releases could be fed from, in picker order. */
 function albumRowSourceCandidates(id: AlbumRowId, album: Album): RowSource[] {
@@ -69,13 +81,18 @@ function albumRowSourceCandidates(id: AlbumRowId, album: Album): RowSource[] {
   ) {
     return [];
   }
-  return [
-    "library",
-    ...artistProvidersForFeature(artist, ProviderFeature.ARTIST_ALBUMS),
-  ];
+  const providers = artistProvidersForFeature(
+    artist,
+    ProviderFeature.ARTIST_ALBUMS,
+  );
+  return providers.length ? ["auto", "library", ...providers] : ["library"];
 }
 
-/** The source feeding the row when nothing valid is saved. */
+/**
+ * The source feeding the row when nothing valid is saved; "auto" for a library
+ * artist whose providers are not known yet, so the page waits for them before
+ * settling on an empty library.
+ */
 function albumRowDefaultSource(
   _id: AlbumRowId,
   album: Album,
@@ -83,5 +100,5 @@ function albumRowDefaultSource(
 ): RowSource {
   const artist = album.artists[0];
   if (artist && artist.provider !== "library") return artist.provider;
-  return candidates[0] ?? "library";
+  return candidates[0] ?? (albumArtistSourcesKnown(album) ? "library" : "auto");
 }

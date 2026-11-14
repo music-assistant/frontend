@@ -72,10 +72,12 @@ vi.mock("@/plugins/i18n", async (importOriginal) => ({
 
 vi.mock("@/components/album/albumRows", () => ({
   availableAlbumRowIds: mockAvailableAlbumRowIds,
+  albumArtistSourcesKnown: () => true,
   albumRows: {
     resolve: mockResolveAlbumRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "library",
+    resolveSource: () => "library",
     sources: mockAlbumRowsSources,
     setSource: mockAlbumRowsSetSource,
   },

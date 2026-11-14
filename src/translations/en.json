@@ -2660,6 +2660,7 @@
     "row_source": "Source",
     "source_library": "Your library",
     "source_all": "All sources",
+    "source_auto": "Automatic",
     "row_hidden": "Hidden",
     "reorder_row": "Reorder row",
     "hide_row": "Hide row",
