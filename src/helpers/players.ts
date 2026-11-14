@@ -7,7 +7,9 @@ import {
   PlaybackState,
   Player,
   PlayerFeature,
+  PlayerSource,
   PlayerType,
+  ProtocolRole,
   User,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -15,6 +17,31 @@ import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 
 export { isPlayerGrouped } from "@/helpers/player_grouping";
+
+// the active output of a player that plays through its own protocol
+const NATIVE_OUTPUT_PROTOCOL = "native";
+
+// the translation of every setup reason the server can give
+const SETUP_REASON_LABELS: Record<string, string> = {
+  pairing_required: "settings.setup_reason.pairing_required",
+  password_required: "settings.setup_reason.password_required",
+  // a player whose provider is not there is described like any other unavailable one
+  provider_not_installed: "settings.player_not_available",
+};
+
+/**
+ * Return the player that goes by the given id: the player with that id, or else
+ * the player that was known under it before, such as one another player was
+ * merged into.
+ */
+export const resolvePlayer = function (playerId: string): Player | undefined {
+  return (
+    api.players[playerId] ??
+    Object.values(api.players).find((player) =>
+      player.legacy_ids.includes(playerId),
+    )
+  );
+};
 
 /**
  * Check if the player is (or streams to) the built-in player of this device.
@@ -135,7 +162,11 @@ export const playerVisible = function (
   if (
     store.currentUser &&
     store.currentUser.player_filter.length > 0 &&
-    !store.currentUser.player_filter.includes(player.player_id)
+    // the filter of this session can still name an id the player had before a merge
+    !store.currentUser.player_filter.some(
+      (playerId) =>
+        playerId === player.player_id || player.legacy_ids.includes(playerId),
+    )
   ) {
     // for non-admin users, the playerfilter is applied in the backend
     // but for admin users we need to filter here as well
@@ -158,6 +189,19 @@ export const isPlayerUnavailable = function (
 };
 
 /**
+ * Return why the player needs setup or can not play at all, such as "Pairing
+ * required", or undefined when it gave no reason this frontend knows.
+ */
+export const getPlayerSetupReason = function (
+  player: Pick<Player, "setup_reason"> | null | undefined,
+): string | undefined {
+  const label = player?.setup_reason
+    ? SETUP_REASON_LABELS[player.setup_reason]
+    : undefined;
+  return label ? $t(label) : undefined;
+};
+
+/**
  * Check if the player may become the active playback target.
  *
  * Capture-only audio inputs are listed for discoverability but never render
@@ -172,6 +216,44 @@ export const isSelectablePlayer = function (
     !player.needs_setup &&
     player.type !== PlayerType.SOURCE,
   );
+};
+
+/**
+ * Return the name of the protocol an app Music Assistant did not start plays on
+ * the player, such as "Chromecast", or undefined when no such app plays or the
+ * name of its source already says so.
+ */
+export const getAppProtocolName = function (
+  player: Player,
+): string | undefined {
+  const source = player.source_list.find(
+    (x) => x.id === player.active_source && x.passive,
+  );
+  if (!source) return undefined;
+  if (
+    player.active_output_protocol &&
+    player.active_output_protocol !== NATIVE_OUTPUT_PROTOCOL
+  )
+    return undefined;
+  // native playback marks the own protocol active; an app always plays on an audio protocol
+  const protocol = player.protocols.find(
+    (x) => x.active && x.role === ProtocolRole.AUDIO,
+  );
+  const name = protocol && api.providerManifests[protocol.domain]?.name;
+  return name && name !== source.name ? name : undefined;
+};
+
+/**
+ * Return the name to show for a source of the player: its own name, followed by
+ * the protocol it plays on when an app Music Assistant did not start plays it.
+ */
+export const getSourceLabel = function (
+  player: Player,
+  source: PlayerSource,
+): string {
+  const protocolName =
+    source.id === player.active_source ? getAppProtocolName(player) : undefined;
+  return protocolName ? `${source.name} • ${protocolName}` : source.name;
 };
 
 /**

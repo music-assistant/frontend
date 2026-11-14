@@ -207,8 +207,7 @@ async function fetchPlayerConfigs(): Promise<void> {
   try {
     // every player that registered, and the switched-off ones on top: those
     // are unregistered, and this is where they are switched back on. One that
-    // is switched on but not around is left out, as on the players settings
-    // page.
+    // is switched on but not around is left out.
     const configs = await api.getPlayerConfigs(undefined, false, false, true);
     for (const config of configs) upsertPlayerConfig(config);
   } catch (error) {

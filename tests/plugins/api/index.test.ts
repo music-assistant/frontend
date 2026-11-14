@@ -6,6 +6,8 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  EventType,
+  type EventMessage,
   ListingType,
   MediaType,
   type Player,
@@ -24,6 +26,7 @@ import { getIngressClientKey } from "@/helpers/ingress";
 import { eventbus, type StreamHeldDialogEvent } from "@/plugins/eventbus";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { playerQueue } from "../../fixtures/playerQueue";
 import { playlist } from "../../fixtures/playlist";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
 import { userSummary } from "../../fixtures/user";
@@ -108,7 +111,11 @@ class TestTransport extends BaseTransport {
   }
 
   receive(
-    message: ServerInfoMessage | SuccessResultMessage | ErrorResultMessage,
+    message:
+      | ServerInfoMessage
+      | SuccessResultMessage
+      | ErrorResultMessage
+      | EventMessage,
   ): void {
     this.emit("message", JSON.stringify(message));
   }
@@ -1112,6 +1119,26 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [true, true],
+    [undefined, false],
+  ])(
+    "asks the server to remove unavailable players (dry run %s)",
+    async (dryRun, sent) => {
+      const request = api.removeUnavailablePlayers(dryRun);
+
+      expect(transport.lastCommand.command).toBe("players/remove_unavailable");
+      expect(transport.lastCommand.args).toEqual({ dry_run: sent });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: ["kitchen"],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual(["kitchen"]);
+    },
+  );
+
   it("flags a server below the minimum schema version as outdated", () => {
     // before server_info arrives there is nothing to judge yet
     api.serverInfo.value = undefined;
@@ -1253,6 +1280,62 @@ describe("MusicAssistantApi error handling", () => {
       item_id: "artist-1",
       provider_instance_id_or_domain: "library",
       provider_filter: "spotify--abc",
+    });
+  });
+
+  describe("player events", () => {
+    const kitchen = (enabled: boolean) =>
+      ({ player_id: "kitchen", enabled, available: enabled }) as Player;
+
+    beforeEach(() => {
+      transport.receive({
+        event: EventType.PLAYER_ADDED,
+        object_id: "kitchen",
+        data: kitchen(true),
+      });
+      transport.receive({
+        event: EventType.QUEUE_ADDED,
+        object_id: "kitchen",
+        data: playerQueue({ queue_id: "kitchen" }),
+      });
+    });
+
+    it("drops a player once it is disabled, with its queue", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: kitchen(false),
+      });
+
+      expect(api.players).not.toHaveProperty("kitchen");
+      expect(api.queues).not.toHaveProperty("kitchen");
+      expect(api.queueElapsedTime).not.toHaveProperty("kitchen");
+    });
+
+    it("takes a player back in once it is enabled again", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: kitchen(false),
+      });
+      transport.receive({
+        event: EventType.PLAYER_ADDED,
+        object_id: "kitchen",
+        data: kitchen(true),
+      });
+
+      expect(api.players.kitchen).toEqual(kitchen(true));
+    });
+
+    it("keeps a player that only became unavailable", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: { ...kitchen(true), available: false },
+      });
+
+      expect(api.players.kitchen.available).toBe(false);
+      expect(api.queues).toHaveProperty("kitchen");
     });
   });
 

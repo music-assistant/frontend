@@ -2,6 +2,7 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   getPlayerSettingsMenuItems,
   getSetupRequiredPlayerMenuItems,
+  removeUnavailablePlayers,
   renamePlayer,
   setPlayerEnabled,
 } from "@/helpers/player_settings_actions";
@@ -36,6 +37,7 @@ const {
     players: {} as Record<string, unknown>,
     queues: {} as Record<string, unknown>,
     removePlayer: vi.fn(),
+    removeUnavailablePlayers: vi.fn(),
     savePlayerConfig: vi.fn(),
   },
   emitEvent: vi.fn(),
@@ -49,6 +51,7 @@ const {
   },
   toastMock: {
     error: vi.fn(),
+    info: vi.fn(),
     success: vi.fn(),
   },
 }));
@@ -68,8 +71,10 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 
+// a count, where one is passed, shows in the text so a test can read it back
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string) => key,
+  $t: (key: string, count?: unknown) =>
+    typeof count === "number" ? `${key} (${count})` : key,
 }));
 
 vi.mock("@/plugins/router", () => ({
@@ -275,14 +280,14 @@ describe("getPlayerSettingsMenuItems actions", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
-  it("offers no deletion for a provider that cannot remove the player", () => {
+  it("offers deletion whatever the provider advertises", () => {
     apiMock.getProvider.mockReturnValue(
       providerInstance({ supported_features: [] }),
     );
 
-    expect(
-      visibleLabels(getPlayerSettingsMenuItems(playerConfig())),
-    ).not.toContain("settings.delete");
+    expect(visibleLabels(getPlayerSettingsMenuItems(playerConfig()))).toContain(
+      "settings.delete",
+    );
   });
 
   it.each(["settings.disable", "settings.delete"])(
@@ -334,6 +339,134 @@ describe("getPlayerSettingsMenuItems actions", () => {
     expect(storeMock.activePlayerId).toBe("office");
     // it was not the player that left, so nothing about the selection changes
     expect(setPreference).not.toHaveBeenCalled();
+  });
+});
+
+describe("getPlayerSettingsMenuItems from the stored config", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  it("manages a player whose provider is not running", () => {
+    registerPlayer({ available: false });
+    apiMock.getProvider.mockReturnValue(undefined);
+
+    const menuItems = getPlayerSettingsMenuItems(playerConfig(), {
+      includeSections: true,
+    });
+
+    expect(menuItem(menuItems, "open_player_settings").disabled).toBeFalsy();
+    expect(visibleLabels(menuItems)).toEqual(
+      expect.arrayContaining(["settings.disable", "settings.delete"]),
+    );
+    menuItem(menuItems, "open_player_settings").action?.();
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
+  it("manages a disabled player, which has no live state, without its provider", () => {
+    apiMock.players = {};
+    apiMock.queues = {};
+    apiMock.getProvider.mockReturnValue(undefined);
+
+    const menuItems = getPlayerSettingsMenuItems(
+      playerConfig({ enabled: false }),
+      { includeSections: true },
+    );
+
+    expect(menuItem(menuItems, "open_player_settings").disabled).toBeFalsy();
+    expect(visibleLabels(menuItems)).toEqual(
+      expect.arrayContaining(["settings.enable", "settings.delete"]),
+    );
+    // the sections that only live state fills have nothing to show
+    for (const section of SECTION_LABELS.slice(1)) {
+      expect(visibleLabels(menuItems)).not.toContain(section);
+    }
+  });
+});
+
+describe("removeUnavailablePlayers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer({ available: false });
+    apiMock.players = {
+      ...apiMock.players,
+      office: player({ player_id: "office" }),
+    };
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("asks with the count the server reports before it removes anything", async () => {
+    apiMock.removeUnavailablePlayers.mockResolvedValueOnce([
+      "kitchen",
+      "garage",
+      "attic",
+    ]);
+
+    await removeUnavailablePlayers();
+
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledWith(true);
+    expect(emitEvent).toHaveBeenCalledWith(
+      "deleteConfirmationDialog",
+      expect.objectContaining({
+        message: "settings.remove_unavailable_players_confirmation (3)",
+      }),
+    );
+  });
+
+  it("removes the players and reports the ones the server removed", async () => {
+    apiMock.removeUnavailablePlayers
+      .mockResolvedValueOnce(["kitchen"])
+      .mockResolvedValueOnce(["kitchen"]);
+    storeMock.activePlayerId = "kitchen";
+    const onRemoved = vi.fn();
+
+    await removeUnavailablePlayers(onRemoved);
+    await confirmation().onConfirm();
+
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenLastCalledWith();
+    expect(onRemoved).toHaveBeenCalledWith(["kitchen"]);
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "settings.unavailable_players_removed (1)",
+    );
+    expect(storeMock.activePlayerId).toBe("office");
+  });
+
+  it("removes nothing when the user does not confirm", async () => {
+    apiMock.removeUnavailablePlayers.mockResolvedValueOnce(["kitchen"]);
+    const onRemoved = vi.fn();
+
+    await removeUnavailablePlayers(onRemoved);
+
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
+    expect(onRemoved).not.toHaveBeenCalled();
+  });
+
+  it("says so when there is nothing to remove, without asking", async () => {
+    apiMock.removeUnavailablePlayers.mockResolvedValueOnce([]);
+
+    await removeUnavailablePlayers();
+
+    expect(toastMock.info).toHaveBeenCalledWith(
+      "settings.no_unavailable_players",
+    );
+    expect(emitEvent).not.toHaveBeenCalled();
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
+  });
+
+  it("asks nothing when the server refuses, and leaves its reason to the api", async () => {
+    apiMock.removeUnavailablePlayers.mockRejectedValueOnce(
+      new Error("Players are still being found, try again in 42 seconds"),
+    );
+
+    await removeUnavailablePlayers();
+
+    expect(emitEvent).not.toHaveBeenCalled();
+    expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
+    // the api layer toasts the server's reason, so this must not toast a second time
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(toastMock.info).not.toHaveBeenCalled();
   });
 });
 

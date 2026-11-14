@@ -16,6 +16,11 @@ const storeMock = vi.hoisted(() => ({
 }));
 vi.mock("@/plugins/store", () => storeMock);
 
+const apiMock = vi.hoisted(() => ({
+  api: { players: {} as Record<string, { legacy_ids: string[] }> },
+}));
+vi.mock("@/plugins/api", () => ({ ...apiMock, default: apiMock.api }));
+
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: vi.fn(),
   useUserPreferences: () => ({
@@ -34,6 +39,7 @@ describe("visualizerEnabledForPlayer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storeMock.store.currentUser = { preferences: {} };
+    apiMock.api.players = {};
   });
 
   it("follows the expert mode until the preference is set", () => {
@@ -54,6 +60,18 @@ describe("visualizerEnabledForPlayer", () => {
     storeMock.store.currentUser.preferences["visualizer_enabled.kitchen"] =
       false;
     expect(visualizerEnabledForPlayer("kitchen")).toBe(false);
+  });
+
+  it("keeps the per-player preference of a player merged into this one", () => {
+    apiMock.api.players = { kitchen: { legacy_ids: ["absorbed"] } };
+    storeMock.store.currentUser.preferences["visualizer_enabled"] = true;
+    storeMock.store.currentUser.preferences["visualizer_enabled.absorbed"] =
+      false;
+    expect(visualizerEnabledForPlayer("kitchen")).toBe(false);
+
+    storeMock.store.currentUser.preferences["visualizer_enabled.kitchen"] =
+      true;
+    expect(visualizerEnabledForPlayer("kitchen")).toBe(true);
   });
 });
 

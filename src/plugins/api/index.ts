@@ -119,7 +119,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 105;
+export const MIN_SERVER_SCHEMA_VERSION = 112;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
@@ -2715,6 +2715,15 @@ export class MusicAssistantApi {
     return this.sendCommand("players/remove", { player_id: playerId });
   }
 
+  /**
+   * Remove every player whose device is gone, and return the ids of those removed.
+   *
+   * @param dry_run Remove nothing, and return the ids of the players it would remove.
+   */
+  public removeUnavailablePlayers(dry_run = false): Promise<string[]> {
+    return this.sendCommand("players/remove_unavailable", { dry_run });
+  }
+
   // Sleep timer related functions/commands
 
   public getSleepTimer(playerId: string): Promise<number | null> {
@@ -3511,13 +3520,13 @@ export class MusicAssistantApi {
       this.players[player.player_id] = player;
     } else if (msg.event == EventType.PLAYER_UPDATED) {
       const player = msg.data as Player;
-      if (player.player_id in this.players)
+      // a disabled player leaves the server with this last update, and its queue with it
+      if (!player.enabled) this.dropPlayer(player.player_id);
+      else if (player.player_id in this.players)
         Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
     } else if (msg.event == EventType.PLAYER_REMOVED) {
-      delete this.players[msg.object_id!];
-      delete this.queues[msg.object_id!];
-      delete this.queueElapsedTime[msg.object_id!];
+      this.dropPlayer(msg.object_id!);
     } else if (msg.event == EventType.CORE_STATE_UPDATED) {
       // Update serverInfo with the new server state
       this.serverInfo.value = msg.data as ServerInfoMessage;
@@ -3531,6 +3540,13 @@ export class MusicAssistantApi {
     // signal + log all events
     if (DEBUG) console.log("[event]", msg);
     this.signalEvent(msg);
+  }
+
+  /** Forget a player that left the server, and its queue. */
+  private dropPlayer(playerId: string): void {
+    delete this.players[playerId];
+    delete this.queues[playerId];
+    delete this.queueElapsedTime[playerId];
   }
 
   private handleTransportStateChange(state: string): void {

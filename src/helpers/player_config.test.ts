@@ -86,18 +86,14 @@ describe("getPlayerSetupLabel", () => {
 });
 
 describe("getListedPlayerConfigs", () => {
-  it("lists every player config, disabled ones included", async () => {
+  it("lists every player config, unavailable and disabled ones included", async () => {
     const kitchen = playerConfig({ player_id: "kitchen", enabled: false });
     const office = playerConfig({ player_id: "office" });
     apiMock.getPlayerConfigs.mockResolvedValue([kitchen, office]);
 
     expect(await getListedPlayerConfigs()).toEqual([kitchen, office]);
-    expect(apiMock.getPlayerConfigs).toHaveBeenCalledWith(
-      undefined,
-      false,
-      false,
-      true,
-    );
+    // the server lists every player by default
+    expect(apiMock.getPlayerConfigs).toHaveBeenCalledWith();
   });
 });
 

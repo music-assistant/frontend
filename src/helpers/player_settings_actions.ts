@@ -13,7 +13,6 @@ import {
   Player,
   PlayerConfig,
   PlayerType,
-  ProviderFeature,
   Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -75,7 +74,6 @@ export const getPlayerSettingsMenuItems = (
       label: "open_player_settings",
       action: () => router.push(`/settings/editplayer/${playerId}`),
       icon: markRaw(Settings),
-      disabled: !provider,
     });
     if (sections.queue) {
       menuItems.push({
@@ -137,7 +135,6 @@ export const getPlayerSettingsMenuItems = (
         confirmDisablePlayer(playerId, getPlayerName(config));
       },
       icon: markRaw(config.enabled ? CircleOff : Power),
-      hide: !provider,
     },
     {
       label: "settings.delete",
@@ -150,7 +147,6 @@ export const getPlayerSettingsMenuItems = (
       },
       icon: markRaw(Trash2),
       color: "error",
-      hide: !playerCanBeDeleted(playerId),
     },
   );
 
@@ -205,17 +201,36 @@ export const getSetupRequiredPlayerMenuItems = (
   return menuItems;
 };
 
-/** Whether the player's provider offers to remove it. */
-export const playerCanBeDeleted = (playerId: string): boolean => {
-  const player = api.players[playerId];
-  if (!player) return true;
-  const feature =
-    player.type === PlayerType.GROUP
-      ? ProviderFeature.REMOVE_GROUP_PLAYER
-      : ProviderFeature.REMOVE_PLAYER;
-  return !!api
-    .getProvider(player.provider)
-    ?.supported_features.includes(feature);
+/**
+ * Remove every player whose device is gone, after asking: the confirmation says
+ * how many players the server would remove, or that there are none.
+ *
+ * @param onRemoved Called with the ids of the players the server removed.
+ */
+export const removeUnavailablePlayers = async (
+  onRemoved?: (playerIds: string[]) => void,
+): Promise<void> => {
+  let candidates: string[];
+  try {
+    candidates = await api.removeUnavailablePlayers(true);
+  } catch {
+    // the api layer reports the failure with the server's reason, such as
+    // providers that have only just started and are still finding their devices
+    return;
+  }
+  const count = candidates.length;
+  if (!count) {
+    toast.info($t("settings.no_unavailable_players"));
+    return;
+  }
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("settings.remove_unavailable_players_title"),
+    message: $t("settings.remove_unavailable_players_confirmation", count, {
+      named: { count },
+    }),
+    confirmLabel: $t("remove"),
+    onConfirm: () => removeUnavailablePlayersConfirmed(onRemoved),
+  });
 };
 
 /**
@@ -282,6 +297,25 @@ async function deletePlayer(playerId: string, onDeleted?: () => void) {
   } catch {
     // a failed command is already reported by the api layer
   }
+}
+
+async function removeUnavailablePlayersConfirmed(
+  onRemoved?: (playerIds: string[]) => void,
+) {
+  let removed: string[];
+  try {
+    removed = await api.removeUnavailablePlayers();
+  } catch {
+    // a failed command is already reported by the api layer
+    return;
+  }
+  removed.forEach(selectFallbackPlayer);
+  onRemoved?.(removed);
+  toast.success(
+    $t("settings.unavailable_players_removed", removed.length, {
+      named: { count: removed.length },
+    }),
+  );
 }
 
 /** Hands the player bar to another player, so it does not point at one that just left. */

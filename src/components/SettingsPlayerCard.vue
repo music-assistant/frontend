@@ -35,6 +35,13 @@
         <div class="mt-0.5 truncate text-[13px] text-muted-foreground">
           {{ providerName }}
         </div>
+        <div
+          v-if="isUnavailable && setupReason"
+          class="truncate text-[13px] text-muted-foreground"
+          data-testid="player-setup-reason"
+        >
+          {{ setupReason }}
+        </div>
       </div>
       <Button
         variant="ghost"
@@ -48,7 +55,11 @@
       </Button>
     </div>
 
-    <PlayerSetupWarning v-if="needsSetup" @setup="handleSetup" />
+    <PlayerSetupWarning
+      v-if="needsSetup"
+      :reason="setupReason"
+      @setup="handleSetup"
+    />
 
     <div class="mt-auto flex items-center justify-between">
       <div class="flex flex-1 flex-wrap gap-1">
@@ -61,6 +72,7 @@
       <PlayerStatusIcon
         :enabled="playerConfig.enabled"
         :unavailable="isUnavailable"
+        :reason="setupReason"
         class="size-4"
       />
     </div>
@@ -98,6 +110,7 @@ const {
   isUnavailable,
   isThisDevice,
   needsSetup,
+  setupReason,
   providerName,
   outputProtocols,
 } = useSettingsPlayer(toRef(props, "playerConfig"));
