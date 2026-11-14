@@ -70,6 +70,11 @@ describe("useVisualizerPalette element colours", () => {
     });
     expect(paletteColors.value).toBeNull();
   });
+
+  it("draws the inner border in primary when the artwork has no accent", () => {
+    const { paletteColors } = build(true, { ...PALETTE, accent: null });
+    expect(paletteColors.value?.[2]).toEqual([200, 40, 40]);
+  });
 });
 
 describe("useVisualizerPalette ramp", () => {

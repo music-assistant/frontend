@@ -50,9 +50,10 @@ export function useVisualizerPalette(options: VisualizerPaletteOptions) {
     if (!paletteColorsPref.value) return null;
     const wire = options.palette.value;
     const foreground = useDark.value ? wire.on_dark : wire.on_light;
-    if (!foreground || !wire.primary || !wire.accent) return null;
-    // waveform, outer border, inner border, motion vectors
-    return [foreground, wire.primary, wire.accent, foreground];
+    if (!foreground || !wire.primary) return null;
+    // waveform, outer border, inner border, motion vectors; a single-hue
+    // artwork has no accent, so the inner border repeats primary.
+    return [foreground, wire.primary, wire.accent ?? wire.primary, foreground];
   });
 
   // Anchors for the engine's luminance ramp, one side of the palette only and
