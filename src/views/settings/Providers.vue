@@ -13,11 +13,7 @@
     </Button>
   </div>
 
-  <CommunityMovedNotice
-    class="mx-5 mb-4"
-    :providers="movedHere"
-    @dismiss="dismissNotice"
-  />
+  <CommunityMovedTypeNotice class="mx-5 mb-4" :type="currentType" />
 
   <div class="pl-5 font-medium">
     {{
@@ -142,7 +138,7 @@
 <script setup lang="ts">
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
-import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
+import CommunityMovedTypeNotice from "@/components/settings/catalog/CommunityMovedTypeNotice.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
 import { Button } from "@/components/ui/button";
@@ -155,7 +151,6 @@ import {
 } from "@/components/ui/empty";
 import { ItemGroup } from "@/components/ui/item";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
-import { useCommunityCatalog } from "@/composables/settings/catalog/useCommunityCatalog";
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
@@ -202,16 +197,6 @@ const currentType = computed(() =>
   managesAllSources()
     ? (route.query.types as string | undefined)
     : ProviderType.MUSIC,
-);
-
-const { moved, dismissNotice } = useCommunityCatalog();
-
-// what moved to the community catalog is told on the page of its type
-const movedHere = computed(() =>
-  moved.value.filter(
-    (provider) =>
-      !currentType.value || provider.manifest.type === currentType.value,
-  ),
 );
 
 const showAudioAnalysisStatusHint = computed(

@@ -1451,6 +1451,7 @@ async function mountWithConfigs(
       },
       stubs: {
         Button: ButtonStub,
+        CommunityMovedTypeNotice: false,
         Container: SlotStub,
         Empty: SlotStub,
         EmptyContent: SlotStub,
