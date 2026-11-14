@@ -112,7 +112,11 @@ describe("loadItems", () => {
 
     await result.loadItems();
 
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(undefined);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(
+      undefined,
+      undefined,
+      true,
+    );
     expect(result.loaded.value).toBe(true);
   });
 
@@ -122,7 +126,11 @@ describe("loadItems", () => {
 
     await result.loadItems();
 
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(
+      ProviderType.MUSIC,
+      undefined,
+      true,
+    );
   });
 
   it("toasts when the load fails", async () => {

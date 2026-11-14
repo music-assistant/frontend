@@ -145,9 +145,12 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
       return;
     }
     try {
-      // a member only ever lists music sources
+      // a member only ever lists music sources; an entry whose provider is not
+      // available is listed too, so it can be removed
       providerConfigs.value = await api.getProviderConfigs(
         toValue(options.managesAllSources) ? undefined : ProviderType.MUSIC,
+        undefined,
+        true,
       );
       loaded.value = true;
     } catch (err) {
