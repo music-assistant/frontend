@@ -45,6 +45,15 @@ import {
   visualizerShownOnDashboards,
 } from "@/plugins/visualizer-relay";
 
+const REMOTE_CONNECTION_REASON = "relay unreachable over a remote connection";
+const UNSUPPORTED_REASON = "WebGL2 or WebAssembly unavailable in this browser";
+
+// Why this session never mounts a canvas, or null when it can render.
+function unrenderableReason(): string | null {
+  if (api.isRemoteConnection.value) return REMOTE_CONNECTION_REASON;
+  return isVisualizerSupported() ? null : UNSUPPORTED_REASON;
+}
+
 // The plugin's show_on_dashboards setting. A cast dashboard runs as the
 // dashboard viewer, which has no user preferences and no way to set any, so
 // this decides for it; the casting user's per-player override still wins.
@@ -68,9 +77,8 @@ function startDashboardDefaultWatch(): void {
         // A cast/TV display that cannot render MilkDrop never mounts the
         // canvas (which reports the capable case), so its probe result would
         // stay invisible; report the negative from here instead.
-        if (!isVisualizerSupported()) {
-          void reportVisualizerCapability("none");
-        }
+        const reason = unrenderableReason();
+        if (reason) void reportVisualizerCapability("none", undefined, reason);
         dashboardDefaultEnabled.value = await visualizerShownOnDashboards();
       },
       { immediate: true },

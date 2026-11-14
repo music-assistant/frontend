@@ -1,15 +1,15 @@
 /**
  * Engine and relay lifecycle for the visualizer canvas.
  *
- * Owns the butterchurn instance and the relay connection, so the component is left with rendering and preferences. Startup is
- * deferred until the canvas has real layout size, and everything is torn down
+ * Owns the butterchurn instance and the relay connection, so the component is
+ * left with rendering and preferences. Startup is deferred until the canvas
+ * has real layout size, and everything is torn down
  * while another view covers it.
  */
 
 import { onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
 import {
   createVisualizerEngine,
-  isVisualizerSupported,
   type VisualizerEngine,
 } from "@/composables/visualizer/useVisualizerEngine";
 import { currentVisualizerPreset } from "@/composables/visualizer/state";
@@ -22,7 +22,7 @@ import {
   reportVisualizerCapability,
 } from "@/plugins/visualizer-relay";
 
-const REMOTE_CONNECTION_REASON = "relay unreachable over a remote connection";
+const ENGINE_FAILED_REASON = "visualizer engine failed to start";
 
 export interface VisualizerCanvasEngineOptions {
   canvas: Ref<HTMLCanvasElement | undefined>;
@@ -140,15 +140,13 @@ export function useVisualizerCanvasEngine(
       void reportVisualizerCapability("butterchurn", engine.renderer);
       return;
     }
-    // WebGL2 or WebAssembly unavailable or init failure: leave the layer
-    // transparent, but say why to the server first, for displays with no
-    // reachable console.
-    const supported = isVisualizerSupported();
-    const reason = supported
-      ? "visualizer engine failed to start"
-      : "WebGL2 or WebAssembly unavailable in this browser";
-    console.warn(`[visualizer] ${reason}, falling back to gradient`);
-    void reportVisualizerCapability("none", undefined, reason);
+    // Init failure: leave the layer transparent, but say why to the server
+    // first, for displays with no reachable console. Unsupported browsers and
+    // remote sessions never mount the canvas; useVisualizer reports those.
+    console.warn(
+      `[visualizer] ${ENGINE_FAILED_REASON}, falling back to gradient`,
+    );
+    void reportVisualizerCapability("none", undefined, ENGINE_FAILED_REASON);
     relay?.close();
     relay = null;
     // Let the mount/uncover/resize paths retry from scratch, relay included.
@@ -183,14 +181,7 @@ export function useVisualizerCanvasEngine(
     if (initialized) return;
     // Remote (WebRTC) sessions cannot reach the relay route; starting up would
     // only produce an endless connect/retry loop.
-    if (api.isRemoteConnection.value) {
-      void reportVisualizerCapability(
-        "none",
-        undefined,
-        REMOTE_CONNECTION_REASON,
-      );
-      return;
-    }
+    if (api.isRemoteConnection.value) return;
     runWhenSized(() => void initialize());
   };
 

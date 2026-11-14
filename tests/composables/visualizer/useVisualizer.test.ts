@@ -49,6 +49,7 @@ const apiMocks = await vi.hoisted(async () => {
     sendCommand: vi.fn(async (): Promise<Record<string, unknown>> => ({})),
     subscribe: vi.fn((_event: string, _callback: () => void) => () => {}),
     state: ref("authenticated"),
+    isRemoteConnection: ref(false),
   };
 });
 vi.mock("@/plugins/api", () => ({
@@ -185,7 +186,28 @@ describe("visualizer dashboard default", () => {
     const { useVisualizer } = await importComposable();
     useVisualizer();
     await flushPromises();
-    expect(relayMocks.reportVisualizerCapability).toHaveBeenCalledWith("none");
+    expect(relayMocks.reportVisualizerCapability).toHaveBeenCalledWith(
+      "none",
+      undefined,
+      "WebGL2 or WebAssembly unavailable in this browser",
+    );
+  });
+
+  it("reports why a remote dashboard viewer shows no visualizer", async () => {
+    authMocks.authManager.isDashboardViewer.mockReturnValue(true);
+    apiMocks.isRemoteConnection.value = true;
+    try {
+      const { useVisualizer } = await importComposable();
+      useVisualizer();
+      await flushPromises();
+    } finally {
+      apiMocks.isRemoteConnection.value = false;
+    }
+    expect(relayMocks.reportVisualizerCapability).toHaveBeenCalledWith(
+      "none",
+      undefined,
+      "relay unreachable over a remote connection",
+    );
   });
 
   it("does not report capability for regular sessions", async () => {

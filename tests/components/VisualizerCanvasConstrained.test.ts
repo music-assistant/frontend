@@ -234,7 +234,7 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     ]);
   });
 
-  it("reports why it shows nothing over a remote connection", async () => {
+  it("stays idle over a remote connection", async () => {
     api.isRemoteConnection.value = true;
     try {
       await mountCanvas();
@@ -243,11 +243,6 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     }
 
     expect(createVisualizerEngine).not.toHaveBeenCalled();
-    expect(reportVisualizerCapability).toHaveBeenCalledWith(
-      "none",
-      undefined,
-      "relay unreachable over a remote connection",
-    );
   });
 
   it("reports why it shows nothing when the engine fails to start", async () => {
