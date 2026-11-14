@@ -64,7 +64,7 @@
           :source-label="moreFromArtistSourceDisplay?.label"
           :source-domain="moreFromArtistSourceDisplay?.domain"
           :source-options="moreFromArtistOptions"
-          :source-value="moreFromArtistSource"
+          :source-value="moreFromArtistSelectedSource"
           :items="artistReleaseItems"
           :view-all-to="artistAlbumsRoute"
           :empty-message="$t('artist_row_empty')"
@@ -204,8 +204,13 @@ const {
   versionItems,
   artistReleaseItems,
   moreFromArtistSource,
+  moreFromArtistSelectedSource,
   moreFromArtistSourceDisplay,
-} = useAlbumRowData(albumForRows, visibleRows);
+} = useAlbumRowData(
+  albumForRows,
+  visibleRows,
+  computed(() => fullArtist.value !== undefined),
+);
 
 // the cover at first; the artist's fanart takes over once that lookup is done
 const backdrop = computed(() =>

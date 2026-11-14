@@ -40,9 +40,9 @@
           :source-label="albumsSourceDisplay?.label"
           :source-domain="albumsSourceDisplay?.domain"
           :source-options="sourceOptions('albums')"
-          :source-value="albumsSource"
+          :source-value="albumsSelectedSource"
           :items="albumItems"
-          :view-all-to="listingRoute('albums')"
+          :view-all-to="listingRoute('albums', albumsSource)"
           :item-count="albumsCount"
           :empty-message="albumsEmptyMessage"
           :parent-item="itemDetails"
@@ -60,9 +60,9 @@
           :source-label="singlesSourceDisplay?.label"
           :source-domain="singlesSourceDisplay?.domain"
           :source-options="sourceOptions('singles_eps')"
-          :source-value="singlesSource"
+          :source-value="singlesSelectedSource"
           :items="singleItems"
-          :view-all-to="listingRoute('singles')"
+          :view-all-to="listingRoute('singles', singlesSource)"
           :item-count="singlesCount"
           :empty-message="singlesEmptyMessage"
           :parent-item="itemDetails"
@@ -294,6 +294,8 @@ const {
   albumsMeta,
   albumsSource,
   singlesSource,
+  albumsSelectedSource,
+  singlesSelectedSource,
   topTracksSource,
   similarArtistsSource,
   albumsSourceDisplay,
@@ -546,8 +548,11 @@ function hasSourcePicker(rowId: ArtistRowId): boolean {
   return artistRows.sources(rowId, itemDetails.value).length > 1;
 }
 
-/** The "View all" target of a shelf. */
-function listingRoute(listing: string): RouteLocationRaw | undefined {
+/** The "View all" target of a shelf, opened on the source the shelf shows when it has one. */
+function listingRoute(
+  listing: string,
+  source?: RowSource,
+): RouteLocationRaw | undefined {
   if (!itemDetails.value) return undefined;
   return {
     name: "artistlisting",
@@ -556,6 +561,7 @@ function listingRoute(listing: string): RouteLocationRaw | undefined {
       itemId: itemDetails.value.item_id,
       listing,
     },
+    query: source ? { source } : undefined,
   };
 }
 </script>

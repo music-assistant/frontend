@@ -567,4 +567,211 @@ describe("useArtistRowData", () => {
     expect(mockLoadArtistReleases).not.toHaveBeenCalled();
     expect(mockLoadArtistTracks).not.toHaveBeenCalled();
   });
+
+  describe("automatic release rows", () => {
+    /** Library counts per row; a provider's count is 7 for either row. */
+    function countsByRow(albums: number, singles: number) {
+      mockArtistAlbumsCountBySource.mockImplementation(
+        async (_artist: Artist, source: RowSource, types: AlbumType[]) => {
+          if (source !== "library") return 7;
+          return types.includes(AlbumType.SINGLE) ? singles : albums;
+        },
+      );
+    }
+
+    /** Every release and count request, as "<row>:<source>". */
+    function requests(): string[] {
+      const row = (types?: AlbumType[]) =>
+        types?.includes(AlbumType.SINGLE) ? "singles" : "albums";
+      return [
+        ...mockLoadArtistReleases.mock.calls.map(
+          ([, source, options]) =>
+            `releases:${row(options?.albumTypes)}:${source}`,
+        ),
+        ...mockArtistAlbumsCountBySource.mock.calls.map(
+          ([, source, types]) => `count:${row(types)}:${source}`,
+        ),
+      ].sort();
+    }
+
+    beforeEach(() => {
+      mockLoadArtistReleases.mockImplementation(async (_artist, source) =>
+        source === "library"
+          ? RELEASES
+          : [
+              album({ item_id: "spotify-album" }),
+              album({
+                item_id: "spotify-single",
+                album_type: AlbumType.SINGLE,
+              }),
+            ],
+      );
+    });
+
+    it("shows the library when it holds releases, requesting nothing else", async () => {
+      countsByRow(3, 2);
+      const page = setupRowData({ rows: ["albums", "singles_eps"] });
+
+      await showArtist(page, libraryArtist());
+
+      expect(requests()).toEqual([
+        "count:albums:library",
+        "count:singles:library",
+        "releases:albums:library",
+        "releases:singles:library",
+      ]);
+      expect(page.albumsSource.value).toBe("library");
+      expect(page.albumsSelectedSource.value).toBe("auto");
+      expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
+    });
+
+    it("turns to the mapped provider once the library count comes back empty", async () => {
+      countsByRow(0, 0);
+      let resolveCount!: (count: number) => void;
+      mockArtistAlbumsCountBySource.mockImplementationOnce(
+        () => new Promise<number>((resolve) => (resolveCount = resolve)),
+      );
+      mockApi.getProvider.mockReturnValue({
+        name: "Spotify",
+        domain: "spotify",
+      });
+      const page = setupRowData({ rows: ["albums"] });
+
+      await showArtist(page, libraryArtist());
+      // still deciding: the row keeps loading instead of showing an empty library
+      expect(page.albumsSource.value).toBeUndefined();
+      expect(page.albumItems.value).toBeUndefined();
+      expect(page.albumsSourceDisplay.value).toEqual({ label: "Automatic" });
+
+      resolveCount(0);
+      await flushPromises();
+
+      expect(requests()).toEqual([
+        "count:albums:library",
+        `count:albums:${SPOTIFY}`,
+        "releases:albums:library",
+        `releases:albums:${SPOTIFY}`,
+      ]);
+      expect(page.albumsSource.value).toBe(SPOTIFY);
+      expect(page.albumsSelectedSource.value).toBe("auto");
+      expect(itemIds(page.albumItems.value)).toEqual(["spotify-album"]);
+      expect(page.albumsCount.value).toBe(7);
+      expect(page.albumsSourceDisplay.value).toEqual({
+        label: "On Spotify",
+        domain: "spotify",
+      });
+    });
+
+    it("decides each row from its own count", async () => {
+      countsByRow(3, 0);
+      const page = setupRowData({ rows: ["albums", "singles_eps"] });
+
+      await showArtist(page, libraryArtist());
+
+      expect(page.albumsSource.value).toBe("library");
+      expect(page.singlesSource.value).toBe(SPOTIFY);
+      expect(itemIds(page.singleItems.value)).toEqual(["spotify-single"]);
+      expect(requests()).not.toContain(`releases:albums:${SPOTIFY}`);
+    });
+
+    it("stays on the library for an artist no provider can list albums for", async () => {
+      countsByRow(0, 0);
+      mockLoadArtistReleases.mockResolvedValue([]);
+      const page = setupRowData({ rows: ["albums", "singles_eps"] });
+
+      await showArtist(page, libraryArtist({ provider_mappings: [] }));
+
+      expect(requests()).toEqual([
+        "count:albums:library",
+        "count:singles:library",
+        "releases:albums:library",
+        "releases:singles:library",
+      ]);
+      expect(page.albumsSource.value).toBe("library");
+      expect(page.albumItems.value).toEqual([]);
+    });
+
+    it("keeps an explicit choice of the library", async () => {
+      countsByRow(0, 0);
+      saveRowSources({ albums: "library" });
+      const page = setupRowData({ rows: ["albums"] });
+
+      await showArtist(page, libraryArtist());
+
+      expect(requests()).toEqual([
+        "count:albums:library",
+        "releases:albums:library",
+      ]);
+      expect(page.albumsSelectedSource.value).toBe("library");
+    });
+
+    it("keeps an explicit choice of a provider", async () => {
+      countsByRow(3, 2);
+      saveRowSources({ singles_eps: SPOTIFY });
+      const page = setupRowData({ rows: ["singles_eps"] });
+
+      await showArtist(page, libraryArtist());
+
+      expect(requests()).toEqual([
+        `count:singles:${SPOTIFY}`,
+        `releases:singles:${SPOTIFY}`,
+      ]);
+      expect(page.singlesSource.value).toBe(SPOTIFY);
+    });
+
+    it("goes back to automatic when the saved choice is cleared", async () => {
+      countsByRow(0, 0);
+      saveRowSources({ albums: "library" });
+      const page = setupRowData({ rows: ["albums"] });
+      await showArtist(page, libraryArtist());
+      expect(page.albumsSource.value).toBe("library");
+
+      saveRowSources({});
+      await flushPromises();
+
+      expect(page.albumsSelectedSource.value).toBe("auto");
+      expect(page.albumsSource.value).toBe(SPOTIFY);
+      expect(itemIds(page.albumItems.value)).toEqual(["spotify-album"]);
+    });
+
+    it("stays on the library when the library count fails", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      mockArtistAlbumsCountBySource.mockRejectedValue(new Error("nope"));
+      const page = setupRowData({ rows: ["albums"] });
+
+      await showArtist(page, libraryArtist());
+
+      expect(page.albumsSource.value).toBe("library");
+      expect(releaseSources()).toEqual(["library"]);
+    });
+
+    it("comes back to the library once a library change adds releases", async () => {
+      vi.useFakeTimers();
+      countsByRow(0, 0);
+      const page = setupRowData({ rows: ["albums"] });
+      await showArtist(page, libraryArtist());
+      expect(page.albumsSource.value).toBe(SPOTIFY);
+
+      countsByRow(2, 0);
+      const [, onLibraryChange] = mockApi.subscribe_multi.mock.lastCall!;
+      onLibraryChange({
+        event: EventType.MEDIA_ITEM_ADDED,
+        data: album({ item_id: "added" }),
+      });
+      await vi.runAllTimersAsync();
+
+      expect(page.albumsSource.value).toBe("library");
+      expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
+    });
+
+    it("asks a provider nothing for a hidden row", async () => {
+      countsByRow(0, 0);
+      const page = setupRowData({ rows: ["top_tracks"] });
+
+      await showArtist(page, libraryArtist());
+
+      expect(mockArtistAlbumsCountBySource).not.toHaveBeenCalled();
+      expect(mockLoadArtistReleases).not.toHaveBeenCalled();
+    });
+  });
 });
