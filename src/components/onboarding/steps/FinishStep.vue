@@ -185,7 +185,7 @@ const pendingGroups = computed(() =>
 );
 
 const receiverInstructions = computed(() =>
-  ctx.value.isMember
+  !appFirst.value
     ? []
     : configuredProviders(ProviderType.PLUGIN)
         .filter((provider) => !provider.needsAttention)

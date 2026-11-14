@@ -571,7 +571,25 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
-  it("gives listening instructions only for configured, enabled receivers without errors", async () => {
+  it("does not show app playback instructions after full-experience setup", async () => {
+    preferenceState.intent.value = "music_hub";
+    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
+    addProvider("airplay--1", "airplay_receiver", ProviderType.PLUGIN);
+    const wrapper = await mountWizard({ step: "finish" });
+    try {
+      await flushPromises();
+
+      expect(wrapper.text()).not.toContain("onboarding.listen_from_apps");
+      expect(
+        wrapper.find("[data-testid=onboarding-receiver-instructions]").exists(),
+      ).toBe(false);
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it("gives app-setup listening instructions only for configured, enabled receivers without errors", async () => {
+    preferenceState.intent.value = "phone_apps";
     addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
     addProvider("airplay--1", "airplay_receiver", ProviderType.PLUGIN);
     addProvider("party--1", "party", ProviderType.PLUGIN);
