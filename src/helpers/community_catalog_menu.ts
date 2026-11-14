@@ -1,6 +1,7 @@
 // The options of the community catalog in the top right menu of the Catalog page.
 import type { CommunityCatalogStatus } from "@/composables/settings/catalog/useCommunityCatalog";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import type { CommunityProvider } from "@/plugins/api/interfaces";
 import { CircleAlert, Download, Power, PowerOff, RefreshCw } from "@lucide/vue";
 import { markRaw } from "vue";
 
@@ -8,6 +9,7 @@ import { markRaw } from "vue";
 export interface CommunityCatalogMenuState {
   status: CommunityCatalogStatus;
   enabled: boolean;
+  installed: CommunityProvider[];
   saving: boolean;
   autoUpdate: boolean;
   savingAutoUpdate: boolean;
@@ -19,9 +21,10 @@ export interface CommunityCatalogMenuState {
 }
 
 /**
- * The menu entries for the community catalog: switching it on or off and, while
- * it is on, checking for changes and automatic updates. While it is not
- * available, they say so with a way to try again.
+ * The menu entries for the community catalog: switching it on or off, checking
+ * for changes while it is on or anything from it is installed, and automatic
+ * updates while it is on. While it is not available, they say so with a way to
+ * try again.
  *
  * @param catalog - The community catalog of an admin.
  */
@@ -43,23 +46,25 @@ export const getCommunityCatalogMenuItems = (
     ];
   }
   const { enabled, autoUpdate } = catalog;
-  const items: ContextMenuItem[] = enabled
-    ? [
-        {
-          label: "settings.catalog.community.refresh",
-          icon: markRaw(RefreshCw),
-          disabled: catalog.refreshing,
-          action: catalog.refresh,
-        },
-        {
-          label: "settings.catalog.community.auto_update",
-          icon: markRaw(Download),
-          selected: autoUpdate,
-          disabled: catalog.savingAutoUpdate,
-          action: () => catalog.setAutoUpdate(!autoUpdate),
-        },
-      ]
-    : [];
+  const items: ContextMenuItem[] = [];
+  // what is installed keeps being checked, also while the community catalog is off
+  if (enabled || catalog.installed.length) {
+    items.push({
+      label: "settings.catalog.community.refresh",
+      icon: markRaw(RefreshCw),
+      disabled: catalog.refreshing,
+      action: catalog.refresh,
+    });
+  }
+  if (enabled) {
+    items.push({
+      label: "settings.catalog.community.auto_update",
+      icon: markRaw(Download),
+      selected: autoUpdate,
+      disabled: catalog.savingAutoUpdate,
+      action: () => catalog.setAutoUpdate(!autoUpdate),
+    });
+  }
   items.push({
     label: enabled
       ? "settings.catalog.community.disable"

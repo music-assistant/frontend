@@ -1370,7 +1370,6 @@ describe("Catalog with the community catalog", () => {
     });
 
     it("fetches the list again with Check for changes in the menu", async () => {
-      communityEnabled = true;
       apiMock.refreshCommunityProviders.mockResolvedValue(
         community.slice(0, 1),
       );
@@ -1719,7 +1718,7 @@ describe("Catalog with updates from the community catalog", () => {
       );
     });
 
-    it("leaves automatic updates and Check for changes out while the community catalog is off", async () => {
+    it("keeps Check for changes for what is installed but leaves automatic updates out while the community catalog is off", async () => {
       communityEnabled = false;
 
       await mountCatalog();
@@ -1727,7 +1726,10 @@ describe("Catalog with updates from the community catalog", () => {
       expect(
         document.querySelector("[data-testid='community-installed']"),
       ).not.toBeNull();
-      expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
+      expect(menuLabels()).toEqual([
+        "settings.catalog.community.refresh",
+        "settings.catalog.community.enable",
+      ]);
     });
   });
 

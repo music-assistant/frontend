@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { communityProvider } from "../../tests/fixtures/communityProvider";
 import {
   type CommunityCatalogMenuState,
   getCommunityCatalogMenuItems,
@@ -9,6 +10,7 @@ const catalog = (
 ): CommunityCatalogMenuState => ({
   status: "ready",
   enabled: false,
+  installed: [],
   saving: false,
   autoUpdate: false,
   savingAutoUpdate: false,
@@ -21,7 +23,7 @@ const catalog = (
 });
 
 describe("the menu of the community catalog", () => {
-  it("offers to switch it on while it is off", () => {
+  it("only offers to switch it on while it is off and nothing is installed", () => {
     const state = catalog({ enabled: false });
 
     const items = getCommunityCatalogMenuItems(state);
@@ -31,6 +33,22 @@ describe("the menu of the community catalog", () => {
     ]);
     items[0].action!();
     expect(state.setEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it("offers to check for changes and switch it on while it is off and something is installed", () => {
+    const state = catalog({
+      enabled: false,
+      installed: [communityProvider("radio")],
+    });
+
+    const items = getCommunityCatalogMenuItems(state);
+
+    expect(items.map((item) => item.label)).toEqual([
+      "settings.catalog.community.refresh",
+      "settings.catalog.community.enable",
+    ]);
+    items[0].action!();
+    expect(state.refresh).toHaveBeenCalled();
   });
 
   it("offers to check for changes, update automatically and switch it off while it is on", () => {
