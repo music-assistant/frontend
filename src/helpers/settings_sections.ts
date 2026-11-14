@@ -1,6 +1,7 @@
 import { Scope } from "@/plugins/api/interfaces";
 import {
   AudioWaveform,
+  Blocks,
   CloudCog,
   FileCode,
   Info,
@@ -29,6 +30,16 @@ export interface SettingsSection {
 
 // the sections of the settings overview, in display order
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
+  {
+    name: "catalog",
+    label: "settings.catalog.title",
+    description: "settings.catalog.description",
+    icon: Blocks,
+    color: "orange",
+    route: { name: "catalog" },
+    // a member adds music sources of its own from it
+    requiresScope: Scope.CONFIG_PROVIDERS_OWN,
+  },
   {
     name: "music_providers",
     label: "settings.music_sources",

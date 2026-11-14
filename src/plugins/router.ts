@@ -525,6 +525,16 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
           },
           {
+            path: "marketplace",
+            name: "catalog",
+            component: () =>
+              import(
+                /* webpackChunkName: "catalog" */ "@/views/settings/Catalog.vue"
+              ),
+            // the Marketplace adds; whoever may not add anything has no use for it
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
+          },
+          {
             path: "storage",
             name: "storagesettings",
             component: () =>
