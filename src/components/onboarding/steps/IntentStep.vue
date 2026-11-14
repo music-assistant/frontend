@@ -13,8 +13,11 @@
       @select="select"
     />
 
-    <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.intent.settings_note") }}
+    <p
+      class="text-muted-foreground text-sm"
+      data-testid="onboarding-intent-preview"
+    >
+      {{ $t(`onboarding.steps.intent.${shown}.preview`) }}
     </p>
   </section>
 </template>
@@ -37,7 +40,7 @@ const DESCRIPTION_ID = "onboarding-intent-description";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
-const emit = defineEmits<{
+defineEmits<{
   (e: "advance"): void;
   (e: "navigate", step: OnboardingStepId): void;
   (e: "finish"): void;
@@ -94,7 +97,7 @@ const select = async function (value: OnboardingIntent) {
   if (busy.value) return;
   chosen.value = value;
   pendingSave = save(value);
-  if (await pendingSave) emit("advance");
+  await pendingSave;
 };
 
 /**

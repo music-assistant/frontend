@@ -2926,6 +2926,7 @@
         "step_counter": "Step {current} of {total}",
         "step_completed": "{step}, completed",
         "next": "Next",
+        "continue": "Continue",
         "skip": "Skip for now",
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
@@ -2933,7 +2934,11 @@
         "needs_attention": "Needs attention",
         "set_up": "Done",
         "still_to_do": "Still to do",
-        "all_done": "Everything on the list is set up.",
+        "explore_more": "Explore more",
+        "all_done": "You can finish setup now and add more features whenever you like.",
+        "listen_from_apps": "Try playing from your music apps",
+        "spotify_connect_hint": "In Spotify Connect's settings, choose the speakers you want to use. Then open Spotify's device picker and select one of those speakers.",
+        "airplay_receiver_hint": "In AirPlay Receiver's settings, choose the speakers you want to use. Then open the AirPlay audio picker on your Apple device and select the receiver for your speaker.",
         "players_count": "{count} player | {count} players",
         "music_sources_count": "{count} music source | {count} music sources",
         "plugins_count": "{count} plugin | {count} plugins",
@@ -2966,17 +2971,19 @@
                 "ready": "Signed in as {name}."
             },
             "intent": {
-                "title": "Choose how you want to use Music Assistant",
-                "description": "This sets what Music Assistant does first. Everything stays available, whichever you pick.",
+                "title": "How would you like to use Music Assistant?",
+                "description": "Choose your starting point. You can use every feature with either option.",
+                "summary_title": "Your setup choice",
                 "phone_apps": {
-                    "label": "From the apps on my phone",
-                    "description": "Stream from Spotify, AirPlay and other apps to the speakers in your home."
+                    "label": "Connect my music apps to my speakers",
+                    "description": "Keep choosing music in apps like Spotify, or use AirPlay. Music Assistant works in the background to connect them to your speakers, without setting up a music library.",
+                    "preview": "Next, we'll add your speakers, connect your music apps and show you how to start listening."
                 },
                 "music_hub": {
-                    "label": "As my music hub",
-                    "description": "Bring your streaming services and local music together in one library."
-                },
-                "settings_note": "You can change this later from the settings."
+                    "label": "The full Music Assistant experience",
+                    "description": "Bring your music services, local music and speakers together in one place. Browse, search and build playlists in Music Assistant. You can still play from Spotify Connect and AirPlay.",
+                    "preview": "Next, we'll connect your music services and add your speakers, then explore more features."
+                }
             },
             "music_sources": {
                 "title": "Add your music sources",
@@ -2995,11 +3002,15 @@
             },
             "plugins": {
                 "title": "Add plugins",
-                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later."
+                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later.",
+                "phone_apps_title": "Connect your music apps",
+                "phone_apps_description": "Add Spotify Connect or the AirPlay receiver, then open its settings to choose your speakers. Other plugins are available here too.",
+                "connect": "Connect a music app"
             },
             "core_settings": {
-                "title": "Check your server settings",
-                "intro": "The addresses Music Assistant is using right now. They are worked out automatically and are normally right, so you can simply move on.",
+                "title": "Access Music Assistant",
+                "intro": "Music Assistant works on your home network automatically. Set up remote access if you'd also like to listen when you're away.",
+                "network_details": "Network details",
                 "internal_address": "Internal address",
                 "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
                 "stream_address": "Stream server address",
@@ -3040,7 +3051,8 @@
             },
             "finish": {
                 "title": "Finish setup",
-                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings."
+                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings.",
+                "phone_apps_description": "Here's a recap of your speakers and app connections. You can add a music library and other features later from the settings."
             },
             "welcome": {
                 "title": "Make yourself at home",

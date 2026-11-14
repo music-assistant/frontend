@@ -93,6 +93,7 @@ import {
 } from "@/components/ui/item";
 import {
   configuredProviders,
+  useOnboarding,
   type ConfiguredProvider,
 } from "@/composables/useOnboarding";
 import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
@@ -118,6 +119,11 @@ defineEmits<{
 }>();
 
 const showAddProviderDialog = ref(false);
+const { intent } = useOnboarding();
+const connectingApps = computed(
+  () =>
+    props.providerType === ProviderType.PLUGIN && intent.value === "phone_apps",
+);
 
 const needsReconfigure = (provider: ConfiguredProvider) =>
   providerRequiresReconfiguration(
@@ -137,16 +143,20 @@ const configured = computed(() => configuredProviders(props.providerType));
 
 // the players have a step of their own, so this one is the music sources or
 // the plugins
-const descriptionKey = computed(() =>
-  match(props.providerType)
+const descriptionKey = computed(() => {
+  if (connectingApps.value)
+    return "onboarding.steps.plugins.phone_apps_description";
+  return match(props.providerType)
     .with(ProviderType.PLUGIN, () => "onboarding.steps.plugins.description")
-    .otherwise(() => "onboarding.steps.music_sources.description"),
-);
+    .otherwise(() => "onboarding.steps.music_sources.description");
+});
 
 const addLabelKey = computed(() =>
-  match(props.providerType)
-    .with(ProviderType.PLUGIN, () => "settings.add_plugin_provider")
-    .otherwise(() => "settings.add_music_provider"),
+  connectingApps.value
+    ? "onboarding.steps.plugins.connect"
+    : match(props.providerType)
+        .with(ProviderType.PLUGIN, () => "settings.add_plugin_provider")
+        .otherwise(() => "settings.add_music_provider"),
 );
 
 const icon = computed(() =>
