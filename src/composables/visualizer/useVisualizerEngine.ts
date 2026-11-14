@@ -24,7 +24,11 @@ export const DECAY_MS = 1500;
 export const ATTACK_MS = 1000;
 
 export interface VisualizerEngine {
-  loadPresetByName(name: string, blendSec?: number): Promise<void>;
+  /**
+   * Load a preset by name, or a random one if it is gone. Resolves with the
+   * loaded name, or "" if none loaded.
+   */
+  loadPresetByName(name: string, blendSec?: number): Promise<string>;
   loadRandomPreset(): Promise<string>;
   /**
    * Suspend the render loop (playback paused/stopped) or resume it.
@@ -36,24 +40,26 @@ export interface VisualizerEngine {
 }
 
 /**
- * Whether the browser can run butterchurn (WebGL2 required).
+ * Whether the browser can run butterchurn (WebGL2 and WebAssembly required).
  *
  * Probed once and cached: this runs inside every hosting view's
  * visualizerActive computed, which re-evaluates on each preference write.
  * An uncached probe would spawn a throwaway WebGL2 context per call, and
  * Chrome drops the oldest live context on overflow — the running visualizer.
  */
-let webgl2Supported: boolean | null = null;
+let visualizerSupported: boolean | null = null;
 
 export function isVisualizerSupported(): boolean {
-  if (webgl2Supported === null) {
+  if (visualizerSupported === null) {
     try {
-      webgl2Supported = !!document.createElement("canvas").getContext("webgl2");
+      visualizerSupported =
+        typeof WebAssembly === "object" &&
+        !!document.createElement("canvas").getContext("webgl2");
     } catch {
-      webgl2Supported = false;
+      visualizerSupported = false;
     }
   }
-  return webgl2Supported;
+  return visualizerSupported;
 }
 
 // One never-resumed AudioContext satisfies butterchurn's constructor; the
@@ -125,6 +131,8 @@ export async function createVisualizerEngine(
       meshWidth: profile.meshWidth,
       meshHeight: profile.meshHeight,
       outputFXAA: profile.outputFXAA,
+      // v3 presets ship eel-compiled equations only; never fall back to the JS interpreter
+      onlyUseWASM: true,
     },
   );
 
@@ -230,20 +238,28 @@ export async function createVisualizerEngine(
 
   return {
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
-      const preset = await getPreset(name);
-      if (!preset || destroyed) return;
+      // A stored name can be a preset v3 dropped.
+      let loadedName = name;
+      let preset = await getPreset(name);
+      if (!preset) {
+        loadedName = await randomPresetName();
+        preset = loadedName ? await getPreset(loadedName) : undefined;
+      }
+      if (!preset || destroyed) return "";
       // A halted loop has no frames to blend across.
-      visualizer.loadPreset(preset, rafHandle === null ? 0 : blendSec);
+      const blend = rafHandle === null ? 0 : blendSec;
+      const loaded = await visualizer.loadPreset(preset, blend);
       redrawIfHalted();
+      // Torn down mid-load: nothing of it is on screen.
+      return loaded && !destroyed ? loadedName : "";
     },
     async loadRandomPreset() {
       const name = await randomPresetName();
       const preset = await getPreset(name);
-      if (preset && !destroyed) {
-        visualizer.loadPreset(preset, 0);
-        redrawIfHalted();
-      }
-      return name;
+      if (!preset || destroyed) return "";
+      const loaded = await visualizer.loadPreset(preset, 0);
+      redrawIfHalted();
+      return loaded ? name : "";
     },
     setPaused(value: boolean, ramp = true) {
       if (destroyed || value === paused) return;

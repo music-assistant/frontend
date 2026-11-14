@@ -10,11 +10,15 @@ import {
   DECAY_MS,
   type VisualizerEngine,
 } from "@/composables/visualizer/useVisualizerEngine";
+import {
+  getPreset,
+  randomPresetName,
+} from "@/helpers/visualizer/presetLibrary";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ZERO_LEVEL = 0x80;
 
-const loadPreset = vi.hoisted(() => vi.fn());
+const loadPreset = vi.hoisted(() => vi.fn(async () => true));
 const renderedSamples = vi.hoisted(() => [] as Uint8Array[]);
 
 vi.mock("butterchurn", () => {
@@ -184,5 +188,74 @@ describe("createVisualizerEngine pause envelope", () => {
     await engine!.loadPresetByName("preset", 2.7);
 
     expect(loadPreset).toHaveBeenCalledWith(expect.anything(), 0);
+  });
+
+  it("reports the preset it loaded", async () => {
+    expect(await engine!.loadPresetByName("known")).toBe("known");
+  });
+
+  it("falls back to a random preset when the name is gone", async () => {
+    vi.mocked(getPreset).mockResolvedValueOnce(undefined);
+
+    expect(await engine!.loadPresetByName("dropped")).toBe("preset");
+    expect(loadPreset).toHaveBeenCalled();
+  });
+
+  it("loads nothing when no preset is available", async () => {
+    vi.mocked(getPreset).mockResolvedValueOnce(undefined);
+    vi.mocked(randomPresetName).mockResolvedValueOnce("");
+
+    expect(await engine!.loadPresetByName("dropped")).toBe("");
+    expect(loadPreset).not.toHaveBeenCalled();
+  });
+
+  it("reports nothing when the engine fails to load the preset", async () => {
+    loadPreset.mockResolvedValueOnce(false);
+
+    expect(await engine!.loadPresetByName("known")).toBe("");
+  });
+
+  it("reports nothing when destroyed while the preset loads", async () => {
+    let finishLoad!: (loaded: boolean) => void;
+    loadPreset.mockImplementationOnce(
+      () => new Promise<boolean>((resolve) => (finishLoad = resolve)),
+    );
+
+    const result = engine!.loadPresetByName("known");
+    await vi.waitFor(() => expect(loadPreset).toHaveBeenCalled());
+    engine!.destroy();
+    finishLoad(true);
+
+    expect(await result).toBe("");
+  });
+});
+
+describe("isVisualizerSupported", () => {
+  // The verdict is cached per module load, so each case imports a fresh one.
+  const probe = async () => {
+    vi.resetModules();
+    const module = await import("@/composables/visualizer/useVisualizerEngine");
+    return module.isVisualizerSupported();
+  };
+
+  beforeEach(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      {} as unknown as RenderingContext,
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("is supported with WebGL2 and WebAssembly", async () => {
+    expect(await probe()).toBe(true);
+  });
+
+  it("is unsupported without WebAssembly", async () => {
+    vi.stubGlobal("WebAssembly", undefined);
+
+    expect(await probe()).toBe(false);
   });
 });

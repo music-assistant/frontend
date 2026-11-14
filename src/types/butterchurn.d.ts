@@ -9,7 +9,9 @@ declare module "butterchurn" {
 
   export interface ButterchurnVisualizer {
     render(opts?: { audioLevels?: ButterchurnAudioLevels }): void;
-    loadPreset(preset: object, blendTimeSec?: number): void;
+    // false when the preset failed to compile, a newer load superseded it, or
+    // it cannot run without the JS interpreter
+    loadPreset(preset: object, blendTimeSec?: number): Promise<boolean>;
     setRendererSize(
       width: number,
       height: number,
@@ -30,6 +32,7 @@ declare module "butterchurn" {
         meshHeight?: number;
         textureRatio?: number;
         outputFXAA?: boolean;
+        onlyUseWASM?: boolean;
       },
     ): ButterchurnVisualizer;
   }
@@ -39,17 +42,11 @@ declare module "butterchurn" {
 }
 
 declare module "butterchurn-presets" {
-  const pack: {
-    getPresets: () => Record<string, object>;
-    default?: { getPresets: () => Record<string, object> };
-  };
+  const pack: Record<string, object>;
   export default pack;
 }
 
-declare module "butterchurn-presets/lib/butterchurnPresetsExtra.min.js" {
-  const pack: {
-    getPresets: () => Record<string, object>;
-    default?: { getPresets: () => Record<string, object> };
-  };
+declare module "butterchurn-presets/dist/extra.min.js" {
+  const pack: Record<string, object>;
   export default pack;
 }
