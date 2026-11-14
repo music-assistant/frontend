@@ -30,16 +30,18 @@ describe("visibleTrackColumns", () => {
       "year",
       "bpm",
       "key",
+      "energy",
       "favorite",
       "duration",
       "menu",
     ]);
   });
 
-  it("starts with BPM and key switched off", () => {
+  it("starts with BPM, key and energy switched off", () => {
     const columns = visibleTrackColumns(DEFAULT_TRACK_COLUMNS, 1400);
     expect(columns).not.toContain("bpm");
     expect(columns).not.toContain("key");
+    expect(columns).not.toContain("energy");
     expect(columns).toContain("year");
   });
 

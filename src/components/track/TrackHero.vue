@@ -90,7 +90,9 @@
             <DetailHeroSourceBadge :item="item" />
             <span
               v-if="
-                item.audio_metadata?.bpm || item.audio_metadata?.musical_key
+                item.audio_metadata?.bpm ||
+                item.audio_metadata?.musical_key ||
+                item.audio_metadata?.energy_level
               "
               class="track-hero__badge"
             >
