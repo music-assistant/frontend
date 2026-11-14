@@ -52,8 +52,8 @@ const coreConfig = (enabled: boolean, autoUpdate = false) =>
     domain: "community_catalog",
     last_error: null,
     values: {
-      catalog_enabled: {
-        key: "catalog_enabled",
+      community_catalog_enabled: {
+        key: "community_catalog_enabled",
         label: "Community catalog",
         description: OWN_RISK,
         value: enabled,
@@ -69,8 +69,10 @@ async function saveSwitch(
   _domain: string,
   values: Record<string, boolean>,
 ): Promise<CoreConfig> {
-  apiMock.getCoreConfig.mockResolvedValue(coreConfig(values.catalog_enabled));
-  return coreConfig(values.catalog_enabled);
+  apiMock.getCoreConfig.mockResolvedValue(
+    coreConfig(values.community_catalog_enabled),
+  );
+  return coreConfig(values.community_catalog_enabled);
 }
 
 let confirmations: DeleteConfirmationDialogEvent[] = [];
@@ -114,7 +116,6 @@ describe("useCommunityCatalog", () => {
     expect(catalog.status.value).toBe("ready");
     expect(catalog.settled.value).toBe(true);
     expect(catalog.enabled.value).toBe(false);
-    expect(catalog.switchEntry.value?.label).toBe("Community catalog");
     expect(catalog.listed.value).toEqual([RADIO]);
   });
 
@@ -196,7 +197,7 @@ describe("useCommunityCatalog", () => {
       await confirmations[0].onConfirm();
 
       expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
-        catalog_enabled: true,
+        community_catalog_enabled: true,
       });
       expect(catalog.enabled.value).toBe(true);
       expect(toastMock.success).toHaveBeenCalledWith(
@@ -217,7 +218,7 @@ describe("useCommunityCatalog", () => {
 
       expect(confirmations).toHaveLength(0);
       expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
-        catalog_enabled: false,
+        community_catalog_enabled: false,
       });
       expect(catalog.enabled.value).toBe(false);
       expect(toastMock.success).toHaveBeenCalledWith(
@@ -237,6 +238,27 @@ describe("useCommunityCatalog", () => {
       expect(catalog.enabled.value).toBe(false);
       expect(catalog.saving.value).toBe(false);
       expect(toastMock.success).not.toHaveBeenCalled();
+    });
+
+    it("stays on when the server refuses to switch it off", async () => {
+      // the api shows the server's reason, such as what is still installed
+      apiMock.getCoreConfig.mockResolvedValue(coreConfig(true));
+      apiMock.saveCoreConfig.mockRejectedValue(
+        new Error("Remove what you installed from the community catalog first"),
+      );
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      catalog.setEnabled(false);
+      await flushPromises();
+
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
+        community_catalog_enabled: false,
+      });
+      expect(catalog.enabled.value).toBe(true);
+      expect(catalog.saving.value).toBe(false);
+      expect(toastMock.success).not.toHaveBeenCalled();
+      expect(toastMock.error).not.toHaveBeenCalled();
     });
   });
 

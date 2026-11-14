@@ -35,7 +35,7 @@ export function useCommunityCatalog() {
   const isAdmin = authManager.hasScope(Scope.SYSTEM_MANAGE);
 
   const providers = ref<CommunityProvider[]>([]);
-  // the switch: its value, and the label and own-risk text the server gives it
+  // the switch: its value, and the own-risk text the server gives it
   const switchEntry = ref<ConfigEntry | null>(null);
   const autoUpdateEntry = ref<ConfigEntry | null>(null);
   const status = ref<CommunityCatalogStatus>(isAdmin ? "loading" : "ready");
@@ -95,7 +95,7 @@ export function useCommunityCatalog() {
    * Switch the community catalog on, after the user confirmed the own-risk text,
    * or off.
    *
-   * @param value - Whether to show it.
+   * @param value - Whether to switch it on.
    */
   const setEnabled = function (value: boolean) {
     if (!value) {
@@ -365,7 +365,6 @@ export function useCommunityCatalog() {
     settled,
     available,
     enabled,
-    switchEntry,
     autoUpdate,
     listed,
     installed,

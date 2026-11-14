@@ -13,6 +13,7 @@ import {
   type Scope,
 } from "@/plugins/api/interfaces";
 import {
+  type ContextMenuDialogEvent,
   type DeleteConfirmationDialogEvent,
   eventbus,
 } from "@/plugins/eventbus";
@@ -54,11 +55,18 @@ const { apiMock, hasScope, routeMock, routerMock, storeMock, toastMock } =
       updateCommunityProviders: vi.fn(),
       dismissCommunityNotice: vi.fn(),
       fetchProviderManifests: vi.fn(),
+      updateUser: vi.fn(),
     },
     hasScope: vi.fn<(scope: Scope) => boolean>(),
     routeMock: { query: {} as Record<string, string> },
     routerMock: { replace: vi.fn() },
-    storeMock: { isTouchscreen: true, currentUser: { user_id: "jane" } },
+    storeMock: {
+      isTouchscreen: true,
+      currentUser: {
+        user_id: "jane",
+        preferences: {} as Record<string, unknown>,
+      },
+    },
     toastMock: { success: vi.fn(), error: vi.fn() },
   }));
 
@@ -134,10 +142,14 @@ let community: CommunityProvider[] = [];
 let confirmations: DeleteConfirmationDialogEvent[] = [];
 const onConfirmation = (event: DeleteConfirmationDialogEvent) =>
   confirmations.push(event);
+let menus: ContextMenuDialogEvent[] = [];
+const onMenu = (event: ContextMenuDialogEvent) => menus.push(event);
 
 beforeEach(() => {
   vi.resetAllMocks();
   routeMock.query = {};
+  // reactive like the store's own, so a saved preference shows at once
+  storeMock.currentUser = reactive({ user_id: "jane", preferences: {} });
   hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   // reactive like the api's own, so a manifest registered later shows
   apiMock.providerManifests = reactive(
@@ -174,18 +186,21 @@ beforeEach(() => {
   );
   apiMock.saveCoreConfig.mockImplementation(
     async (_domain: string, values: Record<string, boolean>) => {
-      communityEnabled = values.catalog_enabled ?? communityEnabled;
+      communityEnabled = values.community_catalog_enabled ?? communityEnabled;
       communityAutoUpdate = values.auto_update ?? communityAutoUpdate;
       return communityCoreConfig(communityEnabled);
     },
   );
   confirmations = [];
   eventbus.on("deleteConfirmationDialog", onConfirmation);
+  menus = [];
+  eventbus.on("contextmenu", onMenu);
   document.body.innerHTML = "";
 });
 
 afterEach(() => {
   eventbus.off("deleteConfirmationDialog", onConfirmation);
+  eventbus.off("contextmenu", onMenu);
 });
 
 describe("Catalog", () => {
@@ -615,76 +630,167 @@ const RADIO = communityProvider("radio", {
 });
 
 describe("Catalog with the community catalog", () => {
-  it("offers an admin the switch, off at first", async () => {
+  it("offers an admin the banner and a menu to switch it on, while it is off", async () => {
     await mountCatalog();
 
-    const bar = document.querySelector("[data-testid='community-switch']")!;
-    expect(bar.textContent).toContain("Community catalog");
-    expect(switchToggle().getAttribute("aria-checked")).toBe("false");
-  });
-
-  it("switches on only after the server's own-risk text is confirmed", async () => {
-    community = [RADIO];
-    await mountCatalog();
-
-    switchToggle().click();
-    await flushPromises();
-
-    expect(confirmations).toHaveLength(1);
-    expect(confirmations[0].message).toBe(OWN_RISK);
-    expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
-    expect(switchToggle().getAttribute("aria-checked")).toBe("false");
-    expect(document.querySelector("[data-domain='radio']")).toBeNull();
-
-    await confirmations[0].onConfirm();
-    await flushPromises();
-
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
-      catalog_enabled: true,
-    });
-    expect(switchToggle().getAttribute("aria-checked")).toBe("true");
-    expect(toastMock.success).toHaveBeenCalledWith(
-      "settings.catalog.community.enabled_toast",
+    expect(banner()!.textContent).toContain(
+      "settings.catalog.community.banner_title",
     );
-    expect(cardNames("[data-testid='catalog-list']")).toContain("Radio Garden");
+    expect(menuButton()!.getAttribute("aria-label")).toBe("more_options");
+    expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
   });
+
+  it.each([
+    ["banner", clickBannerEnable],
+    ["menu", () => chooseInMenu("settings.catalog.community.enable")],
+  ])(
+    "switches on from the %s only after the server's own-risk text is confirmed",
+    async (_where, switchOn) => {
+      community = [RADIO];
+      await mountCatalog();
+
+      await switchOn();
+
+      expect(confirmations).toHaveLength(1);
+      expect(confirmations[0].message).toBe(OWN_RISK);
+      expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
+      expect(banner()).not.toBeNull();
+      expect(document.querySelector("[data-domain='radio']")).toBeNull();
+
+      await confirmations[0].onConfirm();
+      await flushPromises();
+
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
+        community_catalog_enabled: true,
+      });
+      expect(banner()).toBeNull();
+      expect(menuLabels()).toEqual(["settings.catalog.community.disable"]);
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.enabled_toast",
+      );
+      expect(cardNames("[data-testid='catalog-list']")).toContain(
+        "Radio Garden",
+      );
+    },
+  );
 
   it("stays off when the confirmation is cancelled", async () => {
     community = [RADIO];
     await mountCatalog();
 
-    switchToggle().click();
-    await flushPromises();
+    await clickBannerEnable();
     // a cancelled confirmation never calls back
 
     expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
-    expect(switchToggle().getAttribute("aria-checked")).toBe("false");
+    expect(banner()).not.toBeNull();
+    expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
     expect(document.querySelector("[data-domain='radio']")).toBeNull();
   });
 
-  it("switches off without a confirmation, and hides what it offers", async () => {
+  it("switches off from the menu without a confirmation, and hides what it offers", async () => {
     communityEnabled = true;
     community = [RADIO];
     await mountCatalog();
     expect(cardNames("[data-testid='catalog-list']")).toContain("Radio Garden");
 
-    switchToggle().click();
-    await flushPromises();
+    await chooseInMenu("settings.catalog.community.disable");
 
     expect(confirmations).toHaveLength(0);
     expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
-      catalog_enabled: false,
+      community_catalog_enabled: false,
     });
-    expect(switchToggle().getAttribute("aria-checked")).toBe("false");
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "settings.catalog.community.disabled_toast",
+    );
+    expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
     expect(cardNames("[data-testid='catalog-list']")).not.toContain(
       "Radio Garden",
     );
+  });
+
+  it("stays on when the server refuses to switch it off", async () => {
+    communityEnabled = true;
+    community = [RADIO];
+    // the api shows the server's reason itself, once
+    apiMock.saveCoreConfig.mockRejectedValue(
+      new Error("Remove what you installed from the community catalog first"),
+    );
+    await mountCatalog();
+
+    await chooseInMenu("settings.catalog.community.disable");
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
+      community_catalog_enabled: false,
+    });
+    expect(menuLabels()).toEqual(["settings.catalog.community.disable"]);
+    expect(banner()).toBeNull();
+    expect(cardNames("[data-testid='catalog-list']")).toContain("Radio Garden");
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("holds the switch in the menu while it is being saved", async () => {
+    communityEnabled = true;
+    apiMock.saveCoreConfig.mockReturnValue(new Promise(() => {}));
+    await mountCatalog();
+
+    await chooseInMenu("settings.catalog.community.disable");
+
+    expect(openMenu()[0].disabled).toBe(true);
+  });
+
+  it("drops the banner for good after Don't show again, and keeps the menu", async () => {
+    await mountCatalog();
+
+    document
+      .querySelector<HTMLElement>("[data-testid='community-banner-dismiss']")!
+      .click();
+    await flushPromises();
+
+    expect(apiMock.updateUser).toHaveBeenCalledWith(
+      "jane",
+      { preferences: { "catalog.communityBannerDismissed": true } },
+      undefined,
+    );
+    expect(banner()).toBeNull();
+    expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
+    expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
+  });
+
+  it("brings the banner back when the server does not keep Don't show again", async () => {
+    apiMock.updateUser.mockRejectedValue(new Error("refused"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await mountCatalog();
+
+    document
+      .querySelector<HTMLElement>("[data-testid='community-banner-dismiss']")!
+      .click();
+    await flushPromises();
+
+    expect(banner()).not.toBeNull();
+  });
+
+  it("never shows the banner to a user who dismissed it", async () => {
+    storeMock.currentUser.preferences = {
+      "catalog.communityBannerDismissed": true,
+    };
+
+    await mountCatalog();
+
+    expect(banner()).toBeNull();
+    expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
   });
 
   describe("while it is on", () => {
     beforeEach(() => {
       communityEnabled = true;
       community = [RADIO];
+    });
+
+    it("shows no banner", async () => {
+      await mountCatalog();
+
+      expect(banner()).toBeNull();
     });
 
     it("lists what it offers in All and in its type, searchable, with the badge and maintainer", async () => {
@@ -1269,12 +1375,12 @@ describe("Catalog with the community catalog", () => {
 
     await mountCatalog();
 
-    expect(
-      document.querySelector("[data-testid='community-unavailable']"),
-    ).not.toBeNull();
-    expect(
-      document.querySelector("[data-testid='community-switch-toggle']"),
-    ).toBeNull();
+    expect(banner()).toBeNull();
+    expect(menuLabels()).toEqual([
+      "settings.catalog.community.unavailable",
+      "settings.retry",
+    ]);
+    expect(openMenu()[0].disabled).toBe(true);
     expect(
       document.querySelector("[data-testid='community-installed']"),
     ).toBeNull();
@@ -1284,19 +1390,15 @@ describe("Catalog with the community catalog", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
-  it("loads it again on retry after the server refused it", async () => {
+  it("loads it again on retry from the menu after the server refused it", async () => {
     apiMock.getCommunityProviders.mockRejectedValueOnce(new Error("refused"));
     await mountCatalog();
 
-    document
-      .querySelector<HTMLElement>("[data-testid='community-retry']")!
-      .click();
-    await flushPromises();
+    await chooseInMenu("settings.retry");
 
-    expect(
-      document.querySelector("[data-testid='community-unavailable']"),
-    ).toBeNull();
-    expect(switchToggle()).not.toBeNull();
+    expect(apiMock.getCommunityProviders).toHaveBeenCalledTimes(2);
+    expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
+    expect(banner()).not.toBeNull();
   });
 
   it("waits for the community catalog before showing the page", async () => {
@@ -1308,6 +1410,8 @@ describe("Catalog with the community catalog", () => {
       document.querySelector("[data-testid='catalog-loading']"),
     ).not.toBeNull();
     expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
+    expect(banner()).toBeNull();
+    expect(menuButton()!.disabled).toBe(true);
   });
 
   it.each<Record<string, string>>([{}, { view: "installed" }])(
@@ -1326,9 +1430,8 @@ describe("Catalog with the community catalog", () => {
 
       await mountCatalog();
 
-      expect(
-        document.querySelector("[data-testid='community-switch']"),
-      ).toBeNull();
+      expect(banner()).toBeNull();
+      expect(menuButton()).toBeNull();
       expect(
         document.querySelector("[data-testid='community-moved']"),
       ).toBeNull();
@@ -1853,8 +1956,8 @@ function communityCoreConfig(enabled: boolean): CoreConfig {
     domain: "community_catalog",
     last_error: null,
     values: {
-      catalog_enabled: {
-        key: "catalog_enabled",
+      community_catalog_enabled: {
+        key: "community_catalog_enabled",
         label: "Community catalog",
         description: OWN_RISK,
         value: enabled,
@@ -1872,10 +1975,36 @@ async function catalogUpdated() {
   await flushPromises();
 }
 
-function switchToggle(): HTMLElement {
-  return document.querySelector<HTMLElement>(
-    "[data-testid='community-switch-toggle']",
-  )!;
+async function clickBannerEnable() {
+  document
+    .querySelector<HTMLElement>("[data-testid='community-banner-enable']")!
+    .click();
+  await flushPromises();
+}
+
+function banner(): Element | null {
+  return document.querySelector("[data-testid='community-banner']");
+}
+
+function menuButton(): HTMLButtonElement | null {
+  return document.querySelector<HTMLButtonElement>(
+    "[data-testid='catalog-menu']",
+  );
+}
+
+// the items of the menu the button opens
+function openMenu() {
+  menuButton()!.click();
+  return menus.at(-1)!.items;
+}
+
+function menuLabels(): string[] {
+  return openMenu().map((item) => item.label);
+}
+
+async function chooseInMenu(label: string) {
+  openMenu().find((item) => item.label === label)!.action!();
+  await flushPromises();
 }
 
 function clickAdd(domain: string) {
