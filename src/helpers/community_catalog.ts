@@ -9,7 +9,11 @@ import {
 export const COMMUNITY_CATALOG_DOMAIN = "community_catalog";
 
 /** The setting of the switch, a hidden setting of that controller. */
-export const COMMUNITY_CATALOG_ENABLED_KEY = "catalog_enabled";
+export const COMMUNITY_CATALOG_ENABLED_KEY = "community_catalog_enabled";
+
+/** The user preference that keeps the banner of the community catalog away. */
+export const COMMUNITY_BANNER_DISMISSED_PREFERENCE =
+  "catalog.communityBannerDismissed";
 
 // installed and running, as far as this app tells them apart
 const RUNNING_STATES: readonly CommunityProviderState[] = [
