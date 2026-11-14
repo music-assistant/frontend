@@ -1,0 +1,305 @@
+import type { MusicAssistantApi } from "@/plugins/api";
+import {
+  EventType,
+  MediaType,
+  type Audiobook,
+  type EventMessage,
+  type PlaylogUpdate,
+} from "@/plugins/api/interfaces";
+import { flushPromises } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { effectScope, reactive, type EffectScope } from "vue";
+import { audiobook } from "../../tests/fixtures/audiobook";
+import { useAudiobookDetails } from "./useAudiobookDetails";
+
+const { getAudiobook, subscribe, storeMock, toastError } = vi.hoisted(() => ({
+  toastError: vi.fn(),
+  getAudiobook: vi.fn<MusicAssistantApi["getAudiobook"]>(),
+  subscribe:
+    vi.fn<
+      (event: EventType, callback: (event: EventMessage) => void) => () => void
+    >(),
+  storeMock: { currentUser: { user_id: "me" } },
+}));
+vi.mock("@/plugins/api", () => ({ api: { getAudiobook, subscribe } }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
+vi.mock("vue-sonner", () => ({ toast: { error: toastError } }));
+
+const listeners = new Map<EventType, (event: EventMessage) => void>();
+const unsubs: ReturnType<typeof vi.fn>[] = [];
+const scopes: EffectScope[] = [];
+
+function setup(provider = "library") {
+  const route = reactive({ itemId: "1", provider });
+  const scope = effectScope();
+  scopes.push(scope);
+  const { itemDetails } = scope.run(() => useAudiobookDetails(() => route))!;
+  return { route, scope, itemDetails };
+}
+
+function playlog(overrides: Partial<PlaylogUpdate> = {}) {
+  listeners.get(EventType.PLAYLOG_UPDATED)!({
+    data: {
+      uri: "library://audiobook/1",
+      media_type: MediaType.AUDIOBOOK,
+      fully_played: false,
+      seconds_played: 900,
+      userid: "me",
+      ...overrides,
+    },
+  } as EventMessage);
+}
+
+function deferred() {
+  let resolve!: (value: Audiobook) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<Audiobook>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+describe("useAudiobookDetails", () => {
+  beforeEach(() => {
+    toastError.mockReset();
+    getAudiobook.mockReset().mockResolvedValue(audiobook());
+    listeners.clear();
+    unsubs.length = 0;
+    subscribe.mockReset().mockImplementation((event, callback) => {
+      listeners.set(event, callback);
+      const unsub = vi.fn();
+      unsubs.push(unsub);
+      return unsub;
+    });
+  });
+  afterEach(() => {
+    for (const scope of scopes.splice(0)) scope.stop();
+    vi.useRealTimers();
+  });
+
+  it("loads and clears the previous book when only the provider changes", async () => {
+    const { route, itemDetails } = setup();
+    await flushPromises();
+    expect(itemDetails.value?.uri).toBe("library://audiobook/1");
+    const pending = deferred();
+    getAudiobook.mockReturnValueOnce(pending.promise);
+    route.provider = "other";
+    await flushPromises();
+    expect(itemDetails.value).toBeUndefined();
+    expect(getAudiobook).toHaveBeenLastCalledWith("1", "other");
+    pending.resolve(audiobook({ provider: "other" }));
+    await flushPromises();
+    expect(itemDetails.value?.provider).toBe("other");
+  });
+
+  it("rejects an old response after navigating away and back", async () => {
+    const pending = deferred();
+    getAudiobook.mockReturnValueOnce(pending.promise);
+    const { route, itemDetails } = setup();
+    route.itemId = "2";
+    await flushPromises();
+    route.itemId = "1";
+    await flushPromises();
+    pending.resolve(audiobook({ name: "Stale" }));
+    await flushPromises();
+    expect(itemDetails.value?.name).toBe("Audiobook");
+  });
+
+  it("keeps a playlog update received before the load completes", async () => {
+    const pending = deferred();
+    getAudiobook.mockReturnValueOnce(pending.promise);
+    const { itemDetails } = setup();
+    playlog({ fully_played: true });
+    pending.resolve(audiobook());
+    await flushPromises();
+    expect(itemDetails.value).toMatchObject({
+      fully_played: true,
+      resume_position_ms: 900000,
+    });
+  });
+
+  it("ignores other users, media types and items, but accepts shared updates", async () => {
+    const { itemDetails } = setup();
+    await flushPromises();
+    playlog({ userid: "other" });
+    playlog({ media_type: MediaType.TRACK });
+    playlog({ uri: "library://audiobook/2" });
+    expect(itemDetails.value?.resume_position_ms).toBe(0);
+    playlog({ userid: null });
+    expect(itemDetails.value?.resume_position_ms).toBe(900000);
+  });
+
+  it.each([false, true])(
+    "preserves personal progress across metadata events (updated: %s)",
+    async (updated) => {
+      getAudiobook.mockResolvedValue(audiobook({ resume_position_ms: 600000 }));
+      const { itemDetails } = setup();
+      await flushPromises();
+      vi.useFakeTimers();
+      if (updated) playlog();
+      getAudiobook.mockResolvedValue(
+        audiobook({
+          resume_position_ms: updated ? 900000 : 600000,
+        }),
+      );
+      listeners.get(EventType.MEDIA_ITEM_UPDATED)!({
+        data: audiobook({ name: "New metadata", fully_played: true }),
+      } as EventMessage);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(itemDetails.value).toMatchObject({
+        name: "New metadata",
+        fully_played: false,
+        resume_position_ms: updated ? 900000 : 600000,
+      });
+    },
+  );
+
+  it.each([false, true])(
+    "accepts provider-route progress when the response is a library item (before load: %s)",
+    async (beforeLoad) => {
+      const pending = deferred();
+      getAudiobook.mockReturnValueOnce(pending.promise);
+      const { itemDetails } = setup("provider");
+      if (!beforeLoad) {
+        pending.resolve(audiobook());
+        await flushPromises();
+      }
+      playlog({ uri: "provider://audiobook/1", fully_played: true });
+      if (beforeLoad) pending.resolve(audiobook());
+      await flushPromises();
+      expect(itemDetails.value).toMatchObject({
+        uri: "library://audiobook/1",
+        fully_played: true,
+        resume_position_ms: 900000,
+      });
+    },
+  );
+
+  it("refetches personal progress after metadata-only refresh without replacing metadata or favorite", async () => {
+    const { itemDetails } = setup("provider");
+    await flushPromises();
+    vi.useFakeTimers();
+    getAudiobook.mockResolvedValue(
+      audiobook({
+        name: "Response metadata",
+        favorite: false,
+        fully_played: true,
+        resume_position_ms: 1200000,
+      }),
+    );
+    itemDetails.value!.favorite = true;
+    listeners.get(EventType.MEDIA_ITEM_UPDATED)!({
+      data: audiobook({ name: "New metadata" }),
+    } as EventMessage);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(getAudiobook).toHaveBeenLastCalledWith("1", "library", {
+      suppressGlobalError: true,
+    });
+    expect(itemDetails.value).toMatchObject({
+      name: "New metadata",
+      favorite: true,
+      fully_played: true,
+      resume_position_ms: 1200000,
+    });
+  });
+
+  it.each(["playlog", "navigation", "dispose", "newer-refresh"])(
+    "ignores a pending progress refresh after %s",
+    async (change) => {
+      const { route, scope, itemDetails } = setup();
+      await flushPromises();
+      vi.useFakeTimers();
+      const pending = deferred();
+      getAudiobook.mockReturnValueOnce(pending.promise);
+      const metadata = () =>
+        listeners.get(EventType.MEDIA_ITEM_UPDATED)!({
+          data: audiobook({ name: "Metadata" }),
+        } as EventMessage);
+      metadata();
+      await vi.advanceTimersByTimeAsync(2000);
+      if (change === "playlog") playlog();
+      if (change === "navigation") {
+        getAudiobook.mockResolvedValue(audiobook({ item_id: "2" }));
+        route.itemId = "2";
+        await flushPromises();
+      }
+      if (change === "dispose") scope.stop();
+      if (change === "newer-refresh") {
+        getAudiobook.mockResolvedValue(
+          audiobook({ resume_position_ms: 300000 }),
+        );
+        metadata();
+        await vi.advanceTimersByTimeAsync(2000);
+      }
+      const expected = itemDetails.value?.resume_position_ms;
+      pending.resolve(
+        audiobook({ resume_position_ms: 1800000, fully_played: true }),
+      );
+      await flushPromises();
+      expect(itemDetails.value?.resume_position_ms).toBe(expected);
+      expect(itemDetails.value?.fully_played).toBe(false);
+    },
+  );
+
+  it("reports current progress refresh failures and keeps the previous progress", async () => {
+    const { itemDetails } = setup();
+    await flushPromises();
+    vi.useFakeTimers();
+    getAudiobook.mockRejectedValueOnce(new Error("Refresh failed"));
+    listeners.get(EventType.MEDIA_ITEM_UPDATED)!({
+      data: audiobook({ name: "Metadata", resume_position_ms: 123000 }),
+    } as EventMessage);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(itemDetails.value?.resume_position_ms).toBe(0);
+    expect(getAudiobook).toHaveBeenLastCalledWith("1", "library", {
+      suppressGlobalError: true,
+    });
+    expect(toastError).toHaveBeenCalledExactlyOnceWith("Error: Refresh failed");
+  });
+
+  it.each(["navigation", "dispose", "playlog"])(
+    "does not toast a failed refresh after %s",
+    async (change) => {
+      const { route, scope } = setup();
+      await flushPromises();
+      vi.useFakeTimers();
+      const pending = deferred();
+      getAudiobook.mockReturnValueOnce(pending.promise);
+      listeners.get(EventType.MEDIA_ITEM_UPDATED)!({
+        data: audiobook({ name: "Metadata" }),
+      } as EventMessage);
+      await vi.advanceTimersByTimeAsync(2000);
+      if (change === "navigation") {
+        route.itemId = "2";
+        await flushPromises();
+      } else if (change === "dispose") scope.stop();
+      else playlog();
+      pending.reject(new Error("Stale refresh failed"));
+      await flushPromises();
+      expect(toastError).not.toHaveBeenCalled();
+    },
+  );
+
+  it("retains shared personal favorite handling", async () => {
+    const { itemDetails } = setup();
+    await flushPromises();
+    for (const favorite of [true, false, null]) {
+      listeners.get(EventType.FAVORITE_UPDATED)!({
+        data: { uri: itemDetails.value?.uri, user_id: "me", favorite },
+      } as EventMessage);
+      expect(itemDetails.value?.favorite).toBe(favorite);
+    }
+  });
+
+  it("unsubscribes and ignores in-flight responses when disposed", async () => {
+    const pending = deferred();
+    getAudiobook.mockReturnValueOnce(pending.promise);
+    const { scope, itemDetails } = setup();
+    scope.stop();
+    for (const unsub of unsubs) expect(unsub).toHaveBeenCalledOnce();
+    pending.resolve(audiobook());
+    await flushPromises();
+    expect(itemDetails.value).toBeUndefined();
+  });
+});

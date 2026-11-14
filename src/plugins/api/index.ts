@@ -1523,11 +1523,13 @@ export class MusicAssistantApi {
   public getAudiobook(
     item_id: string,
     provider_instance_id_or_domain: string,
+    options?: CommandOptions,
   ): Promise<Audiobook> {
-    return this.sendCommand("music/audiobooks/get_audiobook", {
-      item_id,
-      provider_instance_id_or_domain,
-    });
+    return this.sendCommand(
+      "music/audiobooks/get_audiobook",
+      { item_id, provider_instance_id_or_domain },
+      options,
+    );
   }
 
   public getAudiobookCollection(
