@@ -206,7 +206,11 @@ const {
   moreFromArtistSource,
   moreFromArtistSelectedSource,
   moreFromArtistSourceDisplay,
-} = useAlbumRowData(albumForRows, visibleRows);
+} = useAlbumRowData(
+  albumForRows,
+  visibleRows,
+  computed(() => fullArtist.value !== undefined),
+);
 
 // the cover at first; the artist's fanart takes over once that lookup is done
 const backdrop = computed(() =>

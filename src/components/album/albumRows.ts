@@ -57,17 +57,6 @@ export const albumRows = createRowRegistry<AlbumRowId, Album>({
   defaultSource: albumRowDefaultSource,
 });
 
-/**
- * Whether the album artist's sources are known: a library artist's only once
- * the full artist has been loaded into album.artists[0].
- */
-export function albumArtistSourcesKnown(album: Album): boolean {
-  const artist = album.artists[0];
-  return (
-    !artist || artist.provider !== "library" || "provider_mappings" in artist
-  );
-}
-
 /** The sources the album artist's releases could be fed from, in picker order. */
 function albumRowSourceCandidates(id: AlbumRowId, album: Album): RowSource[] {
   if (id !== "more_from_artist") return [];
@@ -101,4 +90,15 @@ function albumRowDefaultSource(
   const artist = album.artists[0];
   if (artist && artist.provider !== "library") return artist.provider;
   return candidates[0] ?? (albumArtistSourcesKnown(album) ? "library" : "auto");
+}
+
+/**
+ * Whether the album artist's sources are known: a library artist's only once
+ * the full artist has been loaded into album.artists[0].
+ */
+function albumArtistSourcesKnown(album: Album): boolean {
+  const artist = album.artists[0];
+  return (
+    !artist || artist.provider !== "library" || "provider_mappings" in artist
+  );
 }

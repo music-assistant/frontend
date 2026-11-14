@@ -734,6 +734,36 @@ describe("useArtistRowData", () => {
       expect(itemIds(page.albumItems.value)).toEqual(["spotify-album"]);
     });
 
+    it("stays on the library when the library count fails", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      mockArtistAlbumsCountBySource.mockRejectedValue(new Error("nope"));
+      const page = setupRowData({ rows: ["albums"] });
+
+      await showArtist(page, libraryArtist());
+
+      expect(page.albumsSource.value).toBe("library");
+      expect(releaseSources()).toEqual(["library"]);
+    });
+
+    it("comes back to the library once a library change adds releases", async () => {
+      vi.useFakeTimers();
+      countsByRow(0, 0);
+      const page = setupRowData({ rows: ["albums"] });
+      await showArtist(page, libraryArtist());
+      expect(page.albumsSource.value).toBe(SPOTIFY);
+
+      countsByRow(2, 0);
+      const [, onLibraryChange] = mockApi.subscribe_multi.mock.lastCall!;
+      onLibraryChange({
+        event: EventType.MEDIA_ITEM_ADDED,
+        data: album({ item_id: "added" }),
+      });
+      await vi.runAllTimersAsync();
+
+      expect(page.albumsSource.value).toBe("library");
+      expect(itemIds(page.albumItems.value)).toEqual(["album-1"]);
+    });
+
     it("asks a provider nothing for a hidden row", async () => {
       countsByRow(0, 0);
       const page = setupRowData({ rows: ["top_tracks"] });

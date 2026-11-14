@@ -24,7 +24,6 @@ vi.mock("@/composables/userPreferences", () => ({
 import {
   ALBUM_ROW_SOURCES_PREFERENCE_KEY,
   ALBUM_ROWS_PREFERENCE_KEY,
-  albumArtistSourcesKnown,
   albumRows,
   availableAlbumRowIds,
   type AlbumRowId,
@@ -224,11 +223,6 @@ describe("albumRows", () => {
       expect(
         albumRows.effectiveSource("more_from_artist", albumBySlimArtist()),
       ).toBe("auto");
-      expect(albumArtistSourcesKnown(albumBySlimArtist())).toBe(false);
-      expect(albumArtistSourcesKnown(albumByLibraryArtist())).toBe(true);
-      expect(
-        albumArtistSourcesKnown(albumByProviderArtist("spotify--abc")),
-      ).toBe(true);
     });
 
     it("keeps a provider artist on its own provider", () => {
@@ -274,6 +268,12 @@ describe("albumRows", () => {
   });
 
   describe("resolveSource", () => {
+    it("settles on the library when the full artist could not be loaded", () => {
+      expect(
+        albumRows.resolveSource("more_from_artist", albumBySlimArtist(), false),
+      ).toBe("library");
+    });
+
     it("shows the library while it holds other releases, else the first provider", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       const item = albumByLibraryArtist("spotify--abc");

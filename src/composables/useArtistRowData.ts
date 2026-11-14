@@ -118,11 +118,14 @@ export function useArtistRowData(
   ): RowSource | undefined {
     if (!artist.value) return undefined;
     const counts = rowId === "albums" ? albumCounts.value : singlesCounts.value;
+    // a count that failed is stored as undefined and keeps the row on the library
     const libraryCount = counts.get("library");
     return artistRows.resolveSource(
       rowId,
       artist.value,
-      libraryCount === undefined ? undefined : libraryCount > 0,
+      counts.has("library")
+        ? libraryCount === undefined || libraryCount > 0
+        : undefined,
     );
   };
 
@@ -252,10 +255,14 @@ export function useArtistRowData(
     if (!artist.value) return;
     const rows = visibleRows.value;
     if (rows.includes("albums")) {
-      loadReleaseRow("albums", albumsSource.value);
+      loadReleaseRow("albums", albumsSource.value, albumsSelectedSource.value);
     }
     if (rows.includes("singles_eps")) {
-      loadReleaseRow("singles_eps", singlesSource.value);
+      loadReleaseRow(
+        "singles_eps",
+        singlesSource.value,
+        singlesSelectedSource.value,
+      );
     }
     if (rows.includes("appears_on")) {
       fetchAppearsOn();
@@ -286,7 +293,11 @@ export function useArtistRowData(
   function loadReleaseRow(
     rowId: "albums" | "singles_eps",
     source: RowSource | undefined,
+    selected: RowSource | undefined,
   ) {
+    // an automatic row on a provider keeps the library count current, so a
+    // library change can bring it back to the library
+    if (selected === "auto") fetchReleaseCount(rowId, "library");
     fetchReleases(rowId, source ?? "library");
     fetchReleaseCount(rowId, source ?? "library");
   }

@@ -5,7 +5,6 @@ const {
   mockLoadArtistReleases,
   mockEffectiveSource,
   mockResolveSource,
-  mockSourcesKnown,
 } = vi.hoisted(() => ({
   mockLoadAlbumVersions: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
@@ -18,7 +17,6 @@ const {
         libraryHasItems?: boolean,
       ) => string | undefined
     >(),
-  mockSourcesKnown: vi.fn(() => true),
 }));
 
 vi.mock("@/components/album/albumData", () => ({
@@ -29,7 +27,6 @@ vi.mock("@/components/album/albumData", () => ({
 // the effective source is the row registry's job (tested there); here it is
 // mocked so the composable's per-source loading can be driven directly
 vi.mock("@/components/album/albumRows", () => ({
-  albumArtistSourcesKnown: mockSourcesKnown,
   albumRows: {
     effectiveSource: mockEffectiveSource,
     resolveSource: mockResolveSource,
@@ -38,7 +35,12 @@ vi.mock("@/components/album/albumRows", () => ({
 
 import type { AlbumRowId } from "@/components/album/albumRows";
 import { useAlbumRowData } from "@/composables/useAlbumRowData";
-import type { Album } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import {
+  EventType,
+  type Album,
+  type EventMessage,
+} from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
 import { effectScope, ref, type EffectScope } from "vue";
 import { album } from "../fixtures/album";
@@ -47,14 +49,20 @@ const ALL_ROWS: AlbumRowId[] = ["tracks", "other_versions", "more_from_artist"];
 
 const scopes: EffectScope[] = [];
 
-/** The composable, with the rows the page shows and no album loaded yet. */
-function setupRowData(rows: AlbumRowId[] = ALL_ROWS) {
+/**
+ * The composable, with the rows the page shows and no album loaded yet; the
+ * album artist lookup has finished unless `artistSettled` says otherwise.
+ */
+function setupRowData(rows: AlbumRowId[] = ALL_ROWS, artistSettled = true) {
   const albumRef = ref<Album>();
   const visibleRows = ref<AlbumRowId[]>(rows);
+  const settled = ref(artistSettled);
   const scope = effectScope();
   scopes.push(scope);
-  const rowData = scope.run(() => useAlbumRowData(albumRef, visibleRows))!;
-  return { album: albumRef, visibleRows, ...rowData };
+  const rowData = scope.run(() =>
+    useAlbumRowData(albumRef, visibleRows, settled),
+  )!;
+  return { album: albumRef, visibleRows, artistSettled: settled, ...rowData };
 }
 
 /** Puts an album on the page, the way the view does once its details load. */
@@ -77,11 +85,12 @@ describe("useAlbumRowData", () => {
     mockResolveSource
       .mockReset()
       .mockImplementation(() => mockEffectiveSource());
-    mockSourcesKnown.mockReset().mockReturnValue(true);
   });
 
   afterEach(() => {
     scopes.splice(0).forEach((scope) => scope.stop());
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("loads only what the visible rows need", async () => {
@@ -215,9 +224,8 @@ describe("useAlbumRowData", () => {
       ]);
     });
 
-    it("keeps loading an empty library until the artist's providers are known", async () => {
-      mockSourcesKnown.mockReturnValue(false);
-      const page = setupRowData();
+    it("keeps loading an empty library until the artist lookup has finished", async () => {
+      const page = setupRowData(ALL_ROWS, false);
       await showAlbum(page);
 
       expect(mockLoadArtistReleases).toHaveBeenCalledTimes(1);
@@ -227,14 +235,44 @@ describe("useAlbumRowData", () => {
         label: "Automatic",
       });
 
-      // the full artist arrives in artists[0]
-      mockSourcesKnown.mockReturnValue(true);
-      page.album.value = { ...page.album.value! };
+      // found or not, the finished lookup settles the row
+      page.artistSettled.value = true;
       await flushPromises();
 
+      expect(mockResolveSource).toHaveBeenLastCalledWith(
+        "more_from_artist",
+        expect.anything(),
+        false,
+      );
       expect(page.moreFromArtistSource.value).toBe("spotify--abc");
       expect(page.artistReleaseItems.value).toEqual([
         album({ item_id: "spotify-release" }),
+      ]);
+    });
+
+    it("comes back to the library once a library change adds a release", async () => {
+      vi.useFakeTimers();
+      let onLibraryChange: (evt: EventMessage) => void = () => {};
+      vi.spyOn(api, "subscribe_multi").mockImplementation((_events, cb) => {
+        onLibraryChange = cb as (evt: EventMessage) => void;
+        return () => {};
+      });
+      const page = setupRowData();
+      await showAlbum(page);
+      expect(page.moreFromArtistSource.value).toBe("spotify--abc");
+
+      mockLoadArtistReleases.mockImplementation(async () => [
+        album({ item_id: "added" }),
+      ]);
+      onLibraryChange({
+        event: EventType.MEDIA_ITEM_ADDED,
+        data: album({ item_id: "added" }),
+      } as EventMessage);
+      await vi.runAllTimersAsync();
+
+      expect(page.moreFromArtistSource.value).toBe("library");
+      expect(page.artistReleaseItems.value).toEqual([
+        album({ item_id: "added" }),
       ]);
     });
   });
