@@ -273,7 +273,8 @@ export async function createVisualizerEngine(
       const blend = rafHandle === null ? 0 : blendSec;
       const loaded = await visualizer.loadPreset(preset, blend);
       redrawIfHalted();
-      return loaded ? loadedName : "";
+      // Torn down mid-load: nothing of it is on screen.
+      return loaded && !destroyed ? loadedName : "";
     },
     async loadRandomPreset() {
       const name = await randomPresetName();

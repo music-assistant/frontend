@@ -238,6 +238,20 @@ describe("createVisualizerEngine pause envelope", () => {
     expect(setPaletteRamp).not.toHaveBeenCalled();
     engine = null;
   });
+
+  it("reports nothing when destroyed while the preset loads", async () => {
+    let finishLoad!: (loaded: boolean) => void;
+    loadPreset.mockImplementationOnce(
+      () => new Promise<boolean>((resolve) => (finishLoad = resolve)),
+    );
+
+    const result = engine!.loadPresetByName("known");
+    await vi.waitFor(() => expect(loadPreset).toHaveBeenCalled());
+    engine!.destroy();
+    finishLoad(true);
+
+    expect(await result).toBe("");
+  });
 });
 
 describe("isVisualizerSupported", () => {
