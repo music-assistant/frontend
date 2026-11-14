@@ -70,13 +70,16 @@ let unmounted = false;
 // iOS only lets audio start inside a user gesture, but listen-in audio starts
 // asynchronously (after the server groups this player), so the library would
 // otherwise unlock its audio outside the gesture and stay silent.
-const primeAudio = () => {
-  if (!isIOS) return true;
+const primeAudio = (): Promise<boolean> | false => {
+  if (!isIOS) return Promise.resolve(true);
   if (!player) return false;
-  void player.unlock().catch((error) => {
-    console.debug("Sendspin: failed to prime audio for listen-in", error);
-  });
-  return true;
+  return player.unlock().then(
+    () => true,
+    (error) => {
+      console.debug("Sendspin: failed to prime audio for listen-in", error);
+      return false;
+    },
+  );
 };
 
 // Reactive state

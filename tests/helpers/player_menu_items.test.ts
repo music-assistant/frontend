@@ -17,6 +17,7 @@ import {
   RepeatMode,
   Scope,
 } from "@/plugins/api/interfaces";
+import { getLucideIcon } from "@/helpers/icon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
@@ -52,12 +53,27 @@ const {
   },
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     players: {},
     playerCommandShuffle: vi.fn(),
     playerCommandRepeat: vi.fn(),
+    queueCommandTransfer: vi.fn(),
+  };
+  return { default: api, api };
+});
+
+const { webPlayerMock } = vi.hoisted(() => ({
+  webPlayerMock: {
+    player_id: "this_browser",
+    tabMode: "sendspin",
+    unlockAudio: vi.fn(() => Promise.resolve(true)),
   },
+}));
+
+vi.mock("@/plugins/web_player", () => ({
+  webPlayer: webPlayerMock,
+  isPlaybackMode: (mode: string) => mode === "sendspin",
 }));
 
 vi.mock("@/plugins/auth", () => ({
@@ -929,5 +945,177 @@ describe("shuffle and repeat", () => {
 
     expect(shown).not.toContain("shuffle_enable");
     expect(shown).not.toContain("select_repeat_mode");
+  });
+});
+
+describe("transfer queue", () => {
+  function transferItems(players: Player[]): ContextMenuItem[] {
+    api.players = Object.fromEntries(
+      players.map((p) => [p.player_id, p]),
+    ) as unknown as typeof api.players;
+    const menuItems = getPlayerMenuItems(
+      makePlayer(),
+      makeQueue({ active: true, items: 3 }),
+      { context: "queue" },
+    );
+    return (
+      menuItems.find((item) => item.label === "transfer_queue")?.subItems ?? []
+    );
+  }
+
+  async function targetOf(item: ContextMenuItem): Promise<string> {
+    await Promise.resolve(item.action?.());
+    return vi.mocked(api.queueCommandTransfer).mock.lastCall![1];
+  }
+
+  async function targetsOf(items: ContextMenuItem[]): Promise<string[]> {
+    const ids: string[] = [];
+    for (const item of items) ids.push(await targetOf(item));
+    return ids;
+  }
+
+  function target(overrides: Partial<Player>): Player {
+    return makePlayer({
+      enabled: true,
+      available: true,
+      output_protocols: [],
+      group_members: [],
+      ...overrides,
+    });
+  }
+
+  it("offers this device first even though it is hidden", async () => {
+    const items = transferItems([
+      target({ player_id: "kitchen" }),
+      target({ player_id: "attic", name: "Attic" }),
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+      target({ player_id: "garage", name: "Garage", hide_in_ui: true }),
+    ]);
+
+    expect(await targetsOf(items)).toEqual(["this_browser", "attic"]);
+    expect(items.map((item) => item.separatorAfter)).toEqual([true, false]);
+  });
+
+  it("shows the icon the user picked for this device", async () => {
+    const [device] = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        icon: "headphones",
+      }),
+    ]);
+
+    expect(device.icon).toBe(getLucideIcon("headphones"));
+  });
+
+  it("leaves out the separator when this device is the only target", async () => {
+    const items = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    expect(items[0].separatorAfter).toBe(false);
+  });
+
+  it("offers this device while it plays in the source group", async () => {
+    const items = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        synced_to: "kitchen",
+      }),
+      target({ player_id: "attic", synced_to: "kitchen" }),
+    ]);
+
+    expect(await targetsOf(items)).toEqual(["this_browser"]);
+  });
+
+  it("unlocks this tab's audio before moving the queue to it", async () => {
+    vi.mocked(api.queueCommandTransfer).mockClear();
+    webPlayerMock.unlockAudio.mockClear();
+    const [device] = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    await Promise.resolve(device.action?.());
+
+    expect(webPlayerMock.unlockAudio).toHaveBeenCalledOnce();
+    expect(api.queueCommandTransfer).toHaveBeenCalledWith(
+      expect.anything(),
+      "this_browser",
+    );
+  });
+
+  it("keeps the queue when this tab cannot play audio", async () => {
+    const { toast } = await import("vue-sonner");
+    vi.mocked(api.queueCommandTransfer).mockClear();
+    webPlayerMock.unlockAudio.mockResolvedValueOnce(false);
+    const [device] = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    await Promise.resolve(device.action?.());
+
+    expect(api.queueCommandTransfer).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it("does not unlock audio when another tab plays for this device", async () => {
+    webPlayerMock.tabMode = "controls_only";
+    webPlayerMock.unlockAudio.mockClear();
+    try {
+      const [device] = transferItems([
+        target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+      ]);
+
+      expect(await targetOf(device)).toBe("this_browser");
+      expect(webPlayerMock.unlockAudio).not.toHaveBeenCalled();
+    } finally {
+      webPlayerMock.tabMode = "sendspin";
+    }
+  });
+
+  it("does not unlock audio for another player", async () => {
+    webPlayerMock.unlockAudio.mockClear();
+    const [attic] = transferItems([target({ player_id: "attic" })]);
+
+    expect(await targetOf(attic)).toBe("attic");
+    expect(webPlayerMock.unlockAudio).not.toHaveBeenCalled();
+  });
+  it("offers this device when it is the synced member the menu shows", async () => {
+    api.players = Object.fromEntries(
+      [
+        target({ player_id: "kitchen" }),
+        target({
+          player_id: "this_browser",
+          hide_in_ui: true,
+          private: true,
+          synced_to: "kitchen",
+        }),
+      ].map((p) => [p.player_id, p]),
+    ) as unknown as typeof api.players;
+    const items =
+      getPlayerMenuItems(
+        target({ player_id: "this_browser", synced_to: "kitchen" }),
+        makeQueue({ queue_id: "kitchen", active: true, items: 3 }),
+        { context: "queue" },
+      ).find((item) => item.label === "transfer_queue")?.subItems ?? [];
+
+    expect(await targetsOf(items)).toEqual(["this_browser"]);
+  });
+
+  it("marks a target that leads a group with its member count", async () => {
+    const [device] = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        group_members: ["this_browser", "attic"],
+      }),
+      target({ player_id: "attic", synced_to: "this_browser" }),
+    ]);
+
+    expect(device.label).toMatch(/\+1$/);
   });
 });
