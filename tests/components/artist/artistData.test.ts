@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
+    getArtistPlaylists: vi.fn().mockResolvedValue([]),
     getArtistAlbums: vi.fn().mockResolvedValue([]),
     getArtistAlbumsCount: vi.fn().mockResolvedValue(0),
     getArtistAppearsOn: vi.fn().mockResolvedValue([]),
@@ -27,6 +28,7 @@ import {
   loadArtistAppearsOn,
   loadArtistDiscography,
   loadArtistReleases,
+  loadArtistPlaylists,
   loadArtistTopTracks,
   loadArtistTracks,
   loadSimilarArtists,
@@ -78,6 +80,24 @@ describe("artistData", () => {
     apiMock.getSimilarArtists.mockClear();
     apiMock.getArtistTracks.mockClear();
     apiMock.getArtistAppearsOn.mockClear();
+  });
+
+  describe("loadArtistPlaylists", () => {
+    it("uses the provider artist ID instead of the library ID", async () => {
+      await loadArtistPlaylists(LIBRARY_ARTIST, "spotify--abc");
+      expect(apiMock.getArtistPlaylists).toHaveBeenCalledWith(
+        "sp1",
+        "spotify--abc",
+      );
+    });
+
+    it("does not request an unmapped provider", async () => {
+      apiMock.getArtistPlaylists.mockClear();
+      expect(
+        await loadArtistPlaylists(LIBRARY_ARTIST, "soundcloud--missing"),
+      ).toEqual([]);
+      expect(apiMock.getArtistPlaylists).not.toHaveBeenCalled();
+    });
   });
 
   describe("loadArtistReleases", () => {

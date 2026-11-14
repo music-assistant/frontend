@@ -16,6 +16,7 @@ import {
 export type ArtistRowId =
   | "bio"
   | "top_tracks"
+  | "playlists"
   | "albums"
   | "singles_eps"
   | "appears_on"
@@ -39,6 +40,12 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
   {
     id: "top_tracks",
     labelKey: "artist_toptracks",
+    audience: "music",
+    supportsSource: true,
+  },
+  {
+    id: "playlists",
+    labelKey: "playlists",
     audience: "music",
     supportsSource: true,
   },
@@ -126,6 +133,7 @@ const ALL_PROVIDER_ROWS: ArtistRowId[] = ["top_tracks", "similar_artists"];
 // the provider capability each row with a source picker depends on
 const ROW_FEATURES: Partial<Record<ArtistRowId, ProviderFeature>> = {
   top_tracks: ProviderFeature.ARTIST_TOPTRACKS,
+  playlists: ProviderFeature.ARTIST_PLAYLISTS,
   albums: ProviderFeature.ARTIST_ALBUMS,
   singles_eps: ProviderFeature.ARTIST_ALBUMS,
   similar_artists: ProviderFeature.SIMILAR_ARTISTS,
@@ -134,6 +142,7 @@ const ROW_FEATURES: Partial<Record<ArtistRowId, ProviderFeature>> = {
 /** The sources a row of a library artist could be fed from, whether or not it has a picker. */
 function rowSourceCandidates(id: ArtistRowId, artist: Artist): RowSource[] {
   if (artist.provider !== "library") return [];
+  if (id === "playlists") return rowSourceProviders(id, artist);
   const first: RowSource = RELEASE_ROWS.includes(id) ? "library" : "all";
   return [first, ...rowSourceProviders(id, artist)];
 }

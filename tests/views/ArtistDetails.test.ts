@@ -2,6 +2,7 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import {
   AlbumType,
   ArtistType,
+  ProviderFeature,
   ListingType,
   SortDirection,
   SortField,
@@ -14,10 +15,13 @@ import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
+import { playlist } from "../fixtures/playlist";
 import { track } from "../fixtures/track";
 import { providerMapping } from "../fixtures/providerMapping";
 
 const {
+  providersMock,
+  mockLoadArtistPlaylists,
   mockGetArtist,
   mockGetArtistAudiobooks,
   mockSubscribe,
@@ -35,6 +39,8 @@ const {
   mockLoadArtistAppearsOn,
   mockLoadArtistAppearsOnCount,
 } = vi.hoisted(() => ({
+  providersMock: {} as Record<string, unknown>,
+  mockLoadArtistPlaylists: vi.fn(),
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockGetArtistAudiobooks: vi.fn<MusicAssistantApi["getArtistAudiobooks"]>(),
   mockSubscribe: vi.fn(() => () => {}),
@@ -59,7 +65,7 @@ vi.mock("@/plugins/api", () => ({
     getArtistAudiobooks: mockGetArtistAudiobooks,
     subscribe: mockSubscribe,
     subscribe_multi: mockSubscribe,
-    providers: {},
+    providers: providersMock,
     getProvider: () => undefined,
   },
 }));
@@ -85,6 +91,7 @@ vi.mock("@/components/artist/artistRows", () => ({
 // checks) are the real ones so the rows are derived the way they are in the app
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
+  loadArtistPlaylists: mockLoadArtistPlaylists,
   loadArtistReleases: mockLoadArtistReleases,
   artistAlbumsCountBySource: mockArtistAlbumsCountBySource,
   loadArtistDiscography: mockLoadArtistDiscography,
@@ -214,6 +221,8 @@ describe("ArtistDetails", () => {
       }));
     // a library artist mapped to a provider that can supply the row
     mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
+    for (const key of Object.keys(providersMock)) delete providersMock[key];
+    mockLoadArtistPlaylists.mockReset().mockResolvedValue([playlist()]);
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
     mockArtistAlbumsCountBySource.mockReset().mockResolvedValue(4);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([album()]);
@@ -226,6 +235,38 @@ describe("ArtistDetails", () => {
       .mockReset()
       .mockResolvedValue([album({ item_id: "3" })]);
     mockLoadArtistAppearsOnCount.mockReset().mockResolvedValue(1);
+  });
+
+  it("loads playlists on a mapped artist page and respects row visibility", async () => {
+    providersMock["soundcloud--abc"] = {
+      instance_id: "soundcloud--abc",
+      domain: "soundcloud",
+      name: "SoundCloud",
+      supported_features: [ProviderFeature.ARTIST_PLAYLISTS],
+    };
+    mockAvailableArtistRowIds.mockReturnValue(["playlists"]);
+    const item = artist({
+      provider_mappings: [
+        providerMapping({
+          item_id: "67208",
+          provider_instance: "soundcloud--abc",
+          provider_domain: "soundcloud",
+        }),
+      ],
+    });
+    const wrapper = await mountDetails(item);
+    expect(renderedRows(wrapper)).toEqual(["playlists"]);
+    expect(mockLoadArtistPlaylists).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+
+    mockLoadArtistPlaylists.mockClear();
+    mockResolveArtistRows.mockImplementation((order: string[]) => ({
+      order,
+      hidden: new Set(["playlists"]),
+    }));
+    const hidden = await mountDetails(item);
+    expect(renderedRows(hidden)).not.toContain("playlists");
+    expect(mockLoadArtistPlaylists).not.toHaveBeenCalled();
   });
 
   it("renders the rows in the resolved order", async () => {

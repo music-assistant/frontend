@@ -868,6 +868,16 @@ export class MusicAssistantApi {
     });
   }
 
+  public getArtistPlaylists(
+    itemId: string,
+    provider: string,
+  ): Promise<Playlist[]> {
+    return this.sendCommand("music/artists/artist_playlists", {
+      item_id: itemId,
+      provider_instance_id_or_domain: provider,
+    });
+  }
+
   public getArtistAlbums(
     item_id: string,
     provider_instance_id_or_domain: string,
