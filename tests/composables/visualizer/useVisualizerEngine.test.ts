@@ -19,6 +19,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const ZERO_LEVEL = 0x80;
 
 const loadPreset = vi.hoisted(() => vi.fn(async () => true));
+const setPaletteColors = vi.hoisted(() => vi.fn());
+const setPaletteRamp = vi.hoisted(() => vi.fn());
 const renderedSamples = vi.hoisted(() => [] as Uint8Array[]);
 
 vi.mock("butterchurn", () => {
@@ -29,6 +31,8 @@ vi.mock("butterchurn", () => {
       renderedSamples.push(new Uint8Array(audioLevels.timeByteArray)),
     loadPreset,
     setRendererSize: vi.fn(),
+    setPaletteColors,
+    setPaletteRamp,
   });
   // Named as well as default: the module probe reads both, and vitest throws
   // on an export a mock does not define.
@@ -213,6 +217,26 @@ describe("createVisualizerEngine pause envelope", () => {
     loadPreset.mockResolvedValueOnce(false);
 
     expect(await engine!.loadPresetByName("known")).toBe("");
+  });
+
+  it("passes the artwork palette through to butterchurn", () => {
+    const ramp: [number, number, number][] = [
+      [0, 0, 0],
+      [255, 255, 255],
+    ];
+    engine!.setPaletteColors([[1, 2, 3]]);
+    engine!.setPaletteRamp(ramp, 0.5);
+
+    expect(setPaletteColors).toHaveBeenCalledWith([[1, 2, 3]]);
+    expect(setPaletteRamp).toHaveBeenCalledWith(ramp, 0.5);
+  });
+
+  it("ignores palette changes once destroyed", () => {
+    engine!.destroy();
+    engine!.setPaletteRamp(null, 0);
+
+    expect(setPaletteRamp).not.toHaveBeenCalled();
+    engine = null;
   });
 
   it("reports nothing when destroyed while the preset loads", async () => {

@@ -12,6 +12,13 @@ declare module "butterchurn" {
     // false when the preset failed to compile, a newer load superseded it, or
     // it cannot run without the JS interpreter
     loadPreset(preset: object, blendTimeSec?: number): Promise<boolean>;
+    setPaletteColors(
+      colors: readonly (readonly [number, number, number])[] | null,
+    ): void;
+    setPaletteRamp(
+      colors: readonly (readonly [number, number, number])[] | null,
+      strength: number,
+    ): void;
     setRendererSize(
       width: number,
       height: number,

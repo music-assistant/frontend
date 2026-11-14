@@ -13,3 +13,8 @@ export const currentVisualizerPreset = ref<string | null>(null);
 // fallbacks) so the four cannot drift apart.
 export const VISUALIZER_BLUR_DEFAULT = 0;
 export const VISUALIZER_OPACITY_DEFAULT = 40;
+// The ramp only reads differently in large jumps, so it steps rather than
+// sliding freely; 0 is off and skips the shader work entirely.
+export const VISUALIZER_PALETTE_RAMP_STEP = 25;
+export const VISUALIZER_PALETTE_RAMP_DEFAULT = 75;
+export const VISUALIZER_PALETTE_COLORS_DEFAULT = true;

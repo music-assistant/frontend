@@ -36,6 +36,29 @@ export interface VisualizerEngine {
    * @param ramp - ramp the waveform down/up first; false switches on the spot.
    */
   setPaused(paused: boolean, ramp?: boolean): void;
+  /**
+   * Color the preset's own waveform and borders from the artwork palette,
+   * instead of washing the whole frame in a single hue. Transitions over 1.5s.
+   *
+   * :param colors: Four 0-255 rgb triples (waveform, outer border, inner
+   *   border, motion vectors), or null to fade them back to the preset's own
+   *   colors.
+   */
+  setPaletteColors(
+    colors: readonly (readonly [number, number, number])[] | null,
+  ): void;
+  /**
+   * Remap the whole image into a palette ramp, keeping the preset's own
+   * luminance.
+   *
+   * :param colors: Ramp anchors ordered dark to light as 0-255 rgb triples,
+   *   or null to fade the remap out.
+   * :param strength: 0-1 blend strength at the end of the transition.
+   */
+  setPaletteRamp(
+    colors: readonly (readonly [number, number, number])[] | null,
+    strength: number,
+  ): void;
   destroy(): void;
 }
 
@@ -277,6 +300,14 @@ export async function createVisualizerEngine(
       lastFrame = SILENCE;
       lastFrameAt = 0;
       if (rafHandle === null) rafHandle = requestAnimationFrame(renderLoop);
+    },
+    setPaletteColors(colors) {
+      if (destroyed) return;
+      visualizer.setPaletteColors(colors);
+    },
+    setPaletteRamp(colors, strength) {
+      if (destroyed) return;
+      visualizer.setPaletteRamp(colors, strength);
     },
     destroy() {
       destroyed = true;

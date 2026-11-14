@@ -38,6 +38,8 @@ vi.mock("@/plugins/visualizer-relay", () => ({
 }));
 
 const setPaused = vi.hoisted(() => vi.fn());
+const setPaletteColors = vi.hoisted(() => vi.fn());
+const setPaletteRamp = vi.hoisted(() => vi.fn());
 const loadPresetByName = vi.hoisted(() => vi.fn(async (name: string) => name));
 // The real module keeps the timing constants; only the engine itself is faked.
 vi.mock(
@@ -49,6 +51,8 @@ vi.mock(
       loadPresetByName,
       loadRandomPreset: vi.fn(async () => "preset"),
       setPaused,
+      setPaletteColors,
+      setPaletteRamp,
       destroy: vi.fn(),
     })),
   }),
@@ -310,14 +314,14 @@ describe("VisualizerCanvas shown preset", () => {
   });
 });
 
-describe("VisualizerCanvas color tint", () => {
+describe("VisualizerCanvas artwork recoloring", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (api.players as Record<string, { playback_state: PlaybackState }>).kitchen =
       { playback_state: PlaybackState.PLAYING };
   });
 
-  // Tint/scrim only show once streaming, like the relay's real onState.
+  // The scrim only shows once streaming, like the relay's real onState.
   function emitStreaming() {
     const onState = relayConstructor.mock.calls.at(-1)?.[0]?.onState as
       ((state: string) => void) | undefined;
@@ -330,84 +334,7 @@ describe("VisualizerCanvas color tint", () => {
     onColor?.(palette);
   }
 
-  it("tints with on_dark in the light theme, like the OSD gradient", async () => {
-    themeIsDark.value = false;
-    const wrapper = mountCanvas("kitchen");
-    await flushPromises();
-    emitStreaming();
-    emitColor({
-      on_dark: [100, 180, 255],
-      on_light: [10, 40, 90],
-      primary: [10, 20, 30],
-      accent: null,
-    });
-    await flushPromises();
-
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("#64b4ff");
-    wrapper.unmount();
-  });
-
-  it("tints with on_light in the dark theme, like the OSD gradient", async () => {
-    themeIsDark.value = true;
-    const wrapper = mountCanvas("kitchen");
-    await flushPromises();
-    emitStreaming();
-    emitColor({
-      on_dark: [100, 180, 255],
-      on_light: [10, 40, 90],
-      primary: [10, 20, 30],
-      accent: null,
-    });
-    await flushPromises();
-
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("#0a285a");
-    themeIsDark.value = false;
-    wrapper.unmount();
-  });
-
-  it("tints with on_light when the host forces the dark treatment", async () => {
-    // the fullscreen player above 50% opacity builds its gradient from
-    // on_light regardless of theme; the tint must not pick the other side
-    themeIsDark.value = false;
-    const wrapper = mount(VisualizerCanvas, {
-      props: { playerId: "kitchen", forceDarkPalette: true },
-    });
-    await flushPromises();
-    emitStreaming();
-    emitColor({
-      on_dark: [100, 180, 255],
-      on_light: [10, 40, 90],
-    });
-    await flushPromises();
-
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("#0a285a");
-    wrapper.unmount();
-  });
-
-  it("leaves the tint off when the themed pick is missing", async () => {
-    // the OSD falls back to a flat grey rather than another palette entry, so
-    // the honest equivalent here is no tint at all
-    const wrapper = mountCanvas("kitchen");
-    await flushPromises();
-    emitStreaming();
-    emitColor({ on_dark: null, on_light: [10, 40, 90], primary: [1, 2, 3] });
-    await flushPromises();
-
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("transparent");
-    wrapper.unmount();
-  });
-
-  it("fades tint and canvas as one isolated stack, per the opacity setting", async () => {
-    // A tint outside the opacity-carrying stack would composite its own
-    // raw color over the gradient background instead of blending.
+  it("fades the canvas itself, per the opacity setting", async () => {
     const wrapper = mount(VisualizerCanvas, {
       props: { playerId: "kitchen", opacity: 40 },
     });
@@ -416,44 +343,90 @@ describe("VisualizerCanvas color tint", () => {
     emitColor({ on_dark: [10, 20, 30] });
     await flushPromises();
 
-    const stack = wrapper.get(".visualizer-layer__stack");
-    expect(stack.attributes("style")).toContain("opacity: 0.4");
-    expect(stack.find(".visualizer-layer__tint").exists()).toBe(true);
-    expect(stack.find(".visualizer-layer__canvas").exists()).toBe(true);
     expect(
-      wrapper.get(".visualizer-layer__canvas").attributes("style") ?? "",
+      wrapper.get(".visualizer-layer__canvas").attributes("style"),
+    ).toContain("opacity: 0.4");
+    expect(
+      wrapper.get(".visualizer-layer__stack").attributes("style") ?? "",
     ).not.toContain("opacity");
     wrapper.unmount();
   });
 
-  it("stays transparent when the relay has sent no color", async () => {
+  it("hands the engine a ramp built from the relay's palette", async () => {
     const wrapper = mountCanvas("kitchen");
     await flushPromises();
     emitStreaming();
+    emitColor({
+      background_light: [240, 240, 240],
+      primary: [200, 0, 0],
+      accent: [0, 0, 255],
+      on_light: [20, 20, 20],
+    });
     await flushPromises();
 
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("transparent");
+    expect(setPaletteRamp).toHaveBeenLastCalledWith(
+      [
+        [20, 20, 20],
+        [0, 0, 255],
+        [200, 0, 0],
+        [240, 240, 240],
+      ],
+      0.75,
+    );
     wrapper.unmount();
   });
 
-  it("resets the tint when the player changes, before the new relay speaks", async () => {
+  it("applies a palette that arrived before the engine was created", async () => {
+    // The server replays the cached palette right after connect, while the
+    // engine is still starting up.
+    relayConstructor.mockImplementationOnce(
+      (callbacks: { onColor: (palette: unknown) => void }) =>
+        callbacks.onColor({
+          background_light: [240, 240, 240],
+          primary: [200, 0, 0],
+          accent: [0, 0, 255],
+          on_light: [20, 20, 20],
+        }),
+    );
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+
+    expect(setPaletteColors).toHaveBeenLastCalledWith([
+      [20, 20, 20],
+      [200, 0, 0],
+      [0, 0, 255],
+      [20, 20, 20],
+    ]);
+    expect(setPaletteRamp).toHaveBeenLastCalledWith(
+      [
+        [20, 20, 20],
+        [0, 0, 255],
+        [200, 0, 0],
+        [240, 240, 240],
+      ],
+      0.75,
+    );
+    wrapper.unmount();
+  });
+
+  it("drops the recoloring when the player changes, before the new relay speaks", async () => {
     const wrapper = mountCanvas("kitchen");
     await flushPromises();
     emitStreaming();
-    emitColor({ on_dark: [10, 20, 30], accent: null });
+    emitColor({
+      primary: [10, 20, 30],
+      accent: [1, 2, 3],
+      on_light: [4, 5, 6],
+    });
     await flushPromises();
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("#0a141e");
+    expect(setPaletteRamp).toHaveBeenLastCalledWith(expect.any(Array), 0.75);
 
     await wrapper.setProps({ playerId: "living_room" });
     await flushPromises();
 
-    expect(
-      wrapper.get(".visualizer-layer__tint").attributes("style"),
-    ).toContain("transparent");
+    // an emptied palette yields no anchors, so the previous track's colours
+    // must not linger on screen
+    expect(setPaletteRamp).toHaveBeenLastCalledWith(null, 0.75);
     wrapper.unmount();
   });
 });
