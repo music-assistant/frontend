@@ -147,8 +147,8 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
-import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
+import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { Check } from "@lucide/vue";
 import { computed, h, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
@@ -340,6 +340,7 @@ import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
 import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
+import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,
@@ -651,6 +652,11 @@ export const getContextMenuItems = async function (
       },
       icon: Info,
     });
+  }
+
+  if (items.length === 1) {
+    const sharePreviewItem = useShareLinkPreviewMenuItem(firstItem);
+    if (sharePreviewItem) contextMenuItems.push(sharePreviewItem);
   }
 
   // creates an AI Radio show from the playlist, which takes config.providers.write
