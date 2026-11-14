@@ -52,10 +52,13 @@ describe("AudioAnalysisMetadata", () => {
     await wrapper.find("button").trigger("click");
     await flushPromises();
 
-    const popoverText = document.body.textContent;
+    const energyTile = document.body.querySelector(
+      '[title="tooltip.energy_level"]',
+    );
+    const tileText = energyTile?.textContent;
     wrapper.unmount();
-    expect(popoverText).toContain("7");
-    expect(popoverText).toContain("energy_level");
+    expect(tileText).toContain("7");
+    expect(tileText).toContain("energy_level");
   });
 
   it("renders nothing without analysis data", () => {
