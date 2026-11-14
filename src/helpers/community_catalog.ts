@@ -11,6 +11,12 @@ export const COMMUNITY_CATALOG_DOMAIN = "community_catalog";
 /** The setting of the switch, a hidden setting of that controller. */
 export const COMMUNITY_CATALOG_ENABLED_KEY = "catalog_enabled";
 
+/** The setting that installs updates by themselves, next to the switch. */
+export const COMMUNITY_CATALOG_AUTO_UPDATE_KEY = "auto_update";
+
+/** The notice of one the server installed by itself because it moved to the community catalog. */
+export const COMMUNITY_NOTICE_MOVED = "moved";
+
 // installed and running, as far as this app tells them apart
 const RUNNING_STATES: readonly CommunityProviderState[] = [
   CommunityProviderState.INSTALLED,
@@ -25,6 +31,8 @@ const PROBLEM_STATES: readonly CommunityProviderState[] = [
 ];
 
 const STATE_LABELS: Partial<Record<CommunityProviderState, string>> = {
+  [CommunityProviderState.RESTART_REQUIRED]:
+    "settings.catalog.community.state.restart_required",
   [CommunityProviderState.BLOCKED]: "settings.catalog.community.state.blocked",
   [CommunityProviderState.UNAVAILABLE]:
     "settings.catalog.community.state.unavailable",
@@ -43,6 +51,21 @@ export const isCommunityRunning = (provider: CommunityProvider): boolean =>
 /** Whether it is installed but does not run: blocked, or not available on this server. */
 export const isCommunityProblem = (provider: CommunityProvider): boolean =>
   PROBLEM_STATES.includes(provider.state);
+
+/** Whether a newer version is on offer for one that is installed. */
+export const hasCommunityUpdate = (provider: CommunityProvider): boolean =>
+  provider.state === CommunityProviderState.UPDATE_AVAILABLE;
+
+/**
+ * Whether the version on offer is one that failed to load here, so it can be
+ * tried again.
+ */
+export const canRetryCommunityVersion = (
+  provider: CommunityProvider,
+): boolean =>
+  provider.state === CommunityProviderState.INSTALLED &&
+  !!provider.failed_version &&
+  provider.failed_version === provider.latest_version;
 
 /**
  * The translation key of the state an installed one shows, or undefined for one

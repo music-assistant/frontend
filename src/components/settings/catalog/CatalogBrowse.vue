@@ -1,8 +1,12 @@
 <template>
   <div class="space-y-8">
     <CatalogPopularRow
-      v-if="popular.length"
-      :entries="popular"
+      v-for="row in rows"
+      :key="row.key"
+      :entries="row.entries"
+      :title="row.title"
+      :installing="installing"
+      :data-testid="`catalog-${row.key}`"
       @open="emit('open', $event)"
       @add="emit('add', $event)"
     />
@@ -32,14 +36,14 @@ import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import CatalogPopularRow from "@/components/settings/catalog/CatalogPopularRow.vue";
 import CatalogSectionHeading from "@/components/settings/catalog/CatalogSectionHeading.vue";
-import type { CatalogEntry } from "@/helpers/provider_catalog";
+import type { CatalogEntry, CatalogRow } from "@/helpers/provider_catalog";
 import { SearchX } from "@lucide/vue";
 
 interface Props {
   // the entries matching the tab, search and filters
   entries: CatalogEntry[];
-  // shown above the list; empty hides the row
-  popular: CatalogEntry[];
+  // shown above the list, each a row to scroll through
+  rows: CatalogRow[];
   title: string;
   // the domains being installed from the community catalog
   installing: ReadonlySet<string>;

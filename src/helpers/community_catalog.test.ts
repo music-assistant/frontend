@@ -1,14 +1,19 @@
-import { CommunityProviderState } from "@/plugins/api/interfaces";
+import {
+  type CommunityProvider,
+  CommunityProviderState,
+} from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { communityProvider } from "../../tests/fixtures/communityProvider";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
+  canRetryCommunityVersion,
   formatCatalogDate,
   getCommunityLinkUrl,
   getCommunityStateLabel,
   getCommunityStateText,
   getInstalledCommunityProviders,
   getRepositoryUrl,
+  hasCommunityUpdate,
   isCommunityInstalled,
   isCommunityProblem,
   isCommunityRunning,
@@ -40,6 +45,10 @@ describe("the state of one from the community catalog", () => {
     [CommunityProviderState.INSTALLED, undefined],
     [CommunityProviderState.UPDATE_AVAILABLE, undefined],
     [
+      CommunityProviderState.RESTART_REQUIRED,
+      "settings.catalog.community.state.restart_required",
+    ],
+    [
       CommunityProviderState.BLOCKED,
       "settings.catalog.community.state.blocked",
     ],
@@ -67,6 +76,53 @@ describe("the state of one from the community catalog", () => {
       getCommunityStateText(communityProvider("radio", { reason: "Abuse" })),
     ).toBe("Abuse");
     expect(getCommunityStateText(communityProvider("radio"))).toBe("");
+  });
+});
+
+describe("updates of one from the community catalog", () => {
+  it.each([
+    [CommunityProviderState.UPDATE_AVAILABLE, true],
+    [CommunityProviderState.INSTALLED, false],
+    [CommunityProviderState.RESTART_REQUIRED, false],
+    [CommunityProviderState.AVAILABLE, false],
+  ])("%s has an update: %s", (state, update) => {
+    expect(hasCommunityUpdate(communityProvider("radio", { state }))).toBe(
+      update,
+    );
+  });
+
+  it("offers to try a failed version again only while it is the one on offer", () => {
+    const installed = (overrides: Partial<CommunityProvider>) =>
+      communityProvider("radio", {
+        state: CommunityProviderState.INSTALLED,
+        installed_version: "1.1.0",
+        latest_version: "1.2.0",
+        ...overrides,
+      });
+
+    expect(
+      canRetryCommunityVersion(installed({ failed_version: "1.2.0" })),
+    ).toBe(true);
+    expect(canRetryCommunityVersion(installed({}))).toBe(false);
+    // a newer version than the failed one is an ordinary update
+    expect(
+      canRetryCommunityVersion(
+        installed({
+          state: CommunityProviderState.UPDATE_AVAILABLE,
+          failed_version: "1.2.0",
+          latest_version: "1.3.0",
+        }),
+      ),
+    ).toBe(false);
+    // nothing to try while the catalog offers no version
+    expect(
+      canRetryCommunityVersion(
+        installed({
+          state: CommunityProviderState.WITHDRAWN,
+          failed_version: "1.2.0",
+        }),
+      ),
+    ).toBe(false);
   });
 });
 

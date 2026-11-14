@@ -51,6 +51,8 @@ const { apiMock, hasScope, routeMock, routerMock, storeMock, toastMock } =
       refreshCommunityProviders: vi.fn(),
       installCommunityProvider: vi.fn(),
       removeCommunityProvider: vi.fn(),
+      updateCommunityProviders: vi.fn(),
+      dismissCommunityNotice: vi.fn(),
       fetchProviderManifests: vi.fn(),
     },
     hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -127,6 +129,7 @@ const MANIFESTS = [
 let configs: ProviderConfig[] = [];
 // what the server keeps of the community catalog
 let communityEnabled = false;
+let communityAutoUpdate = false;
 let community: CommunityProvider[] = [];
 let confirmations: DeleteConfirmationDialogEvent[] = [];
 const onConfirmation = (event: DeleteConfirmationDialogEvent) =>
@@ -157,6 +160,7 @@ beforeEach(() => {
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
   communityEnabled = false;
+  communityAutoUpdate = false;
   community = [];
   // the server offers what is not installed only while the switch is on
   apiMock.getCommunityProviders.mockImplementation(async () =>
@@ -170,7 +174,8 @@ beforeEach(() => {
   );
   apiMock.saveCoreConfig.mockImplementation(
     async (_domain: string, values: Record<string, boolean>) => {
-      communityEnabled = values.catalog_enabled;
+      communityEnabled = values.catalog_enabled ?? communityEnabled;
+      communityAutoUpdate = values.auto_update ?? communityAutoUpdate;
       return communityCoreConfig(communityEnabled);
     },
   );
@@ -1312,7 +1317,10 @@ describe("Catalog with the community catalog", () => {
       communityEnabled = true;
       community = [
         RADIO,
-        communityProvider("old", { state: CommunityProviderState.INSTALLED }),
+        communityProvider("old", {
+          state: CommunityProviderState.UPDATE_AVAILABLE,
+          notice: "moved",
+        }),
       ];
       routeMock.query = query;
 
@@ -1320,6 +1328,15 @@ describe("Catalog with the community catalog", () => {
 
       expect(
         document.querySelector("[data-testid='community-switch']"),
+      ).toBeNull();
+      expect(
+        document.querySelector("[data-testid='community-moved']"),
+      ).toBeNull();
+      expect(
+        document.querySelector("[data-testid='catalog-updates-count']"),
+      ).toBeNull();
+      expect(
+        document.querySelector("[data-testid='catalog-community-new']"),
       ).toBeNull();
       expect(
         document.querySelector("[data-testid='community-installed']"),
@@ -1330,6 +1347,417 @@ describe("Catalog with the community catalog", () => {
     },
   );
 });
+
+describe("Catalog with updates from the community catalog", () => {
+  const updatable = (domain: string, name: string, from: string, to: string) =>
+    communityProvider(domain, {
+      state: CommunityProviderState.UPDATE_AVAILABLE,
+      installed_version: from,
+      latest_version: to,
+      manifest: providerManifest({ domain, name }),
+    });
+
+  describe("in the Installed view", () => {
+    beforeEach(() => {
+      routeMock.query = { view: "installed" };
+      communityEnabled = true;
+      community = [
+        updatable("radio", "Radio Garden", "1.1.0", "1.2.0"),
+        updatable("dj", "DJ", "0.1.0", "0.2.0"),
+        communityProvider("lyrics", {
+          state: CommunityProviderState.RESTART_REQUIRED,
+          installed_version: "1.0.0",
+          pending_version: "1.1.0",
+          manifest: providerManifest({ domain: "lyrics", name: "Lyrics" }),
+        }),
+        communityProvider("fm", {
+          state: CommunityProviderState.INSTALLED,
+          installed_version: "1.9.0",
+          latest_version: "2.0.0",
+          failed_version: "2.0.0",
+          manifest: providerManifest({ domain: "fm", name: "FM" }),
+        }),
+      ];
+    });
+
+    it("shows the installed version and the one on offer, and how many updates wait", async () => {
+      await mountCatalog();
+
+      const radio = installedRow("radio");
+      expect(radio.textContent).toContain(
+        "settings.catalog.community.version 1.1.0",
+      );
+      expect(
+        radio.querySelector("[data-testid='community-installed-update']")
+          ?.textContent,
+      ).toContain("settings.catalog.community.update_available 1.2.0");
+      expect(
+        radio.querySelector("[data-testid='community-update']")?.textContent,
+      ).toContain("settings.catalog.community.update");
+      expect(
+        document.querySelector("[data-testid='catalog-updates-count']")
+          ?.textContent,
+      ).toContain("2");
+    });
+
+    it("updates one by its domain, with progress", async () => {
+      let finish!: (value: CommunityProvider[]) => void;
+      apiMock.updateCommunityProviders.mockReturnValue(
+        new Promise((resolve) => (finish = resolve)),
+      );
+      await mountCatalog();
+
+      updateButton("radio").click();
+      await flushPromises();
+
+      expect(apiMock.updateCommunityProviders).toHaveBeenCalledWith("radio");
+      expect(updateButton("radio").getAttribute("aria-busy")).toBe("true");
+      expect(updateButton("radio").textContent).toContain(
+        "settings.catalog.community.updating",
+      );
+
+      finish(
+        community.map((provider) =>
+          provider.domain === "radio"
+            ? {
+                ...provider,
+                state: CommunityProviderState.INSTALLED,
+                installed_version: "1.2.0",
+              }
+            : provider,
+        ),
+      );
+      await flushPromises();
+
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.updated_toast Radio Garden",
+      );
+      expect(
+        installedRow("radio").querySelector("[data-testid='community-update']"),
+      ).toBeNull();
+      expect(
+        document.querySelector("[data-testid='catalog-updates-count']")
+          ?.textContent,
+      ).toContain("1");
+    });
+
+    it("shows the server's message when an update fails", async () => {
+      apiMock.updateCommunityProviders.mockRejectedValue({
+        toString: () => "Its requirements clash with dj",
+      });
+      await mountCatalog();
+
+      updateButton("radio").click();
+      await flushPromises();
+
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "Its requirements clash with dj",
+      );
+      expect(updateButton("radio").getAttribute("aria-busy")).toBeNull();
+    });
+
+    it("updates all at once when more than one has an update", async () => {
+      apiMock.updateCommunityProviders.mockResolvedValue(community);
+      await mountCatalog();
+
+      document
+        .querySelector<HTMLElement>("[data-testid='community-update-all']")!
+        .click();
+      await flushPromises();
+
+      expect(apiMock.updateCommunityProviders).toHaveBeenCalledWith();
+    });
+
+    it("offers no update of all for a single update", async () => {
+      community = community.filter((provider) => provider.domain !== "dj");
+
+      await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='community-update-all']"),
+      ).toBeNull();
+      expect(updateButton("radio")).not.toBeNull();
+    });
+
+    it("says which version a restart of Music Assistant makes active, without a button", async () => {
+      await mountCatalog();
+
+      const lyrics = installedRow("lyrics");
+      expect(
+        lyrics.querySelector("[data-testid='community-installed-restart']")
+          ?.textContent,
+      ).toContain("settings.catalog.community.restart_hint 1.1.0");
+      expect(
+        lyrics.querySelector("[data-testid='community-installed-state']")
+          ?.textContent,
+      ).toContain("settings.catalog.community.state.restart_required");
+      expect(
+        lyrics.querySelector("[data-testid='community-update']"),
+      ).toBeNull();
+    });
+
+    it("says a version did not load, and tries it again by its domain", async () => {
+      apiMock.updateCommunityProviders.mockResolvedValue(community);
+      await mountCatalog();
+
+      const fm = installedRow("fm");
+      expect(
+        fm.querySelector("[data-testid='community-installed-failed']")
+          ?.textContent,
+      ).toContain("settings.catalog.community.failed_version 2.0.0");
+      expect(updateButton("fm").textContent).toContain(
+        "settings.catalog.community.retry_version",
+      );
+
+      updateButton("fm").click();
+      await flushPromises();
+
+      expect(apiMock.updateCommunityProviders).toHaveBeenCalledWith("fm");
+    });
+
+    it("turns automatic updates on", async () => {
+      await mountCatalog();
+      const toggle = autoUpdateToggle()!;
+      expect(toggle.getAttribute("aria-checked")).toBe("false");
+
+      toggle.click();
+      await flushPromises();
+
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
+        auto_update: true,
+      });
+      expect(autoUpdateToggle()!.getAttribute("aria-checked")).toBe("true");
+    });
+
+    it("leaves automatic updates out while the community catalog is off", async () => {
+      communityEnabled = false;
+
+      await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='community-installed']"),
+      ).not.toBeNull();
+      expect(autoUpdateToggle()).toBeNull();
+    });
+  });
+
+  it("shows the version on offer with its date and an Update in the details", async () => {
+    apiMock.providerManifests.radio = RADIO.manifest;
+    communityEnabled = true;
+    community = [
+      {
+        ...RADIO,
+        state: CommunityProviderState.UPDATE_AVAILABLE,
+        installed_version: "1.1.0",
+      },
+    ];
+    apiMock.updateCommunityProviders.mockResolvedValue(community);
+    await mountCatalog();
+
+    await openDetail("radio");
+
+    const detail = document.querySelector("[data-testid='catalog-detail']")!;
+    expect(
+      detail.querySelector("[data-testid='catalog-detail-update']")
+        ?.textContent,
+    ).toContain("settings.catalog.community.update_released 1.2.0 Nov 2, 2026");
+    detail
+      .querySelector<HTMLElement>(
+        "[data-testid='catalog-detail-update-button']",
+      )!
+      .click();
+    await flushPromises();
+
+    expect(apiMock.updateCommunityProviders).toHaveBeenCalledWith("radio");
+  });
+
+  it("shows the version on offer without a release date that is not a date", async () => {
+    apiMock.providerManifests.radio = RADIO.manifest;
+    communityEnabled = true;
+    community = [
+      {
+        ...RADIO,
+        state: CommunityProviderState.UPDATE_AVAILABLE,
+        installed_version: "1.1.0",
+        released: "soon",
+      },
+    ];
+    await mountCatalog();
+
+    await openDetail("radio");
+
+    const detail = document.querySelector("[data-testid='catalog-detail']")!;
+    expect(
+      detail.querySelector("[data-testid='catalog-detail-version']")
+        ?.textContent,
+    ).toContain("settings.catalog.community.version 1.1.0");
+    expect(
+      detail.querySelector("[data-testid='catalog-detail-update']")
+        ?.textContent,
+    ).toContain("settings.catalog.community.update_available 1.2.0");
+  });
+
+  describe("the notice that one moved", () => {
+    const MOVED = communityProvider("radio", {
+      state: CommunityProviderState.INSTALLED,
+      installed_version: "1.2.0",
+      notice: "moved",
+      manifest: RADIO.manifest,
+    });
+
+    beforeEach(() => {
+      apiMock.providerManifests.radio = RADIO.manifest;
+      community = [MOVED];
+    });
+
+    it("names it above the tabs, also while the community catalog is off", async () => {
+      await mountCatalog();
+
+      const notice = document.querySelector("[data-testid='community-moved']")!;
+      expect(notice.textContent).toContain(
+        "settings.catalog.community.moved_title Radio Garden",
+      );
+      expect(notice.textContent).toContain(
+        "settings.catalog.community.moved_message",
+      );
+      const tabs = document.querySelector("[data-testid='catalog-tabs']")!;
+      expect(
+        notice.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        linkTarget("[data-testid='community-moved-details']", notice),
+      ).toEqual({ name: "catalog", query: { detail: "radio" } });
+    });
+
+    it("is dismissed with the server and disappears", async () => {
+      apiMock.dismissCommunityNotice.mockResolvedValue(undefined);
+      await mountCatalog();
+
+      document
+        .querySelector<HTMLElement>("[data-testid='community-moved-dismiss']")!
+        .click();
+      await flushPromises();
+
+      expect(apiMock.dismissCommunityNotice).toHaveBeenCalledWith("radio");
+      expect(
+        document.querySelector("[data-testid='community-moved']"),
+      ).toBeNull();
+    });
+
+    it("opens the details its link names", async () => {
+      routeMock.query = { detail: "radio" };
+
+      await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='catalog-detail']")?.textContent,
+      ).toContain("Radio Garden");
+      expect(routerMock.replace).toHaveBeenCalledWith({ query: {} });
+    });
+  });
+
+  describe("what is new", () => {
+    beforeEach(() => {
+      communityEnabled = true;
+      community = [
+        RADIO,
+        communityProvider("dj", {
+          added: "2026-11-05T00:00:00Z",
+          released: "2026-11-06T00:00:00Z",
+          manifest: providerManifest({
+            domain: "dj",
+            name: "DJ",
+            tier: ProviderTier.COMMUNITY,
+          }),
+        }),
+        communityProvider("lyrics", {
+          added: "not a date",
+          released: "2026-11-10T00:00:00Z",
+          manifest: providerManifest({
+            domain: "lyrics",
+            name: "Lyrics",
+            tier: ProviderTier.COMMUNITY,
+          }),
+        }),
+      ];
+    });
+
+    it("leads All with what is new and what was updated, newest first, each once", async () => {
+      await mountCatalog();
+
+      expect(cardNames("[data-testid='catalog-community-new']")).toEqual([
+        "DJ",
+        "Radio Garden",
+      ]);
+      expect(cardNames("[data-testid='catalog-community-updated']")).toEqual([
+        "Lyrics",
+      ]);
+      expect(
+        document.querySelector("[data-testid='catalog-community-new'] h2")
+          ?.textContent,
+      ).toContain("settings.catalog.community.new_title");
+    });
+
+    it("leaves out a row with nothing to show", async () => {
+      community = [RADIO];
+
+      await mountCatalog();
+
+      expect(cardNames("[data-testid='catalog-community-new']")).toEqual([
+        "Radio Garden",
+      ]);
+      expect(
+        document.querySelector("[data-testid='catalog-community-updated']"),
+      ).toBeNull();
+    });
+
+    it("shows no rows on the tab of a type, or while searching", async () => {
+      routeMock.query = { types: "music" };
+      const wrapper = await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='catalog-community-new']"),
+      ).toBeNull();
+
+      routeMock.query = {};
+      wrapper.unmount();
+      const all = await mountCatalog();
+      await all.get("[data-slot='input-group-control']").setValue("dj");
+
+      expect(
+        document.querySelector("[data-testid='catalog-community-new']"),
+      ).toBeNull();
+    });
+
+    it("shows no rows while the community catalog is off", async () => {
+      communityEnabled = false;
+      community = [
+        communityProvider("radio", { state: CommunityProviderState.INSTALLED }),
+      ];
+
+      await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='catalog-community-new']"),
+      ).toBeNull();
+      expect(
+        document.querySelector("[data-testid='catalog-community-updated']"),
+      ).toBeNull();
+    });
+  });
+});
+
+function updateButton(domain: string): HTMLElement {
+  return installedRow(domain).querySelector<HTMLElement>(
+    "[data-testid='community-update']",
+  )!;
+}
+
+function autoUpdateToggle(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(
+    "[data-testid='community-auto-update-toggle']",
+  );
+}
 
 function communityCoreConfig(enabled: boolean): CoreConfig {
   return {
@@ -1342,6 +1770,7 @@ function communityCoreConfig(enabled: boolean): CoreConfig {
         description: OWN_RISK,
         value: enabled,
       },
+      auto_update: { key: "auto_update", value: communityAutoUpdate },
     },
   } as unknown as CoreConfig;
 }

@@ -2992,6 +2992,28 @@ export class MusicAssistantApi {
     );
   }
 
+  public updateCommunityProviders(
+    domain?: string,
+  ): Promise<CommunityProvider[]> {
+    // Update one installed community provider, or without a domain every one with
+    // an update on offer, and return its providers. By domain this also installs
+    // its failed_version again.
+    return this.sendCommand(
+      "community_catalog/update",
+      { domain },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public dismissCommunityNotice(domain: string): Promise<void> {
+    // Dismiss the notice of an installed community provider.
+    return this.sendCommand(
+      "community_catalog/dismiss_notice",
+      { domain },
+      { suppressGlobalError: true },
+    );
+  }
+
   // PlayerConfig related functions
 
   public async getPlayerConfigs(
