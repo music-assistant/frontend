@@ -117,6 +117,15 @@ export interface CatalogEntry {
   community?: CommunityProvider;
 }
 
+/** A row of entries to scroll through above the list. */
+export interface CatalogRow {
+  // names the row in its test id: catalog-<key>
+  key: string;
+  // the translation key of its title
+  title: string;
+  entries: CatalogEntry[];
+}
+
 export interface CatalogFilter {
   query?: string;
   types?: readonly string[];
@@ -286,8 +295,83 @@ export const getPopularEntries = (
     ),
   );
 
+/** How many entries a row of what is new in the community catalog shows at most. */
+export const COMMUNITY_ROW_SIZE = 8;
+
+/** How long an addition or a release counts as new in the community catalog. */
+export const COMMUNITY_RECENT_MS = 30 * 24 * 60 * 60 * 1000;
+
+export interface CommunityHighlights {
+  // the latest additions to the community catalog
+  added: CatalogEntry[];
+  // the latest releases among the rest
+  updated: CatalogEntry[];
+}
+
+/**
+ * What is new in the community catalog among the entries that can be added,
+ * newest first: added, or with a latest version released, within
+ * COMMUNITY_RECENT_MS. An entry is in one row at most, and one without a valid
+ * date for a row is left out of it.
+ *
+ * @param entries - The Catalog entries.
+ * @param now - The current time, in milliseconds since the epoch.
+ */
+export const getCommunityHighlights = (
+  entries: readonly CatalogEntry[],
+  now: number,
+): CommunityHighlights => {
+  const since = now - COMMUNITY_RECENT_MS;
+  const community = entries.filter((entry) => entry.community && entry.canAdd);
+  const added = newestFirst(community, (provider) => provider.added, since);
+  const addedDomains = new Set(added.map((entry) => entry.manifest.domain));
+  const updated = newestFirst(
+    community.filter((entry) => !addedDomains.has(entry.manifest.domain)),
+    (provider) => provider.released,
+    since,
+  );
+  return { added, updated };
+};
+
+/**
+ * The rows that lead a tab of the Catalog, each with something to show: the
+ * popular entries, and what is new in the community catalog when asked for.
+ *
+ * @param entries - The Catalog entries of the tab.
+ * @param withCommunity - Whether to show what is new in the community catalog.
+ * @param now - The current time, in milliseconds since the epoch.
+ */
+export const getCatalogRows = (
+  entries: readonly CatalogEntry[],
+  withCommunity: boolean,
+  now: number,
+): CatalogRow[] => {
+  const highlights = withCommunity
+    ? getCommunityHighlights(entries, now)
+    : { added: [], updated: [] };
+  return [
+    {
+      key: "popular",
+      title: "settings.catalog.popular",
+      entries: getPopularEntries(entries),
+    },
+    {
+      key: "community-new",
+      title: "settings.catalog.community.new_title",
+      entries: highlights.added,
+    },
+    {
+      key: "community-updated",
+      title: "settings.catalog.community.updated_title",
+      entries: highlights.updated,
+    },
+  ].filter((row) => row.entries.length);
+};
+
 export const CATALOG_ALL_TAB = "all";
 export const CATALOG_INSTALLED_TAB = "installed";
+/** The route query that opens the details of an entry, by its domain. */
+export const CATALOG_DETAIL_QUERY = "detail";
 
 /** A tab of the Catalog: everything, one type, or what is set up. */
 export type CatalogTab =
@@ -324,6 +408,22 @@ export const getCatalogTabQuery = (tab: CatalogTab): LocationQueryRaw => {
 export const getCatalogRoute = (type?: string): RouteLocationRaw => ({
   name: "catalog",
   query: isCatalogType(type) ? getCatalogTabQuery(type) : {},
+});
+
+/**
+ * The Catalog with the details of an entry open.
+ *
+ * @param domain - The domain of the entry.
+ */
+export const getCatalogDetailRoute = (domain: string): RouteLocationRaw => ({
+  name: "catalog",
+  query: { [CATALOG_DETAIL_QUERY]: domain },
+});
+
+/** The Catalog on its Installed view. */
+export const getCatalogInstalledRoute = (): RouteLocationRaw => ({
+  name: "catalog",
+  query: getCatalogTabQuery(CATALOG_INSTALLED_TAB),
 });
 
 /** The settings page of a provider type. */
@@ -397,6 +497,23 @@ export const groupInstalledProviders = (
 /** The GitHub profile of a maintainer, by its handle. */
 export const getMaintainerProfileUrl = (handle: string) =>
   `https://github.com/${handle.replace(/^@/, "")}`;
+
+function newestFirst(
+  entries: readonly CatalogEntry[],
+  getDate: (provider: CommunityProvider) => string | null,
+  since: number,
+): CatalogEntry[] {
+  // a date that is not a date parses to NaN, which is never this recent
+  return entries
+    .map((entry) => ({
+      entry,
+      time: Date.parse(getDate(entry.community!) ?? ""),
+    }))
+    .filter(({ time }) => time >= since)
+    .sort((a, b) => b.time - a.time)
+    .slice(0, COMMUNITY_ROW_SIZE)
+    .map(({ entry }) => entry);
+}
 
 function popularRank(domain: string): number {
   const index = POPULAR_PROVIDERS.indexOf(domain);

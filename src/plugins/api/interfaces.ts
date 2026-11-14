@@ -1854,6 +1854,10 @@ export interface CommunityProvider {
   state: CommunityProviderState;
   installed_version: string | null;
   latest_version: string | null;
+  // the version that becomes active at the next start of the server
+  pending_version: string | null;
+  // a version that failed to load here; installed again only when asked for by domain
+  failed_version: string | null;
   // ISO dates: when it entered the catalog, and when latest_version was released
   added: string | null;
   released: string | null;
@@ -1862,6 +1866,7 @@ export interface CommunityProvider {
   reason_url: string | null;
   // why an installed provider does not run
   error: ProviderError | null;
+  // what the app tells the admin until it is dismissed: "moved"
   notice: string | null;
 }
 

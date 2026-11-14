@@ -35,6 +35,11 @@
       @enable="community.setEnabled(true)"
     />
 
+    <CommunityMovedNotice
+      :providers="community.moved"
+      @dismiss="community.dismissNotice"
+    />
+
     <Tabs
       :model-value="activeTab"
       class="gap-6"
@@ -58,6 +63,20 @@
             <span v-if="loaded" class="text-muted-foreground">{{
               installedCount
             }}</span>
+            <Badge
+              v-if="community.updateCount"
+              class="h-5 min-w-5 rounded-full px-1.5"
+              :aria-label="
+                $t(
+                  'settings.catalog.community.updates_waiting',
+                  community.updateCount,
+                  { named: { count: community.updateCount } },
+                )
+              "
+              data-testid="catalog-updates-count"
+            >
+              {{ community.updateCount }}
+            </Badge>
           </TabsTrigger>
         </TabsList>
       </div>
@@ -99,10 +118,12 @@
           <CatalogCommunityInstalled
             v-if="showCommunityInstalled"
             :providers="community.installed"
-            :refreshing="community.refreshing"
             :removing="community.removing"
-            @refresh="community.refresh"
+            :is-updating="community.isUpdating"
+            :updating-all="community.updatingAll"
             @remove="community.remove"
+            @update="community.update"
+            @update-all="community.updateAll"
           />
           <CatalogInstalled :groups="installed" />
         </template>
@@ -133,7 +154,7 @@
 
           <CatalogBrowse
             :entries="filteredEntries"
-            :popular="popularEntries"
+            :rows="rows"
             :title="listTitle"
             :installing="community.installing"
             @open="openDetail"
@@ -166,7 +187,9 @@
       v-model:open="detailOpen"
       :entry="selectedEntry"
       :installing="community.installing.has(selectedEntry.manifest.domain)"
+      :updating="community.isUpdating(selectedEntry.manifest.domain)"
       @add="addEntry(selectedEntry, closeDetail)"
+      @update="community.update(selectedEntry.community!)"
     />
 
     <CommunityInstallNote
@@ -186,6 +209,8 @@ import CatalogCommunityBanner from "@/components/settings/catalog/CatalogCommuni
 import CatalogEntryDialog from "@/components/settings/catalog/CatalogEntryDialog.vue";
 import CatalogInstalled from "@/components/settings/catalog/CatalogInstalled.vue";
 import CommunityInstallNote from "@/components/settings/catalog/CommunityInstallNote.vue";
+import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
+import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -197,6 +222,7 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCatalogDetail } from "@/composables/settings/catalog/useCatalogDetail";
 import { useCommunityCatalog } from "@/composables/settings/catalog/useCommunityCatalog";
 import { useProviderCatalog } from "@/composables/settings/catalog/useProviderCatalog";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
@@ -211,10 +237,10 @@ import {
   type CatalogTab,
   FEATURE_REQUESTS_URL,
   filterCatalogEntries,
+  getCatalogRows,
   getCatalogTab,
   getCatalogTabQuery,
   getCatalogType,
-  getPopularEntries,
   getTypeSettingsRoute,
   needsInstall,
 } from "@/helpers/provider_catalog";
@@ -258,8 +284,9 @@ const noteOpen = ref(false);
 
 const searchQuery = ref("");
 const selectedStages = ref<string[]>([]);
-const selectedDomain = ref<string | null>(null);
-const detailOpen = ref(false);
+
+const { selectedEntry, detailOpen, openDetail, closeDetail } =
+  useCatalogDetail(entries);
 
 // a type gets a tab only when there is something of it to add
 const tabTypes = computed(() =>
@@ -301,11 +328,16 @@ const filteredEntries = computed(() =>
   }),
 );
 
-// the row leads the tab only until a search or a filter narrows it down
-const popularEntries = computed(() =>
+// the rows lead the tab only until a search or a filter narrows it down;
+// what is new in the community catalog only leads All, while it is shown
+const rows = computed(() =>
   searchQuery.value.trim() || selectedStages.value.length
     ? []
-    : getPopularEntries(typeEntries.value),
+    : getCatalogRows(
+        typeEntries.value,
+        !activeType.value && community.enabled,
+        Date.now(),
+      ),
 );
 
 const listTitle = computed(() =>
@@ -314,22 +346,8 @@ const listTitle = computed(() =>
     : $t("settings.catalog.everything"),
 );
 
-// looked up again on every change, so an added instance shows in the open detail
-const selectedEntry = computed(() =>
-  entries.value.find((entry) => entry.manifest.domain === selectedDomain.value),
-);
-
 const selectTab = (tab: string | number) => {
   void router.replace({ query: getCatalogTabQuery(tab as CatalogTab) });
-};
-
-const openDetail = (entry: CatalogEntry) => {
-  selectedDomain.value = entry.manifest.domain;
-  detailOpen.value = true;
-};
-
-const closeDetail = () => {
-  detailOpen.value = false;
 };
 
 const openMenu = (evt: MouseEvent) => {

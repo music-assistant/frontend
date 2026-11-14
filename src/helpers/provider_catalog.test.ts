@@ -1,4 +1,5 @@
 import {
+  type CommunityProvider,
   CommunityProviderState,
   type ProviderConfig,
   type ProviderManifest,
@@ -15,10 +16,16 @@ import {
   CATALOG_ALL_TAB,
   CATALOG_INSTALLED_TAB,
   type CatalogEntry,
+  COMMUNITY_RECENT_MS,
+  COMMUNITY_ROW_SIZE,
   filterCatalogEntries,
+  getCatalogDetailRoute,
+  getCatalogInstalledRoute,
   getCatalogRoute,
+  getCatalogRows,
   getCatalogTab,
   getCatalogTabQuery,
+  getCommunityHighlights,
   getEntryMaintainers,
   getManageRoute,
   getMaintainerProfileUrl,
@@ -29,6 +36,9 @@ import {
   needsInstall,
   sortPopularFirst,
 } from "./provider_catalog";
+
+// the time the rows of what is new are made at
+const NOW = Date.parse("2026-11-30T00:00:00Z");
 
 // a cross-section of what a server ships: every type, single and multi
 // instance, self-service or not, builtin, retired and a core module
@@ -583,6 +593,140 @@ describe("groupInstalledProviders", () => {
   });
 });
 
+describe("getCommunityHighlights", () => {
+  it("lists the latest additions, and the latest releases of the rest, newest first", () => {
+    const highlights = getCommunityHighlights(
+      [
+        communityEntry("older", {
+          added: "2026-11-05T00:00:00Z",
+          released: "2026-11-20T00:00:00Z",
+        }),
+        communityEntry("newest", {
+          added: "2026-11-10T00:00:00Z",
+          // released later than any other, but new wins
+          released: "2026-11-25T00:00:00Z",
+        }),
+        communityEntry("oldest", {
+          added: "2026-11-01T00:00:00Z",
+          released: "2026-11-02T00:00:00Z",
+        }),
+        { manifest: manifestOf("spotify"), instances: [], canAdd: true },
+      ],
+      NOW,
+    );
+
+    expect(domains(highlights.added)).toEqual(["newest", "older", "oldest"]);
+    expect(highlights.updated).toEqual([]);
+  });
+
+  it("keeps an entry out of the latest releases once it is among the additions", () => {
+    const entries = Array.from({ length: COMMUNITY_ROW_SIZE + 2 }, (_, i) =>
+      communityEntry(`radio${i}`, {
+        added: `2026-11-${String(10 + i).padStart(2, "0")}T00:00:00Z`,
+        // the oldest addition has the latest release
+        released: `2026-11-${String(29 - i).padStart(2, "0")}T00:00:00Z`,
+      }),
+    );
+
+    const { added, updated } = getCommunityHighlights(entries, NOW);
+
+    expect(added).toHaveLength(COMMUNITY_ROW_SIZE);
+    expect(domains(added)[0]).toBe(`radio${COMMUNITY_ROW_SIZE + 1}`);
+    expect(domains(updated)).toEqual(["radio0", "radio1"]);
+  });
+
+  it("leaves out what was added or released longer ago than the window", () => {
+    const edge = new Date(NOW - COMMUNITY_RECENT_MS).toISOString();
+    const before = new Date(NOW - COMMUNITY_RECENT_MS - 1).toISOString();
+
+    const { added, updated } = getCommunityHighlights(
+      [
+        communityEntry("new", { added: edge, released: before }),
+        // added before the window, but its latest version is recent
+        communityEntry("updated", { added: before, released: edge }),
+        communityEntry("stale", { added: before, released: before }),
+      ],
+      NOW,
+    );
+
+    expect(domains(added)).toEqual(["new"]);
+    expect(domains(updated)).toEqual(["updated"]);
+  });
+
+  it("leaves out what cannot be added and a date that is not a date", () => {
+    const { added, updated } = getCommunityHighlights(
+      [
+        communityEntry("setup", { added: "2026-11-01T00:00:00Z" }, false),
+        communityEntry("nodate", { added: "soon", released: null }),
+        communityEntry("released", { added: null }),
+      ],
+      NOW,
+    );
+
+    expect(added).toEqual([]);
+    expect(domains(updated)).toEqual(["released"]);
+  });
+
+  it("has nothing to show without entries from the community catalog", () => {
+    expect(getCommunityHighlights([], NOW)).toEqual({ added: [], updated: [] });
+  });
+});
+
+describe("getCatalogRows", () => {
+  const entries = [
+    communityEntry("radio", { added: "2026-11-20T00:00:00Z" }),
+    communityEntry("dj", {
+      added: "2026-01-01T00:00:00Z",
+      released: "2026-11-21T00:00:00Z",
+    }),
+    { manifest: manifestOf("tidal"), instances: [], canAdd: true },
+    { manifest: manifestOf("spotify"), instances: [], canAdd: true },
+  ];
+
+  it("leads with the popular entries, then what is new in the community catalog", () => {
+    const rows = getCatalogRows(entries, true, NOW);
+
+    expect(
+      rows.map((row) => [row.key, row.title, domains(row.entries)]),
+    ).toEqual([
+      ["popular", "settings.catalog.popular", ["spotify", "tidal"]],
+      ["community-new", "settings.catalog.community.new_title", ["radio"]],
+      ["community-updated", "settings.catalog.community.updated_title", ["dj"]],
+    ]);
+  });
+
+  it("shows only the popular entries without the community catalog", () => {
+    const rows = getCatalogRows(entries, false, NOW);
+
+    expect(rows.map((row) => row.key)).toEqual(["popular"]);
+  });
+
+  it("leaves out a row with nothing to show", () => {
+    expect(
+      getCatalogRows(entries.slice(0, 1), true, NOW).map((row) => row.key),
+    ).toEqual(["community-new"]);
+    expect(getCatalogRows([], true, NOW)).toEqual([]);
+  });
+});
+
+describe("getCatalogInstalledRoute", () => {
+  it("opens the Installed view of the Catalog", () => {
+    expect(getCatalogInstalledRoute()).toEqual({
+      name: "catalog",
+      query: { view: "installed" },
+    });
+  });
+});
+
+describe("getCatalogDetailRoute", () => {
+  it("opens the Catalog with the details of an entry", () => {
+    expect(getCatalogDetailRoute("radio")).toEqual({
+      name: "catalog",
+      query: { detail: "radio" },
+    });
+  });
+});
+
 describe("getMaintainerProfileUrl", () => {
   it("links a handle to its GitHub profile", () => {
     expect(getMaintainerProfileUrl("@jane")).toBe("https://github.com/jane");
@@ -618,4 +762,22 @@ function entry(entries: CatalogEntry[], domain: string): CatalogEntry {
   const found = entries.find((item) => item.manifest.domain === domain);
   if (!found) throw new Error(`no entry for ${domain}`);
   return found;
+}
+
+function domains(entries: CatalogEntry[]): string[] {
+  return entries.map((item) => item.manifest.domain);
+}
+
+function communityEntry(
+  domain: string,
+  overrides: Partial<CommunityProvider>,
+  canAdd = true,
+): CatalogEntry {
+  const provider = communityProvider(domain, overrides);
+  return {
+    manifest: provider.manifest,
+    instances: [],
+    canAdd,
+    community: provider,
+  };
 }

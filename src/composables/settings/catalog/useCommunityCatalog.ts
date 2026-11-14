@@ -1,7 +1,11 @@
 import {
+  COMMUNITY_CATALOG_AUTO_UPDATE_KEY,
   COMMUNITY_CATALOG_DOMAIN,
   COMMUNITY_CATALOG_ENABLED_KEY,
+  COMMUNITY_NOTICE_MOVED,
+  getCommunityUpdateOutcome,
   getInstalledCommunityProviders,
+  hasCommunityUpdate,
 } from "@/helpers/community_catalog";
 import { getCatalogType } from "@/helpers/provider_catalog";
 import { api } from "@/plugins/api";
@@ -22,9 +26,9 @@ import { toast } from "vue-sonner";
 export type CommunityCatalogStatus = "loading" | "ready" | "unavailable";
 
 /**
- * The community catalog for an admin: its switch, what it lists, and installing
- * and removing from it, kept in step with the server. For anyone else it stays
- * empty and makes no call.
+ * The community catalog for an admin: its switch, what it lists, and installing,
+ * updating and removing from it, kept in step with the server. For anyone else
+ * it stays empty and makes no call.
  */
 export function useCommunityCatalog() {
   // the commands need the system manage scope
@@ -33,18 +37,32 @@ export function useCommunityCatalog() {
   const providers = ref<CommunityProvider[]>([]);
   // the switch: its value, and the own-risk text the server gives it
   const switchEntry = ref<ConfigEntry | null>(null);
+  const autoUpdateEntry = ref<ConfigEntry | null>(null);
   const status = ref<CommunityCatalogStatus>(isAdmin ? "loading" : "ready");
   const saving = ref(false);
+  const savingAutoUpdate = ref(false);
   const refreshing = ref(false);
   const installing = ref(new Set<string>());
   const removing = ref(new Set<string>());
+  const updating = ref(new Set<string>());
+  const updatingAll = ref(false);
 
   // whether the page has what it needs from the community catalog, either way
   const settled = computed(() => status.value !== "loading");
   const available = computed(() => isAdmin && status.value === "ready");
   const enabled = computed(() => switchEntry.value?.value === true);
+  const autoUpdate = computed(() => autoUpdateEntry.value?.value === true);
   const installed = computed(() =>
     available.value ? getInstalledCommunityProviders(providers.value) : [],
+  );
+  const updateCount = computed(
+    () => installed.value.filter(hasCommunityUpdate).length,
+  );
+  // the ones the server installed by itself because they moved here
+  const moved = computed(() =>
+    installed.value.filter(
+      (provider) => provider.notice === COMMUNITY_NOTICE_MOVED,
+    ),
   );
   // what joins the Catalog's list; nothing while it is not available
   const listed = computed(() => (available.value ? providers.value : []));
@@ -57,6 +75,8 @@ export function useCommunityCatalog() {
         api.getCommunityProviders(),
       ]);
       switchEntry.value = config.values[COMMUNITY_CATALOG_ENABLED_KEY];
+      autoUpdateEntry.value =
+        config.values[COMMUNITY_CATALOG_AUTO_UPDATE_KEY] ?? null;
       providers.value = list;
       status.value = "ready";
     } catch {
@@ -149,6 +169,132 @@ export function useCommunityCatalog() {
     });
   };
 
+  /**
+   * Whether an installed one is being updated, on its own or with all the others.
+   *
+   * @param domain - The domain of the installed one.
+   */
+  const isUpdating = function (domain: string): boolean {
+    if (updating.value.has(domain)) return true;
+    const provider = providers.value.find((item) => item.domain === domain);
+    return updatingAll.value && !!provider && hasCommunityUpdate(provider);
+  };
+
+  /**
+   * Update an installed one to the version on offer, also when that version
+   * failed to load before; nothing happens while it is being updated already.
+   *
+   * @param provider - The installed one.
+   */
+  const update = async function (provider: CommunityProvider) {
+    const { domain } = provider;
+    if (isUpdating(domain)) return;
+    const name = provider.manifest.name;
+    const version = provider.latest_version;
+    updating.value.add(domain);
+    try {
+      providers.value = await api.updateCommunityProviders(domain);
+    } catch (err) {
+      toast.error(String(err));
+      return;
+    } finally {
+      updating.value.delete(domain);
+    }
+    const result = providers.value.find((item) => item.domain === domain);
+    const outcome = getCommunityUpdateOutcome(result, version);
+    if (outcome === "failed") {
+      toast.error(
+        $t("settings.catalog.community.update_failed_toast", { name, version }),
+      );
+      return;
+    }
+    toast.success(
+      outcome === "restart"
+        ? $t("settings.catalog.community.restart_hint", { version })
+        : $t("settings.catalog.community.updated_toast", { name }),
+    );
+  };
+
+  /** Update every installed one that has an update on offer. */
+  const updateAll = async function () {
+    if (updatingAll.value) return;
+    // the version each one is to get
+    const targets = installed.value
+      .filter(hasCommunityUpdate)
+      .map((provider) => [provider.domain, provider.latest_version] as const);
+    updatingAll.value = true;
+    try {
+      providers.value = await api.updateCommunityProviders();
+    } catch (err) {
+      toast.error(String(err));
+      return;
+    } finally {
+      updatingAll.value = false;
+    }
+    // the server skips one it cannot update, and puts one that does not load
+    // back on its previous version
+    const outcomes = targets.map(([domain, version]) =>
+      getCommunityUpdateOutcome(
+        providers.value.find((provider) => provider.domain === domain),
+        version,
+      ),
+    );
+    if (outcomes.includes("failed")) {
+      toast.error($t("settings.catalog.community.update_all_failed"));
+      return;
+    }
+    toast.success(
+      $t(
+        outcomes.includes("restart")
+          ? "settings.catalog.community.updated_all_restart"
+          : "settings.catalog.community.updated_all_toast",
+      ),
+    );
+  };
+
+  /**
+   * Turn automatic updates on or off.
+   *
+   * @param value - Whether updates install by themselves.
+   */
+  const setAutoUpdate = async function (value: boolean) {
+    savingAutoUpdate.value = true;
+    try {
+      const config = await api.saveCoreConfig(COMMUNITY_CATALOG_DOMAIN, {
+        [COMMUNITY_CATALOG_AUTO_UPDATE_KEY]: value,
+      });
+      autoUpdateEntry.value =
+        config.values[COMMUNITY_CATALOG_AUTO_UPDATE_KEY] ?? null;
+    } catch {
+      // the api reports a failed save itself, and the switch keeps its state
+      return;
+    } finally {
+      savingAutoUpdate.value = false;
+    }
+    toast.success(
+      $t(
+        value
+          ? "settings.catalog.community.auto_update_on_toast"
+          : "settings.catalog.community.auto_update_off_toast",
+      ),
+    );
+  };
+
+  /**
+   * Dismiss the notice of an installed one.
+   *
+   * @param provider - The installed one with a notice.
+   */
+  const dismissNotice = async function (provider: CommunityProvider) {
+    try {
+      await api.dismissCommunityNotice(provider.domain);
+    } catch (err) {
+      toast.error(String(err));
+      return;
+    }
+    replaceProvider({ ...provider, notice: null });
+  };
+
   /** Fetch the community catalog from the project now. */
   const refresh = async function () {
     refreshing.value = true;
@@ -229,16 +375,27 @@ export function useCommunityCatalog() {
     settled,
     available,
     enabled,
+    autoUpdate,
     listed,
     installed,
+    updateCount,
+    moved,
     saving,
+    savingAutoUpdate,
     refreshing,
     installing,
     removing,
+    updating,
+    updatingAll,
+    isUpdating,
     retry,
     setEnabled,
+    setAutoUpdate,
     install,
+    update,
+    updateAll,
     remove,
+    dismissNotice,
     refresh,
   };
 }

@@ -88,6 +88,9 @@
         <p v-if="versionText" class="m-0" data-testid="catalog-detail-version">
           {{ versionText }}
         </p>
+        <p v-if="updateText" class="m-0" data-testid="catalog-detail-update">
+          {{ updateText }}
+        </p>
       </div>
 
       <div
@@ -105,6 +108,21 @@
           <template v-else>
             <Plus class="size-4" />
             {{ $t("settings.catalog.add") }}
+          </template>
+        </Button>
+        <Button
+          v-if="updateText"
+          variant="outline"
+          :loading="updating"
+          data-testid="catalog-detail-update-button"
+          @click="emit('update')"
+        >
+          <template v-if="updating">
+            {{ $t("settings.catalog.community.updating") }}
+          </template>
+          <template v-else>
+            <Download class="size-4" />
+            {{ $t("settings.catalog.community.update") }}
           </template>
         </Button>
         <Button
@@ -188,6 +206,7 @@ import { useCanonicalLocale } from "@/composables/useCanonicalLocale";
 import {
   formatCatalogDate,
   getCommunityLinkUrl,
+  hasCommunityUpdate,
   isCommunityInstalled,
 } from "@/helpers/community_catalog";
 import {
@@ -204,6 +223,7 @@ import { $t } from "@/plugins/i18n";
 import {
   BookOpen,
   Check,
+  Download,
   FolderGit2,
   LifeBuoy,
   MessageSquarePlus,
@@ -218,6 +238,8 @@ interface Props {
   entry: CatalogEntry;
   // whether it is being installed from the community catalog
   installing?: boolean;
+  // whether it is being updated from the community catalog
+  updating?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -225,6 +247,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: "update:open", value: boolean): void;
   (e: "add"): void;
+  (e: "update"): void;
 }>();
 
 const {
@@ -272,6 +295,19 @@ const versionText = computed(() => {
   return date
     ? $t("settings.catalog.community.version_released", { version, date })
     : $t("settings.catalog.community.version", { version });
+});
+
+// the version on offer for one installed with an update, and when it was released
+const updateText = computed(() => {
+  const provider = props.entry.community;
+  if (!provider || !hasCommunityUpdate(provider)) return "";
+  const version = provider.latest_version;
+  const date = provider.released
+    ? formatCatalogDate(provider.released, locale.value)
+    : "";
+  return date
+    ? $t("settings.catalog.community.update_released", { version, date })
+    : $t("settings.catalog.community.update_available", { version });
 });
 
 const credits = computed(() => props.entry.manifest.credits.join(" / "));

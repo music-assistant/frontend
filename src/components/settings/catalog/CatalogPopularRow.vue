@@ -1,8 +1,8 @@
 <template>
-  <section class="space-y-3" data-testid="catalog-popular">
+  <section class="space-y-3">
     <div class="flex items-center justify-between gap-4">
       <h2 class="m-0 text-lg font-semibold">
-        {{ $t("settings.catalog.popular") }}
+        {{ title }}
       </h2>
       <!-- touch screens swipe the row; a mouse needs a way to move it -->
       <div class="flex gap-1 max-md:hidden">
@@ -35,6 +35,7 @@
       >
         <CatalogCard
           :entry="entry"
+          :installing="installing.has(entry.manifest.domain)"
           @open="emit('open', entry)"
           @add="emit('add', entry)"
         />
@@ -53,6 +54,9 @@ import { useTemplateRef } from "vue";
 
 interface Props {
   entries: CatalogEntry[];
+  title: string;
+  // the domains being installed from the community catalog
+  installing: ReadonlySet<string>;
 }
 
 defineProps<Props>();
