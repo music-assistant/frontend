@@ -111,7 +111,7 @@
             :providers="community.installed"
             :refreshing="community.refreshing"
             :removing="community.removing"
-            :updating="community.updating"
+            :is-updating="community.isUpdating"
             :updating-all="community.updatingAll"
             :enabled="community.enabled"
             :auto-update="community.autoUpdate"
@@ -184,7 +184,7 @@
       v-model:open="detailOpen"
       :entry="selectedEntry"
       :installing="community.installing.has(selectedEntry.manifest.domain)"
-      :updating="community.updating.has(selectedEntry.manifest.domain)"
+      :updating="community.isUpdating(selectedEntry.manifest.domain)"
       @add="addEntry(selectedEntry, closeDetail)"
       @update="community.update(selectedEntry.community!)"
     />
@@ -219,32 +219,30 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCatalogDetail } from "@/composables/settings/catalog/useCatalogDetail";
 import { useCommunityCatalog } from "@/composables/settings/catalog/useCommunityCatalog";
 import { useProviderCatalog } from "@/composables/settings/catalog/useProviderCatalog";
 import { startAddProvider } from "@/helpers/provider_add";
 import {
   ADDABLE_PROVIDER_STAGES,
   CATALOG_ALL_TAB,
-  CATALOG_DETAIL_QUERY,
   CATALOG_INSTALLED_TAB,
   CATALOG_TYPES,
   type CatalogEntry,
-  type CatalogRow,
   type CatalogTab,
   FEATURE_REQUESTS_URL,
   filterCatalogEntries,
+  getCatalogRows,
   getCatalogTab,
   getCatalogTabQuery,
   getCatalogType,
-  getCommunityHighlights,
-  getPopularEntries,
   getTypeSettingsRoute,
   needsInstall,
 } from "@/helpers/provider_catalog";
 import { getProviderStageTranslationKey } from "@/helpers/provider_config";
 import { $t } from "@/plugins/i18n";
 import { Blocks, ChevronRight, CircleAlert, RefreshCw } from "@lucide/vue";
-import { computed, reactive, ref, watch } from "vue";
+import { computed, reactive, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
@@ -274,8 +272,9 @@ const noteOpen = ref(false);
 
 const searchQuery = ref("");
 const selectedStages = ref<string[]>([]);
-const selectedDomain = ref<string | null>(null);
-const detailOpen = ref(false);
+
+const { selectedEntry, detailOpen, openDetail, closeDetail } =
+  useCatalogDetail(entries);
 
 // a type gets a tab only when there is something of it to add
 const tabTypes = computed(() =>
@@ -319,30 +318,15 @@ const filteredEntries = computed(() =>
 
 // the rows lead the tab only until a search or a filter narrows it down;
 // what is new in the community catalog only leads All, while it is shown
-const rows = computed((): CatalogRow[] => {
-  if (searchQuery.value.trim() || selectedStages.value.length) return [];
-  const highlights =
-    !activeType.value && community.enabled
-      ? getCommunityHighlights(entries.value)
-      : { added: [], updated: [] };
-  return [
-    {
-      key: "popular",
-      title: $t("settings.catalog.popular"),
-      entries: getPopularEntries(typeEntries.value),
-    },
-    {
-      key: "community-new",
-      title: $t("settings.catalog.community.new_title"),
-      entries: highlights.added,
-    },
-    {
-      key: "community-updated",
-      title: $t("settings.catalog.community.updated_title"),
-      entries: highlights.updated,
-    },
-  ].filter((row) => row.entries.length);
-});
+const rows = computed(() =>
+  searchQuery.value.trim() || selectedStages.value.length
+    ? []
+    : getCatalogRows(
+        typeEntries.value,
+        !activeType.value && community.enabled,
+        Date.now(),
+      ),
+);
 
 const listTitle = computed(() =>
   activeType.value
@@ -350,37 +334,9 @@ const listTitle = computed(() =>
     : $t("settings.catalog.everything"),
 );
 
-// looked up again on every change, so an added instance shows in the open detail
-const selectedEntry = computed(() =>
-  entries.value.find((entry) => entry.manifest.domain === selectedDomain.value),
-);
-
 const selectTab = (tab: string | number) => {
   void router.replace({ query: getCatalogTabQuery(tab as CatalogTab) });
 };
-
-const openDetail = (entry: CatalogEntry) => {
-  selectedDomain.value = entry.manifest.domain;
-  detailOpen.value = true;
-};
-
-const closeDetail = () => {
-  detailOpen.value = false;
-};
-
-// a link elsewhere opens the details of an entry; the query is dropped again,
-// so the same link opens them once more after they are closed
-watch(
-  () => route.query[CATALOG_DETAIL_QUERY],
-  (domain) => {
-    if (typeof domain !== "string") return;
-    selectedDomain.value = domain;
-    detailOpen.value = true;
-    const { [CATALOG_DETAIL_QUERY]: _detail, ...query } = route.query;
-    void router.replace({ query });
-  },
-  { immediate: true },
-);
 
 // one from the community catalog is added only after its note is confirmed,
 // shown each time

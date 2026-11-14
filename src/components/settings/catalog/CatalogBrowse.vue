@@ -4,7 +4,7 @@
       v-for="row in rows"
       :key="row.key"
       :entries="row.entries"
-      :title="row.title"
+      :title="$t(row.title)"
       :installing="installing"
       :data-testid="`catalog-${row.key}`"
       @open="emit('open', $event)"
@@ -37,6 +37,7 @@ import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import CatalogPopularRow from "@/components/settings/catalog/CatalogPopularRow.vue";
 import CatalogSectionHeading from "@/components/settings/catalog/CatalogSectionHeading.vue";
 import type { CatalogEntry, CatalogRow } from "@/helpers/provider_catalog";
+import { $t } from "@/plugins/i18n";
 import { SearchX } from "@lucide/vue";
 
 interface Props {

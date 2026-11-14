@@ -145,7 +145,7 @@
             v-if="update || retry"
             size="sm"
             :variant="update ? 'default' : 'outline'"
-            :loading="isUpdating(provider)"
+            :loading="isUpdating(provider.domain)"
             :aria-label="
               $t(
                 update
@@ -157,7 +157,7 @@
             data-testid="community-update"
             @click="emit('update', provider)"
           >
-            <template v-if="isUpdating(provider)">
+            <template v-if="isUpdating(provider.domain)">
               {{ $t("settings.catalog.community.updating") }}
             </template>
             <template v-else-if="update">
@@ -239,8 +239,8 @@ interface Props {
   refreshing: boolean;
   // the domains being removed
   removing: ReadonlySet<string>;
-  // the domains being updated
-  updating: ReadonlySet<string>;
+  // whether one is being updated, on its own or with all the others
+  isUpdating: (domain: string) => boolean;
   updatingAll: boolean;
   // whether the community catalog is switched on, which automatic updates need
   enabled: boolean;
@@ -276,14 +276,6 @@ const rows = computed(() =>
 const updateCount = computed(
   () => rows.value.filter((row) => row.update).length,
 );
-
-// updating all shows on every one with an update
-function isUpdating(provider: CommunityProvider): boolean {
-  return (
-    props.updating.has(provider.domain) ||
-    (props.updatingAll && hasCommunityUpdate(provider))
-  );
-}
 
 // what it is and which version is installed
 function getSummary(provider: CommunityProvider): string {

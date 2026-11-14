@@ -67,6 +67,29 @@ export const canRetryCommunityVersion = (
   !!provider.failed_version &&
   provider.failed_version === provider.latest_version;
 
+/** How an update ended: the new version runs, waits for a restart, or failed. */
+export type CommunityUpdateOutcome = "updated" | "restart" | "failed";
+
+/**
+ * How an update to a version ended, by what the community catalog lists after it.
+ * One that did not load and was put back on its previous version has failed.
+ *
+ * @param provider - The installed one after the update, undefined when no longer listed.
+ * @param version - The version it was to get.
+ */
+export const getCommunityUpdateOutcome = (
+  provider: CommunityProvider | undefined,
+  version: string | null,
+): CommunityUpdateOutcome => {
+  if (
+    provider?.state === CommunityProviderState.RESTART_REQUIRED &&
+    provider.pending_version === version
+  ) {
+    return "restart";
+  }
+  return provider?.installed_version === version ? "updated" : "failed";
+};
+
 /**
  * The translation key of the state an installed one shows, or undefined for one
  * that runs as it should.

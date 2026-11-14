@@ -801,6 +801,20 @@ describe("Providers with something that moved to the community catalog", () => {
     expect(notice.props("providers")).toEqual([]);
   });
 
+  it("still lists what is set up when the server refuses the community catalog", async () => {
+    apiMock.getCommunityProviders.mockRejectedValue(
+      new Error("not available in safe mode"),
+    );
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
+    expect(
+      wrapper.getComponent(CommunityMovedNotice).props("providers"),
+    ).toEqual([]);
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
   it("tells a member nothing and asks the server nothing", async () => {
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),

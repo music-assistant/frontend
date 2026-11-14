@@ -11,6 +11,7 @@ import {
   getCommunityLinkUrl,
   getCommunityStateLabel,
   getCommunityStateText,
+  getCommunityUpdateOutcome,
   getInstalledCommunityProviders,
   getRepositoryUrl,
   hasCommunityUpdate,
@@ -123,6 +124,46 @@ describe("updates of one from the community catalog", () => {
         }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("getCommunityUpdateOutcome", () => {
+  const after = (overrides: Partial<CommunityProvider>) =>
+    communityProvider("radio", {
+      state: CommunityProviderState.INSTALLED,
+      installed_version: "1.1.0",
+      latest_version: "1.2.0",
+      ...overrides,
+    });
+
+  it("is updated once the version runs", () => {
+    expect(
+      getCommunityUpdateOutcome(after({ installed_version: "1.2.0" }), "1.2.0"),
+    ).toBe("updated");
+  });
+
+  it("waits for a restart that makes the version live", () => {
+    const pending = after({
+      state: CommunityProviderState.RESTART_REQUIRED,
+      pending_version: "1.2.0",
+      // a version tried again keeps its failed mark until it runs
+      failed_version: "1.2.0",
+    });
+
+    expect(getCommunityUpdateOutcome(pending, "1.2.0")).toBe("restart");
+  });
+
+  it("failed when the server put the previous version back, skipped it or no longer lists it", () => {
+    expect(
+      getCommunityUpdateOutcome(after({ failed_version: "1.2.0" }), "1.2.0"),
+    ).toBe("failed");
+    expect(
+      getCommunityUpdateOutcome(
+        after({ state: CommunityProviderState.UPDATE_AVAILABLE }),
+        "1.2.0",
+      ),
+    ).toBe("failed");
+    expect(getCommunityUpdateOutcome(undefined, "1.2.0")).toBe("failed");
   });
 });
 

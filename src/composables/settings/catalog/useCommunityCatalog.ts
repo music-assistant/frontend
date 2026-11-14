@@ -3,6 +3,7 @@ import {
   COMMUNITY_CATALOG_DOMAIN,
   COMMUNITY_CATALOG_ENABLED_KEY,
   COMMUNITY_NOTICE_MOVED,
+  getCommunityUpdateOutcome,
   getInstalledCommunityProviders,
   hasCommunityUpdate,
 } from "@/helpers/community_catalog";
@@ -10,7 +11,6 @@ import { getCatalogType } from "@/helpers/provider_catalog";
 import { api } from "@/plugins/api";
 import {
   type CommunityProvider,
-  CommunityProviderState,
   type ConfigEntry,
   EventType,
   type ProviderManifest,
@@ -160,15 +160,27 @@ export function useCommunityCatalog() {
   };
 
   /**
+   * Whether an installed one is being updated, on its own or with all the others.
+   *
+   * @param domain - The domain of the installed one.
+   */
+  const isUpdating = function (domain: string): boolean {
+    if (updating.value.has(domain)) return true;
+    const provider = providers.value.find((item) => item.domain === domain);
+    return updatingAll.value && !!provider && hasCommunityUpdate(provider);
+  };
+
+  /**
    * Update an installed one to the version on offer, also when that version
-   * failed to load before.
+   * failed to load before; nothing happens while it is being updated already.
    *
    * @param provider - The installed one.
    */
   const update = async function (provider: CommunityProvider) {
     const { domain } = provider;
-    if (updating.value.has(domain)) return;
+    if (isUpdating(domain)) return;
     const name = provider.manifest.name;
+    const version = provider.latest_version;
     updating.value.add(domain);
     try {
       providers.value = await api.updateCommunityProviders(domain);
@@ -179,11 +191,16 @@ export function useCommunityCatalog() {
       updating.value.delete(domain);
     }
     const result = providers.value.find((item) => item.domain === domain);
+    const outcome = getCommunityUpdateOutcome(result, version);
+    if (outcome === "failed") {
+      toast.error(
+        $t("settings.catalog.community.update_failed_toast", { name, version }),
+      );
+      return;
+    }
     toast.success(
-      result?.state === CommunityProviderState.RESTART_REQUIRED
-        ? $t("settings.catalog.community.restart_hint", {
-            version: result.pending_version,
-          })
+      outcome === "restart"
+        ? $t("settings.catalog.community.restart_hint", { version })
         : $t("settings.catalog.community.updated_toast", { name }),
     );
   };
@@ -191,9 +208,10 @@ export function useCommunityCatalog() {
   /** Update every installed one that has an update on offer. */
   const updateAll = async function () {
     if (updatingAll.value) return;
-    const domains = installed.value
+    // the version each one is to get
+    const targets = installed.value
       .filter(hasCommunityUpdate)
-      .map((provider) => provider.domain);
+      .map((provider) => [provider.domain, provider.latest_version] as const);
     updatingAll.value = true;
     try {
       providers.value = await api.updateCommunityProviders();
@@ -203,16 +221,25 @@ export function useCommunityCatalog() {
     } finally {
       updatingAll.value = false;
     }
-    // the server skips one it cannot update, so it still has its update
-    const left = providers.value.some(
-      (provider) =>
-        domains.includes(provider.domain) && hasCommunityUpdate(provider),
+    // the server skips one it cannot update, and puts one that does not load
+    // back on its previous version
+    const outcomes = targets.map(([domain, version]) =>
+      getCommunityUpdateOutcome(
+        providers.value.find((provider) => provider.domain === domain),
+        version,
+      ),
     );
-    if (left) {
+    if (outcomes.includes("failed")) {
       toast.error($t("settings.catalog.community.update_all_failed"));
-    } else {
-      toast.success($t("settings.catalog.community.updated_all_toast"));
+      return;
     }
+    toast.success(
+      $t(
+        outcomes.includes("restart")
+          ? "settings.catalog.community.updated_all_restart"
+          : "settings.catalog.community.updated_all_toast",
+      ),
+    );
   };
 
   /**
@@ -230,9 +257,17 @@ export function useCommunityCatalog() {
         config.values[COMMUNITY_CATALOG_AUTO_UPDATE_KEY] ?? null;
     } catch {
       // the api reports a failed save itself, and the switch keeps its state
+      return;
     } finally {
       savingAutoUpdate.value = false;
     }
+    toast.success(
+      $t(
+        value
+          ? "settings.catalog.community.auto_update_on_toast"
+          : "settings.catalog.community.auto_update_off_toast",
+      ),
+    );
   };
 
   /**
@@ -343,6 +378,7 @@ export function useCommunityCatalog() {
     removing,
     updating,
     updatingAll,
+    isUpdating,
     retry,
     setEnabled,
     setAutoUpdate,

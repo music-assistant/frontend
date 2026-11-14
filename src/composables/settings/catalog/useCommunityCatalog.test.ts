@@ -391,6 +391,18 @@ describe("useCommunityCatalog", () => {
       installed_version: "0.1.0",
       latest_version: "0.2.0",
     });
+    const otherUpdated = communityProvider("dj", {
+      state: CommunityProviderState.INSTALLED,
+      installed_version: "0.2.0",
+      latest_version: "0.2.0",
+    });
+    // what the server lists once it put 1.1.0 back because 1.2.0 did not load
+    const wentBack = communityProvider("radio", {
+      state: CommunityProviderState.INSTALLED,
+      installed_version: "1.1.0",
+      latest_version: "1.2.0",
+      failed_version: "1.2.0",
+    });
 
     beforeEach(() => {
       apiMock.getCommunityProviders.mockResolvedValue([current, other]);
@@ -446,6 +458,42 @@ describe("useCommunityCatalog", () => {
       );
     });
 
+    it("says the server put the previous version back when the update did not load", async () => {
+      apiMock.updateCommunityProviders.mockResolvedValue([wentBack, other]);
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      await catalog.update(current);
+
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "settings.catalog.community.update_failed_toast radio 1.2.0",
+      );
+      expect(toastMock.success).not.toHaveBeenCalled();
+      expect(catalog.installed.value).toEqual([other, wentBack]);
+    });
+
+    it("tries a version that did not load again, and says how it went", async () => {
+      apiMock.getCommunityProviders.mockResolvedValue([wentBack]);
+      apiMock.updateCommunityProviders.mockResolvedValueOnce([wentBack]);
+      apiMock.updateCommunityProviders.mockResolvedValueOnce([updated]);
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      await catalog.update(wentBack);
+
+      expect(apiMock.updateCommunityProviders).toHaveBeenCalledWith("radio");
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "settings.catalog.community.update_failed_toast radio 1.2.0",
+      );
+      expect(toastMock.success).not.toHaveBeenCalled();
+
+      await catalog.update(wentBack);
+
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.updated_toast radio",
+      );
+    });
+
     it("keeps the result when the change event arrives while it runs", async () => {
       let finish!: (value: CommunityProvider[]) => void;
       apiMock.updateCommunityProviders.mockReturnValue(
@@ -455,14 +503,17 @@ describe("useCommunityCatalog", () => {
       await flushPromises();
 
       const result = catalog.update(current);
-      // the server tells about the change before the command returns
+      // the server tells about the change once the new version is live, and
+      // only then finds that it does not load and puts the previous one back
       apiMock.getCommunityProviders.mockResolvedValue([updated, other]);
       await apiMock.subscribe.mock.calls[0][1]();
+      expect(catalog.installed.value).toEqual([other, updated]);
       expect(catalog.updating.value.has("radio")).toBe(true);
-      finish([updated, other]);
+      finish([wentBack, other]);
       await result;
 
-      expect(catalog.installed.value).toEqual([other, updated]);
+      // the command answers last, with the list after all of it
+      expect(catalog.installed.value).toEqual([other, wentBack]);
       expect(catalog.updating.value.has("radio")).toBe(false);
     });
 
@@ -486,17 +537,23 @@ describe("useCommunityCatalog", () => {
     it("updates all at once and reports it", async () => {
       apiMock.updateCommunityProviders.mockResolvedValue([
         updated,
-        communityProvider("dj", { state: CommunityProviderState.INSTALLED }),
+        otherUpdated,
       ]);
       const { catalog } = mountCatalog();
       await flushPromises();
 
       const result = catalog.updateAll();
       expect(catalog.updatingAll.value).toBe(true);
+      expect(catalog.isUpdating("radio")).toBe(true);
+      expect(catalog.isUpdating("dj")).toBe(true);
+      // updating one of them on its own meanwhile asks nothing more of the server
+      void catalog.update(current);
       await result;
 
+      expect(apiMock.updateCommunityProviders).toHaveBeenCalledOnce();
       expect(apiMock.updateCommunityProviders).toHaveBeenCalledWith();
       expect(catalog.updatingAll.value).toBe(false);
+      expect(catalog.isUpdating("radio")).toBe(false);
       expect(catalog.updateCount.value).toBe(0);
       expect(toastMock.success).toHaveBeenCalledWith(
         "settings.catalog.community.updated_all_toast",
@@ -515,6 +572,42 @@ describe("useCommunityCatalog", () => {
         "settings.catalog.community.update_all_failed",
       );
       expect(toastMock.success).not.toHaveBeenCalled();
+    });
+
+    it("says not every update could be installed when one was put back", async () => {
+      apiMock.updateCommunityProviders.mockResolvedValue([
+        wentBack,
+        otherUpdated,
+      ]);
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      await catalog.updateAll();
+
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "settings.catalog.community.update_all_failed",
+      );
+      expect(toastMock.success).not.toHaveBeenCalled();
+    });
+
+    it("says a restart finishes the updates when only that is left", async () => {
+      apiMock.updateCommunityProviders.mockResolvedValue([
+        communityProvider("radio", {
+          state: CommunityProviderState.RESTART_REQUIRED,
+          installed_version: "1.1.0",
+          pending_version: "1.2.0",
+        }),
+        otherUpdated,
+      ]);
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      await catalog.updateAll();
+
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.updated_all_restart",
+      );
+      expect(toastMock.error).not.toHaveBeenCalled();
     });
 
     it("reports a failed update of all", async () => {
@@ -539,7 +632,7 @@ describe("useCommunityCatalog", () => {
       expect(catalog.autoUpdate.value).toBe(true);
     });
 
-    it("saves the setting", async () => {
+    it("saves the setting and reports it", async () => {
       apiMock.saveCoreConfig.mockResolvedValue(coreConfig(true, true));
       const { catalog } = mountCatalog();
       await flushPromises();
@@ -553,6 +646,23 @@ describe("useCommunityCatalog", () => {
       });
       expect(catalog.autoUpdate.value).toBe(true);
       expect(catalog.savingAutoUpdate.value).toBe(false);
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.auto_update_on_toast",
+      );
+    });
+
+    it("reports turning it off", async () => {
+      apiMock.getCoreConfig.mockResolvedValue(coreConfig(true, true));
+      apiMock.saveCoreConfig.mockResolvedValue(coreConfig(true, false));
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      await catalog.setAutoUpdate(false);
+
+      expect(catalog.autoUpdate.value).toBe(false);
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.auto_update_off_toast",
+      );
     });
 
     it("keeps its state when saving fails", async () => {
@@ -564,6 +674,7 @@ describe("useCommunityCatalog", () => {
 
       expect(catalog.autoUpdate.value).toBe(false);
       expect(catalog.savingAutoUpdate.value).toBe(false);
+      expect(toastMock.success).not.toHaveBeenCalled();
     });
   });
 
