@@ -3,19 +3,21 @@
   Emits the value only once a drag ends.
 -->
 <template>
-  <div class="visualizer-menu__row">
-    <component :is="icon" :size="20" class="visualizer-menu__icon" />
+  <div class="flex items-center gap-3">
+    <component :is="icon" :size="20" class="flex-none" />
     <Slider
       :model-value="[draft]"
       :thumb-label="ariaLabel"
       :min="min"
       :max="max"
       :step="step"
-      class="visualizer-menu__slider"
+      class="flex-auto"
       @update:model-value="onChange"
       @value-commit="(v: number[]) => emit('commit', v[0] ?? defaultValue)"
     />
-    <span class="visualizer-menu__value">{{ draft }}{{ unit }}</span>
+    <span class="min-w-[4ch] text-right tabular-nums"
+      >{{ draft }}{{ unit }}</span
+    >
   </div>
 </template>
 
@@ -55,19 +57,3 @@ const onChange = (value: number[] | undefined) => {
   draft.value = value[0] ?? props.defaultValue;
 };
 </script>
-
-<style scoped>
-.visualizer-menu__icon {
-  flex: 0 0 auto;
-}
-
-.visualizer-menu__slider {
-  flex: 1 1 auto;
-}
-
-.visualizer-menu__value {
-  min-width: 4ch;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-</style>
