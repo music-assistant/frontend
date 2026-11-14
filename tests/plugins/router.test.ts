@@ -560,6 +560,7 @@ describe("scope-gated routes", () => {
       ["admin", "user", "own_sources", "reads_sources"],
     ],
     ["/settings/editprovider/spotify--abc", ["admin", "user", "own_sources"]],
+    ["/settings/catalog?types=music", ["admin", "user", "own_sources"]],
     ["/settings/players", ["admin"]],
     ["/settings/editplayer/player-1", ["admin"]],
     ["/settings/editplayer/player-1/dsp", ["admin"]],

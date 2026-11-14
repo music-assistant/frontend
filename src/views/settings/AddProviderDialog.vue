@@ -56,13 +56,7 @@
                 >
                   {{ provider.name }}
                 </button>
-                <Badge
-                  v-if="shouldShowStageBadge(provider.stage)"
-                  :variant="getStageVariant(provider.stage)"
-                  class="uppercase"
-                >
-                  {{ getStageLabel(provider.stage) }}
-                </Badge>
+                <ProviderStageBadge :stage="provider.stage" />
               </ItemTitle>
               <ItemDescription>{{ provider.description }}</ItemDescription>
               <ProviderMaintainerMarker
@@ -99,7 +93,7 @@
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
-import { Badge } from "@/components/ui/badge";
+import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
 import {
   Dialog,
   DialogContent,
@@ -124,22 +118,25 @@ import {
 } from "@/components/ui/item";
 import { SearchInput } from "@/components/ui/search-input";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
-import { isSelfServiceProvider } from "@/helpers/provider_access";
+import { startAddProvider } from "@/helpers/provider_add";
+import {
+  ADDABLE_PROVIDER_STAGES,
+  buildCatalogEntries,
+  filterCatalogEntries,
+  sortPopularFirst,
+} from "@/helpers/provider_catalog";
 import {
   getProviderMaintainers,
   getProviderStageTranslationKey,
   isCommunityProvider,
-  shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
   ProviderConfig,
   ProviderManifest,
-  ProviderStage,
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, Search } from "@lucide/vue";
@@ -156,18 +153,6 @@ const props = defineProps<{
   // only offer providers that members may set up themselves
   selfServiceOnly?: boolean;
 }>();
-
-const POPULAR_PROVIDERS = [
-  "spotify",
-  "tidal",
-  "qobuz",
-  "filesystem_local",
-  "sonos",
-  "chromecast",
-  "airplay",
-  "spotify_connect",
-  "airplay_receiver",
-];
 
 const emit = defineEmits<{
   (e: "update:show", value: boolean): void;
@@ -196,152 +181,48 @@ const dialogTitle = computed(() =>
     .otherwise(() => $t("settings.add_new")),
 );
 
-const providerStageOptions = computed(() => [
-  { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
-  { label: $t("settings.stage.options.beta"), value: ProviderStage.BETA },
-  { label: $t("settings.stage.options.alpha"), value: ProviderStage.ALPHA },
-  {
-    label: $t("settings.stage.options.experimental"),
-    value: ProviderStage.EXPERIMENTAL,
-  },
-  {
-    label: $t("settings.stage.options.unmaintained"),
-    value: ProviderStage.UNMAINTAINED,
-  },
-  // no deprecated option: those providers never reach this list
-]);
+const providerStageOptions = computed(() =>
+  ADDABLE_PROVIDER_STAGES.map((stage) => ({
+    label: $t(getProviderStageTranslationKey(stage)!),
+    value: stage,
+  })),
+);
 
-const availableProviders = computed(() => {
-  let providers = Object.values(api.providerManifests);
+// a configured provider that allows a single instance cannot be added again
+const availableProviders = computed(() =>
+  sortPopularFirst(
+    buildCatalogEntries(
+      Object.values(api.providerManifests),
+      providerConfigs.value,
+      {
+        multiInstanceOnly: props.multiInstanceOnly,
+        selfServiceOnly: props.selfServiceOnly,
+      },
+    ).filter((entry) => entry.canAdd),
+  ),
+);
 
-  // a deprecated provider is retired: it can no longer be set up, so keep it
-  // out of the list even though it is no longer builtin
-  providers = providers.filter(
-    (x) =>
-      !x.builtin &&
-      x.type !== ("core" as ProviderType) &&
-      x.stage !== ProviderStage.DEPRECATED,
-  );
+const activeTypes = computed(() =>
+  (activeTypeFilter.value ?? "")
+    .split(",")
+    .map((type) => type.trim())
+    .filter((type) => type.length > 0),
+);
 
-  if (props.multiInstanceOnly) {
-    providers = providers.filter((x) => x.multi_instance);
-  }
-
-  if (props.selfServiceOnly) {
-    providers = providers.filter((x) => isSelfServiceProvider(x));
-  }
-
-  return providers
-    .filter(
-      (x) =>
-        x.multi_instance ||
-        !providerConfigs.value.find((y) => y.domain == x.domain),
-    )
-    .sort((a, b) => {
-      const aPopularIndex = POPULAR_PROVIDERS.indexOf(a.domain);
-      const bPopularIndex = POPULAR_PROVIDERS.indexOf(b.domain);
-      const aIsPopular = aPopularIndex !== -1;
-      const bIsPopular = bPopularIndex !== -1;
-
-      if (aIsPopular && !bIsPopular) return -1;
-      if (!aIsPopular && bIsPopular) return 1;
-      if (aIsPopular && bIsPopular) return aPopularIndex - bPopularIndex;
-
-      const nameA = (
-        a.name || api.providerManifests[a.domain].name
-      ).toUpperCase();
-      const nameB = (
-        b.name || api.providerManifests[b.domain].name
-      ).toUpperCase();
-      return nameA > nameB ? 1 : -1;
-    });
-});
-
-const filteredProviders = computed(() => {
-  let providers = availableProviders.value;
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    providers = providers.filter(
-      (provider) =>
-        provider.name.toLowerCase().includes(query) ||
-        provider.description.toLowerCase().includes(query),
-    );
-  }
-
-  if (activeTypeFilter.value) {
-    const activeTypes = Array.isArray(activeTypeFilter.value)
-      ? activeTypeFilter.value
-      : String(activeTypeFilter.value)
-          .split(",")
-          .map((type) => type.trim())
-          .filter((type) => type.length > 0);
-
-    if (activeTypes.length > 0) {
-      providers = providers.filter((x) => activeTypes.includes(x.type));
-    }
-  }
-
-  if (selectedProviderStages.value.length > 0) {
-    providers = providers.filter((x) =>
-      selectedProviderStages.value.includes(x.stage),
-    );
-  }
-
-  return providers;
-});
+const filteredProviders = computed(() =>
+  filterCatalogEntries(availableProviders.value, {
+    query: searchQuery.value,
+    types: activeTypes.value,
+    stages: selectedProviderStages.value,
+  }).map((entry) => entry.manifest),
+);
 
 const loadItems = async function () {
   providerConfigs.value = await api.getProviderConfigs();
 };
 
 const addProvider = function (provider: ProviderManifest) {
-  const dependsOn = provider.depends_on;
-  if (dependsOn && !api.getProvider(dependsOn)) {
-    // the provider it depends on has to be set up first, so offer that flow
-    // instead of this one
-    const depProvName = api.getProviderName(dependsOn);
-    eventbus.emit("deleteConfirmationDialog", {
-      title: $t("settings.setup_flow.setup_title", [depProvName]),
-      message: $t("settings.provider_depends_on_confirm", [
-        provider.name,
-        depProvName,
-      ]),
-      confirmLabel: $t("settings.start_setup"),
-      destructive: false,
-      onConfirm: () => {
-        close();
-        eventbus.emit("setupFlowDialog", {
-          kind: "provider",
-          domain: dependsOn,
-        });
-      },
-    });
-    return;
-  }
-  close();
-  eventbus.emit("setupFlowDialog", {
-    kind: "provider",
-    domain: provider.domain,
-  });
-};
-
-const getStageLabel = function (stage?: string) {
-  const key = getProviderStageTranslationKey(stage);
-  return key ? $t(key) : "";
-};
-
-const getStageVariant = function (
-  stage?: string,
-): "default" | "secondary" | "outline" | "destructive" {
-  return match(stage)
-    .with("stable", () => "default" as const)
-    .with("beta", () => "secondary" as const)
-    .with("alpha", () => "outline" as const)
-    .with("experimental", () => "outline" as const)
-    .with("unmaintained", () => "secondary" as const)
-    .with("deprecated", () => "destructive" as const)
-    .otherwise(() => "default" as const);
+  startAddProvider(provider, close);
 };
 
 const handleOpenChange = (open: boolean) => {
