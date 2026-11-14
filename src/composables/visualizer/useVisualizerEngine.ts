@@ -310,6 +310,8 @@ export async function createVisualizerEngine(
       visualizer.setPaletteRamp(colors, strength);
     },
     destroy() {
+      // A lost context has no extension left to lose, so a repeat would throw.
+      if (destroyed) return;
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();

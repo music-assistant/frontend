@@ -203,6 +203,14 @@ describe("createVisualizerEngine pause envelope", () => {
     expect(loseGLContext).toHaveBeenCalledOnce();
   });
 
+  it("releases the GL context only once when destroyed twice", () => {
+    engine!.destroy();
+    engine!.destroy();
+    engine = null;
+
+    expect(loseGLContext).toHaveBeenCalledOnce();
+  });
+
   it("reports the preset it loaded", async () => {
     expect(await engine!.loadPresetByName("known")).toBe("known");
   });
