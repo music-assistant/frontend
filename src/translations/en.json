@@ -2947,7 +2947,7 @@
         "plugins_count": "{count} plugin | {count} plugins",
         "run_again": "Run the setup wizard again",
         "paused_title": "Setup paused",
-        "paused_text": "Pick up where you left off, now or later from the settings.",
+        "paused_text": "Continue now, or open the setup wizard again later from the settings.",
         "resume": "Resume",
         "pause": "Pause setup",
         "dismiss": "Dismiss",
@@ -3013,9 +3013,11 @@
             "core_settings": {
                 "title": "Access Music Assistant",
                 "intro": "Music Assistant works on your home network automatically. Set up remote access if you'd also like to listen when you're away.",
-                "network_details": "Network details",
+                "network_details": "Server and network details",
                 "internal_address": "Internal address",
                 "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
+                "external_address": "External address",
+                "external_address_hint": "Where you reach Music Assistant from outside your home, through your reverse proxy.",
                 "stream_address": "Stream server address",
                 "stream_address_hint": "Where your players fetch the audio from.",
                 "address_unknown": "Not available",
@@ -3025,7 +3027,7 @@
                     "unreachable": "Not reachable from this device",
                     "unchecked": "Could not check from this device"
                 },
-                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, set it under the advanced settings.",
+                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, change it with Edit below.",
                 "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system}, in {webserver} and {streams}.",
                 "remote": {
                     "title": "Listen from outside your home",
@@ -3100,10 +3102,6 @@
         "end": "End the tour",
         "next": "Next",
         "step_counter": "{current} of {total}",
-        "offer": {
-            "title": "Want a quick look around?",
-            "description": "A short tour points out the main parts of the app. You can take it again any time from your profile menu."
-        },
         "stops": {
             "menu": {
                 "title": "The menu",

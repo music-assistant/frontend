@@ -4,10 +4,64 @@
       {{ $t("onboarding.steps.core_settings.intro") }}
     </p>
 
+    <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-1">
+        <h3 class="text-sm font-semibold">
+          {{ $t("onboarding.steps.core_settings.remote.title") }}
+        </h3>
+        <p class="text-muted-foreground text-sm">
+          {{ $t("onboarding.steps.core_settings.remote.description") }}
+        </p>
+      </div>
+
+      <div class="grid items-start gap-3 sm:grid-cols-2">
+        <RemoteAccessCard v-if="canManageRemoteAccess" />
+
+        <Card data-testid="onboarding-reverse-proxy">
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2">
+              <Waypoints class="size-4 shrink-0" aria-hidden="true" />
+              {{ $t("onboarding.steps.core_settings.remote.proxy.title") }}
+            </CardTitle>
+            <CardDescription>
+              {{
+                $t("onboarding.steps.core_settings.remote.proxy.description")
+              }}
+            </CardDescription>
+          </CardHeader>
+          <CardContent v-if="canEditSettings">
+            <Button
+              variant="secondary"
+              data-testid="onboarding-set-external-address"
+              @click="openEditing"
+            >
+              {{
+                $t("onboarding.steps.core_settings.remote.proxy.set_external")
+              }}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+
+    <!-- players are on the same network as this browser, so an address it
+         could not reach is the one thing here worth a word of advice -->
+    <p
+      v-if="anyUnreachable"
+      class="text-destructive text-sm"
+      role="status"
+      data-testid="onboarding-address-unreachable-hint"
+    >
+      {{ $t("onboarding.steps.core_settings.unreachable_hint") }}
+    </p>
+
+    <!-- folded content stays mounted, so what was typed in the form survives
+         folding it, and the wizard's Next saves through it either way -->
     <Accordion
       v-model="networkDetails"
       type="single"
       collapsible
+      :unmount-on-hide="false"
       data-testid="onboarding-network-details"
     >
       <AccordionItem :value="NETWORK_DETAILS_PANEL" class="border-b-0">
@@ -15,8 +69,27 @@
           {{ $t("onboarding.steps.core_settings.network_details") }}
         </AccordionTrigger>
         <AccordionContent class="space-y-3">
-          <!-- the addresses in use, each with what this browser found out about it -->
           <ItemGroup class="gap-2">
+            <Item
+              variant="outline"
+              size="sm"
+              data-testid="onboarding-server-name"
+            >
+              <ItemMedia variant="icon">
+                <Server aria-hidden="true" />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>{{ $t("settings.server_name") }}</ItemTitle>
+                <span class="text-sm break-all">
+                  {{
+                    serverName ??
+                    $t("onboarding.steps.core_settings.address_unknown")
+                  }}
+                </span>
+              </ItemContent>
+            </Item>
+
+            <!-- the addresses in use, each with what this browser found out about it -->
             <Item
               v-for="address in addresses"
               :key="address.id"
@@ -56,7 +129,7 @@
                   {{ $t("onboarding.steps.core_settings.address_unknown") }}
                 </span>
               </ItemContent>
-              <ItemActions v-if="address.url">
+              <ItemActions v-if="address.url && address.check">
                 <Badge
                   :variant="CHECK_BADGES[address.check].variant"
                   :class="CHECK_BADGES[address.check].class"
@@ -79,128 +152,75 @@
             </Item>
           </ItemGroup>
 
-          <p class="text-muted-foreground text-sm">
-            {{
-              $t("onboarding.steps.core_settings.override_hint", {
-                system: $t("settings.system"),
-                webserver: $t("settings.core_module.webserver.name"),
-                streams: $t("settings.core_module.streams.name"),
-              })
-            }}
-          </p>
+          <div class="flex items-start justify-between gap-3">
+            <p class="text-muted-foreground text-sm">
+              {{
+                $t("onboarding.steps.core_settings.override_hint", {
+                  system: $t("settings.system"),
+                  webserver: $t("settings.core_module.webserver.name"),
+                  streams: $t("settings.core_module.streams.name"),
+                })
+              }}
+            </p>
+            <Button
+              v-if="canEditSettings"
+              variant="outline"
+              size="sm"
+              :aria-expanded="editing"
+              :aria-controls="editFormId"
+              data-testid="onboarding-network-edit"
+              @click="toggleEditing"
+            >
+              <Pencil aria-hidden="true" />
+              {{ $t("edit") }}
+            </Button>
+          </div>
+
+          <!-- every entry the form holds is shown outright: whether the form
+               is open at all is what hides them, not the form's own toggle -->
+          <div
+            v-if="canEditSettings"
+            v-show="editing"
+            :id="editFormId"
+            ref="editSection"
+            class="min-h-24"
+            data-testid="onboarding-network-edit-form"
+          >
+            <EditConfig
+              v-if="entries.length > 0"
+              ref="editConfig"
+              :config-entries="entries"
+              :disabled="false"
+              :show-advanced-settings="true"
+              :inline-save="true"
+              :hide-header="true"
+              @submit="onSubmit"
+            />
+
+            <div
+              v-else-if="!loaded"
+              class="flex min-h-24 items-center justify-center"
+            >
+              <Spinner class="size-6" />
+            </div>
+
+            <Empty
+              v-else
+              class="border-border rounded-md border border-dashed py-6"
+            >
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Globe />
+                </EmptyMedia>
+                <EmptyTitle>
+                  {{ $t("onboarding.steps.core_settings.load_failed") }}
+                </EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          </div>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
-
-    <!-- players are on the same network as this browser, so an address it
-         could not reach is the one thing here worth a word of advice -->
-    <p
-      v-if="anyUnreachable"
-      class="text-destructive text-sm"
-      role="status"
-      data-testid="onboarding-address-unreachable-hint"
-    >
-      {{ $t("onboarding.steps.core_settings.unreachable_hint") }}
-    </p>
-
-    <div class="flex flex-col gap-3">
-      <div class="flex flex-col gap-1">
-        <h3 class="text-sm font-semibold">
-          {{ $t("onboarding.steps.core_settings.remote.title") }}
-        </h3>
-        <p class="text-muted-foreground text-sm">
-          {{ $t("onboarding.steps.core_settings.remote.description") }}
-        </p>
-      </div>
-
-      <div class="grid items-start gap-3 sm:grid-cols-2">
-        <RemoteAccessCard v-if="canManageRemoteAccess" />
-
-        <Card data-testid="onboarding-reverse-proxy">
-          <CardHeader>
-            <CardTitle class="flex items-center gap-2">
-              <Waypoints class="size-4 shrink-0" aria-hidden="true" />
-              {{ $t("onboarding.steps.core_settings.remote.proxy.title") }}
-            </CardTitle>
-            <CardDescription>
-              {{
-                $t("onboarding.steps.core_settings.remote.proxy.description")
-              }}
-            </CardDescription>
-          </CardHeader>
-          <CardContent v-if="canEditSettings">
-            <Button
-              variant="secondary"
-              data-testid="onboarding-set-external-address"
-              @click="openAdvanced"
-            >
-              {{
-                $t("onboarding.steps.core_settings.remote.proxy.set_external")
-              }}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-
-    <div
-      v-if="canEditSettings"
-      ref="advancedSection"
-      class="flex flex-col gap-3"
-    >
-      <div class="flex items-center gap-2">
-        <Switch
-          :id="advancedSwitchId"
-          v-model="showAdvanced"
-          data-testid="onboarding-advanced-settings"
-        />
-        <Label :for="advancedSwitchId" class="cursor-pointer">
-          {{ $t("settings.show_advanced_settings") }}
-        </Label>
-      </div>
-
-      <!-- the form stays mounted while it is folded away, so what was typed
-           under Advanced survives folding it, and the wizard's Next saves
-           through it either way. Every entry it holds is shown outright: the
-           switch above is what hides them, not the form's own. -->
-      <div
-        v-show="showAdvanced"
-        class="min-h-24"
-        data-testid="onboarding-advanced-section"
-      >
-        <EditConfig
-          v-if="entries.length > 0"
-          ref="editConfig"
-          :config-entries="entries"
-          :disabled="false"
-          :show-advanced-settings="true"
-          :inline-save="true"
-          :hide-header="true"
-          @submit="onSubmit"
-        />
-
-        <div
-          v-else-if="!loaded"
-          class="flex min-h-24 items-center justify-center"
-        >
-          <Spinner class="size-6" />
-        </div>
-
-        <Empty
-          v-else
-          class="border-border rounded-md border border-dashed py-6"
-        >
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Globe />
-            </EmptyMedia>
-            <EmptyTitle>
-              {{ $t("onboarding.steps.core_settings.load_failed") }}
-            </EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      </div>
-    </div>
   </section>
 </template>
 
@@ -236,9 +256,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { Switch } from "@/components/ui/switch";
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import {
@@ -262,6 +280,8 @@ import {
   CircleHelp,
   Globe,
   LoaderCircle,
+  Pencil,
+  Server,
   Waypoints,
 } from "@lucide/vue";
 import {
@@ -278,18 +298,18 @@ import {
 import { toast } from "vue-sonner";
 
 /**
- * The core modules the advanced form edits, with the settings of each it
- * offers. The form groups its entries by category, so this is the order they
- * are handed over in rather than the order on screen.
+ * The core modules the form edits, with the settings of each it offers. The
+ * form groups its entries by category, so this is the order they are handed
+ * over in rather than the order on screen.
  */
-const ADVANCED_SETTINGS = {
+const NETWORK_SETTINGS = {
   // the server's own name and the two addresses it advertises
   webserver: ["server_name", "base_url", "external_url"],
   // the address players fetch audio from
   streams: ["publish_ip"],
 } as const;
-type CoreDomain = keyof typeof ADVANCED_SETTINGS;
-const DOMAINS = Object.keys(ADVANCED_SETTINGS) as CoreDomain[];
+type CoreDomain = keyof typeof NETWORK_SETTINGS;
+const DOMAINS = Object.keys(NETWORK_SETTINGS) as CoreDomain[];
 
 // The stream server only restarts on its new address a moment after a save
 // has answered, and says nothing once it is up again, so the address is asked
@@ -342,8 +362,9 @@ const canManageRemoteAccess = authManager.hasScope(Scope.SYSTEM_MANAGE);
 const canReadSettings = authManager.hasScope(Scope.CONFIG_CORE_READ);
 const canEditSettings = authManager.hasScope(Scope.CONFIG_CORE_WRITE);
 
-const advancedSwitchId = useId();
+const editFormId = useId();
 
+const serverName = computed(() => api.serverInfo.value?.name);
 // The internal address as the server advertises it right now, which server
 // info reports; the stream server's is asked for, as nothing else carries it.
 const internalUrl = computed(
@@ -385,10 +406,23 @@ const checkedFromHere = function (
   return check;
 };
 
+const externalUrl = computed(
+  () => api.serverInfo.value?.external_url || undefined,
+);
+
 const internalCheck = checkedFromHere(internalUrl);
 const streamCheck = checkedFromHere(streamUrl);
 
-const addresses = computed(() => [
+/** An address row; one without a check shows no badge. */
+interface AddressRow {
+  id: "internal" | "external" | "stream";
+  icon: Component;
+  url: string | undefined;
+  pending: boolean;
+  check?: CheckState;
+}
+
+const addresses = computed<AddressRow[]>(() => [
   {
     id: "internal",
     icon: markRaw(Globe),
@@ -396,6 +430,17 @@ const addresses = computed(() => [
     pending: false,
     check: internalCheck.value,
   },
+  // only set behind a reverse proxy, and not checked: players never use it
+  ...(externalUrl.value
+    ? [
+        {
+          id: "external" as const,
+          icon: markRaw(Waypoints),
+          url: externalUrl.value,
+          pending: false,
+        },
+      ]
+    : []),
   {
     id: "stream",
     icon: markRaw(AudioLines),
@@ -408,16 +453,18 @@ const anyUnreachable = computed(() =>
   addresses.value.some((address) => address.check === "unreachable"),
 );
 const networkDetails = ref<string>();
+// opened for an unreachable address, but never folded away from under the
+// user: a saved address is checked afresh, and the form may be open
 watch(
   anyUnreachable,
   (unreachable) => {
-    networkDetails.value = unreachable ? NETWORK_DETAILS_PANEL : undefined;
+    if (unreachable) networkDetails.value = NETWORK_DETAILS_PANEL;
   },
   { immediate: true },
 );
 
-const showAdvanced = ref(false);
-const advancedSection = ref<HTMLElement | null>(null);
+const editing = ref(false);
+const editSection = ref<HTMLElement | null>(null);
 const configs = ref<Partial<Record<CoreDomain, CoreConfig>>>({});
 // whether the settings have been asked for and answered, however that turned
 // out: until then the section reserves the room rather than claiming anything
@@ -429,7 +476,7 @@ const editConfig = ref<InstanceType<typeof EditConfig>>();
 // the form make one up.
 const entries = computed<ConfigEntryUI[]>(() =>
   DOMAINS.flatMap((domain) =>
-    ADVANCED_SETTINGS[domain].map((key) => configs.value[domain]?.values[key]),
+    NETWORK_SETTINGS[domain].map((key) => configs.value[domain]?.values[key]),
   ).filter((entry) => entry != null),
 );
 
@@ -470,11 +517,12 @@ const refreshStreamServerInfo = async function (): Promise<void> {
   }
 };
 
-/** Unfold the advanced settings and bring them into view. */
-const openAdvanced = async function (): Promise<void> {
-  showAdvanced.value = true;
+/** Unfold the network details with the form open, and bring it into view. */
+const openEditing = async function (): Promise<void> {
+  networkDetails.value = NETWORK_DETAILS_PANEL;
+  editing.value = true;
   await nextTick();
-  advancedSection.value?.scrollIntoView?.({
+  editSection.value?.scrollIntoView?.({
     block: "nearest",
     behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
       ? "auto"
@@ -482,12 +530,17 @@ const openAdvanced = async function (): Promise<void> {
   });
 };
 
+const toggleEditing = function (): void {
+  if (editing.value) editing.value = false;
+  else void openEditing();
+};
+
 /** The settings of one module the server carries that differ from what it has. */
 const changedValuesOf = function (
   domain: CoreDomain,
   values: Record<string, ConfigValueType>,
 ): Record<string, ConfigValueType> {
-  const keys: readonly string[] = ADVANCED_SETTINGS[domain];
+  const keys: readonly string[] = NETWORK_SETTINGS[domain];
   return Object.fromEntries(
     Object.entries(values).filter(
       ([key, value]) =>

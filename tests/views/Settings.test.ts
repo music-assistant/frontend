@@ -326,7 +326,7 @@ describe("the link back into onboarding", () => {
     store.currentUser = undefined;
   });
 
-  it("offers an admin the setup wizard again", async () => {
+  it("opens the admin setup wizard again at the setup choice", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     store.currentUser = user({ username: "admin", role: UserRole.ADMIN });
 
@@ -336,8 +336,7 @@ describe("the link back into onboarding", () => {
 
     await link.trigger("click");
 
-    // the setup opens on whatever is left to set up
-    expect(onboardingOpen).toHaveBeenCalledWith(undefined);
+    expect(onboardingOpen).toHaveBeenCalledWith("intent");
 
     wrapper.unmount();
   });
