@@ -1,10 +1,18 @@
 import DashboardNowPlayingView from "@/views/DashboardNowPlayingView.vue";
-import { mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { routeMock, storeMock } = vi.hoisted(() => ({
+const { authMock, routeMock, routerMock, storeMock } = vi.hoisted(() => ({
+  authMock: { isDashboardViewer: (): boolean => false },
   routeMock: { query: {} as Record<string, string> },
+  routerMock: {
+    options: { history: { state: { back: "/discover" as string | null } } },
+    back: vi.fn(),
+    push: vi.fn(),
+  },
   storeMock: {
+    frameless: false,
+    showFullscreenPlayer: false,
     activePlayerId: undefined as string | undefined,
     activePlayer: undefined as
       | {
@@ -35,10 +43,10 @@ vi.mock("vue-router", () => ({
 
 // Pulled in transitively via @/helpers/utils; mocked so their module-load side effects (AuthManager reading localStorage) don't leak into this test.
 vi.mock("@/plugins/router", () => ({
-  default: {},
+  default: routerMock,
 }));
 vi.mock("@/plugins/auth", () => ({
-  authManager: {},
+  authManager: authMock,
   default: {},
 }));
 
@@ -67,8 +75,17 @@ function mountView() {
 }
 
 describe("DashboardNowPlayingView", () => {
+  // a view left mounted would still answer the next test's Escape
+  enableAutoUnmount(afterEach);
+
   beforeEach(() => {
+    authMock.isDashboardViewer = () => false;
     routeMock.query = {};
+    routerMock.options.history.state.back = "/discover";
+    routerMock.back.mockClear();
+    routerMock.push.mockClear();
+    storeMock.frameless = false;
+    storeMock.showFullscreenPlayer = false;
     storeMock.activePlayerId = undefined;
     storeMock.activePlayer = undefined;
   });
@@ -114,4 +131,111 @@ describe("DashboardNowPlayingView", () => {
     expect(wrapper.text()).toContain("Kitchen");
     expect(wrapper.text()).not.toContain("Song Title");
   });
+
+  describe("opened from the player on this device", () => {
+    it("hides the app's chrome and leaves on a click, back to the player", async () => {
+      const wrapper = mountView();
+      expect(storeMock.frameless).toBe(true);
+
+      await wrapper.get(".now-playing-view").trigger("click");
+      expect(routerMock.back).toHaveBeenCalledTimes(1);
+
+      wrapper.unmount();
+      expect(storeMock.frameless).toBe(false);
+      expect(storeMock.showFullscreenPlayer).toBe(true);
+    });
+
+    it("leaves on Escape", () => {
+      mountView();
+
+      escape();
+
+      expect(routerMock.back).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves a dialog, menu or popover open above it to handle Escape first", () => {
+      mountView();
+      document.body.innerHTML += '<div role="dialog"></div>';
+
+      escape();
+
+      expect(routerMock.back).not.toHaveBeenCalled();
+      document.querySelector('[role="dialog"]')?.remove();
+    });
+
+    it("shows a labelled close control that leaves, back to the player", async () => {
+      const wrapper = mountView();
+      const close = wrapper.get('[aria-label="close"]');
+
+      await close.trigger("click");
+
+      expect(routerMock.back).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not reopen the player for an unmount this view did not ask for", () => {
+      const wrapper = mountView();
+
+      // e.g. the command center opening another page over this one
+      wrapper.unmount();
+
+      expect(storeMock.showFullscreenPlayer).toBe(false);
+    });
+
+    it("clears a fullscreen-player flag a browser Forward brings back stale", async () => {
+      const first = mountView();
+      // leaving sets the flag for the player page this unmount lands on
+      await first.get(".now-playing-view").trigger("click");
+      first.unmount();
+      expect(storeMock.showFullscreenPlayer).toBe(true);
+
+      // Forward reopens this view; nothing here covers it, so the flag from
+      // the page just left must not survive into this mount
+      mountView();
+
+      expect(storeMock.showFullscreenPlayer).toBe(false);
+    });
+
+    it("stays while the timeline is used", async () => {
+      storeMock.activePlayer = { name: "Kitchen" };
+      const wrapper = mountView();
+
+      await wrapper.get(".now-playing-timeline").trigger("click");
+
+      expect(routerMock.back).not.toHaveBeenCalled();
+    });
+
+    it("goes to the start page when there is nothing to go back to", async () => {
+      routerMock.options.history.state.back = null;
+      const wrapper = mountView();
+
+      await wrapper.get(".now-playing-view").trigger("click");
+
+      expect(routerMock.push).toHaveBeenCalledWith("/");
+    });
+  });
+
+  it.each([
+    ["cast to a display", () => (authMock.isDashboardViewer = () => true)],
+    ["opened as a kiosk link", () => (routeMock.query = { frameless: "" })],
+  ])("stays as it is when %s", async (_case, setUp) => {
+    setUp();
+    const wrapper = mountView();
+
+    expect(wrapper.find('[aria-label="close"]').exists()).toBe(false);
+    await wrapper.get(".now-playing-view").trigger("click");
+    escape();
+    wrapper.unmount();
+
+    expect(routerMock.back).not.toHaveBeenCalled();
+    expect(storeMock.frameless).toBe(false);
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+  });
 });
+
+// useEscapeBack listens on window and only acts on an event that actually
+// bubbles there, the way a real keypress does.
+function escape() {
+  document.body.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+  );
+}
