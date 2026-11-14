@@ -3835,6 +3835,7 @@ export class MusicAssistantApi {
     role: string,
     displayName?: string,
     playerFilter?: string[],
+    allowExplicit?: boolean,
     options?: CommandOptions,
   ): Promise<User> {
     return this.accountApi.createUser(
@@ -3843,6 +3844,7 @@ export class MusicAssistantApi {
       role,
       displayName,
       playerFilter,
+      allowExplicit,
       options,
     );
   }
@@ -3857,6 +3859,7 @@ export class MusicAssistantApi {
       password?: string;
       preferences?: Record<string, unknown>;
       player_filter?: string[];
+      allow_explicit?: boolean;
     },
     options?: CommandOptions,
   ): Promise<User> {

@@ -99,6 +99,15 @@
                 </Field>
               </template>
             </form.Field>
+            <form.Field name="allowExplicit">
+              <template #default="{ field }">
+                <AllowExplicitSwitch
+                  :id="field.name"
+                  :model-value="field.state.value"
+                  @update:model-value="field.handleChange"
+                />
+              </template>
+            </form.Field>
           </FieldGroup>
         </form>
       </div>
@@ -148,6 +157,7 @@ import { createUserSchema } from "@/lib/forms/profile";
 import { api, ApiCommandError } from "@/plugins/api";
 import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import AllowExplicitSwitch from "./AllowExplicitSwitch.vue";
 import MultiSelect from "./MultiSelect.vue";
 
 const { t } = useI18n();
@@ -218,6 +228,7 @@ const form = useForm({
     confirmPassword: "",
     role: UserRole.USER as string,
     playerFilter: [] as string[],
+    allowExplicit: true,
   },
   validators: {
     onSubmit: createUserSchema(t),
@@ -232,6 +243,7 @@ const form = useForm({
         value.role,
         value.displayName || undefined,
         value.playerFilter.length > 0 ? value.playerFilter : undefined,
+        value.allowExplicit,
         { suppressGlobalError: true },
       );
 

@@ -213,6 +213,7 @@ export class AccountApi {
     role: string,
     displayName?: string,
     playerFilter?: string[],
+    allowExplicit?: boolean,
     options?: CommandOptions,
   ): Promise<User> {
     // Create a new user (admin only)
@@ -227,6 +228,7 @@ export class AccountApi {
           role,
           display_name: displayName,
           player_filter: playerFilter,
+          allow_explicit: allowExplicit,
         },
         options,
       );
@@ -272,6 +274,7 @@ export class AccountApi {
       password?: string;
       preferences?: Record<string, unknown>;
       player_filter?: string[];
+      allow_explicit?: boolean;
     },
     options?: CommandOptions,
   ): Promise<User> {
@@ -288,6 +291,8 @@ export class AccountApi {
         args.preferences = updates.preferences;
       if (updates.player_filter != undefined)
         args.player_filter = updates.player_filter;
+      if (updates.allow_explicit != undefined)
+        args.allow_explicit = updates.allow_explicit;
 
       const result = await this.sendCommand<
         { success?: boolean; user?: User } | User | null | undefined

@@ -1,4 +1,5 @@
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
+import AllowExplicitSwitch from "@/components/users/AllowExplicitSwitch.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -48,6 +49,20 @@ vi.mock("vue-i18n", async (importOriginal) => ({
 
 const passthrough = { template: "<div><slot /></div>" };
 
+/** Return the option values of the field with the given label. */
+function fieldOptions(wrapper: VueWrapper, label: string): string[][] {
+  const field = wrapper
+    .findAll('[data-slot="field"]')
+    .find(
+      (candidate) =>
+        candidate.find('[data-slot="field-label"]').text() === label,
+    );
+  return (field?.findAll("[data-value]") ?? []).map((option) => [
+    option.attributes("data-value") ?? "",
+    option.text(),
+  ]);
+}
+
 function mountDialog(): VueWrapper {
   return mount(CreateUserDialog, {
     props: { modelValue: true },
@@ -77,9 +92,7 @@ describe("CreateUserDialog", () => {
     const wrapper = mountDialog();
     await flushPromises();
 
-    const options = wrapper
-      .findAll("[data-value]")
-      .map((option) => [option.attributes("data-value"), option.text()]);
+    const options = fieldOptions(wrapper, "auth.role");
     expect(options).toContainEqual(["household_member", "Household member"]);
     // the service role is for integrations, so a new user isn't offered it
     expect(options.map(([value]) => value)).toEqual([
@@ -101,5 +114,37 @@ describe("CreateUserDialog", () => {
       "auth.display_name",
       "auth.role",
     ]);
+  });
+
+  it("allows explicit content for a new user by default", () => {
+    const wrapper = mountDialog();
+
+    expect(wrapper.getComponent(AllowExplicitSwitch).props("modelValue")).toBe(
+      true,
+    );
+  });
+
+  it("creates a user who may not get explicit content", async () => {
+    apiMock.createUser.mockResolvedValue({});
+    const wrapper = mountDialog();
+
+    await wrapper.get('input[name="username"]').setValue("kid");
+    await wrapper.get('input[name="password"]').setValue("password123");
+    await wrapper.get('input[name="confirmPassword"]').setValue("password123");
+    wrapper
+      .getComponent(AllowExplicitSwitch)
+      .vm.$emit("update:modelValue", false);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(apiMock.createUser).toHaveBeenCalledWith(
+      "kid",
+      "password123",
+      "user",
+      undefined,
+      undefined,
+      false,
+      { suppressGlobalError: true },
+    );
   });
 });

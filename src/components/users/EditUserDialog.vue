@@ -117,6 +117,15 @@
                 </Field>
               </template>
             </form.Field>
+            <form.Field name="allowExplicit">
+              <template #default="{ field }">
+                <AllowExplicitSwitch
+                  :id="field.name"
+                  :model-value="field.state.value"
+                  @update:model-value="field.handleChange"
+                />
+              </template>
+            </form.Field>
           </FieldGroup>
         </form>
       </div>
@@ -168,6 +177,7 @@ import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
 import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import AllowExplicitSwitch from "./AllowExplicitSwitch.vue";
 import MultiSelect from "./MultiSelect.vue";
 
 const { t } = useI18n();
@@ -250,6 +260,7 @@ const form = useForm({
     password: "",
     confirmPassword: "",
     playerFilter: props.user?.player_filter || [],
+    allowExplicit: props.user?.allow_explicit ?? true,
   },
   validators: {
     onSubmit: editUserSchema(t),
@@ -267,6 +278,7 @@ const form = useForm({
         role?: string;
         password?: string;
         player_filter?: string[];
+        allow_explicit?: boolean;
       } = {};
 
       if (value.username !== props.user.username) {
@@ -291,6 +303,9 @@ const form = useForm({
         JSON.stringify([...currentPlayerFilter].sort())
       ) {
         updates.player_filter = value.playerFilter;
+      }
+      if (value.allowExplicit !== props.user.allow_explicit) {
+        updates.allow_explicit = value.allowExplicit;
       }
 
       await api.updateUser(props.user.user_id, updates, {
@@ -322,6 +337,7 @@ const resetForm = () => {
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
     form.setFieldValue("playerFilter", props.user.player_filter);
+    form.setFieldValue("allowExplicit", props.user.allow_explicit);
   }
 };
 
