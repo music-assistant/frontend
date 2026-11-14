@@ -1,5 +1,6 @@
 import { computed } from "vue";
 import { resolveExternalSource } from "@/composables/externalSource";
+import { getSourceLabel } from "@/helpers/players";
 import { store } from "@/plugins/store";
 
 /**
@@ -9,6 +10,8 @@ export interface NowPlayingSource {
   name: string;
   /** Provider domain or instance id to render the source icon from. */
   iconDomain?: string;
+  /** The source's name with the protocol it plays on, e.g. "YouTube • Chromecast". */
+  label: string;
 }
 
 /**
@@ -27,6 +30,7 @@ export function useNowPlayingSource() {
     return {
       name: externalSource.name,
       iconDomain: sourceProviderId(externalSource.id),
+      label: getSourceLabel(player, externalSource),
     };
   });
 

@@ -5,6 +5,8 @@ import {
   type PlayerMedia,
   Player,
   PlayerQueue,
+  ProtocolRole,
+  type ProviderManifest,
 } from "@/plugins/api/interfaces";
 import { playerSource } from "../fixtures/playerSource";
 
@@ -16,6 +18,7 @@ const storeMock = reactive({
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 
 const { useNowPlayingSource } = await import("@/composables/nowPlayingSource");
+const { api } = await import("@/plugins/api");
 
 /** A player with only the fields the composable reads. */
 function player(overrides: Partial<Player> = {}): Player {
@@ -24,6 +27,8 @@ function player(overrides: Partial<Player> = {}): Player {
     powered: true,
     active_source: "player-1",
     source_list: [],
+    active_output_protocol: null,
+    protocols: [],
     ...overrides,
   } as Player;
 }
@@ -67,6 +72,7 @@ describe("useNowPlayingSource", () => {
     expect(nowPlayingSource.value).toEqual({
       name: "Spotify Connect",
       iconDomain: "spotify_connect--abc",
+      label: "Spotify Connect",
     });
   });
 
@@ -82,7 +88,35 @@ describe("useNowPlayingSource", () => {
     expect(nowPlayingSource.value).toEqual({
       name: "Line In",
       iconDomain: undefined,
+      label: "Line In",
     });
+  });
+
+  it("labels an app from outside with the protocol it plays on", () => {
+    api.providerManifests.chromecast = {
+      name: "Chromecast",
+    } as ProviderManifest;
+    const source = playerSource({ id: "youtube", name: "YouTube" });
+    storeMock.activePlayer = player({
+      active_source: source.id,
+      source_list: [source],
+      protocols: [
+        {
+          protocol_id: "cast-1",
+          domain: "chromecast",
+          provider: "chromecast",
+          role: ProtocolRole.AUDIO,
+          available: true,
+          active: true,
+        },
+      ],
+    });
+
+    const { nowPlayingSource } = useNowPlayingSource();
+
+    expect(nowPlayingSource.value?.name).toBe("YouTube");
+    expect(nowPlayingSource.value?.label).toBe("YouTube • Chromecast");
+    delete api.providerManifests.chromecast;
   });
 
   it("keeps a radio station in the album subtitle", () => {

@@ -7,7 +7,9 @@ import {
   PlaybackState,
   Player,
   PlayerFeature,
+  PlayerSource,
   PlayerType,
+  ProtocolRole,
   User,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -15,6 +17,9 @@ import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 
 export { isPlayerGrouped } from "@/helpers/player_grouping";
+
+// the active output of a player that plays through its own protocol
+const NATIVE_OUTPUT_PROTOCOL = "native";
 
 // the translation of every setup reason the server can give
 const SETUP_REASON_LABELS: Record<string, string> = {
@@ -211,6 +216,44 @@ export const isSelectablePlayer = function (
     !player.needs_setup &&
     player.type !== PlayerType.SOURCE,
   );
+};
+
+/**
+ * Return the name of the protocol an app Music Assistant did not start plays on
+ * the player, such as "Chromecast", or undefined when no such app plays or the
+ * name of its source already says so.
+ */
+export const getAppProtocolName = function (
+  player: Player,
+): string | undefined {
+  const source = player.source_list.find(
+    (x) => x.id === player.active_source && x.passive,
+  );
+  if (!source) return undefined;
+  if (
+    player.active_output_protocol &&
+    player.active_output_protocol !== NATIVE_OUTPUT_PROTOCOL
+  )
+    return undefined;
+  // native playback marks the own protocol active; an app always plays on an audio protocol
+  const protocol = player.protocols.find(
+    (x) => x.active && x.role === ProtocolRole.AUDIO,
+  );
+  const name = protocol && api.providerManifests[protocol.domain]?.name;
+  return name && name !== source.name ? name : undefined;
+};
+
+/**
+ * Return the name to show for a source of the player: its own name, followed by
+ * the protocol it plays on when an app Music Assistant did not start plays it.
+ */
+export const getSourceLabel = function (
+  player: Player,
+  source: PlayerSource,
+): string {
+  const protocolName =
+    source.id === player.active_source ? getAppProtocolName(player) : undefined;
+  return protocolName ? `${source.name} • ${protocolName}` : source.name;
 };
 
 /**

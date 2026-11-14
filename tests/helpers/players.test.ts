@@ -1,10 +1,12 @@
 import {
   canBeGroupMember,
   canEditPlayerGroup,
+  getAppProtocolName,
   getPlayerDisplayName,
   getPlayerGroupMemberCount,
   getPlayerName,
   getPlayerSetupReason,
+  getSourceLabel,
   getWebPlayerName,
   groupMemberPickerVisible,
   isBuiltinPlayer,
@@ -19,7 +21,11 @@ import {
   PlaybackState,
   type Player,
   PlayerFeature,
+  type PlayerProtocolInfo,
+  type PlayerSource,
   PlayerType,
+  ProtocolRole,
+  type ProviderManifest,
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
@@ -30,7 +36,7 @@ import { user } from "../fixtures/user";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => ({
-  api: { players: {} },
+  api: { players: {}, providerManifests: {} },
 }));
 
 vi.mock("@/plugins/store", () => ({
@@ -83,6 +89,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     has_setup_flow: false,
     setup_reason: null,
     legacy_ids: [],
+    protocols: [],
     playback_state: PlaybackState.IDLE,
     output_protocols: [],
     active_output_protocol: null,
@@ -640,5 +647,160 @@ describe("player group controls", () => {
     expect(isPlayerGrouped(createPlayer({ group_members: ["player"] }))).toBe(
       false,
     );
+  });
+});
+
+describe("getAppProtocolName", () => {
+  const ownQueue: PlayerSource = {
+    id: "player",
+    name: "Music Assistant Queue",
+    passive: false,
+    can_play_pause: true,
+    can_seek: true,
+    can_next_previous: true,
+    can_shuffle: true,
+    can_repeat: true,
+    shuffle_enabled: null,
+    repeat_mode: null,
+  };
+
+  function createSource(overrides: Partial<PlayerSource>): PlayerSource {
+    return { ...ownQueue, id: "app", name: "YouTube Music", ...overrides };
+  }
+
+  function createProtocol(
+    overrides: Partial<PlayerProtocolInfo>,
+  ): PlayerProtocolInfo {
+    return {
+      protocol_id: "own",
+      domain: "sonos",
+      provider: "sonos",
+      role: ProtocolRole.NATIVE,
+      available: true,
+      active: false,
+      ...overrides,
+    };
+  }
+
+  const chromecast = createProtocol({
+    protocol_id: "cast",
+    domain: "chromecast",
+    provider: "chromecast",
+    role: ProtocolRole.AUDIO,
+  });
+  const airplay = createProtocol({
+    protocol_id: "airplay",
+    domain: "airplay",
+    provider: "airplay",
+    role: ProtocolRole.AUDIO,
+  });
+
+  function createAppPlayer(overrides: Partial<Player> = {}): Player {
+    return createPlayer({
+      active_source: "app",
+      source_list: [ownQueue, createSource({ passive: true })],
+      protocols: [createProtocol({}), { ...chromecast, active: true }, airplay],
+      ...overrides,
+    });
+  }
+
+  beforeEach(() => {
+    api.providerManifests.chromecast = {
+      name: "Chromecast",
+    } as ProviderManifest;
+    api.providerManifests.airplay = { name: "AirPlay" } as ProviderManifest;
+  });
+
+  afterEach(() => {
+    delete api.providerManifests.chromecast;
+    delete api.providerManifests.airplay;
+  });
+
+  it("names the protocol an app from outside plays on", () => {
+    expect(getAppProtocolName(createAppPlayer())).toBe("Chromecast");
+    expect(
+      getAppProtocolName(createAppPlayer({ active_output_protocol: "native" })),
+    ).toBe("Chromecast");
+  });
+
+  it("names nothing while Music Assistant's own output is active", () => {
+    expect(
+      getAppProtocolName(
+        createAppPlayer({
+          active_output_protocol: "airplay",
+          protocols: [
+            createProtocol({}),
+            chromecast,
+            { ...airplay, active: true },
+          ],
+        }),
+      ),
+    ).toBeUndefined();
+    // the own protocol is marked active for native playback
+    expect(
+      getAppProtocolName(
+        createAppPlayer({
+          active_output_protocol: "native",
+          protocols: [createProtocol({ active: true }), chromecast, airplay],
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("names nothing while the player plays its own queue", () => {
+    expect(
+      getAppProtocolName(createAppPlayer({ active_source: "player" })),
+    ).toBeUndefined();
+    expect(
+      getAppProtocolName(createAppPlayer({ active_source: null })),
+    ).toBeUndefined();
+  });
+
+  it("names nothing without protocols", () => {
+    expect(getAppProtocolName(createAppPlayer({ protocols: [] }))).toBe(
+      undefined,
+    );
+    // a server that marks no protocol active
+    expect(
+      getAppProtocolName(
+        createAppPlayer({
+          protocols: [createProtocol({}), chromecast, airplay],
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("names nothing when the source already carries the protocol's name", () => {
+    expect(
+      getAppProtocolName(
+        createAppPlayer({
+          source_list: [
+            ownQueue,
+            createSource({ name: "AirPlay", passive: true }),
+          ],
+          protocols: [
+            createProtocol({}),
+            chromecast,
+            { ...airplay, active: true },
+          ],
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("never names a protocol by its domain", () => {
+    delete api.providerManifests.chromecast;
+    expect(getAppProtocolName(createAppPlayer())).toBeUndefined();
+  });
+
+  it("labels the active source with the protocol its app plays on", () => {
+    const player = createAppPlayer();
+    expect(getSourceLabel(player, player.source_list[1])).toBe(
+      "YouTube Music • Chromecast",
+    );
+    expect(getSourceLabel(player, ownQueue)).toBe("Music Assistant Queue");
+    expect(
+      getSourceLabel(createAppPlayer({ protocols: [] }), player.source_list[1]),
+    ).toBe("YouTube Music");
   });
 });

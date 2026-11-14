@@ -108,6 +108,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     has_setup_flow: false,
     setup_reason: null,
     legacy_ids: [],
+    protocols: [],
     output_protocols: [],
     active_output_protocol: null,
     elapsed_time: null,

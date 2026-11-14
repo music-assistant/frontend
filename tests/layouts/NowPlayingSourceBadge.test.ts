@@ -1,7 +1,13 @@
 import NowPlayingSourceBadge from "@/layouts/default/PlayerOSD/NowPlayingSourceBadge.vue";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Player, PlayerQueue } from "@/plugins/api/interfaces";
+import {
+  type Player,
+  type PlayerProtocolInfo,
+  type PlayerQueue,
+  ProtocolRole,
+  type ProviderManifest,
+} from "@/plugins/api/interfaces";
 import { playerSource } from "../fixtures/playerSource";
 
 vi.mock("@/composables/useProviderIcon", async () => {
@@ -32,6 +38,7 @@ vi.mock("@/plugins/store", async () => {
 });
 
 const { store: storeModule } = await import("@/plugins/store");
+const { api } = await import("@/plugins/api");
 
 // the real store computes these; on the mock they are plain writable state
 const store = storeModule as typeof storeModule & {
@@ -52,13 +59,19 @@ function mountBadge(props: { iconOnly?: boolean; plain?: boolean } = {}) {
   });
 }
 
-function activateSource(id: string, name: string) {
+function activateSource(
+  id: string,
+  name: string,
+  protocols: PlayerProtocolInfo[] = [],
+) {
   const source = playerSource({ id, name });
   store.activePlayer = {
     player_id: "player-1",
     powered: true,
     active_source: source.id,
     source_list: [source],
+    active_output_protocol: null,
+    protocols,
   } as unknown as Player;
 }
 
@@ -68,6 +81,8 @@ beforeEach(() => {
     powered: true,
     active_source: "player-1",
     source_list: [],
+    active_output_protocol: null,
+    protocols: [],
   } as unknown as Player;
   store.activePlayerQueue = undefined;
 });
@@ -87,6 +102,30 @@ describe("NowPlayingSourceBadge", () => {
     );
     expect(badge.find("img").exists()).toBe(true);
     expect(badge.find(".now-playing-source__fallback").exists()).toBe(false);
+  });
+
+  it("names the protocol an app from outside plays on", () => {
+    api.providerManifests.chromecast = {
+      name: "Chromecast",
+    } as ProviderManifest;
+    activateSource("youtube", "YouTube", [
+      {
+        protocol_id: "cast-1",
+        domain: "chromecast",
+        provider: "chromecast",
+        role: ProtocolRole.AUDIO,
+        available: true,
+        active: true,
+      },
+    ]);
+
+    const badge = mountBadge();
+
+    expect(badge.text()).toContain("YouTube • Chromecast");
+    expect(badge.get("[data-slot=badge]").attributes("title")).toBe(
+      "tooltip.playing_from:YouTube • Chromecast",
+    );
+    delete api.providerManifests.chromecast;
   });
 
   it("uses the AirPlay provider icon", () => {

@@ -1584,6 +1584,27 @@ export interface OutputProtocol {
   derived_from: string | null;
 }
 
+export enum ProtocolRole {
+  // The role a protocol has within a player.
+  NATIVE = "native", // the vendor-specific protocol of the device, with full control
+  CONTROL = "control", // controls the device (e.g. power, volume) but does not play audio
+  AUDIO = "audio", // a generic protocol that plays audio on the device (e.g. AirPlay)
+  VIRTUAL = "virtual", // a protocol without a physical device behind it (e.g. a group player)
+  UNKNOWN = "unknown",
+}
+
+export interface PlayerProtocolInfo {
+  // A protocol a player is made up of (e.g. the device's own protocol plus AirPlay and Chromecast).
+  protocol_id: string; // Unique ID of the protocol (its own id, not the player id)
+  domain: string; // Domain of the protocol's provider, e.g. "airplay", "sonos"
+  provider: string; // instance_id of the protocol's provider
+  role: ProtocolRole;
+  available: boolean; // Whether this protocol is currently available
+  // active: the player's current playback path: the protocol of an app Music Assistant
+  // did not start that the player shows, else the one of its active output
+  active: boolean;
+}
+
 export interface DeviceInfo {
   model: string;
   manufacturer: string;
@@ -1726,6 +1747,8 @@ export interface Player {
   // legacy_ids: ids the player was known under before (such as a player merged into it),
   // which it keeps answering to
   legacy_ids: string[];
+  // protocols: the protocols the player is made up of, also those that are away
+  protocols: PlayerProtocolInfo[];
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
