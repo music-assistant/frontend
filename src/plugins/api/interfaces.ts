@@ -1206,6 +1206,8 @@ export interface AudioMetadata {
   musical_key: string | null;
   // Camelot wheel notation of musical_key, e.g. "11A"
   camelot_key: string | null;
+  // 1 (calmest) to 10 (most energetic)
+  energy_level: number | null;
 }
 
 export interface Track extends MediaItem {

@@ -129,6 +129,13 @@
         <template v-else>{{ audioMetadata?.musical_key }}</template>
       </div>
 
+      <div
+        v-else-if="column === 'energy'"
+        class="text-sm tabular-nums text-muted-foreground"
+      >
+        {{ audioMetadata?.energy_level }}
+      </div>
+
       <!-- on hover-capable devices only a favorite shows its heart until the row is hovered -->
       <div
         v-else-if="column === 'favorite'"
