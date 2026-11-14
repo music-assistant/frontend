@@ -3,6 +3,7 @@
     <div class="profile-container">
       <div class="profile-content space-y-6">
         <ProfileSettings />
+        <ListeningHistoryPreferences />
         <PasswordSettings />
         <SessionTokensList
           :tokens="sessionTokens"
@@ -60,6 +61,7 @@
 import LongLivedTokensList from "@/components/profile/LongLivedTokensList.vue";
 import PasswordSettings from "@/components/profile/PasswordSettings.vue";
 import ProfileSettings from "@/components/profile/ProfileSettings.vue";
+import ListeningHistoryPreferences from "@/components/profile/ListeningHistoryPreferences.vue";
 import SessionTokensList from "@/components/profile/SessionTokensList.vue";
 import { Button } from "@/components/ui/button";
 import {

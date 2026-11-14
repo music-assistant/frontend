@@ -20,40 +20,46 @@
           <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
         </div>
 
-        <div class="album-hero__text">
-          <h1 class="album-hero__name">
-            {{ item.name }}
-            <span v-if="item.version" class="album-hero__version">
-              ({{ item.version }})
-            </span>
-            <ExplicitBadge
-              v-if="item.metadata?.explicit"
-              class="album-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
-            />
-          </h1>
-
-          <div class="album-hero__meta">
-            <div v-if="item.artists.length" class="album-hero__line">
-              <Music :size="16" class="album-hero__icon" />
-              <span class="album-hero__line-text">
-                <template
-                  v-for="(artist, index) in item.artists"
-                  :key="artist.uri"
-                >
-                  <span v-if="index > 0">,&nbsp;</span>
-                  <button
-                    type="button"
-                    class="album-hero__link"
-                    @click="gotoArtist(artist)"
-                  >
-                    {{ artist.name }}
-                  </button>
-                </template>
+        <div class="album-hero__text detail-hero-listening-layout">
+          <div class="detail-hero-listening-identity">
+            <h1 class="album-hero__name">
+              {{ item.name }}
+              <span v-if="item.version" class="album-hero__version">
+                ({{ item.version }})
               </span>
-            </div>
-            <DetailHeroFacts v-if="facts.length" :icon="Disc" :facts="facts" />
-          </div>
+              <ExplicitBadge
+                v-if="item.metadata?.explicit"
+                class="album-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
+              />
+            </h1>
 
+            <div class="album-hero__meta">
+              <div v-if="item.artists.length" class="album-hero__line">
+                <Music :size="16" class="album-hero__icon" />
+                <span class="album-hero__line-text">
+                  <template
+                    v-for="(artist, index) in item.artists"
+                    :key="artist.uri"
+                  >
+                    <span v-if="index > 0">,&nbsp;</span>
+                    <button
+                      type="button"
+                      class="album-hero__link"
+                      @click="gotoArtist(artist)"
+                    >
+                      {{ artist.name }}
+                    </button>
+                  </template>
+                </span>
+              </div>
+              <DetailHeroFacts
+                v-if="facts.length"
+                :icon="Disc"
+                :facts="facts"
+              />
+            </div>
+          </div>
+          <DetailHeroListeningStats :item="item" />
           <div class="album-hero__actions">
             <DetailHeroPlayButton
               :item="item"
@@ -93,6 +99,7 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
+import DetailHeroListeningStats from "@/components/details/DetailHeroListeningStats.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
