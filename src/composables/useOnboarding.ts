@@ -568,7 +568,7 @@ async function pause(options?: { force?: boolean }): Promise<void> {
   }
 }
 
-/** Stop offering to resume a paused setup; the settings still resume it. */
+/** Hide the banner offering to resume a paused setup. */
 function dismissPaused(): void {
   pausedBannerDismissed.value = true;
 }

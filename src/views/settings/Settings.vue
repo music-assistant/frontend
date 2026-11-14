@@ -298,12 +298,10 @@ const onboardingLinkKey = computed(() =>
   isAdminTrack() ? "onboarding.run_again" : "onboarding.welcome_again",
 );
 const { open: openOnboarding } = useOnboarding();
-// The setup wizard opens where a paused setup was left, or else on whatever is
-// left to set up. The welcome has been shown by the time this link is any use,
-// so nothing is left to do on it and it would otherwise open on its own
-// summary: showing it again means showing it from the top.
+// Running the wizard again starts at its first choice; the paused banner
+// separately resumes wherever the user left it.
 const launchOnboarding = () =>
-  openOnboarding(isAdminTrack() ? undefined : "welcome");
+  openOnboarding(isAdminTrack() ? "intent" : "welcome");
 
 const settingsSections = computed(() =>
   availableSettingsSections((scope) => authManager.hasScope(scope)),
