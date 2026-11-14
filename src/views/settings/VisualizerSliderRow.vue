@@ -14,7 +14,7 @@
     <div class="flex w-full shrink-0 items-center gap-3 sm:w-64">
       <Slider
         :model-value="[draft]"
-        :aria-label="ariaLabel"
+        :thumb-label="ariaLabel"
         :min="min"
         :max="max"
         :step="step"

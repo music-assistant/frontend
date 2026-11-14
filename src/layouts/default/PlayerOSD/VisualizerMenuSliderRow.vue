@@ -7,7 +7,7 @@
     <component :is="icon" :size="20" class="visualizer-menu__icon" />
     <Slider
       :model-value="[draft]"
-      :aria-label="ariaLabel"
+      :thumb-label="ariaLabel"
       :min="min"
       :max="max"
       :step="step"
