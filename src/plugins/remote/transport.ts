@@ -5,6 +5,14 @@
  * This allows the MusicAssistantApi to work with either transport seamlessly.
  */
 
+/** A message the transport refuses to send because it is too large, on a healthy connection. */
+export class MessageTooLargeError extends Error {
+  constructor() {
+    super("This is too large to send over remote access.");
+    this.name = "MessageTooLargeError";
+  }
+}
+
 export enum TransportState {
   DISCONNECTED = "disconnected",
   CONNECTING = "connecting",
