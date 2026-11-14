@@ -19,7 +19,7 @@ let systemSchemeListener: (() => void) | undefined;
 const currentTheme = ref<"light" | "dark">("dark");
 export const isDark = computed(() => currentTheme.value === "dark");
 
-export const THEME_PREFERENCES = ["auto", "light", "dark"] as const;
+export const THEME_PREFERENCES = ["auto", "light", "dark", "black"] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 
 export function isThemePreference(value: unknown): value is ThemePreference {
@@ -53,6 +53,7 @@ export function useThemePreference() {
   function applyTheme(preference: ThemePreference): void {
     const resolvedTheme =
       preference === "dark" ||
+      preference === "black" ||
       (preference === "auto" &&
         typeof window.matchMedia === "function" &&
         window.matchMedia("(prefers-color-scheme: dark)").matches)
@@ -60,15 +61,19 @@ export function useThemePreference() {
         : "light";
 
     themePreference.value = preference;
-    applyResolvedTheme(resolvedTheme);
+    applyResolvedTheme(resolvedTheme, preference === "black");
     colorMode.value = preference === "auto" ? "auto" : resolvedTheme;
     syncVuetifyToSystemScheme(preference);
   }
 
-  function applyResolvedTheme(value: "light" | "dark"): void {
+  // Black is the dark theme on a true black background, for OLED screens:
+  // everything that looks at light or dark keeps seeing dark.
+  function applyResolvedTheme(value: "light" | "dark", black = false): void {
+    const vuetifyTheme = black ? "black" : value;
     currentTheme.value = value;
-    theme.change(value);
-    setStatusBarThemeColor(theme.themes.value[value].colors.background);
+    document.documentElement.classList.toggle("black", black);
+    theme.change(vuetifyTheme);
+    setStatusBarThemeColor(theme.themes.value[vuetifyTheme].colors.background);
   }
 
   function syncVuetifyToSystemScheme(preference: ThemePreference): void {
