@@ -2316,14 +2316,18 @@ export class MusicAssistantApi {
     queueId: string,
     queue_item_id: string,
     pos_shift = 1,
-  ) {
-    // Move queue item x up/down the queue.
+  ): Promise<void> {
+    // Move queue item x up/down the queue; resolves once the server has moved it.
     // - queue_id: id of the queue to process this request.
     // - queue_item_id: the item_id of the queueitem that needs to be moved.
     // - pos_shift: move item x positions down if positive value
     // - pos_shift: move item x positions up if negative value
     // - pos_shift:  move item to top of queue as next item if 0
-    this.playerQueueCommand(queueId, "move_item", { queue_item_id, pos_shift });
+    return this.sendCommand("player_queues/move_item", {
+      queue_id: queueId,
+      queue_item_id,
+      pos_shift,
+    });
   }
   public queueCommandMoveItemEnd(queueId: string, queue_item_id: string) {
     // Move queue item to the end of the queue.
