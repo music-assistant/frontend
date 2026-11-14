@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const ZERO_LEVEL = 0x80;
 
 const loadPreset = vi.hoisted(() => vi.fn(async () => true));
+const loseGLContext = vi.hoisted(() => vi.fn());
 const setPaletteColors = vi.hoisted(() => vi.fn());
 const setPaletteRamp = vi.hoisted(() => vi.fn());
 const renderedSamples = vi.hoisted(() => [] as Uint8Array[]);
@@ -31,6 +32,7 @@ vi.mock("butterchurn", () => {
       renderedSamples.push(new Uint8Array(audioLevels.timeByteArray)),
     loadPreset,
     setRendererSize: vi.fn(),
+    loseGLContext,
     setPaletteColors,
     setPaletteRamp,
   });
@@ -192,6 +194,21 @@ describe("createVisualizerEngine pause envelope", () => {
     await engine!.loadPresetByName("preset", 2.7);
 
     expect(loadPreset).toHaveBeenCalledWith(expect.anything(), 0);
+  });
+
+  it("releases the GL context on destroy", () => {
+    engine!.destroy();
+    engine = null;
+
+    expect(loseGLContext).toHaveBeenCalledOnce();
+  });
+
+  it("releases the GL context only once when destroyed twice", () => {
+    engine!.destroy();
+    engine!.destroy();
+    engine = null;
+
+    expect(loseGLContext).toHaveBeenCalledOnce();
   });
 
   it("reports the preset it loaded", async () => {
