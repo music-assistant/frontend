@@ -545,6 +545,7 @@ export enum ProviderFeature {
   LIBRARY_AUDIOBOOKS = "library_audiobooks",
   LIBRARY_GENRES = "library_genres",
   // additional library features
+  ARTIST_PLAYLISTS = "artist_playlists",
   ARTIST_ALBUMS = "artist_albums",
   ARTIST_TRACKS = "artist_tracks",
   ARTIST_TOPTRACKS = "artist_toptracks",

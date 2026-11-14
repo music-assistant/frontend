@@ -31,6 +31,22 @@
           @select-source="(source) => selectRowSource('top_tracks', source)"
         />
 
+        <ReleaseShelf
+          v-else-if="
+            rowId === 'playlists' &&
+            sourceRowVisible('playlists', playlistItems)
+          "
+          :title="$t('playlists')"
+          :source-label="playlistsSourceDisplay?.label"
+          :source-domain="playlistsSourceDisplay?.domain"
+          :source-options="sourceOptions('playlists')"
+          :source-value="playlistsSource"
+          :items="playlistItems"
+          :parent-item="itemDetails"
+          @edit-rows="rowsEditorOpen = true"
+          @select-source="(source) => selectRowSource('playlists', source)"
+        />
+
         <!-- albums -->
         <ReleaseShelf
           v-else-if="
@@ -227,6 +243,7 @@ import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import { artistProvidersForFeature } from "@/components/artist/artistData";
 import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import { useDiscographyRows } from "@/composables/useDiscographyRows";
@@ -277,6 +294,9 @@ const visibleRows = computed(() => {
 });
 
 const {
+  playlistItems,
+  playlistsSource,
+  playlistsSourceDisplay,
   artistTracks,
   artistTracksCount,
   topTracksItems,
@@ -504,6 +524,14 @@ const UpdateItemInDb = async function () {
 function rowApplies(rowId: ArtistRowId): boolean {
   const isLibraryItem = itemDetails.value?.provider === "library";
   switch (rowId) {
+    case "playlists":
+      return (
+        !!itemDetails.value &&
+        artistProvidersForFeature(
+          itemDetails.value,
+          ProviderFeature.ARTIST_PLAYLISTS,
+        ).length > 0
+      );
     case "appears_on":
     case "audiobooks":
       return isLibraryItem;

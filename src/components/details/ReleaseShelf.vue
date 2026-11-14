@@ -55,9 +55,11 @@
             overlay
             class="release-shelf__explicit"
           />
-          <span v-if="item.year" class="release-shelf__year">{{
-            item.year
-          }}</span>
+          <span
+            v-if="'year' in item && item.year"
+            class="release-shelf__year"
+            >{{ item.year }}</span
+          >
         </template>
         <template #subtitle>{{ subtitle(item) }}</template>
       </EditorialMediaCard>
@@ -87,7 +89,9 @@ import { panelViewItemResponsive } from "@/helpers/utils";
 import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
+  MediaType,
   type Album,
+  type Playlist,
   type ItemMapping,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
@@ -109,7 +113,7 @@ export interface Props {
   // the source currently feeding the row, highlighted in the picker
   sourceValue?: RowSource;
   // undefined while the row is still loading
-  items?: Array<Album | ItemMapping>;
+  items?: Array<Album | Playlist | ItemMapping>;
   viewAllTo?: RouteLocationRaw;
   itemCount?: number;
   // what "View all" opens, for screen readers, when the title doesn't say it
@@ -168,7 +172,9 @@ const viewAllLabel = computed(() =>
 // the item's type, so every card says what it is; the year already sits on the
 // artwork, so it isn't repeated here. A release that is not in the library says
 // that instead, which is the more useful thing to know about it.
-const subtitle = function (item: Album | ItemMapping): string {
+const subtitle = function (item: Album | Playlist | ItemMapping): string {
+  if (item.media_type === MediaType.PLAYLIST && "owner" in item && item.owner)
+    return item.owner;
   if (isMusicBrainzItem(item)) return $t("not_in_library");
   if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
     return $t(`album_type.${item.album_type}`);
@@ -176,7 +182,7 @@ const subtitle = function (item: Album | ItemMapping): string {
   return $t(item.media_type);
 };
 
-const isExplicit = function (item: Album | ItemMapping): boolean {
+const isExplicit = function (item: Album | Playlist | ItemMapping): boolean {
   return (
     "metadata" in item &&
     !!item.metadata &&

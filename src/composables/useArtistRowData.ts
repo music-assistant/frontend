@@ -7,6 +7,7 @@ import {
   loadArtistDiscography,
   loadArtistDiscographyCount,
   loadArtistReleases,
+  loadArtistPlaylists,
   loadArtistTopTracks,
   loadArtistTracks,
   loadArtistTracksCount,
@@ -28,6 +29,7 @@ import {
   SortField,
   type Album,
   type Artist,
+  type Playlist,
   type Track,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -53,6 +55,7 @@ export function useArtistRowData(
   const singlesReleases = ref(new Map<RowSource, Album[]>());
   const albumCounts = ref(new Map<RowSource, number | undefined>());
   const singlesCounts = ref(new Map<RowSource, number | undefined>());
+  const playlists = ref(new Map<RowSource, Playlist[]>());
   const topTracks = ref(new Map<RowSource, Track[]>());
   const similarArtists = ref(new Map<RowSource, Artist[]>());
   const artistTracks = ref<Track[]>();
@@ -74,6 +77,7 @@ export function useArtistRowData(
       singlesReleases.value = new Map();
       albumCounts.value = new Map();
       singlesCounts.value = new Map();
+      playlists.value = new Map();
       topTracks.value = new Map();
       similarArtists.value = new Map();
       artistTracks.value = undefined;
@@ -112,6 +116,13 @@ export function useArtistRowData(
     return artistRows.effectiveSource(rowId, artist.value);
   };
 
+  const playlistsSource = computed(() => rowSource("playlists"));
+  const playlistItems = computed(() =>
+    sourceItems(playlists.value, playlistsSource.value),
+  );
+  const playlistsSourceDisplay = computed(() =>
+    rowSourceDisplay(playlistsSource.value),
+  );
   const albumsSource = computed(() => rowSource("albums"));
   const singlesSource = computed(() => rowSource("singles_eps"));
   const topTracksSource = computed(() => rowSource("top_tracks"));
@@ -206,6 +217,7 @@ export function useArtistRowData(
   watch(
     [
       visibleRows,
+      playlistsSource,
       albumsSource,
       singlesSource,
       topTracksSource,
@@ -233,6 +245,14 @@ export function useArtistRowData(
   function loadRowData() {
     if (!artist.value) return;
     const rows = visibleRows.value;
+    if (rows.includes("playlists")) {
+      fetchInto(
+        "playlists",
+        playlistsSource.value!,
+        playlists.value,
+        loadArtistPlaylists,
+      );
+    }
     if (rows.includes("albums")) {
       fetchReleases("albums", albumsSource.value!);
       fetchReleaseCount("albums", albumsSource.value!);
@@ -383,6 +403,9 @@ export function useArtistRowData(
   }
 
   return {
+    playlistItems,
+    playlistsSource,
+    playlistsSourceDisplay,
     artistTracks,
     artistTracksCount,
     topTracksItems,

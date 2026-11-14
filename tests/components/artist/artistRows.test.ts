@@ -49,6 +49,7 @@ import { artist } from "../../fixtures/artist";
 const MUSIC_ROWS: ArtistRowId[] = [
   "bio",
   "top_tracks",
+  "playlists",
   "albums",
   "singles_eps",
   "appears_on",
@@ -119,6 +120,18 @@ describe("artistRows", () => {
   });
 
   describe("sources", () => {
+    it("offers only mapped providers capable of artist playlists", () => {
+      addProvider("soundcloud--abc", [ProviderFeature.ARTIST_PLAYLISTS]);
+      addProvider("spotify--def", []);
+      const item = mappedTo("soundcloud--abc", "spotify--def");
+      expect(artistRows.sources("playlists", item)).toEqual([
+        "soundcloud--abc",
+      ]);
+      expect(artistRows.effectiveSource("playlists", item)).toBe(
+        "soundcloud--abc",
+      );
+    });
+
     it("lists the library and the capable providers for a release row, never every provider at once", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       addProvider("tidal--def", []);
@@ -218,6 +231,7 @@ describe("artistRows", () => {
         "similar_artists",
         "bio",
         "top_tracks",
+        "playlists",
       ]);
       expect(hidden).toEqual(new Set(["appears_on"]));
     });
@@ -274,6 +288,7 @@ describe("artistRows", () => {
         "albums",
         "bio",
         "top_tracks",
+        "playlists",
         "singles_eps",
         "appears_on",
         "discography",
