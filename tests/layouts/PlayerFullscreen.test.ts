@@ -261,6 +261,7 @@ async function seedPlayingQueue(): Promise<void> {
     playback_state: PlaybackState.PLAYING,
     current_media: {
       media_type: MediaType.AUDIOBOOK,
+      title: "Book",
       queue_item_id: "item-1",
     },
   };
@@ -335,12 +336,12 @@ describe("PlayerFullscreen chapter queue", () => {
     vi.useRealTimers();
   });
 
-  async function mountChapterQueue(): Promise<VueWrapper> {
+  async function mountChapterQueue(showQueueItems = true): Promise<VueWrapper> {
     await seedPlayingQueue();
     const { store } = await import("@/plugins/store");
     const testStore = store as unknown as TestStore;
     testStore.showFullscreenPlayer = true;
-    testStore.showQueueItems = true;
+    testStore.showQueueItems = showQueueItems;
     wrapper = shallowMount(PlayerFullscreen, {
       props: { colorPalette: EMPTY_COLOR_PALETTE },
       global: {
@@ -350,6 +351,11 @@ describe("PlayerFullscreen chapter queue", () => {
           "v-card": { template: "<div><slot /></div>" },
           // rendered, so its chapter and bookmark rows can be checked here
           QueueChapterList: false,
+          "v-card-title": { template: '<div class="title"><slot /></div>' },
+          "v-card-subtitle": {
+            template: '<div class="subtitle"><slot /></div>',
+          },
+          MarqueeText: { template: "<span><slot /></span>" },
         },
       },
     });
@@ -373,6 +379,16 @@ describe("PlayerFullscreen chapter queue", () => {
     expect(
       fullscreen.findAll(".queue-chapter")[0].attributes("aria-current"),
     ).toBeUndefined();
+  });
+
+  it("titles the playing chapter above the book with the queue hidden", async () => {
+    const fullscreen = await mountChapterQueue(false);
+    expect(fullscreen.get(".title").text()).toBe("First");
+    expect(fullscreen.get(".subtitle").text()).toBe("Book");
+
+    await vi.advanceTimersByTimeAsync(51_000);
+    await nextTick();
+    expect(fullscreen.get(".title").text()).toBe("Second");
   });
 
   it("seeks to a chapter start without reloading the media", async () => {
@@ -459,16 +475,16 @@ describe("PlayerFullscreen chapter queue", () => {
             : [
                 x.findComponent(QueueBookmarkRow).props("bookmark").name,
                 x.findComponent(QueueBookmarkRow).props("inChapter"),
-                x.findComponent(QueueBookmarkRow).props("time"),
+                x.findComponent(QueueBookmarkRow).props("bookmark").start,
               ],
         ),
       ).toEqual([
         // with the position it takes, and the bookmarks within their chapter
         ["add_bookmark", "00:10"],
-        ["First", "01:00"],
+        ["First", "00:00"],
         ["In the first", true, 30],
         ["Second", "01:00"],
-        ["In the second", true, 30],
+        ["In the second", true, 90],
       ]);
       const bookmarkRows = fullscreen.findAllComponents(QueueBookmarkRow);
       // edits where the provider takes them, or Music Assistant keeps them
@@ -545,7 +561,7 @@ describe("PlayerFullscreen chapter queue", () => {
     expect(
       fullscreen
         .findAllComponents(QueueBookmarkRow)
-        .map((x) => [x.props("inChapter"), x.props("time")]),
+        .map((x) => [x.props("inChapter"), x.props("bookmark").start]),
     ).toEqual([[false, 90]]);
     // the position it takes, in the whole book as well
     await vi.advanceTimersByTimeAsync(60_000);

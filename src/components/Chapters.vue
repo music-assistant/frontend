@@ -28,28 +28,48 @@
         <button
           v-if="row.chapter"
           type="button"
-          class="flex h-14 w-full items-center gap-3 rounded-lg px-2 text-left hover:bg-[rgba(var(--v-theme-on-surface),0.05)] disabled:opacity-50"
-          :disabled="!itemIsAvailable(itemDetails)"
+          class="group flex h-14 w-full items-center gap-3 rounded-lg px-2 text-left hover:bg-[rgba(var(--v-theme-on-surface),0.05)] disabled:opacity-50"
+          :disabled="!playable"
+          :aria-current="isPlaying(row.chapter) ? 'true' : undefined"
           data-testid="chapter-row"
           @click="chapterClicked(row.chapter)"
         >
           <span
             class="flex size-10 shrink-0 items-center justify-center rounded-md bg-[rgba(var(--v-theme-on-surface),0.08)] text-[13px] font-medium tabular-nums"
+            :class="{ 'bg-primary/12 text-primary': isPlaying(row.chapter) }"
           >
-            {{ row.chapter.position }}
+            <Play
+              v-if="playable"
+              :size="16"
+              class="hidden fill-current group-hover:block group-focus-visible:block"
+              aria-hidden="true"
+            />
+            <span
+              :class="{
+                'group-hover:hidden group-focus-visible:hidden': playable,
+              }"
+            >
+              <AudioLines
+                v-if="isPlaying(row.chapter)"
+                :size="18"
+                aria-hidden="true"
+                data-testid="chapter-playing"
+              />
+              <template v-else>{{ row.chapter.position }}</template>
+            </span>
           </span>
           <span
             class="min-w-0 flex-1 truncate text-[15px] font-medium"
+            :class="{ 'text-primary': isPlaying(row.chapter) }"
             data-testid="chapter-name"
           >
             {{ row.chapter.name }}
           </span>
           <span
-            v-if="row.chapter.end"
             class="min-w-11 shrink-0 text-right text-[13px] text-[rgba(var(--v-theme-on-surface),0.6)] tabular-nums"
-            data-testid="chapter-duration"
+            data-testid="chapter-start"
           >
-            {{ formatDuration(row.chapter.end - row.chapter.start) }}
+            {{ formatDuration(row.chapter.start) }}
           </span>
           <!-- where the bookmarks have their menu, so the times line up -->
           <span class="w-7 shrink-0"></span>
@@ -57,7 +77,6 @@
         <BookmarkRow
           v-else-if="row.bookmark"
           :bookmark="row.bookmark"
-          :time="row.time"
           :editable="isEditable(row.bookmark)"
           :disabled="!bookmarkPlayable(row.bookmark)"
           @play="bookmarkClicked(row.bookmark)"
@@ -82,10 +101,12 @@ import BookmarkRow from "@/components/BookmarkRow.vue";
 import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBookmarkActions, useBookmarks } from "@/composables/useBookmarks";
+import { usePlayingChapter } from "@/composables/usePlayingChapter";
 import {
   chaptersFitBookmarks,
   groupBookmarksByChapter,
 } from "@/helpers/chapters";
+import { AudioLines, Play } from "@lucide/vue";
 import { formatDuration } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
@@ -123,17 +144,17 @@ const { bookmarks } = useBookmarks(() => {
 
 type ChapterTab = "chapters" | "bookmarks" | "all";
 
-// a tab per kind the item has, and the combined one when it has both
+// the combined tab first when the item has both kinds, then a tab per kind
 const tabs = computed(() => {
   const hasChapters = !!props.itemDetails.metadata?.chapters?.length;
   const hasBookmarks = bookmarks.value.length > 0;
   const result: { id: ChapterTab; labelKey: string }[] = [];
-  if (hasChapters) result.push({ id: "chapters", labelKey: "chapters" });
-  if (hasBookmarks) result.push({ id: "bookmarks", labelKey: "bookmarks" });
   // the bookmarks of a copy with chapters of its own do not fit the item's ones
   if (hasChapters && hasBookmarks && chaptersFitBookmarks(props.itemDetails)) {
     result.push({ id: "all", labelKey: "chapters_and_bookmarks_tab" });
   }
+  if (hasChapters) result.push({ id: "chapters", labelKey: "chapters" });
+  if (hasBookmarks) result.push({ id: "bookmarks", labelKey: "bookmarks" });
   return result;
 });
 
@@ -142,7 +163,7 @@ const titleKey = computed(() =>
   tabs.value.length > 1 ? "chapters_and_bookmarks" : tabs.value[0]?.labelKey,
 );
 
-const activeTab = ref<ChapterTab>("chapters");
+const activeTab = ref<ChapterTab>("all");
 
 const {
   renameDialogOpen,
@@ -165,8 +186,6 @@ interface ChapterRow {
   key: string;
   chapter?: MediaItemChapter;
   bookmark?: MediaItemBookmark;
-  // the time a bookmark shows: within its chapter beside the chapters' durations
-  time?: number;
 }
 
 const bookmarkKey = (bookmark: MediaItemBookmark) =>
@@ -175,10 +194,13 @@ const bookmarkKey = (bookmark: MediaItemBookmark) =>
 const rows = computed<ChapterRow[]>(() => {
   const tab = shownTab.value;
   if (tab === "chapters") {
-    return (props.itemDetails.metadata?.chapters ?? []).map((chapter) => ({
-      key: `chapter-${chapter.position}`,
-      chapter,
-    }));
+    // in playing order, as the timeline and the grouped tab show them
+    return [...(props.itemDetails.metadata?.chapters ?? [])]
+      .sort((a, b) => a.start - b.start)
+      .map((chapter) => ({
+        key: `chapter-${chapter.position}`,
+        chapter,
+      }));
   }
   if (tab === "bookmarks") {
     return [...bookmarks.value]
@@ -196,13 +218,18 @@ const rows = computed<ChapterRow[]>(() => {
     ...group.bookmarks.map((bookmark) => ({
       key: bookmarkKey(bookmark),
       bookmark,
-      time: bookmark.start - (group.chapter?.start ?? 0),
     })),
   ]);
 });
 
+const playable = computed(() => itemIsAvailable(props.itemDetails));
+
+const playingPosition = usePlayingChapter(() => props.itemDetails);
+const isPlaying = (chapter: MediaItemChapter) =>
+  chapter.position === playingPosition.value;
+
 const chapterClicked = function (chapter: MediaItemChapter) {
-  if (!props.itemDetails || !itemIsAvailable(props.itemDetails)) return;
+  if (!playable.value) return;
   // an episode is played on its own, so it starts at a position, not a chapter
   api.playMedia(
     props.itemDetails.uri,

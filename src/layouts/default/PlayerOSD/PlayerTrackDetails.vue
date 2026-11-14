@@ -198,21 +198,21 @@ import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { getPlayerDisplayName } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
-import { resolveCurrentChapter } from "@/helpers/chapters";
+import {
+  isChapteredMediaType,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
 import { MediaType, PlaybackState, PlayerType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed, onUnmounted, ref, watch } from "vue";
-import { useUserPreferences } from "@/composables/userPreferences";
 import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import NowPlayingSourceBadge from "./NowPlayingSourceBadge.vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
 const marqueeSync = new MarqueeTextSync();
-const { getPreference } = useUserPreferences();
-const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 
 const nowTick = ref(0);
 let chapterTimer: ReturnType<typeof setInterval> | null = null;
@@ -221,8 +221,7 @@ const currentChapter = computed(() => {
   const media = store.activePlayer?.current_media;
   const queueItem = store.curQueueItem;
   if (
-    !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    !isChapteredMediaType(media?.media_type) ||
     (media.queue_item_id !== null &&
       media.queue_item_id !== queueItem?.queue_item_id)
   ) {
@@ -237,7 +236,6 @@ const currentChapter = computed(() => {
 
 const chapterTimerNeeded = computed(
   () =>
-    showChapterProgress.value &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
     !!currentChapter.value,
 );

@@ -1,12 +1,20 @@
-import type {
-  MediaItemBookmark,
-  MediaItemChapter,
-  ProviderMapping,
+import {
+  MediaType,
+  type MediaItemBookmark,
+  type MediaItemChapter,
+  type ProviderMapping,
 } from "@/plugins/api/interfaces";
 
-export interface ChapterTick extends MediaItemChapter {
-  // position along the track as percentage
-  percent: number;
+export const isChapteredMediaType = (mediaType: MediaType | undefined) =>
+  mediaType === MediaType.AUDIOBOOK || mediaType === MediaType.PODCAST_EPISODE;
+
+export interface ChapterSegment {
+  // undefined for the stretch before the first chapter starts
+  chapter?: MediaItemChapter;
+  start: number;
+  end: number;
+  startPercent: number;
+  widthPercent: number;
 }
 
 export interface ResolvedChapter {
@@ -66,19 +74,43 @@ export function resolveCurrentChapter(
   return undefined;
 }
 
-/**
- * map media chapters to slider ticks, computing each chapter's start as a
- * percentage of the track, percentages are clamped to [0, 100]
- */
-export function computeChapterTicks(
+/** one segment per chapter, each running to the next chapter's start */
+export function computeChapterSegments(
   chapters: MediaItemChapter[] | null | undefined,
   duration: number | null | undefined,
-): ChapterTick[] {
+): ChapterSegment[] {
   if (!duration || !chapters?.length) return [];
-  return chapters.map((chapter) => ({
-    ...chapter,
-    percent: Math.min(100, Math.max(0, (chapter.start / duration) * 100)),
+  const clamp = (seconds: number) => Math.min(duration, Math.max(0, seconds));
+  const ordered = chapters
+    .filter((chapter) => Number.isFinite(chapter.start))
+    .sort((a, b) => a.start - b.start);
+  if (!ordered.length) return [];
+
+  const ranges: { chapter?: MediaItemChapter; start: number; end: number }[] =
+    [];
+  const firstStart = clamp(ordered[0].start);
+  if (firstStart > 0) ranges.push({ start: 0, end: firstStart });
+  ordered.forEach((chapter, index) => {
+    const start = clamp(chapter.start);
+    const next = ordered[index + 1];
+    const end = next ? clamp(next.start) : duration;
+    if (end > start) ranges.push({ chapter, start, end });
+  });
+  return ranges.map((range) => ({
+    ...range,
+    startPercent: (range.start / duration) * 100,
+    widthPercent: ((range.end - range.start) / duration) * 100,
   }));
+}
+
+export function segmentAt(
+  segments: ChapterSegment[],
+  seconds: number,
+): ChapterSegment | undefined {
+  return (
+    segments.find((x) => seconds >= x.start && seconds < x.end) ??
+    segments.at(-1)
+  );
 }
 
 export interface ChapterBookmarks {
@@ -108,18 +140,22 @@ export function groupBookmarksByChapter(
   chaptersFit = true,
 ): ChapterBookmarks[] {
   const ordered = [...bookmarks].sort((a, b) => a.start - b.start);
-  if (!chapters?.length || !chaptersFit) {
+  const orderedChapters = [...(chapters ?? [])].sort(
+    (a, b) => a.start - b.start,
+  );
+  if (!orderedChapters.length || !chaptersFit) {
     return [
-      ...(chapters ?? []).map((chapter) => ({ chapter, bookmarks: [] })),
+      ...orderedChapters.map((chapter) => ({ chapter, bookmarks: [] })),
       ...(ordered.length ? [{ bookmarks: ordered }] : []),
     ];
   }
-  return chapters.map((chapter, index) => ({
+  return orderedChapters.map((chapter, index) => ({
     chapter,
     bookmarks: ordered.filter(
       (x) =>
         (index === 0 || x.start >= chapter.start) &&
-        (index === chapters.length - 1 || x.start < chapters[index + 1].start),
+        (index === orderedChapters.length - 1 ||
+          x.start < orderedChapters[index + 1].start),
     ),
   }));
 }

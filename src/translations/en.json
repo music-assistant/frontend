@@ -777,8 +777,8 @@
             "description": "Adds a letter bar to the artists, albums and tracks lists so you can jump straight to a letter. Only shown when the list is sorted by name and you are not searching."
         },
         "audiobook_chapter_progress": {
-            "label": "Show audiobook chapter progress",
-            "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."
+            "label": "Show chapter progress",
+            "description": "Show elapsed and remaining time for the current chapter of an audiobook or podcast episode instead of the whole item."
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
@@ -1225,6 +1225,10 @@
     "audiobooks": "Audiobooks",
     "chapter": "Chapter",
     "chapters": "Chapters",
+    "chapter_of": "Chapter {current} of {total}",
+    "chapter_progress_show_audiobook": "Show the whole audiobook",
+    "chapter_progress_show_episode": "Show the whole episode",
+    "chapter_progress_show_chapter": "Show only this chapter",
     "chapters_and_bookmarks": "Chapters & Bookmarks",
     "chapters_and_bookmarks_tab": "All",
     "bookmarks": "Bookmarks",

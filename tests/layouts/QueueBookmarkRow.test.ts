@@ -29,7 +29,7 @@ const bookmark: MediaItemBookmark = {
 
 function mountRow(editable: boolean) {
   return mount(QueueBookmarkRow, {
-    props: { bookmark, time: 754, editable, inChapter: true },
+    props: { bookmark, editable, inChapter: true },
     global: { mocks: { $t: (key: string) => key } },
   });
 }
