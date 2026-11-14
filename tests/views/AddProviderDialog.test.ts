@@ -75,6 +75,38 @@ beforeEach(() => {
 });
 
 describe("AddProviderDialog", () => {
+  it("prioritizes app receivers without hiding other plugins", async () => {
+    apiMock.providerManifests = {
+      party: providerManifest({
+        domain: "party",
+        name: "Party",
+        type: ProviderType.PLUGIN,
+      }),
+      spotify_connect: providerManifest({
+        domain: "spotify_connect",
+        name: "Spotify Connect",
+        type: ProviderType.PLUGIN,
+        stage: ProviderStage.BETA,
+      }),
+      airplay_receiver: providerManifest({
+        domain: "airplay_receiver",
+        name: "AirPlay Receiver",
+        type: ProviderType.PLUGIN,
+        stage: ProviderStage.ALPHA,
+      }),
+      spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
+    };
+    routeMock.query = { types: ProviderType.PLUGIN };
+
+    await openDialog();
+
+    expect(providerNames()).toEqual([
+      "Spotify Connect",
+      "AirPlay Receiver",
+      "Party",
+    ]);
+  });
+
   it("focuses the search field on a non-touch device", async () => {
     await openDialog();
 
