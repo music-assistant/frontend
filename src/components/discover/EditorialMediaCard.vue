@@ -115,6 +115,7 @@ import {
   itemArtwork,
   placeholderArtwork,
   placeholderBackground,
+  usesGenreIconTreatment,
 } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
@@ -207,7 +208,9 @@ const art = computed(() =>
   artFailed.value ? placeholderArtwork(props.item) : resolvedArt.value,
 );
 
-const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
+// genres get the white-icon-over-banner treatment, unless the user uploaded
+// a custom image, which is real cover art and renders as-is
+const isGenre = computed(() => usesGenreIconTreatment(props.item));
 
 // a release only MusicBrainz knows: muted rather than shown as unavailable,
 // since it can be opened and added to the library

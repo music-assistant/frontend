@@ -1,3 +1,4 @@
+import { getCustomImage } from "@/helpers/customImage";
 import { getMediaTypeIcon } from "@/helpers/media_type_icon";
 import { getImageThumbForItem } from "@/helpers/utils";
 import {
@@ -47,11 +48,22 @@ export function itemArtwork(
 
   return {
     image,
-    gradient:
-      item.media_type === MediaType.GENRE
-        ? bannerBackground
-        : placeholderBackground,
+    gradient: usesGenreIconTreatment(item)
+      ? bannerBackground
+      : placeholderBackground,
   };
+}
+
+/**
+ * Whether an item is a genre shown as an icon over the banner. Genres
+ * normally are (their images are icons), unless the user uploaded a custom
+ * image, which is real cover art.
+ */
+export function usesGenreIconTreatment(item: AnyItem): boolean {
+  return (
+    item.media_type === MediaType.GENRE &&
+    !("metadata" in item && getCustomImage(item))
+  );
 }
 
 /**
