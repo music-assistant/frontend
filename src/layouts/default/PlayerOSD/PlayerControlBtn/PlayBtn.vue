@@ -72,7 +72,8 @@ const playButtonLabel = computed(() => {
   color: var(--play-icon-color, #fff);
 }
 
-.v-theme--dark .play-btn-icon {
+.v-theme--dark .play-btn-icon,
+.v-theme--black .play-btn-icon {
   background-color: #fff;
   color: var(--play-icon-color, #212121);
 }

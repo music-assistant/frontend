@@ -220,7 +220,8 @@
             "options": {
                 "auto": "Auto (follow system configuration)",
                 "light": "Light",
-                "dark": "Dark"
+                "dark": "Dark",
+                "black": "Black (OLED)"
             }
         },
         "language": {

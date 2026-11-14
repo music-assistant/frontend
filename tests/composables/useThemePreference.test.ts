@@ -37,6 +37,7 @@ vi.mock("vuetify", () => ({
       value: {
         light: { colors: { background: "#f5f5f5" } },
         dark: { colors: { background: "#181818" } },
+        black: { colors: { background: "#000000" } },
       },
     },
   }),
@@ -55,6 +56,7 @@ describe("useThemePreference", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    document.documentElement.classList.remove("black");
     document.head
       .querySelectorAll('meta[name="theme-color"]')
       .forEach((meta) => {
@@ -210,6 +212,58 @@ describe("useThemePreference", () => {
     media.dispatch();
 
     expect(mocks.changeTheme).toHaveBeenLastCalledWith("light");
+  });
+
+  it("applies black as the dark theme on a black background", () => {
+    mocks.store.currentUser.preferences.theme = "black";
+    const meta = createThemeColorMeta();
+    const { applyThemePreference, themePreference } = useThemePreference();
+
+    applyThemePreference();
+
+    expect(themePreference.value).toBe("black");
+    expect(mocks.changeTheme).toHaveBeenCalledWith("black");
+    expect(mocks.colorMode.value).toBe("dark");
+    expect(document.documentElement.classList.contains("black")).toBe(true);
+    expect(meta.content).toBe("#000000");
+  });
+
+  it("counts black as dark", async () => {
+    mocks.store.currentUser.preferences.theme = "black";
+    vi.resetModules();
+    const { isDark, useThemePreference: freshUseThemePreference } =
+      await import("@/composables/useThemePreference");
+
+    freshUseThemePreference().applyThemePreference();
+
+    expect(isDark.value).toBe(true);
+  });
+
+  it("drops the black background when another theme is chosen", () => {
+    mocks.store.currentUser.preferences.theme = "black";
+    const { applyThemePreference } = useThemePreference();
+    applyThemePreference();
+
+    mocks.store.currentUser.preferences.theme = "dark";
+    applyThemePreference();
+
+    expect(mocks.changeTheme).toHaveBeenLastCalledWith("dark");
+    expect(document.documentElement.classList.contains("black")).toBe(false);
+  });
+
+  // useColorMode only knows light and dark: handing it "black" would drop the
+  // dark class from <html>. The guest page never re-applies the mode, so a
+  // guest reload on black must start the color mode in dark.
+  it("starts the color mode in dark for a black preference", () => {
+    mocks.isGuestSession.value = true;
+    localStorage.setItem("frontend.settings.guest_theme", "black");
+
+    useThemePreference();
+
+    expect(mocks.colorModeOptions).toEqual({
+      initialValue: "dark",
+      storageKey: null,
+    });
   });
 
   // the composable keeps module-level listener state, so these tests import a
