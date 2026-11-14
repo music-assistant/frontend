@@ -5,6 +5,7 @@
  * for as long as the id takes to arrive.
  */
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
+import { currentVisualizerPreset } from "@/composables/visualizer/state";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -44,9 +45,9 @@ vi.mock("@/plugins/auth", () => ({
 }));
 
 const setPaused = vi.hoisted(() => vi.fn());
-const loadPresetByName = vi.hoisted(() => vi.fn(async (name: string) => name));
 const setPaletteColors = vi.hoisted(() => vi.fn());
 const setPaletteRamp = vi.hoisted(() => vi.fn());
+const loadPresetByName = vi.hoisted(() => vi.fn(async (name: string) => name));
 // The real module keeps the timing constants; only the engine itself is faked.
 vi.mock(
   "@/composables/visualizer/useVisualizerEngine",
@@ -164,40 +165,6 @@ describe("VisualizerCanvas relay connection", () => {
   });
 });
 
-describe("VisualizerCanvas favourites", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    preferenceOverrides.visualizer_preset_mode = "random_favorites";
-    preferenceOverrides.visualizer_favorites = ["gone", "kept"];
-  });
-
-  afterEach(() => {
-    for (const key of Object.keys(preferenceOverrides))
-      delete preferenceOverrides[key];
-  });
-
-  it("never picks a favourite the library no longer has", async () => {
-    const wrapper = mountCanvas("kitchen");
-    await flushPromises();
-
-    expect(loadPresetByName).toHaveBeenCalledWith("kept", expect.anything());
-    expect(loadPresetByName).not.toHaveBeenCalledWith(
-      "gone",
-      expect.anything(),
-    );
-    wrapper.unmount();
-  });
-
-  it("falls back to a random preset when no favourite is left", async () => {
-    preferenceOverrides.visualizer_favorites = ["gone"];
-    const wrapper = mountCanvas("kitchen");
-    await flushPromises();
-
-    expect(loadPresetByName).toHaveBeenCalledWith("preset", expect.anything());
-    wrapper.unmount();
-  });
-});
-
 describe("VisualizerCanvas playback gating", () => {
   const player = () =>
     (api.players as Record<string, { playback_state: PlaybackState }>).kitchen;
@@ -278,6 +245,82 @@ describe("VisualizerCanvas playback gating", () => {
   });
 });
 
+describe("VisualizerCanvas favourites", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    preferenceOverrides.visualizer_preset_mode = "random_favorites";
+    preferenceOverrides.visualizer_favorites = ["gone", "kept"];
+  });
+
+  afterEach(() => {
+    for (const key of Object.keys(preferenceOverrides))
+      delete preferenceOverrides[key];
+  });
+
+  it("never picks a favourite the library no longer has", async () => {
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+
+    expect(loadPresetByName).toHaveBeenCalledWith("kept", expect.anything());
+    expect(loadPresetByName).not.toHaveBeenCalledWith(
+      "gone",
+      expect.anything(),
+    );
+    wrapper.unmount();
+  });
+
+  it("falls back to a random preset when no favourite is left", async () => {
+    preferenceOverrides.visualizer_favorites = ["gone"];
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+
+    expect(loadPresetByName).toHaveBeenCalledWith("preset", expect.anything());
+    wrapper.unmount();
+  });
+});
+
+describe("VisualizerCanvas shown preset", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    preferenceOverrides.visualizer_preset_mode = "fixed";
+  });
+
+  afterEach(() => {
+    for (const key of Object.keys(preferenceOverrides))
+      delete preferenceOverrides[key];
+  });
+
+  const mountWithPreset = async (preset: string) => {
+    const wrapper = mount(VisualizerCanvas, {
+      props: { playerId: "kitchen", preset },
+    });
+    await flushPromises();
+    return wrapper;
+  };
+
+  it("keeps the previous preset when the engine fails to load the next", async () => {
+    const wrapper = await mountWithPreset("first");
+    loadPresetByName.mockResolvedValueOnce("");
+
+    await wrapper.setProps({ preset: "second" });
+    await flushPromises();
+
+    expect(currentVisualizerPreset.value).toBe("first");
+    wrapper.unmount();
+  });
+
+  it("shows the preset the engine fell back to, not the one requested", async () => {
+    const wrapper = await mountWithPreset("first");
+    loadPresetByName.mockResolvedValueOnce("fallback");
+
+    await wrapper.setProps({ preset: "dropped" });
+    await flushPromises();
+
+    expect(currentVisualizerPreset.value).toBe("fallback");
+    wrapper.unmount();
+  });
+});
+
 describe("VisualizerCanvas artwork recoloring", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -328,6 +371,39 @@ describe("VisualizerCanvas artwork recoloring", () => {
     });
     await flushPromises();
 
+    expect(setPaletteRamp).toHaveBeenLastCalledWith(
+      [
+        [20, 20, 20],
+        [0, 0, 255],
+        [200, 0, 0],
+        [240, 240, 240],
+      ],
+      0.75,
+    );
+    wrapper.unmount();
+  });
+
+  it("applies a palette that arrived before the engine was created", async () => {
+    // The server replays the cached palette right after connect, while the
+    // engine is still starting up.
+    relayConstructor.mockImplementationOnce(
+      (callbacks: { onColor: (palette: unknown) => void }) =>
+        callbacks.onColor({
+          background_light: [240, 240, 240],
+          primary: [200, 0, 0],
+          accent: [0, 0, 255],
+          on_light: [20, 20, 20],
+        }),
+    );
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+
+    expect(setPaletteColors).toHaveBeenLastCalledWith([
+      [20, 20, 20],
+      [200, 0, 0],
+      [0, 0, 255],
+      [20, 20, 20],
+    ]);
     expect(setPaletteRamp).toHaveBeenLastCalledWith(
       [
         [20, 20, 20],
