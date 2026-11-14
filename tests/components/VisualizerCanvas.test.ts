@@ -333,6 +333,39 @@ describe("VisualizerCanvas artwork recoloring", () => {
     wrapper.unmount();
   });
 
+  it("applies a palette that arrived before the engine was created", async () => {
+    // The server replays the cached palette right after connect, while the
+    // engine is still starting up.
+    relayConstructor.mockImplementationOnce(
+      (callbacks: { onColor: (palette: unknown) => void }) =>
+        callbacks.onColor({
+          background_light: [240, 240, 240],
+          primary: [200, 0, 0],
+          accent: [0, 0, 255],
+          on_light: [20, 20, 20],
+        }),
+    );
+    const wrapper = mountCanvas("kitchen");
+    await flushPromises();
+
+    expect(setPaletteColors).toHaveBeenLastCalledWith([
+      [20, 20, 20],
+      [200, 0, 0],
+      [0, 0, 255],
+      [20, 20, 20],
+    ]);
+    expect(setPaletteRamp).toHaveBeenLastCalledWith(
+      [
+        [20, 20, 20],
+        [0, 0, 255],
+        [200, 0, 0],
+        [240, 240, 240],
+      ],
+      0.75,
+    );
+    wrapper.unmount();
+  });
+
   it("drops the recoloring when the player changes, before the new relay speaks", async () => {
     const wrapper = mountCanvas("kitchen");
     await flushPromises();
