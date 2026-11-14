@@ -249,4 +249,18 @@ describe("VisualizerCanvas on a cast dashboard", () => {
       "relay unreachable over a remote connection",
     );
   });
+
+  it("reports why it shows nothing when the engine fails to start", async () => {
+    createVisualizerEngine.mockImplementation(async () => null);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await mountCanvas();
+    warn.mockRestore();
+
+    expect(reportVisualizerCapability).toHaveBeenCalledWith(
+      "none",
+      undefined,
+      "visualizer engine failed to start",
+    );
+  });
 });
