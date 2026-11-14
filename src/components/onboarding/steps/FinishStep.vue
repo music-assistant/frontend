@@ -32,7 +32,7 @@
             <CircleCheck class="text-primary size-4" aria-hidden="true" />
           </ItemMedia>
           <ItemContent>
-            <ItemTitle>{{ $t(stepTitleKey(step.id, ctx.answers)) }}</ItemTitle>
+            <ItemTitle>{{ $t(doneTitleKey(step.id)) }}</ItemTitle>
             <ItemDescription v-if="countLabels[step.id]">
               {{ countLabels[step.id] }}
             </ItemDescription>
@@ -228,6 +228,11 @@ const done = computed(() =>
 );
 const countLabel = (key: string, count: number) =>
   count > 0 ? $t(key, count, { named: { count } }) : undefined;
+// the setup choice is looked back on as the choice made, not the question asked
+const doneTitleKey = (id: OnboardingStepId) =>
+  id === "intent"
+    ? "onboarding.steps.intent.summary_title"
+    : stepTitleKey(id, ctx.value.answers);
 const countLabels = computed<Partial<Record<OnboardingStepId, string>>>(() => ({
   players: countLabel("onboarding.players_count", ctx.value.playerCount),
   music_sources: countLabel(

@@ -13,9 +13,6 @@
       @select="select"
     />
 
-    <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.intent.settings_note") }}
-    </p>
     <p
       class="text-muted-foreground text-sm"
       data-testid="onboarding-intent-preview"
