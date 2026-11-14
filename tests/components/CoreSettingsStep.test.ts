@@ -211,15 +211,17 @@ function networkDetailsTrigger(wrapper: Wrapper) {
   );
 }
 
-function addressRow(wrapper: Wrapper, id: "internal" | "stream") {
+type AddressId = "internal" | "external" | "stream";
+
+function addressRow(wrapper: Wrapper, id: AddressId) {
   return wrapper.find(`[data-testid=onboarding-address-${id}]`);
 }
 
-function addressUrl(wrapper: Wrapper, id: "internal" | "stream") {
+function addressUrl(wrapper: Wrapper, id: AddressId) {
   return addressRow(wrapper, id).find("[data-testid=onboarding-address-url]");
 }
 
-function addressCheck(wrapper: Wrapper, id: "internal" | "stream") {
+function addressCheck(wrapper: Wrapper, id: AddressId) {
   return addressRow(wrapper, id).find("[data-testid=onboarding-address-check]");
 }
 
@@ -227,15 +229,18 @@ function unreachableHint(wrapper: Wrapper) {
   return wrapper.find("[data-testid=onboarding-address-unreachable-hint]");
 }
 
-function advancedSection(wrapper: Wrapper) {
-  return wrapper.find("[data-testid=onboarding-advanced-section]");
+function editSection(wrapper: Wrapper) {
+  return wrapper.find("[data-testid=onboarding-network-edit-form]");
 }
 
-/** Whether the advanced settings are folded away, as `v-show` folds them. */
-function advancedFolded(wrapper: Wrapper): boolean {
+function editButton(wrapper: Wrapper) {
+  return wrapper.find("[data-testid=onboarding-network-edit]");
+}
+
+/** Whether the form is closed, as `v-show` closes it. */
+function editClosed(wrapper: Wrapper): boolean {
   return (
-    advancedSection(wrapper).attributes("style")?.includes("display: none") ??
-    false
+    editSection(wrapper).attributes("style")?.includes("display: none") ?? false
   );
 }
 
@@ -269,6 +274,52 @@ afterEach(() => {
 
 describe("CoreSettingsStep", () => {
   describe("the addresses in use", () => {
+    it("puts one disclosure for the details below the remote access choices", async () => {
+      const wrapper = await mountLoadedStep();
+
+      const disclosures = wrapper.findAll(
+        "[data-testid=onboarding-network-details]",
+      );
+      expect(disclosures).toHaveLength(1);
+      const proxy = wrapper.find("[data-testid=onboarding-reverse-proxy]");
+      expect(
+        proxy.element.compareDocumentPosition(disclosures[0].element) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      // the form lives in it, with no second switch for it elsewhere
+      expect(
+        disclosures[0]
+          .find("[data-testid=onboarding-network-edit-form]")
+          .exists(),
+      ).toBe(true);
+      expect(wrapper.find("[role=switch]").exists()).toBe(false);
+    });
+
+    it("shows the server name, and the external address once there is one", async () => {
+      apiMock.serverInfo.value = serverInfo({
+        name: "Living room",
+        external_url: "https://music.example.com",
+      });
+
+      const wrapper = await mountLoadedStep();
+
+      expect(
+        wrapper.find("[data-testid=onboarding-server-name]").text(),
+      ).toContain("Living room");
+      expect(addressUrl(wrapper, "external").text()).toBe(
+        "https://music.example.com",
+      );
+      // players never use it, so it is not checked from here
+      expect(addressCheck(wrapper, "external").exists()).toBe(false);
+      expect(probedUrls()).not.toContain("https://music.example.com/info");
+    });
+
+    it("leaves the external address out when there is none", async () => {
+      const wrapper = await mountLoadedStep();
+
+      expect(addressRow(wrapper, "external").exists()).toBe(false);
+    });
+
     it("shows the addresses the server is using right now", async () => {
       const wrapper = await mountLoadedStep();
 
@@ -390,6 +441,36 @@ describe("CoreSettingsStep", () => {
       expect(unreachableHint(wrapper).isVisible()).toBe(true);
     });
 
+    it("does not fold the details away once an address answers again", async () => {
+      // the old internal address does not answer; everything else does
+      const answering = answeringAsThisServer();
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string) => {
+          if (url.startsWith(INTERNAL_URL)) {
+            throw new TypeError("Failed to fetch");
+          }
+          return answering();
+        }),
+      );
+      const wrapper = mountStep();
+      await flushPromises();
+      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
+        "true",
+      );
+
+      // a fixed address is checked afresh while the user may still be editing
+      apiMock.serverInfo.value = serverInfo({
+        internal_url: "http://10.0.0.5:8095",
+      });
+      await flushPromises();
+
+      expect(unreachableHint(wrapper).exists()).toBe(false);
+      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
+        "true",
+      );
+    });
+
     it("says when an address could not be checked from this page", async () => {
       // an https page may not fetch a plain http address: nothing is known
       vi.stubGlobal("location", { protocol: "https:" });
@@ -449,11 +530,11 @@ describe("CoreSettingsStep", () => {
     });
   });
 
-  describe("the advanced settings", () => {
-    it("keeps them folded away, with the form ready underneath", async () => {
+  describe("changing the details", () => {
+    it("keeps the form closed, with it ready underneath", async () => {
       const wrapper = await mountLoadedStep();
 
-      expect(advancedFolded(wrapper)).toBe(true);
+      expect(editClosed(wrapper)).toBe(true);
       expect(apiMock.getCoreConfig).toHaveBeenCalledWith("webserver");
       expect(apiMock.getCoreConfig).toHaveBeenCalledWith("streams");
       // the settings of both modules, in one form
@@ -462,7 +543,7 @@ describe("CoreSettingsStep", () => {
           .props("configEntries")
           .map((configEntry: ConfigEntry) => configEntry.key),
       ).toEqual(["server_name", "base_url", "external_url", "publish_ip"]);
-      // the switch above the form is what hides the entries, not the form's
+      // whether the form is open is what hides the entries, not the form's
       // own advanced toggle, which its hidden header leaves out
       expect(form(wrapper).props("showAdvancedSettings")).toBe(true);
       expect(form(wrapper).props("hideHeader")).toBe(true);
@@ -470,25 +551,62 @@ describe("CoreSettingsStep", () => {
       expect(form(wrapper).props("inlineSave")).toBe(true);
     });
 
-    it("unfolds them on request", async () => {
+    it("opens the form from the pencil, and closes it again", async () => {
       const wrapper = await mountLoadedStep();
 
-      await wrapper
-        .find("[data-testid=onboarding-advanced-settings]")
-        .trigger("click");
+      expect(editButton(wrapper).attributes("aria-expanded")).toBe("false");
+      expect(editButton(wrapper).attributes("aria-controls")).toBe(
+        editSection(wrapper).attributes("id"),
+      );
+      await editButton(wrapper).trigger("click");
+      await flushPromises();
 
-      expect(advancedFolded(wrapper)).toBe(false);
+      expect(editClosed(wrapper)).toBe(false);
+      expect(editButton(wrapper).attributes("aria-expanded")).toBe("true");
+
+      await editButton(wrapper).trigger("click");
+      expect(editClosed(wrapper)).toBe(true);
     });
 
-    it("unfolds them for the external address", async () => {
-      const wrapper = await mountLoadedStep();
+    it("unfolds the details with the form open for the external address", async () => {
+      const wrapper = mountStep();
+      await flushPromises();
+      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
+        "false",
+      );
 
       await wrapper
         .find("[data-testid=onboarding-set-external-address]")
         .trigger("click");
       await flushPromises();
 
-      expect(advancedFolded(wrapper)).toBe(false);
+      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
+        "true",
+      );
+      expect(editClosed(wrapper)).toBe(false);
+    });
+
+    it("keeps what was typed when the details are folded", async () => {
+      hasUnsavedChanges.value = true;
+      const wrapper = await mountLoadedStep();
+      await editButton(wrapper).trigger("click");
+      await flushPromises();
+      const typedInto = form(wrapper).vm.$.uid;
+
+      await networkDetailsTrigger(wrapper).trigger("click");
+      await flushPromises();
+
+      // the same form, still holding the edits, which Next then saves
+      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
+        "false",
+      );
+      expect(form(wrapper).exists()).toBe(true);
+      expect(form(wrapper).vm.$.uid).toBe(typedInto);
+      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+        "webserver",
+        EDITED_CHANGE,
+      );
     });
 
     it("keeps them from whoever may not change the settings", async () => {
@@ -496,8 +614,9 @@ describe("CoreSettingsStep", () => {
 
       const wrapper = await mountLoadedStep();
 
-      // nothing to unfold, nothing to fetch for it, and nothing to point at
-      expect(advancedSection(wrapper).exists()).toBe(false);
+      // nothing to open, nothing to fetch for it, and nothing to point at
+      expect(editSection(wrapper).exists()).toBe(false);
+      expect(editButton(wrapper).exists()).toBe(false);
       expect(
         wrapper.find("[data-testid=onboarding-set-external-address]").exists(),
       ).toBe(false);
@@ -526,9 +645,7 @@ describe("CoreSettingsStep", () => {
 
       const wrapper = await mountLoadedStep();
 
-      expect(advancedSection(wrapper).find("[role=status]").exists()).toBe(
-        true,
-      );
+      expect(editSection(wrapper).find("[role=status]").exists()).toBe(true);
       expect(form(wrapper).exists()).toBe(false);
       expect(wrapper.text()).not.toContain(
         "onboarding.steps.core_settings.load_failed",
@@ -543,9 +660,7 @@ describe("CoreSettingsStep", () => {
       // the api toasts its own failures; nothing here is filled in with values
       // nobody stands behind
       expect(form(wrapper).exists()).toBe(false);
-      expect(advancedSection(wrapper).find("[role=status]").exists()).toBe(
-        false,
-      );
+      expect(editSection(wrapper).find("[role=status]").exists()).toBe(false);
       expect(wrapper.text()).toContain(
         "onboarding.steps.core_settings.load_failed",
       );
