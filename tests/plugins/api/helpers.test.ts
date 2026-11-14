@@ -276,6 +276,7 @@ describe("getPlaylistMigrationProviders", () => {
     ],
     available: true,
     is_streaming_provider: true,
+    supported_artist_types: [],
     ...overrides,
   });
 

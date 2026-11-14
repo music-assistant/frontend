@@ -689,6 +689,7 @@ describe("Providers", () => {
       is_streaming_provider: false,
       name: "Spotify",
       supported_features: [ProviderFeature.CREATE_GROUP_PLAYER],
+      supported_artist_types: [],
       type: ProviderType.PLAYER,
     });
 
@@ -885,6 +886,7 @@ describe("Providers for a member", () => {
       is_streaming_provider: true,
       name: "Own Spotify",
       supported_features: [],
+      supported_artist_types: [],
       type: ProviderType.MUSIC,
     });
 
