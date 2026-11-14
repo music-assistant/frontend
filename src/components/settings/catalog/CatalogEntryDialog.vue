@@ -6,7 +6,11 @@
     >
       <DialogHeader class="gap-4 p-6 pr-12 text-left">
         <div class="flex items-center gap-4">
-          <ProviderIcon :domain="entry.manifest.domain" :size="64" />
+          <CatalogIcon
+            :domain="entry.manifest.domain"
+            :icon="entry.community?.icon"
+            :size="64"
+          />
           <div class="min-w-0">
             <DialogTitle class="text-xl leading-tight">
               {{ entry.manifest.name }}
@@ -65,13 +69,25 @@
         <p v-else class="m-0" data-testid="catalog-detail-maintainers">
           {{ $t("settings.catalog.created_by_team") }}
         </p>
+        <!-- what a community manifest says is shown as text, never as markup -->
+        <p
+          v-if="credits && community"
+          class="m-0"
+          data-testid="catalog-detail-credits"
+        >
+          <strong>{{ $t("settings.provider_credits") }}:</strong>
+          {{ credits }}
+        </p>
         <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
         <div
-          v-if="entry.manifest.credits.length"
+          v-else-if="credits"
           data-testid="catalog-detail-credits"
           v-html="creditsHtml"
         ></div>
         <!-- eslint-enable vue/no-v-html -->
+        <p v-if="versionText" class="m-0" data-testid="catalog-detail-version">
+          {{ versionText }}
+        </p>
       </div>
 
       <div
@@ -79,11 +95,17 @@
       >
         <Button
           v-if="entry.canAdd"
+          :loading="installing"
           data-testid="catalog-detail-add"
           @click="emit('add')"
         >
-          <Plus class="size-4" />
-          {{ $t("settings.catalog.add") }}
+          <template v-if="installing">
+            {{ $t("settings.catalog.community.installing") }}
+          </template>
+          <template v-else>
+            <Plus class="size-4" />
+            {{ $t("settings.catalog.add") }}
+          </template>
         </Button>
         <Button
           v-if="isSetUp"
@@ -120,6 +142,20 @@
           {{ $t("settings.provider_get_help") }}
         </Button>
         <Button
+          v-if="repositoryUrl"
+          as="a"
+          variant="outline"
+          :href="repositoryUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="catalog-detail-repository"
+        >
+          <FolderGit2 class="size-4" />
+          {{ $t("settings.catalog.community.source_code") }}
+        </Button>
+        <!-- a change to one from the community is for its maintainer -->
+        <Button
+          v-if="!entry.community"
           as="a"
           variant="outline"
           :href="FEATURE_REQUESTS_URL"
@@ -136,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import CatalogIcon from "@/components/settings/catalog/CatalogIcon.vue";
 import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -148,6 +184,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCatalogEntryDetails } from "@/composables/settings/catalog/useCatalogEntryDetails";
+import { useCanonicalLocale } from "@/composables/useCanonicalLocale";
+import {
+  formatCatalogDate,
+  getCommunityLinkUrl,
+  isCommunityInstalled,
+} from "@/helpers/community_catalog";
 import {
   type CatalogEntry,
   FEATURE_REQUESTS_URL,
@@ -162,6 +204,7 @@ import { $t } from "@/plugins/i18n";
 import {
   BookOpen,
   Check,
+  FolderGit2,
   LifeBuoy,
   MessageSquarePlus,
   Plus,
@@ -173,6 +216,8 @@ import { RouterLink } from "vue-router";
 interface Props {
   open: boolean;
   entry: CatalogEntry;
+  // whether it is being installed from the community catalog
+  installing?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -182,23 +227,56 @@ const emit = defineEmits<{
   (e: "add"): void;
 }>();
 
-const { typeLabel, community, maintainers, isSetUp, manageRoute } =
-  useCatalogEntryDetails(() => props.entry);
+const {
+  typeLabel,
+  community,
+  maintainers,
+  isSetUp,
+  manageRoute,
+  repositoryUrl,
+} = useCatalogEntryDetails(() => props.entry);
+
+const locale = useCanonicalLocale();
 
 const showStageBadge = computed(() =>
   shouldShowStageBadge(props.entry.manifest.stage),
 );
 
 const documentationUrl = computed(() =>
-  getExternalLinkUrl(props.entry.manifest.documentation),
+  community.value
+    ? getCommunityLinkUrl(props.entry.manifest.documentation)
+    : getExternalLinkUrl(props.entry.manifest.documentation),
 );
 
-const helpUrl = computed(() => getProviderHelpUrl(props.entry.manifest));
+const helpUrl = computed(() =>
+  getProviderHelpUrl(props.entry.manifest, repositoryUrl.value),
+);
+
+// the version installed, else the one the community catalog offers and when it
+// was released
+const versionText = computed(() => {
+  const provider = props.entry.community;
+  if (!provider) return "";
+  if (isCommunityInstalled(provider)) {
+    return provider.installed_version
+      ? $t("settings.catalog.community.version", {
+          version: provider.installed_version,
+        })
+      : "";
+  }
+  const version = provider.latest_version;
+  if (!version) return "";
+  const date = provider.released
+    ? formatCatalogDate(provider.released, locale.value)
+    : "";
+  return date
+    ? $t("settings.catalog.community.version_released", { version, date })
+    : $t("settings.catalog.community.version", { version });
+});
+
+const credits = computed(() => props.entry.manifest.credits.join(" / "));
 
 const creditsHtml = computed(() =>
-  markdownToHtml(
-    `**${$t("settings.provider_credits")}**: ` +
-      props.entry.manifest.credits.join(" / "),
-  ),
+  markdownToHtml(`**${$t("settings.provider_credits")}**: ${credits.value}`),
 );
 </script>

@@ -506,6 +506,8 @@ export enum EventType {
   // a user's bookmarks of one copy changed; object_id is the copy's uri, data the user id
   BOOKMARKS_UPDATED = "bookmarks_updated",
   PROVIDERS_UPDATED = "providers_updated",
+  // the community catalog or the provider manifests changed
+  COMMUNITY_CATALOG_UPDATED = "community_catalog_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
@@ -1817,6 +1819,8 @@ export enum ProviderStatus {
   AUTH_REQUIRED = "auth_required",
   INCOMPATIBLE = "incompatible",
   ERROR = "error",
+  // the code of the provider is not on this server; the reason is in last_error
+  UNAVAILABLE = "unavailable",
 }
 
 export interface ProviderError {
@@ -1825,6 +1829,40 @@ export interface ProviderError {
   // client renders it directly.
   error_code: number;
   message: string;
+}
+
+export enum CommunityProviderState {
+  AVAILABLE = "available",
+  INSTALLED = "installed",
+  UPDATE_AVAILABLE = "update_available",
+  RESTART_REQUIRED = "restart_required",
+  BLOCKED = "blocked",
+  UNAVAILABLE = "unavailable",
+  WITHDRAWN = "withdrawn",
+}
+
+export interface CommunityProvider {
+  // A provider of the community catalog: one that can be installed, or one that is.
+  domain: string;
+  // owner/name of the repository on GitHub
+  repository: string;
+  maintainers: string[];
+  // a data URI to show in an image element
+  icon: string | null;
+  // the manifest of the installed version, else the one of the latest version
+  manifest: ProviderManifest;
+  state: CommunityProviderState;
+  installed_version: string | null;
+  latest_version: string | null;
+  // ISO dates: when it entered the catalog, and when latest_version was released
+  added: string | null;
+  released: string | null;
+  // what the catalog says about a provider it blocked or withdrew, and where it explains it
+  reason: string | null;
+  reason_url: string | null;
+  // why an installed provider does not run
+  error: ProviderError | null;
+  notice: string | null;
 }
 
 export interface ProviderInstance {

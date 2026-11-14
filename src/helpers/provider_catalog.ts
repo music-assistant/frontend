@@ -1,8 +1,14 @@
 // What can be added and how the Catalog and the add dialog list it. Both decide
 // from here, so they never offer a different set.
+import { isCommunityRunning } from "@/helpers/community_catalog";
 import { isSelfServiceProvider } from "@/helpers/provider_access";
-import { isBuiltinProvider } from "@/helpers/provider_config";
 import {
+  getProviderMaintainers,
+  isBuiltinProvider,
+} from "@/helpers/provider_config";
+import {
+  type CommunityProvider,
+  CommunityProviderState,
   type ProviderConfig,
   type ProviderManifest,
   ProviderStage,
@@ -107,6 +113,8 @@ export interface CatalogEntry {
   instances: ProviderConfig[];
   // whether an instance (or another one) may be added
   canAdd: boolean;
+  // what the community catalog lists for it, for one that comes from there
+  community?: CommunityProvider;
 }
 
 export interface CatalogFilter {
@@ -149,22 +157,48 @@ export const isOfferable = (
   (!restrictions.selfServiceOnly || isSelfServiceProvider(manifest));
 
 /**
- * The Catalog entries for the offerable providers, alphabetically by name.
+ * The Catalog entries for the offerable providers, alphabetically by name: one
+ * per provider the server knows or the community catalog runs, and one per
+ * provider the community catalog offers that is not installed yet.
  *
  * @param manifests - Every provider manifest the server knows.
  * @param configs - The provider instances set up that the user can see.
  * @param restrictions - What the user may add.
  * @param canManage - Whether the user manages an instance; by default every one.
+ * @param community - What the community catalog lists; nothing by default.
  */
 export const buildCatalogEntries = (
   manifests: readonly ProviderManifest[],
   configs: readonly ProviderConfig[],
   restrictions: AddRestrictions = {},
   canManage: (config: ProviderConfig) => boolean = () => true,
-): CatalogEntry[] =>
-  manifests
+  community: readonly CommunityProvider[] = [],
+): CatalogEntry[] => {
+  const communityByDomain = new Map(
+    community.map((provider) => [provider.domain, provider]),
+  );
+  const knownDomains = new Set(manifests.map((manifest) => manifest.domain));
+  // the list and the manifests change at different moments around an install,
+  // so one just installed stays on the manifest the community catalog gave
+  const justInstalled = community
+    .filter(
+      (provider) =>
+        isCommunityRunning(provider) && !knownDomains.has(provider.domain),
+    )
+    .map((provider) => provider.manifest);
+  const known = [...manifests, ...justInstalled]
     .filter((manifest) => isOfferable(manifest, restrictions))
-    .map((manifest) => {
+    // one the community catalog withdrew keeps running, but is no longer offered;
+    // one still on offer may already be registered
+    .filter((manifest) => {
+      const provider = communityByDomain.get(manifest.domain);
+      return (
+        !provider ||
+        provider.state === CommunityProviderState.AVAILABLE ||
+        isCommunityRunning(provider)
+      );
+    })
+    .map((manifest): CatalogEntry => {
       const instances = configs.filter(
         (config) => config.domain === manifest.domain,
       );
@@ -172,9 +206,41 @@ export const buildCatalogEntries = (
         manifest,
         instances: instances.filter(canManage),
         canAdd: manifest.multi_instance || instances.length === 0,
+        community: communityByDomain.get(manifest.domain),
       };
-    })
-    .sort((a, b) => compareNames(a.manifest.name, b.manifest.name));
+    });
+  const installable = community
+    .filter(
+      (provider) =>
+        provider.state === CommunityProviderState.AVAILABLE &&
+        !knownDomains.has(provider.domain) &&
+        isOfferable(provider.manifest, restrictions),
+    )
+    .map((provider): CatalogEntry => ({
+      manifest: provider.manifest,
+      instances: [],
+      canAdd: true,
+      community: provider,
+    }));
+  return [...known, ...installable].sort((a, b) =>
+    compareNames(a.manifest.name, b.manifest.name),
+  );
+};
+
+/**
+ * Who maintains an entry: the maintainers the community catalog names for one
+ * from there, else the people among its codeowners; none when only the team does.
+ */
+export const getEntryMaintainers = (entry: CatalogEntry): string[] =>
+  entry.community?.maintainers.length
+    ? entry.community.maintainers
+    : getProviderMaintainers(entry.manifest);
+
+/** Whether adding the entry first installs it from the community catalog. */
+export const needsInstall = (
+  entry: CatalogEntry,
+): entry is CatalogEntry & { community: CommunityProvider } =>
+  entry.community?.state === CommunityProviderState.AVAILABLE;
 
 /**
  * The entries that match the search text, the types and the stages; an empty

@@ -1,10 +1,13 @@
 import {
+  CommunityProviderState,
   type ProviderConfig,
   type ProviderManifest,
   ProviderStage,
+  ProviderTier,
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
+import { communityProvider } from "../../tests/fixtures/communityProvider";
 import { providerConfig } from "../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
@@ -16,12 +19,14 @@ import {
   getCatalogRoute,
   getCatalogTab,
   getCatalogTabQuery,
+  getEntryMaintainers,
   getManageRoute,
   getMaintainerProfileUrl,
   getPopularEntries,
   groupInstalledProviders,
   isOfferable,
   MEMBER_ADD_RESTRICTIONS,
+  needsInstall,
   sortPopularFirst,
 } from "./provider_catalog";
 
@@ -215,6 +220,186 @@ describe("buildCatalogEntries", () => {
       instances: [],
       canAdd: false,
     });
+  });
+});
+
+describe("buildCatalogEntries with the community catalog", () => {
+  // installed and running: the server lists its manifest among its own
+  const installedManifest = manifest("radio", "Radio", ProviderType.MUSIC, {
+    tier: ProviderTier.COMMUNITY,
+    multi_instance: true,
+  });
+  const community = [
+    communityProvider("radio", {
+      state: CommunityProviderState.INSTALLED,
+      manifest: installedManifest,
+    }),
+    communityProvider("lyrics", {
+      manifest: manifest("lyrics", "Lyrics", ProviderType.METADATA),
+    }),
+    communityProvider("dj", {
+      manifest: manifest("dj", "DJ", ProviderType.PLUGIN, {
+        self_service: false,
+      }),
+    }),
+    // withdrawn, still running: its manifest is listed, but it is not offered
+    communityProvider("old", {
+      state: CommunityProviderState.WITHDRAWN,
+      manifest: manifest("old", "Old", ProviderType.MUSIC),
+    }),
+    // blocked: the server no longer lists its manifest
+    communityProvider("bad", {
+      state: CommunityProviderState.BLOCKED,
+      manifest: manifest("bad", "Bad", ProviderType.MUSIC),
+    }),
+  ];
+  const manifests = [
+    ...MANIFESTS,
+    installedManifest,
+    manifest("old", "Old", ProviderType.MUSIC),
+  ];
+  const entries = buildCatalogEntries(manifests, [], {}, undefined, community);
+
+  it("adds what it offers to install, alphabetically among the rest", () => {
+    expect(names(entries)).toEqual([
+      "AirPlay",
+      "AirPlay Receiver",
+      "Chromecast",
+      "DJ",
+      "Essentia",
+      "fanart.tv",
+      "Local disk",
+      "Lyrics",
+      "Party",
+      "Radio",
+      "Sonos",
+      "SoundCloud",
+      "Spotify",
+      "Spotify Connect",
+      "Tidal",
+    ]);
+    expect(entry(entries, "lyrics")).toMatchObject({
+      instances: [],
+      canAdd: true,
+      community: community[1],
+    });
+  });
+
+  it("keeps one that is installed as the server lists it, with what the catalog says", () => {
+    expect(entry(entries, "radio")).toMatchObject({
+      manifest: installedManifest,
+      community: community[0],
+    });
+  });
+
+  it("leaves out what it no longer offers or blocked", () => {
+    expect(entries.find((item) => item.manifest.domain === "old")).toBe(
+      undefined,
+    );
+    expect(entries.find((item) => item.manifest.domain === "bad")).toBe(
+      undefined,
+    );
+  });
+
+  it("applies the restrictions to what it offers", () => {
+    expect(
+      names(
+        buildCatalogEntries(
+          manifests,
+          [],
+          MEMBER_ADD_RESTRICTIONS,
+          undefined,
+          community,
+        ),
+      ),
+    ).not.toContain("DJ");
+  });
+
+  it("installs only what is not installed yet", () => {
+    expect(needsInstall(entry(entries, "lyrics"))).toBe(true);
+    expect(needsInstall(entry(entries, "radio"))).toBe(false);
+    expect(needsInstall(entry(entries, "spotify"))).toBe(false);
+  });
+
+  it("keeps one just installed on the manifest the catalog gave until the server lists its own", () => {
+    const configs = [providerConfig({ domain: "radio" })];
+
+    const listed = entry(
+      buildCatalogEntries(MANIFESTS, configs, {}, undefined, community),
+      "radio",
+    );
+
+    expect(listed).toMatchObject({
+      manifest: installedManifest,
+      instances: configs,
+      canAdd: true,
+      community: community[0],
+    });
+    expect(needsInstall(listed)).toBe(false);
+  });
+
+  it("keeps one on offer whose manifest the server lists already", () => {
+    const offered = communityProvider("radio", { manifest: installedManifest });
+
+    const listed = entry(
+      buildCatalogEntries(manifests, [], {}, undefined, [offered]),
+      "radio",
+    );
+
+    expect(listed).toMatchObject({
+      manifest: installedManifest,
+      community: offered,
+    });
+  });
+
+  it.each([
+    CommunityProviderState.BLOCKED,
+    CommunityProviderState.UNAVAILABLE,
+    CommunityProviderState.WITHDRAWN,
+  ])(
+    "leaves out one that is %s, whether or not the server lists its manifest",
+    (state) => {
+      const provider = communityProvider("radio", {
+        state,
+        manifest: installedManifest,
+      });
+
+      for (const known of [MANIFESTS, manifests]) {
+        expect(
+          buildCatalogEntries(known, [], {}, undefined, [provider]).find(
+            (item) => item.manifest.domain === "radio",
+          ),
+        ).toBe(undefined);
+      }
+    },
+  );
+});
+
+describe("getEntryMaintainers", () => {
+  it("names the maintainers the community catalog gives, else the codeowners", () => {
+    const radio = manifest("radio", "Radio", ProviderType.MUSIC, {
+      codeowners: ["@john"],
+    });
+
+    expect(
+      getEntryMaintainers({
+        manifest: radio,
+        instances: [],
+        canAdd: true,
+        community: communityProvider("radio", { maintainers: ["@jane"] }),
+      }),
+    ).toEqual(["@jane"]);
+    expect(
+      getEntryMaintainers({
+        manifest: radio,
+        instances: [],
+        canAdd: true,
+        community: communityProvider("radio", { maintainers: [] }),
+      }),
+    ).toEqual(["@john"]);
+    expect(
+      getEntryMaintainers({ manifest: radio, instances: [], canAdd: true }),
+    ).toEqual(["@john"]);
   });
 });
 

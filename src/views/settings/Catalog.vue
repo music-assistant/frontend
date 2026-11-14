@@ -14,7 +14,26 @@
           {{ $t("settings.catalog.description") }}
         </p>
       </div>
+      <!-- only the community catalog has options here, so only an admin gets the menu -->
+      <Button
+        v-if="community.isAdmin"
+        data-testid="catalog-menu"
+        variant="ghost"
+        size="icon-sm"
+        class="ml-auto shrink-0 self-start"
+        aria-haspopup="menu"
+        :aria-label="$t('more_options')"
+        :disabled="!community.settled"
+        @click="openMenu"
+      >
+        <MoreVertical class="size-4" />
+      </Button>
     </header>
+
+    <CatalogCommunityBanner
+      v-if="community.available && !community.enabled"
+      @enable="community.setEnabled(true)"
+    />
 
     <Tabs
       :model-value="activeTab"
@@ -69,17 +88,24 @@
           </EmptyContent>
         </Empty>
         <div
-          v-else-if="!loaded"
+          v-else-if="!ready"
           class="flex min-h-24 items-center justify-center"
           data-testid="catalog-loading"
         >
           <Spinner class="size-8" />
         </div>
 
-        <CatalogInstalled
-          v-else-if="activeTab === CATALOG_INSTALLED_TAB"
-          :groups="installed"
-        />
+        <template v-else-if="activeTab === CATALOG_INSTALLED_TAB">
+          <CatalogCommunityInstalled
+            v-if="showCommunityInstalled"
+            :providers="community.installed"
+            :refreshing="community.refreshing"
+            :removing="community.removing"
+            @refresh="community.refresh"
+            @remove="community.remove"
+          />
+          <CatalogInstalled :groups="installed" />
+        </template>
 
         <template v-else>
           <div class="flex flex-wrap items-center gap-2">
@@ -109,6 +135,7 @@
             :entries="filteredEntries"
             :popular="popularEntries"
             :title="listTitle"
+            :installing="community.installing"
             @open="openDetail"
             @add="addEntry"
           />
@@ -138,7 +165,15 @@
       v-if="selectedEntry"
       v-model:open="detailOpen"
       :entry="selectedEntry"
+      :installing="community.installing.has(selectedEntry.manifest.domain)"
       @add="addEntry(selectedEntry, closeDetail)"
+    />
+
+    <CommunityInstallNote
+      v-if="pendingAdd"
+      v-model:open="noteOpen"
+      :entry="pendingAdd.entry"
+      @continue="continueAdd"
     />
   </div>
 </template>
@@ -146,8 +181,11 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import CatalogBrowse from "@/components/settings/catalog/CatalogBrowse.vue";
+import CatalogCommunityInstalled from "@/components/settings/catalog/CatalogCommunityInstalled.vue";
+import CatalogCommunityBanner from "@/components/settings/catalog/CatalogCommunityBanner.vue";
 import CatalogEntryDialog from "@/components/settings/catalog/CatalogEntryDialog.vue";
 import CatalogInstalled from "@/components/settings/catalog/CatalogInstalled.vue";
+import CommunityInstallNote from "@/components/settings/catalog/CommunityInstallNote.vue";
 import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -159,7 +197,10 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCommunityCatalog } from "@/composables/settings/catalog/useCommunityCatalog";
 import { useProviderCatalog } from "@/composables/settings/catalog/useProviderCatalog";
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import { getCommunityCatalogMenuItems } from "@/helpers/community_catalog_menu";
 import { startAddProvider } from "@/helpers/provider_add";
 import {
   ADDABLE_PROVIDER_STAGES,
@@ -175,17 +216,45 @@ import {
   getCatalogType,
   getPopularEntries,
   getTypeSettingsRoute,
+  needsInstall,
 } from "@/helpers/provider_catalog";
 import { getProviderStageTranslationKey } from "@/helpers/provider_config";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Blocks, ChevronRight, CircleAlert, RefreshCw } from "@lucide/vue";
-import { computed, ref } from "vue";
+import {
+  Blocks,
+  ChevronRight,
+  CircleAlert,
+  MoreVertical,
+  RefreshCw,
+} from "@lucide/vue";
+import { computed, reactive, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
 
-const { entries, installed, loaded, failed, reload } = useProviderCatalog();
+const community = reactive(useCommunityCatalog());
+
+const { entries, installed, loaded, failed, reload } = useProviderCatalog(
+  () => community.listed,
+);
+
+// the community catalog joins the list, so the page waits for it too
+const ready = computed(() => loaded.value && community.settled);
+
+// the Installed view looks after it while it is shown or anything is installed
+const showCommunityInstalled = computed(
+  () =>
+    community.available &&
+    (community.enabled || community.installed.length > 0),
+);
+
+// an entry from the community catalog waiting for its note to be confirmed
+const pendingAdd = ref<{ entry: CatalogEntry; onStart?: () => void } | null>(
+  null,
+);
+const noteOpen = ref(false);
 
 const searchQuery = ref("");
 const selectedStages = ref<string[]>([]);
@@ -263,7 +332,44 @@ const closeDetail = () => {
   detailOpen.value = false;
 };
 
+const openMenu = (evt: MouseEvent) => {
+  // a click from the keyboard carries no coordinates, so fall back to the
+  // button itself and the menu opens against it rather than in the corner
+  const { x, y } = getEventPosition(evt);
+  const trigger =
+    x || y
+      ? undefined
+      : (evt.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+  eventbus.emit("contextmenu", {
+    items: getCommunityCatalogMenuItems(community),
+    posX: trigger ? trigger.left : x,
+    posY: trigger ? trigger.bottom : y,
+  });
+};
+
+// one from the community catalog is added only after its note is confirmed,
+// shown each time
 const addEntry = (entry: CatalogEntry, onStart?: () => void) => {
-  startAddProvider(entry.manifest, onStart);
+  if (!entry.community) {
+    startAddProvider(entry.manifest, onStart);
+    return;
+  }
+  pendingAdd.value = { entry, onStart };
+  noteOpen.value = true;
+};
+
+const continueAdd = async () => {
+  noteOpen.value = false;
+  if (!pendingAdd.value) return;
+  const { entry: pending, onStart } = pendingAdd.value;
+  // looked up again: another admin may have installed it while the note was open
+  const entry = entries.value.find(
+    (item) => item.manifest.domain === pending.manifest.domain,
+  );
+  if (!entry) return;
+  const manifest = needsInstall(entry)
+    ? await community.install(entry.community)
+    : entry.manifest;
+  if (manifest) startAddProvider(manifest, onStart);
 };
 </script>

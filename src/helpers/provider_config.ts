@@ -14,6 +14,7 @@ const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
   [ProviderStatus.AUTH_REQUIRED]: "settings.provider_status_auth_required",
   [ProviderStatus.INCOMPATIBLE]: "settings.provider_status_incompatible",
   [ProviderStatus.ERROR]: "settings.provider_status_error",
+  [ProviderStatus.UNAVAILABLE]: "settings.provider_status_unavailable",
 };
 
 const PROVIDER_STAGE_TRANSLATION_KEYS: Record<ProviderStage, string> = {
@@ -117,10 +118,18 @@ export const getProviderMaintainers = (manifest: ProviderManifest): string[] =>
 
 /**
  * Where to ask for help with a provider: the maintainer's own https support link
- * when the manifest has one, else a new problem report in the support repository.
+ * when the manifest has one, else the repository of one from the community
+ * catalog, else a new problem report in the support repository.
+ *
+ * @param manifest - The manifest of the provider.
+ * @param repositoryUrl - The repository of a provider from the community catalog.
  */
-export const getProviderHelpUrl = (manifest: ProviderManifest): string => {
+export const getProviderHelpUrl = (
+  manifest: ProviderManifest,
+  repositoryUrl?: string,
+): string => {
   if (manifest.support_url?.startsWith("https://")) return manifest.support_url;
+  if (repositoryUrl) return repositoryUrl;
   // GitHub applies labels only for reporters with triage rights; for everyone
   // else the support repository's triage workflow labels by the provider named
   // in the title

@@ -210,8 +210,9 @@ const ProviderRowStub = {
     "isError",
     "errorText",
     "community",
+    "removable",
   ],
-  emits: ["open", "menu", "reconfigure"],
+  emits: ["open", "menu", "reconfigure", "remove"],
   template: `<div data-testid="provider-row">{{ name }}</div>`,
 };
 
@@ -1061,7 +1062,11 @@ describe("Providers loading", () => {
 
     await mountWithConfigs([]);
 
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(
+      ProviderType.MUSIC,
+      undefined,
+      true,
+    );
   });
 
   it("gives a role that manages only its own music sources the member view", async () => {
@@ -1069,7 +1074,11 @@ describe("Providers loading", () => {
 
     await mountWithConfigs([]);
 
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(
+      ProviderType.MUSIC,
+      undefined,
+      true,
+    );
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
     expect(apiMock.getShareCandidates).toHaveBeenCalled();
   });
@@ -1114,6 +1123,70 @@ describe("Providers loading", () => {
 
     expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
     expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
+  });
+
+  describe("an entry whose provider is not available", () => {
+    const unavailable = () =>
+      providerConfig({
+        domain: "radio",
+        instance_id: "radio--a",
+        name: "",
+        default_name: "Radio Garden",
+        status: ProviderStatus.UNAVAILABLE,
+        last_error: {
+          error_code: 61,
+          message:
+            "The community catalog blocked this (It sends data elsewhere), so it no longer runs.",
+        },
+      });
+
+    it("is listed as not available with its reason, and cannot be opened", async () => {
+      const wrapper = await mountWithConfigs([unavailable()]);
+
+      const row = onlyRow(wrapper);
+      expect(row.props()).toMatchObject({
+        name: "Radio Garden",
+        manageable: false,
+        removable: true,
+        reconfigurable: false,
+        isError: true,
+        statusVariant: "destructive",
+        statusLabel: "settings.provider_status_unavailable",
+        errorText:
+          "The community catalog blocked this (It sends data elsewhere), so it no longer runs.",
+      });
+    });
+
+    it("is removed after the usual confirmation", async () => {
+      apiMock.removeProviderConfig.mockResolvedValue(undefined);
+      const wrapper = await mountWithConfigs([unavailable()]);
+
+      onlyRow(wrapper).vm.$emit("remove");
+      const removeCall = eventbusMock.emit.mock.calls.find(
+        ([event]) => event === "deleteConfirmationDialog",
+      );
+      expect(removeCall?.[1].message).toBe(
+        "settings.remove_provider_confirm_music",
+      );
+      expect(apiMock.removeProviderConfig).not.toHaveBeenCalled();
+
+      await removeCall?.[1].onConfirm();
+      await flushPromises();
+
+      expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("radio--a");
+      expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(0);
+    });
+
+    it("is not removable for a member who does not own it", async () => {
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+      const wrapper = await mountWithConfigs([
+        { ...otherSource(), status: ProviderStatus.UNAVAILABLE },
+      ]);
+
+      expect(onlyRow(wrapper).props("removable")).toBe(false);
+    });
   });
 
   it("shows no empty state until the providers are loaded", async () => {

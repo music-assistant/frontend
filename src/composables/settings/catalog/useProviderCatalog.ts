@@ -10,18 +10,30 @@ import {
 } from "@/helpers/provider_permissions";
 import { api } from "@/plugins/api";
 import {
+  type CommunityProvider,
   EventType,
   type ProviderConfig,
   ProviderType,
 } from "@/plugins/api/interfaces";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import {
+  computed,
+  type MaybeRefOrGetter,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  toValue,
+} from "vue";
 import { toast } from "vue-sonner";
 
 /**
  * What the Catalog lists for the current user: an entry for everything it may
  * add, and what is set up per type, kept in step with the server.
+ *
+ * @param community - What the community catalog lists, to join the entries.
  */
-export function useProviderCatalog() {
+export function useProviderCatalog(
+  community: MaybeRefOrGetter<readonly CommunityProvider[]> = [],
+) {
   const configs = ref<ProviderConfig[]>([]);
   // the page waits for the first load, so it never shows a state from before it
   const loaded = ref(false);
@@ -38,6 +50,7 @@ export function useProviderCatalog() {
       configs.value,
       restrictions.value,
       canManageSource,
+      toValue(community),
     ),
   );
 
