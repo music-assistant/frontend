@@ -17,6 +17,7 @@
           v-for="entry in entries"
           :key="entry.manifest.domain"
           :entry="entry"
+          :installing="installing.has(entry.manifest.domain)"
           @open="emit('open', entry)"
           @add="emit('add', entry)"
         />
@@ -40,6 +41,8 @@ interface Props {
   // shown above the list; empty hides the row
   popular: CatalogEntry[];
   title: string;
+  // the domains being installed from the community catalog
+  installing: ReadonlySet<string>;
 }
 
 defineProps<Props>();

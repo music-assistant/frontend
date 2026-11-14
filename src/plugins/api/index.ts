@@ -68,6 +68,7 @@ import {
   ConfigActionResult,
   ConfigEntry,
   ConfigValueType,
+  CommunityProvider,
   CoreConfig,
   DSPConfig,
   DSPConfigPreset,
@@ -2845,11 +2846,15 @@ export class MusicAssistantApi {
   public async getProviderConfigs(
     provider_type?: ProviderType,
     provider_domain?: string,
+    include_unavailable?: boolean,
   ): Promise<ProviderConfig[]> {
     // Return all known provider configurations, optionally filtered by ProviderType or domain.
+    // include_unavailable: also return the configurations of providers that are not
+    // available, with status UNAVAILABLE and the reason in last_error.
     return this.sendCommand("config/providers", {
       provider_type,
       provider_domain,
+      include_unavailable,
     });
   }
 
@@ -2948,6 +2953,43 @@ export class MusicAssistantApi {
       // callers show their own error toast; avoid a duplicate global one
       suppressGlobalError: true,
     });
+  }
+
+  // Community catalog related functions (admin only, refused in safe mode)
+  // Callers report a failure themselves, so these opt out of the global error toast.
+
+  public getCommunityProviders(): Promise<CommunityProvider[]> {
+    // Return the installed community providers and, while the community catalog is
+    // switched on, what it offers.
+    return this.sendCommand("community_catalog/providers", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
+  public refreshCommunityProviders(): Promise<CommunityProvider[]> {
+    // Fetch the community catalog now and return its providers.
+    return this.sendCommand("community_catalog/refresh", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
+  public installCommunityProvider(domain: string): Promise<CommunityProvider> {
+    // Install a provider of the community catalog. This creates no ProviderConfig:
+    // its manifest is then listed among the provider manifests to add it the usual way.
+    return this.sendCommand(
+      "community_catalog/install",
+      { domain },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeCommunityProvider(domain: string): Promise<void> {
+    // Remove an installed community provider; its ProviderConfigs stay.
+    return this.sendCommand(
+      "community_catalog/remove",
+      { domain },
+      { suppressGlobalError: true },
+    );
   }
 
   // PlayerConfig related functions
@@ -3521,6 +3563,10 @@ export class MusicAssistantApi {
     } else if (msg.event == EventType.CORE_STATE_UPDATED) {
       // Update serverInfo with the new server state
       this.serverInfo.value = msg.data as ServerInfoMessage;
+    } else if (msg.event == EventType.COMMUNITY_CATALOG_UPDATED) {
+      // a community provider was installed, removed or stopped; a failed fetch
+      // shows the global error toast
+      this.fetchProviderManifests().catch(() => {});
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {
       // Clear and repopulate the existing reactive object to preserve reactivity
       Object.keys(this.providers).forEach((key) => delete this.providers[key]);
@@ -4085,6 +4131,11 @@ export class MusicAssistantApi {
     const manifests = await this.sendCommand<ProviderManifest[]>(
       "providers/manifests",
     );
+    // a community provider that was removed or stopped is no longer listed
+    const domains = new Set(manifests.map((prov) => prov.domain));
+    Object.keys(this.providerManifests)
+      .filter((domain) => !domains.has(domain))
+      .forEach((domain) => delete this.providerManifests[domain]);
     for (const prov of manifests) {
       this.providerManifests[prov.domain] = prov;
     }

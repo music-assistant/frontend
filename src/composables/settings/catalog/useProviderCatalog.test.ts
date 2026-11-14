@@ -7,7 +7,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { defineComponent, h } from "vue";
+import { defineComponent, h, ref } from "vue";
+import { communityProvider } from "../../../../tests/fixtures/communityProvider";
 import { providerConfig } from "../../../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../../../tests/fixtures/providerManifest";
 import {
@@ -62,12 +63,12 @@ const CONFIGS = [
   }),
 ];
 
-function mountCatalog() {
+function mountCatalog(community?: Parameters<typeof useProviderCatalog>[0]) {
   let catalog!: ReturnType<typeof useProviderCatalog>;
   const wrapper = mount(
     defineComponent({
       setup() {
-        catalog = useProviderCatalog();
+        catalog = useProviderCatalog(community);
         return () => h("div");
       },
     }),
@@ -151,6 +152,22 @@ describe("useProviderCatalog for an admin", () => {
 
     wrapper.unmount();
     expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("joins what the community catalog offers, and follows it", async () => {
+    const community = ref([communityProvider("radio")]);
+    const { catalog } = mountCatalog(community);
+    await flushPromises();
+
+    expect(
+      catalog.entries.value.map((entry) => entry.manifest.domain),
+    ).toContain("radio");
+
+    community.value = [];
+
+    expect(
+      catalog.entries.value.map((entry) => entry.manifest.domain),
+    ).not.toContain("radio");
   });
 
   it("reports a failing load", async () => {

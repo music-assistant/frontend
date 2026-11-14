@@ -1,22 +1,34 @@
 import Catalog from "@/views/settings/Catalog.vue";
 import {
+  type CommunityProvider,
+  CommunityProviderState,
+  type CoreConfig,
+  EventType,
   type ProviderConfig,
   type ProviderManifest,
   ProviderSharing,
   ProviderStage,
+  ProviderTier,
   ProviderType,
   type Scope,
 } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
+import {
+  type DeleteConfirmationDialogEvent,
+  eventbus,
+} from "@/plugins/eventbus";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h } from "vue";
+import {
+  COMMUNITY_ICON,
+  communityProvider,
+} from "../fixtures/communityProvider";
 import { providerConfig } from "../fixtures/providerConfig";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, hasScope, routeMock, routerMock, storeMock } = vi.hoisted(
-  () => ({
+const { apiMock, hasScope, routeMock, routerMock, storeMock, toastMock } =
+  vi.hoisted(() => ({
     apiMock: {
       providerManifests: {} as Record<string, ProviderManifest>,
       providers: {} as Record<string, unknown>,
@@ -25,13 +37,20 @@ const { apiMock, hasScope, routeMock, routerMock, storeMock } = vi.hoisted(
       getProvider: vi.fn(),
       getProviderName: vi.fn(),
       subscribe: vi.fn(),
+      getCoreConfig: vi.fn(),
+      saveCoreConfig: vi.fn(),
+      getCommunityProviders: vi.fn(),
+      refreshCommunityProviders: vi.fn(),
+      installCommunityProvider: vi.fn(),
+      removeCommunityProvider: vi.fn(),
+      fetchProviderManifests: vi.fn(),
     },
     hasScope: vi.fn<(scope: Scope) => boolean>(),
     routeMock: { query: {} as Record<string, string> },
     routerMock: { replace: vi.fn() },
     storeMock: { isTouchscreen: true, currentUser: { user_id: "jane" } },
-  }),
-);
+    toastMock: { success: vi.fn(), error: vi.fn() },
+  }));
 
 // a link that shows where it leads, so a jump can be asserted
 const RouterLinkStub = vi.hoisted(() => ({
@@ -43,10 +62,13 @@ const RouterLinkStub = vi.hoisted(() => ({
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
+vi.mock("vue-sonner", () => ({ toast: toastMock }));
 // a translation shows its key followed by the values it names
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string, named?: Record<string, unknown>) =>
     [key, ...Object.values(named ?? {})].join(" "),
+  canonicalizeLocale: (locale: string) => locale,
+  i18n: { global: { locale: { value: "en-US" } } },
 }));
 vi.mock("vue-router", () => ({
   RouterLink: RouterLinkStub,
@@ -95,6 +117,12 @@ const MANIFESTS = [
 ];
 
 let configs: ProviderConfig[] = [];
+// what the server keeps of the community catalog
+let communityEnabled = false;
+let community: CommunityProvider[] = [];
+let confirmations: DeleteConfirmationDialogEvent[] = [];
+const onConfirmation = (event: DeleteConfirmationDialogEvent) =>
+  confirmations.push(event);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -117,7 +145,31 @@ beforeEach(() => {
   );
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
+  communityEnabled = false;
+  community = [];
+  // the server offers what is not installed only while the switch is on
+  apiMock.getCommunityProviders.mockImplementation(async () =>
+    community.filter(
+      (provider) =>
+        communityEnabled || provider.state !== CommunityProviderState.AVAILABLE,
+    ),
+  );
+  apiMock.getCoreConfig.mockImplementation(async () =>
+    communityCoreConfig(communityEnabled),
+  );
+  apiMock.saveCoreConfig.mockImplementation(
+    async (_domain: string, values: Record<string, boolean>) => {
+      communityEnabled = values.catalog_enabled;
+      return communityCoreConfig(communityEnabled);
+    },
+  );
+  confirmations = [];
+  eventbus.on("deleteConfirmationDialog", onConfirmation);
   document.body.innerHTML = "";
+});
+
+afterEach(() => {
+  eventbus.off("deleteConfirmationDialog", onConfirmation);
 });
 
 describe("Catalog", () => {
@@ -531,6 +583,552 @@ describe("Catalog for a member", () => {
     });
   });
 });
+
+const OWN_RISK = "You install them at your own risk.";
+
+// on offer while the switch is on
+const RADIO = communityProvider("radio", {
+  repository: "jane/ma-radio",
+  manifest: providerManifest({
+    domain: "radio",
+    name: "Radio Garden",
+    description: "Radio from around the world",
+    tier: ProviderTier.COMMUNITY,
+    documentation: "https://jane.github.io/ma-radio/",
+  }),
+});
+
+describe("Catalog with the community catalog", () => {
+  it("offers an admin the switch, off at first", async () => {
+    await mountCatalog();
+
+    const bar = document.querySelector("[data-testid='community-switch']")!;
+    expect(bar.textContent).toContain("Community catalog");
+    expect(switchToggle().getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("switches on only after the server's own-risk text is confirmed", async () => {
+    community = [RADIO];
+    await mountCatalog();
+
+    switchToggle().click();
+    await flushPromises();
+
+    expect(confirmations).toHaveLength(1);
+    expect(confirmations[0].message).toBe(OWN_RISK);
+    expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
+    expect(switchToggle().getAttribute("aria-checked")).toBe("false");
+    expect(document.querySelector("[data-domain='radio']")).toBeNull();
+
+    await confirmations[0].onConfirm();
+    await flushPromises();
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
+      catalog_enabled: true,
+    });
+    expect(switchToggle().getAttribute("aria-checked")).toBe("true");
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "settings.catalog.community.enabled_toast",
+    );
+    expect(cardNames("[data-testid='catalog-list']")).toContain("Radio Garden");
+  });
+
+  it("stays off when the confirmation is cancelled", async () => {
+    community = [RADIO];
+    await mountCatalog();
+
+    switchToggle().click();
+    await flushPromises();
+    // a cancelled confirmation never calls back
+
+    expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
+    expect(switchToggle().getAttribute("aria-checked")).toBe("false");
+    expect(document.querySelector("[data-domain='radio']")).toBeNull();
+  });
+
+  it("switches off without a confirmation, and hides what it offers", async () => {
+    communityEnabled = true;
+    community = [RADIO];
+    await mountCatalog();
+    expect(cardNames("[data-testid='catalog-list']")).toContain("Radio Garden");
+
+    switchToggle().click();
+    await flushPromises();
+
+    expect(confirmations).toHaveLength(0);
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
+      catalog_enabled: false,
+    });
+    expect(switchToggle().getAttribute("aria-checked")).toBe("false");
+    expect(cardNames("[data-testid='catalog-list']")).not.toContain(
+      "Radio Garden",
+    );
+  });
+
+  describe("while it is on", () => {
+    beforeEach(() => {
+      communityEnabled = true;
+      community = [RADIO];
+    });
+
+    it("lists what it offers in All and in its type, searchable, with the badge and maintainer", async () => {
+      const wrapper = await mountCatalog();
+
+      const card = cardFor("radio", "[data-testid='catalog-list']");
+      expect(
+        card.querySelector("[data-testid='catalog-card-community']"),
+      ).not.toBeNull();
+      expect(
+        card.querySelector("[data-testid='catalog-card-credit']")?.textContent,
+      ).toContain("settings.catalog.by_maintainers @jane");
+
+      await wrapper.get("[data-slot='input-group-control']").setValue("world");
+      expect(cardNames("[data-testid='catalog-list']")).toEqual([
+        "Radio Garden",
+      ]);
+    });
+
+    it("lists it in the tab of its type", async () => {
+      routeMock.query = { types: "music" };
+
+      await mountCatalog();
+
+      expect(cardNames("[data-testid='catalog-list']")).toContain(
+        "Radio Garden",
+      );
+    });
+
+    it("shows its icon as an image of the data the catalog gives", async () => {
+      await mountCatalog();
+
+      const icon = cardFor(
+        "radio",
+        "[data-testid='catalog-list']",
+      ).querySelector("[data-testid='catalog-icon-image']");
+      expect(icon?.tagName).toBe("IMG");
+      expect(icon?.getAttribute("src")).toBe(COMMUNITY_ICON);
+    });
+
+    it("shows its maintainers, code, documentation, help and version in the details", async () => {
+      await mountCatalog();
+
+      await openDetail("radio");
+
+      const detail = document.querySelector("[data-testid='catalog-detail']")!;
+      expect(
+        detail
+          .querySelector("[data-testid='catalog-detail-maintainers'] a")
+          ?.getAttribute("href"),
+      ).toBe("https://github.com/jane");
+      expect(href(detail, "catalog-detail-repository")).toBe(
+        "https://github.com/jane/ma-radio",
+      );
+      expect(href(detail, "catalog-detail-documentation")).toBe(
+        "https://jane.github.io/ma-radio/",
+      );
+      expect(href(detail, "catalog-detail-help")).toBe(
+        "https://github.com/jane/ma-radio",
+      );
+      expect(
+        detail.querySelector("[data-testid='catalog-detail-version']")
+          ?.textContent,
+      ).toContain(
+        "settings.catalog.community.version_released 1.2.0 Nov 2, 2026",
+      );
+      // a change to it is for its maintainer
+      expect(
+        detail.querySelector("[data-testid='catalog-detail-request']"),
+      ).toBeNull();
+    });
+
+    it("shows its note on Add, and installs nothing before Continue", async () => {
+      await mountCatalog();
+
+      clickAdd("radio");
+      await flushPromises();
+
+      expect(apiMock.installCommunityProvider).not.toHaveBeenCalled();
+      const note = document.querySelector("[data-testid='community-note']")!;
+      expect(note.textContent).toContain(
+        "settings.catalog.community.note_maintainers Radio Garden @jane",
+      );
+      expect(href(note, "community-note-help")).toBe(
+        "https://github.com/jane/ma-radio",
+      );
+    });
+
+    it("installs after the note, with progress, then starts adding it", async () => {
+      const emit = vi.spyOn(eventbus, "emit");
+      let finishInstall!: (provider: CommunityProvider) => void;
+      apiMock.installCommunityProvider.mockReturnValue(
+        new Promise((resolve) => (finishInstall = resolve)),
+      );
+      await mountCatalog();
+      clickAdd("radio");
+      await flushPromises();
+
+      continueNote();
+      await flushPromises();
+
+      expect(apiMock.installCommunityProvider).toHaveBeenCalledWith("radio");
+      const add = cardFor(
+        "radio",
+        "[data-testid='catalog-list']",
+      ).querySelector("[data-testid='catalog-card-add']")!;
+      expect(add.getAttribute("aria-busy")).toBe("true");
+      expect(add.textContent).toContain(
+        "settings.catalog.community.installing",
+      );
+      expect(emit).not.toHaveBeenCalledWith(
+        "setupFlowDialog",
+        expect.anything(),
+      );
+
+      finishInstall({
+        ...RADIO,
+        state: CommunityProviderState.INSTALLED,
+        installed_version: "1.2.0",
+      });
+      await flushPromises();
+
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.installed_toast Radio Garden",
+      );
+      expect(apiMock.fetchProviderManifests).toHaveBeenCalled();
+      expect(emit).toHaveBeenCalledWith("setupFlowDialog", {
+        kind: "provider",
+        domain: "radio",
+      });
+      emit.mockRestore();
+    });
+
+    it("reports the server's error when installing fails, and adds nothing", async () => {
+      const emit = vi.spyOn(eventbus, "emit");
+      apiMock.installCommunityProvider.mockRejectedValue({
+        toString: () => "Its requirements clash with dj",
+      });
+      await mountCatalog();
+      clickAdd("radio");
+      await flushPromises();
+
+      continueNote();
+      await flushPromises();
+
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "Its requirements clash with dj",
+      );
+      expect(emit).not.toHaveBeenCalledWith(
+        "setupFlowDialog",
+        expect.anything(),
+      );
+      emit.mockRestore();
+    });
+
+    it("shows the note again for one that is installed, then adds it without installing", async () => {
+      const emit = vi.spyOn(eventbus, "emit");
+      const installed = {
+        ...RADIO,
+        state: CommunityProviderState.INSTALLED,
+        installed_version: "1.2.0",
+      };
+      community = [installed];
+      apiMock.providerManifests.radio = installed.manifest;
+      await mountCatalog();
+
+      clickAdd("radio");
+      await flushPromises();
+      expect(
+        document.querySelector("[data-testid='community-note']"),
+      ).not.toBeNull();
+      continueNote();
+      await flushPromises();
+
+      expect(apiMock.installCommunityProvider).not.toHaveBeenCalled();
+      expect(emit).toHaveBeenCalledWith("setupFlowDialog", {
+        kind: "provider",
+        domain: "radio",
+      });
+      emit.mockRestore();
+    });
+
+    it("lists it again when the community catalog changes", async () => {
+      await mountCatalog();
+      const onUpdated = apiMock.subscribe.mock.calls.find(
+        ([event]) => event === EventType.COMMUNITY_CATALOG_UPDATED,
+      )![1];
+
+      community = [];
+      await onUpdated();
+      await flushPromises();
+
+      expect(cardNames("[data-testid='catalog-list']")).not.toContain(
+        "Radio Garden",
+      );
+    });
+  });
+
+  describe("in the Installed view", () => {
+    beforeEach(() => {
+      routeMock.query = { view: "installed" };
+      community = [
+        communityProvider("radio", {
+          state: CommunityProviderState.INSTALLED,
+          installed_version: "1.2.0",
+          manifest: providerManifest({ domain: "radio", name: "Radio Garden" }),
+        }),
+        communityProvider("bad", {
+          state: CommunityProviderState.BLOCKED,
+          installed_version: "0.3.0",
+          manifest: providerManifest({ domain: "bad", name: "Bad radio" }),
+          reason: "It sends data elsewhere",
+          reason_url: "https://github.com/music-assistant/registry/issues/9",
+          error: {
+            error_code: 61,
+            message:
+              "The community catalog blocked this (It sends data elsewhere), so it no longer runs.",
+          },
+        }),
+        communityProvider("broken", {
+          state: CommunityProviderState.UNAVAILABLE,
+          installed_version: "2.0.0",
+          manifest: providerManifest({ domain: "broken", name: "Broken" }),
+          error: {
+            error_code: 61,
+            message: "This is not available for this version.",
+          },
+        }),
+        communityProvider("old", {
+          state: CommunityProviderState.WITHDRAWN,
+          installed_version: "1.0.0",
+          manifest: providerManifest({ domain: "old", name: "Old radio" }),
+          reason: "The maintainer stopped",
+        }),
+      ];
+    });
+
+    it("lists what is installed with its version, state and reason", async () => {
+      await mountCatalog();
+
+      expect(
+        installedRows().map((row) => row.getAttribute("data-domain")),
+      ).toEqual(["bad", "broken", "old", "radio"]);
+
+      const radio = installedRow("radio");
+      expect(radio.textContent).toContain(
+        "settings.catalog.community.version 1.2.0",
+      );
+      expect(
+        radio.querySelector("[data-testid='community-installed-state']"),
+      ).toBeNull();
+
+      const bad = installedRow("bad");
+      expect(
+        bad.querySelector("[data-testid='community-installed-state']")
+          ?.textContent,
+      ).toContain("settings.catalog.community.state.blocked");
+      expect(
+        bad.querySelector("[data-testid='community-installed-reason']")
+          ?.textContent,
+      ).toContain("so it no longer runs");
+      expect(href(bad, "community-installed-reason-link")).toBe(
+        "https://github.com/music-assistant/registry/issues/9",
+      );
+
+      expect(
+        installedRow("broken").querySelector(
+          "[data-testid='community-installed-reason']",
+        )?.textContent,
+      ).toContain("This is not available for this version.");
+
+      const old = installedRow("old");
+      expect(old.textContent).toContain(
+        "settings.catalog.community.state.withdrawn",
+      );
+      expect(old.textContent).toContain(
+        "settings.catalog.community.withdrawn_hint",
+      );
+      expect(old.textContent).toContain("The maintainer stopped");
+    });
+
+    it("removes one after a confirmation that its settings stay", async () => {
+      await mountCatalog();
+
+      installedRow("bad")
+        .querySelector<HTMLElement>("[data-testid='community-remove']")!
+        .click();
+      await flushPromises();
+
+      expect(confirmations[0].message).toBe(
+        "settings.catalog.community.remove_message Bad radio settings.music_sources",
+      );
+      expect(apiMock.removeCommunityProvider).not.toHaveBeenCalled();
+
+      community = community.filter((provider) => provider.domain !== "bad");
+      await confirmations[0].onConfirm();
+      await flushPromises();
+
+      expect(apiMock.removeCommunityProvider).toHaveBeenCalledWith("bad");
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.removed_toast Bad radio",
+      );
+      expect(document.querySelector("[data-domain='bad']")).toBeNull();
+    });
+
+    it("fetches the list again on refresh", async () => {
+      apiMock.refreshCommunityProviders.mockResolvedValue(
+        community.slice(0, 1),
+      );
+      await mountCatalog();
+
+      document
+        .querySelector<HTMLElement>("[data-testid='community-refresh']")!
+        .click();
+      await flushPromises();
+
+      expect(apiMock.refreshCommunityProviders).toHaveBeenCalled();
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.refreshed",
+      );
+      expect(
+        installedRows().map((row) => row.getAttribute("data-domain")),
+      ).toEqual(["radio"]);
+    });
+
+    it("leaves the section out while it is off and nothing is installed", async () => {
+      community = [RADIO];
+
+      await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='community-installed']"),
+      ).toBeNull();
+    });
+  });
+
+  it("says it is not available when the server refuses it, and keeps the rest of the page", async () => {
+    apiMock.getCommunityProviders.mockRejectedValue(
+      new Error("The community catalog is not available in safe mode"),
+    );
+    routeMock.query = { view: "installed" };
+    community = [
+      communityProvider("radio", { state: CommunityProviderState.INSTALLED }),
+    ];
+
+    await mountCatalog();
+
+    expect(
+      document.querySelector("[data-testid='community-unavailable']"),
+    ).not.toBeNull();
+    expect(
+      document.querySelector("[data-testid='community-switch-toggle']"),
+    ).toBeNull();
+    expect(
+      document.querySelector("[data-testid='community-installed']"),
+    ).toBeNull();
+    expect(
+      document.querySelectorAll("[data-testid='catalog-installed-group']"),
+    ).toHaveLength(2);
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("loads it again on retry after the server refused it", async () => {
+    apiMock.getCommunityProviders.mockRejectedValueOnce(new Error("refused"));
+    await mountCatalog();
+
+    document
+      .querySelector<HTMLElement>("[data-testid='community-retry']")!
+      .click();
+    await flushPromises();
+
+    expect(
+      document.querySelector("[data-testid='community-unavailable']"),
+    ).toBeNull();
+    expect(switchToggle()).not.toBeNull();
+  });
+
+  it("waits for the community catalog before showing the page", async () => {
+    apiMock.getCommunityProviders.mockReturnValue(new Promise(() => {}));
+
+    await mountCatalog();
+
+    expect(
+      document.querySelector("[data-testid='catalog-loading']"),
+    ).not.toBeNull();
+    expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
+  });
+
+  it.each<Record<string, string>>([{}, { view: "installed" }])(
+    "shows none of it to a user who is not an admin (%o)",
+    async (query) => {
+      hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+      communityEnabled = true;
+      community = [
+        RADIO,
+        communityProvider("old", { state: CommunityProviderState.INSTALLED }),
+      ];
+      routeMock.query = query;
+
+      await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='community-switch']"),
+      ).toBeNull();
+      expect(
+        document.querySelector("[data-testid='community-installed']"),
+      ).toBeNull();
+      expect(document.querySelector("[data-domain='radio']")).toBeNull();
+      expect(apiMock.getCommunityProviders).not.toHaveBeenCalled();
+      expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
+    },
+  );
+});
+
+function communityCoreConfig(enabled: boolean): CoreConfig {
+  return {
+    domain: "community_catalog",
+    last_error: null,
+    values: {
+      catalog_enabled: {
+        key: "catalog_enabled",
+        label: "Community catalog",
+        description: OWN_RISK,
+        value: enabled,
+      },
+    },
+  } as unknown as CoreConfig;
+}
+
+function switchToggle(): HTMLElement {
+  return document.querySelector<HTMLElement>(
+    "[data-testid='community-switch-toggle']",
+  )!;
+}
+
+function clickAdd(domain: string) {
+  cardFor(domain, "[data-testid='catalog-list']")
+    .querySelector<HTMLElement>("[data-testid='catalog-card-add']")!
+    .click();
+}
+
+function continueNote() {
+  document
+    .querySelector<HTMLElement>("[data-testid='community-note-continue']")!
+    .click();
+}
+
+function installedRows(): Element[] {
+  return [
+    ...document.querySelectorAll("[data-testid='community-installed-row']"),
+  ];
+}
+
+function installedRow(domain: string): Element {
+  const row = document.querySelector(
+    `[data-testid='community-installed-row'][data-domain='${domain}']`,
+  );
+  if (!row) throw new Error(`no installed row for ${domain}`);
+  return row;
+}
 
 async function mountCatalog() {
   const wrapper = mount(Catalog, {
