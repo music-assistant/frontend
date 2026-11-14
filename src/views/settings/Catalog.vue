@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-6 p-6 pb-20 max-md:px-3 max-md:py-4">
+  <div class="flex flex-col gap-6 p-6 max-md:px-3 max-md:py-4">
     <header class="flex items-center gap-4">
       <span
         class="flex size-12 shrink-0 items-center justify-center rounded-(--radius-lg) bg-primary/10 text-primary"
@@ -16,7 +16,11 @@
       </div>
     </header>
 
-    <Tabs :model-value="activeTab" @update:model-value="selectTab">
+    <Tabs
+      :model-value="activeTab"
+      class="gap-6"
+      @update:model-value="selectTab"
+    >
       <!-- the tabs scroll sideways on a phone rather than wrapping -->
       <div class="-mx-6 overflow-x-auto px-6 max-md:-mx-3 max-md:px-3">
         <TabsList variant="line" data-testid="catalog-tabs">
@@ -32,49 +36,85 @@
           </TabsTrigger>
           <TabsTrigger :value="CATALOG_INSTALLED_TAB">
             {{ $t("settings.catalog.installed") }}
-            <span class="text-muted-foreground">{{ installedCount }}</span>
+            <span v-if="loaded" class="text-muted-foreground">{{
+              installedCount
+            }}</span>
           </TabsTrigger>
         </TabsList>
       </div>
-    </Tabs>
 
-    <CatalogInstalled
-      v-if="activeTab === CATALOG_INSTALLED_TAB"
-      :groups="installed"
-    />
-
-    <template v-else>
-      <div class="flex flex-wrap items-center gap-2">
-        <SearchInput
-          v-model="searchQuery"
-          :placeholder="$t('search')"
-          clearable
-          class="max-w-md min-w-48 flex-1"
-        />
-        <FacetedFilter
-          v-model="selectedStages"
-          :title="$t('settings.stage.label')"
-          :options="stageOptions"
-        />
-        <RouterLink
-          v-if="activeType"
-          :to="getTypeSettingsRoute(activeType.type)"
-          class="ml-auto flex items-center gap-1 text-sm text-primary no-underline hover:underline"
-          data-testid="catalog-manage-link"
+      <!-- one panel, for whichever tab is picked -->
+      <TabsContent :value="activeTab" class="flex flex-col gap-6">
+        <!-- what is set up decides what may be added, so nothing shows before it is known -->
+        <Empty
+          v-if="!loaded && failed"
+          class="rounded-(--radius-xl) border"
+          data-testid="catalog-load-failed"
         >
-          {{ $t(activeType.manageLabel) }}
-          <ChevronRight class="size-4" aria-hidden="true" />
-        </RouterLink>
-      </div>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <CircleAlert />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t("settings.catalog.load_failed") }}</EmptyTitle>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              variant="outline"
+              data-testid="catalog-retry"
+              @click="reload"
+            >
+              <RefreshCw class="size-4" aria-hidden="true" />
+              {{ $t("settings.retry") }}
+            </Button>
+          </EmptyContent>
+        </Empty>
+        <div
+          v-else-if="!loaded"
+          class="flex min-h-24 items-center justify-center"
+          data-testid="catalog-loading"
+        >
+          <Spinner class="size-8" />
+        </div>
 
-      <CatalogBrowse
-        :entries="filteredEntries"
-        :popular="popularEntries"
-        :title="listTitle"
-        @open="openDetail"
-        @add="addEntry"
-      />
-    </template>
+        <CatalogInstalled
+          v-else-if="activeTab === CATALOG_INSTALLED_TAB"
+          :groups="installed"
+        />
+
+        <template v-else>
+          <div class="flex flex-wrap items-center gap-2">
+            <SearchInput
+              v-model="searchQuery"
+              :placeholder="$t('search')"
+              clearable
+              class="max-w-md min-w-48 flex-1"
+            />
+            <FacetedFilter
+              v-model="selectedStages"
+              :title="$t('settings.stage.label')"
+              :options="stageOptions"
+            />
+            <RouterLink
+              v-if="activeType"
+              :to="getTypeSettingsRoute(activeType.type)"
+              class="ml-auto flex items-center gap-1 text-sm text-primary no-underline hover:underline"
+              data-testid="catalog-manage-link"
+            >
+              {{ $t(activeType.manageLabel) }}
+              <ChevronRight class="size-4" aria-hidden="true" />
+            </RouterLink>
+          </div>
+
+          <CatalogBrowse
+            :entries="filteredEntries"
+            :popular="popularEntries"
+            :title="listTitle"
+            @open="openDetail"
+            @add="addEntry"
+          />
+        </template>
+      </TabsContent>
+    </Tabs>
 
     <i18n-t
       keypath="settings.catalog.missing"
@@ -109,7 +149,16 @@ import CatalogBrowse from "@/components/settings/catalog/CatalogBrowse.vue";
 import CatalogEntryDialog from "@/components/settings/catalog/CatalogEntryDialog.vue";
 import CatalogInstalled from "@/components/settings/catalog/CatalogInstalled.vue";
 import { SearchInput } from "@/components/ui/search-input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProviderCatalog } from "@/composables/settings/catalog/useProviderCatalog";
 import { startAddProvider } from "@/helpers/provider_add";
 import {
@@ -129,14 +178,14 @@ import {
 } from "@/helpers/provider_catalog";
 import { getProviderStageTranslationKey } from "@/helpers/provider_config";
 import { $t } from "@/plugins/i18n";
-import { Blocks, ChevronRight } from "@lucide/vue";
+import { Blocks, ChevronRight, CircleAlert, RefreshCw } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
 
-const { entries, installed } = useProviderCatalog();
+const { entries, installed, loaded, failed, reload } = useProviderCatalog();
 
 const searchQuery = ref("");
 const selectedStages = ref<string[]>([]);

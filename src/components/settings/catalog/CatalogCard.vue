@@ -64,6 +64,9 @@
           as-child
           variant="ghost"
           size="sm"
+          :aria-label="
+            $t('settings.catalog.manage_named', { name: entry.manifest.name })
+          "
           data-testid="catalog-card-manage"
         >
           <RouterLink :to="manageRoute" class="no-underline">
@@ -74,6 +77,9 @@
           v-if="entry.canAdd"
           variant="outline"
           size="sm"
+          :aria-label="
+            $t('settings.catalog.add_named', { name: entry.manifest.name })
+          "
           data-testid="catalog-card-add"
           @click="emit('add')"
         >

@@ -103,7 +103,7 @@ export const MEMBER_ADD_RESTRICTIONS: AddRestrictions = {
 /** One thing the Catalog lists. */
 export interface CatalogEntry {
   manifest: ProviderManifest;
-  // the instances of it that are set up, empty when there is none
+  // the instances of it that the user manages, empty when there is none
   instances: ProviderConfig[];
   // whether an instance (or another one) may be added
   canAdd: boolean;
@@ -154,11 +154,13 @@ export const isOfferable = (
  * @param manifests - Every provider manifest the server knows.
  * @param configs - The provider instances set up that the user can see.
  * @param restrictions - What the user may add.
+ * @param canManage - Whether the user manages an instance; by default every one.
  */
 export const buildCatalogEntries = (
   manifests: readonly ProviderManifest[],
   configs: readonly ProviderConfig[],
   restrictions: AddRestrictions = {},
+  canManage: (config: ProviderConfig) => boolean = () => true,
 ): CatalogEntry[] =>
   manifests
     .filter((manifest) => isOfferable(manifest, restrictions))
@@ -168,7 +170,7 @@ export const buildCatalogEntries = (
       );
       return {
         manifest,
-        instances,
+        instances: instances.filter(canManage),
         canAdd: manifest.multi_instance || instances.length === 0,
       };
     })
@@ -284,6 +286,8 @@ export const getManageRoute = (entry: CatalogEntry): RouteLocationRaw =>
 export interface InstalledProvider {
   config: ProviderConfig;
   name: string;
+  // whether the user manages it, and so may open its settings
+  manageable: boolean;
 }
 
 export interface InstalledGroup {
@@ -299,12 +303,14 @@ export interface InstalledGroup {
  * @param manifests - The provider manifests by domain.
  * @param includeBuiltin - Whether to list the providers that ship with the server.
  * @param getName - The name an instance is shown by.
+ * @param canManage - Whether the user manages an instance; by default every one.
  */
 export const groupInstalledProviders = (
   configs: readonly ProviderConfig[],
   manifests: Readonly<Record<string, ProviderManifest>>,
   includeBuiltin: boolean,
   getName: (config: ProviderConfig) => string,
+  canManage: (config: ProviderConfig) => boolean = () => true,
 ): InstalledGroup[] =>
   CATALOG_TYPES.map((type) => ({
     type,
@@ -314,7 +320,11 @@ export const groupInstalledProviders = (
           config.type === type.type &&
           (includeBuiltin || !isBuiltinProvider(manifests[config.domain])),
       )
-      .map((config) => ({ config, name: getName(config) }))
+      .map((config) => ({
+        config,
+        name: getName(config),
+        manageable: canManage(config),
+      }))
       .sort((a, b) => compareNames(a.name, b.name)),
   })).filter((group) => group.items.length > 0);
 

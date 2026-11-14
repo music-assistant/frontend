@@ -13,16 +13,22 @@
         :link-to="getTypeSettingsRoute(group.type.type)"
       />
       <ItemGroup class="gap-2">
+        <!-- a source shared with the user is listed, but its settings are not
+             the user's to open -->
         <Item
           v-for="item in group.items"
           :key="item.config.instance_id"
           as-child
           variant="outline"
-          class="rounded-(--radius-xl) hover:bg-accent/50"
-          :class="{ 'opacity-60': !item.config.enabled }"
+          class="rounded-(--radius-xl)"
+          :class="{
+            'hover:bg-accent/50': item.manageable,
+            'opacity-60': !item.config.enabled,
+          }"
         >
-          <RouterLink
-            :to="getInstanceSettingsRoute(item.config)"
+          <component
+            :is="item.manageable ? RouterLink : 'div'"
+            :to="item.manageable ? getInstanceSettingsRoute(item.config) : null"
             class="text-inherit no-underline"
             data-testid="catalog-installed-row"
           >
@@ -40,13 +46,13 @@
                 {{ subtitle(item) }}
               </ItemDescription>
             </ItemContent>
-            <ItemActions>
+            <ItemActions v-if="item.manageable">
               <ChevronRight
                 class="size-4 text-muted-foreground"
                 aria-hidden="true"
               />
             </ItemActions>
-          </RouterLink>
+          </component>
         </Item>
       </ItemGroup>
     </section>

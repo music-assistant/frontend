@@ -2,6 +2,7 @@ import Catalog from "@/views/settings/Catalog.vue";
 import {
   type ProviderConfig,
   type ProviderManifest,
+  ProviderSharing,
   ProviderStage,
   ProviderType,
   type Scope,
@@ -14,20 +15,23 @@ import { providerConfig } from "../fixtures/providerConfig";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, hasScope, routeMock, routerMock } = vi.hoisted(() => ({
-  apiMock: {
-    providerManifests: {} as Record<string, ProviderManifest>,
-    providers: {} as Record<string, unknown>,
-    serverInfo: { value: undefined },
-    getProviderConfigs: vi.fn(),
-    getProvider: vi.fn(),
-    getProviderName: vi.fn(),
-    subscribe: vi.fn(),
-  },
-  hasScope: vi.fn<(scope: Scope) => boolean>(),
-  routeMock: { query: {} as Record<string, string> },
-  routerMock: { replace: vi.fn() },
-}));
+const { apiMock, hasScope, routeMock, routerMock, storeMock } = vi.hoisted(
+  () => ({
+    apiMock: {
+      providerManifests: {} as Record<string, ProviderManifest>,
+      providers: {} as Record<string, unknown>,
+      serverInfo: { value: undefined },
+      getProviderConfigs: vi.fn(),
+      getProvider: vi.fn(),
+      getProviderName: vi.fn(),
+      subscribe: vi.fn(),
+    },
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
+    routeMock: { query: {} as Record<string, string> },
+    routerMock: { replace: vi.fn() },
+    storeMock: { isTouchscreen: true, currentUser: { user_id: "jane" } },
+  }),
+);
 
 // a link that shows where it leads, so a jump can be asserted
 const RouterLinkStub = vi.hoisted(() => ({
@@ -38,8 +42,12 @@ const RouterLinkStub = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
-vi.mock("@/plugins/store", () => ({ store: { isTouchscreen: true } }));
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
+// a translation shows its key followed by the values it names
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, named?: Record<string, unknown>) =>
+    [key, ...Object.values(named ?? {})].join(" "),
+}));
 vi.mock("vue-router", () => ({
   RouterLink: RouterLinkStub,
   useRoute: () => routeMock,
@@ -358,6 +366,71 @@ describe("Catalog", () => {
     ).not.toBeNull();
   });
 
+  it("names what the Add and Manage on a card are for", async () => {
+    await mountCatalog();
+
+    const card = cardFor("spotify", "[data-testid='catalog-list']");
+    expect(
+      card
+        .querySelector("[data-testid='catalog-card-add']")
+        ?.getAttribute("aria-label"),
+    ).toBe("settings.catalog.add_named Spotify");
+    expect(
+      card
+        .querySelector("[data-testid='catalog-card-manage']")
+        ?.getAttribute("aria-label"),
+    ).toBe("settings.catalog.manage_named Spotify");
+  });
+
+  it("shows the picked tab in a panel the tab controls", async () => {
+    await mountCatalog();
+
+    const tab = document.querySelector(
+      "[data-slot='tabs-trigger'][data-state='active']",
+    )!;
+    const panel = document.getElementById(tab.getAttribute("aria-controls")!);
+    expect(panel?.getAttribute("role")).toBe("tabpanel");
+    expect(panel?.querySelector("[data-testid='catalog-list']")).not.toBeNull();
+  });
+
+  it.each<Record<string, string>>([{}, { view: "installed" }])(
+    "shows nothing that depends on what is set up before it is loaded (%o)",
+    async (query) => {
+      routeMock.query = query;
+      apiMock.getProviderConfigs.mockReturnValue(new Promise(() => {}));
+
+      await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='catalog-loading']"),
+      ).not.toBeNull();
+      expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
+      expect(
+        document.querySelector("[data-testid='catalog-installed-empty']"),
+      ).toBeNull();
+      expect(tabLabels().at(-1)).toBe("settings.catalog.installed");
+    },
+  );
+
+  it("says when loading failed and loads again on retry", async () => {
+    apiMock.getProviderConfigs.mockRejectedValueOnce(new Error("refused"));
+    const wrapper = await mountCatalog();
+
+    expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
+    expect(
+      document.querySelector("[data-testid='catalog-loading']"),
+    ).toBeNull();
+
+    await wrapper.get("[data-testid='catalog-retry']").trigger("click");
+    await flushPromises();
+
+    expect(
+      document.querySelector("[data-testid='catalog-load-failed']"),
+    ).toBeNull();
+    expect(cardFor("chromecast")).toBeTruthy();
+    expect(tabLabels().at(-1)).toBe("settings.catalog.installed2");
+  });
+
   it("asks what is missing at the bottom", async () => {
     await mountCatalog();
 
@@ -388,6 +461,74 @@ describe("Catalog for a member", () => {
       "settings.catalog.installed1",
     ]);
     expect(cardNames("[data-testid='catalog-list']")).toEqual(["Spotify"]);
+  });
+
+  describe("with a source shared with it", () => {
+    beforeEach(() => {
+      configs = [
+        providerConfig({
+          domain: "spotify",
+          instance_id: "spotify--shared",
+          name: "Shared Spotify",
+          access: {
+            owner: null,
+            sharing: ProviderSharing.EVERYONE,
+            shared_users: [],
+          },
+        }),
+      ];
+    });
+
+    it("does not count it as added or offer to manage it", async () => {
+      await mountCatalog();
+
+      const card = cardFor("spotify", "[data-testid='catalog-list']");
+      expect(
+        card.querySelector("[data-testid='catalog-card-added']"),
+      ).toBeNull();
+      expect(
+        card.querySelector("[data-testid='catalog-card-manage']"),
+      ).toBeNull();
+      expect(
+        card.querySelector("[data-testid='catalog-card-add']"),
+      ).not.toBeNull();
+    });
+
+    it("lists it as installed without a link to its settings", async () => {
+      routeMock.query = { view: "installed" };
+
+      await mountCatalog();
+
+      const row = document.querySelector(
+        "[data-testid='catalog-installed-row']",
+      )!;
+      expect(row.textContent).toContain("Shared Spotify");
+      expect(row.tagName).toBe("DIV");
+      expect(row.hasAttribute("data-to")).toBe(false);
+    });
+
+    it("links its own source next to the shared one", async () => {
+      routeMock.query = { view: "installed" };
+      configs.push(
+        providerConfig({
+          domain: "spotify",
+          instance_id: "spotify--own",
+          name: "My Spotify",
+          access: {
+            owner: "jane",
+            sharing: ProviderSharing.PRIVATE,
+            shared_users: [],
+          },
+        }),
+      );
+
+      await mountCatalog();
+
+      expect(linkTarget("[data-testid='catalog-installed-row']")).toEqual({
+        name: "editprovider",
+        params: { instanceId: "spotify--own" },
+      });
+    });
   });
 });
 

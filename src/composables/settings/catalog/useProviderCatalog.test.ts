@@ -1,6 +1,7 @@
 import {
   EventType,
   type ProviderManifest,
+  ProviderSharing,
   ProviderType,
   type Scope,
 } from "@/plugins/api/interfaces";
@@ -15,7 +16,7 @@ import {
 } from "../../../../tests/fixtures/scopes";
 import { useProviderCatalog } from "./useProviderCatalog";
 
-const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
+const { apiMock, hasScope, storeMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     providerManifests: {} as Record<string, ProviderManifest>,
     providers: {} as Record<string, unknown>,
@@ -23,12 +24,13 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
     subscribe: vi.fn(),
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
+  storeMock: { currentUser: { user_id: "jane" } },
   toastMock: { error: vi.fn() },
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
-vi.mock("@/plugins/store", () => ({ store: {} }));
+vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
 const MANIFESTS = [
@@ -158,6 +160,18 @@ describe("useProviderCatalog for an admin", () => {
 
     expect(toastMock.error).toHaveBeenCalledWith("Error: refused");
     expect(catalog.loaded.value).toBe(false);
+    expect(catalog.failed.value).toBe(true);
+  });
+
+  it("loads again after a failing load", async () => {
+    apiMock.getProviderConfigs.mockRejectedValueOnce(new Error("refused"));
+    const { catalog } = mountCatalog();
+    await flushPromises();
+
+    await catalog.reload();
+
+    expect(catalog.loaded.value).toBe(true);
+    expect(catalog.failed.value).toBe(false);
   });
 });
 
@@ -174,6 +188,44 @@ describe("useProviderCatalog for a member", () => {
     expect(catalog.entries.value.map((entry) => entry.manifest.domain)).toEqual(
       ["spotify"],
     );
+  });
+
+  it("only counts its own sources as set up, and lists shared ones without managing them", async () => {
+    apiMock.getProviderConfigs.mockResolvedValue([
+      providerConfig({
+        domain: "spotify",
+        instance_id: "spotify--own",
+        access: {
+          owner: "jane",
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+        },
+      }),
+      providerConfig({
+        domain: "spotify",
+        instance_id: "spotify--shared",
+        access: {
+          owner: null,
+          sharing: ProviderSharing.EVERYONE,
+          shared_users: [],
+        },
+      }),
+    ]);
+    const { catalog } = mountCatalog();
+    await flushPromises();
+
+    expect(
+      catalog.entries.value[0].instances.map((config) => config.instance_id),
+    ).toEqual(["spotify--own"]);
+    expect(
+      catalog.installed.value[0].items.map((item) => [
+        item.config.instance_id,
+        item.manageable,
+      ]),
+    ).toEqual([
+      ["spotify--own", true],
+      ["spotify--shared", false],
+    ]);
   });
 
   it("leaves the providers that ship with the server out of what is installed", async () => {

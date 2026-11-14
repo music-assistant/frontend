@@ -674,8 +674,10 @@
             "next": "Next",
             "everything": "Everything",
             "add": "Add",
+            "add_named": "Add {name}",
             "added": "Added",
             "manage": "Manage",
+            "manage_named": "Manage {name}",
             "by_maintainers": "by {maintainers}",
             "by_team": "by the Music Assistant team",
             "created_by": "Created and maintained by {maintainers}",
@@ -685,6 +687,7 @@
             "request_it": "Request it",
             "installed_empty_title": "Nothing added yet",
             "installed_empty": "What you add from the Catalog shows up here.",
+            "load_failed": "Could not load the Catalog",
             "type": {
                 "music": "Music source",
                 "player": "Player support",

@@ -195,6 +195,27 @@ describe("buildCatalogEntries", () => {
       canAdd: true,
     });
   });
+
+  it("only counts the instances the user manages as set up", () => {
+    const managed = buildCatalogEntries(
+      MANIFESTS,
+      CONFIGS,
+      {},
+      (config) => config.instance_id !== "spotify--a",
+    );
+    expect(entry(managed, "spotify")).toMatchObject({
+      instances: [],
+      canAdd: true,
+    });
+  });
+
+  it("keeps a single-instance provider without Add when someone else set it up", () => {
+    const managed = buildCatalogEntries(MANIFESTS, CONFIGS, {}, () => false);
+    expect(entry(managed, "chromecast")).toMatchObject({
+      instances: [],
+      canAdd: false,
+    });
+  });
 });
 
 describe("filterCatalogEntries", () => {
@@ -353,6 +374,23 @@ describe("groupInstalledProviders", () => {
   it("leaves out the providers that ship with the server when asked", () => {
     const groups = groupInstalledProviders(configs, manifests, false, getName);
     expect(groups[1].items.map((item) => item.name)).toEqual(["Chromecast"]);
+  });
+
+  it("marks which instances the user manages", () => {
+    const groups = groupInstalledProviders(
+      configs,
+      manifests,
+      true,
+      getName,
+      (config) => config.instance_id !== "spotify--b",
+    );
+    expect(groups[0].items.map((item) => [item.name, item.manageable])).toEqual(
+      [
+        ["Another Spotify", false],
+        ["Spotify", true],
+        ["Tidal", true],
+      ],
+    );
   });
 
   it("has no groups when nothing is set up", () => {

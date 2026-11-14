@@ -4,7 +4,10 @@ import {
   MEMBER_ADD_RESTRICTIONS,
 } from "@/helpers/provider_catalog";
 import { providerDisplayName } from "@/helpers/provider_config";
-import { managesAllSources } from "@/helpers/provider_permissions";
+import {
+  canManageSource,
+  managesAllSources,
+} from "@/helpers/provider_permissions";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -20,8 +23,10 @@ import { toast } from "vue-sonner";
  */
 export function useProviderCatalog() {
   const configs = ref<ProviderConfig[]>([]);
-  // the empty states wait for the first load, so they never flash before the list
+  // the page waits for the first load, so it never shows a state from before it
   const loaded = ref(false);
+  // whether the latest load failed, for the page to offer another try
+  const failed = ref(false);
 
   const restrictions = computed(() =>
     managesAllSources() ? {} : MEMBER_ADD_RESTRICTIONS,
@@ -32,6 +37,7 @@ export function useProviderCatalog() {
       Object.values(api.providerManifests),
       configs.value,
       restrictions.value,
+      canManageSource,
     ),
   );
 
@@ -43,10 +49,12 @@ export function useProviderCatalog() {
       api.providerManifests,
       managesAllSources(),
       getInstanceName,
+      canManageSource,
     ),
   );
 
   const loadConfigs = async function () {
+    failed.value = false;
     try {
       // a member only ever lists music sources
       configs.value = await api.getProviderConfigs(
@@ -54,6 +62,7 @@ export function useProviderCatalog() {
       );
       loaded.value = true;
     } catch (err) {
+      failed.value = true;
       toast.error(String(err));
     }
   };
@@ -72,7 +81,7 @@ export function useProviderCatalog() {
     unsubProvidersUpdated?.();
   });
 
-  return { entries, installed, loaded };
+  return { entries, installed, loaded, failed, reload: loadConfigs };
 }
 
 function getInstanceName(config: ProviderConfig): string {
