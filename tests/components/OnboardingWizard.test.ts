@@ -523,9 +523,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     expect(
       wrapper.find("[data-testid=onboarding-summary-optional]").exists(),
     ).toBe(false);
-    expect(wrapper.find("[data-testid=onboarding-tour-offer]").exists()).toBe(
-      false,
-    );
+    expect(wrapper.find("[data-testid=onboarding-tour]").exists()).toBe(false);
     wrapper.unmount();
   });
 
@@ -679,6 +677,28 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
           expect(heading(wrapper)).toBe(title);
           expect(stepCount(wrapper)).toBe(count);
         }
+      } finally {
+        wrapper.unmount();
+      }
+    });
+
+    it("does not reopen account creation from the first-run recap", async () => {
+      let wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+        signInAsNewAdmin();
+        await flushPromises();
+        wrapper.unmount();
+
+        wrapper = await mountWizard({ fresh: false, step: "finish" });
+        await flushPromises();
+        const account = wrapper
+          .findAll("[data-testid=onboarding-summary-done]")
+          .find((row) => row.text().includes("onboarding.steps.account.title"));
+        expect(account).toBeDefined();
+        expect(account!.attributes("disabled")).toBeDefined();
+        await account!.trigger("click");
+        expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
       } finally {
         wrapper.unmount();
       }
@@ -1117,7 +1137,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // neither list: nothing about them is set up or still to do
     expect(wrapper.text()).not.toContain("onboarding.steps.core_settings");
     expect(wrapper.find("[data-testid=onboarding-finish]").exists()).toBe(true);
-    // the summary carries its own finish button instead of the step footer
+    // the summary's footer offers Finish instead of Next
     expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(false);
 
     // the whole row of a step still to do is the way back to it
@@ -1129,12 +1149,52 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
+  it.each(["music_hub", "phone_apps"])(
+    "revisits every completed setup row, including the choice, for %s",
+    async (intent) => {
+      preferenceState.intent.value = intent;
+      addEveryProvider();
+      addProvider("connect--1", "spotify_connect", ProviderType.PLUGIN);
+      addMember("alex");
+      const targets =
+        intent === "phone_apps"
+          ? ["intent", "players", "plugins"]
+          : ["intent", "music_sources", "players", "plugins", "invite_members"];
+
+      for (const id of targets) {
+        const wrapper = await mountWizard({ step: "finish" });
+        try {
+          await flushPromises();
+          const title =
+            id === "intent"
+              ? "onboarding.steps.intent.summary_title"
+              : id === "plugins" && intent === "phone_apps"
+                ? "onboarding.steps.plugins.phone_apps_title"
+                : `onboarding.steps.${id}.title`;
+          const row = wrapper
+            .findAll("[data-testid=onboarding-summary-done]")
+            .find((item) => item.text().includes(title));
+          expect(row).toBeDefined();
+          expect(row!.element.tagName).toBe("BUTTON");
+          await row!.trigger("click");
+          await flushPromises();
+          expect(heading(wrapper)).toBe(
+            id === "intent" ? "onboarding.steps.intent.title" : title,
+          );
+          if (id === "intent") expect(stepCount(wrapper)).toBeNull();
+        } finally {
+          wrapper.unmount();
+        }
+      }
+    },
+  );
+
   it("offers the tour on the summary and starts it once onboarding has closed", async () => {
     addMusicProvider();
 
     const wrapper = await mountWizard({ step: "finish" });
     await flushPromises();
-    expect(wrapper.find("[data-testid=onboarding-tour-offer]").exists()).toBe(
+    expect(wrapper.find("footer [data-testid=onboarding-tour]").exists()).toBe(
       true,
     );
 
@@ -1154,6 +1214,43 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     );
 
     wrapper.unmount();
+  });
+
+  it("holds both finish actions and recap navigation while finishing", async () => {
+    preferenceState.intent.value = "music_hub";
+    let landFinish: () => void = () => {};
+    apiMock.sendCommand.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          landFinish = resolve;
+        }),
+    );
+    const wrapper = await mountWizard({ step: "finish" });
+    try {
+      await flushPromises();
+      await wrapper
+        .find("footer [data-testid=onboarding-tour]")
+        .trigger("click");
+      await flushPromises();
+
+      for (const control of wrapper.findAll(
+        "footer button, [data-testid=onboarding-summary-done], [data-testid=onboarding-summary-pending], [data-testid=onboarding-summary-optional]",
+      )) {
+        expect(control.attributes("disabled")).toBeDefined();
+      }
+      const choice = wrapper.find("[data-testid=onboarding-summary-done]");
+      await choice.trigger("click");
+      expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
+      expect(startTourMock).not.toHaveBeenCalled();
+
+      landFinish();
+      await flushPromises();
+      expect(apiMock.sendCommand).toHaveBeenCalledOnce();
+      expect(startTourMock).toHaveBeenCalledOnce();
+    } finally {
+      landFinish();
+      wrapper.unmount();
+    }
   });
 
   it("holds the tour back when onboarding could not be closed", async () => {

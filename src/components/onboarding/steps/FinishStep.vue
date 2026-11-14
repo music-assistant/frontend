@@ -24,9 +24,14 @@
         <Item
           v-for="step in done"
           :key="step.id"
+          as="button"
+          type="button"
           variant="outline"
           size="sm"
+          class="enabled:hover:bg-accent/50 w-full text-left transition-colors enabled:cursor-pointer"
+          :disabled="busy || step.id === 'account'"
           data-testid="onboarding-summary-done"
+          @click="emit('navigate', step.id)"
         >
           <ItemMedia>
             <CircleCheck class="text-primary size-4" aria-hidden="true" />
@@ -50,6 +55,12 @@
               }}
             </ItemDescription>
           </ItemContent>
+          <ItemActions v-if="step.id !== 'account'">
+            <ChevronRight
+              class="text-muted-foreground size-4"
+              aria-hidden="true"
+            />
+          </ItemActions>
         </Item>
       </ItemGroup>
     </div>
@@ -78,6 +89,7 @@
           variant="outline"
           size="sm"
           class="hover:bg-accent/50 w-full cursor-pointer text-left transition-colors"
+          :disabled="busy"
           :data-testid="group.testId"
           @click="emit('navigate', step.id)"
         >
@@ -99,33 +111,11 @@
         </Item>
       </ItemGroup>
     </div>
-
-    <Item v-if="!appFirst" variant="muted" data-testid="onboarding-tour-offer">
-      <ItemMedia variant="icon">
-        <Route aria-hidden="true" />
-      </ItemMedia>
-      <ItemContent>
-        <ItemTitle>{{ $t("tour.offer.title") }}</ItemTitle>
-        <ItemDescription>{{ $t("tour.offer.description") }}</ItemDescription>
-      </ItemContent>
-      <ItemActions>
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="busy"
-          data-testid="onboarding-tour"
-          @click="emit('finish', { tour: true })"
-        >
-          {{ $t("tour.start") }}
-        </Button>
-      </ItemActions>
-    </Item>
   </section>
 </template>
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Item,
   ItemActions,
@@ -148,14 +138,8 @@ import {
 } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ChevronRight, Circle, CircleCheck, Route } from "@lucide/vue";
+import { ChevronRight, Circle, CircleCheck } from "@lucide/vue";
 import { computed } from "vue";
-
-/** What the summary asks for on the way out. */
-export interface FinishOptions {
-  // walk the user through the app once onboarding has closed
-  tour?: boolean;
-}
 
 const props = defineProps<{
   busy?: boolean;
@@ -168,7 +152,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "advance"): void;
   (e: "navigate", step: OnboardingStepId): void;
-  (e: "finish", options?: FinishOptions): void;
+  (e: "finish"): void;
 }>();
 
 const { ctx, steps, pending, expertMode } = useOnboarding();
