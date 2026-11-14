@@ -249,7 +249,7 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // save queue as playlist (queue menu only)
+  // add queue to a new or existing playlist (queue menu only)
   if (
     isQueue &&
     playerQueue?.items &&
@@ -257,10 +257,13 @@ export const getPlayerMenuItems = (
     authManager.hasScope(Scope.LIBRARY_WRITE)
   ) {
     menuItems.push({
-      label: "save_queue_as_playlist",
+      label: "add_queue_to_playlist",
       labelArgs: [],
       action: () => {
-        eventbus.emit("createPlaylist", { queueId: playerQueue!.queue_id });
+        eventbus.emit("playlistdialog", {
+          items: [],
+          queueId: playerQueue!.queue_id,
+        });
       },
       icon: "mdi-playlist-plus",
     });

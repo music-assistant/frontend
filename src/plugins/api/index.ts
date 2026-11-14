@@ -119,7 +119,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 105;
+export const MIN_SERVER_SCHEMA_VERSION = 106;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
@@ -2298,6 +2298,20 @@ export class MusicAssistantApi {
     });
   }
 
+  public queueCommandAddToPlaylist(
+    queueId: string,
+    db_playlist_id: string | number,
+  ): Promise<BackgroundTask> {
+    // Add the queue's items to an existing library playlist.
+    return this.sendCommand<BackgroundTask>("player_queues/add_to_playlist", {
+      queue_id: queueId,
+      db_playlist_id,
+    }).then((task) => {
+      this._notifyBackgroundTaskStarted(task);
+      return task;
+    });
+  }
+
   public queueCommandClear(queueId: string) {
     // Clear all items in the queue.
     this.playerQueueCommand(queueId, "clear");
@@ -2441,23 +2455,6 @@ export class MusicAssistantApi {
       auto_play: autoPlay,
     });
   }
-  public queueCommandSaveAsPlaylist(
-    queueId: string,
-    name: string,
-    options: { showBackgroundTaskToast?: boolean } = {},
-  ): Promise<BackgroundTask> {
-    // Save the current queue items as a new playlist.
-    return this.sendCommand<BackgroundTask>("player_queues/save_as_playlist", {
-      queue_id: queueId,
-      name,
-    }).then((task) => {
-      if (options.showBackgroundTaskToast !== false) {
-        this._notifyBackgroundTaskStarted(task);
-      }
-      return task;
-    });
-  }
-
   // Player related functions/commands
 
   public async getPlayers(): Promise<Player[]> {
@@ -3384,6 +3381,8 @@ export class MusicAssistantApi {
     // Imported dynamically: router.ts imports this module statically, so a
     // static import here would make the api client and the router directly circular.
     const { default: router } = await import("../router");
+    // the task list would otherwise open underneath the full screen player
+    store.showFullscreenPlayer = false;
     if (router.currentRoute.value.name === "backgroundtasks") {
       return;
     }

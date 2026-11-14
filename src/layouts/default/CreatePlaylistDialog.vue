@@ -1,5 +1,5 @@
 <!--
-  Global dialog to create a new playlist or save a queue as a playlist.
+  Global dialog to create a new playlist.
   Because this dialog can be called from various places throughout the app,
   we steer its visibility through the centralized eventbus.
 -->
@@ -8,22 +8,19 @@
     <DialogContent class="sm:max-w-[500px]">
       <DialogHeader>
         <DialogTitle class="mb-2">
-          {{ $t(queueId ? "save_queue_as_playlist" : "new_playlist") }}
+          {{ $t("new_playlist") }}
         </DialogTitle>
-        <DialogDescription v-if="queueId" class="sr-only">
-          {{ $t("save_queue_as_playlist") }}
-        </DialogDescription>
-        <DialogDescription v-else>
+        <DialogDescription>
           {{ $t("playlist_create_media_types", [providerName]) }}
           {{ playlistAllowedMediaTypesTranslated.join(", ") }}
         </DialogDescription>
 
-        <div v-if="!queueId" class="flex flex-col gap-4 mb-3">
+        <div class="flex flex-col gap-4 mb-3">
           <DialogDescription v-if="playlistAllowMixedMediaTypes">
             {{ $t("playlist_mix_allowed") }}
           </DialogDescription>
           <div
-            v-else-if="!queueId && playlistAllowedMediaTypes.length > 1"
+            v-else-if="playlistAllowedMediaTypes.length > 1"
             class="flex flex-col gap-3"
           >
             <DialogDescription>{{
@@ -89,8 +86,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import api from "@/plugins/api";
-import { MediaType, ProviderFeature, Scope } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
+import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
 import { type CreatePlaylistEvent, eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
@@ -105,7 +101,6 @@ const playlistAllowedMediaTypes = ref<MediaType[]>([]);
 const playlistAllowedMediaTypesTranslated = ref<string[]>([]);
 const playlistSelectedMediaType = ref<MediaType>(MediaType.UNKNOWN);
 const playlistAllowMixedMediaTypes = ref(false);
-const queueId = ref("");
 const providerId = ref("");
 const providerName = ref("");
 const nameInput = ref();
@@ -121,69 +116,60 @@ watch(showDialog, (open) => {
 
 onMounted(() => {
   eventbus.on("createPlaylist", (evt: CreatePlaylistEvent) => {
-    queueId.value = evt.queueId || "";
     providerId.value = evt.providerId || "";
     playlistName.value = "";
     playlistAllowedMediaTypes.value = [];
     playlistSelectedMediaType.value = MediaType.UNKNOWN;
 
-    if (!queueId.value) {
-      // Provider feature detection is only needed for the "new playlist" flow.
-      // The queue-to-playlist flow uses a different backend endpoint that
-      // handles provider selection internally.
-      const provider = api.getProvider(providerId.value);
+    const provider = api.getProvider(providerId.value);
 
-      if (provider != undefined) {
-        providerName.value = provider.name;
-        if (
-          provider.supported_features.includes(
-            ProviderFeature.PLAYLIST_CREATE,
-          ) ||
-          provider.supported_features.includes(
-            ProviderFeature.PLAYLIST_CREATE_TRACKS,
-          )
-        ) {
-          playlistAllowedMediaTypes.value.push(MediaType.TRACK);
-        }
-        if (
-          provider.supported_features.includes(
-            ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
-          )
-        ) {
-          playlistAllowedMediaTypes.value.push(MediaType.AUDIOBOOK);
-        }
-        if (
-          provider.supported_features.includes(
-            ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
-          )
-        ) {
-          playlistAllowedMediaTypes.value.push(MediaType.PODCAST_EPISODE);
-        }
-        if (
-          provider.supported_features.includes(
-            ProviderFeature.PLAYLIST_CREATE_RADIOS,
-          )
-        ) {
-          playlistAllowedMediaTypes.value.push(MediaType.RADIO);
-        }
-        playlistAllowMixedMediaTypes.value =
-          provider.supported_features.includes(
-            ProviderFeature.PLAYLIST_CREATE_MIXED,
-          );
-        if (
-          !playlistAllowMixedMediaTypes.value &&
-          playlistAllowedMediaTypes.value.length > 1
-        ) {
-          // set the first to be the default for the radio button
-          playlistSelectedMediaType.value = playlistAllowedMediaTypes.value[0];
-        }
-      } else {
-        toast.error($t("playlist_create_provider_error"));
-        return;
+    if (provider != undefined) {
+      providerName.value = provider.name;
+      if (
+        provider.supported_features.includes(ProviderFeature.PLAYLIST_CREATE) ||
+        provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE_TRACKS,
+        )
+      ) {
+        playlistAllowedMediaTypes.value.push(MediaType.TRACK);
       }
-      playlistAllowedMediaTypesTranslated.value =
-        getTranslatedSupportedMediaTypes();
+      if (
+        provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE_AUDIOBOOKS,
+        )
+      ) {
+        playlistAllowedMediaTypes.value.push(MediaType.AUDIOBOOK);
+      }
+      if (
+        provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE_PODCAST_EPISODES,
+        )
+      ) {
+        playlistAllowedMediaTypes.value.push(MediaType.PODCAST_EPISODE);
+      }
+      if (
+        provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE_RADIOS,
+        )
+      ) {
+        playlistAllowedMediaTypes.value.push(MediaType.RADIO);
+      }
+      playlistAllowMixedMediaTypes.value = provider.supported_features.includes(
+        ProviderFeature.PLAYLIST_CREATE_MIXED,
+      );
+      if (
+        !playlistAllowMixedMediaTypes.value &&
+        playlistAllowedMediaTypes.value.length > 1
+      ) {
+        // set the first to be the default for the radio button
+        playlistSelectedMediaType.value = playlistAllowedMediaTypes.value[0];
+      }
+    } else {
+      toast.error($t("playlist_create_provider_error"));
+      return;
     }
+    playlistAllowedMediaTypesTranslated.value =
+      getTranslatedSupportedMediaTypes();
     dialogKey.value++;
     showDialog.value = true;
   });
@@ -213,25 +199,6 @@ const doSave = async () => {
   }
 
   try {
-    if (queueId.value) {
-      await api.queueCommandSaveAsPlaylist(queueId.value, playlistName.value, {
-        showBackgroundTaskToast: false,
-      });
-      toast.info($t("background_tasks.toast.added"), {
-        // the task list takes system.read
-        action: authManager.hasScope(Scope.SYSTEM_READ)
-          ? {
-              label: $t("background_tasks.open"),
-              onClick: () => {
-                store.showFullscreenPlayer = false;
-                router.push({ name: "backgroundtasks" });
-              },
-            }
-          : undefined,
-      });
-      return;
-    }
-
     const playlist = await api.createPlaylist(
       playlistName.value,
       providerId.value,

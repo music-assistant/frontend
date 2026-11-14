@@ -353,7 +353,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
   });
 });
 
-describe("getPlayerMenuItems save queue as playlist", () => {
+describe("getPlayerMenuItems add queue to playlist", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -363,14 +363,14 @@ describe("getPlayerMenuItems save queue as playlist", () => {
       context: "queue",
     }).map((item) => item.label);
 
-  it("offers saving the queue to a member", () => {
-    expect(labels()).toContain("save_queue_as_playlist");
+  it("offers adding the queue to a member", () => {
+    expect(labels()).toContain("add_queue_to_playlist");
   });
 
-  it("keeps saving the queue from a role that may not change the library", () => {
+  it("keeps adding the queue from a role that may not change the library", () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
 
-    expect(labels()).not.toContain("save_queue_as_playlist");
+    expect(labels()).not.toContain("add_queue_to_playlist");
   });
 });
 
