@@ -96,8 +96,8 @@ export function useCommunityCatalog() {
    * installed already.
    *
    * @param provider - What the community catalog offers.
-   * @returns The manifest to add it with, or undefined when the install failed
-   *   or was already running.
+   * @returns The manifest to add it with, or undefined when the install failed,
+   *   was already running, or brought back the settings it had before.
    */
   const install = async function (
     provider: CommunityProvider,
@@ -108,10 +108,20 @@ export function useCommunityCatalog() {
     try {
       const result = await api.installCommunityProvider(provider.domain);
       replaceProvider(result);
-      toast.success($t("settings.catalog.community.installed_toast", { name }));
+      // settings kept from before load again with it, and then there is nothing to add
+      const restored =
+        (await api.getProviderConfigs(undefined, provider.domain)).length > 0;
+      toast.success(
+        $t(
+          restored
+            ? "settings.catalog.community.installed_restored_toast"
+            : "settings.catalog.community.installed_toast",
+          { name },
+        ),
+      );
       // the add flow reads the manifest the server just registered
       await api.fetchProviderManifests();
-      return result.manifest;
+      return restored ? undefined : result.manifest;
     } catch (err) {
       toast.error(String(err));
       return undefined;

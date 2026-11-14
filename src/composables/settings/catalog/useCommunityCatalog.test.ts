@@ -3,6 +3,7 @@ import {
   CommunityProviderState,
   type CoreConfig,
   EventType,
+  type ProviderConfig,
   type Scope,
 } from "@/plugins/api/interfaces";
 import {
@@ -13,6 +14,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h } from "vue";
 import { communityProvider } from "../../../../tests/fixtures/communityProvider";
+import { providerConfig } from "../../../../tests/fixtures/providerConfig";
 import {
   BUILTIN_ROLE_SCOPES,
   scopeChecker,
@@ -28,6 +30,7 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
     installCommunityProvider: vi.fn(),
     removeCommunityProvider: vi.fn(),
     fetchProviderManifests: vi.fn(),
+    getProviderConfigs: vi.fn(),
     subscribe: vi.fn(),
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -60,6 +63,9 @@ const coreConfig = (enabled: boolean) =>
   }) as unknown as CoreConfig;
 
 const RADIO = communityProvider("radio");
+
+// the settings entries the server holds
+let configs: ProviderConfig[] = [];
 
 // saves the switch the way the server does, so a later read returns it
 async function saveSwitch(
@@ -95,6 +101,11 @@ beforeEach(() => {
   apiMock.getCoreConfig.mockResolvedValue(coreConfig(false));
   apiMock.getCommunityProviders.mockResolvedValue([RADIO]);
   apiMock.subscribe.mockReturnValue(vi.fn());
+  configs = [providerConfig({ domain: "spotify" })];
+  apiMock.getProviderConfigs.mockImplementation(
+    async (_type: unknown, domain?: string) =>
+      configs.filter((config) => !domain || config.domain === domain),
+  );
   confirmations = [];
   eventbus.on("deleteConfirmationDialog", onConfirmation);
 });
@@ -282,6 +293,26 @@ describe("useCommunityCatalog", () => {
       );
       expect(catalog.installing.value.has("radio")).toBe(false);
       expect(catalog.installed.value).toEqual([installed]);
+    });
+
+    it("reports the settings it had before are back and hands back nothing to add", async () => {
+      configs.push(providerConfig({ domain: "radio" }));
+      apiMock.installCommunityProvider.mockResolvedValue(
+        communityProvider("radio", { state: CommunityProviderState.INSTALLED }),
+      );
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      await expect(catalog.install(RADIO)).resolves.toBe(undefined);
+
+      expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(
+        undefined,
+        "radio",
+      );
+      expect(toastMock.success).toHaveBeenCalledExactlyOnceWith(
+        "settings.catalog.community.installed_restored_toast radio",
+      );
+      expect(apiMock.fetchProviderManifests).toHaveBeenCalled();
     });
 
     it("does nothing while it is being installed already", async () => {

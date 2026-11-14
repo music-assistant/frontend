@@ -722,6 +722,7 @@
                 "continue": "Continue",
                 "installing": "Installing…",
                 "installed_toast": "{name} is installed",
+                "installed_restored_toast": "{name} is installed, and what you set up with it before is back",
                 "source_code": "Source code",
                 "version": "Version {version}",
                 "version_released": "Version {version}, released on {date}",

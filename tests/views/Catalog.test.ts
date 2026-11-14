@@ -163,8 +163,13 @@ beforeEach(() => {
     providerConfig({ domain: "spotify", instance_id: "spotify--a" }),
   ];
   // the server only hands a member its music sources
-  apiMock.getProviderConfigs.mockImplementation(async (type?: ProviderType) =>
-    type ? configs.filter((config) => config.type === type) : configs,
+  apiMock.getProviderConfigs.mockImplementation(
+    async (type?: ProviderType, domain?: string) =>
+      configs.filter(
+        (config) =>
+          (!type || config.type === type) &&
+          (!domain || config.domain === domain),
+      ),
   );
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
@@ -975,6 +980,30 @@ describe("Catalog with the community catalog", () => {
         kind: "provider",
         domain: "radio",
       });
+      emit.mockRestore();
+    });
+
+    it("adds nothing after the install when the settings it had before are back", async () => {
+      const emit = vi.spyOn(eventbus, "emit");
+      // the server loads the settings entry kept from before with the install
+      apiMock.installCommunityProvider.mockImplementation(async () => {
+        configs.push(providerConfig({ domain: "radio" }));
+        return { ...RADIO, state: CommunityProviderState.INSTALLED };
+      });
+      await mountCatalog();
+      clickAdd("radio");
+      await flushPromises();
+
+      continueNote();
+      await flushPromises();
+
+      expect(toastMock.success).toHaveBeenCalledExactlyOnceWith(
+        "settings.catalog.community.installed_restored_toast Radio Garden",
+      );
+      expect(emit).not.toHaveBeenCalledWith(
+        "setupFlowDialog",
+        expect.anything(),
+      );
       emit.mockRestore();
     });
 
