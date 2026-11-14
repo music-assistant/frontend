@@ -2947,7 +2947,7 @@
         "plugins_count": "{count} plugin | {count} plugins",
         "run_again": "Run the setup wizard again",
         "paused_title": "Setup paused",
-        "paused_text": "Pick up where you left off, now or later from the settings.",
+        "paused_text": "Continue now, or open the setup wizard again later from the settings.",
         "resume": "Resume",
         "pause": "Pause setup",
         "dismiss": "Dismiss",
