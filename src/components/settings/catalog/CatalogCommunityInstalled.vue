@@ -1,55 +1,17 @@
 <template>
   <section class="space-y-3" data-testid="community-installed">
     <CatalogSectionHeading :title="$t('settings.catalog.community.title')">
-      <div class="flex flex-wrap gap-2">
-        <Button
-          v-if="updateCount > 1"
-          size="sm"
-          :loading="updatingAll"
-          data-testid="community-update-all"
-          @click="emit('update-all')"
-        >
-          <Download v-if="!updatingAll" class="size-4" aria-hidden="true" />
-          {{ $t("settings.catalog.community.update_all") }}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          :loading="refreshing"
-          data-testid="community-refresh"
-          @click="emit('refresh')"
-        >
-          <RefreshCw v-if="!refreshing" class="size-4" aria-hidden="true" />
-          {{ $t("settings.catalog.community.refresh") }}
-        </Button>
-      </div>
+      <Button
+        v-if="updateCount > 1"
+        size="sm"
+        :loading="updatingAll"
+        data-testid="community-update-all"
+        @click="emit('update-all')"
+      >
+        <Download v-if="!updatingAll" class="size-4" aria-hidden="true" />
+        {{ $t("settings.catalog.community.update_all") }}
+      </Button>
     </CatalogSectionHeading>
-
-    <div
-      v-if="enabled"
-      class="flex items-start gap-3"
-      data-testid="community-auto-update"
-    >
-      <Switch
-        :id="autoUpdateId"
-        :model-value="autoUpdate"
-        :disabled="savingAutoUpdate"
-        :aria-describedby="`${autoUpdateId}-description`"
-        data-testid="community-auto-update-toggle"
-        @update:model-value="emit('update:autoUpdate', $event)"
-      />
-      <div class="min-w-0">
-        <label :for="autoUpdateId" class="text-sm font-medium">
-          {{ $t("settings.catalog.community.auto_update") }}
-        </label>
-        <p
-          :id="`${autoUpdateId}-description`"
-          class="m-0 text-sm text-muted-foreground"
-        >
-          {{ $t("settings.catalog.community.auto_update_description") }}
-        </p>
-      </div>
-    </div>
 
     <ItemGroup v-if="rows.length" class="gap-2">
       <Item
@@ -215,7 +177,6 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { Switch } from "@/components/ui/switch";
 import {
   canRetryCommunityVersion,
   getCommunityLinkUrl,
@@ -230,35 +191,26 @@ import {
   CommunityProviderState,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Download, RefreshCw, RotateCcw, Trash2 } from "@lucide/vue";
-import { computed, useId } from "vue";
+import { Download, RotateCcw, Trash2 } from "@lucide/vue";
+import { computed } from "vue";
 
 interface Props {
   // the installed ones, running or not
   providers: CommunityProvider[];
-  refreshing: boolean;
   // the domains being removed
   removing: ReadonlySet<string>;
   // whether one is being updated, on its own or with all the others
   isUpdating: (domain: string) => boolean;
   updatingAll: boolean;
-  // whether the community catalog is switched on, which automatic updates need
-  enabled: boolean;
-  autoUpdate: boolean;
-  savingAutoUpdate: boolean;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: "refresh"): void;
   (e: "remove", provider: CommunityProvider): void;
   (e: "update", provider: CommunityProvider): void;
   (e: "update-all"): void;
-  (e: "update:autoUpdate", value: boolean): void;
 }>();
-
-const autoUpdateId = useId();
 
 const rows = computed(() =>
   props.providers.map((provider) => ({

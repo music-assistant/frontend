@@ -617,6 +617,13 @@ describe("Catalog for a member", () => {
 
 const OWN_RISK = "You install them at your own risk.";
 
+// what the menu offers while the community catalog is on
+const MENU_WHILE_ON = [
+  "settings.catalog.community.refresh",
+  "settings.catalog.community.auto_update",
+  "settings.catalog.community.disable",
+];
+
 // on offer while the switch is on
 const RADIO = communityProvider("radio", {
   repository: "jane/ma-radio",
@@ -664,7 +671,7 @@ describe("Catalog with the community catalog", () => {
         community_catalog_enabled: true,
       });
       expect(banner()).toBeNull();
-      expect(menuLabels()).toEqual(["settings.catalog.community.disable"]);
+      expect(menuLabels()).toEqual(MENU_WHILE_ON);
       expect(toastMock.success).toHaveBeenCalledWith(
         "settings.catalog.community.enabled_toast",
       );
@@ -722,7 +729,7 @@ describe("Catalog with the community catalog", () => {
     expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
       community_catalog_enabled: false,
     });
-    expect(menuLabels()).toEqual(["settings.catalog.community.disable"]);
+    expect(menuLabels()).toEqual(MENU_WHILE_ON);
     expect(banner()).toBeNull();
     expect(cardNames("[data-testid='catalog-list']")).toContain("Radio Garden");
     expect(toastMock.success).not.toHaveBeenCalled();
@@ -736,7 +743,7 @@ describe("Catalog with the community catalog", () => {
 
     await chooseInMenu("settings.catalog.community.disable");
 
-    expect(openMenu()[0].disabled).toBe(true);
+    expect(menuItem("settings.catalog.community.disable").disabled).toBe(true);
   });
 
   it("drops the banner for good after Don't show again, and keeps the menu", async () => {
@@ -1333,16 +1340,14 @@ describe("Catalog with the community catalog", () => {
       expect(document.querySelector("[data-domain='bad']")).toBeNull();
     });
 
-    it("fetches the list again on refresh", async () => {
+    it("fetches the list again with Check for changes in the menu", async () => {
+      communityEnabled = true;
       apiMock.refreshCommunityProviders.mockResolvedValue(
         community.slice(0, 1),
       );
       await mountCatalog();
 
-      document
-        .querySelector<HTMLElement>("[data-testid='community-refresh']")!
-        .click();
-      await flushPromises();
+      await chooseInMenu("settings.catalog.community.refresh");
 
       expect(apiMock.refreshCommunityProviders).toHaveBeenCalled();
       expect(toastMock.success).toHaveBeenCalledWith(
@@ -1623,24 +1628,69 @@ describe("Catalog with updates from the community catalog", () => {
       expect(toastMock.success).not.toHaveBeenCalled();
     });
 
-    it("turns automatic updates on", async () => {
+    it("turns automatic updates on from the menu", async () => {
       await mountCatalog();
-      const toggle = autoUpdateToggle()!;
-      expect(toggle.getAttribute("aria-checked")).toBe("false");
+      expect(menuItem("settings.catalog.community.auto_update").selected).toBe(
+        false,
+      );
 
-      toggle.click();
-      await flushPromises();
+      await chooseInMenu("settings.catalog.community.auto_update");
 
       expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
         auto_update: true,
       });
-      expect(autoUpdateToggle()!.getAttribute("aria-checked")).toBe("true");
+      expect(menuItem("settings.catalog.community.auto_update").selected).toBe(
+        true,
+      );
       expect(toastMock.success).toHaveBeenCalledWith(
         "settings.catalog.community.auto_update_on_toast",
       );
     });
 
-    it("leaves automatic updates out while the community catalog is off", async () => {
+    it("turns automatic updates off from the menu", async () => {
+      communityAutoUpdate = true;
+      await mountCatalog();
+
+      await chooseInMenu("settings.catalog.community.auto_update");
+
+      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("community_catalog", {
+        auto_update: false,
+      });
+      expect(menuItem("settings.catalog.community.auto_update").selected).toBe(
+        false,
+      );
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.auto_update_off_toast",
+      );
+    });
+
+    it("keeps automatic updates as they were when saving fails", async () => {
+      apiMock.saveCoreConfig.mockRejectedValue(new Error("denied"));
+      await mountCatalog();
+
+      await chooseInMenu("settings.catalog.community.auto_update");
+
+      expect(menuItem("settings.catalog.community.auto_update").selected).toBe(
+        false,
+      );
+      expect(toastMock.success).not.toHaveBeenCalled();
+    });
+
+    it("keeps the options of the menu out of the section", async () => {
+      await mountCatalog();
+
+      const section = document.querySelector(
+        "[data-testid='community-installed']",
+      )!;
+      expect(section.textContent).not.toContain(
+        "settings.catalog.community.refresh",
+      );
+      expect(section.textContent).not.toContain(
+        "settings.catalog.community.auto_update",
+      );
+    });
+
+    it("leaves automatic updates and Check for changes out while the community catalog is off", async () => {
       communityEnabled = false;
 
       await mountCatalog();
@@ -1648,7 +1698,7 @@ describe("Catalog with updates from the community catalog", () => {
       expect(
         document.querySelector("[data-testid='community-installed']"),
       ).not.toBeNull();
-      expect(autoUpdateToggle()).toBeNull();
+      expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
     });
   });
 
@@ -1945,12 +1995,6 @@ function updateButton(domain: string): HTMLElement {
   )!;
 }
 
-function autoUpdateToggle(): HTMLElement | null {
-  return document.querySelector<HTMLElement>(
-    "[data-testid='community-auto-update-toggle']",
-  );
-}
-
 function communityCoreConfig(enabled: boolean): CoreConfig {
   return {
     domain: "community_catalog",
@@ -2002,8 +2046,14 @@ function menuLabels(): string[] {
   return openMenu().map((item) => item.label);
 }
 
+function menuItem(label: string) {
+  const item = openMenu().find((entry) => entry.label === label);
+  if (!item) throw new Error(`no menu item ${label}`);
+  return item;
+}
+
 async function chooseInMenu(label: string) {
-  openMenu().find((item) => item.label === label)!.action!();
+  menuItem(label).action!();
   await flushPromises();
 }
 

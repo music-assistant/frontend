@@ -118,18 +118,12 @@
           <CatalogCommunityInstalled
             v-if="showCommunityInstalled"
             :providers="community.installed"
-            :refreshing="community.refreshing"
             :removing="community.removing"
             :is-updating="community.isUpdating"
             :updating-all="community.updatingAll"
-            :enabled="community.enabled"
-            :auto-update="community.autoUpdate"
-            :saving-auto-update="community.savingAutoUpdate"
-            @refresh="community.refresh"
             @remove="community.remove"
             @update="community.update"
             @update-all="community.updateAll"
-            @update:auto-update="community.setAutoUpdate"
           />
           <CatalogInstalled :groups="installed" />
         </template>

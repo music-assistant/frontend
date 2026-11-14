@@ -10,7 +10,12 @@ const catalog = (
   status: "ready",
   enabled: false,
   saving: false,
+  autoUpdate: false,
+  savingAutoUpdate: false,
+  refreshing: false,
   setEnabled: vi.fn(),
+  setAutoUpdate: vi.fn(),
+  refresh: vi.fn(),
   retry: vi.fn(),
   ...state,
 });
@@ -28,16 +33,47 @@ describe("the menu of the community catalog", () => {
     expect(state.setEnabled).toHaveBeenCalledWith(true);
   });
 
-  it("offers to switch it off while it is on", () => {
+  it("offers to check for changes, update automatically and switch it off while it is on", () => {
     const state = catalog({ enabled: true });
 
     const items = getCommunityCatalogMenuItems(state);
 
     expect(items.map((item) => item.label)).toEqual([
+      "settings.catalog.community.refresh",
+      "settings.catalog.community.auto_update",
       "settings.catalog.community.disable",
     ]);
-    items[0].action!();
+    items[2].action!();
     expect(state.setEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it("checks for changes", () => {
+    const state = catalog({ enabled: true });
+
+    getCommunityCatalogMenuItems(state)[0].action!();
+
+    expect(state.refresh).toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    "shows automatic updates as %s and toggles them",
+    (autoUpdate) => {
+      const state = catalog({ enabled: true, autoUpdate });
+
+      const item = getCommunityCatalogMenuItems(state)[1];
+
+      expect(item.selected).toBe(autoUpdate);
+      item.action!();
+      expect(state.setAutoUpdate).toHaveBeenCalledWith(!autoUpdate);
+    },
+  );
+
+  it("holds checking for changes and automatic updates while they run", () => {
+    const items = getCommunityCatalogMenuItems(
+      catalog({ enabled: true, refreshing: true, savingAutoUpdate: true }),
+    );
+
+    expect(items.map((item) => !!item.disabled)).toEqual([true, true, false]);
   });
 
   it("switches the way the menu said when it was opened", () => {
