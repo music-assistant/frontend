@@ -29,8 +29,10 @@ export function isThemePreference(value: unknown): value is ThemePreference {
 export function useThemePreference() {
   const theme = useTheme();
   const initialThemePreference = getThemePreference();
+  // useColorMode only knows light and dark, so black starts it in dark
   const colorMode = useColorMode({
-    initialValue: initialThemePreference,
+    initialValue:
+      initialThemePreference === "black" ? "dark" : initialThemePreference,
     storageKey: null,
   });
   const themePreference = ref(initialThemePreference);

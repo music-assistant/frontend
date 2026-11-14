@@ -251,6 +251,21 @@ describe("useThemePreference", () => {
     expect(document.documentElement.classList.contains("black")).toBe(false);
   });
 
+  // useColorMode only knows light and dark: handing it "black" would drop the
+  // dark class from <html>. The guest page never re-applies the mode, so a
+  // guest reload on black must start the color mode in dark.
+  it("starts the color mode in dark for a black preference", () => {
+    mocks.isGuestSession.value = true;
+    localStorage.setItem("frontend.settings.guest_theme", "black");
+
+    useThemePreference();
+
+    expect(mocks.colorModeOptions).toEqual({
+      initialValue: "dark",
+      storageKey: null,
+    });
+  });
+
   // the composable keeps module-level listener state, so these tests import a
   // fresh module copy to stay order-independent
   async function freshComposable() {
