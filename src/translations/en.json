@@ -665,8 +665,8 @@
         "music_sources": "Music sources",
         "plugins": "Plugins",
         "catalog": {
-            "title": "Catalog",
-            "description": "Everything you can add to Music Assistant: music sources, player support, metadata and plugins, from the team and the community.",
+            "title": "Marketplace",
+            "description": "Extend Music Assistant with more music sources, support for more players and powerful plugins.",
             "all": "All",
             "installed": "Installed",
             "popular": "Popular",
@@ -686,8 +686,8 @@
             "missing": "Missing something? {link}",
             "request_it": "Request it",
             "installed_empty_title": "Nothing added yet",
-            "installed_empty": "What you add from the Catalog shows up here.",
-            "load_failed": "Could not load the Catalog",
+            "installed_empty": "What you add from the Marketplace shows up here.",
+            "load_failed": "Could not load the Marketplace",
             "type": {
                 "music": "Music source",
                 "player": "Player support",
