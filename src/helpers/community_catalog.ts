@@ -74,12 +74,32 @@ export const getRepositoryUrl = (repository: string): string =>
   `https://github.com/${repository}`;
 
 /**
- * A date the catalog gives, such as when a version was released, for display.
+ * A link the community catalog or a community manifest gives: only an https
+ * address, else undefined.
+ */
+export const getCommunityLinkUrl = (
+  url?: string | null,
+): string | undefined => {
+  if (!url) return undefined;
+  try {
+    return new URL(url).protocol === "https:" ? url : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * A date the catalog gives, such as when a version was released, for display in
+ * UTC; empty when it is not a date.
  *
  * @param isoDate - An ISO 8601 date.
  * @param locale - A BCP 47 locale tag.
  */
-export const formatCatalogDate = (isoDate: string, locale: string): string =>
-  new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
-    new Date(isoDate),
-  );
+export const formatCatalogDate = (isoDate: string, locale: string): string => {
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(date);
+};

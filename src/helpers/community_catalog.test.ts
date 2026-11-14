@@ -4,6 +4,7 @@ import { communityProvider } from "../../tests/fixtures/communityProvider";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
   formatCatalogDate,
+  getCommunityLinkUrl,
   getCommunityStateLabel,
   getCommunityStateText,
   getInstalledCommunityProviders,
@@ -110,5 +111,27 @@ describe("formatCatalogDate", () => {
     expect(formatCatalogDate("2026-11-02T12:00:00Z", "nl-NL")).toBe(
       "2 nov 2026",
     );
+  });
+
+  it("shows the day in UTC, whatever the time zone", () => {
+    expect(formatCatalogDate("2026-11-02T00:00:00Z", "en-US")).toBe(
+      "Nov 2, 2026",
+    );
+  });
+
+  it("is empty for a value that is not a date", () => {
+    expect(formatCatalogDate("soon", "en-US")).toBe("");
+  });
+});
+
+describe("getCommunityLinkUrl", () => {
+  it("only links to an https address", () => {
+    expect(getCommunityLinkUrl("https://example.org/why")).toBe(
+      "https://example.org/why",
+    );
+    expect(getCommunityLinkUrl("http://example.org/why")).toBeUndefined();
+    expect(getCommunityLinkUrl("javascript:alert(1)")).toBeUndefined();
+    expect(getCommunityLinkUrl("not a url")).toBeUndefined();
+    expect(getCommunityLinkUrl(null)).toBeUndefined();
   });
 });

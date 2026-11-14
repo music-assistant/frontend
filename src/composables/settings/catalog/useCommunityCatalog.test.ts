@@ -88,7 +88,7 @@ function mountCatalog() {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   apiMock.getCoreConfig.mockResolvedValue(coreConfig(false));
   apiMock.getCommunityProviders.mockResolvedValue([RADIO]);
@@ -260,6 +260,28 @@ describe("useCommunityCatalog", () => {
       );
       expect(catalog.installing.value.has("radio")).toBe(false);
       expect(catalog.installed.value).toEqual([installed]);
+    });
+
+    it("does nothing while it is being installed already", async () => {
+      let finishInstall!: (value: CommunityProvider) => void;
+      apiMock.installCommunityProvider.mockReturnValue(
+        new Promise((resolve) => (finishInstall = resolve)),
+      );
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      const first = catalog.install(RADIO);
+      const second = catalog.install(RADIO);
+      finishInstall(
+        communityProvider("radio", { state: CommunityProviderState.INSTALLED }),
+      );
+
+      await expect(second).resolves.toBe(undefined);
+      await first;
+
+      expect(apiMock.installCommunityProvider).toHaveBeenCalledOnce();
+      expect(toastMock.success).toHaveBeenCalledOnce();
+      expect(toastMock.error).not.toHaveBeenCalled();
     });
 
     it("reports the server's error and hands back nothing", async () => {

@@ -328,7 +328,12 @@ const addEntry = (entry: CatalogEntry, onStart?: () => void) => {
 const continueAdd = async () => {
   noteOpen.value = false;
   if (!pendingAdd.value) return;
-  const { entry, onStart } = pendingAdd.value;
+  const { entry: pending, onStart } = pendingAdd.value;
+  // looked up again: another admin may have installed it while the note was open
+  const entry = entries.value.find(
+    (item) => item.manifest.domain === pending.manifest.domain,
+  );
+  if (!entry) return;
   const manifest = needsInstall(entry)
     ? await community.install(entry.community)
     : entry.manifest;

@@ -158,8 +158,8 @@ export const isOfferable = (
 
 /**
  * The Catalog entries for the offerable providers, alphabetically by name: one
- * per provider the server knows, and one per provider the community catalog
- * offers that is not installed yet.
+ * per provider the server knows or the community catalog runs, and one per
+ * provider the community catalog offers that is not installed yet.
  *
  * @param manifests - Every provider manifest the server knows.
  * @param configs - The provider instances set up that the user can see.
@@ -177,12 +177,26 @@ export const buildCatalogEntries = (
   const communityByDomain = new Map(
     community.map((provider) => [provider.domain, provider]),
   );
-  const known = manifests
+  const knownDomains = new Set(manifests.map((manifest) => manifest.domain));
+  // the list and the manifests change at different moments around an install,
+  // so one just installed stays on the manifest the community catalog gave
+  const justInstalled = community
+    .filter(
+      (provider) =>
+        isCommunityRunning(provider) && !knownDomains.has(provider.domain),
+    )
+    .map((provider) => provider.manifest);
+  const known = [...manifests, ...justInstalled]
     .filter((manifest) => isOfferable(manifest, restrictions))
-    // one the community catalog withdrew keeps running, but is no longer offered
+    // one the community catalog withdrew keeps running, but is no longer offered;
+    // one still on offer may already be registered
     .filter((manifest) => {
       const provider = communityByDomain.get(manifest.domain);
-      return !provider || isCommunityRunning(provider);
+      return (
+        !provider ||
+        provider.state === CommunityProviderState.AVAILABLE ||
+        isCommunityRunning(provider)
+      );
     })
     .map((manifest): CatalogEntry => {
       const instances = configs.filter(
@@ -195,7 +209,6 @@ export const buildCatalogEntries = (
         community: communityByDomain.get(manifest.domain),
       };
     });
-  const knownDomains = new Set(manifests.map((manifest) => manifest.domain));
   const installable = community
     .filter(
       (provider) =>

@@ -69,9 +69,18 @@
         <p v-else class="m-0" data-testid="catalog-detail-maintainers">
           {{ $t("settings.catalog.created_by_team") }}
         </p>
+        <!-- what a community manifest says is shown as text, never as markup -->
+        <p
+          v-if="credits && community"
+          class="m-0"
+          data-testid="catalog-detail-credits"
+        >
+          <strong>{{ $t("settings.provider_credits") }}:</strong>
+          {{ credits }}
+        </p>
         <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
         <div
-          v-if="entry.manifest.credits.length"
+          v-else-if="credits"
           data-testid="catalog-detail-credits"
           v-html="creditsHtml"
         ></div>
@@ -176,7 +185,11 @@ import {
 } from "@/components/ui/dialog";
 import { useCatalogEntryDetails } from "@/composables/settings/catalog/useCatalogEntryDetails";
 import { useCanonicalLocale } from "@/composables/useCanonicalLocale";
-import { formatCatalogDate } from "@/helpers/community_catalog";
+import {
+  formatCatalogDate,
+  getCommunityLinkUrl,
+  isCommunityInstalled,
+} from "@/helpers/community_catalog";
 import {
   type CatalogEntry,
   FEATURE_REQUESTS_URL,
@@ -230,30 +243,40 @@ const showStageBadge = computed(() =>
 );
 
 const documentationUrl = computed(() =>
-  getExternalLinkUrl(props.entry.manifest.documentation),
+  community.value
+    ? getCommunityLinkUrl(props.entry.manifest.documentation)
+    : getExternalLinkUrl(props.entry.manifest.documentation),
 );
 
 const helpUrl = computed(() =>
   getProviderHelpUrl(props.entry.manifest, repositoryUrl.value),
 );
 
-// the version the community catalog offers, and when it was released
+// the version installed, else the one the community catalog offers and when it
+// was released
 const versionText = computed(() => {
   const provider = props.entry.community;
-  if (!provider?.latest_version) return "";
+  if (!provider) return "";
+  if (isCommunityInstalled(provider)) {
+    return provider.installed_version
+      ? $t("settings.catalog.community.version", {
+          version: provider.installed_version,
+        })
+      : "";
+  }
   const version = provider.latest_version;
-  return provider.released
-    ? $t("settings.catalog.community.version_released", {
-        version,
-        date: formatCatalogDate(provider.released, locale.value),
-      })
+  if (!version) return "";
+  const date = provider.released
+    ? formatCatalogDate(provider.released, locale.value)
+    : "";
+  return date
+    ? $t("settings.catalog.community.version_released", { version, date })
     : $t("settings.catalog.community.version", { version });
 });
 
+const credits = computed(() => props.entry.manifest.credits.join(" / "));
+
 const creditsHtml = computed(() =>
-  markdownToHtml(
-    `**${$t("settings.provider_credits")}**: ` +
-      props.entry.manifest.credits.join(" / "),
-  ),
+  markdownToHtml(`**${$t("settings.provider_credits")}**: ${credits.value}`),
 );
 </script>

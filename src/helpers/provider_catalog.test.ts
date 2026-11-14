@@ -320,6 +320,59 @@ describe("buildCatalogEntries with the community catalog", () => {
     expect(needsInstall(entry(entries, "radio"))).toBe(false);
     expect(needsInstall(entry(entries, "spotify"))).toBe(false);
   });
+
+  it("keeps one just installed on the manifest the catalog gave until the server lists its own", () => {
+    const configs = [providerConfig({ domain: "radio" })];
+
+    const listed = entry(
+      buildCatalogEntries(MANIFESTS, configs, {}, undefined, community),
+      "radio",
+    );
+
+    expect(listed).toMatchObject({
+      manifest: installedManifest,
+      instances: configs,
+      canAdd: true,
+      community: community[0],
+    });
+    expect(needsInstall(listed)).toBe(false);
+  });
+
+  it("keeps one on offer whose manifest the server lists already", () => {
+    const offered = communityProvider("radio", { manifest: installedManifest });
+
+    const listed = entry(
+      buildCatalogEntries(manifests, [], {}, undefined, [offered]),
+      "radio",
+    );
+
+    expect(listed).toMatchObject({
+      manifest: installedManifest,
+      community: offered,
+    });
+  });
+
+  it.each([
+    CommunityProviderState.BLOCKED,
+    CommunityProviderState.UNAVAILABLE,
+    CommunityProviderState.WITHDRAWN,
+  ])(
+    "leaves out one that is %s, whether or not the server lists its manifest",
+    (state) => {
+      const provider = communityProvider("radio", {
+        state,
+        manifest: installedManifest,
+      });
+
+      for (const known of [MANIFESTS, manifests]) {
+        expect(
+          buildCatalogEntries(known, [], {}, undefined, [provider]).find(
+            (item) => item.manifest.domain === "radio",
+          ),
+        ).toBe(undefined);
+      }
+    },
+  );
 });
 
 describe("getEntryMaintainers", () => {

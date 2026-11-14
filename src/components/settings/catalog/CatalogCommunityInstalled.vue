@@ -118,12 +118,12 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import {
+  getCommunityLinkUrl,
   getCommunityStateLabel,
   getCommunityStateText,
   isCommunityProblem,
 } from "@/helpers/community_catalog";
 import { getCatalogType } from "@/helpers/provider_catalog";
-import { getExternalLinkUrl } from "@/helpers/utils";
 import {
   type CommunityProvider,
   CommunityProviderState,
@@ -153,7 +153,7 @@ const rows = computed(() =>
     stateLabel: getCommunityStateLabel(provider),
     problem: isCommunityProblem(provider),
     stateText: getCommunityStateText(provider),
-    reasonUrl: getExternalLinkUrl(provider.reason_url),
+    reasonUrl: getCommunityLinkUrl(provider.reason_url),
     summary: getSummary(provider),
   })),
 );

@@ -92,14 +92,17 @@ export function useCommunityCatalog() {
   };
 
   /**
-   * Install one from the community catalog.
+   * Install one from the community catalog; nothing happens while it is being
+   * installed already.
    *
    * @param provider - What the community catalog offers.
-   * @returns The manifest to add it with, or undefined when the install failed.
+   * @returns The manifest to add it with, or undefined when the install failed
+   *   or was already running.
    */
   const install = async function (
     provider: CommunityProvider,
   ): Promise<ProviderManifest | undefined> {
+    if (installing.value.has(provider.domain)) return undefined;
     const name = provider.manifest.name;
     installing.value.add(provider.domain);
     try {
