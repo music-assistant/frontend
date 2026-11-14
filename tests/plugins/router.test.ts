@@ -106,6 +106,9 @@ vi.mock("vue-router", async () => {
 
 const partyGuard = beforeEnterGuard("party");
 const aiRadioGuard = beforeEnterGuard("ai-radio");
+const visualizerGuard = beforeEnterGuard("visualizer");
+const rotationNewGuard = beforeEnterGuard("rotation-new");
+const rotationEditGuard = beforeEnterGuard("rotation-edit");
 const globalGuard = globalNavigationGuard();
 
 const PLAYER_SETTINGS_ROUTES = [
@@ -309,6 +312,52 @@ describe("AI Radio guard", () => {
     await expect(pending.result).resolves.toEqual({ name: "discover" });
     expect(mocks.toastError).toHaveBeenCalledWith(
       "providers.ai_radio.toast.unavailable",
+    );
+  });
+});
+
+describe("visualizer guard", () => {
+  it("redirects to Discover without a toast when the plugin is disabled", async () => {
+    await expect(
+      invokeGuard(visualizerGuard, resolveRoute("/visualizer")),
+    ).resolves.toEqual({ name: "discover" });
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+});
+
+describe("Rotation editor routes", () => {
+  it.each([
+    ["/rotations/new", rotationNewGuard],
+    ["/rotations/fuchsbande/edit", rotationEditGuard],
+  ])(
+    "redirects %s to the playlists with a toast when the plugin is disabled",
+    async (path, guard) => {
+      await expect(invokeGuard(guard, resolveRoute(path))).resolves.toEqual({
+        name: "playlists",
+      });
+      expect(mocks.toastError).toHaveBeenCalledWith("rotation.plugin_disabled");
+    },
+  );
+
+  it("opens the editor when the plugin is enabled", async () => {
+    mocks.store.enabledPlugins = new Set(["rotation_playlist"]);
+
+    await expect(
+      invokeGuard(
+        rotationEditGuard,
+        resolveRoute("/rotations/fuchsbande/edit"),
+      ),
+    ).resolves.toBeUndefined();
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
+  it("needs the right to change the library and passes the id as a prop", () => {
+    const route = resolveRoute("/rotations/fuchsbande/edit");
+    expect(route.name).toBe("rotation-edit");
+    expect(route.params.rotationId).toBe("fuchsbande");
+    expect(route.meta.requiresScope).toBe(Scope.LIBRARY_WRITE);
+    expect(resolveRoute("/rotations/new").meta.requiresScope).toBe(
+      Scope.LIBRARY_WRITE,
     );
   });
 });

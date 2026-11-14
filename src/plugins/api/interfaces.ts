@@ -2269,6 +2269,96 @@ export interface SmartPlaylistTrackStats {
   duration_seconds: number;
 }
 
+// Rotation interfaces
+
+export type RotationMediaType = "artist" | "album" | "track";
+
+export interface RotationCondition {
+  field: string;
+  op: string;
+  value?: unknown;
+}
+
+export type RotationStep =
+  | { type: "source"; media_type: RotationMediaType; from?: "library" }
+  | {
+      type: "filter";
+      mode: "keep" | "remove";
+      match: "all" | "any";
+      conditions: RotationCondition[];
+    }
+  | { type: "sort"; keys: { field: string; descending?: boolean }[] }
+  | { type: "limit"; count?: number | null; minutes?: number | null }
+  | { type: "expand"; to: "album" | "track"; scope?: "library" | "providers" }
+  | { type: "flatten" };
+
+export interface RotationStepError {
+  /** 1-based step number */
+  step: number;
+  field: string | null;
+  message: string;
+}
+
+export interface RotationRoundStatus {
+  round: number;
+  units_total?: number;
+  units_played?: number;
+  exact?: boolean;
+  error?: string;
+}
+
+export interface RotationInfo {
+  id: string;
+  name: string;
+  steps: RotationStep[];
+  playlist: Playlist | null;
+  round_status: RotationRoundStatus;
+}
+
+export interface RotationListEntry {
+  id: string;
+  name: string;
+  playlist: Playlist | null;
+}
+
+export interface RotationPreviewGroup {
+  item: MediaItemType;
+  tracks: { track: Track; removed: boolean }[];
+}
+
+export interface RotationPreview {
+  groups: RotationPreviewGroup[];
+  step_counts: { step: number; count: number; exact: boolean }[];
+  total_tracks: number;
+  total_exact: boolean;
+  duration_seconds: number;
+}
+
+export interface RotationFieldInfo {
+  name: string;
+  type: "text" | "number" | "date" | "bool" | "ref";
+  label: string;
+  operators: string[];
+  sortable: boolean;
+}
+
+export interface RotationDescribe {
+  step_types: string[];
+  media_types: Record<
+    RotationMediaType,
+    { fields: RotationFieldInfo[]; sort_keys: string[] }
+  >;
+  providers: { instance_id: string; domain: string; name: string }[];
+  schema?: unknown;
+}
+
+export interface RotationRecipe {
+  id: string;
+  name: string;
+  goal: string;
+  steps: RotationStep[];
+}
+
 // AI Radio interfaces
 
 export type AIRadioSectionType = "ai_text" | "ai_meta";

@@ -55,6 +55,9 @@ export type DeleteConfirmationDialogEvent = {
   // button is enabled
   acknowledgement?: string;
   onConfirm: () => void | Promise<void>;
+  // called when the dialog closes without a confirmation, also when a later
+  // confirmation takes its place
+  onCancel?: () => void;
 };
 
 export type PlayerGroupPlaybackChange = "remove" | "power_off";
