@@ -5,6 +5,7 @@
  * for as long as the id takes to arrive.
  */
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
+import { currentVisualizerPreset } from "@/composables/visualizer/state";
 import api from "@/plugins/api";
 import { PlaybackState } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -263,6 +264,48 @@ describe("VisualizerCanvas favourites", () => {
     await flushPromises();
 
     expect(loadPresetByName).toHaveBeenCalledWith("preset", expect.anything());
+    wrapper.unmount();
+  });
+});
+
+describe("VisualizerCanvas shown preset", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    preferenceOverrides.visualizer_preset_mode = "fixed";
+  });
+
+  afterEach(() => {
+    for (const key of Object.keys(preferenceOverrides))
+      delete preferenceOverrides[key];
+  });
+
+  const mountWithPreset = async (preset: string) => {
+    const wrapper = mount(VisualizerCanvas, {
+      props: { playerId: "kitchen", preset },
+    });
+    await flushPromises();
+    return wrapper;
+  };
+
+  it("keeps the previous preset when the engine fails to load the next", async () => {
+    const wrapper = await mountWithPreset("first");
+    loadPresetByName.mockResolvedValueOnce("");
+
+    await wrapper.setProps({ preset: "second" });
+    await flushPromises();
+
+    expect(currentVisualizerPreset.value).toBe("first");
+    wrapper.unmount();
+  });
+
+  it("shows the preset the engine fell back to, not the one requested", async () => {
+    const wrapper = await mountWithPreset("first");
+    loadPresetByName.mockResolvedValueOnce("fallback");
+
+    await wrapper.setProps({ preset: "dropped" });
+    await flushPromises();
+
+    expect(currentVisualizerPreset.value).toBe("fallback");
     wrapper.unmount();
   });
 });
