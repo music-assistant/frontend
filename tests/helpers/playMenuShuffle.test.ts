@@ -15,6 +15,8 @@ const { mockApi, mockStore, mockEventbusEmit } = vi.hoisted(() => ({
     getCoreConfigValue: vi.fn(),
     playMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
     getLibraryItem: vi.fn(),
+    providerManifests: {},
+    providers: {},
     players: {},
   },
   mockStore: {

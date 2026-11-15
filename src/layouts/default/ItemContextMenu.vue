@@ -341,6 +341,11 @@ import { backFromMediaDetails } from "@/helpers/navigation";
 import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
 import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
+import { showActionResult } from "@/helpers/action_result";
+import {
+  getProviderMenuItems,
+  type ProviderMenuChoice,
+} from "@/helpers/provider_menu_actions";
 import {
   canAddToPlaylist,
   canEditPlaylistItems,
@@ -582,6 +587,9 @@ export const showPlayMenuForMediaItem = async function (
       disabled: !store.activePlayer,
     });
   }
+  playMenuItems.push(
+    ...providerMenuItems(playableItems, true, !store.activePlayer),
+  );
 
   if (playMenuItems.length == 0) playMenuItems = [];
 
@@ -1523,6 +1531,7 @@ export const getContextMenuItems = async function (
       icon: Trash2,
     });
   }
+  contextMenuItems.push(...providerMenuItems(items, false));
   return contextMenuItems;
 };
 
@@ -1636,6 +1645,7 @@ export const getPlaybackContextMenuItems = async function (
     icon: ListMusic,
     labelArgs: [],
   });
+  playMenuItems.push(...providerMenuItems(playableItems, true));
   // Multi-select mark as played/unplayed for podcast episodes
   if (
     authManager.hasScope(Scope.LIBRARY_WRITE) &&
@@ -1720,6 +1730,50 @@ export const getPlaybackContextMenuItems = async function (
     }
   }
   return playMenuItems;
+};
+
+/**
+ * The menu entries the provider instances declare for a single item: those that
+ * act on a player, which get the player chosen when an entry is picked, or the
+ * others.
+ */
+const providerMenuItems = function (
+  items: MediaItemTypeOrItemMapping[],
+  requiresPlayer: boolean,
+  disabled = false,
+): ContextMenuItem[] {
+  const item = items[0];
+  if (items.length !== 1 || !itemIsAvailable(item) || isMusicBrainzItem(item))
+    return [];
+  return getProviderMenuItems(
+    item.media_type,
+    {
+      requiresPlayer,
+      providers: Object.values(api.providers),
+      manifests: api.providerManifests,
+      hasScope: (scope) => authManager.hasScope(scope),
+    },
+    (choice) => void runProviderMenuAction(choice, item.uri, requiresPlayer),
+  ).map((menuItem) => ({ ...menuItem, disabled }));
+};
+
+const runProviderMenuAction = async function (
+  choice: ProviderMenuChoice,
+  uri: string,
+  withPlayer: boolean,
+) {
+  try {
+    showActionResult(
+      await api.invokeProviderMenuAction(
+        choice.instanceId,
+        choice.actionId,
+        uri,
+        withPlayer ? store.activePlayer?.player_id : undefined,
+      ),
+    );
+  } catch {
+    // the api reports the failure itself
+  }
 };
 
 // Radio and AudioSource are both live, infinite streams and share a single enqueue

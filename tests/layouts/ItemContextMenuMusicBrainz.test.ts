@@ -28,6 +28,7 @@ const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
     getCoreConfigValue: vi.fn(),
     playMedia: vi.fn(),
     providers: {},
+    providerManifests: {},
     players: {},
   },
   storeMock: {

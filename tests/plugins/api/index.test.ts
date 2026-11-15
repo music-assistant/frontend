@@ -1128,6 +1128,42 @@ describe("MusicAssistantApi error handling", () => {
     });
   });
 
+  it.each([
+    ["for a player", "player-1", { player_id: "player-1" }],
+    ["without a player", undefined, {}],
+  ])("runs a menu action of a provider %s", (_case, playerId, extra) => {
+    void api.invokeProviderMenuAction(
+      "demo--1",
+      "show_item",
+      "library://track/1",
+      playerId,
+    );
+
+    expect(transport.lastCommand.command).toBe("providers/invoke_menu_action");
+    expect(transport.lastCommand.args).toEqual({
+      instance_id: "demo--1",
+      action_id: "show_item",
+      uri: "library://track/1",
+      ...extra,
+    });
+  });
+
+  it("tells a failing menu action as any failing command", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.invokeProviderMenuAction(
+      "demo--1",
+      "show_item",
+      "library://track/1",
+    );
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).toHaveBeenCalledWith("Boom");
+  });
+
   it("updates one community provider by its domain", () => {
     void api.updateCommunityProviders("radio");
 
