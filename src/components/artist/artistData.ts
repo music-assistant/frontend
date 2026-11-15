@@ -70,7 +70,7 @@ export async function artistAlbumsCountBySource(
  * The releases of an artist from one source: the library, or a single
  * provider's own catalog.
  *
- * `source` follows a row registry's effectiveSource: "library" returns the
+ * `source` follows a row registry's resolveSource: "library" returns the
  * in-library albums, a provider instance id queries that provider with the
  * artist's id there, so an artist not mapped to it has no releases to show. A
  * provider (non-library) artist always comes from its own provider. A slim

@@ -104,9 +104,10 @@ describe("ReleaseShelf subtitles", () => {
   it("says a release is not in the library instead of naming its type", () => {
     const wrapper = mountShelf([
       album({
-        item_id: "rg-1",
-        provider: "musicbrainz",
+        item_id: "musicbrainz_releasegroupid:rg-1",
+        provider: "external",
         provider_mappings: [],
+        is_playable: false,
         album_type: AlbumType.SINGLE,
       }),
     ]);

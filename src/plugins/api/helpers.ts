@@ -210,21 +210,21 @@ export const getProviderRootDomain = function (
     : undefined;
 };
 
-// the provider a discography release carries while it is on none of the user's
-// music services
-export const MUSICBRAINZ_PROVIDER = "musicbrainz";
+// the provider of an item the server knows only by an external id, such as a
+// MusicBrainz id or an ISRC
+export const EXTERNAL_PROVIDER = "external";
 
 /**
- * Whether the item is a MusicBrainz entry rather than one of a music service.
+ * Whether the item is known only by an external id, so not found yet in the
+ * library or on one of the user's music services.
  *
- * The server resolves such an item to the same album on one of the user's
- * music services when it is opened or added to the library, so it can be shown
- * and added but not played as it is.
+ * The server looks such an item up when it is opened, played or added to the
+ * library. Its is_playable flag tells whether it can be played as it is.
  */
-export const isMusicBrainzItem = function (
+export const isExternalItem = function (
   item: MediaItemType | ItemMapping,
 ): boolean {
-  return item.provider === MUSICBRAINZ_PROVIDER;
+  return item.provider === EXTERNAL_PROVIDER;
 };
 
 export const itemIsAvailable = function (
