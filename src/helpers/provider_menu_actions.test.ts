@@ -121,6 +121,27 @@ describe("getProviderMenuItems", () => {
   });
 
   it.each([
+    ["the manifest's name", "Demo plugin", "Demo plugin"],
+    ["the domain without a name in the manifest", " ", "demo"],
+  ])(
+    "names an instance renamed to blanks after %s",
+    (_case, manifestName, shown) => {
+      const blank = { ...demo("demo"), name: "  " };
+      const manifests = {
+        demo: { ...manifest([ASK]), name: manifestName },
+      };
+
+      const [item] = getProviderMenuItems(
+        MediaType.TRACK,
+        context({ providers: [blank], manifests }),
+        vi.fn(),
+      );
+
+      expect(item.addedBy).toBe(shown);
+    },
+  );
+
+  it.each([
     ["a translation key", "show_info"],
     ["braces and a link", "{0} @:show_info {name} <b>"],
   ])("shows a label that holds %s as it is", (_case, label) => {

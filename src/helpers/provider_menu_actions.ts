@@ -35,7 +35,8 @@ export interface ProviderMenuContext {
  * The menu entries the available provider instances declare for an item of a
  * media type, for the actions that act on a player or for the others: those of
  * a media type the item has, with a scope the user holds. Each instance gets its
- * own entry, with the instance named under the label.
+ * own entry, with the instance named under the label (or its provider, for an
+ * instance without a name).
  *
  * @param mediaType - The media type of the item.
  * @param context - Which entries, and what the user sees and may do.
@@ -48,27 +49,32 @@ export const getProviderMenuItems = (
 ): ContextMenuItem[] => {
   return context.providers
     .filter((provider) => provider.available)
-    .flatMap((provider) =>
+    .flatMap((provider) => {
+      const manifest = context.manifests[provider.domain];
       // an older server declares none
-      (context.manifests[provider.domain]?.menu_actions ?? [])
+      return (manifest?.menu_actions ?? [])
         .filter(
           (action) =>
             action.requires_player === context.requiresPlayer &&
             action.media_types.includes(mediaType) &&
             context.hasScope(action.scope),
         )
-        .map((action) => ({ provider, action })),
-    )
+        .map((action) => ({
+          provider,
+          action,
+          // an instance renamed to blanks is named after its provider
+          addedBy:
+            provider.name.trim() || manifest?.name.trim() || provider.domain,
+        }));
+    })
     .sort((a, b) =>
-      a.provider.name.localeCompare(b.provider.name, undefined, {
-        sensitivity: "base",
-      }),
+      a.addedBy.localeCompare(b.addedBy, undefined, { sensitivity: "base" }),
     )
-    .map(({ provider, action }) => ({
+    .map(({ provider, action, addedBy }) => ({
       // the label only names the entry; what it says is its text
       label: `provider_menu_action/${provider.instance_id}/${action.id}`,
       text: action.label,
-      addedBy: provider.name,
+      addedBy,
       icon: isPlainIconName(action.icon) ? action.icon : markRaw(Puzzle),
       action: () =>
         choose({ instanceId: provider.instance_id, actionId: action.id }),
