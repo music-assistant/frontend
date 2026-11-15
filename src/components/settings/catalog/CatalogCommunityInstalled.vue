@@ -104,7 +104,8 @@
             >
           </ItemDescription>
         </ItemContent>
-        <ItemActions>
+        <!-- on a phone the actions go under the text, lined up with it -->
+        <ItemActions class="max-md:basis-full max-md:pl-14">
           <Button
             v-if="update || retry"
             size="sm"
