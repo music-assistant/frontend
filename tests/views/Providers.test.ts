@@ -146,24 +146,6 @@ vi.mock("@/helpers/utils", () => ({
 }));
 
 // rendered in place of the real dialog, exposing what it was handed
-const AddDialogStub = vi.hoisted(() => ({
-  name: "AddProviderDialog",
-  props: ["show", "providerType", "multiInstanceOnly", "selfServiceOnly"],
-  template: `
-    <div
-      data-testid="add-dialog"
-      :data-provider-type="providerType ?? ''"
-      :data-multi-instance="String(multiInstanceOnly)"
-      :data-self-service="String(selfServiceOnly)"
-    />
-  `,
-}));
-
-vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
-  default: AddDialogStub,
-}));
-
-// rendered in place of the real dialog, exposing what it was handed
 const AccessDialogStub = vi.hoisted(() => ({
   name: "ProviderAccessDialog",
   props: ["canChangeOwner", "config", "open", "shareCandidates", "users"],
@@ -707,13 +689,16 @@ describe("Providers", () => {
     expect(menuItems.at(-1).color).toBe("error");
   });
 
-  it("leaves the offered provider types to the route for an admin", async () => {
+  it("opens the Catalog on the type of the page for an admin", async () => {
+    routeMock.query.types = "player";
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    const dialog = wrapper.get('[data-testid="add-dialog"]');
-    expect(dialog.attributes("data-provider-type")).toBe("");
-    expect(dialog.attributes("data-multi-instance")).toBe("false");
-    expect(dialog.attributes("data-self-service")).toBe("false");
+    await wrapper.get('[data-testid="add-provider"]').trigger("click");
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "catalog",
+      query: { types: "player" },
+    });
   });
 
   it("offers reconfiguration of a provider that only an admin may set up", async () => {
@@ -950,13 +935,28 @@ describe("Providers for a member", () => {
     ).toBe("none");
   });
 
-  it("offers only music sources that allow another account and that members may set up", async () => {
+  it("opens the Catalog on the music sources, whatever type the route names", async () => {
+    routeMock.query.types = "player";
     const wrapper = await mountWithConfigs([ownSource()]);
 
-    const dialog = wrapper.get('[data-testid="add-dialog"]');
-    expect(dialog.attributes("data-provider-type")).toBe("music");
-    expect(dialog.attributes("data-multi-instance")).toBe("true");
-    expect(dialog.attributes("data-self-service")).toBe("true");
+    await wrapper.get('[data-testid="add-provider"]').trigger("click");
+
+    // the Catalog itself keeps a member to what it may add
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "catalog",
+      query: { types: "music" },
+    });
+  });
+
+  it("opens the Catalog from the invitation to add a first source", async () => {
+    const wrapper = await mountWithConfigs([]);
+
+    await wrapper.get('[data-testid="add-provider-empty"]').trigger("click");
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "catalog",
+      query: { types: "music" },
+    });
   });
 
   it("offers no reconfiguration of a provider that only an admin may set up", async () => {
@@ -1296,7 +1296,6 @@ async function mountWithConfigs(
         },
       },
       stubs: {
-        AddProviderDialog: AddDialogStub,
         Button: ButtonStub,
         Container: SlotStub,
         Empty: SlotStub,

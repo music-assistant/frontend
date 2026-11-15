@@ -6,7 +6,7 @@
       v-if="canOwnSources() && !showMusicEmptyState"
       class="add-provider-btn"
       data-testid="add-provider"
-      @click="showAddProviderDialog = true"
+      @click="openCatalog"
     >
       <Plus class="size-4" />
       {{ addProviderLabel }}
@@ -92,10 +92,7 @@
         }}
       </EmptyDescription>
       <EmptyContent v-if="canOwnSources()">
-        <Button
-          data-testid="add-provider-empty"
-          @click="showAddProviderDialog = true"
-        >
+        <Button data-testid="add-provider-empty" @click="openCatalog">
           <Plus class="size-4" />
           {{ $t("settings.add_music_provider") }}
         </Button>
@@ -124,12 +121,6 @@
       </RouterLink>
     </Button>
   </div>
-  <AddProviderDialog
-    v-model:show="showAddProviderDialog"
-    :provider-type="managesAllSources() ? undefined : ProviderType.MUSIC"
-    :multi-instance-only="!managesAllSources()"
-    :self-service-only="!managesAllSources()"
-  />
   <ProviderAccessDialog
     v-model:open="showAccessDialog"
     :config="accessDialogConfig"
@@ -158,6 +149,7 @@ import { useBackgroundTasks } from "@/composables/background-tasks/useBackground
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import { getCatalogRoute } from "@/helpers/provider_catalog";
 import {
   getProviderStatusTranslationKey,
   isCommunityProvider,
@@ -183,9 +175,8 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { Info, Music, Plus, Puzzle } from "@lucide/vue";
 import { match } from "ts-pattern";
-import { computed, inject, ref } from "vue";
+import { computed, inject } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import AddProviderDialog from "./AddProviderDialog.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -221,7 +212,6 @@ const addProviderLabel = computed(() => {
     .otherwise(() => $t("settings.add_new"));
 });
 
-const showAddProviderDialog = ref(false);
 const { isProviderSyncing } = useBackgroundTasks();
 
 const getProviderName = function (config: ProviderConfig) {
@@ -291,6 +281,11 @@ const {
   accessSummary,
   openAccessDialog,
 } = useProviderAccess({ managesAllSources, canOwnSources });
+
+// the Catalog opens on the type of this page and only offers what the viewer may add
+const openCatalog = function () {
+  void router.push(getCatalogRoute(currentType.value));
+};
 
 const openProviderOptions = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);

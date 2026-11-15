@@ -321,6 +321,7 @@ const settingsSections = computed(() =>
 );
 
 const providerSectionNames = [
+  "catalog",
   "music_providers",
   "player_providers",
   "metadata_providers",
@@ -404,6 +405,10 @@ const activeTab = computed(() => {
   if (name.includes("about")) {
     return "about";
   }
+  // the Catalog carries a types query of its own, for the tab it opens on
+  if (name === "catalog") {
+    return "catalog";
+  }
 
   const typesQuery = router.currentRoute.value.query.types as
     string | undefined;
@@ -484,6 +489,8 @@ const breadcrumbItems = computed(() => {
         disabled: name === "usersettings",
         to: { name: "usersettings" },
       });
+    } else if (currentTab === "catalog") {
+      items.push({ title: t("settings.catalog.title"), disabled: true });
     } else if (currentTab === "music_providers") {
       items.push({
         title: t("settings.music_sources"),
