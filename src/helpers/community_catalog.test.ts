@@ -22,7 +22,7 @@ describe("the state of one from the community catalog", () => {
     [CommunityProviderState.INSTALLED, true, true, false],
     [CommunityProviderState.UPDATE_AVAILABLE, true, true, false],
     [CommunityProviderState.RESTART_REQUIRED, true, true, false],
-    [CommunityProviderState.WITHDRAWN, true, false, false],
+    [CommunityProviderState.WITHDRAWN, true, true, false],
     [CommunityProviderState.BLOCKED, true, false, true],
     [CommunityProviderState.UNAVAILABLE, true, false, true],
   ])(

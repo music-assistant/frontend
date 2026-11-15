@@ -20,6 +20,7 @@ const RUNNING_STATES: readonly CommunityProviderState[] = [
   CommunityProviderState.INSTALLED,
   CommunityProviderState.UPDATE_AVAILABLE,
   CommunityProviderState.RESTART_REQUIRED,
+  CommunityProviderState.WITHDRAWN,
 ];
 
 // the states that stop it from running
