@@ -222,8 +222,8 @@ const connectRelay = () => {
   relay = null;
   // Don't carry the old player's palette over until the new relay speaks.
   colorPalette.value = {};
-  // Without a player the server would pick one itself (whichever Sendspin
-  // player happens to be playing), so a canvas mounted before its view has
+  // Without a player the server would pick one itself (whichever player
+  // happens to be playing), so a canvas mounted before its view has
   // resolved the player would briefly visualize a different one. The watcher
   // below connects as soon as the id arrives.
   if (!props.playerId) {

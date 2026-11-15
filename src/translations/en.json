@@ -981,7 +981,7 @@
         "visualizer_description": "Quality, presets and favorites for the MilkDrop music visualizer",
         "visualizer_enabled": {
             "label": "MilkDrop visualizer",
-            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu. The waveform is tapped from the Sendspin stream, so it is only offered for players with a Sendspin output."
+            "description": "Show a MilkDrop visualizer behind the fullscreen player, reacting live to the music. Each player can override this from its fullscreen menu."
         },
         "visualizer_blur": {
             "label": "Visualizer blur",
