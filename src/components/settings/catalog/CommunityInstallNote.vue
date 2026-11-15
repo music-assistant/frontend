@@ -22,7 +22,12 @@
               target="_blank"
               rel="noopener noreferrer"
               data-testid="community-note-help"
-              >{{ $t("settings.provider_get_help") }}</a
+              >{{
+                $t(
+                  "settings.catalog.community.note_help_link",
+                  maintainers.length,
+                )
+              }}</a
             >
           </template>
         </i18n-t>

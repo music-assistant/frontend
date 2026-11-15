@@ -266,8 +266,8 @@ describe("Catalog", () => {
     await wrapper.get("[data-slot='input-group-control']").setValue("nothing");
 
     expect(
-      document.querySelector("[data-testid='catalog-empty']"),
-    ).not.toBeNull();
+      document.querySelector("[data-testid='catalog-empty']")?.textContent,
+    ).toContain("settings.catalog.no_match");
   });
 
   it("opens on the type the route names, with a link to its settings page", async () => {
@@ -948,6 +948,9 @@ describe("Catalog with the community catalog", () => {
       expect(href(note, "community-note-help")).toBe(
         "https://github.com/jane/ma-radio",
       );
+      expect(
+        note.querySelector("[data-testid='community-note-help']")?.textContent,
+      ).toBe("settings.catalog.community.note_help_link");
     });
 
     it("installs after the note, with progress, then starts adding it", async () => {
@@ -1313,6 +1316,12 @@ describe("Catalog with the community catalog", () => {
       expect(href(bad, "community-installed-reason-link")).toBe(
         "https://github.com/music-assistant/registry/issues/9",
       );
+      // the link stands apart from the reason, which may end without a full stop
+      expect(
+        bad.querySelector(
+          "[data-testid='community-installed-reason'] [data-testid='community-installed-reason-link']",
+        ),
+      ).toBeNull();
 
       expect(
         installedRow("broken").querySelector(
@@ -1409,9 +1418,15 @@ describe("Catalog with the community catalog", () => {
     await mountCatalog();
 
     expect(banner()).toBeNull();
+    expect(unavailableNotice()?.textContent).toContain(
+      "settings.catalog.community.unavailable_title",
+    );
+    expect(unavailableNotice()?.textContent).toContain(
+      "settings.catalog.community.unavailable_message",
+    );
     expect(menuLabels()).toEqual([
       "settings.catalog.community.unavailable",
-      "settings.retry",
+      "settings.catalog.try_again",
     ]);
     expect(openMenu()[0].disabled).toBe(true);
     expect(
@@ -1427,11 +1442,14 @@ describe("Catalog with the community catalog", () => {
     apiMock.getCommunityProviders.mockRejectedValueOnce(new Error("refused"));
     await mountCatalog();
 
-    await chooseInMenu("settings.retry");
+    expect(unavailableNotice()).not.toBeNull();
+
+    await chooseInMenu("settings.catalog.try_again");
 
     expect(apiMock.getCommunityProviders).toHaveBeenCalledTimes(2);
     expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
     expect(banner()).not.toBeNull();
+    expect(unavailableNotice()).toBeNull();
   });
 
   it("waits for the community catalog before showing the page", async () => {
@@ -2059,6 +2077,10 @@ async function clickBannerEnable() {
 
 function banner(): Element | null {
   return document.querySelector("[data-testid='community-banner']");
+}
+
+function unavailableNotice(): Element | null {
+  return document.querySelector("[data-testid='community-unavailable']");
 }
 
 function menuButton(): HTMLButtonElement | null {

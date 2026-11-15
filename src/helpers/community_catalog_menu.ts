@@ -39,7 +39,7 @@ export const getCommunityCatalogMenuItems = (
         disabled: true,
       },
       {
-        label: "settings.retry",
+        label: "settings.catalog.try_again",
         icon: markRaw(RefreshCw),
         action: catalog.retry,
       },

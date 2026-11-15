@@ -19,7 +19,7 @@ export function communityProvider(
   return {
     domain,
     repository: `jane/${domain}`,
-    maintainers: ["@jane"],
+    maintainers: ["jane"],
     icon: COMMUNITY_ICON,
     manifest: providerManifest({
       domain,

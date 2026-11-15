@@ -91,8 +91,10 @@
             data-testid="community-installed-reason"
           >
             {{ stateText }}
+          </ItemDescription>
+          <!-- a reason may end without a full stop, so its link gets a line of its own -->
+          <ItemDescription v-if="stateText && reasonUrl">
             <a
-              v-if="reasonUrl"
               :href="reasonUrl"
               target="_blank"
               rel="noopener noreferrer"

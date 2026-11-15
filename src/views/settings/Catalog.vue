@@ -34,6 +34,9 @@
       v-if="community.available && !community.enabled"
       @enable="community.setEnabled(true)"
     />
+    <CatalogCommunityUnavailable
+      v-else-if="community.status === 'unavailable'"
+    />
 
     <CommunityMovedNotice
       :providers="community.moved"
@@ -102,7 +105,7 @@
               @click="reload"
             >
               <RefreshCw class="size-4" aria-hidden="true" />
-              {{ $t("settings.retry") }}
+              {{ $t("settings.catalog.try_again") }}
             </Button>
           </EmptyContent>
         </Empty>
@@ -206,6 +209,7 @@ import FacetedFilter from "@/components/FacetedFilter.vue";
 import CatalogBrowse from "@/components/settings/catalog/CatalogBrowse.vue";
 import CatalogCommunityInstalled from "@/components/settings/catalog/CatalogCommunityInstalled.vue";
 import CatalogCommunityBanner from "@/components/settings/catalog/CatalogCommunityBanner.vue";
+import CatalogCommunityUnavailable from "@/components/settings/catalog/CatalogCommunityUnavailable.vue";
 import CatalogEntryDialog from "@/components/settings/catalog/CatalogEntryDialog.vue";
 import CatalogInstalled from "@/components/settings/catalog/CatalogInstalled.vue";
 import CommunityInstallNote from "@/components/settings/catalog/CommunityInstallNote.vue";
