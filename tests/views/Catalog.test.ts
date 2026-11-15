@@ -936,6 +936,9 @@ describe("Catalog with the community catalog", () => {
       expect(href(note, "community-note-help")).toBe(
         "https://github.com/jane/ma-radio",
       );
+      expect(
+        note.querySelector("[data-testid='community-note-help']")?.textContent,
+      ).toBe("settings.catalog.community.note_help_link");
     });
 
     it("installs after the note, with progress, then starts adding it", async () => {
@@ -1301,6 +1304,12 @@ describe("Catalog with the community catalog", () => {
       expect(href(bad, "community-installed-reason-link")).toBe(
         "https://github.com/music-assistant/registry/issues/9",
       );
+      // the link stands apart from the reason, which may end without a full stop
+      expect(
+        bad.querySelector(
+          "[data-testid='community-installed-reason'] [data-testid='community-installed-reason-link']",
+        ),
+      ).toBeNull();
 
       expect(
         installedRow("broken").querySelector(
