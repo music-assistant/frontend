@@ -65,9 +65,11 @@ import {
   AuthExchangeResult,
   AuthorizationStart,
   AuthProvider,
+  CatalogRecommendation,
   ConfigActionResult,
   ConfigEntry,
   ConfigValueType,
+  CommunityProvider,
   CoreConfig,
   DSPConfig,
   DSPConfigPreset,
@@ -119,7 +121,7 @@ const DEBUG = process.env.NODE_ENV === "development";
 // The oldest server API schema this frontend works with. Only the public web app
 // (app.music-assistant.io) can meet an older server, the bundled frontend always
 // matches its own. Raise it when a change would break the previous stable server.
-export const MIN_SERVER_SCHEMA_VERSION = 109;
+export const MIN_SERVER_SCHEMA_VERSION = 113;
 
 // Server error codes of a missing or rejected sign-in; the login UI reports these itself
 const AUTHENTICATION_REQUIRED_ERROR_CODE = 20;
@@ -974,10 +976,9 @@ export class MusicAssistantApi {
    * Every album, EP and single MusicBrainz credits to a library artist, newest first.
    *
    * Only library artists are supported; the list is empty when MusicBrainz doesn't know
-   * the artist. The releases that are not in the library come back as MusicBrainz items
-   * (provider "musicbrainz", without provider mappings), which the server resolves to a
-   * real album when one is opened or added. `album_types` limits the list to
-   * releases of those types.
+   * the artist. The releases that are not in the library come back as external items
+   * (provider "external", without provider mappings), which the server looks up when one
+   * is opened or added. `album_types` limits the list to releases of those types.
    */
   public getArtistDiscography(
     item_id: string,
@@ -1523,11 +1524,13 @@ export class MusicAssistantApi {
   public getAudiobook(
     item_id: string,
     provider_instance_id_or_domain: string,
+    options?: CommandOptions,
   ): Promise<Audiobook> {
-    return this.sendCommand("music/audiobooks/get_audiobook", {
-      item_id,
-      provider_instance_id_or_domain,
-    });
+    return this.sendCommand(
+      "music/audiobooks/get_audiobook",
+      { item_id, provider_instance_id_or_domain },
+      options,
+    );
   }
 
   public getAudiobookCollection(
@@ -2715,6 +2718,15 @@ export class MusicAssistantApi {
     return this.sendCommand("players/remove", { player_id: playerId });
   }
 
+  /**
+   * Remove every player whose device is gone, and return the ids of those removed.
+   *
+   * @param dry_run Remove nothing, and return the ids of the players it would remove.
+   */
+  public removeUnavailablePlayers(dry_run = false): Promise<string[]> {
+    return this.sendCommand("players/remove_unavailable", { dry_run });
+  }
+
   // Sleep timer related functions/commands
 
   public getSleepTimer(playerId: string): Promise<number | null> {
@@ -2845,11 +2857,15 @@ export class MusicAssistantApi {
   public async getProviderConfigs(
     provider_type?: ProviderType,
     provider_domain?: string,
+    include_unavailable?: boolean,
   ): Promise<ProviderConfig[]> {
     // Return all known provider configurations, optionally filtered by ProviderType or domain.
+    // include_unavailable: also return the configurations of providers that are not
+    // available, with status UNAVAILABLE and the reason in last_error.
     return this.sendCommand("config/providers", {
       provider_type,
       provider_domain,
+      include_unavailable,
     });
   }
 
@@ -2948,6 +2964,73 @@ export class MusicAssistantApi {
       // callers show their own error toast; avoid a duplicate global one
       suppressGlobalError: true,
     });
+  }
+
+  public getCatalogRecommendations(): Promise<CatalogRecommendation[]> {
+    // What the Marketplace suggests the calling user adds, and why. The page
+    // shows itself without suggestions when this fails, so it reports nothing.
+    return this.sendCommand("catalog/recommendations", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
+  // Community catalog related functions (admin only, refused in safe mode)
+  // Callers report a failure themselves, so these opt out of the global error toast.
+
+  public getCommunityProviders(): Promise<CommunityProvider[]> {
+    // Return the installed community providers and, while the community catalog is
+    // switched on, what it offers.
+    return this.sendCommand("community_catalog/providers", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
+  public refreshCommunityProviders(): Promise<CommunityProvider[]> {
+    // Fetch the community catalog now and return its providers.
+    return this.sendCommand("community_catalog/refresh", undefined, {
+      suppressGlobalError: true,
+    });
+  }
+
+  public installCommunityProvider(domain: string): Promise<CommunityProvider> {
+    // Install a provider of the community catalog. This creates no ProviderConfig:
+    // its manifest is then listed among the provider manifests to add it the usual way.
+    return this.sendCommand(
+      "community_catalog/install",
+      { domain },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeCommunityProvider(domain: string): Promise<void> {
+    // Remove an installed community provider; its ProviderConfigs stay.
+    return this.sendCommand(
+      "community_catalog/remove",
+      { domain },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public updateCommunityProviders(
+    domain?: string,
+  ): Promise<CommunityProvider[]> {
+    // Update one installed community provider, or without a domain every one with
+    // an update on offer, and return its providers. By domain this also installs
+    // its failed_version again.
+    return this.sendCommand(
+      "community_catalog/update",
+      { domain },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public dismissCommunityNotice(domain: string): Promise<void> {
+    // Dismiss the notice of an installed community provider.
+    return this.sendCommand(
+      "community_catalog/dismiss_notice",
+      { domain },
+      { suppressGlobalError: true },
+    );
   }
 
   // PlayerConfig related functions
@@ -3511,16 +3594,20 @@ export class MusicAssistantApi {
       this.players[player.player_id] = player;
     } else if (msg.event == EventType.PLAYER_UPDATED) {
       const player = msg.data as Player;
-      if (player.player_id in this.players)
+      // a disabled player leaves the server with this last update, and its queue with it
+      if (!player.enabled) this.dropPlayer(player.player_id);
+      else if (player.player_id in this.players)
         Object.assign(this.players[player.player_id], player);
       else this.players[player.player_id] = player;
     } else if (msg.event == EventType.PLAYER_REMOVED) {
-      delete this.players[msg.object_id!];
-      delete this.queues[msg.object_id!];
-      delete this.queueElapsedTime[msg.object_id!];
+      this.dropPlayer(msg.object_id!);
     } else if (msg.event == EventType.CORE_STATE_UPDATED) {
       // Update serverInfo with the new server state
       this.serverInfo.value = msg.data as ServerInfoMessage;
+    } else if (msg.event == EventType.COMMUNITY_CATALOG_UPDATED) {
+      // a community provider was installed, removed or stopped; a failed fetch
+      // shows the global error toast
+      this.fetchProviderManifests().catch(() => {});
     } else if (msg.event == EventType.PROVIDERS_UPDATED) {
       // Clear and repopulate the existing reactive object to preserve reactivity
       Object.keys(this.providers).forEach((key) => delete this.providers[key]);
@@ -3531,6 +3618,13 @@ export class MusicAssistantApi {
     // signal + log all events
     if (DEBUG) console.log("[event]", msg);
     this.signalEvent(msg);
+  }
+
+  /** Forget a player that left the server, and its queue. */
+  private dropPlayer(playerId: string): void {
+    delete this.players[playerId];
+    delete this.queues[playerId];
+    delete this.queueElapsedTime[playerId];
   }
 
   private handleTransportStateChange(state: string): void {
@@ -4085,6 +4179,11 @@ export class MusicAssistantApi {
     const manifests = await this.sendCommand<ProviderManifest[]>(
       "providers/manifests",
     );
+    // a community provider that was removed or stopped is no longer listed
+    const domains = new Set(manifests.map((prov) => prov.domain));
+    Object.keys(this.providerManifests)
+      .filter((domain) => !domains.has(domain))
+      .forEach((domain) => delete this.providerManifests[domain]);
     for (const prov of manifests) {
       this.providerManifests[prov.domain] = prov;
     }

@@ -88,12 +88,7 @@
               @click="gotoRadio(item)"
             />
             <DetailHeroSourceBadge :item="item" />
-            <span
-              v-if="
-                item.audio_metadata?.bpm || item.audio_metadata?.musical_key
-              "
-              class="track-hero__badge"
-            >
+            <span v-if="hasAudioAnalysis" class="track-hero__badge">
               <AudioAnalysisMetadata :audio-metadata="item.audio_metadata" />
             </span>
             <span v-if="qualityLabel" class="track-hero__pill">
@@ -153,6 +148,11 @@ const isPhone = computed(() => isPhoneSizedScreen());
 const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
+
+const hasAudioAnalysis = computed(() => {
+  const metadata = props.item?.audio_metadata;
+  return !!(metadata?.bpm || metadata?.musical_key || metadata?.energy_level);
+});
 
 const qualityLabel = computed(() => {
   const format = props.item && bestAudioFormat(props.item);

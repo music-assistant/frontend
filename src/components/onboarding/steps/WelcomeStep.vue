@@ -45,7 +45,7 @@ const DESCRIPTION_ID = "onboarding-welcome-description";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
-const emit = defineEmits<{
+defineEmits<{
   (e: "advance"): void;
   (e: "navigate", step: OnboardingStepId): void;
   (e: "finish"): void;
@@ -115,7 +115,7 @@ const select = async function (value: OnboardingExperience) {
   if (busy.value) return;
   chosen.value = value;
   pendingSave = save(value);
-  if (await pendingSave) emit("advance");
+  await pendingSave;
 };
 
 /**

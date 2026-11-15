@@ -388,7 +388,7 @@
                 :show-disc-number="showTrackNumber"
                 :show-duration="showDuration"
                 :show-favorite="showFavorite ?? showFavoritesOnlyFilter"
-                :show-menu="item.is_playable || isMusicBrainzItem(item)"
+                :show-menu="item.is_playable || isExternalItem(item)"
                 :show-provider="showProviderIcon"
                 :show-album="showAlbum"
                 :show-checkboxes="showCheckboxes && !isParentDirItem(item)"
@@ -569,7 +569,7 @@ import { returnedByHistory } from "@/helpers/navigation";
 import { panelViewItemResponsive, scrollElement } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
-  isMusicBrainzItem,
+  isExternalItem,
   itemIsAvailable,
   itemSupportsPlayLog,
   providerServiceName,

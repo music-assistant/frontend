@@ -2,12 +2,14 @@ import { Scope } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
+  MEMBER_WITHOUT_OWN_SCOPES,
   OWN_SOURCES_ROLE_SCOPES,
   scopeChecker,
 } from "../../tests/fixtures/scopes";
 import { availableSettingsSections } from "./settings_sections";
 
 const ALL_SECTIONS = [
+  "catalog",
   "music_providers",
   "player_providers",
   "metadata_providers",
@@ -33,8 +35,9 @@ describe("availableSettingsSections", () => {
     expect(sectionNames(BUILTIN_ROLE_SCOPES.admin)).toEqual(ALL_SECTIONS);
   });
 
-  it("lists a member its own music sources and its personal settings", () => {
+  it("lists a member the catalog, its own music sources and its personal settings", () => {
     expect(sectionNames(BUILTIN_ROLE_SCOPES.user)).toEqual([
+      "catalog",
       "music_providers",
       "profile",
       "frontend",
@@ -52,11 +55,16 @@ describe("availableSettingsSections", () => {
 
   it("lists a role managing its own music sources nothing more to manage", () => {
     expect(sectionNames(OWN_SOURCES_ROLE_SCOPES)).toEqual([
+      "catalog",
       "music_providers",
       "profile",
       "frontend",
       "about",
     ]);
+  });
+
+  it("leaves the catalog out for a role that may not add music sources", () => {
+    expect(sectionNames(MEMBER_WITHOUT_OWN_SCOPES)).not.toContain("catalog");
   });
 
   it("lists the music sources to a role that may only read them", () => {

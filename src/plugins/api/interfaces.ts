@@ -506,6 +506,8 @@ export enum EventType {
   // a user's bookmarks of one copy changed; object_id is the copy's uri, data the user id
   BOOKMARKS_UPDATED = "bookmarks_updated",
   PROVIDERS_UPDATED = "providers_updated",
+  // the community catalog or the provider manifests changed
+  COMMUNITY_CATALOG_UPDATED = "community_catalog_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
@@ -1206,6 +1208,8 @@ export interface AudioMetadata {
   musical_key: string | null;
   // Camelot wheel notation of musical_key, e.g. "11A"
   camelot_key: string | null;
+  // 1 (calmest) to 10 (most energetic)
+  energy_level: number | null;
 }
 
 export interface Track extends MediaItem {
@@ -1592,6 +1596,27 @@ export interface OutputProtocol {
   derived_from: string | null;
 }
 
+export enum ProtocolRole {
+  // The role a protocol has within a player.
+  NATIVE = "native", // the vendor-specific protocol of the device, with full control
+  CONTROL = "control", // controls the device (e.g. power, volume) but does not play audio
+  AUDIO = "audio", // a generic protocol that plays audio on the device (e.g. AirPlay)
+  VIRTUAL = "virtual", // a protocol without a physical device behind it (e.g. a group player)
+  UNKNOWN = "unknown",
+}
+
+export interface PlayerProtocolInfo {
+  // A protocol a player is made up of (e.g. the device's own protocol plus AirPlay and Chromecast).
+  protocol_id: string; // Unique ID of the protocol (its own id, not the player id)
+  domain: string; // Domain of the protocol's provider, e.g. "airplay", "sonos"
+  provider: string; // instance_id of the protocol's provider
+  role: ProtocolRole;
+  available: boolean; // Whether this protocol is currently available
+  // active: the player's current playback path: the protocol of an app Music Assistant
+  // did not start that the player shows, else the one of its active output
+  active: boolean;
+}
+
 export interface DeviceInfo {
   model: string;
   manufacturer: string;
@@ -1726,8 +1751,16 @@ export interface Player {
   volume_control: string;
   mute_control: string;
   needs_setup: boolean;
+  // setup_reason: why the player needs setup or has no way to play at all, such as
+  // "pairing_required" or "provider_not_installed"; null when it gave no reason
+  setup_reason: string | null;
   // this player (or a wrapped protocol child) offers a setup flow that can be re-run on demand
   has_setup_flow: boolean;
+  // legacy_ids: ids the player was known under before (such as a player merged into it),
+  // which it keeps answering to
+  legacy_ids: string[];
+  // protocols: the protocols the player is made up of, also those that are away
+  protocols: PlayerProtocolInfo[];
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
@@ -1817,6 +1850,8 @@ export enum ProviderStatus {
   AUTH_REQUIRED = "auth_required",
   INCOMPATIBLE = "incompatible",
   ERROR = "error",
+  // the code of the provider is not on this server; the reason is in last_error
+  UNAVAILABLE = "unavailable",
 }
 
 export interface ProviderError {
@@ -1825,6 +1860,62 @@ export interface ProviderError {
   // client renders it directly.
   error_code: number;
   message: string;
+}
+
+export enum CommunityProviderState {
+  AVAILABLE = "available",
+  INSTALLED = "installed",
+  UPDATE_AVAILABLE = "update_available",
+  RESTART_REQUIRED = "restart_required",
+  BLOCKED = "blocked",
+  UNAVAILABLE = "unavailable",
+  WITHDRAWN = "withdrawn",
+}
+
+export interface CommunityProvider {
+  // A provider of the community catalog: one that can be installed, or one that is.
+  domain: string;
+  // owner/name of the repository on GitHub
+  repository: string;
+  maintainers: string[];
+  // a data URI to show in an image element
+  icon: string | null;
+  // the manifest of the installed version, else the one of the latest version
+  manifest: ProviderManifest;
+  state: CommunityProviderState;
+  installed_version: string | null;
+  latest_version: string | null;
+  // the version that becomes active at the next start of the server
+  pending_version: string | null;
+  // a version that failed to load here; installed again only when asked for by domain
+  failed_version: string | null;
+  // ISO dates: when it entered the catalog, and when latest_version was released
+  added: string | null;
+  released: string | null;
+  // what the catalog says about a provider it blocked or withdrew, and where it explains it
+  reason: string | null;
+  reason_url: string | null;
+  // why an installed provider does not run
+  error: ProviderError | null;
+  // what the app tells the admin until it is dismissed: "moved"
+  notice: string | null;
+}
+
+export enum CatalogRecommendationReason {
+  // Why the Marketplace suggests a provider, in the order the suggestions come in.
+  DISCOVERED = "discovered",
+  COMPLEMENTS = "complements",
+  POPULAR = "popular",
+  NEW = "new",
+  UPDATED = "updated",
+}
+
+export interface CatalogRecommendation {
+  // A provider the Marketplace suggests the user adds, and why.
+  domain: string;
+  reason: CatalogRecommendationReason;
+  // for complements: the domain of the provider it goes well with, which is set up
+  detail: string | null;
 }
 
 export interface ProviderInstance {
