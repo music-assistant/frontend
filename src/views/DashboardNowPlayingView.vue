@@ -29,12 +29,13 @@
           v-if="store.activePlayer.powered === false"
           class="now-playing-title"
         >
-          {{ store.activePlayer.name }}
+          {{ getPlayerDisplayName(store.activePlayer) }}
         </div>
         <template v-else>
           <MarqueeText :sync="marqueeSync" class="now-playing-title">
             {{
-              store.activePlayer.current_media?.title || store.activePlayer.name
+              store.activePlayer.current_media?.title ||
+              getPlayerDisplayName(store.activePlayer)
             }}
           </MarqueeText>
           <!-- placeholder when no artist, so the artwork position stays fixed -->
@@ -62,6 +63,7 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
+import { getPlayerDisplayName } from "@/helpers/players";
 import {
   type ImageColorPalette,
   getMediaImageUrl,
@@ -88,8 +90,11 @@ onMounted(() => {
 // Synced marquee scrolling for the title/artist, same as the fullscreen player.
 const marqueeSync = new MarqueeTextSync();
 
-// Waveform is always on here: the guest session has no show_waveform preference, so it defaults on.
-const { waveformBins: waveformData } = useActiveTrackWaveform();
+// The dashboard has no settings of its own, so it shows the waveform whatever
+// the signed-in account's setting says.
+const { waveformBins: waveformData } = useActiveTrackWaveform({
+  ignorePreference: true,
+});
 
 const artworkUrl = computed(
   () => getMediaImageUrl(store.activePlayer?.current_media?.image_url) || null,

@@ -3,6 +3,7 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import mitt, { Emitter } from "mitt";
 import {
+  ConfigValueType,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
@@ -47,6 +48,12 @@ export type DeleteConfirmationDialogEvent = {
   message: string;
   title?: string;
   confirmLabel?: string;
+  // false for a confirmation that does not destroy anything: the confirm button
+  // is then the regular one instead of the red destructive one
+  destructive?: boolean;
+  // when set, a checkbox with this label has to be ticked before the confirm
+  // button is enabled
+  acknowledgement?: string;
   onConfirm: () => void | Promise<void>;
 };
 
@@ -55,13 +62,33 @@ export type PlayerGroupPlaybackChange = "remove" | "power_off";
 export type PlayerGroupPlaybackDialogEvent = {
   change: PlayerGroupPlaybackChange;
   playerName: string;
+  // the player is the built-in player of this device
+  isThisDevice: boolean;
   onKeepPlaying: () => void | Promise<void>;
   onStopAndUngroup: () => void | Promise<void>;
+};
+
+// Playback was refused because another player is playing from the only stream of a
+// provider, such as a Spotify account
+export type StreamHeldDialogEvent = {
+  holderQueueId: string;
+  holderName: string;
+  providerName: string;
+  // sends the refused command again
+  retry: () => Promise<unknown>;
 };
 
 export type ImportPlaylistEvent = {
   m3uData: string;
   playlistName: string;
+};
+
+export type MigratePlaylistDialogEvent = {
+  playlist: Playlist;
+};
+
+export type PlaylistAccessDialogEvent = {
+  playlist: Playlist;
 };
 
 export type CreateSmartPlaylistEvent = {
@@ -90,10 +117,19 @@ export type SetupFlowEndedCallback = (finished: boolean) => void;
 // Launches the setup flow dialog for one of: adding a provider (by domain),
 // reconfiguring a provider instance, or setting up a player.
 export type SetupFlowDialogEvent =
-  | { kind: "provider"; domain: string }
+  | {
+      kind: "provider";
+      domain: string;
+      // values for entries of the first form step, by entry key; the user still
+      // sees the step and confirms it
+      initialValues?: Record<string, ConfigValueType>;
+      onFlowEnded?: SetupFlowEndedCallback;
+    }
   | {
       kind: "reconfigure";
       instanceId: string;
+      // heads the dialog when the instance is not loaded
+      name?: string;
       onFlowEnded?: SetupFlowEndedCallback;
     }
   | { kind: "player"; playerId: string; onFlowEnded?: SetupFlowEndedCallback };
@@ -106,8 +142,11 @@ export type Events = {
   deleteGenreDialog: DeleteGenreDialogEvent;
   deleteConfirmationDialog: DeleteConfirmationDialogEvent;
   playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
+  streamHeldDialog: StreamHeldDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
+  migratePlaylistDialog: MigratePlaylistDialogEvent;
+  playlistAccessDialog: PlaylistAccessDialogEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;

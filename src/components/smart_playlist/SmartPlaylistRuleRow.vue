@@ -39,15 +39,13 @@
         "
         :key="`operator-${rule.field}`"
         :model-value="rule.operator"
-        :disabled="rule.field === 'year' || rule.field === 'duration'"
+        :disabled="hasFixedOperator"
         @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
       >
         <SelectTrigger
           :class="[
             'h-7 w-[110px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none',
-            rule.field === 'year' || rule.field === 'duration'
-              ? 'cursor-default opacity-70'
-              : 'hover:bg-accent',
+            hasFixedOperator ? 'cursor-default opacity-70' : 'hover:bg-accent',
           ]"
         >
           <SelectValue />
@@ -60,11 +58,7 @@
                 : $t("smart_playlist.op_is")
             }}
           </SelectItem>
-          <SelectItem
-            v-if="rule.field !== 'year' && rule.field !== 'duration'"
-            value="is_not"
-            class="text-xs"
-          >
+          <SelectItem v-if="!hasFixedOperator" value="is_not" class="text-xs">
             {{ $t("smart_playlist.op_is_not") }}
           </SelectItem>
         </SelectContent>
@@ -82,12 +76,26 @@
     </div>
 
     <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:min-w-0">
-      <span
+      <Select
         v-if="rule.field === 'favorite'"
-        class="text-xs text-muted-foreground px-1"
+        :model-value="rule.operator"
+        :disabled="!allowFavoritesOnly"
+        @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
       >
-        {{ $t("smart_playlist.favorites_yes") }}
-      </span>
+        <SelectTrigger
+          class="h-7 w-[160px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none hover:bg-accent"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-if="allowFavoritesOnly" value="is" class="text-xs">
+            {{ $t("smart_playlist.favorites_only") }}
+          </SelectItem>
+          <SelectItem value="is_not" class="text-xs">
+            {{ $t("smart_playlist.favorites_exclude") }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       <Select
         v-else-if="rule.field === 'explicit'"
@@ -214,7 +222,9 @@
           variant="default"
           class="max-w-full min-w-0 gap-1 pr-1 sm:max-w-[200px]"
         >
-          <span class="min-w-0 truncate text-xs">{{ v.name }}</span>
+          <span class="min-w-0 truncate text-xs" :title="v.name">{{
+            v.name
+          }}</span>
           <button
             type="button"
             class="hover:bg-primary-foreground/20 rounded-full p-0.5 pt-1 flex-shrink-0 transition-colors"
@@ -271,6 +281,7 @@ import type {
   RuleField,
   RuleOperator,
   RuleRow,
+  RuleValue,
 } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -279,13 +290,19 @@ import { computed } from "vue";
 import { fieldIcon } from "./fieldIcon";
 import SmartPlaylistRuleValuePicker from "./SmartPlaylistRuleValuePicker.vue";
 
-const props = defineProps<{
-  rule: RuleRow;
-  availableFields: RuleField[];
-  genreOptions: { id: number; name: string; item?: Genre }[];
-  albumTypeOptions: { id: number; name: string }[];
-  invalid?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    rule: RuleRow;
+    availableFields: RuleField[];
+    genreOptions: { id: number; name: string; item?: Genre }[];
+    albumTypeOptions: { id: number; name: string }[];
+    invalid?: boolean;
+    allowFavoritesOnly?: boolean;
+  }>(),
+  {
+    allowFavoritesOnly: true,
+  },
+);
 
 const emit = defineEmits<{
   "change-field": [field: RuleField];
@@ -293,10 +310,15 @@ const emit = defineEmits<{
   "change-year": [value: { from?: number; to?: number }];
   "change-duration": [value: { min?: number; max?: number }];
   "change-last-played": [value: { value?: number; unit?: string }];
-  "add-value": [value: { id: number; name: string }];
+  "add-value": [value: RuleValue];
   "remove-value": [id: number];
   remove: [];
 }>();
+
+// these fields only take "is" (between for a range), so their operator cannot be changed
+const hasFixedOperator = computed(() =>
+  ["year", "duration", "folder"].includes(props.rule.field),
+);
 
 const fieldOptions = computed(() => {
   const all: { value: RuleField; label: string }[] = [
@@ -304,6 +326,7 @@ const fieldOptions = computed(() => {
     { value: "album_type", label: $t("album_type_label") },
     { value: "artist", label: $t("artist") },
     { value: "album", label: $t("album") },
+    { value: "folder", label: $t("smart_playlist.field_folder") },
     { value: "favorite", label: $t("smart_playlist.field_favorite") },
     { value: "explicit", label: $t("smart_playlist.field_explicit") },
     { value: "year", label: $t("smart_playlist.field_year") },
@@ -317,7 +340,8 @@ const fieldOptions = computed(() => {
 });
 
 const pickerSource = computed(
-  () => props.rule.field as "genre" | "artist" | "album" | "album_type",
+  () =>
+    props.rule.field as "genre" | "artist" | "album" | "album_type" | "folder",
 );
 
 const pickerAddLabel = computed(() => {
@@ -330,6 +354,8 @@ const pickerAddLabel = computed(() => {
       return $t("artist");
     case "album":
       return $t("album");
+    case "folder":
+      return $t("smart_playlist.field_folder");
     default:
       return $t("add");
   }

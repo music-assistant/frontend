@@ -4,8 +4,10 @@ import {
   type BackgroundTask,
   type EventMessage,
   EventType,
+  Scope,
   TaskStatus,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 
 const MUSIC_SYNC_TASK_DOMAIN = "music_sync";
 
@@ -67,13 +69,18 @@ const refreshTasks = async () => {
 };
 
 export function useBackgroundTasks() {
+  // the task list is only served to a role that may read it
+  const readsTasks = authManager.hasScope(Scope.SYSTEM_READ);
+
   onMounted(() => {
+    if (!readsTasks) return;
     consumerCount += 1;
     subscribeToTaskUpdates();
     void refreshTasks();
   });
 
   onUnmounted(() => {
+    if (!readsTasks) return;
     consumerCount = Math.max(0, consumerCount - 1);
     unsubscribeFromTaskUpdates();
   });

@@ -12,9 +12,7 @@ export function useMusicQuizAutoStart(
 ) {
   const deadline = computed(() => {
     const currentState = toValue(state);
-    return currentState?.phase === "lobby"
-      ? (currentState.auto_start_at ?? null)
-      : null;
+    return currentState?.phase === "lobby" ? currentState.auto_start_at : null;
   });
   const isScheduled = computed(() => deadline.value !== null);
   const deadlineState = useMusicQuizAnswerDeadline({

@@ -16,7 +16,7 @@ export function genre(overrides: Partial<Genre> = {}): Genre {
     media_type: MediaType.GENRE,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     genre_aliases: null,
     ...overrides,
   });

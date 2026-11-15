@@ -1,17 +1,22 @@
 <template>
-  <section v-if="isAdmin" style="margin-bottom: 10px">
+  <!-- the section only removes exclusions, so it has no purpose without any -->
+  <section
+    v-if="canManageLibrary && exclusions.length"
+    style="margin-bottom: 10px"
+  >
     <Toolbar
       :title="exclusionTitle"
       :menu-items="toolbarMenuItems"
       @title-clicked="toggleSection"
     />
     <v-divider />
-    <Container v-if="sectionExpanded">
+    <div v-if="sectionExpanded" :class="bodyPadding">
       <v-list>
         <ListItem
           v-for="genre in exclusions"
           :key="genre.item_id"
           show-menu-btn
+          :menu-button-label="`${$t('more_options')}: ${genre.name}`"
           @menu.stop="(evt) => onMenu(evt, genre)"
         >
           <template #prepend>
@@ -30,17 +35,17 @@
           <template #title>{{ genre.name }}</template>
         </ListItem>
       </v-list>
-    </Container>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
+import { useSectionBodyPadding } from "@/composables/useDetailAdminCard";
 import { api } from "@/plugins/api";
-import { Genre, MediaType } from "@/plugins/api/interfaces";
+import { Genre, MediaType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { ChevronDown, ChevronUp } from "@lucide/vue";
@@ -56,8 +61,11 @@ const props = defineProps<Props>();
 
 const { t } = useI18n();
 
-const isAdmin = computed(() => authManager.isAdmin());
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
 const sectionExpanded = ref(false);
+const bodyPadding = useSectionBodyPadding();
 const operationInProgress = ref(false);
 const exclusions = ref<Genre[]>([]);
 

@@ -18,12 +18,13 @@ import {
   audioProcessingChain,
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { itemMapping } from "../fixtures/itemMapping";
 import { playerQueue } from "../fixtures/playerQueue";
 import { queueItem } from "../fixtures/queueItem";
 import { streamDetails } from "../fixtures/streamDetails";
 
 const storeMock = vi.hoisted(() => ({
-  activePlayer: undefined as { active_source_audio?: unknown } | undefined,
+  activePlayer: undefined as { active_source_audio: unknown } | undefined,
   activePlayerQueue: undefined as PlayerQueue | undefined,
   curQueueItem: undefined as QueueItem | undefined,
 }));
@@ -33,9 +34,10 @@ vi.mock("@/plugins/store", () => ({
 }));
 vi.mock("@/components/AudioProcessingDetails.vue", () => ({
   default: {
-    props: ["crossfadeIntent"],
+    props: ["crossfadeIntent", "queueId", "container"],
+    emits: ["navigate"],
     template:
-      '<div data-testid="audio-processing-details" :data-crossfade-intent="crossfadeIntent" />',
+      '<div data-testid="audio-processing-details" :data-crossfade-intent="crossfadeIntent" :data-queue-id="queueId" :data-container="container?.uri"><button data-testid="details-navigate" @click="$emit(\'navigate\')" /></div>',
   },
 }));
 
@@ -112,6 +114,37 @@ describe("QualityDetailsBtn", () => {
     },
   );
 
+  it("passes the queue the audio plays through to the pipeline", () => {
+    storeMock.activePlayerQueue = makeQueue({
+      ...makeStreamDetails(),
+      audio_processing: audioProcessingChain(),
+    });
+
+    expect(
+      mountButton()
+        .get('[data-testid="audio-processing-details"]')
+        .attributes("data-queue-id"),
+    ).toBe("queue-1");
+  });
+
+  it("passes the item the queue item was played from to the pipeline", () => {
+    storeMock.activePlayerQueue = makeQueue({
+      ...makeStreamDetails(),
+      audio_processing: audioProcessingChain(),
+    });
+    const container = itemMapping({ item_id: "3" });
+    storeMock.curQueueItem = queueItem({
+      ...storeMock.curQueueItem,
+      origin: { container, provider_instance: null, item_id: null },
+    });
+
+    expect(
+      mountButton()
+        .get('[data-testid="audio-processing-details"]')
+        .attributes("data-container"),
+    ).toBe("library://album/3");
+  });
+
   describe("live external source, with no active queue item", () => {
     it("renders the pill from the output quality range", () => {
       storeMock.activePlayer = {
@@ -163,8 +196,26 @@ describe("QualityDetailsBtn", () => {
       expect(mountButton().get("button").attributes("disabled")).toBeFalsy();
     });
 
-    it("does not render on older servers that never send a source snapshot", () => {
-      storeMock.activePlayer = {};
+    it("passes no queue to the pipeline", () => {
+      storeMock.activePlayer = {
+        active_source_audio: {
+          input_format: audioFormat(),
+          input_fidelity: audioFidelity(),
+          crossfade_mode: CrossfadeMode.DISABLED,
+          volume_normalization_mode: VolumeNormalizationMode.DISABLED,
+          outputs: [],
+        },
+      };
+
+      expect(
+        mountButton()
+          .get('[data-testid="audio-processing-details"]')
+          .attributes("data-queue-id"),
+      ).toBeUndefined();
+    });
+
+    it("does not render without a queue item or source snapshot", () => {
+      storeMock.activePlayer = { active_source_audio: null };
 
       expect(
         mountButton().find('[data-testid="quality-popover"]').exists(),
@@ -219,6 +270,31 @@ describe("QualityDetailsBtn", () => {
     expect(document.activeElement?.classList).toContain(
       "audio-processing-popover-focus-target",
     );
+    wrapper.unmount();
+  });
+
+  it("closes the audio pipeline popover when a stage opens its settings", async () => {
+    storeMock.activePlayerQueue = makeQueue({
+      ...makeStreamDetails(),
+      audio_processing: audioProcessingChain({
+        outputs: [outputWithQuality(AudioQuality.STANDARD)],
+      }),
+    });
+
+    const wrapper = mount(QualityDetailsBtn, {
+      attachTo: document.body,
+    });
+    const trigger = wrapper.get("button");
+    await trigger.trigger("click");
+    await nextTick();
+    expect(trigger.attributes("data-state")).toBe("open");
+
+    document.body
+      .querySelector<HTMLElement>('[data-testid="details-navigate"]')
+      ?.click();
+    await nextTick();
+
+    expect(trigger.attributes("data-state")).toBe("closed");
     wrapper.unmount();
   });
 });

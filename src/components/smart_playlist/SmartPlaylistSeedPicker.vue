@@ -46,7 +46,7 @@
       />
       <div class="max-h-56 overflow-y-auto flex flex-col min-h-[80px]">
         <div v-if="isSearching" class="flex justify-center py-6">
-          <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
+          <Spinner class="text-muted-foreground" />
         </div>
         <template v-else-if="results.length > 0">
           <template v-for="(group, index) in resultGroups" :key="group.key">
@@ -101,12 +101,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SeedKind } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Loader2, Plus } from "@lucide/vue";
+import { Plus } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, ref } from "vue";
 

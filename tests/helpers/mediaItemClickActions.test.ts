@@ -8,13 +8,21 @@
 import type { MusicAssistantApi } from "@/plugins/api";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const { mockPlayMedia, mockGetCoreConfigValue, mockRouterPush } = vi.hoisted(
-  () => ({
-    mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
-    mockGetCoreConfigValue: vi.fn(),
-    mockRouterPush: vi.fn(),
-  }),
-);
+const {
+  mockPlayMedia,
+  mockGetCoreConfigValue,
+  mockGetItem,
+  mockRouterPush,
+  mockCurrentRoute,
+  mockItemIsAvailable,
+} = vi.hoisted(() => ({
+  mockPlayMedia: vi.fn<MusicAssistantApi["playMedia"]>(),
+  mockGetCoreConfigValue: vi.fn(),
+  mockGetItem: vi.fn<MusicAssistantApi["getItem"]>(),
+  mockRouterPush: vi.fn(),
+  mockCurrentRoute: { value: { fullPath: "" } },
+  mockItemIsAvailable: vi.fn(() => true),
+}));
 
 vi.mock("@/plugins/api", () => ({
   api: {
@@ -22,6 +30,7 @@ vi.mock("@/plugins/api", () => ({
     players: {},
     playMedia: mockPlayMedia,
     getCoreConfigValue: mockGetCoreConfigValue,
+    getItem: mockGetItem,
   },
 }));
 
@@ -36,12 +45,21 @@ vi.mock("@/plugins/store", () => ({
   },
 }));
 
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
 vi.mock("@/plugins/breakpoint", () => ({
   getBreakpointValue: vi.fn(() => false),
 }));
 
 vi.mock("@/plugins/router", () => ({
-  default: { push: mockRouterPush },
+  default: { push: mockRouterPush, currentRoute: mockCurrentRoute },
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -55,7 +73,9 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 }));
 
 vi.mock("@/plugins/api/helpers", () => ({
-  itemIsAvailable: vi.fn(() => true),
+  itemIsAvailable: mockItemIsAvailable,
+  // what the real helper does, which this module-wide mock would otherwise hide
+  isExternalItem: (item: { provider: string }) => item.provider === "external",
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -70,12 +90,16 @@ import {
   handleMediaItemClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
+import { authManager } from "@/plugins/auth";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { audioSource } from "../fixtures/audioSource";
 import { genre } from "../fixtures/genre";
 import { playlist } from "../fixtures/playlist";
+import { podcastEpisode } from "../fixtures/podcastEpisode";
 import { radio } from "../fixtures/radio";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
 
 const playedTrack = track({ item_id: "track1", name: "Track 1" });
@@ -87,6 +111,13 @@ beforeEach(() => {
   mockPlayMedia.mockResolvedValue(undefined);
   mockGetCoreConfigValue.mockReset();
   mockRouterPush.mockReset();
+  mockGetItem.mockReset();
+  mockCurrentRoute.value.fullPath = "/artists/library/1";
+  mockItemIsAvailable.mockReset().mockReturnValue(true);
+  vi.mocked(showContextMenuForMediaItem).mockClear();
+  vi.mocked(authManager.hasScope).mockImplementation(
+    scopeChecker(BUILTIN_ROLE_SCOPES.user),
+  );
 });
 
 describe("handlePlayBtnClick honours default_play_action_*_track", () => {
@@ -259,5 +290,133 @@ describe("handleMediaItemClick honours default_click_action_*", () => {
       },
     });
     expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+});
+
+describe("handleMediaItemClick on a podcast episode", () => {
+  it("opens the episode page without reading a click-action setting", async () => {
+    const episode = podcastEpisode({ item_id: "ep1", provider: "rss" });
+
+    await handleMediaItemClick(episode, 0, 0);
+
+    expect(mockGetCoreConfigValue).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: "podcast_episode",
+      params: { itemId: "ep1", provider: "rss" },
+    });
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+});
+
+describe("handleMediaItemClick on an external item", () => {
+  // the server lists items it knows only by an external id without provider
+  // mappings, so nothing is available on a music service yet
+  const release = album({
+    item_id: "musicbrainz_releasegroupid:rg-1",
+    provider: "external",
+    provider_mappings: [],
+    is_playable: false,
+  });
+  const topTrack = track({
+    item_id: "musicbrainz_recordingid:rec-1",
+    provider: "external",
+    provider_mappings: [],
+  });
+  // the same album on one of the user's music services
+  const resolvedAlbum = album({ item_id: "sp-1", provider: "spotify" });
+
+  beforeEach(() => {
+    mockItemIsAvailable.mockReturnValue(false);
+  });
+
+  it("opens the page of the album it is found as instead of the menu an unavailable item gets", async () => {
+    mockGetItem.mockResolvedValue(resolvedAlbum);
+
+    await handleMediaItemClick(release, 0, 0);
+
+    expect(mockGetItem).toHaveBeenCalledWith(
+      release.media_type,
+      "musicbrainz_releasegroupid:rg-1",
+      "external",
+    );
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: resolvedAlbum.media_type,
+      params: { itemId: "sp-1", provider: "spotify" },
+    });
+    expect(showContextMenuForMediaItem).not.toHaveBeenCalled();
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+  });
+
+  it("never plays an album, whatever the click-action setting says", async () => {
+    mockGetCoreConfigValue.mockResolvedValue("play");
+    mockGetItem.mockResolvedValue(resolvedAlbum);
+
+    await handleMediaItemClick(release, 0, 0);
+
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledTimes(1);
+  });
+
+  it("plays a track when the click-action setting says play", async () => {
+    mockGetCoreConfigValue.mockResolvedValue("play");
+
+    await handleMediaItemClick(topTrack, 0, 0);
+
+    expect(mockGetCoreConfigValue).toHaveBeenCalledWith(
+      "player_queues",
+      "default_click_action_track",
+    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(topTrack);
+    expect(mockGetItem).not.toHaveBeenCalled();
+    expect(showContextMenuForMediaItem).not.toHaveBeenCalled();
+  });
+
+  it("opens the page of the track it is found as by default", async () => {
+    mockGetCoreConfigValue.mockResolvedValue("browse");
+    mockGetItem.mockResolvedValue(track({ item_id: "5", provider: "library" }));
+
+    await handleMediaItemClick(topTrack, 0, 0);
+
+    expect(mockGetItem).toHaveBeenCalledWith(
+      topTrack.media_type,
+      "musicbrainz_recordingid:rec-1",
+      "external",
+    );
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: topTrack.media_type,
+      params: { itemId: "5", provider: "library" },
+    });
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+    expect(showContextMenuForMediaItem).not.toHaveBeenCalled();
+  });
+});
+
+describe("click behaviour for a role that may not read the core settings", () => {
+  beforeEach(() => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+  });
+
+  it("plays the playlist from the track without asking the server", async () => {
+    await handlePlayBtnClick(playedTrack, 0, 0, parentPlaylist);
+
+    expect(mockGetCoreConfigValue).not.toHaveBeenCalled();
+    expect(mockPlayMedia).toHaveBeenCalledWith(parentPlaylist.uri, undefined, {
+      start_item: playedTrack.item_id,
+      sort_by: undefined,
+    });
+  });
+
+  it("opens the details view without asking the server", async () => {
+    const item = album({ item_id: "a1" });
+
+    await handleMediaItemClick(item, 0, 0);
+
+    expect(mockGetCoreConfigValue).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: item.media_type,
+      params: { itemId: item.item_id, provider: item.provider },
+    });
   });
 });

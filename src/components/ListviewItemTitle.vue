@@ -17,11 +17,7 @@
   >
     {{ displayName }}
     <span v-if="'version' in item && item.version"> ({{ item.version }}) </span>
-    <span
-      v-if="item.media_type == MediaType.TRACK && item.metadata?.release_date"
-    >
-      ({{ new Date(item.metadata.release_date).getFullYear() }})
-    </span>
+    <span v-if="releaseYear"> ({{ releaseYear }}) </span>
   </span>
   <!-- explicit icon -->
   <template
@@ -38,10 +34,9 @@
           tabindex="0"
           :class="{ 'explicit-icon-align': !showCheckboxes }"
         >
-          <v-icon
+          <ExplicitIcon
+            class="inline-block size-6 shrink-0 scale-90 align-middle [&_text]:fill-background"
             :class="{ 'explicit-icon-margin-left': showCheckboxes }"
-            icon="mdi-alpha-e-box"
-            width="35"
           />
         </span>
       </TooltipTrigger>
@@ -53,13 +48,15 @@
 </template>
 
 <script setup lang="ts">
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import { parseBool } from "@/helpers/parse";
-import { getBrowseFolderName } from "@/helpers/utils";
+import { getBrowseFolderName, getTrackReleaseYear } from "@/helpers/utils";
 import {
   MediaType,
   type BrowseFolder,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 import {
@@ -72,6 +69,7 @@ import {
 export interface Props {
   displayName?: string;
   item: MediaItemType;
+  parentItem?: MediaItemType;
   showCheckboxes?: boolean;
   isPlaying?: boolean;
 }
@@ -79,11 +77,16 @@ export interface Props {
 // global refs
 const { t } = useI18n();
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   displayName: "",
+  parentItem: undefined,
   showCheckboxes: false,
   isPlaying: false,
 });
+
+const releaseYear = computed(() =>
+  getTrackReleaseYear(props.item, props.parentItem),
+);
 </script>
 
 <style scoped>

@@ -29,6 +29,15 @@ const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
 vi.mock("@/plugins/eventbus", () => ({
   eventbus: {
     on: vi.fn(),
@@ -77,6 +86,8 @@ const resolved: Audiobook = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // the menu resolves the library counterpart of the item on every open
+  apiMock.getLibraryItem.mockResolvedValue(null);
   emittedMenus.length = 0;
 });
 

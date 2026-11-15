@@ -67,6 +67,8 @@ This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-
 - **Use shadcn-vue**: All new UI should use [shadcn-vue](https://www.shadcn-vue.com/) components located in `src/components/ui/`. Do not introduce new Vuetify components.
 - **Extend, don't override**: If a shadcn-vue component needs customization, extend it via props or slots rather than overriding styles globally.
 - **Avoid inline styles**: Use Tailwind utility classes for styling. Avoid `style=""` attributes except for dynamic values that cannot be expressed as classes.
+- **Tailwind first**: Style with Tailwind utility classes rather than a scoped `<style>` block. Arbitrary values (`text-[44px]`) and variants (`max-md:`, `[&>.v-divider]:hidden`) cover most cases; keep scoped CSS for what Tailwind cannot express, such as keyframes or `:deep()` rules reaching into a child component.
+- **Override utilities with utilities**: Every Tailwind utility is `!important` (`src/styles/style.css`), so scoped CSS cannot override one. Pass a competing utility instead; `cn()` (`src/lib/utils.ts`) drops the one it replaces.
 
 ### TypeScript
 
@@ -108,6 +110,17 @@ This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-
 - **Keep templates readable**: If a template expression is complex, move it to a computed property.
 - **Clean up side effects**: Always clean up event listeners and intervals in `onUnmounted`; manually created watchers outside component `setup` or manual effect scopes must also be cleaned up.
 - **Accessibility**: Use semantic HTML elements and provide `aria-*` attributes where appropriate.
+
+---
+
+# Stable releases
+
+The server's stable channel pins a frontend release from main. Fixes for it ship as `<pinned>.postN` releases built from the `stable` branch:
+
+1. Label a main PR `backport-to-stable`, before or after it merges. Once it is merged, the [backport workflow](.github/workflows/backport-to-stable.yml) cherry-picks it onto `backport/<pinned>.postN` and opens or updates the "[Backport to stable] <pinned>.postN" PR into `stable`. A conflicting pick fails the run and comments on the PR with the files to resolve by hand.
+2. Merge that PR with **Rebase and merge**. This publishes the `.post` release and opens the PR that pins it on the server, against the server's open backport branch, or its `stable` branch if none is open.
+
+`stable` follows the frontend pin on the server's `stable` branch. After a server X.Y.0, the next backport run (or a manual run of the workflow) resets `stable` to the newly pinned release and closes backport PRs left for the old one. Releases cut from `stable` use the workflows on `stable`, so a fix to the release workflows reaches the stable channel only with that reset, or as a backport itself.
 
 ---
 

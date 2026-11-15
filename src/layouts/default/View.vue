@@ -1,9 +1,13 @@
 <template>
   <v-main
     id="cont"
-    :class="['main-layout', { 'main-layout--mobile': store.mobileLayout }]"
+    :class="[
+      'main-layout',
+      { 'main-layout--mobile': store.mobileLayout },
+      { 'main-layout--frameless': store.frameless },
+    ]"
   >
-    <SidebarProvider>
+    <SidebarProvider class="min-h-0">
       <AppSidebar v-if="!store.frameless" />
       <SidebarInset>
         <div
@@ -22,16 +26,22 @@
           <create-playlist-dialog />
           <create-smart-playlist-dialog />
           <import-playlist-dialog />
+          <migrate-playlist-dialog />
+          <playlist-access-dialog />
           <play-announcement-dialog />
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
-          <dialog-delete-confirmation />
           <player-group-playback-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
           <item-context-menu />
           <command-center />
+          <!-- kept last so they portal after the other dialogs, which share
+               their z-index, and a confirmation asked from one of them (e.g.
+               the search popup) appears on top -->
+          <stream-held-dialog />
+          <dialog-delete-confirmation />
           <AddManualLink
             v-model="showEditItemDialog"
             :type="editItemType"
@@ -40,6 +50,7 @@
         </div>
       </SidebarInset>
       <PlayerSelect />
+      <TourOverlay />
     </SidebarProvider>
   </v-main>
 </template>
@@ -55,6 +66,8 @@ import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
+import StreamHeldDialog from "@/components/StreamHeldDialog.vue";
+import TourOverlay from "@/components/tour/TourOverlay.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   MediaType,
@@ -72,8 +85,10 @@ import CreatePlaylistDialog from "./CreatePlaylistDialog.vue";
 import CreateSmartPlaylistDialog from "./CreateSmartPlaylistDialog.vue";
 import ImportPlaylistDialog from "./ImportPlaylistDialog.vue";
 import ItemContextMenu from "./ItemContextMenu.vue";
+import MigratePlaylistDialog from "./MigratePlaylistDialog.vue";
 import PlayAnnouncementDialog from "./PlayAnnouncementDialog.vue";
 import PlayerSelect from "./PlayerSelect.vue";
+import PlaylistAccessDialog from "./PlaylistAccessDialog.vue";
 
 const route = useRoute();
 
@@ -103,7 +118,18 @@ onMounted(() => {
   /* Reset Vuetify's automatic padding that accounts for drawers */
   padding-top: var(--device-inset-top) !important;
   padding-right: var(--device-inset-right) !important;
+  /* Vuetify measures the fixed footer. Its manual safe-area offset is not part
+     of that measurement, so reserve both before sizing the page scroller. */
+  padding-bottom: calc(
+    var(--v-layout-bottom, 0px) + var(--device-inset-bottom)
+  ) !important;
   padding-left: var(--device-inset-left) !important;
+}
+
+.main-layout--mobile,
+.main-layout--frameless {
+  /* Mobile chrome intentionally overlays the page; frameless has no chrome. */
+  padding-bottom: 0 !important;
 }
 
 .content-section {
@@ -111,7 +137,6 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  padding-bottom: calc(110px + var(--device-inset-bottom));
 }
 
 .content-section--mobile {

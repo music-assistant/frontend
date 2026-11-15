@@ -42,6 +42,7 @@ PROJECT-SPECIFIC RULES:
 
 - UI Components: New features MUST use shadcn-vue (components in `src/components/ui/`), NOT Vuetify
 - If existing Vuetify code is being modified, suggest refactoring to shadcn-vue when reasonable
+- Styling: Tailwind utility classes first. Flag new scoped `<style>` rules or `style=""` attributes that a utility (including arbitrary values like `text-[44px]` and variants like `max-md:`) could express; scoped CSS is fine for keyframes and `:deep()` into child components. Scoped CSS cannot override a Tailwind utility (all utilities are `!important`), so an override must be another utility
 - TypeScript: Ensure proper typing for `.vue` imports and component props
 - Translations: New user-facing strings should use i18n (managed via Lokalise)
 - Refer to shadcn-vue docs for component usage: https://www.shadcn-vue.com/

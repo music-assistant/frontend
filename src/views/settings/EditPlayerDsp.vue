@@ -1,7 +1,11 @@
 <template>
   <section v-if="dsp">
     <div class="flex items-center gap-2 border-b px-4 py-2">
-      <Switch v-model="dsp.enabled" />
+      <Switch
+        v-model="dsp.enabled"
+        :aria-label="dspToggleLabel"
+        :title="dspToggleLabel"
+      />
       <h2 class="min-w-0 flex-1 truncate text-base font-medium">
         {{ $t("settings.dsp.configure_on", { name: playerName }) }}
       </h2>
@@ -44,7 +48,8 @@
             <Button
               variant="ghost"
               size="icon-xs"
-              :aria-label="$t('delete')"
+              :aria-label="`${$t('delete')}: ${preset.name}`"
+              :title="`${$t('delete')}: ${preset.name}`"
               @click.stop="removePreset(preset.preset_id)"
             >
               <Trash2 />
@@ -129,6 +134,8 @@
             <Switch
               v-if="typeof selectedStage === 'number'"
               v-model="dsp.filters[selectedStage].enabled"
+              :aria-label="selectedFilterToggleLabel"
+              :title="selectedFilterToggleLabel"
               class="mx-2"
             />
             <Button
@@ -322,7 +329,9 @@
 <script setup lang="ts">
 import { ref, computed, toRaw, watch, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute, useRouter } from "vue-router";
 import { api } from "@/plugins/api";
+import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
   DSPConfig,
@@ -344,7 +353,7 @@ import {
   HighLowPassMode,
   EventType,
 } from "@/plugins/api/interfaces";
-import { getPlayerName } from "@/helpers/utils";
+import { truncateString } from "@/helpers/utils";
 import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
@@ -397,11 +406,17 @@ import { Switch } from "@/components/ui/switch";
 import { useDSPPresets } from "@/composables/useDSPPresets";
 import {
   areDSPConfigsEqual,
+  areDSPSettingsEqual,
+  DSP_STAGE_QUERY_KEY,
   dspFilterTypeLabel,
+  type DSPStage,
+  parseDSPStage,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
 const props = defineProps<{
   playerId?: string;
@@ -409,7 +424,7 @@ const props = defineProps<{
 
 const dsp = ref<DSPConfig>();
 const { getPresetName, presets: dspPresets } = useDSPPresets();
-const selectedStage = ref<number | null | "input" | "output">(null);
+const selectedStage = ref<DSPStage | null>(null);
 const showAddFilterDialog = ref(false);
 const showSavePresetDialog = ref(false);
 const newFilterType = ref(DSPFilterType.PARAMETRIC_EQ);
@@ -418,6 +433,9 @@ const newPresetName = ref("");
 // the force-mobile setting, rather than Vuetify's width-only breakpoint.
 const mobileLayout = computed(() => store.mobileLayout);
 let updatedFromServer = false;
+// Last config received from the server, used to tell whether a local edit
+// still matches the selected preset.
+let serverDSPConfig: DSPConfig | undefined;
 let localConfigGeneration = 0;
 let applyRequestId = 0;
 let playerLoadRequestId = 0;
@@ -464,11 +482,11 @@ const selectedPresetLabel = computed(() => {
 });
 
 // Methods
-const selectStage = (index: number | "input" | "output") => {
+const selectStage = (index: DSPStage) => {
   selectedStage.value = index;
 };
 
-const stageTitle = (index: number | "input" | "output") => {
+const stageTitle = (index: DSPStage) => {
   if (index === "input") return t("settings.dsp.input");
   if (index === "output") return t("settings.dsp.output");
   const filter = dsp.value?.filters[index];
@@ -672,10 +690,13 @@ const savePreset = async () => {
   }
 };
 
-const removePreset = async (presetId?: string | null) => {
-  if (!presetId || !confirm(t("settings.dsp.presets.remove_confirm"))) return;
+const removePreset = (presetId?: string | null) => {
+  if (!presetId) return;
 
-  await api.removeDSPPreset(presetId);
+  eventbus.emit("deleteConfirmationDialog", {
+    message: t("settings.dsp.presets.remove_confirm"),
+    onConfirm: () => api.removeDSPPreset(presetId),
+  });
 };
 
 // Watchers
@@ -689,9 +710,17 @@ watch(
   },
   { immediate: true },
 );
-const playerName = computed(() =>
-  getPlayerName(api.players[props.playerId!], 27),
-);
+const fullPlayerName = computed(() => api.players[props.playerId!]?.name ?? "");
+const playerName = computed(() => truncateString(fullPlayerName.value, 27));
+// Stable names: the switch's checked state already conveys on/off, so the
+// accessible name identifies what the switch controls.
+const dspToggleLabel = computed(() => `DSP: ${fullPlayerName.value}`);
+const selectedFilterToggleLabel = computed(() => {
+  if (typeof selectedStage.value !== "number") {
+    return t("settings.enable");
+  }
+  return stageTitle(selectedStage.value);
+});
 
 watch(
   () => props.playerId,
@@ -728,9 +757,25 @@ watch(
         return;
       }
       setServerDSPConfig(config, val);
+      selectStageFromQuery();
     }
   },
   { immediate: true },
+);
+
+// a link into an already open page, e.g. from the signal path; a link to
+// another player is handled once that player's config has loaded
+watch(
+  () => route.query[DSP_STAGE_QUERY_KEY],
+  (value) => {
+    if (
+      value !== undefined &&
+      dsp.value &&
+      route.params.playerId === props.playerId
+    ) {
+      selectStageFromQuery();
+    }
+  },
 );
 
 onBeforeUnmount(() => {
@@ -777,7 +822,12 @@ watch(
     if (newVal) {
       localConfigGeneration += 1;
       if (props.playerId) markPlayerOperation(props.playerId);
-      newVal.preset_id = null;
+      if (
+        newVal.preset_id &&
+        (!serverDSPConfig || !areDSPSettingsEqual(newVal, serverDSPConfig))
+      ) {
+        newVal.preset_id = null;
+      }
       debouncedSave(newVal);
     }
   },
@@ -790,11 +840,25 @@ function setServerDSPConfig(
 ): void {
   if (playerId) markPlayerOperation(playerId);
   updatedFromServer = true;
+  serverDSPConfig = structuredClone(config);
   dsp.value = structuredClone(config);
+}
+
+// Opens the stage a link asked for, once, so it never overrides what the user
+// picks afterwards; an unknown stage keeps the default.
+function selectStageFromQuery(): void {
+  const value = route.query[DSP_STAGE_QUERY_KEY];
+  if (value === undefined) return;
+  const stage = parseDSPStage(value, dsp.value?.filters.length ?? 0);
+  if (stage !== undefined) selectStage(stage);
+  const query = { ...route.query };
+  delete query[DSP_STAGE_QUERY_KEY];
+  void router.replace({ query });
 }
 
 function clearServerDSPConfig(): void {
   updatedFromServer = true;
+  serverDSPConfig = undefined;
   dsp.value = undefined;
 }
 

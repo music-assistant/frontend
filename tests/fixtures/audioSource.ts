@@ -17,7 +17,7 @@ export function audioSource(overrides: Partial<AudioSource> = {}): AudioSource {
     media_type: MediaType.AUDIO_SOURCE,
     provider_mappings: [],
     metadata: {},
-    favorite: false,
+    favorite: null,
     can_play_pause: true,
     can_seek: false,
     can_next_previous: false,

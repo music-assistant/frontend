@@ -9,19 +9,19 @@
       ])
     "
     :title="repeatTitle"
+    :aria-label="repeatButtonLabel"
     :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="cycleRepeatMode"
   >
-    <IconRepeatOff v-if="repeatMode === RepeatMode.OFF" :size="size" />
-    <IconRepeat v-else-if="repeatMode === RepeatMode.ALL" :size="size" />
-    <IconRepeatOnce v-else :size="size" />
+    <RepeatIcon :mode="repeatMode" :size="size" />
   </Icon>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
+import RepeatIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatIcon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import { useExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -30,7 +30,6 @@ import { Player, PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { computed, toRef } from "vue";
-import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
 // properties
 export interface Props {
@@ -79,6 +78,11 @@ const repeatMode = computed<RepeatMode>(() => {
   }
   return compProps.playerQueue?.repeat_mode ?? RepeatMode.OFF;
 });
+
+// Accessible name carries the mode in effect, since the icon alone is silent.
+const repeatButtonLabel = computed(
+  () => `${$t("select_repeat_mode")}: ${$t(`repeat_mode.${repeatMode.value}`)}`,
+);
 
 // The next repeat mode when the button is pressed: cycle OFF -> ALL -> ONE.
 // (The button is disabled for radio/dynamic queues, so those don't apply here.)

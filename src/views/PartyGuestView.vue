@@ -69,7 +69,7 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
-          :added-items="addedItems"
+          :added-items="shownAddedItems"
           :queued-uris="queuedUris"
           :is-expanded="
             expandedResultItemId === `${track.media_type}-${track.item_id}`
@@ -129,7 +129,7 @@
         :boost-badge-color="boostBadgeColor"
         :request-badge-color="requestBadgeColor"
         :adding-items="addingItems"
-        :added-items="addedItems"
+        :added-items="shownAddedItems"
         :queued-uris="queuedUris"
         :is-expanded="true"
         @add-to-queue="addToQueue"
@@ -174,6 +174,7 @@ import { useGuestArtistTracks } from "@/composables/guest/useGuestArtistTracks";
 import { useGuestQueue } from "@/composables/guest/useGuestQueue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
+import { queuedGuestTrackUris } from "@/helpers/queue_position";
 import api from "@/plugins/api";
 import {
   type Artist,
@@ -262,17 +263,22 @@ const onSearchSelect = (item: MediaItemTypeOrItemMapping) => {
   }
 };
 
-const queuedUris = computed(() => {
-  const uris = new Set<string>();
-  for (const item of queueItems.value) {
-    if (item.media_item?.uri) uris.add(item.media_item.uri);
-  }
-  return uris;
-});
+const queuedUris = computed(() =>
+  queuedGuestTrackUris(
+    queueItems.value,
+    partyConfig.value?.prevent_duplicate_tracks ?? true,
+  ),
+);
 
 // --- Template-specific state ---
 const addingItems = ref(new Set<string>());
 const addedItems = ref(new Set<string>());
+// only shown while duplicates are prevented, so toggling the setting takes effect right away
+const shownAddedItems = computed(() =>
+  (partyConfig.value?.prevent_duplicate_tracks ?? true)
+    ? addedItems.value
+    : new Set<string>(),
+);
 const skippingSong = ref(false);
 const boostingQueueItemId = ref("");
 const expandedResultItemId = ref("");

@@ -176,6 +176,7 @@ describe("collapsed sidebar alignment", () => {
     const padding = getComputedStyle(menu);
     expect(padding.paddingLeft).not.toBe("");
     expect(padding.paddingLeft).toBe(padding.paddingRight);
+    expect(padding.paddingBottom).toBe(padding.paddingLeft);
     expect(anchor.body).toContain(`- ${padding.paddingLeft})`);
 
     // the rail's button anchor reaches this button too, at the same

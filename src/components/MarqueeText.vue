@@ -9,7 +9,7 @@ Features:
 -->
 <template>
   <!-- Main container with hidden overflow -->
-  <div ref="containerRef" class="container">
+  <div ref="containerRef" class="marquee-container">
     <!-- Scrolling content wrapper with dynamic transform -->
     <div ref="scrollingRef" class="scrolling" :style="scrollingStyle">
       <slot></slot>
@@ -265,7 +265,9 @@ watch(
 </script>
 
 <style scoped>
-.container {
+/* not named "container": that is a tailwind utility, which this project imports
+   as important and which would then dictate the width */
+.marquee-container {
   position: relative;
   overflow: hidden;
   width: 100%;

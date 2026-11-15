@@ -7,8 +7,9 @@ import type {
   AIRadioSectionOrderRule,
   AIRadioStation,
   AIRadioWebSearchMode,
+  Player,
 } from "@/plugins/api/interfaces";
-import { $t, canonicalizeLocale, i18n } from "@/plugins/i18n";
+import { $t } from "@/plugins/i18n";
 
 // Sentinel for "no selection" in shadcn Select components, which do not
 // allow SelectItem values to be empty strings.
@@ -54,35 +55,6 @@ export const formatTimestamp = (value?: string) => {
   return parsed.toLocaleString();
 };
 
-/**
- * Localized relative label ("2 hours ago") for an ISO timestamp.
- * `nowMs` is injectable for tests; callers rely on the 5s session polling
- * to keep displayed values fresh, so no ticking is needed.
- */
-export const relativeTimeFromIso = (
-  value?: string | null,
-  nowMs = Date.now(),
-): string => {
-  if (!value) return "";
-  const thenMs = new Date(value).getTime();
-  if (Number.isNaN(thenMs)) return "";
-  const diffSeconds = Math.round((thenMs - nowMs) / 1000);
-  const absSeconds = Math.abs(diffSeconds);
-  const rtf = new Intl.RelativeTimeFormat(
-    canonicalizeLocale(i18n.global.locale.value),
-    {
-      numeric: "auto",
-      style: "narrow",
-    },
-  );
-  if (absSeconds < 60) return rtf.format(0, "second");
-  if (absSeconds < 3600)
-    return rtf.format(Math.trunc(diffSeconds / 60), "minute");
-  if (absSeconds < 86400)
-    return rtf.format(Math.trunc(diffSeconds / 3600), "hour");
-  return rtf.format(Math.trunc(diffSeconds / 86400), "day");
-};
-
 // -----------------------------------------------------------------------
 // Host model: the UI "segment" representation of a host's spoken content,
 // and the compiler/decompiler for the backend host+section contract.
@@ -94,6 +66,7 @@ export interface ShowSegment {
   name: string;
   prompt: string;
   webSearch: AIRadioWebSearchMode;
+  allowPost: boolean;
   maxChars: number;
   plays: PlaysRule;
 }
@@ -129,11 +102,11 @@ export interface ShowDraft {
 }
 
 const SONG_TRANSITION_PROMPT =
-  "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Create a natural radio transition that connects both songs, sounds informed but concise, and avoids filler or repetition.";
+  "The previous track was <prev_songinfo> and the next track is <next_songinfo>. Bridge the two with one natural link, such as a shared era, scene, mood or a surprising contrast, then hand off by naming the next artist and title once. No filler, and mention the previous track at most in passing.";
 
 /** Neutral starter instructions for a brand-new custom host, mirroring the server's built-in default. */
 export const GENERIC_HOST_INSTRUCTIONS =
-  "Host personality: warm, sharp, music-literate, and slightly premium without sounding formal. Program instructions: write for spoken delivery, keep segments concise, avoid bullet-point phrasing, avoid clichés, mention concrete details when available, and maintain a believable radio flow between sections.";
+  "You are a warm, sharp, music-literate radio host, slightly premium without sounding formal. Keep segments concise, skip cliches and filler, use concrete details when you have them, and keep a believable flow from one segment into the next. Write for spoken delivery: short sentences, no lists, no headings, no emojis, no stage directions. Never invent facts, dates or quotes; when you lack a detail, say less. Never mention being an AI. Name artists, tracks and albums in their original language and never translate them; when unsure of a name's original form, use its English form. Respelling a name for pronunciation is fine.";
 
 /**
  * Persona-neutral segment templates mirroring the server's built-in section
@@ -144,8 +117,9 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "intro",
     name: "Intro",
     prompt:
-      "The next track is <next_songinfo>. Open the program like a polished radio host: brief welcome, confident energy, one concrete hook about the song or artist, and a clean handoff into the music.",
+      "The next track is <next_songinfo>. Open the program: a brief welcome, one concrete hook about the song or artist, then hand off by naming the artist and title once.",
     webSearch: "disabled",
+    allowPost: false,
     maxChars: 650,
     plays: { kind: "start" },
   },
@@ -154,6 +128,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     name: "Transition",
     prompt: SONG_TRANSITION_PROMPT,
     webSearch: "allow",
+    allowPost: false,
     maxChars: 650,
     plays: { kind: "every_song" },
   },
@@ -161,8 +136,9 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "weather",
     name: "Weather",
     prompt:
-      "Using <weather_hourly> and <timestamp>, deliver a short spoken weather update with the current outlook, a useful next-hours summary, and smooth radio phrasing.",
+      "Using <weather_hourly> and <timestamp>, give a short spoken weather update: how it feels right now, what changes over the next few hours, and one practical tip if the forecast calls for it. Pick the two or three numbers that matter instead of reading the whole table.",
     webSearch: "disabled",
+    allowPost: false,
     maxChars: 500,
     plays: { kind: "every_n_min", n: 60 },
   },
@@ -170,8 +146,9 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "news",
     name: "News",
     prompt:
-      "Create a short global news bulletin anchored to <timestamp>. Use web search. Include two or three current items that are broadly relevant, clearly separated, fact-focused, and written for spoken delivery.",
+      "Give a short global news bulletin anchored to <timestamp>. Search the web for today's headlines and pick two or three current, broadly relevant items, each in one or two spoken sentences, fact-focused and clearly separated. Lead with the item most listeners care about and skip speculation.",
     webSearch: "force",
+    allowPost: false,
     maxChars: 700,
     plays: { kind: "every_n_min", n: 60 },
   },
@@ -181,6 +158,7 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     prompt:
       "The next track is <next_songinfo>. Share one genuinely interesting fact about the track or its artist, keeping it precise, engaging, and free of generic trivia.",
     webSearch: "allow",
+    allowPost: false,
     maxChars: 500,
     plays: { kind: "every_n_songs", n: 3 },
   },
@@ -188,8 +166,9 @@ export const GENERIC_SEGMENT_TEMPLATES: ShowSegment[] = [
     id: "sign_off",
     name: "Sign-off",
     prompt:
-      "The last track played was <prev_songinfo>. Close the program with a memorable sign-off: brief reflection, warm farewell, and language that sounds like the end of a real radio segment.",
+      "The last track played was <prev_songinfo>. Close the program: one short reflection on the set or that last track, a warm farewell, and a line that sounds like the real end of a radio segment. Do not announce another track.",
     webSearch: "disabled",
+    allowPost: false,
     maxChars: 650,
     plays: { kind: "end" },
   },
@@ -304,6 +283,8 @@ const compileSegments = (
       name: segment.name,
       type: "ai_text",
       web_search: segment.webSearch,
+      // a closing segment has nothing after it to talk over
+      allow_post: segment.allowPost && segment.plays.kind !== "end",
       prompt: segment.prompt,
       constraints: { max_chars: segment.maxChars },
     });
@@ -379,6 +360,9 @@ export interface HostDraft {
   // options: free-form key/value pairs passed straight through to the TTS engine
   options: Record<string, unknown>;
   segments: ShowSegment[];
+  // Carried through unchanged; the server validates them on save
+  presetId?: string;
+  presetHash?: string;
 }
 
 export interface CompiledHost {
@@ -410,6 +394,9 @@ export const compileHost = (draft: HostDraft): CompiledHost => {
       section_ids: sections.map((section) => section.id),
       section_order: sectionOrder,
       merge_section_id: mergeSectionId,
+      ...(draft.presetId && draft.presetHash
+        ? { preset_id: draft.presetId, preset_hash: draft.presetHash }
+        : {}),
     },
     sections,
   };
@@ -541,6 +528,7 @@ export const decompileHost = (
       name: section.name,
       prompt: section.prompt,
       webSearch: section.web_search || "disabled",
+      allowPost: section.allow_post ?? false,
       maxChars: section.constraints?.max_chars || 0,
       plays,
     };
@@ -553,9 +541,11 @@ export const decompileHost = (
     name: host.name,
     instructions: host.instructions,
     ttsEngine: host.tts_engine,
-    language: host.language || "",
-    options: host.options || {},
+    language: host.language,
+    options: host.options,
     segments,
+    presetId: host.preset_id,
+    presetHash: host.preset_hash,
   };
 };
 
@@ -580,12 +570,18 @@ export const playsRuleLabel = (rule: PlaysRule): string => {
   return $t(key);
 };
 
-/** Player to start a show on: its own default, else the currently active player, else none. */
+/**
+ * The player a show starts on: its default playback device while that device is
+ * known and available, otherwise the player the user has selected.
+ */
 export const resolveShowPlayerId = (
   station: Pick<AIRadioStation, "default_player_id">,
   activePlayerId: string | undefined,
+  players: Record<string, Pick<Player, "available">>,
 ): string => {
-  return station.default_player_id || activePlayerId || "";
+  const preferred = station.default_player_id;
+  if (preferred && players[preferred]?.available) return preferred;
+  return activePlayerId || "";
 };
 
 export const getQueryValue = (value: unknown) => {

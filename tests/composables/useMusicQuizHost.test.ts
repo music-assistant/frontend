@@ -268,7 +268,6 @@ describe("useMusicQuizHost", () => {
     expect(mockGetMusicQuizPlaybackOptions).toHaveBeenCalledOnce();
     expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
     expect(host.playbackOptionsLoading.value).toBe(false);
-    expect(host.playbackOptionsLegacy.value).toBe(false);
     expect(host.playbackOptionsError.value).toBe(false);
   });
 
@@ -300,23 +299,7 @@ describe("useMusicQuizHost", () => {
     expect(host.playbackOptionsLoading.value).toBe(false);
   });
 
-  it("silently falls back for playback options on older servers", async () => {
-    mockGetMusicQuizPlaybackOptions.mockRejectedValue(
-      "Invalid command: music_quiz/playback_options",
-    );
-    const notifyError = vi.fn();
-
-    const host = useMusicQuizHost({ notifyError });
-    await flushPromises();
-
-    expect(host.playbackOptions.value).toBeNull();
-    expect(host.playbackOptionsLoading.value).toBe(false);
-    expect(host.playbackOptionsLegacy.value).toBe(true);
-    expect(host.playbackOptionsError.value).toBe(false);
-    expect(notifyError).not.toHaveBeenCalled();
-  });
-
-  it("blocks legacy fallback after an initial playback discovery failure", async () => {
+  it("reports an initial playback discovery failure", async () => {
     mockGetMusicQuizPlaybackOptions.mockRejectedValue(
       new Error("Server unavailable"),
     );
@@ -327,7 +310,6 @@ describe("useMusicQuizHost", () => {
 
     expect(host.playbackOptions.value).toBeNull();
     expect(host.playbackOptionsLoading.value).toBe(false);
-    expect(host.playbackOptionsLegacy.value).toBe(false);
     expect(host.playbackOptionsError.value).toBe(true);
     expect(notifyError).toHaveBeenCalledWith(
       "providers.music_quiz.error_load_playback_options",
@@ -346,7 +328,6 @@ describe("useMusicQuizHost", () => {
     await host.fetchPlaybackOptions();
 
     expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
-    expect(host.playbackOptionsLegacy.value).toBe(false);
     expect(host.playbackOptionsError.value).toBe(false);
   });
 
@@ -360,7 +341,6 @@ describe("useMusicQuizHost", () => {
     await host.fetchPlaybackOptions();
 
     expect(host.playbackOptions.value).toEqual(PLAYBACK_OPTIONS);
-    expect(host.playbackOptionsLegacy.value).toBe(false);
     expect(host.playbackOptionsError.value).toBe(true);
   });
 
@@ -385,19 +365,6 @@ describe("useMusicQuizHost", () => {
 
     expect(host.playbackOptions.value).toEqual(refreshedOptions);
     expect(host.playbackOptionsLoading.value).toBe(false);
-  });
-
-  it("keeps optional game types hidden on older servers", async () => {
-    mockGetAvailableMusicQuizTypes.mockRejectedValue(
-      "Invalid command: music_quiz/available_quiz_types",
-    );
-    const notifyError = vi.fn();
-
-    const host = useMusicQuizHost({ notifyError });
-    await flushPromises();
-
-    expect(host.availableQuizTypes.value).toEqual([]);
-    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it("treats a null response as setup state without a toast", async () => {

@@ -1,40 +1,51 @@
+import CreateShowDialog from "@/components/ai-radio/CreateShowDialog.vue";
 import CustomizeHost from "@/components/ai-radio/CustomizeHost.vue";
 import CustomizeShow from "@/components/ai-radio/CustomizeShow.vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { useShows } from "@/composables/ai-radio/useShows";
-import type { AIRadioHost, AIRadioStation } from "@/plugins/api/interfaces";
+import type {
+  AIRadioHost,
+  AIRadioStation,
+  Scope,
+} from "@/plugins/api/interfaces";
 import AIRadioView from "@/views/AIRadioView.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 type SendCommand = (
   command: string,
   args?: Record<string, unknown>,
 ) => Promise<unknown>;
 
-const { sendCommand, getLibraryPlaylists, routeMock, routerMock } = vi.hoisted(
-  () => ({
+const { sendCommand, getLibraryPlaylists, hasScope, routeMock, routerMock } =
+  vi.hoisted(() => ({
     sendCommand: vi.fn<SendCommand>(async () => []),
     getLibraryPlaylists: vi.fn(async () => []),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
     routeMock: { query: { station_id: "show-1" } as Record<string, string> },
     routerMock: { push: vi.fn(), replace: vi.fn() },
-  }),
-);
+  }));
 
 vi.mock("@/plugins/api", () => {
   const mockApi = {
-    // useShows/useHosts derive ai_radio availability from the provider list;
-    // useOrderedPlayers reads players directly.
-    providers: {},
+    // useOrderedPlayers reads the players.
     players: {},
     sendCommand,
     getLibraryPlaylists,
+    subscribe: vi.fn(() => () => {}),
+    state: { value: "initialized" },
   };
   return { default: mockApi, api: mockApi };
 });
 
 vi.mock("@/plugins/store", () => ({
-  store: { activePlayerId: undefined },
+  store: { activePlayerId: undefined, enabledPlugins: new Set<string>() },
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { guestSessionKind: () => null, hasScope },
 }));
 
 vi.mock("vue-router", async (importOriginal) => ({
@@ -104,9 +115,10 @@ const getShowFetchCount = () =>
     ([command]) => command === "ai_radio/stations/get",
   ).length;
 
-const getStatusFetchCount = () =>
-  sendCommand.mock.calls.filter(([command]) => command === "ai_radio/status")
-    .length;
+const getDjStatusFetchCount = () =>
+  sendCommand.mock.calls.filter(
+    ([command]) => command === "ai_radio/queue_dj/status",
+  ).length;
 
 function findButtonByText(wrapper: VueWrapper, text: string) {
   return wrapper.findAll("button").find((button) => button.text() === text);
@@ -140,11 +152,11 @@ function trackDocumentListeners() {
 }
 
 /**
- * Records the status poll timers armed while a view runs.
+ * Records the long-running timers armed while a view runs.
  *
- * `pending()` reports the ones not cleared again, which is what a poll loop
- * still running boils down to. Poll delays start at 5s, well clear of the
- * short timeouts the components and the test harness arm themselves.
+ * `pending()` reports the ones not cleared again, i.e. what the view left
+ * behind. Only delays of 5s and up count, well clear of the short timeouts the
+ * components and the test harness arm themselves.
  */
 function trackPollTimers() {
   const POLL_DELAY_FLOOR_MS = 5000;
@@ -177,17 +189,21 @@ async function mountView() {
   return wrapper;
 }
 
+// an admin unless a test says otherwise: only an admin edits shows and hosts
+beforeEach(() => {
+  hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+});
+
 afterEach(() => {
   vi.clearAllMocks();
   onConfirm = undefined;
+  useShows().dismissNoAiProviderAlert();
   routeMock.query = { station_id: STATION_ID };
   useHosts().hosts.value = [];
   useShows().shows.value = [];
-  useShows().sessions.value = [];
+  useShows().djStatus.value = {};
   useShows().playlists.value = [];
-  // Polling state lives in the composable's module scope, so a run left behind
-  // here would decide what the next test sees.
-  useShows().stopStatusPolling();
+  useShows().loadingDjStatus.value = false;
   document.body.replaceChildren();
 });
 
@@ -272,8 +288,8 @@ describe("AIRadioView host editor / show editor interplay", () => {
   });
 });
 
-describe("AIRadioView status polling lifecycle", () => {
-  it("polls while the page is open and stops once it is closed", async () => {
+describe("AIRadioView status loading", () => {
+  it("fetches the on-air state once on mount and leaves no timers behind", async () => {
     routeMock.query = {};
     setupSendCommand([]);
     const listeners = trackDocumentListeners();
@@ -281,40 +297,198 @@ describe("AIRadioView status polling lifecycle", () => {
 
     const view = mountViewRaw();
     await flushPromises();
-    const listeningWhileOpen = listeners.live();
-    const pendingWhileOpen = timers.pending();
-
     view.unmount();
-    const listeningAfterClose = listeners.stop();
-    const pendingAfterClose = timers.pending();
+    const remainingListeners = listeners.stop();
+    const pending = timers.pending();
     timers.stop();
 
-    expect(listeningWhileOpen).toContain("visibilitychange");
-    expect(pendingWhileOpen).toHaveLength(1);
-    expect(getStatusFetchCount()).toBeGreaterThan(0);
-    expect(listeningAfterClose).not.toContain("visibilitychange");
-    expect(pendingAfterClose).toHaveLength(0);
+    // The provider list is empty here, so nothing but the view itself asks.
+    expect(getDjStatusFetchCount()).toBe(1);
+    expect(remainingListeners).not.toContain("visibilitychange");
+    expect(pending).toHaveLength(0);
   });
 
-  it("sets nothing up when the page is closed while still loading", async () => {
-    // leaving before the loads resolve runs the unmount hook first, so anything
-    // starting afterwards would poll on for the lifetime of the page
+  it("does not rewrite the route when the page is closed while still loading", async () => {
     routeMock.query = { station_id: STATION_ID };
     setupSendCommand([]);
-    const listeners = trackDocumentListeners();
-    const timers = trackPollTimers();
 
     const view = mountViewRaw();
     view.unmount();
     await flushPromises();
-    const remaining = listeners.stop();
-    const pending = timers.pending();
-    timers.stop();
 
-    expect(remaining).not.toContain("visibilitychange");
-    expect(pending).toHaveLength(0);
-    expect(getStatusFetchCount()).toBe(0);
     // by now the query belongs to whatever route replaced this one
     expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+});
+
+describe("AIRadioView editing rights", () => {
+  // A view left mounted keeps following the composables' module state after the
+  // cleanup below clears the page, and trips over its teleported menus.
+  const views: VueWrapper[] = [];
+  const openView = async () => {
+    const view = await mountView();
+    views.push(view);
+    return view;
+  };
+
+  afterEach(() => {
+    for (const view of views.splice(0)) view.unmount();
+  });
+
+  const NON_EDITORS = [
+    ["a member", BUILTIN_ROLE_SCOPES.user],
+    ["a guest", BUILTIN_ROLE_SCOPES.guest],
+  ] as const;
+
+  const requested = (command: string) =>
+    sendCommand.mock.calls.some(([sent]) => sent === command);
+  const headings = (wrapper: VueWrapper) =>
+    wrapper.findAll("h2").map((heading) => heading.text());
+
+  it("lets an admin add hosts and shows and change a show", async () => {
+    routeMock.query = {};
+    setupSendCommand([]);
+    useShows().noAiProviderAlert.value = true;
+    const wrapper = await openView();
+
+    expect(headings(wrapper)).toEqual(["Hosts", "Shows"]);
+    expect(findButtonByText(wrapper, "Add host")).toBeTruthy();
+    expect(findButtonByText(wrapper, "Add show")).toBeTruthy();
+    expect(findButtonByText(wrapper, "Go to Settings › Plugins")).toBeTruthy();
+    expect(wrapper.find('[aria-label="More options"]').exists()).toBe(true);
+    expect(requested("ai_radio/hosts/list")).toBe(true);
+    expect(requested("ai_radio/hosts/presets/list")).toBe(true);
+
+    await wrapper.find(".show-card").trigger("click");
+    await flushPromises();
+    expect(wrapper.findComponent(CustomizeShow).exists()).toBe(true);
+  });
+
+  it.each(NON_EDITORS)(
+    "lets %s play the shows and nothing more",
+    async (_role, scopes) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      routeMock.query = {};
+      setupSendCommand([]);
+      useShows().noAiProviderAlert.value = true;
+      const wrapper = await openView();
+
+      expect(headings(wrapper)).toEqual(["Shows"]);
+      expect(findButtonByText(wrapper, "Add show")).toBeUndefined();
+      expect(
+        findButtonByText(wrapper, "Go to Settings › Plugins"),
+      ).toBeUndefined();
+      expect(wrapper.find('[aria-label="More options"]').exists()).toBe(false);
+      expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
+      expect(requested("ai_radio/hosts/list")).toBe(false);
+      expect(requested("ai_radio/hosts/presets/list")).toBe(false);
+
+      await wrapper.find(".show-card").trigger("click");
+      await flushPromises();
+      expect(wrapper.findComponent(CustomizeShow).exists()).toBe(false);
+    },
+  );
+
+  it.each([
+    { role: "an admin", scopes: BUILTIN_ROLE_SCOPES.admin, offered: true },
+    { role: "a member", scopes: BUILTIN_ROLE_SCOPES.user, offered: false },
+    { role: "a guest", scopes: BUILTIN_ROLE_SCOPES.guest, offered: false },
+  ])(
+    "offers $role to create the first show: $offered",
+    async ({ scopes, offered }) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      routeMock.query = {};
+      // no shows yet
+      sendCommand.mockImplementation(async () => []);
+      const wrapper = await openView();
+
+      expect(!!findButtonByText(wrapper, "Create show")).toBe(offered);
+    },
+  );
+
+  it("invites an admin to create the first show in the empty state", async () => {
+    routeMock.query = {};
+    sendCommand.mockImplementation(async () => []);
+    const wrapper = await openView();
+
+    expect(wrapper.text()).toContain("Create your first show");
+    expect(wrapper.text()).toContain("AI Radio turns one of your playlists");
+    expect(findButtonByText(wrapper, "Create show")).toBeTruthy();
+  });
+
+  it.each(NON_EDITORS)(
+    "tells %s the empty state without inviting them to create a show",
+    async (_role, scopes) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      routeMock.query = {};
+      sendCommand.mockImplementation(async () => []);
+      const wrapper = await openView();
+
+      expect(wrapper.text()).toContain("No shows yet");
+      expect(wrapper.text()).toContain("No radio shows have been set up yet");
+      expect(wrapper.text()).not.toContain("Create your first show");
+      expect(wrapper.text()).not.toContain(
+        "AI Radio turns one of your playlists",
+      );
+      expect(findButtonByText(wrapper, "Create show")).toBeUndefined();
+    },
+  );
+
+  it("opens the create dialog for an admin following a playlist link", async () => {
+    routeMock.query = {
+      source_playlist_id: "42",
+      source_playlist_provider: "library",
+      source_playlist_name: "Road trip",
+    };
+    setupSendCommand([]);
+    const wrapper = await openView();
+
+    expect(wrapper.getComponent(CreateShowDialog).props("open")).toBe(true);
+  });
+
+  it.each(NON_EDITORS)(
+    "opens no editor for %s following a link",
+    async (_role, scopes) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      setupSendCommand([]);
+
+      routeMock.query = { station_id: STATION_ID };
+      const showLink = await openView();
+      expect(showLink.findComponent(CustomizeShow).exists()).toBe(false);
+      expect(getShowFetchCount()).toBe(0);
+
+      routeMock.query = {
+        source_playlist_id: "42",
+        source_playlist_provider: "library",
+      };
+      const playlistLink = await openView();
+      expect(playlistLink.getComponent(CreateShowDialog).props("open")).toBe(
+        false,
+      );
+    },
+  );
+});
+
+describe("AIRadioView refresh button", () => {
+  it("stays disabled while the dj-status refresh is still pending", async () => {
+    routeMock.query = {};
+    setupSendCommand([]);
+    const view = await mountView();
+
+    // Every other refresh call has settled by now; only the dj-status one is
+    // still outstanding, but the button must stay busy until it settles too.
+    useShows().loadingDjStatus.value = true;
+    await nextTick();
+    expect(
+      view.find('[aria-label="Refresh"]').attributes("disabled"),
+    ).toBeDefined();
+
+    useShows().loadingDjStatus.value = false;
+    await nextTick();
+    expect(
+      view.find('[aria-label="Refresh"]').attributes("disabled"),
+    ).toBeUndefined();
+
+    view.unmount();
   });
 });

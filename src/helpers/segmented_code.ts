@@ -19,3 +19,13 @@ export function splitCode(code: string, lengths: number[]): string[] {
   }
   return parts;
 }
+
+/** Segment lengths the remote access ID is grouped into: 8-5-5-8. */
+export const REMOTE_ID_GROUPS = [8, 5, 5, 8];
+
+/**
+ * Format a remote access ID into its dash-separated 8-5-5-8 groups.
+ */
+export function formatRemoteId(id: string): string {
+  return splitCode(id, REMOTE_ID_GROUPS).join("-");
+}

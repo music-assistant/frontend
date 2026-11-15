@@ -64,7 +64,7 @@
           v-else-if="store.activePlayer.powered == false"
           class="ma-line-clamp-1"
         >
-          {{ store.activePlayer.name }}
+          {{ getPlayerDisplayName(store.activePlayer) }}
         </div>
         <!-- track title -->
         <div
@@ -92,7 +92,7 @@
         </div>
         <!-- fallback: player name, so the title never renders blank -->
         <div v-else class="ma-line-clamp-1">
-          {{ store.activePlayer.name }}
+          {{ getPlayerDisplayName(store.activePlayer) }}
         </div>
       </div>
     </template>
@@ -195,6 +195,7 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
+import { getPlayerDisplayName } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import { resolveCurrentChapter } from "@/helpers/chapters";

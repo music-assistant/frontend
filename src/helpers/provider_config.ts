@@ -1,4 +1,11 @@
-import { ProviderStage, ProviderStatus } from "@/plugins/api/interfaces";
+import {
+  type ProviderConfig,
+  type ProviderInstance,
+  type ProviderManifest,
+  ProviderStage,
+  ProviderStatus,
+  ProviderTier,
+} from "@/plugins/api/interfaces";
 
 const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
   [ProviderStatus.LOADED]: "settings.provider_status_loaded",
@@ -7,6 +14,7 @@ const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
   [ProviderStatus.AUTH_REQUIRED]: "settings.provider_status_auth_required",
   [ProviderStatus.INCOMPATIBLE]: "settings.provider_status_incompatible",
   [ProviderStatus.ERROR]: "settings.provider_status_error",
+  [ProviderStatus.UNAVAILABLE]: "settings.provider_status_unavailable",
 };
 
 const PROVIDER_STAGE_TRANSLATION_KEYS: Record<ProviderStage, string> = {
@@ -17,6 +25,13 @@ const PROVIDER_STAGE_TRANSLATION_KEYS: Record<ProviderStage, string> = {
   [ProviderStage.UNMAINTAINED]: "settings.stage.options.unmaintained",
   [ProviderStage.DEPRECATED]: "settings.stage.options.deprecated",
 };
+
+// the organisation handle marks a provider the project owns; it names no maintainer
+const PROJECT_CODEOWNER = "@music-assistant";
+
+const SUPPORT_ISSUES_URL = "https://github.com/music-assistant/support/issues";
+// the support repository's issue form for problem reports
+const SUPPORT_BUG_REPORT_TEMPLATE = "1_bug_report.yml";
 
 // Support labels predate some provider domains and do not always use the same name.
 const PROVIDER_SUPPORT_LABELS: Record<string, string> = {
@@ -81,9 +96,72 @@ export const getProviderStageTranslationKey = (
 export const shouldShowStageBadge = (stage?: ProviderStage | string | null) =>
   stage !== ProviderStage.STABLE && !!getProviderStageTranslationKey(stage);
 
-export const getProviderSupportIssuesUrl = (domain: string) => {
-  const label = PROVIDER_SUPPORT_LABELS[domain] ?? domain;
-  return `https://github.com/music-assistant/support/issues?q=${encodeURIComponent(
-    `is:issue state:open label:"${label}"`,
+export const getProviderSupportIssuesUrl = (domain: string) =>
+  `${SUPPORT_ISSUES_URL}?q=${encodeURIComponent(
+    `is:issue state:open label:"${getSupportLabel(domain)}"`,
   )}`;
+
+/**
+ * A provider built and maintained by a community member. A manifest without a
+ * tier counts as core.
+ */
+export const isCommunityProvider = (manifest?: ProviderManifest): boolean =>
+  manifest?.tier === ProviderTier.COMMUNITY;
+
+/**
+ * The handles of the people who maintain a provider, in manifest order.
+ */
+export const getProviderMaintainers = (manifest: ProviderManifest): string[] =>
+  manifest.codeowners.filter(
+    (owner) => owner.toLowerCase() !== PROJECT_CODEOWNER,
+  );
+
+/**
+ * Where to ask for help with a provider: the maintainer's own https support link
+ * when the manifest has one, else the repository of one from the community
+ * catalog, else a new problem report in the support repository.
+ *
+ * @param manifest - The manifest of the provider.
+ * @param repositoryUrl - The repository of a provider from the community catalog.
+ */
+export const getProviderHelpUrl = (
+  manifest: ProviderManifest,
+  repositoryUrl?: string,
+): string => {
+  if (manifest.support_url?.startsWith("https://")) return manifest.support_url;
+  if (repositoryUrl) return repositoryUrl;
+  // GitHub applies labels only for reporters with triage rights; for everyone
+  // else the support repository's triage workflow labels by the provider named
+  // in the title
+  const params = new URLSearchParams({
+    template: SUPPORT_BUG_REPORT_TEMPLATE,
+    labels: `triage,${getSupportLabel(manifest.domain)}`,
+    title: `${manifest.name}: `,
+  });
+  return `${SUPPORT_ISSUES_URL}/new?${params}`;
 };
+
+/**
+ * A provider that ships with the server rather than one the user set up. The
+ * manifest owns that flag, so a provider whose manifest is missing is not
+ * claimed to be builtin.
+ */
+export const isBuiltinProvider = (manifest?: ProviderManifest): boolean =>
+  manifest?.builtin === true;
+
+/**
+ * The name a provider instance goes by: the custom name set on its configuration,
+ * then what the running instance calls itself, the default name the server gave
+ * it and finally the name from the manifest. Empty when none of those is known,
+ * so a caller can fall back on the domain or the instance id.
+ */
+export const providerDisplayName = (
+  config: ProviderConfig,
+  instance?: ProviderInstance,
+  manifest?: ProviderManifest,
+): string =>
+  config.name || instance?.name || config.default_name || manifest?.name || "";
+
+function getSupportLabel(domain: string): string {
+  return PROVIDER_SUPPORT_LABELS[domain] ?? domain;
+}

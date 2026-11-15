@@ -13,7 +13,7 @@
         {{ $t("grouped_volume") }}
       </SheetTitle>
       <SheetDescription class="sr-only">
-        {{ player.name }}
+        {{ getPlayerDisplayName(player) }}
       </SheetDescription>
       <PlayerVolumePanel :player="player" />
     </SheetContent>
@@ -28,6 +28,7 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { getPlayerDisplayName } from "@/helpers/players";
 import type { Player } from "@/plugins/api/interfaces";
 import PlayerVolumePanel from "./PlayerVolumePanel.vue";
 
@@ -58,7 +59,7 @@ function preventAutoFocus(event: Event) {
      group it shows up to the room left above the navigation instead */
   max-height: calc(
     100dvh - var(--mobile-navigation-height) - var(--player-bar-popout-gap) -
-      var(--player-bar-popout-top-gap)
+      var(--player-bar-popout-top-gap) - var(--device-inset-top)
   );
 }
 

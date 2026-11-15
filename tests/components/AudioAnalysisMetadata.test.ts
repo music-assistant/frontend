@@ -1,0 +1,74 @@
+import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import type { AudioMetadata } from "@/plugins/api/interfaces";
+import { flushPromises, mount } from "@vue/test-utils";
+import { describe, expect, it } from "vitest";
+
+function mountMetadata(audioMetadata: AudioMetadata | null) {
+  return mount(AudioAnalysisMetadata, {
+    props: { audioMetadata },
+    global: { mocks: { $t: (key: string) => key } },
+  });
+}
+
+describe("AudioAnalysisMetadata", () => {
+  it("renders the trigger as a labelled button", () => {
+    const wrapper = mountMetadata({
+      bpm: 128,
+      musical_key: "F# minor",
+      camelot_key: "11A",
+      energy_level: null,
+    });
+
+    // the popover has to be reachable and activatable from the keyboard
+    const trigger = wrapper.find('button[aria-label="audio_analysis"]');
+    expect(trigger.exists()).toBe(true);
+    expect(trigger.attributes("type")).toBe("button");
+  });
+
+  it("shows the Camelot key behind the musical key", async () => {
+    const wrapper = mountMetadata({
+      bpm: 128,
+      musical_key: "F# minor",
+      camelot_key: "11A",
+      energy_level: null,
+    });
+
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    const popoverText = document.body.textContent;
+    wrapper.unmount();
+    expect(popoverText).toContain("F# minor (11A)");
+  });
+
+  it("shows the energy level when it is the only analysis data", async () => {
+    const wrapper = mountMetadata({
+      bpm: null,
+      musical_key: null,
+      camelot_key: null,
+      energy_level: 7,
+    });
+
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    const energyTile = document.body.querySelector(
+      '[title="tooltip.energy_level"]',
+    );
+    const tileText = energyTile?.textContent;
+    wrapper.unmount();
+    expect(tileText).toContain("7");
+    expect(tileText).toContain("energy_level");
+  });
+
+  it("renders nothing without analysis data", () => {
+    const wrapper = mountMetadata({
+      bpm: null,
+      musical_key: null,
+      camelot_key: null,
+      energy_level: null,
+    });
+
+    expect(wrapper.find("button").exists()).toBe(false);
+  });
+});

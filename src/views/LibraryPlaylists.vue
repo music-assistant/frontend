@@ -1,6 +1,7 @@
 <template>
   <ItemsListing
     ref="listingRef"
+    fill-height
     itemtype="playlists"
     path="libraryplaylists"
     :show-duration="false"
@@ -8,7 +9,8 @@
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
     :show-library="true"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_PLAYLISTS"
+    library-toolbar
     :update-available="updateAvailable"
     :title="$t('playlists')"
     :allow-key-hooks="true"
@@ -27,13 +29,18 @@ import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { SMART_PLAYLIST_PROVIDER_DOMAIN } from "@/components/smart_playlist/constants";
 import { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
+  type Playlist,
   ProviderFeature,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -46,56 +53,47 @@ defineOptions({
 });
 
 const updateAvailable = ref(false);
-const total = ref(store.libraryPlaylistsCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryPlaylistsCount,
+);
 const extraMenuItems = ref<ToolBarMenuItem[]>([]);
 const listingRef = ref<InstanceType<typeof ItemsListing>>();
 
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "timestamp_modified",
-  "timestamp_modified_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
-
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryPlaylists(
     params.favoritesOnly || undefined,
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.randomSeed,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
   if (!params.favoritesOnly && !params.provider) {
-    total.value = store.libraryPlaylistsCount;
+    setTotal(store.libraryPlaylistsCount);
     return;
   }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryPlaylistsCount(
-    params.favoritesOnly || false,
-  );
+  await loadTotal(api.getLibraryPlaylistsCount(params.favoritesOnly || false));
 };
 
 onMounted(() => {
+  // creating and importing playlists changes the library
+  const canEditLibrary = authManager.hasScope(Scope.LIBRARY_WRITE);
   const playListCreateItems: ToolBarMenuItem[] = [];
   for (const prov of Object.values(api.providers).filter(
     (x) =>
@@ -121,11 +119,7 @@ onMounted(() => {
     });
   }
   // Smart Playlist option inside the "Create Playlist" submenu
-  if (
-    Object.values(api.providers).some(
-      (p) => p.available && p.domain === SMART_PLAYLIST_PROVIDER_DOMAIN,
-    )
-  ) {
+  if (store.enabledPlugins.has(SMART_PLAYLIST_PROVIDER_DOMAIN)) {
     playListCreateItems.push({
       label: "smart_playlist.create",
       action: () => {
@@ -135,7 +129,7 @@ onMounted(() => {
       overflowAllowed: true,
     });
   }
-  if (playListCreateItems.length) {
+  if (canEditLibrary && playListCreateItems.length) {
     extraMenuItems.value.push({
       label: "create_playlist_on",
       icon: ListPlus,
@@ -144,14 +138,16 @@ onMounted(() => {
     });
   }
   // import playlist from file
-  extraMenuItems.value.push({
-    label: "import_playlist",
-    action: () => {
-      triggerFileImport();
-    },
-    icon: Import,
-    overflowAllowed: true,
-  });
+  if (canEditLibrary) {
+    extraMenuItems.value.push({
+      label: "import_playlist",
+      action: () => {
+        triggerFileImport();
+      },
+      icon: Import,
+      overflowAllowed: true,
+    });
+  }
   // signal if/when items get added/updated/removed within this library
   const unsub = api.subscribe_multi(
     [
@@ -165,6 +161,14 @@ onMounted(() => {
         evt.event === EventType.MEDIA_ITEM_ADDED ||
         evt.event === EventType.MEDIA_ITEM_DELETED
       ) {
+        listingRef.value?.reload?.();
+      } else if (
+        (evt.data as Playlist).access !== null &&
+        listingRef.value?.isMissing((evt.data as Playlist).uri)
+      ) {
+        // the server only announces a playlist to the users who may see it, so
+        // a personal playlist a fully loaded, unfiltered listing lacks was just
+        // shared with the user (losing access arrives as a delete instead)
         listingRef.value?.reload?.();
       } else {
         updateAvailable.value = true;

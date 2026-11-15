@@ -67,10 +67,7 @@ registerProcessor(${JSON.stringify(PROCESSOR_NAME)}, LiveAnnouncementProcessor);
 `;
 
 export type LiveAnnouncementState =
-  | "idle"
-  | "connecting"
-  | "recording"
-  | "finishing";
+  "idle" | "connecting" | "recording" | "finishing";
 
 export interface LiveAnnouncementCallbacks {
   /** The clip finished playing on the player. */

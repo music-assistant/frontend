@@ -31,12 +31,10 @@ import { markRaw, type Component } from "vue";
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
 
 export type MusicQuizCapabilityState =
-  | MusicQuizSupportedInfo
-  | MusicQuizSupportedPublicState;
+  MusicQuizSupportedInfo | MusicQuizSupportedPublicState;
 
 export type MusicQuizStateCapability =
-  | boolean
-  | ((state: MusicQuizCapabilityState) => boolean);
+  boolean | ((state: MusicQuizCapabilityState) => boolean);
 
 export interface MusicQuizGameDefinition<
   TGame extends MusicQuizType = MusicQuizType,
@@ -120,7 +118,7 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
     icon: markRaw(WandSparkles),
     requiresBackendAvailability: true,
     supportsListenIn: (state) =>
-      state.quiz_type === "trivia" && state.play_reveal_audio === true,
+      state.quiz_type === "trivia" && state.play_reveal_audio,
     usesRevealCountdown: true,
     revealPhaseLabelKey: "providers.music_quiz.phase_answer_revealed",
     adapters: {

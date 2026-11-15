@@ -48,14 +48,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { renamePlayer } from "@/helpers/player_settings_actions";
 import { api } from "@/plugins/api";
 import { eventbus, type PlayerRenameDialogEvent } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useI18n } from "vue-i18n";
-import { toast } from "vue-sonner";
 
-const { t } = useI18n();
 const open = ref(false);
 const saving = ref(false);
 const name = ref("");
@@ -91,13 +89,12 @@ async function save() {
 
   saving.value = true;
   try {
-    await api.savePlayerConfig(playerId.value, { name: nextName });
-    const player = api.players[playerId.value];
-    if (player) player.name = nextName ?? defaultName.value ?? player.name;
-    toast.success(t("settings.player_saved"));
-    close();
-  } catch (error) {
-    toast.error(String(error));
+    // a save that did not land keeps the dialog open to try again or cancel
+    if (await renamePlayer(playerId.value, nextName)) {
+      const player = api.players[playerId.value];
+      if (player) player.name = nextName ?? defaultName.value ?? player.name;
+      close();
+    }
   } finally {
     saving.value = false;
   }

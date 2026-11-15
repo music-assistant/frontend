@@ -3,7 +3,7 @@
     <DialogContent
       class="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[1120px] xl:max-w-[1280px]"
     >
-      <DialogHeader class="gap-3 px-8 pt-8 pb-4 text-left">
+      <DialogHeader class="gap-3 px-8 pt-8 pb-4">
         <DialogTitle class="truncate pr-8">
           {{ task ? task.name : t("background_tasks.details_title") }}
         </DialogTitle>
@@ -237,9 +237,10 @@ import {
 } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import {
   type BackgroundTask,
+  Scope,
   TaskStatus,
-  UserRole,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
@@ -291,9 +292,9 @@ const scheduleLabel = computed(() => {
   );
 });
 
-const canOpenUsers = computed(() => store.currentUser?.role === UserRole.ADMIN);
-const canEditSchedule = computed(
-  () => store.currentUser?.role === UserRole.ADMIN,
+const canOpenUsers = computed(() => authManager.hasScope(Scope.USERS_READ));
+const canEditSchedule = computed(() =>
+  authManager.hasScope(Scope.SYSTEM_MANAGE),
 );
 
 const resolveUserLabel = (

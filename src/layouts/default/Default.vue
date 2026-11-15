@@ -6,12 +6,15 @@
     <Footer v-if="!store.frameless" />
   </v-app>
   <reload-prompt />
+  <SetupPausedBanner v-if="!store.frameless" />
 </template>
 
 <script lang="ts" setup>
 import MainView from "./View.vue";
 import Footer from "./Footer.vue";
 import ReloadPrompt from "./ReloadPrompt.vue";
+import SetupPausedBanner from "@/components/onboarding/SetupPausedBanner.vue";
+import { usePlayPauseShortcut } from "@/composables/usePlayPauseShortcut";
 import { store } from "@/plugins/store";
 import { watch } from "vue";
 import api from "@/plugins/api";
@@ -19,16 +22,20 @@ import { isSelectablePlayer } from "@/helpers/players";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
+
+usePlayPauseShortcut();
+
 watch(
   // make sure it's retriggered when players array is populated
   [() => route.query.player, () => Object.keys(api.players).length],
   ([newActivePlayer]) => {
     if (!newActivePlayer) return;
     const newPlayerString = newActivePlayer.toString().toLowerCase();
-    // newActivePlayer can be either player id or player name
+    // newActivePlayer can be either player id (also one it had before a merge) or player name
     const newPlayerId = Object.values(api.players).find((p) => {
       return (
         (p.player_id.toLowerCase() === newPlayerString ||
+          p.legacy_ids.some((id) => id.toLowerCase() === newPlayerString) ||
           p.name.toLowerCase() === newPlayerString) &&
         isSelectablePlayer(p)
       );

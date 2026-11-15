@@ -113,6 +113,7 @@ import {
 } from "@/helpers/ai_radio";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import api from "@/plugins/api";
 import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
@@ -233,13 +234,14 @@ async function playAfterCreate(stationId: string, defaultPlayerId?: string) {
   const playerId = resolveShowPlayerId(
     { default_player_id: defaultPlayerId },
     store.activePlayerId,
+    api.players,
   );
   if (!playerId) {
     toast.error($t("providers.ai_radio.card.no_player"));
     return;
   }
   try {
-    await startShow(stationId, { playerIdOverride: playerId });
+    await startShow(stationId, playerId);
   } catch (error) {
     const message = errorMessage(error);
     toast.error($t("providers.ai_radio.card.start_failed", [message]));
