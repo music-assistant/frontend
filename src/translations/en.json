@@ -1259,7 +1259,7 @@
         "bpm": "Tempo (beats per minute)",
         "musical_key": "Musical key",
         "energy_level": "Energy level, from 1 (calmest) to 10 (most energetic)",
-        "show_dashboard": "Cast dashboard to a device",
+        "show_dashboard": "Show dashboard",
         "collapse_collections": "Collapse collections",
         "mute": "Mute",
         "unmute": "Unmute",
