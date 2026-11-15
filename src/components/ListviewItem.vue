@@ -361,7 +361,7 @@ import {
 } from "@/helpers/utils";
 import {
   getListItemProviderIconDomain,
-  isMusicBrainzItem,
+  isExternalItem,
 } from "@/plugins/api/helpers";
 import {
   AlbumType,
@@ -443,9 +443,9 @@ const compProps = withDefaults(defineProps<Props>(), {
 });
 
 // computed properties
-// a release only MusicBrainz knows: muted rather than shown as unavailable,
-// since it can be opened and added to the library
-const notInLibrary = computed(() => isMusicBrainzItem(compProps.item));
+// an item known only by an external id: muted rather than shown as
+// unavailable, since it can be opened and added to the library
+const notInLibrary = computed(() => isExternalItem(compProps.item));
 
 const { isResolving } = useResolvingItems();
 const resolving = computed(() => isResolving(compProps.item.uri));
@@ -456,9 +456,11 @@ const episodeNumber = computed(() =>
     : undefined,
 );
 
-// a row that is not available has nothing to play, whatever its flag says
+// a row that is not available has nothing to play, whatever its flag says;
+// an external item is looked up when played
 const showPlay = computed(
-  () => compProps.item.is_playable && compProps.isAvailable,
+  () =>
+    compProps.item.is_playable && (compProps.isAvailable || notInLibrary.value),
 );
 
 // favouring an item changes the library

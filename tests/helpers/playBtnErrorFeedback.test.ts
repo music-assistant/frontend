@@ -60,8 +60,7 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: vi.fn(),
   // what the real helper does, which this module-wide mock would otherwise hide
-  isMusicBrainzItem: (item: { provider: string }) =>
-    item.provider === "musicbrainz",
+  isExternalItem: (item: { provider: string }) => item.provider === "external",
 }));
 
 vi.mock("@/plugins/i18n", () => ({

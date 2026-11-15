@@ -64,7 +64,7 @@
           :source-label="moreFromArtistSourceDisplay?.label"
           :source-domain="moreFromArtistSourceDisplay?.domain"
           :source-options="moreFromArtistOptions"
-          :source-value="moreFromArtistSource"
+          :source-value="moreFromArtistSelectedSource"
           :items="artistReleaseItems"
           :view-all-to="artistAlbumsRoute"
           :empty-message="$t('artist_row_empty')"
@@ -136,7 +136,7 @@ import { useAlbumRowData } from "@/composables/useAlbumRowData";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
-import { MUSICBRAINZ_PROVIDER } from "@/plugins/api/helpers";
+import { EXTERNAL_PROVIDER } from "@/plugins/api/helpers";
 import {
   AlbumType,
   ListingType,
@@ -204,8 +204,13 @@ const {
   versionItems,
   artistReleaseItems,
   moreFromArtistSource,
+  moreFromArtistSelectedSource,
   moreFromArtistSourceDisplay,
-} = useAlbumRowData(albumForRows, visibleRows);
+} = useAlbumRowData(
+  albumForRows,
+  visibleRows,
+  computed(() => fullArtist.value !== undefined),
+);
 
 // the cover at first; the artist's fanart takes over once that lookup is done
 const backdrop = computed(() =>
@@ -289,8 +294,8 @@ const loadItemDetails = async function () {
   itemDetails.value = undefined;
   albumTracks.value = undefined;
   const album =
-    provider === MUSICBRAINZ_PROVIDER
-      ? await resolveMusicBrainzAlbum(itemId)
+    provider === EXTERNAL_PROVIDER
+      ? await resolveExternalAlbum(itemId, provider)
       : await api.getAlbum(itemId, provider);
   // a slower response for a previous album must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
@@ -414,23 +419,20 @@ async function loadFullArtist() {
 }
 
 /**
- * Resolves a MusicBrainz release to the same album on one of the user's music
- * services, which is what the page shows. Returns undefined when none of them
- * has it, leaving the page for where the user came from.
+ * Looks up an external album in the library or on one of the user's music
+ * services, which is what the page shows. Returns undefined when it is not
+ * found, leaving the page for where the user came from.
  */
-async function resolveMusicBrainzAlbum(
+async function resolveExternalAlbum(
   itemId: string,
+  provider: string,
 ): Promise<Album | undefined> {
   try {
-    return (await api.getItem(
-      MediaType.ALBUM,
-      itemId,
-      MUSICBRAINZ_PROVIDER,
-    )) as Album;
+    return (await api.getItem(MediaType.ALBUM, itemId, provider)) as Album;
   } catch {
     // the server's own message is already on screen as a toast; a lookup that
     // outlived a move to another album must not pull the user off that one
-    if (itemId === props.itemId && props.provider === MUSICBRAINZ_PROVIDER) {
+    if (itemId === props.itemId && provider === props.provider) {
       backFromMediaDetails(router);
     }
     return undefined;

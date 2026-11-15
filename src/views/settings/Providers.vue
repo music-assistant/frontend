@@ -6,12 +6,14 @@
       v-if="canOwnSources() && !showMusicEmptyState"
       class="add-provider-btn"
       data-testid="add-provider"
-      @click="showAddProviderDialog = true"
+      @click="openCatalog"
     >
       <Plus class="size-4" />
       {{ addProviderLabel }}
     </Button>
   </div>
+
+  <CommunityMovedTypeNotice class="mx-5 mb-4" :type="currentType" />
 
   <div class="pl-5 font-medium">
     {{
@@ -51,8 +53,9 @@
             :key="item.instance_id"
             :variant="viewMode"
             :config="item"
-            :manageable="canManageSource(item)"
+            :manageable="canManageSource(item) && !isUnavailable(item)"
             :reconfigurable="canReconfigureSource(item)"
+            :removable="canManageSource(item) && isUnavailable(item)"
             :syncing="isProviderSyncing(item.instance_id)"
             :name="getProviderName(item)"
             :description="api.providerManifests[item.domain]?.description"
@@ -68,6 +71,7 @@
             @open="openProvider(item)"
             @menu="openMenu($event, item)"
             @reconfigure="reconfigureProvider(item)"
+            @remove="removeSource(item)"
           />
         </component>
       </section>
@@ -92,10 +96,7 @@
         }}
       </EmptyDescription>
       <EmptyContent v-if="canOwnSources()">
-        <Button
-          data-testid="add-provider-empty"
-          @click="showAddProviderDialog = true"
-        >
+        <Button data-testid="add-provider-empty" @click="openCatalog">
           <Plus class="size-4" />
           {{ $t("settings.add_music_provider") }}
         </Button>
@@ -124,12 +125,6 @@
       </RouterLink>
     </Button>
   </div>
-  <AddProviderDialog
-    v-model:show="showAddProviderDialog"
-    :provider-type="managesAllSources() ? undefined : ProviderType.MUSIC"
-    :multi-instance-only="!managesAllSources()"
-    :self-service-only="!managesAllSources()"
-  />
   <ProviderAccessDialog
     v-model:open="showAccessDialog"
     :config="accessDialogConfig"
@@ -143,6 +138,7 @@
 <script setup lang="ts">
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
+import CommunityMovedTypeNotice from "@/components/settings/catalog/CommunityMovedTypeNotice.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
 import { Button } from "@/components/ui/button";
@@ -158,6 +154,7 @@ import { useBackgroundTasks } from "@/composables/background-tasks/useBackground
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import { getCatalogRoute } from "@/helpers/provider_catalog";
 import {
   getProviderStatusTranslationKey,
   isCommunityProvider,
@@ -183,9 +180,8 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { Info, Music, Plus, Puzzle } from "@lucide/vue";
 import { match } from "ts-pattern";
-import { computed, inject, ref } from "vue";
+import { computed, inject } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import AddProviderDialog from "./AddProviderDialog.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -221,14 +217,15 @@ const addProviderLabel = computed(() => {
     .otherwise(() => $t("settings.add_new"));
 });
 
-const showAddProviderDialog = ref(false);
 const { isProviderSyncing } = useBackgroundTasks();
 
 const getProviderName = function (config: ProviderConfig) {
-  return providerDisplayName(
-    config,
-    api.providers[config.instance_id],
-    api.providerManifests[config.domain],
+  return (
+    providerDisplayName(
+      config,
+      api.providers[config.instance_id],
+      api.providerManifests[config.domain],
+    ) || config.instance_id
   );
 };
 
@@ -237,8 +234,14 @@ const isErrorStatus = function (status?: ProviderStatus | null) {
   return (
     status === ProviderStatus.AUTH_REQUIRED ||
     status === ProviderStatus.INCOMPATIBLE ||
-    status === ProviderStatus.ERROR
+    status === ProviderStatus.ERROR ||
+    status === ProviderStatus.UNAVAILABLE
   );
+};
+
+// the provider of the entry is not on this server: it cannot be opened, only removed
+const isUnavailable = function (config: ProviderConfig) {
+  return config.status === ProviderStatus.UNAVAILABLE;
 };
 
 // only a status that needs attention carries a badge
@@ -291,6 +294,11 @@ const {
   accessSummary,
   openAccessDialog,
 } = useProviderAccess({ managesAllSources, canOwnSources });
+
+// the Catalog opens on the type of this page and only offers what the viewer may add
+const openCatalog = function () {
+  void router.push(getCatalogRoute(currentType.value));
+};
 
 const openProviderOptions = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
