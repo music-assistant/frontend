@@ -46,20 +46,29 @@
         </button>
         <div
           class="player-card-main pointer-events-none relative z-[1] flex min-w-0 flex-1"
-          :class="
-            useStackedMediaLayout ? 'flex-col gap-1.5' : 'items-center gap-3'
-          "
+          :class="stackMediaDetails ? 'flex-col gap-1.5' : 'items-center gap-3'"
         >
-          <PlayerCardTitle
+          <div
             v-if="stackMediaDetails"
-            :player-name="cardPlayerName"
-            :member-names="displayedGroupMemberNames"
-            :member-layout="groupMemberLayout"
-            :playing="isPlaying"
-            :selected="isSelectedPlayer"
+            class="player-card-header flex min-w-0 items-start gap-2"
           >
-            <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
-          </PlayerCardTitle>
+            <PlayerIcon
+              :icon="player.icon"
+              :grouped="isGroupedPlayer"
+              :size="20"
+              class="player-card-icon shrink-0"
+            />
+            <PlayerCardTitle
+              class="flex-1"
+              :player-name="cardPlayerName"
+              :member-names="displayedGroupMemberNames"
+              :member-layout="groupMemberLayout"
+              :playing="isPlaying"
+              :selected="isSelectedPlayer"
+            >
+              <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
+            </PlayerCardTitle>
+          </div>
           <div
             v-if="!stackMediaDetails || hasStackedDetails"
             class="player-card-media-row"
@@ -71,12 +80,7 @@
           >
             <div
               v-if="!stackMediaDetails || hasSelectedMedia"
-              class="player-card-media flex size-11 shrink-0 items-center justify-center overflow-hidden"
-              :class="{
-                'bg-muted rounded-md': artworkUrl || !useStackedMediaLayout,
-                'player-card-media-placeholder':
-                  useStackedMediaLayout && !artworkUrl,
-              }"
+              class="player-card-media bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
             >
               <img
                 v-if="artworkUrl"
@@ -86,27 +90,22 @@
                 loading="lazy"
                 @error="artworkFailed = true"
               />
+              <Music
+                v-else-if="stackMediaDetails"
+                class="player-card-media-placeholder text-muted-foreground size-5"
+              />
               <PlayerIcon
                 v-else
                 :icon="player.icon"
-                :grouped="
-                  player.type === PlayerType.PLAYER &&
-                  player.group_members.some(
-                    (playerId) => playerId !== player.player_id,
-                  )
-                "
+                :grouped="isGroupedPlayer"
                 :size="24"
-                :class="
-                  useStackedMediaLayout
-                    ? 'text-foreground opacity-100'
-                    : 'opacity-80'
-                "
+                class="opacity-80"
               />
             </div>
 
             <div class="min-w-0 flex-1 py-0.5">
               <PlayerCardTitle
-                v-if="!useStackedMediaLayout"
+                v-if="!stackMediaDetails"
                 :player-name="cardPlayerName"
                 :member-names="displayedGroupMemberNames"
                 :member-layout="groupMemberLayout"
@@ -272,6 +271,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
   EllipsisVertical,
+  Music,
   Pause,
   Play,
   Power,
@@ -375,6 +375,14 @@ const isSelectedPlayer = computed(
   () =>
     props.showSelectedIndicator === true &&
     props.player.player_id === store.activePlayerId,
+);
+
+const isGroupedPlayer = computed(
+  () =>
+    props.player.type === PlayerType.PLAYER &&
+    props.player.group_members.some(
+      (playerId) => playerId !== props.player.player_id,
+    ),
 );
 
 const useStackedMediaLayout = computed(

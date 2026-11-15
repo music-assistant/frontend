@@ -405,7 +405,7 @@ describe("PlayerSelect", () => {
     webPlayer.player_id = null;
   });
 
-  it("orders players alphabetically regardless of selection or playback", () => {
+  it("orders the selected player, this device, then active players first", () => {
     const activePlayer = createPlayer("active", "Kitchen");
     api.players = {
       office: createPlayer("office", "Office"),
@@ -423,7 +423,45 @@ describe("PlayerSelect", () => {
       wrapper
         .findAll(".player-card")
         .map((card) => card.attributes("data-player-id")),
-    ).toEqual(["attic", "bedroom", "active", "lounge", "office", "builtin"]);
+    ).toEqual(["active", "builtin", "attic", "bedroom", "lounge", "office"]);
+  });
+
+  it("leaves the selected player in normal list order when pinning is disabled", () => {
+    setPlayerSelectPreference("playerSelect.showSelectedPlayerFirst", false);
+    setPlayerSelectPreference("playerSelect.showActivePlayersFirst", false);
+    const selectedPlayer = createPlayer("selected", "Office");
+    api.players = {
+      kitchen: createPlayer("kitchen", "Kitchen"),
+      selected: selectedPlayer,
+      attic: createPlayer("attic", "Attic"),
+    };
+    store.activePlayerId = selectedPlayer.player_id;
+
+    const wrapper = mountPlayerSelect();
+
+    expect(
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id")),
+    ).toEqual(["attic", "kitchen", "selected"]);
+  });
+
+  it("leaves active players in normal list order when prioritizing is disabled", () => {
+    setPlayerSelectPreference("playerSelect.showSelectedPlayerFirst", false);
+    setPlayerSelectPreference("playerSelect.showActivePlayersFirst", false);
+    api.players = {
+      office: createPlayer("office", "Office", PlaybackState.PLAYING),
+      bedroom: createPlayer("bedroom", "Bedroom", PlaybackState.PAUSED),
+      attic: createPlayer("attic", "Attic"),
+    };
+
+    const wrapper = mountPlayerSelect();
+
+    expect(
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id")),
+    ).toEqual(["attic", "bedroom", "office"]);
   });
 
   it("waits for a remembered player instead of selecting the web player", async () => {
@@ -640,7 +678,7 @@ describe("PlayerSelect", () => {
     expect(setPreference).not.toHaveBeenCalled();
   });
 
-  it("keeps the list order stable when selection and playback change", async () => {
+  it("moves a newly active player to the front the next time the panel opens", async () => {
     const kitchen = createPlayer("kitchen", "Kitchen");
     const office = createPlayer("office", "Office");
     api.players = {
@@ -648,16 +686,65 @@ describe("PlayerSelect", () => {
       [office.player_id]: office,
     };
     const wrapper = mountPlayerSelect();
+    const order = () =>
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id"));
 
     store.activePlayerId = office.player_id;
-    kitchen.playback_state = PlaybackState.PLAYING;
+    await nextTick();
+    expect(order()).toEqual(["kitchen", "office"]);
+
+    store.showPlayersMenu = false;
+    await nextTick();
+    store.showPlayersMenu = true;
+    await nextTick();
+    expect(order()).toEqual(["office", "kitchen"]);
+  });
+
+  it("keeps the order while the panel is open", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    api.players = {
+      kitchen,
+      office: createPlayer("office", "Office"),
+      attic: createPlayer("attic", "Attic"),
+    };
+    store.activePlayerId = kitchen.player_id;
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+    const order = () =>
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id"));
+
+    store.showPlayersMenu = true;
+    await nextTick();
+    expect(order()).toEqual(["kitchen", "attic", "office"]);
+
+    store.activePlayerId = "office";
+    api.players.attic.playback_state = PlaybackState.PLAYING;
+    api.players.bedroom = createPlayer("bedroom", "Bedroom");
+    await nextTick();
+    expect(order()).toEqual(["kitchen", "attic", "office", "bedroom"]);
+  });
+
+  it("applies a changed sort option right away while the panel is open", async () => {
+    const office = createPlayer("office", "Office");
+    api.players = {
+      office,
+      attic: createPlayer("attic", "Attic"),
+    };
+    store.activePlayerId = office.player_id;
+    const wrapper = mountPlayerSelect();
+
+    setPlayerSelectPreference("playerSelect.showSelectedPlayerFirst", false);
     await nextTick();
 
     expect(
       wrapper
         .findAll(".player-card")
         .map((card) => card.attributes("data-player-id")),
-    ).toEqual(["kitchen", "office"]);
+    ).toEqual(["attic", "office"]);
   });
 
   it("shows search only when more than ten players are visible", () => {
@@ -907,7 +994,17 @@ describe("PlayerSelect", () => {
 
     await toggles[0].trigger("click");
     await toggles[1].trigger("click");
+    await toggles[2].trigger("click");
+    await toggles[3].trigger("click");
 
+    expect(setPreference).toHaveBeenCalledWith(
+      "playerSelect.showSelectedPlayerFirst",
+      false,
+    );
+    expect(setPreference).toHaveBeenCalledWith(
+      "playerSelect.showActivePlayersFirst",
+      false,
+    );
     expect(setPreference).toHaveBeenCalledWith(
       "playerSelect.showGroupMemberNames",
       false,
@@ -1183,7 +1280,7 @@ describe("PlayerSelect", () => {
     ).toBe("false");
   });
 
-  it("scrolls the selected player into view in the alphabetical list", async () => {
+  it("scrolls the selected player into view when it is not pinned", async () => {
     const originalScrollIntoView = Object.getOwnPropertyDescriptor(
       HTMLElement.prototype,
       "scrollIntoView",
@@ -1193,6 +1290,8 @@ describe("PlayerSelect", () => {
       configurable: true,
       value: scrollIntoView,
     });
+    setPlayerSelectPreference("playerSelect.showSelectedPlayerFirst", false);
+    setPlayerSelectPreference("playerSelect.showActivePlayersFirst", false);
     const selectedPlayer = createPlayer("selected", "Zulu");
     api.players = {
       attic: createPlayer("attic", "Attic"),

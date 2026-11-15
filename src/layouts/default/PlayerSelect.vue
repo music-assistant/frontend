@@ -74,6 +74,30 @@
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
+              :model-value="showSelectedPlayerFirst"
+              @select.prevent
+              @update:model-value="
+                setBooleanPreference(
+                  PLAYER_SELECT_PREFERENCES.showSelectedPlayerFirst,
+                  $event,
+                )
+              "
+            >
+              {{ $t("player_select.show_selected_player_first") }}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              :model-value="showActivePlayersFirst"
+              @select.prevent
+              @update:model-value="
+                setBooleanPreference(
+                  PLAYER_SELECT_PREFERENCES.showActivePlayersFirst,
+                  $event,
+                )
+              "
+            >
+              {{ $t("player_select.show_active_players_first") }}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
               :model-value="showGroupMemberNames"
               @select.prevent
               @update:model-value="
@@ -185,6 +209,7 @@ import {
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
+import { keepPlayerOrder } from "@/helpers/player_order";
 import {
   canEditPlayerGroup,
   getPlayerDisplayName,
@@ -216,6 +241,8 @@ const SEARCH_PLAYER_THRESHOLD = 10;
 const BUILTIN_PLAYER_PREFERENCE = "<builtinplayer>";
 const PLAYER_SELECT_PREFERENCES = {
   showVolumeForActivePlayersOnly: "playerSelect.showVolumeForActivePlayersOnly",
+  showSelectedPlayerFirst: "playerSelect.showSelectedPlayerFirst",
+  showActivePlayersFirst: "playerSelect.showActivePlayersFirst",
   showGroupMemberNames: "playerSelect.showGroupMemberNames",
 } as const;
 
@@ -226,6 +253,14 @@ const playerList = ref<HTMLElement>();
 const { getPreference, setPreference } = useUserPreferences();
 const showVolumeForActivePlayersOnly = getPreference<boolean>(
   PLAYER_SELECT_PREFERENCES.showVolumeForActivePlayersOnly,
+  true,
+);
+const showSelectedPlayerFirst = getPreference<boolean>(
+  PLAYER_SELECT_PREFERENCES.showSelectedPlayerFirst,
+  true,
+);
+const showActivePlayersFirst = getPreference<boolean>(
+  PLAYER_SELECT_PREFERENCES.showActivePlayersFirst,
   true,
 );
 const showGroupMemberNames = getPreference<boolean>(
@@ -244,7 +279,16 @@ let autoSelectedPlayerId: string | undefined;
 const orderedPlayers = useOrderedPlayers({
   allowNeedsSetup: () => authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
   allowSources: true,
+  selectedPlayerFirst: showSelectedPlayerFirst,
+  activePlayersFirst: showActivePlayersFirst,
+  includePausedAsActive: true,
 });
+// the order is taken when the panel opens, so cards stay under the finger
+// while players start, stop or get selected
+const panelOrder = ref<string[]>([]);
+const panelPlayers = computed(() =>
+  keepPlayerOrder(orderedPlayers.value, panelOrder.value),
+);
 
 const showSearch = computed(
   () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
@@ -261,10 +305,10 @@ const popoutAnchor = computed(() =>
 );
 
 const filteredPlayers = computed(() => {
-  if (!showSearch.value) return orderedPlayers.value;
+  if (!showSearch.value) return panelPlayers.value;
   const query = playerSearchQuery.value.trim().toLocaleLowerCase();
-  if (!query) return orderedPlayers.value;
-  return orderedPlayers.value.filter((player) =>
+  if (!query) return panelPlayers.value;
+  return panelPlayers.value.filter((player) =>
     getPlayerDisplayName(player).toLocaleLowerCase().includes(query),
   );
 });
@@ -279,6 +323,7 @@ watch(
         activeElement instanceof HTMLElement && activeElement !== document.body
           ? activeElement
           : null;
+      takePanelOrder();
       expandActivePlayerGroupControls();
       void scrollSelectedPlayerIntoView();
       return;
@@ -297,6 +342,14 @@ watch(
     });
   },
 );
+
+watch([showSelectedPlayerFirst, showActivePlayersFirst], takePanelOrder);
+
+watch(showSelectedPlayerFirst, (showFirst) => {
+  if (!showFirst && store.showPlayersMenu) {
+    void scrollSelectedPlayerIntoView();
+  }
+});
 
 watch(showSearch, (isVisible) => {
   if (!isVisible) playerSearchQuery.value = "";
@@ -329,7 +382,10 @@ onMounted(() => {
   document.addEventListener("keydown", markKeyboardInteraction, true);
   document.addEventListener("pointerdown", markPointerInteraction, true);
   checkDefaultPlayer();
-  if (store.showPlayersMenu) void scrollSelectedPlayerIntoView();
+  if (store.showPlayersMenu) {
+    takePanelOrder();
+    void scrollSelectedPlayerIntoView();
+  }
 });
 
 onBeforeUnmount(() => {
@@ -530,8 +586,14 @@ function isSelectablePlayerId(playerId: string | null | undefined) {
   return !!playerId && isSelectablePlayer(api.players[playerId]);
 }
 
+function takePanelOrder() {
+  panelOrder.value = orderedPlayers.value.map((player) => player.player_id);
+}
+
 async function scrollSelectedPlayerIntoView() {
-  if (!store.showPlayersMenu) return;
+  if (showSelectedPlayerFirst.value || !store.showPlayersMenu) {
+    return;
+  }
 
   await nextTick();
   const activePlayerId = store.activePlayerId;

@@ -664,7 +664,9 @@ describe("PlayerCard", () => {
       "flex-col",
     );
     expect(
-      selectorCard.find(".player-card-main > .player-card-title").exists(),
+      selectorCard
+        .find(".player-card-main > .player-card-header .player-card-title")
+        .exists(),
     ).toBe(true);
     expect(
       selectorCard.find(".player-card-media-row .player-card-title").exists(),
@@ -683,26 +685,55 @@ describe("PlayerCard", () => {
     );
   });
 
-  it("keeps idle selector cards to one line without a speaker icon", () => {
+  it("keeps idle selector cards to the player icon and name", () => {
     const wrapper = mountPlayerCard(createPlayer(), {
       stackMediaDetails: true,
     });
 
     expect(wrapper.classes()).not.toContain("opacity-80");
-    expect(wrapper.find(".player-card-main").classes()).not.toContain(
-      "flex-col",
-    );
-    expect(
-      wrapper.find(".player-card-main > .player-card-title").exists(),
-    ).toBe(true);
+    const header = wrapper.get(".player-card-main > .player-card-header");
+    expect(header.find(".player-icon").exists()).toBe(true);
+    expect(header.get(".player-card-name").text()).toBe("Kitchen");
     expect(wrapper.find(".player-card-media-row").exists()).toBe(false);
-    expect(wrapper.find(".player-icon").exists()).toBe(false);
     expect(wrapper.find(".player-card-actions").classes()).not.toContain(
       "self-end",
     );
   });
 
-  it("uses full speaker-icon contrast when media is selected without artwork", () => {
+  it.each([
+    ["idle", createPlayer()],
+    [
+      "playing with artwork",
+      createPlayer({
+        playback_state: PlaybackState.PLAYING,
+        current_media: createPlayerMedia({
+          title: "Hate Me Now",
+          image_url: "https://example.test/cover.jpg",
+        }),
+      }),
+    ],
+    [
+      "paused without artwork",
+      createPlayer({
+        playback_state: PlaybackState.PAUSED,
+        current_media: createPlayerMedia({ title: "Hate Me Now" }),
+      }),
+    ],
+  ])(
+    "shows the player icon before the name in selector cards when %s",
+    (_state, player) => {
+      const wrapper = mountPlayerCard(player, { stackMediaDetails: true });
+
+      const header = wrapper.get(".player-card-main > .player-card-header");
+      expect(header.element.firstElementChild?.classList).toContain(
+        "player-icon",
+      );
+      expect(header.get(".player-card-name").text()).toBe("Kitchen");
+      expect(wrapper.findAll(".player-icon")).toHaveLength(1);
+    },
+  );
+
+  it("shows a music note in the selector media slot without artwork", () => {
     const wrapper = mountPlayerCard(
       createPlayer({
         playback_state: PlaybackState.PLAYING,
@@ -711,9 +742,14 @@ describe("PlayerCard", () => {
       { stackMediaDetails: true },
     );
 
-    const icon = wrapper.get(".player-card-media-placeholder .player-icon");
-    expect(icon.classes()).toContain("opacity-100");
-    expect(icon.classes()).toContain("text-foreground");
+    expect(
+      wrapper
+        .find(".player-card-media .player-card-media-placeholder")
+        .exists(),
+    ).toBe(true);
+    expect(wrapper.find(".player-card-media .player-icon").exists()).toBe(
+      false,
+    );
   });
 
   it("reserves a title slot for the playing-state indicator", () => {

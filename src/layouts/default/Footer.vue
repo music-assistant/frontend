@@ -115,7 +115,6 @@ function clearOverlay() {
 .v-footer.mediacontrols-player-default {
   padding-right: var(--device-inset-right) !important;
   padding-left: var(--device-inset-left) !important;
-  box-shadow: 0 0 4px -1px black;
 }
 
 .v-footer.mediacontrols-player-float {

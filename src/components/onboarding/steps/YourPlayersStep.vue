@@ -78,7 +78,10 @@ const NAMED_LIMIT = 6;
 // The players this member may play to, as every picker lists them, bar the two
 // nudges that are about what is on right now: this step is about what is in
 // the house, so it stays in the same order however the music moves.
-const players = useOrderedPlayers();
+const players = useOrderedPlayers({
+  selectedPlayerFirst: false,
+  activePlayersFirst: false,
+});
 
 const listed = computed(() => players.value.slice(0, NAMED_LIMIT));
 const more = computed(() => players.value.length - listed.value.length);

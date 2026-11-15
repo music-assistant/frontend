@@ -1763,7 +1763,6 @@
     "map_provider_mapping": "Link this source entry to the current item",
     "player_tip": {
         "selected": "Selected",
-        "selected_player": "Selected player",
         "currently_playing": "Currently playing on",
         "click_to_change": "Click below to change output device"
     },
