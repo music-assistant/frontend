@@ -1,6 +1,11 @@
 <template>
   <div>
-    <Toolbar :icon="Settings">
+    <Toolbar
+      :icon="Settings"
+      :menu-items="toolbarMenuItems"
+      :enforce-overflow-menu="true"
+      :menu-active="toolbarMenuActive"
+    >
       <template #title>
         <ToolbarHeading
           :title="t('settings.settings')"
@@ -86,6 +91,7 @@ import { Button } from "@/components/ui/button";
 import { ItemGroup } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
+import { provideSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
@@ -110,6 +116,13 @@ const { getPreference, setPreference } = useUserPreferences();
 // the provider settings page publishes the name it shows, so the crumb above
 // it cannot disagree with its heading
 const editedProviderName = provideEditedProviderName();
+
+// the page on screen puts what it offers in the toolbar's overflow menu
+const toolbarMenuItems = provideSettingsToolbarMenu();
+// an option that is on shows on the menu button
+const toolbarMenuActive = computed(() =>
+  toolbarMenuItems.value.some((item) => item.active),
+);
 
 const settingsViewMode = ref<"list" | "card">("card");
 const savedSettingsViewMode = getPreference<"list" | "card">(
@@ -308,6 +321,7 @@ const settingsSections = computed(() =>
 );
 
 const providerSectionNames = [
+  "catalog",
   "music_providers",
   "player_providers",
   "metadata_providers",
@@ -391,6 +405,10 @@ const activeTab = computed(() => {
   if (name.includes("about")) {
     return "about";
   }
+  // the Catalog carries a types query of its own, for the tab it opens on
+  if (name === "catalog") {
+    return "catalog";
+  }
 
   const typesQuery = router.currentRoute.value.query.types as
     string | undefined;
@@ -471,6 +489,8 @@ const breadcrumbItems = computed(() => {
         disabled: name === "usersettings",
         to: { name: "usersettings" },
       });
+    } else if (currentTab === "catalog") {
+      items.push({ title: t("settings.catalog.title"), disabled: true });
     } else if (currentTab === "music_providers") {
       items.push({
         title: t("settings.music_sources"),

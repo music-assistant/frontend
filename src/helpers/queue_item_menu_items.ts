@@ -5,7 +5,9 @@ import {
   radioSupported,
 } from "@/helpers/radio";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { openExternalItem } from "@/helpers/open_external_item";
 import api from "@/plugins/api";
+import { isExternalItem } from "@/plugins/api/helpers";
 import { MediaType, QueueItem } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
@@ -78,6 +80,10 @@ export const getQueueItemMenuItems = (
       labelArgs: [],
       action: () => {
         store.showFullscreenPlayer = false;
+        if (isExternalItem(mediaItem)) {
+          openExternalItem(mediaItem);
+          return;
+        }
         router.push({
           name: mediaItem.media_type,
           params: { itemId: mediaItem.item_id, provider: mediaItem.provider },

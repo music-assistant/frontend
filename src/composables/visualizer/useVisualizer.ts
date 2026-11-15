@@ -33,7 +33,7 @@ import {
 } from "@/composables/visualizer/state";
 import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
 import { expertModeSetting } from "@/helpers/expert_mode";
-import api, { ConnectionState } from "@/plugins/api";
+import { api, ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
@@ -180,8 +180,12 @@ export function visualizerEnabledForPlayer(playerId?: string): boolean {
   }
   const prefs = store.currentUser?.preferences;
   if (playerId) {
-    const override = prefs?.[`visualizer_enabled.${playerId}`];
-    if (override !== undefined) return Boolean(override);
+    // a player merged into this one brings its preference along
+    const playerIds = [playerId, ...(api.players[playerId]?.legacy_ids ?? [])];
+    for (const id of playerIds) {
+      const override = prefs?.[`visualizer_enabled.${id}`];
+      if (override !== undefined) return Boolean(override);
+    }
   }
   // show_on_dashboards deliberately does not reach here; this is not a dashboard
   return expertModeSetting("visualizer_enabled");

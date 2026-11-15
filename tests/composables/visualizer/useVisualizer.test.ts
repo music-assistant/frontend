@@ -50,9 +50,11 @@ const apiMocks = await vi.hoisted(async () => {
     subscribe: vi.fn((_event: string, _callback: () => void) => () => {}),
     state: ref("authenticated"),
     isRemoteConnection: ref(false),
+    players: {} as Record<string, { legacy_ids: string[] }>,
   };
 });
 vi.mock("@/plugins/api", () => ({
+  api: apiMocks,
   default: apiMocks,
   ConnectionState: {
     CONNECTING: "connecting",
@@ -83,6 +85,7 @@ describe("visualizerEnabledForPlayer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storeMock.store.currentUser = { preferences: {} };
+    apiMocks.players = {};
   });
 
   it("follows the expert mode until the preference is set", () => {
@@ -103,6 +106,18 @@ describe("visualizerEnabledForPlayer", () => {
     storeMock.store.currentUser.preferences["visualizer_enabled.kitchen"] =
       false;
     expect(visualizerEnabledForPlayer("kitchen")).toBe(false);
+  });
+
+  it("keeps the per-player preference of a player merged into this one", () => {
+    apiMocks.players = { kitchen: { legacy_ids: ["absorbed"] } };
+    storeMock.store.currentUser.preferences["visualizer_enabled"] = true;
+    storeMock.store.currentUser.preferences["visualizer_enabled.absorbed"] =
+      false;
+    expect(visualizerEnabledForPlayer("kitchen")).toBe(false);
+
+    storeMock.store.currentUser.preferences["visualizer_enabled.kitchen"] =
+      true;
+    expect(visualizerEnabledForPlayer("kitchen")).toBe(true);
   });
 });
 

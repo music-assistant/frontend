@@ -96,6 +96,34 @@ describe("useDetailItemUpdates", () => {
     expect(item.value?.uri).toBe(added.uri);
   });
 
+  // an external address names no provider item: the item it was found as is
+  // what gets added to the library
+  it("matches a page opened on an external address against the item it was found as", () => {
+    const found = artist({ item_id: "sp1", provider: "spotify" });
+    const { item } = setup(found, {
+      providerItem: {
+        itemId: "musicbrainz_artistid:mb-1",
+        provider: "external",
+        mediaType: MediaType.ARTIST,
+      },
+    });
+    const added = artist({
+      item_id: "42",
+      provider_mappings: [
+        providerMapping({
+          item_id: "sp1",
+          provider_domain: "spotify",
+          provider_instance: "spotify--1",
+        }),
+      ],
+    });
+
+    emit(EventType.MEDIA_ITEM_UPDATED, added);
+    vi.runAllTimers();
+
+    expect(item.value?.uri).toBe(added.uri);
+  });
+
   it("ignores a mapped update without a provider item to match", () => {
     const { item } = setup(artist());
 

@@ -134,7 +134,7 @@ import {
 import {
   getListItemProviderIconDomain,
   getProviderRootDomain,
-  isMusicBrainzItem,
+  isExternalItem,
 } from "@/plugins/api/helpers";
 import {
   type Album,
@@ -209,9 +209,9 @@ const art = computed(() =>
 
 const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
 
-// a release only MusicBrainz knows: muted rather than shown as unavailable,
-// since it can be opened and added to the library
-const notInLibrary = computed(() => isMusicBrainzItem(props.item));
+// an item known only by an external id: muted rather than shown as
+// unavailable, since it can be opened and added to the library
+const notInLibrary = computed(() => isExternalItem(props.item));
 
 const { isResolving } = useResolvingItems();
 const resolving = computed(() => isResolving(props.item.uri));
@@ -231,11 +231,11 @@ const getStyle = computed(() => {
 });
 
 const isPlayable = computed(() => props.item.is_playable !== false);
+// an external item is looked up when played
 const showPlay = computed(
   () =>
     isPlayable.value &&
-    props.isAvailable &&
-    !notInLibrary.value &&
+    (props.isAvailable || notInLibrary.value) &&
     !props.showCheckboxes,
 );
 
