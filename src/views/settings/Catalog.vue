@@ -73,7 +73,7 @@
               {{ $t("settings.catalog.discover") }}
             </TabsTrigger>
             <TabsTrigger
-              v-for="{ type, count } in typeCounts"
+              v-for="{ type, count } in tabCounts"
               :key="type.type"
               :value="type.type"
             >
@@ -103,6 +103,7 @@
           <CatalogTypeList
             v-else
             :key="activeTab"
+            v-model:stages="selectedStages"
             :entries="listEntries"
             :query="searchQuery"
             :title="
@@ -206,6 +207,7 @@ import {
   type CatalogTab,
   countCatalogTypes,
   FEATURE_REQUESTS_URL,
+  filterCatalogEntries,
   getCatalogTab,
   getCatalogTabQuery,
   getCatalogType,
@@ -241,6 +243,8 @@ const pendingAdd = ref<{ entry: CatalogEntry; onStart?: () => void } | null>(
 const noteOpen = ref(false);
 
 const searchQuery = ref("");
+// the stage filter belongs to the list of one tab, and starts empty on each
+const selectedStages = ref<string[]>([]);
 
 const { selectedEntry, detailOpen, openDetail, closeDetail } =
   useCatalogDetail(entries);
@@ -257,6 +261,18 @@ const activeTab = computed(() =>
 
 const activeType = computed(() => getCatalogType(activeTab.value));
 
+// what each tab lists with the search, and on the active tab its stage filter
+const tabCounts = computed(() =>
+  typeCounts.value.map(({ type }) => ({
+    type,
+    count: filterCatalogEntries(entries.value, {
+      types: [type.type],
+      query: searchQuery.value,
+      stages: type.type === activeTab.value ? selectedStages.value : [],
+    }).length,
+  })),
+);
+
 const listEntries = computed(() =>
   activeType.value
     ? entries.value.filter(
@@ -270,6 +286,10 @@ const installedCount = computed(() =>
 );
 
 const getMenuItems = () => getCommunityCatalogMenuItems(community);
+
+watch(activeTab, () => {
+  selectedStages.value = [];
+});
 
 const selectTab = (tab: string | number) => {
   void router.replace({ query: getCatalogTabQuery(tab as CatalogTab) });

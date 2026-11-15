@@ -441,6 +441,33 @@ describe("Catalog", () => {
     expect(cardNames("[data-testid='catalog-list']")).toEqual(["Sonos"]);
   });
 
+  it("counts on each tab what it lists with the search", async () => {
+    await mountCatalog();
+
+    await search("sound");
+
+    expect(tabLabels()).toEqual([
+      "settings.catalog.discover",
+      "settings.music_sources1",
+      "settings.playerproviders0",
+    ]);
+  });
+
+  it("counts a stage filter on its own tab only", async () => {
+    const wrapper = await mountList();
+
+    wrapper
+      .findComponent({ name: "FacetedFilter" })
+      .vm.$emit("update:modelValue", [ProviderStage.BETA]);
+    await flushPromises();
+
+    expect(tabLabels()).toEqual([
+      "settings.catalog.discover",
+      "settings.music_sources1",
+      "settings.playerproviders2",
+    ]);
+  });
+
   it("filters the list of a type by stage", async () => {
     const wrapper = await mountList();
     expect(cardNames("[data-testid='catalog-list']")).toEqual([

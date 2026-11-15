@@ -126,7 +126,8 @@ const emit = defineEmits<{
 
 const isPhone = useMediaQuery("(max-width: 767px)");
 
-const stages = ref<string[]>([]);
+// the stages picked in the filter, kept by the page for the number on its tab
+const stages = defineModel<string[]>("stages", { required: true });
 const limit = ref(CATALOG_PAGE_SIZE);
 
 const stageOptions = computed(() =>
