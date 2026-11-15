@@ -523,6 +523,7 @@ import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
+import { openExternalItem } from "@/helpers/open_external_item";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
 import {
@@ -563,6 +564,7 @@ import {
   resolveCurrentChapter,
 } from "@/helpers/chapters";
 import api from "@/plugins/api";
+import { isExternalItem } from "@/plugins/api/helpers";
 import {
   MediaItemChapter,
   MediaType,
@@ -1119,6 +1121,9 @@ const onAlbumClick = async function () {
   if (mediaItem && "album" in mediaItem && mediaItem.album) {
     // Navigate directly to album detail page
     store.showFullscreenPlayer = false;
+    if (isExternalItem(mediaItem.album)) {
+      return openExternalItem(mediaItem.album);
+    }
     router.push({
       name: "album",
       params: {
@@ -1201,6 +1206,9 @@ const onArtistClick = async function () {
   ) {
     // Navigate directly to artist detail page
     store.showFullscreenPlayer = false;
+    if (isExternalItem(mediaItem.artists[0])) {
+      return openExternalItem(mediaItem.artists[0]);
+    }
     router.push({
       name: "artist",
       params: {
