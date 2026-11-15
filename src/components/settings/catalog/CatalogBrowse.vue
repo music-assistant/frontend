@@ -21,16 +21,33 @@
           @add="emit('add', entry)"
         />
       </div>
-      <FilterEmptyState v-else :icon="SearchX" data-testid="catalog-empty" />
+      <Empty v-else class="border-0 py-16" data-testid="catalog-empty">
+        <EmptyHeader>
+          <EmptyMedia>
+            <SearchX
+              class="size-16 text-muted-foreground opacity-40"
+              aria-hidden="true"
+            />
+          </EmptyMedia>
+          <EmptyTitle class="text-muted-foreground">
+            {{ $t("settings.catalog.no_match") }}
+          </EmptyTitle>
+        </EmptyHeader>
+      </Empty>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import CatalogPopularRow from "@/components/settings/catalog/CatalogPopularRow.vue";
 import CatalogSectionHeading from "@/components/settings/catalog/CatalogSectionHeading.vue";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
 import { SearchX } from "@lucide/vue";
 
