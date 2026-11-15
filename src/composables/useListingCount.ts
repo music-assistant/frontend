@@ -12,6 +12,8 @@ interface ListingCountOptions {
 
 interface ListingCountState {
   params: Ref<LoadDataParams>;
+  // the listing row of the first loaded item
+  baseOffset: Ref<number>;
   pagedItems: Ref<MediaItemType[]>;
   allItemsReceived: Ref<boolean>;
   loading: Ref<boolean>;
@@ -45,7 +47,7 @@ export function useListingCount(
     const p = state.params.value;
     return listingItemCount({
       total: options.total,
-      loaded: state.pagedItems.value.length,
+      loaded: state.baseOffset.value + state.pagedItems.value.length,
       allLoaded: state.allItemsReceived.value,
       narrowedBeyondTotal: Boolean(
         p.search ||

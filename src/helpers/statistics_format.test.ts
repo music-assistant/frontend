@@ -3,6 +3,7 @@ import {
   formatAverage,
   formatCount,
   formatHour,
+  formatShortHour,
   weekdayNames,
 } from "./statistics_format";
 
@@ -32,6 +33,13 @@ describe("formatHour", () => {
     expect(formatHour(21, "en-GB")).toBe("21:00");
     expect(formatHour(0, "en-GB")).toBe("00:00");
     expect(formatHour(21, "en-US")).toBe("09:00 PM");
+  });
+});
+
+describe("formatShortHour", () => {
+  it("formats an hour without minutes", () => {
+    expect(formatShortHour(21, "en-GB")).toBe("21");
+    expect(formatShortHour(0, "en-US")).toBe("12 AM");
   });
 });
 

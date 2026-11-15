@@ -552,7 +552,6 @@
     "view": {
         "list": "Vista em lista",
         "panel": "Vista de miniaturas",
-        "panel_compact": "Vista compactada de miniaturas",
         "discovery": "Descoberta"
     },
     "play_replace": "Reproduzir Agora (limpar fila)",

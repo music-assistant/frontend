@@ -301,6 +301,85 @@ describe("PlayerTimeline", () => {
     expect(api.playMedia).not.toHaveBeenCalled();
   });
 
+  // with chapter progress the track spans the playing chapter only
+  it.each([
+    [
+      false,
+      [
+        ["In the first", "00:30 · First", "25%"],
+        ["In the second", "01:30 · Second", "75%"],
+      ],
+    ],
+    [true, [["In the second", "01:30 · Second", "50%"]]],
+  ])(
+    "marks the bookmarks on the track, chapter progress %s",
+    async (chapterProgress, expected) => {
+      api.queues["q1"] = {
+        queue_id: "q1",
+        state: PlaybackState.PAUSED,
+        active: true,
+        current_item: {},
+      };
+      api.queueElapsedTime["q1"] = {
+        elapsed_time: 75,
+        elapsed_time_last_updated: NOW,
+      };
+      store.currentUser = {
+        preferences: { audiobook_chapter_progress: chapterProgress },
+      };
+      store.curQueueItem = {
+        queue_item_id: "qi-1",
+        media_item: {
+          media_type: MediaType.AUDIOBOOK,
+          metadata: {
+            chapters: [
+              { position: 1, name: "First", start: 0, end: 60 },
+              { position: 2, name: "Second", start: 60, end: 120 },
+            ],
+          },
+        },
+      };
+      store.activePlayer = {
+        player_id: "p1",
+        active_source: "q1",
+        playback_state: PlaybackState.PAUSED,
+        current_media: {
+          duration: 120,
+          media_type: MediaType.AUDIOBOOK,
+          queue_item_id: "qi-1",
+        },
+      };
+      api.playerCommandSeek.mockClear();
+
+      mountTimeline({
+        SliderRoot: { template: "<div><slot /></div>" },
+        SliderTrack: { template: "<div><slot /></div>" },
+      });
+      const bookmark = {
+        provider_instance: "audiobookshelf--1",
+        item_id: "book1",
+        stored_by_music_assistant: false,
+      };
+      await wrapper!.setProps({
+        bookmarks: [
+          { ...bookmark, name: "In the first", start: 30 },
+          { ...bookmark, name: "In the second", start: 90 },
+        ],
+      });
+      const markers = wrapper!.findAll('[data-testid="bookmark-tick"]');
+
+      // named with its position and chapter, as its tooltip shows it
+      expect(
+        markers.map((x) => [
+          ...x.attributes("aria-label")!.split(", "),
+          (x.element as HTMLElement).style.left,
+        ]),
+      ).toEqual(expected);
+      await markers[markers.length - 1].trigger("click");
+      expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
+    },
+  );
+
   it("keeps the final chapter-relative position at exact media completion", async () => {
     api.queues["q1"] = {
       queue_id: "q1",

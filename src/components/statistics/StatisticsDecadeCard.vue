@@ -27,6 +27,7 @@
           type="x"
           :tick-values="tickValues"
           :tick-format="(index: number) => decadeData[index]?.label ?? ''"
+          :tick-text-hide-overlapping="true"
           :tick-line="false"
           :domain-line="false"
           :grid-line="false"

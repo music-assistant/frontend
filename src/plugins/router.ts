@@ -181,6 +181,12 @@ export const routes: RouteRecordRaw[] = [
           ),
         props: (route: { query: Record<string, unknown> }) => ({
           period: parseStatisticsPeriod(route.query.period),
+          users:
+            route.query.all_users === "true"
+              ? { all_users: true }
+              : typeof route.query.users === "string" && route.query.users
+                ? { users: route.query.users.split(",") }
+                : {},
         }),
       },
       {
@@ -517,6 +523,16 @@ export const routes: RouteRecordRaw[] = [
             // whoever may read the source settings opens the page; a member
             // manages the sources it owns from it
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
+          },
+          {
+            path: "marketplace",
+            name: "catalog",
+            component: () =>
+              import(
+                /* webpackChunkName: "catalog" */ "@/views/settings/Catalog.vue"
+              ),
+            // the Marketplace adds; whoever may not add anything has no use for it
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
             path: "storage",

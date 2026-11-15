@@ -206,6 +206,23 @@ describe("FavoriteMenuBtn", () => {
     });
   });
 
+  // a queued track the server looks up only when it is loaded holds no state
+  // and goes into no playlist until then
+  it("is not offered for a track known only by an external id", async () => {
+    await setPlaying(
+      track({
+        item_id: "musicbrainz_recordingid:rec-1",
+        provider: "external",
+        provider_mappings: [],
+      }),
+    );
+
+    const wrapper = mountButton();
+
+    expect(wrapper.find(TRIGGER).exists()).toBe(false);
+    expect(wrapper.findAll(".dropdown-item")).toHaveLength(0);
+  });
+
   // a line-in or other live source is not a library item
   it("disables itself for an audio source", async () => {
     await setPlaying(track({ media_type: MediaType.AUDIO_SOURCE }));

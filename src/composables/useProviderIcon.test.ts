@@ -11,9 +11,9 @@ const { providers, providerManifests, providerIcons } = vi.hoisted(() => ({
   providerIcons: {} as Record<string, string>,
 }));
 
-vi.mock("@/composables/useThemePreference", () => ({
-  isDark: { value: false },
-}));
+const theme = vi.hoisted(() => ({ isDark: { value: false } }));
+
+vi.mock("@/composables/useThemePreference", () => theme);
 vi.mock("@/plugins/api", () => ({
   api: {
     providers,
@@ -25,15 +25,16 @@ vi.mock("@/plugins/api", () => ({
 
 import { useProviderIcon } from "./useProviderIcon";
 
-const run = (domain: string) => {
+const run = (domain: string, light = false) => {
   const scope = effectScope();
-  const icon = scope.run(() => useProviderIcon(() => domain))!;
+  const icon = scope.run(() => useProviderIcon(() => domain, { light }))!;
   scope.stop();
   return icon;
 };
 
 describe("useProviderIcon", () => {
   afterEach(() => {
+    theme.isDark.value = false;
     for (const map of [providers, providerManifests, providerIcons])
       Object.keys(map).forEach((k) => delete map[k]);
   });
@@ -64,6 +65,23 @@ describe("useProviderIcon", () => {
     expect(icon.providerName.value).toBe("Local files");
     expect(icon.iconDataUri.value).toBe(
       "data:image/svg+xml;base64,PGxvY2FsLz4=",
+    );
+  });
+
+  it("keeps the default icon in a dark theme for a light background", () => {
+    theme.isDark.value = true;
+    providerManifests["tidal"] = {
+      name: "Tidal",
+      icon_images: [ProviderIconVariant.DEFAULT, ProviderIconVariant.DARK],
+    };
+    providerIcons["tidal:default"] = "data:image/svg+xml;base64,ZGFyaw==";
+    providerIcons["tidal:dark"] = "data:image/svg+xml;base64,bGlnaHQ=";
+
+    expect(run("tidal").iconDataUri.value).toBe(
+      "data:image/svg+xml;base64,bGlnaHQ=",
+    );
+    expect(run("tidal", true).iconDataUri.value).toBe(
+      "data:image/svg+xml;base64,ZGFyaw==",
     );
   });
 

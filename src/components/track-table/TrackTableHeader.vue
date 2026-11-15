@@ -5,7 +5,11 @@
     :style="{ gridTemplateColumns: gridTemplate }"
   >
     <template v-for="column in columns" :key="column">
-      <span v-if="column === 'number'" :title="$t('track_table.track_number')">
+      <span v-if="column === 'handle'" aria-hidden="true"></span>
+      <span
+        v-else-if="column === 'number'"
+        :title="$t('track_table.track_number')"
+      >
         <span aria-hidden="true">#</span>
         <span class="sr-only">{{ $t("track_table.track_number") }}</span>
       </span>
@@ -31,6 +35,13 @@
         :title="$t('tooltip.musical_key')"
       >
         {{ $t("musical_key") }}
+      </span>
+      <span
+        v-else-if="column === 'energy'"
+        class="truncate"
+        :title="$t('tooltip.energy_level')"
+      >
+        {{ $t("energy_level") }}
       </span>
       <span
         v-else-if="column === 'duration'"
@@ -123,6 +134,7 @@ const OPTION_LABEL_KEYS: Record<OptionalTrackColumn, string> = {
   year: "track_table.year",
   bpm: "bpm",
   key: "musical_key",
+  energy: "energy_level",
 };
 
 const options = computed(() =>

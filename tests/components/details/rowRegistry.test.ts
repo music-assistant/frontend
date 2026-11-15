@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   storeMock,
   mockSetUserPreference,
+  mockSetUserPreferences,
   mockGetProvider,
   providersMock,
   manifestsMock,
@@ -11,6 +12,7 @@ const {
     currentUser: null as { preferences?: Record<string, unknown> } | null,
   },
   mockSetUserPreference: vi.fn(),
+  mockSetUserPreferences: vi.fn(),
   mockGetProvider: vi.fn(),
   providersMock: {} as Record<
     string,
@@ -34,6 +36,7 @@ vi.mock("@/plugins/api", () => {
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
+  setUserPreferences: mockSetUserPreferences,
 }));
 
 import {
@@ -43,7 +46,7 @@ import {
   type RowSource,
 } from "@/components/details/rowRegistry";
 
-type RowId = "with_picker" | "plain" | "admin";
+type RowId = "with_picker" | "plain" | "admin" | "follower";
 
 // the item decides what a row can be fed from
 interface Item {
@@ -58,6 +61,7 @@ const registry = createRowRegistry<RowId, Item>({
     { id: "with_picker", labelKey: "with_picker", supportsSource: true },
     { id: "plain", labelKey: "plain" },
     { id: "admin", labelKey: "admin", adminOnly: true },
+    { id: "follower", labelKey: "follower", hiddenWith: "plain" },
   ],
   preferenceKey: ROWS_KEY,
   sourcesPreferenceKey: SOURCES_KEY,
@@ -80,6 +84,7 @@ function setPreferences(preferences: Record<string, unknown>) {
 describe("rowRegistry", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
+    mockSetUserPreferences.mockReset();
     mockGetProvider.mockReset();
     for (const key of Object.keys(providersMock)) delete providersMock[key];
     for (const key of Object.keys(manifestsMock)) delete manifestsMock[key];
@@ -91,6 +96,7 @@ describe("rowRegistry", () => {
       "with_picker",
       "plain",
       "admin",
+      "follower",
     ]);
     expect(registry.preferenceKey).toBe(ROWS_KEY);
     expect(registry.sourcesPreferenceKey).toBe(SOURCES_KEY);
@@ -165,6 +171,50 @@ describe("rowRegistry", () => {
     expect(own.effectiveSource("with_picker", ITEM)).toBe("spotify--abc");
   });
 
+  describe("resolveSource", () => {
+    const AUTO_ITEM: Item = {
+      candidates: ["auto", "library", "spotify--abc", "tidal--def"],
+    };
+
+    it("passes a source other than auto through as it is", () => {
+      expect(registry.resolveSource("with_picker", ITEM)).toBe("all");
+      expect(registry.resolveSource("with_picker", ITEM, false)).toBe("all");
+    });
+
+    it("works auto out from whether the library holds items for the row", () => {
+      expect(
+        registry.resolveSource("with_picker", AUTO_ITEM, undefined),
+      ).toBeUndefined();
+      expect(registry.resolveSource("with_picker", AUTO_ITEM, true)).toBe(
+        "library",
+      );
+      expect(registry.resolveSource("with_picker", AUTO_ITEM, false)).toBe(
+        "spotify--abc",
+      );
+    });
+
+    it("stays on the library when auto has no provider to turn to", () => {
+      expect(
+        registry.resolveSource(
+          "with_picker",
+          { candidates: ["auto", "library", "all"] },
+          false,
+        ),
+      ).toBe("library");
+    });
+
+    it("keeps a saved source over auto", () => {
+      setPreferences({ [SOURCES_KEY]: { with_picker: "tidal--def" } });
+      expect(registry.resolveSource("with_picker", AUTO_ITEM, true)).toBe(
+        "tidal--def",
+      );
+      setPreferences({ [SOURCES_KEY]: { with_picker: "library" } });
+      expect(registry.resolveSource("with_picker", AUTO_ITEM, false)).toBe(
+        "library",
+      );
+    });
+  });
+
   it("resolves the saved order and visibility against the available rows", () => {
     setPreferences({
       [ROWS_KEY]: { hidden: ["plain"], order: ["plain", "with_picker"] },
@@ -172,6 +222,21 @@ describe("rowRegistry", () => {
     const { order, hidden } = registry.resolve(["with_picker", "plain"]);
     expect(order).toEqual(["plain", "with_picker"]);
     expect(hidden).toEqual(new Set(["plain"]));
+  });
+
+  it("hides a row along with the row it follows until it is set itself", () => {
+    const available: RowId[] = ["plain", "follower"];
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["plain"] } });
+    expect(registry.resolve(available).hidden).toEqual(
+      new Set(["plain", "follower"]),
+    );
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["plain"], shown: ["follower"] } });
+    expect(registry.resolve(available).hidden).toEqual(new Set(["plain"]));
+
+    setPreferences({ [ROWS_KEY]: { hidden: ["follower"] } });
+    expect(registry.resolve(available).hidden).toEqual(new Set(["follower"]));
   });
 
   it("writes a row's visibility, order and source", async () => {
@@ -193,14 +258,37 @@ describe("rowRegistry", () => {
     });
   });
 
-  it("clears both preferences on reset", async () => {
-    await registry.reset();
-    expect(mockSetUserPreference).toHaveBeenCalledWith(ROWS_KEY, {
-      hidden: [],
-      shown: [],
-      order: [],
+  it("saves auto as no source, so the row follows its default again", async () => {
+    setPreferences({
+      [SOURCES_KEY]: { with_picker: "spotify--abc", plain: "library" },
     });
-    expect(mockSetUserPreference).toHaveBeenLastCalledWith(SOURCES_KEY, {});
+    await registry.setSource("with_picker", "auto");
+    expect(mockSetUserPreference).toHaveBeenLastCalledWith(SOURCES_KEY, {
+      plain: "library",
+    });
+  });
+
+  it("clears both preferences on reset, in one write", async () => {
+    await registry.reset();
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
+      [SOURCES_KEY]: {},
+    });
+  });
+
+  it("clears the extra preferences on reset too", async () => {
+    const withExtras = createRowRegistry<"plain", Item>({
+      rows: [{ id: "plain", labelKey: "plain" }],
+      preferenceKey: ROWS_KEY,
+      extraPreferenceKeys: ["test.rowTypes"],
+    });
+    await withExtras.reset();
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
+      "test.rowTypes": null,
+    });
   });
 
   it("keeps only the row preference when no row has a source picker", async () => {
@@ -210,11 +298,10 @@ describe("rowRegistry", () => {
     });
     await plain.setSource("plain", "spotify--abc");
     await plain.reset();
-    expect(mockSetUserPreference).toHaveBeenCalledTimes(1);
-    expect(mockSetUserPreference).toHaveBeenCalledWith(ROWS_KEY, {
-      hidden: [],
-      shown: [],
-      order: [],
+    expect(mockSetUserPreference).not.toHaveBeenCalled();
+    expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+    expect(mockSetUserPreferences).toHaveBeenCalledWith({
+      [ROWS_KEY]: { hidden: [], shown: [], order: [] },
     });
   });
 
@@ -236,15 +323,27 @@ describe("rowRegistry", () => {
       ]);
     });
 
+    it("labels the automatic source", () => {
+      expect(
+        rowSourceOptions(registry, "with_picker", {
+          candidates: ["auto", "library"],
+        }),
+      ).toEqual([
+        { value: "auto", label: "Automatic", domain: undefined },
+        { value: "library", label: "Your library", domain: undefined },
+      ]);
+    });
+
     it("is empty for a row without a source picker", () => {
       expect(rowSourceOptions(registry, "plain", ITEM)).toEqual([]);
     });
   });
 
   describe("rowSourceDisplay", () => {
-    it("reads the library and every-provider sources", () => {
+    it("reads the library, every-provider and automatic sources", () => {
       expect(rowSourceDisplay("library")).toEqual({ label: "In your library" });
       expect(rowSourceDisplay("all")).toEqual({ label: "All sources" });
+      expect(rowSourceDisplay("auto")).toEqual({ label: "Automatic" });
     });
 
     it("names a provider and carries its domain for the icon", () => {

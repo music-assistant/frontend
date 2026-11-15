@@ -113,6 +113,17 @@ This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-
 
 ---
 
+# Stable releases
+
+The server's stable channel pins a frontend release from main. Fixes for it ship as `<pinned>.postN` releases built from the `stable` branch:
+
+1. Label a main PR `backport-to-stable`, before or after it merges. Once it is merged, the [backport workflow](.github/workflows/backport-to-stable.yml) cherry-picks it onto `backport/<pinned>.postN` and opens or updates the "[Backport to stable] <pinned>.postN" PR into `stable`. A conflicting pick fails the run and comments on the PR with the files to resolve by hand.
+2. Merge that PR with **Rebase and merge**. This publishes the `.post` release and opens the PR that pins it on the server, against the server's open backport branch, or its `stable` branch if none is open.
+
+`stable` follows the frontend pin on the server's `stable` branch. After a server X.Y.0, the next backport run (or a manual run of the workflow) resets `stable` to the newly pinned release and closes backport PRs left for the old one. Releases cut from `stable` use the workflows on `stable`, so a fix to the release workflows reaches the stable channel only with that reset, or as a backport itself.
+
+---
+
 # Translation Management
 
 We use Lokalise to manage the translation files for the Music Assistant frontend

@@ -8,6 +8,13 @@ import { VitePWA } from "vite-plugin-pwa";
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import webfontDownload from "vite-plugin-webfont-dl";
 
+// Vitest's module runner gets each module's AST from Rust as one string, and
+// every locale compiled into one messages module passes V8's string length
+// limit, so tests load English plus German, which a locale switch test uses.
+const TRANSLATIONS = process.env.VITEST
+  ? "./src/translations/{en,de}.json"
+  : "./src/translations/**";
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "./",
@@ -63,7 +70,7 @@ export default defineConfig({
       },
     }),
     VueI18nPlugin({
-      include: [path.resolve(__dirname, "./src/translations/**")],
+      include: [path.resolve(__dirname, TRANSLATIONS)],
     }),
   ],
   define: { "process.env": {} },

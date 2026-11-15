@@ -1030,7 +1030,6 @@
     "view": {
         "list": "리스트 보기",
         "panel": "썸네일 보기",
-        "panel_compact": "간략한 썸네일 보기",
         "discovery": "둘러보기",
         "card": "카드 보기"
     },

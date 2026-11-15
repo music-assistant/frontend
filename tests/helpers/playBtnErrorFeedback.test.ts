@@ -60,8 +60,7 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: vi.fn(),
   // what the real helper does, which this module-wide mock would otherwise hide
-  isMusicBrainzItem: (item: { provider: string }) =>
-    item.provider === "musicbrainz",
+  isExternalItem: (item: { provider: string }) => item.provider === "external",
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -73,6 +72,7 @@ vi.mock("vue-sonner", () => ({
 }));
 
 import { handlePlayBtnClick } from "@/helpers/media_item_actions";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { playlist } from "../fixtures/playlist";
 import { track } from "../fixtures/track";
 
@@ -118,6 +118,25 @@ describe("handlePlayBtnClick error feedback", () => {
   it("shows a toast when opening the play menu fails", async () => {
     mockStore.activePlayer = undefined;
     mockShowPlayMenu.mockRejectedValue(new Error("Connection lost"));
+
+    handlePlayBtnClick(playedTrack, 0, 0);
+    await flushPromises();
+
+    expect(mockToastError).toHaveBeenCalledWith("play_failed");
+  });
+
+  it("leaves the server's message as the only toast", async () => {
+    const reason = "Spotify is already playing on Overal.";
+    mockPlayMedia.mockRejectedValue(new ApiCommandError(reason, 29, reason));
+
+    handlePlayBtnClick(playedTrack, 0, 0);
+    await flushPromises();
+
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("shows a toast when the server error has no message", async () => {
+    mockPlayMedia.mockRejectedValue(new ApiCommandError("29", 29));
 
     handlePlayBtnClick(playedTrack, 0, 0);
     await flushPromises();

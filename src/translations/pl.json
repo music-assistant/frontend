@@ -603,7 +603,6 @@
     "view": {
         "list": "Widok listy",
         "panel": "Widok panelu",
-        "panel_compact": "Kompaktowy widok miniatur",
         "discovery": "Wykrywanie"
     },
     "play_replace": "Odtwarzaj teraz (wyczyść kolejkę)",

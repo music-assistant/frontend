@@ -346,8 +346,7 @@
     "create_playlist_on": "Crea nuova playlist su {0}",
     "view": {
         "list": "Visualizzazione elenco",
-        "panel": "Visualizzazione miniature",
-        "panel_compact": "Visualizzazione compatta delle miniature"
+        "panel": "Visualizzazione miniature"
     },
     "play_replace": "Leggi Ora (cancella coda)",
     "played": "Ascoltata",
