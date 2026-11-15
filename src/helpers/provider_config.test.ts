@@ -61,6 +61,7 @@ describe("provider configuration state", () => {
     [ProviderStatus.AUTH_REQUIRED, "settings.provider_status_auth_required"],
     [ProviderStatus.INCOMPATIBLE, "settings.provider_status_incompatible"],
     [ProviderStatus.ERROR, "settings.provider_status_error"],
+    [ProviderStatus.UNAVAILABLE, "settings.provider_status_unavailable"],
     [undefined, "settings.provider_status_unknown"],
   ])("maps provider status %s to %s", (status, expected) => {
     expect(getProviderStatusTranslationKey(status)).toBe(expected);
@@ -252,6 +253,24 @@ describe("who maintains a provider", () => {
         }),
       ),
     ).toBe("https://github.com/jane/spotify/issues");
+  });
+
+  it("sends help for one from the community catalog to its repository without a support link", () => {
+    expect(
+      getProviderHelpUrl(
+        providerManifest({ domain: "radio" }),
+        "https://github.com/jane/radio",
+      ),
+    ).toBe("https://github.com/jane/radio");
+    expect(
+      getProviderHelpUrl(
+        providerManifest({
+          domain: "radio",
+          support_url: "https://example.org/help",
+        }),
+        "https://github.com/jane/radio",
+      ),
+    ).toBe("https://example.org/help");
   });
 
   it.each([null, "", "javascript:alert(1)"])(

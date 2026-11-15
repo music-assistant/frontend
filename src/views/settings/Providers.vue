@@ -51,8 +51,9 @@
             :key="item.instance_id"
             :variant="viewMode"
             :config="item"
-            :manageable="canManageSource(item)"
+            :manageable="canManageSource(item) && !isUnavailable(item)"
             :reconfigurable="canReconfigureSource(item)"
+            :removable="canManageSource(item) && isUnavailable(item)"
             :syncing="isProviderSyncing(item.instance_id)"
             :name="getProviderName(item)"
             :description="api.providerManifests[item.domain]?.description"
@@ -68,6 +69,7 @@
             @open="openProvider(item)"
             @menu="openMenu($event, item)"
             @reconfigure="reconfigureProvider(item)"
+            @remove="removeSource(item)"
           />
         </component>
       </section>
@@ -215,10 +217,12 @@ const addProviderLabel = computed(() => {
 const { isProviderSyncing } = useBackgroundTasks();
 
 const getProviderName = function (config: ProviderConfig) {
-  return providerDisplayName(
-    config,
-    api.providers[config.instance_id],
-    api.providerManifests[config.domain],
+  return (
+    providerDisplayName(
+      config,
+      api.providers[config.instance_id],
+      api.providerManifests[config.domain],
+    ) || config.instance_id
   );
 };
 
@@ -227,8 +231,14 @@ const isErrorStatus = function (status?: ProviderStatus | null) {
   return (
     status === ProviderStatus.AUTH_REQUIRED ||
     status === ProviderStatus.INCOMPATIBLE ||
-    status === ProviderStatus.ERROR
+    status === ProviderStatus.ERROR ||
+    status === ProviderStatus.UNAVAILABLE
   );
+};
+
+// the provider of the entry is not on this server: it cannot be opened, only removed
+const isUnavailable = function (config: ProviderConfig) {
+  return config.status === ProviderStatus.UNAVAILABLE;
 };
 
 // only a status that needs attention carries a badge

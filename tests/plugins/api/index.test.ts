@@ -1119,6 +1119,58 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
+  it("asks for the provider configs whose provider is not available", () => {
+    void api.getProviderConfigs(undefined, undefined, true);
+
+    expect(transport.lastCommand).toMatchObject({
+      command: "config/providers",
+      args: { include_unavailable: true },
+    });
+  });
+
+  it.each<[string, (api: MusicAssistantApi) => Promise<unknown>]>([
+    ["community_catalog/providers", (api) => api.getCommunityProviders()],
+    ["community_catalog/refresh", (api) => api.refreshCommunityProviders()],
+    [
+      "community_catalog/install",
+      (api) => api.installCommunityProvider("radio"),
+    ],
+    ["community_catalog/remove", (api) => api.removeCommunityProvider("radio")],
+  ])("leaves a failing %s to its caller", async (command, call) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = call(api);
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    expect(transport.lastCommand.command).toBe(command);
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("fetches the manifests again when the community catalog changes, dropping what is gone", async () => {
+    api.providerManifests.radio = { domain: "radio" } as never;
+    api.providerManifests.spotify = { domain: "spotify" } as never;
+
+    transport.receive({
+      event: EventType.COMMUNITY_CATALOG_UPDATED,
+      object_id: null,
+      data: null,
+    } as EventMessage);
+
+    expect(transport.lastCommand.command).toBe("providers/manifests");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [{ domain: "spotify", name: "Spotify" }],
+      partial: false,
+    });
+    await vi.waitFor(() =>
+      expect(Object.keys(api.providerManifests)).toEqual(["spotify"]),
+    );
+    expect(api.providerManifests.spotify.name).toBe("Spotify");
+  });
+
   it.each([
     [true, true],
     [undefined, false],

@@ -5,7 +5,11 @@
     :data-domain="entry.manifest.domain"
   >
     <div class="flex items-start gap-4">
-      <ProviderIcon :domain="entry.manifest.domain" :size="48" />
+      <CatalogIcon
+        :domain="entry.manifest.domain"
+        :icon="entry.community?.icon"
+        :size="48"
+      />
       <div class="min-w-0 flex-1">
         <h3 class="m-0 text-base leading-snug font-semibold">
           <!-- the name stretches over the card, so the whole card opens the
@@ -77,14 +81,20 @@
           v-if="entry.canAdd"
           variant="outline"
           size="sm"
+          :loading="installing"
           :aria-label="
             $t('settings.catalog.add_named', { name: entry.manifest.name })
           "
           data-testid="catalog-card-add"
           @click="emit('add')"
         >
-          <Plus class="size-4" aria-hidden="true" />
-          {{ $t("settings.catalog.add") }}
+          <template v-if="installing">
+            {{ $t("settings.catalog.community.installing") }}
+          </template>
+          <template v-else>
+            <Plus class="size-4" aria-hidden="true" />
+            {{ $t("settings.catalog.add") }}
+          </template>
         </Button>
       </div>
     </div>
@@ -92,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import CatalogIcon from "@/components/settings/catalog/CatalogIcon.vue";
 import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -106,6 +116,8 @@ import { RouterLink } from "vue-router";
 
 interface Props {
   entry: CatalogEntry;
+  // whether it is being installed from the community catalog
+  installing?: boolean;
 }
 
 const props = defineProps<Props>();
