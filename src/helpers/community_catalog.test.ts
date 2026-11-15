@@ -1,5 +1,5 @@
 import { CommunityProviderState } from "@/plugins/api/interfaces";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { communityProvider } from "../../tests/fixtures/communityProvider";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
@@ -114,9 +114,15 @@ describe("formatCatalogDate", () => {
   });
 
   it("shows the day in UTC, whatever the time zone", () => {
-    expect(formatCatalogDate("2026-11-02T00:00:00Z", "en-US")).toBe(
-      "Nov 2, 2026",
-    );
+    // midnight in UTC is still the day before there
+    vi.stubEnv("TZ", "America/Los_Angeles");
+    try {
+      expect(formatCatalogDate("2026-11-02T00:00:00Z", "en-US")).toBe(
+        "Nov 2, 2026",
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("is empty for a value that is not a date", () => {
