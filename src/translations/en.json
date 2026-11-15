@@ -147,7 +147,7 @@
         "enable": "Enable",
         "enable_player": "Enable this player",
         "invalid_input": "The input is invalid",
-        "metadataproviders": "Metadata",
+        "metadataproviders": "Metadata sources",
         "player_disabled": "This player is disabled",
         "player_name": "Custom player name",
         "player_not_available": "This player is not (yet) available",
@@ -664,7 +664,7 @@
         "player_needs_setup": "This player requires setup",
         "add_music_provider": "Add a music source",
         "add_player_provider": "Add player support",
-        "add_metadata_provider": "Add metadata",
+        "add_metadata_provider": "Add a metadata source",
         "add_plugin_provider": "Add a plugin",
         "music_sources": "Music sources",
         "plugins": "Plugins",
@@ -714,14 +714,14 @@
             "type": {
                 "music": "Music source",
                 "player": "Player support",
-                "metadata": "Metadata",
+                "metadata": "Metadata source",
                 "plugin": "Plugin",
                 "audio_analysis": "Audio analysis"
             },
             "manage_type": {
                 "music": "Manage your music sources",
                 "player": "Manage player support",
-                "metadata": "Manage metadata",
+                "metadata": "Manage your metadata sources",
                 "plugin": "Manage plugins",
                 "audio_analysis": "Manage audio analysis"
             },
