@@ -58,22 +58,11 @@
 
           <div class="flex min-w-0 flex-wrap items-center gap-2">
             <DetailHeroPlayButton :item="item" />
+            <DetailHeroPlayedState v-if="playedState" :item="item" />
             <span
-              v-if="item.fully_played"
-              role="img"
-              :title="$t('item_fully_played')"
-              :aria-label="$t('item_fully_played')"
-              class="inline-flex size-9 items-center justify-center"
+              v-if="!item.fully_played && position > 0"
+              class="text-sm text-white/85"
             >
-              <Check :size="20" aria-hidden="true" />
-            </span>
-            <span
-              v-else-if="position > 0"
-              class="inline-flex items-center gap-2 text-sm text-white/85"
-              :title="$t('item_in_progress')"
-            >
-              <ClockFading :size="20" aria-hidden="true" />
-              <span class="sr-only">{{ $t("item_in_progress") }}:</span>
               {{ formatDuration(position) }}
             </span>
           </div>
@@ -101,9 +90,11 @@ import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroPlayedState from "@/components/details/DetailHeroPlayedState.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Progress } from "@/components/ui/progress";
+import { getPlayedState } from "@/helpers/played_state";
 import {
   formatDuration,
   getAuthorsNarratorsArray,
@@ -111,7 +102,7 @@ import {
 } from "@/helpers/utils";
 import { ImageType, type Audiobook } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { Check, ClockFading, Mic, PenLine, Timer } from "@lucide/vue";
+import { Mic, PenLine, Timer } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
@@ -134,6 +125,9 @@ const wideArt = computed(
 );
 const backdrop = computed(
   () => wideArt.value || getImageThumbForItem(props.item, ImageType.THUMB),
+);
+const playedState = computed(() =>
+  props.item ? getPlayedState(props.item) : undefined,
 );
 const position = computed(() =>
   Math.max(0, (props.item?.resume_position_ms ?? 0) / 1000),

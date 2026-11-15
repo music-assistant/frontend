@@ -5,6 +5,7 @@ import { audiobook } from "../../fixtures/audiobook";
 import { artist } from "../../fixtures/artist";
 
 vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => false }));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/components/details/DetailHero.vue", () => ({
   default: {
     name: "DetailHero",
@@ -123,7 +124,10 @@ describe("AudiobookHero", () => {
       "item_fully_played",
     );
     const partial = mountHero(audiobook({ resume_position_ms: 900000 }));
-    expect(partial.text()).toContain("item_in_progress");
+    expect(partial.get('[role="img"]').attributes("aria-label")).toBe(
+      "item_in_progress",
+    );
     expect(partial.text()).toContain("15:00");
+    expect(mountHero(audiobook()).find('[role="img"]').exists()).toBe(false);
   });
 });
