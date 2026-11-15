@@ -831,12 +831,7 @@ describe("Catalog lists of a type", () => {
   });
 
   it("lists compact rows on a phone, each opening its details", async () => {
-    vi.stubGlobal("matchMedia", (query: string) => ({
-      matches: query === "(max-width: 767px)",
-      media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    }));
+    onPhone();
     await mountList("player");
 
     expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
@@ -864,22 +859,77 @@ describe("Catalog lists of a type", () => {
     ).toContain("Sonos");
   });
 
-  it("keeps the active tab in view in the strip of tabs", async () => {
+  it("warns of the stage of an entry on its compact row", async () => {
+    apiMock.providerManifests.source13 = {
+      ...apiMock.providerManifests.source13,
+      stage: ProviderStage.ALPHA,
+    };
+    onPhone();
+    await mountList();
+
+    const row = (domain: string) =>
+      document.querySelector(
+        `[data-testid='catalog-list-row'][data-domain='${domain}']`,
+      )!;
+    expect(row("source13").textContent).toContain(
+      "settings.stage.options.alpha",
+    );
+    expect(row("soundcloud").textContent).toContain(
+      "settings.stage.options.beta",
+    );
+    expect(row("source14").textContent).not.toContain("settings.stage.options");
+  });
+
+  it("scrolls the active tab to the middle of the strip of tabs", async () => {
     const scrollTo = vi.fn();
     HTMLElement.prototype.scrollTo = scrollTo;
+    // the strip is 300 wide; the active tab starts at 400 and is 100 wide
+    const isActive = (element: HTMLElement) =>
+      element.getAttribute("data-state") === "active";
+    const offsets = [
+      vi
+        .spyOn(HTMLElement.prototype, "offsetLeft", "get")
+        .mockImplementation(function (this: HTMLElement) {
+          return isActive(this) ? 400 : 0;
+        }),
+      vi
+        .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+        .mockImplementation(function (this: HTMLElement) {
+          return isActive(this) ? 100 : 0;
+        }),
+    ];
+    const clientWidth = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "clientWidth",
+    );
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => 300,
+    });
     try {
       await mountList("player");
 
-      expect(scrollTo).toHaveBeenCalledWith(
-        expect.objectContaining({ behavior: "smooth" }),
-      );
+      expect(scrollTo).toHaveBeenLastCalledWith({
+        left: 300,
+        behavior: "smooth",
+      });
       expect(
         (scrollTo.mock.contexts.at(-1) as HTMLElement).querySelector(
           "[data-testid='catalog-tabs']",
         ),
       ).not.toBeNull();
     } finally {
+      offsets.forEach((spy) => spy.mockRestore());
       delete (HTMLElement.prototype as Partial<HTMLElement>).scrollTo;
+      if (clientWidth) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          "clientWidth",
+          clientWidth,
+        );
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+      }
     }
   });
 });
@@ -2627,6 +2677,16 @@ async function mountCatalog() {
   });
   await flushPromises();
   return wrapper;
+}
+
+// a screen as narrow as a phone's
+function onPhone() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === "(max-width: 767px)",
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
 }
 
 // the list of a type, on its tab

@@ -26,6 +26,7 @@
         <Badge v-if="community" variant="community">
           {{ $t("settings.provider_community") }}
         </Badge>
+        <ProviderStageBadge :stage="entry.manifest.stage" />
       </div>
       <p class="m-0 truncate text-xs text-muted-foreground">{{ byline }}</p>
       <p class="m-0 truncate text-xs text-muted-foreground">
@@ -56,6 +57,7 @@
 
 <script setup lang="ts">
 import CatalogIcon from "@/components/settings/catalog/CatalogIcon.vue";
+import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCatalogEntryDetails } from "@/composables/settings/catalog/useCatalogEntryDetails";
