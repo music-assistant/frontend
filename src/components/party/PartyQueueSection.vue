@@ -17,15 +17,19 @@
         </span>
         <Button
           size="sm"
-          :disabled="
-            (rateLimitingEnabled && skipSongTokens <= 0) || skippingSong
-          "
+          :disabled="skipDisabled"
           class="skip-btn"
           @click="$emit('skip')"
         >
           <Spinner v-if="skippingSong" class="size-4" />
           <SkipForward v-else :size="16" />
           {{ $t("providers.party.guest_page.skip") }}
+          <span
+            v-if="skipVotesRequired > 1"
+            class="ml-1 tabular-nums opacity-80"
+          >
+            {{ skipVotes }}/{{ skipVotesRequired }}
+          </span>
           <span
             v-if="rateLimitingEnabled"
             class="skip-token-badge"
@@ -78,7 +82,7 @@ import Spinner from "@/components/ui/spinner/Spinner.vue";
 import type { QueueItem } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Clock, ListMusic, SkipForward } from "@lucide/vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import PartyQueueItem from "./PartyQueueItem.vue";
 
 const props = defineProps<{
@@ -92,6 +96,10 @@ const props = defineProps<{
   skipSongTokens: number;
   skippingSong: boolean;
   skipTokenCountdown: string;
+  skipVotes: number;
+  skipVotesRequired: number;
+  hasVotedToSkip: boolean;
+  hasCurrentItem: boolean;
   boostBadgeColor: string;
   requestBadgeColor: string;
   boostEnabled: boolean;
@@ -104,6 +112,15 @@ const emit = defineEmits<{
   queueScroll: [event: Event];
   boostQueueItem: [item: QueueItem];
 }>();
+
+const skipDisabled = computed(
+  () =>
+    (props.rateLimitingEnabled && props.skipSongTokens <= 0) ||
+    props.skippingSong ||
+    props.hasVotedToSkip ||
+    // a vote is for the track the guest sees, so wait until it is known
+    !props.hasCurrentItem,
+);
 
 const expandedQueueItemId = ref("");
 
