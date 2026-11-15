@@ -5,12 +5,14 @@
 -->
 <template>
   <DropdownMenu :open="show" :modal="modal" @update:open="onOpenChange">
+    <!-- capped at the room the screen leaves, so a long menu scrolls instead
+         of running off it -->
     <DropdownMenuContent
       data-item-context-menu
       :reference="reference"
       align="end"
       :side-offset="0"
-      class="z-[999999] min-w-[300px] max-w-[350px] max-h-[85vh] overflow-y-auto"
+      class="z-[999999] min-w-[300px] max-w-[350px] max-h-[min(85vh,var(--reka-dropdown-menu-content-available-height))] overflow-y-auto"
       @close-auto-focus="onCloseAutoFocus"
     >
       <!-- play menu header -->
@@ -94,11 +96,12 @@
               menuItemLabel(menuItem)
             }}</span>
           </DropdownMenuSubTrigger>
+          <!-- capped as the menu itself, so a long entry is cut off on a phone -->
           <DropdownMenuSubContent
             align="start"
             :align-offset="-5"
             :side-offset="6"
-            class="max-h-[70vh] overflow-y-auto"
+            class="max-h-[70vh] max-w-[min(92vw,350px)] overflow-y-auto"
           >
             <DropdownMenuItem
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
@@ -341,6 +344,12 @@ import { backFromMediaDetails } from "@/helpers/navigation";
 import { openExternalItem } from "@/helpers/open_external_item";
 import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
+import { showActionResult } from "@/helpers/action_result";
+import {
+  getProviderMenuItems,
+  type ProviderMenuChoice,
+  type ProviderMenuContext,
+} from "@/helpers/provider_menu_actions";
 import {
   canAddToPlaylist,
   canEditPlaylistItems,
@@ -467,20 +476,19 @@ export const showContextMenuForMediaItem = async function (
 
   const menuTargets = await withFullItemDetails(mediaItems);
 
-  const contextMenuItems = await getContextMenuItems(
-    menuTargets,
-    parentItem,
-    options,
-  );
-
-  let menuItems: ContextMenuItem[] = [];
-
   // the play section, its player header included, is for an item that can be
   // played at all
   const withPlayMenu =
     includePlayMenuItems &&
     menuTargets[0].is_playable &&
     (itemIsAvailable(menuTargets[0]) || isExternalItem(menuTargets[0]));
+
+  const contextMenuItems = [
+    ...(await getContextMenuItems(menuTargets, parentItem, options)),
+    ...getDeclaredContextMenuItems(menuTargets, withPlayMenu),
+  ];
+
+  let menuItems: ContextMenuItem[] = [];
   if (withPlayMenu) {
     // Play menu items first, then context items
     menuItems = await getPlaybackContextMenuItems(
@@ -579,6 +587,7 @@ export const showPlayMenuForMediaItem = async function (
       disabled: !store.activePlayer,
     });
   }
+  playMenuItems.push(...providerMenuItems(mediaItems, "player"));
 
   if (playMenuItems.length == 0) playMenuItems = [];
 
@@ -1531,6 +1540,22 @@ export const getContextMenuItems = async function (
 };
 
 /**
+ * The submenus the provider instances add to the menu of a single item, one
+ * per instance; they go after the entries of getContextMenuItems. Read in a
+ * computed, they follow the providers and their manifests.
+ *
+ * @param items - The selection the menu is for.
+ * @param withPlayer - Whether the menu offers the ways to play the item and so
+ * also the entries that act on the chosen player.
+ */
+export const getDeclaredContextMenuItems = function (
+  items: MediaItemTypeOrItemMapping[],
+  withPlayer = false,
+): ContextMenuItem[] {
+  return providerMenuItems(items, withPlayer ? "all" : "other");
+};
+
+/**
   Generates playback-related context menu items based on the given media items and their parent.
   This includes "Play now", the "Enqueue options" submenu and "Play from here" (for playlists/albums).
   An AudioSource only gets "Play now": it cannot be queued for later.
@@ -1724,6 +1749,52 @@ export const getPlaybackContextMenuItems = async function (
     }
   }
   return playMenuItems;
+};
+
+/**
+ * The submenus of the provider instances for a selection of one item, with the
+ * entries of the given kind; an entry that acts on a player gets the player
+ * chosen when it is picked. A selection of several items gets none.
+ */
+const providerMenuItems = function (
+  items: MediaItemTypeOrItemMapping[],
+  offer: ProviderMenuContext["offer"],
+): ContextMenuItem[] {
+  const item = items[0];
+  // the server looks an external item up by its uri, as for the app's own actions
+  if (items.length !== 1 || !(itemIsAvailable(item) || isExternalItem(item)))
+    return [];
+  return getProviderMenuItems(
+    item.media_type,
+    {
+      offer,
+      hasPlayer: !!store.activePlayer,
+      providers: Object.values(api.providers),
+      manifests: api.providerManifests,
+      hasScope: (scope) => authManager.hasScope(scope),
+    },
+    (choice) => void runProviderMenuAction(choice, item.uri),
+  );
+};
+
+// an entry that needs a player is disabled without one, since the server
+// refuses it then
+const runProviderMenuAction = async function (
+  choice: ProviderMenuChoice,
+  uri: string,
+) {
+  try {
+    showActionResult(
+      await api.invokeProviderMenuAction(
+        choice.instanceId,
+        choice.actionId,
+        uri,
+        choice.requiresPlayer ? store.activePlayer?.player_id : undefined,
+      ),
+    );
+  } catch {
+    // the api reports the failure itself
+  }
 };
 
 // Radio and AudioSource are both live, infinite streams and share a single enqueue

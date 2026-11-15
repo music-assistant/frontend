@@ -950,6 +950,31 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it.each([false, true])(
+    "lets getAudiobook opt out of global errors (suppressed: %s)",
+    async (suppressed) => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const result = suppressed
+        ? api.getAudiobook("book-1", "library", { suppressGlobalError: true })
+        : api.getAudiobook("book-1", "library");
+      expect(transport.lastCommand.command).toBe(
+        "music/audiobooks/get_audiobook",
+      );
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "book-1",
+        provider_instance_id_or_domain: "library",
+      });
+      const rejection = expect(result).rejects.toMatchObject({
+        message: "Cannot load audiobook",
+      });
+      transport.receive(
+        createErrorResult(transport.lastCommand, "Cannot load audiobook"),
+      );
+      await rejection;
+      expect(mockToastError).toHaveBeenCalledTimes(suppressed ? 0 : 1);
+    },
+  );
+
   it("lets updateUser suppress the global error toast for the caller", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const result = api.updateUser(
@@ -1126,6 +1151,42 @@ describe("MusicAssistantApi error handling", () => {
       command: "config/providers",
       args: { include_unavailable: true },
     });
+  });
+
+  it.each([
+    ["for a player", "player-1", { player_id: "player-1" }],
+    ["without a player", undefined, {}],
+  ])("runs a menu action of a provider %s", (_case, playerId, extra) => {
+    void api.invokeProviderMenuAction(
+      "demo--1",
+      "show_item",
+      "library://track/1",
+      playerId,
+    );
+
+    expect(transport.lastCommand.command).toBe("providers/invoke_menu_action");
+    expect(transport.lastCommand.args).toEqual({
+      instance_id: "demo--1",
+      action_id: "show_item",
+      uri: "library://track/1",
+      ...extra,
+    });
+  });
+
+  it("tells a failing menu action as any failing command", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.invokeProviderMenuAction(
+      "demo--1",
+      "show_item",
+      "library://track/1",
+    );
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).toHaveBeenCalledWith("Boom");
   });
 
   it("updates one community provider by its domain", () => {
