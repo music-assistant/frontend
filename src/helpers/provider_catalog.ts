@@ -228,12 +228,14 @@ export const buildCatalogEntries = (
 };
 
 /**
- * Who maintains an entry: the maintainers the community catalog names for one
- * from there, else the people among its codeowners; none when only the team does.
+ * Who maintains an entry, as GitHub handles with an @: the maintainers the
+ * community catalog names for one from there, else the people among its
+ * codeowners; none when only the team does.
  */
 export const getEntryMaintainers = (entry: CatalogEntry): string[] =>
+  // the community catalog gives bare handles, codeowners carry the @ already
   entry.community?.maintainers.length
-    ? entry.community.maintainers
+    ? entry.community.maintainers.map((handle) => `@${handle}`)
     : getProviderMaintainers(entry.manifest);
 
 /** Whether adding the entry first installs it from the community catalog. */

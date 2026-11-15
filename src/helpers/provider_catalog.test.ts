@@ -386,7 +386,7 @@ describe("getEntryMaintainers", () => {
         manifest: radio,
         instances: [],
         canAdd: true,
-        community: communityProvider("radio", { maintainers: ["@jane"] }),
+        community: communityProvider("radio", { maintainers: ["jane"] }),
       }),
     ).toEqual(["@jane"]);
     expect(

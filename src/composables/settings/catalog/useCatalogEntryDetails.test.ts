@@ -30,7 +30,7 @@ describe("useCatalogEntryDetails", () => {
   it("describes one from the community catalog by what the catalog says", () => {
     const provider = communityProvider("radio", {
       repository: "jane/ma-radio",
-      maintainers: ["@jane", "@john"],
+      maintainers: ["jane", "john"],
     });
     const details = useCatalogEntryDetails({
       manifest: provider.manifest,
