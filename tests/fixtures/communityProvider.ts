@@ -30,6 +30,8 @@ export function communityProvider(
     state: CommunityProviderState.AVAILABLE,
     installed_version: null,
     latest_version: "1.2.0",
+    pending_version: null,
+    failed_version: null,
     added: "2026-10-01T00:00:00Z",
     released: "2026-11-02T00:00:00Z",
     reason: null,

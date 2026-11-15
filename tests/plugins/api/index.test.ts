@@ -1128,6 +1128,15 @@ describe("MusicAssistantApi error handling", () => {
     });
   });
 
+  it("updates one community provider by its domain", () => {
+    void api.updateCommunityProviders("radio");
+
+    expect(transport.lastCommand).toMatchObject({
+      command: "community_catalog/update",
+      args: { domain: "radio" },
+    });
+  });
+
   it.each<[string, (api: MusicAssistantApi) => Promise<unknown>]>([
     ["community_catalog/providers", (api) => api.getCommunityProviders()],
     ["community_catalog/refresh", (api) => api.refreshCommunityProviders()],
@@ -1136,6 +1145,11 @@ describe("MusicAssistantApi error handling", () => {
       (api) => api.installCommunityProvider("radio"),
     ],
     ["community_catalog/remove", (api) => api.removeCommunityProvider("radio")],
+    ["community_catalog/update", (api) => api.updateCommunityProviders()],
+    [
+      "community_catalog/dismiss_notice",
+      (api) => api.dismissCommunityNotice("radio"),
+    ],
   ])("leaves a failing %s to its caller", async (command, call) => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(console, "debug").mockImplementation(() => {});

@@ -13,6 +13,8 @@
     </Button>
   </div>
 
+  <CommunityMovedTypeNotice class="mx-5 mb-4" :type="currentType" />
+
   <div class="pl-5 font-medium">
     {{
       $t("settings.providers_total", filteredProviders.length, {
@@ -136,6 +138,7 @@
 <script setup lang="ts">
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
+import CommunityMovedTypeNotice from "@/components/settings/catalog/CommunityMovedTypeNotice.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
 import { Button } from "@/components/ui/button";

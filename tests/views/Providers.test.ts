@@ -2,6 +2,8 @@ import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  CommunityProviderState,
+  type CoreConfig,
   type ProviderConfig,
   ProviderFeature,
   ProviderSharing,
@@ -14,8 +16,11 @@ import {
   UserRole,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
 import Providers from "@/views/settings/Providers.vue";
+import { communityProvider } from "../fixtures/communityProvider";
 import { providerConfig } from "../fixtures/providerConfig";
+import { providerManifest } from "../fixtures/providerManifest";
 import {
   BUILTIN_ROLE_SCOPES,
   MEMBER_WITHOUT_OWN_SCOPES,
@@ -35,7 +40,11 @@ const {
   toastMock,
 } = vi.hoisted(() => ({
   apiMock: {
+    dismissCommunityNotice:
+      vi.fn<MusicAssistantApi["dismissCommunityNotice"]>(),
     getAllUsers: vi.fn<MusicAssistantApi["getAllUsers"]>(),
+    getCommunityProviders: vi.fn<MusicAssistantApi["getCommunityProviders"]>(),
+    getCoreConfig: vi.fn<MusicAssistantApi["getCoreConfig"]>(),
     getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
     getShareCandidates: vi.fn<MusicAssistantApi["getShareCandidates"]>(),
@@ -224,6 +233,10 @@ afterEach(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([owner, member]);
+  apiMock.getCommunityProviders.mockResolvedValue([]);
+  apiMock.getCoreConfig.mockResolvedValue({
+    values: {},
+  } as unknown as CoreConfig);
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.getShareCandidates.mockResolvedValue(shareCandidates);
   apiMock.providerManifests.spotify.builtin = false;
@@ -746,6 +759,74 @@ describe("Providers", () => {
     await mountProviders(ProviderStatus.LOADED);
 
     expect(toastMock.error).toHaveBeenCalledWith("auth.users_load_failed");
+  });
+});
+
+describe("Providers with something that moved to the community catalog", () => {
+  const moved = (domain: string, type: ProviderType) =>
+    communityProvider(domain, {
+      state: CommunityProviderState.INSTALLED,
+      notice: "moved",
+      manifest: providerManifest({ domain, name: domain, type }),
+    });
+
+  beforeEach(() => {
+    apiMock.getCommunityProviders.mockResolvedValue([
+      moved("radio", ProviderType.MUSIC),
+      moved("speaker", ProviderType.PLAYER),
+      communityProvider("fm", { state: CommunityProviderState.INSTALLED }),
+    ]);
+  });
+
+  it("tells an admin about the ones of the type of the page", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const notice = wrapper.getComponent(CommunityMovedNotice);
+    expect(
+      notice
+        .props("providers")
+        .map((provider: { domain: string }) => provider.domain),
+    ).toEqual(["radio"]);
+  });
+
+  it("dismisses one with the server", async () => {
+    apiMock.dismissCommunityNotice.mockResolvedValue(undefined);
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+    const notice = wrapper.getComponent(CommunityMovedNotice);
+
+    notice.vm.$emit("dismiss", notice.props("providers")[0]);
+    await flushPromises();
+
+    expect(apiMock.dismissCommunityNotice).toHaveBeenCalledWith("radio");
+    expect(notice.props("providers")).toEqual([]);
+  });
+
+  it("still lists what is set up when the server refuses the community catalog", async () => {
+    apiMock.getCommunityProviders.mockRejectedValue(
+      new Error("not available in safe mode"),
+    );
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
+    expect(
+      wrapper.getComponent(CommunityMovedNotice).props("providers"),
+    ).toEqual([]);
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("tells a member nothing and asks the server nothing", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(
+      wrapper.getComponent(CommunityMovedNotice).props("providers"),
+    ).toEqual([]);
+    expect(apiMock.getCommunityProviders).not.toHaveBeenCalled();
+    expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
   });
 });
 
@@ -1370,6 +1451,7 @@ async function mountWithConfigs(
       },
       stubs: {
         Button: ButtonStub,
+        CommunityMovedTypeNotice: false,
         Container: SlotStub,
         Empty: SlotStub,
         EmptyContent: SlotStub,

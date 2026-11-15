@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { communityProvider } from "../../tests/fixtures/communityProvider";
 import {
   type CommunityCatalogMenuState,
   getCommunityCatalogMenuItems,
@@ -9,14 +10,20 @@ const catalog = (
 ): CommunityCatalogMenuState => ({
   status: "ready",
   enabled: false,
+  installed: [],
   saving: false,
+  autoUpdate: false,
+  savingAutoUpdate: false,
+  refreshing: false,
   setEnabled: vi.fn(),
+  setAutoUpdate: vi.fn(),
+  refresh: vi.fn(),
   retry: vi.fn(),
   ...state,
 });
 
 describe("the menu of the community catalog", () => {
-  it("offers to switch it on while it is off", () => {
+  it("only offers to switch it on while it is off and nothing is installed", () => {
     const state = catalog({ enabled: false });
 
     const items = getCommunityCatalogMenuItems(state);
@@ -28,16 +35,63 @@ describe("the menu of the community catalog", () => {
     expect(state.setEnabled).toHaveBeenCalledWith(true);
   });
 
-  it("offers to switch it off while it is on", () => {
+  it("offers to check for changes and switch it on while it is off and something is installed", () => {
+    const state = catalog({
+      enabled: false,
+      installed: [communityProvider("radio")],
+    });
+
+    const items = getCommunityCatalogMenuItems(state);
+
+    expect(items.map((item) => item.label)).toEqual([
+      "settings.catalog.community.refresh",
+      "settings.catalog.community.enable",
+    ]);
+    items[0].action!();
+    expect(state.refresh).toHaveBeenCalled();
+  });
+
+  it("offers to check for changes, update automatically and switch it off while it is on", () => {
     const state = catalog({ enabled: true });
 
     const items = getCommunityCatalogMenuItems(state);
 
     expect(items.map((item) => item.label)).toEqual([
+      "settings.catalog.community.refresh",
+      "settings.catalog.community.auto_update",
       "settings.catalog.community.disable",
     ]);
-    items[0].action!();
+    items[2].action!();
     expect(state.setEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it("checks for changes", () => {
+    const state = catalog({ enabled: true });
+
+    getCommunityCatalogMenuItems(state)[0].action!();
+
+    expect(state.refresh).toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    "shows automatic updates as %s and toggles them",
+    (autoUpdate) => {
+      const state = catalog({ enabled: true, autoUpdate });
+
+      const item = getCommunityCatalogMenuItems(state)[1];
+
+      expect(item.selected).toBe(autoUpdate);
+      item.action!();
+      expect(state.setAutoUpdate).toHaveBeenCalledWith(!autoUpdate);
+    },
+  );
+
+  it("holds checking for changes and automatic updates while they run", () => {
+    const items = getCommunityCatalogMenuItems(
+      catalog({ enabled: true, refreshing: true, savingAutoUpdate: true }),
+    );
+
+    expect(items.map((item) => !!item.disabled)).toEqual([true, true, false]);
   });
 
   it("switches the way the menu said when it was opened", () => {
