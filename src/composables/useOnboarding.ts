@@ -43,6 +43,7 @@ import {
   type Player,
   type PlayerConfig,
   type ProviderConfig,
+  type ProviderStatus,
   type ProviderType,
   type User,
 } from "@/plugins/api/interfaces";
@@ -59,6 +60,7 @@ export interface ConfiguredProvider {
   domain: string;
   // set up, but not doing anything: switched off or failed to load
   needsAttention: boolean;
+  status: ProviderStatus | null;
 }
 
 /** A player the wizard lists, built from its configuration and live state. */
@@ -205,8 +207,7 @@ async function fetchPlayerConfigs(): Promise<void> {
   try {
     // every player that registered, and the switched-off ones on top: those
     // are unregistered, and this is where they are switched back on. One that
-    // is switched on but not around is left out, as on the players settings
-    // page.
+    // is switched on but not around is left out.
     const configs = await api.getPlayerConfigs(undefined, false, false, true);
     for (const config of configs) upsertPlayerConfig(config);
   } catch (error) {
@@ -324,6 +325,7 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
         ) || config.domain,
       domain: config.domain,
       needsAttention: config.enabled === false || config.last_error != null,
+      status: config.status,
     }));
 }
 
@@ -488,20 +490,86 @@ const steps = computed(() => applicableSteps(ctx.value));
 const pending = computed(() => pendingSteps(ctx.value));
 
 // Whether the onboarding modal is open, and the step it should open on when it
-// is (`null` falls back to the first step still to do). Module-level so the
-// same modal is driven from the app shell, the settings page and the sign-in
-// flow, and stays open across the routes it sits over.
+// is (`null` falls back to the first step still to do). The wizard keeps the
+// step up to date as it moves, so a paused setup opens again where it was.
+// Module-level so the same modal is driven from the app shell, the settings
+// page and the sign-in flow.
 const active = ref(false);
 const requestedStep = ref<OnboardingStepId | null>(null);
+// a setup put aside, which a reconnect leaves aside
+const paused = ref(false);
+// the paused banner was dismissed, which hides it but keeps the setup aside
+const pausedBannerDismissed = ref(false);
+const showPausedBanner = computed(
+  () => paused.value && !pausedBannerDismissed.value,
+);
+// counts each time the wizard opens, so a pause only acts on the opening it
+// started on and never on a wizard resumed while its save was on its way
+let opening = 0;
 
 function open(step?: OnboardingStepId): void {
-  requestedStep.value = step ?? null;
+  if (step) requestedStep.value = step;
+  paused.value = false;
+  pausedBannerDismissed.value = false;
+  if (!active.value) opening++;
   active.value = true;
 }
 
 function close(): void {
   active.value = false;
+  paused.value = false;
+  pausedBannerDismissed.value = false;
   requestedStep.value = null;
+}
+
+// what lets the step on screen save before the setup is put aside; the
+// wizard's to set while it is open
+let leaveCurrentStep: (() => Promise<boolean>) | null = null;
+// the opening a pause is saving for, if any
+let pausingOpening: number | null = null;
+
+/** Let the step on screen save before a pause; hands back what undoes it. */
+function setStepGuard(guard: () => Promise<boolean>): () => void {
+  leaveCurrentStep = guard;
+  return () => {
+    // a wizard that has already taken over keeps its own guard
+    if (leaveCurrentStep === guard) leaveCurrentStep = null;
+  };
+}
+
+/** Hide the open setup and offer to resume it, without asking its step. */
+function setAside(): void {
+  if (!active.value) return;
+  active.value = false;
+  paused.value = true;
+}
+
+/**
+ * Put the setup aside, keeping its step for whenever it is resumed. The step on
+ * screen saves first, as it does on Next; a step that cannot keeps the wizard
+ * open, unless `force` says the user has already left it.
+ */
+async function pause(options?: { force?: boolean }): Promise<void> {
+  if (!active.value) return;
+  const started = opening;
+  if (pausingOpening === started) {
+    // the user went to another page while a pause was saving: they have left,
+    // so the wizard goes now, whatever that save turns out to be
+    if (options?.force) setAside();
+    return;
+  }
+  pausingOpening = started;
+  try {
+    const saved = (await leaveCurrentStep?.()) ?? true;
+    if (opening === started && (saved || options?.force)) setAside();
+  } finally {
+    if (pausingOpening === started) pausingOpening = null;
+  }
+}
+
+/** Hide the banner offering to resume a paused setup. */
+function dismissPaused(): void {
+  pausedBannerDismissed.value = true;
 }
 
 /** Answer the setup's intent question, and say whether the answer landed. */
@@ -560,10 +628,11 @@ async function markWelcomed(options?: CommandOptions): Promise<boolean> {
   return await write;
 }
 
-// InvalidDataError: the server is still registering the command but has already
-// completed onboarding itself.
+// InvalidDataError: the command is still registered, but onboarding was already
+// completed, by another session for instance.
 const INVALID_DATA_ERROR_CODE = 3;
-// InvalidCommand: the server dropped the command when it completed onboarding.
+// InvalidCommand: a server restarted after onboarding completed no longer
+// registers the command.
 const INVALID_COMMAND_ERROR_CODE = 12;
 
 /**
@@ -585,8 +654,7 @@ function isAlreadyCompletedError(error: unknown): boolean {
  * the admin's setup, and all the welcome leaves behind is the marker on the
  * member's own account.
  *
- * On the admin track the server completes onboarding by itself as soon as the
- * first provider is added, so the command is skipped once it says so and an
+ * A server that already says onboarding is done is not asked again, and an
  * answer that only repeats that is not worth a word. Any other failure leaves
  * onboarding open on the server, so the wizard stays put with the error on
  * screen rather than handing the user back an app that will drop them in here
@@ -639,6 +707,11 @@ export function useOnboarding() {
     requestedStep,
     open,
     close,
+    pause,
+    paused,
+    showPausedBanner,
+    dismissPaused,
+    setStepGuard,
     intent,
     setIntent,
     expertMode,

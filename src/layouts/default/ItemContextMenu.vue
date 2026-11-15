@@ -11,6 +11,7 @@
       align="end"
       :side-offset="0"
       class="z-[999999] min-w-[300px] max-w-[350px] max-h-[85vh] overflow-y-auto"
+      @close-auto-focus="onCloseAutoFocus"
     >
       <!-- play menu header -->
       <template v-if="showPlayMenuHeader">
@@ -205,6 +206,13 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
 // clearing it for the dialog underneath
 let dialogActiveBeforeOpen = false;
 
+// the menu opens without a trigger element, so on close focus goes back to
+// whatever held it when the menu opened. Only for keyboard users: a touch
+// long-press (or a click in Safari) leaves focus where it was, which may be an
+// unrelated input that would scroll the page or bring up the on-screen keyboard
+let focusBeforeOpen: HTMLElement | null = null;
+let usingKeyboard = false;
+
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
     items.value = evt.items;
@@ -212,16 +220,26 @@ onMounted(() => {
     posY.value = evt.posY || 0;
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
     nextTick(() => {
-      if (!show.value) dialogActiveBeforeOpen = store.dialogActive;
+      if (!show.value) {
+        dialogActiveBeforeOpen = store.dialogActive;
+        focusBeforeOpen =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+      }
       show.value = true;
       store.dialogActive = true;
     });
   });
+  document.addEventListener("keydown", markKeyboardInteraction, true);
+  document.addEventListener("pointerdown", markPointerInteraction, true);
   document.addEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
 onBeforeUnmount(() => {
   eventbus.off("contextmenu");
+  document.removeEventListener("keydown", markKeyboardInteraction, true);
+  document.removeEventListener("pointerdown", markPointerInteraction, true);
   document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
 });
 
@@ -230,6 +248,20 @@ const onOpenChange = function (value: boolean) {
   // the dialog underneath may have closed on its own in the meantime, so
   // only a flag that is still set is restored
   store.dialogActive = value || (dialogActiveBeforeOpen && store.dialogActive);
+};
+
+const onCloseAutoFocus = function (event: Event) {
+  event.preventDefault();
+  const target = focusBeforeOpen;
+  focusBeforeOpen = null;
+  if (!usingKeyboard || !target) return;
+  // deferred like reka's own restore, so the closing interaction settles first
+  setTimeout(() => {
+    // an action may have moved focus on purpose (e.g. into a dialog)
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    if (target.isConnected) target.focus();
+  }, 0);
 };
 
 function closeOnOutsidePointer(event: PointerEvent) {
@@ -256,6 +288,14 @@ function closeOnOutsidePointer(event: PointerEvent) {
     if (!show.value)
       store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
   });
+}
+
+function markKeyboardInteraction() {
+  usingKeyboard = true;
+}
+
+function markPointerInteraction() {
+  usingKeyboard = false;
 }
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {
@@ -298,12 +338,14 @@ import {
 } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
+import { openExternalItem } from "@/helpers/open_external_item";
 import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import {
   canAddToPlaylist,
   canEditPlaylistItems,
   canManagePlaylist,
+  canReorderPlaylistItems,
   canSharePlaylist,
 } from "@/helpers/playlist_access";
 import {
@@ -315,10 +357,11 @@ import {
 import {
   getPlaylistMigrationProviders,
   isAudioSource,
+  isExternalItem,
   isItemInLibrary,
-  isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
+  providerSupportsPlaylistMove,
 } from "@/plugins/api/helpers";
 import {
   Album,
@@ -334,6 +377,8 @@ import {
   ProviderMapping,
   QueueOption,
   Radio,
+  SortDirection,
+  SortField,
   Scope,
   Track,
 } from "@/plugins/api/interfaces";
@@ -343,9 +388,17 @@ import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import {
+  canSavePlaylistMoves,
+  isPlaylistEditPending,
+  sendPlaylistEdit,
+  untilTaskEnds,
+} from "@/composables/usePlaylistTrackReorder";
+import {
   ArrowDown,
+  ArrowDownToLine,
   ArrowRightLeft,
   ArrowUp,
+  ArrowUpToLine,
   Disc3,
   Download,
   Folder,
@@ -394,6 +447,8 @@ export const showContextMenuForMediaItem = async function (
   showPlayMenuHeader = false,
   sortBy?: string,
   options?: ContextMenuOptions,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   // show ContextMenu for given MediaItem(s)
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
@@ -425,13 +480,15 @@ export const showContextMenuForMediaItem = async function (
   const withPlayMenu =
     includePlayMenuItems &&
     menuTargets[0].is_playable &&
-    itemIsAvailable(menuTargets[0]);
+    (itemIsAvailable(menuTargets[0]) || isExternalItem(menuTargets[0]));
   if (withPlayMenu) {
     // Play menu items first, then context items
     menuItems = await getPlaybackContextMenuItems(
       menuTargets,
       parentItem,
       sortBy,
+      sortField,
+      sortDirection,
     );
     menuItems.push(...contextMenuItems);
   } else {
@@ -463,6 +520,9 @@ export const showPlayMenuForMediaItem = async function (
   parentItem?: MediaItemType,
   posX = 0,
   posY = 0,
+  tracksSortBy?: string,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ) {
   // open the play menu by emitting the event
 
@@ -470,10 +530,7 @@ export const showPlayMenuForMediaItem = async function (
     ? item
     : [item];
   if (mediaItems.length == 0) return;
-  // a MusicBrainz release in the selection has nothing to play
-  const playableItems = mediaItems.filter(
-    (x) => x.is_playable && !isMusicBrainzItem(x),
-  );
+  const playableItems = mediaItems.filter((x) => x.is_playable);
   if (playableItems.length == 0) return;
   const firstItem = playableItems[0];
 
@@ -494,7 +551,14 @@ export const showPlayMenuForMediaItem = async function (
     );
   } else {
     playMenuItems.push(
-      ...buildEnqueueMenuItems(playableItems, defaultEnqueueOption),
+      ...buildEnqueueMenuItems(
+        playableItems,
+        defaultEnqueueOption,
+        // the order of a single album/playlist's own tracks
+        playableItems.length == 1 ? tracksSortBy : undefined,
+        playableItems.length == 1 ? tracksSortField : undefined,
+        playableItems.length == 1 ? tracksSortDirection : undefined,
+      ),
     );
   }
   // Starting the media shuffled is its own action rather than a state indicator:
@@ -561,12 +625,16 @@ export const getContextMenuItems = async function (
       MediaType.PODCAST_EPISODE,
       MediaType.TRACK,
     ].includes(items[0].media_type) &&
-    (itemIsAvailable(items[0]) || isMusicBrainzItem(items[0]))
+    (itemIsAvailable(items[0]) || isExternalItem(items[0]))
   ) {
     contextMenuItems.push({
       label: "show_info",
       labelArgs: [],
       action: () => {
+        if (isExternalItem(firstItem)) {
+          openExternalItem(firstItem);
+          return;
+        }
         router.push({
           name: firstItem.media_type,
           params: {
@@ -631,7 +699,7 @@ export const getContextMenuItems = async function (
   // go to artist(s)
   if (
     items.length === 1 &&
-    itemIsAvailable(items[0]) &&
+    (itemIsAvailable(items[0]) || isExternalItem(items[0])) &&
     "artists" in items[0] &&
     (items[0] as Track | Album).artists.length === 1
   ) {
@@ -640,6 +708,10 @@ export const getContextMenuItems = async function (
         label: "goto_artist",
         labelArgs: [artist.name],
         action: () => {
+          if (isExternalItem(artist)) {
+            openExternalItem(artist);
+            return;
+          }
           router.push({
             name: "artist",
             params: {
@@ -654,7 +726,9 @@ export const getContextMenuItems = async function (
   }
   // go to album
   const trackAlbum =
-    items.length === 1 && itemIsAvailable(items[0]) && "album" in items[0]
+    items.length === 1 &&
+    (itemIsAvailable(items[0]) || isExternalItem(items[0])) &&
+    "album" in items[0]
       ? (items[0] as Track).album
       : null;
   if (trackAlbum) {
@@ -662,6 +736,10 @@ export const getContextMenuItems = async function (
       label: "goto_album",
       labelArgs: [trackAlbum.name],
       action: () => {
+        if (isExternalItem(trackAlbum)) {
+          openExternalItem(trackAlbum);
+          return;
+        }
         router.push({
           name: "album",
           params: {
@@ -694,11 +772,11 @@ export const getContextMenuItems = async function (
   // which provider items and item mappings do not carry, so resolve the
   // counterpart the library holds. Library rows are verified too since a
   // row can outlive its item (a list kept open, a cached search result).
-  // A MusicBrainz release is skipped: the server hands back the library album
-  // for a release that is in the library, so this one is outside it.
+  // An external item is skipped: the server hands back the library item for
+  // one that is in the library, so this one is outside it.
   let libraryItem: MediaItemType | undefined;
   if (
-    !isMusicBrainzItem(firstItem) &&
+    !isExternalItem(firstItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -732,11 +810,11 @@ export const getContextMenuItems = async function (
   // Only the first item of a selection is resolved, so a single item acts
   // on its library counterpart while a multi-selection keeps its own
   // identity.
-  // (a MusicBrainz release has no library row to act on)
+  // (an external item has no library row to act on)
   const actionTargets =
     items.length === 1
       ? [resolvedItem]
-      : items.filter((item) => !isMusicBrainzItem(item));
+      : items.filter((item) => !isExternalItem(item));
   // a library row alone is not membership, since the backend also keeps
   // rows for relatives of saved items, so the resolved row is checked too
   const inLibrary =
@@ -758,14 +836,14 @@ export const getContextMenuItems = async function (
       MediaType.RADIO,
       MediaType.TRACK,
     ].includes(resolvedItem.media_type) &&
-    (itemIsAvailable(resolvedItem) || isMusicBrainzItem(resolvedItem))
+    (itemIsAvailable(resolvedItem) || isExternalItem(resolvedItem))
   ) {
     contextMenuItems.push({
       label: "add_library",
       labelArgs: [],
       action: () => {
         for (const item of items) {
-          // a release none of the music services has is refused with a toast
+          // an external item no music service has is refused with a toast
           api.addItemToLibrary(addableItem(item)).catch(() => undefined);
           // optimistically flag the mappings so the derived state re-evaluates
           if ("provider_mappings" in item)
@@ -848,12 +926,9 @@ export const getContextMenuItems = async function (
       favoriteState(item) === false;
 
     // the actions run on the library copy while the next menu is built from
-    // the item the caller holds, so its state has to follow (a MusicBrainz
-    // release in the selection was not acted on)
+    // the item the caller holds, so its state has to follow
     const markFavorite = (favorite: boolean | null) => {
-      for (const item of items) {
-        if (!isMusicBrainzItem(item)) setFavoriteState(item, favorite);
-      }
+      for (const item of items) setFavoriteState(item, favorite);
     };
 
     if (favoritableItems.length > 0) {
@@ -997,6 +1072,10 @@ export const getContextMenuItems = async function (
     parentItem.media_type === MediaType.PLAYLIST
   ) {
     const playlist = parentItem as Playlist;
+    // while another edit is pending the listed positions are out of date, and
+    // while reconnecting an edit cannot be sent
+    const canEditOrder = () =>
+      canSavePlaylistMoves() && !isPlaylistEditPending(playlist.item_id);
     if (
       (firstItem.media_type === MediaType.TRACK ||
         firstItem.media_type === MediaType.RADIO ||
@@ -1007,13 +1086,74 @@ export const getContextMenuItems = async function (
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
+        disabled: !canEditOrder(),
         action: () => {
-          api.removePlaylistTracks(
-            playlist.item_id,
-            items.map((x) => ("position" in x ? x.position : 0) as number),
+          if (!canEditOrder()) return;
+          // the removal runs as a background task; the positions hold until
+          // it is done and read back
+          void sendPlaylistEdit(playlist.item_id, () =>
+            untilTaskEnds(() =>
+              api.removePlaylistTracks(
+                playlist.item_id,
+                items.map((x) => ("position" in x ? x.position : 0) as number),
+              ),
+            ),
           );
+          // the rows read back after it would select the tracks taking the
+          // removed ones' places
+          eventbus.emit("clearSelection");
         },
         icon: MinusCircle,
+      });
+    }
+    // move to the playlist's top or bottom; the listing reloads once the
+    // playlist reports the change
+    const positions = items.map((x) =>
+      "position" in x && typeof x.position === "number" ? x.position : 0,
+    );
+    const atTop = [...new Set(positions)]
+      .sort((a, b) => a - b)
+      .every((position, index) => position === index + 1);
+    if (
+      positions.every((position) => position > 0) &&
+      canReorderPlaylistItems(
+        playlist,
+        store.currentUser,
+        managesLibrary,
+        providerSupportsPlaylistMove,
+      )
+    ) {
+      if (!atTop) {
+        contextMenuItems.push({
+          label: "playlist_move_to_top",
+          labelArgs: [],
+          disabled: !canEditOrder(),
+          action: () => {
+            if (!canEditOrder()) return;
+            void sendPlaylistEdit(playlist.item_id, () =>
+              api.movePlaylistTracks(playlist.item_id, positions, 1),
+            ).then((moved) => {
+              if (moved) toast.success($t("playlist_moved_to_top"));
+            });
+            eventbus.emit("clearSelection");
+          },
+          icon: ArrowUpToLine,
+        });
+      }
+      contextMenuItems.push({
+        label: "playlist_move_to_bottom",
+        labelArgs: [],
+        disabled: !canEditOrder(),
+        action: () => {
+          if (!canEditOrder()) return;
+          void sendPlaylistEdit(playlist.item_id, () =>
+            api.movePlaylistTracks(playlist.item_id, positions),
+          ).then((moved) => {
+            if (moved) toast.success($t("playlist_moved_to_bottom"));
+          });
+          eventbus.emit("clearSelection");
+        },
+        icon: ArrowDownToLine,
       });
     }
   }
@@ -1065,7 +1205,7 @@ export const getContextMenuItems = async function (
           icon: RotateCcw,
           action: () => {
             api.playMedia(item.uri, QueueOption.PLAY, {
-              start_from_beginning: true,
+              start_position: 0,
             });
           },
           disabled: !store.activePlayer,
@@ -1157,7 +1297,7 @@ export const getContextMenuItems = async function (
     ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
       items[0].media_type,
     ) &&
-    !isMusicBrainzItem(items[0]) &&
+    !isExternalItem(items[0]) &&
     ((managesLibrary && items[0] == parentItem) || canFindOnMusicServices)
   ) {
     contextMenuItems.push({
@@ -1399,16 +1539,18 @@ export const getPlaybackContextMenuItems = async function (
   items: MediaItemTypeOrItemMapping[],
   parentItem?: MediaItemType,
   sortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
-  if (items.length == 0 || !itemIsAvailable(items[0])) {
+  if (
+    items.length == 0 ||
+    (!itemIsAvailable(items[0]) && !isExternalItem(items[0]))
+  ) {
     return playMenuItems;
   }
 
-  // a MusicBrainz release in the selection has nothing to play
-  const playableItems = items.filter(
-    (x) => x.is_playable && !isMusicBrainzItem(x),
-  );
+  const playableItems = items.filter((x) => x.is_playable);
   if (playableItems.length == 0) return playMenuItems;
   const firstItem = playableItems[0];
 
@@ -1436,7 +1578,11 @@ export const getPlaybackContextMenuItems = async function (
         action: () => {
           api.playMedia(parentItem.uri, undefined, {
             start_item: playableItems[0].item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           });
         },
         icon: PlayCircle,
@@ -1451,7 +1597,11 @@ export const getPlaybackContextMenuItems = async function (
         action: () => {
           api.playMedia(parentItem.uri, undefined, {
             start_item: firstItem.item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           });
         },
         icon: PlayCircle,
@@ -1486,7 +1636,7 @@ export const getPlaybackContextMenuItems = async function (
   // "Enqueue..." submenu with all enqueue options
   playMenuItems.push({
     label: "enqueue",
-    subItems: buildEnqueueMenuItems(items, defaultEnqueueOption),
+    subItems: buildEnqueueMenuItems(playableItems, defaultEnqueueOption),
     icon: ListMusic,
     labelArgs: [],
   });
@@ -1606,11 +1756,15 @@ const getDefaultEnqueueOption = async function (
 
 /**
  * Menu entries for every way the given items can be started or queued, with the
- * configured default, when known, marked as selected.
+ * configured default, when known, marked as selected. tracksSortBy orders the
+ * tracks of an album or playlist the way its page shows them.
  */
 const buildEnqueueMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
   defaultEnqueueOption: QueueOption | undefined,
+  tracksSortBy?: string,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ): ContextMenuItem[] {
   return [
     QueueOption.PLAY,
@@ -1621,10 +1775,17 @@ const buildEnqueueMenuItems = function (
   ].map((option) => ({
     label: $t(`queue_option.${option}`),
     action: () => {
-      api.playMedia(
-        items.map((x) => x.uri),
-        option,
-      );
+      const uris = items.map((x) => x.uri);
+      if (tracksSortField) {
+        api.playMedia(uris, option, {
+          sort_field: tracksSortField,
+          sort_direction: tracksSortDirection,
+        });
+      } else if (tracksSortBy) {
+        api.playMedia(uris, option, { sort_by: tracksSortBy });
+      } else {
+        api.playMedia(uris, option);
+      }
     },
     icon: queueOptionIconMap[option],
     labelArgs: [],
@@ -1689,8 +1850,8 @@ const playPodcastFromHereMenuItem = function (
 const addableItem = function (
   item: MediaItemTypeOrItemMapping,
 ): string | MediaItemTypeOrItemMapping {
-  // the server resolves a MusicBrainz uri to the album on a music service
-  if (isMusicBrainzItem(item)) return item.uri;
+  // the server looks an external item up by its uri
+  if (isExternalItem(item)) return item.uri;
   if (item.provider !== "library" || !("provider_mappings" in item)) {
     return item;
   }

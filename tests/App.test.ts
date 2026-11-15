@@ -39,6 +39,7 @@ const {
   mockRememberCurrentRemoteConnection,
   mockRunAfterPreferenceWrites,
   mockOnboardingOpen,
+  onboardingPaused,
   mockRouterPush,
   mockRouterReplace,
   mockSetPreference,
@@ -52,6 +53,8 @@ const {
     authenticateWithToken: vi.fn<MusicAssistantApi["authenticateWithToken"]>(),
     baseUrl: "http://music-assistant.test",
     fetchState: vi.fn<MusicAssistantApi["fetchState"]>(),
+    fetchProviderManifests:
+      vi.fn<MusicAssistantApi["fetchProviderManifests"]>(),
     fetchProviders: vi.fn<MusicAssistantApi["fetchProviders"]>(),
     getCurrentUserInfo: vi.fn<MusicAssistantApi["getCurrentUserInfo"]>(),
     getLibraryAlbumsCount: vi.fn<MusicAssistantApi["getLibraryAlbumsCount"]>(),
@@ -121,6 +124,8 @@ const {
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRunAfterPreferenceWrites: vi.fn(),
     mockOnboardingOpen: vi.fn(),
+    // whether the admin paused the setup, which a reconnect leaves paused
+    onboardingPaused: { value: false },
     mockRouterPush: vi.fn(),
     mockRouterReplace: vi.fn(),
     mockSetPreference: vi.fn(),
@@ -203,7 +208,10 @@ vi.mock("@/composables/useShortcuts", () => ({
 }));
 
 vi.mock("@/composables/useOnboarding", () => ({
-  useOnboarding: () => ({ open: mockOnboardingOpen }),
+  useOnboarding: () => ({
+    open: mockOnboardingOpen,
+    paused: onboardingPaused,
+  }),
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -327,6 +335,7 @@ describe("App initialization", () => {
     vi.resetAllMocks();
     vi.resetModules();
     guestType.value = null;
+    onboardingPaused.value = false;
     i18nMock.global.locale.value = "en";
     apiMock.state.value = "authenticated";
     apiMock.isRemoteConnection.value = false;
@@ -348,6 +357,7 @@ describe("App initialization", () => {
       }),
     );
     apiMock.fetchState.mockResolvedValue(undefined);
+    apiMock.fetchProviderManifests.mockResolvedValue(undefined);
     apiMock.fetchProviders.mockResolvedValue(undefined);
     apiMock.initialize.mockResolvedValue(undefined);
     apiMock.setLocale.mockResolvedValue(undefined);
@@ -455,6 +465,7 @@ describe("App initialization", () => {
       expect(mockPruneStaleProviderFilters).not.toHaveBeenCalled();
       expect(mockRememberCurrentRemoteConnection).not.toHaveBeenCalled();
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(apiMock.fetchProviderManifests).toHaveBeenCalledOnce();
       expect(apiMock.fetchProviders).toHaveBeenCalledOnce();
       expectLibraryCountsNotCalled();
       expect(webPlayerMock.setBaseUrl).toHaveBeenCalledWith(apiMock.baseUrl);
@@ -540,6 +551,16 @@ describe("App initialization", () => {
         expect(mockOnboardingOpen).not.toHaveBeenCalled();
       },
     );
+
+    it("leaves a setup the admin paused alone when it runs again", async () => {
+      asAdmin();
+      apiMock.serverInfo.value.onboard_done = false;
+      onboardingPaused.value = true;
+
+      wrapper = await mountApp();
+
+      expect(mockOnboardingOpen).not.toHaveBeenCalled();
+    });
 
     it("stays out of the way once the server is set up", async () => {
       asAdmin();
@@ -716,6 +737,7 @@ describe("App initialization", () => {
     expect(storeMock.roles).toEqual([userRole]);
     expect(storeMock.roleScopes).toEqual({ user: ["library.read"] });
     expect(apiMock.fetchState).toHaveBeenCalledOnce();
+    expect(apiMock.fetchProviderManifests).not.toHaveBeenCalled();
     expect(apiMock.fetchProviders).not.toHaveBeenCalled();
     expect(mockPruneStaleProviderFilters).toHaveBeenCalledOnce();
     expectLibraryCountsCalled();

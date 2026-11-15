@@ -7,6 +7,7 @@ import {
   ProviderFeature,
   ProviderMapping,
   SearchResults,
+  SortField,
 } from "@/plugins/api/interfaces";
 import { computed, onScopeDispose, ref, watch, type Ref } from "vue";
 
@@ -213,7 +214,7 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
           search: trimmedTerm,
           limit: limits.single,
           offset: 0,
-          order_by: "name",
+          sort_field: SortField.NAME,
         });
         if (searchId !== currentSearchId) return;
         providerResults.value[LIBRARY_SEARCH_TARGET] = {
@@ -240,7 +241,7 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
           search: trimmedTerm,
           limit: limits.multi,
           offset: 0,
-          order_by: "name",
+          sort_field: SortField.NAME,
         })
         .then((genres) => {
           if (searchId === currentSearchId)

@@ -44,7 +44,7 @@
             }}:
             {{ accessiblePlayerLabel }}
             <template v-if="player.needs_setup">
-              . {{ $t("settings.setup_required") }}
+              . {{ setupReason ?? $t("settings.setup_required") }}
             </template>
             <template v-else-if="playerStatus">
               . {{ $t(playerStatus) }}
@@ -114,7 +114,7 @@
                 :style="{ color: 'rgb(var(--v-theme-warning))' }"
               >
                 <TriangleAlert class="size-3" />
-                {{ $t("settings.setup_required") }}
+                {{ setupReason ?? $t("settings.setup_required") }}
               </Badge>
               <p
                 v-if="player.type === PlayerType.SOURCE"
@@ -245,6 +245,7 @@ import {
   getPlayerDisplayName,
   getPlayerGroupMemberCount,
   getPlayerName,
+  getPlayerSetupReason,
   isBuiltinPlayer,
 } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
@@ -297,9 +298,13 @@ const emit = defineEmits<{
 }>();
 
 const artworkFailed = ref(false);
-const { activeSource } = useActiveSource(toRef(props, "player"));
+const { activeSource, canRestartSource } = useActiveSource(
+  toRef(props, "player"),
+);
 
 const playerQueue = computed(() => resolvePlayerQueue(props.player));
+
+const setupReason = computed(() => getPlayerSetupReason(props.player));
 
 // a set-up audio input can't be selected for playback; its row only informs
 const isInformationalSource = computed(
@@ -344,7 +349,7 @@ const useStackedMediaLayout = computed(
 );
 
 const canPlayPause = computed(
-  () => activeSource.value?.can_play_pause === true,
+  () => activeSource.value?.can_play_pause === true || canRestartSource.value,
 );
 
 const playActionInProgress = computed(

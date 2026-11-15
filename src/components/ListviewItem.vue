@@ -4,6 +4,7 @@
     link
     :show-menu-btn="showMenu"
     :menu-button-label="menuButtonLabel"
+    :aria-busy="resolving || undefined"
     :class="{
       unavailable: !isAvailable && !notInLibrary,
       'not-in-library': notInLibrary,
@@ -71,6 +72,11 @@
                 alt=""
               />
             </div>
+            <ArtworkSpinner
+              v-if="resolving"
+              class="rounded"
+              spinner-class="size-5"
+            />
           </div>
         </template>
         <!-- ===== DESKTOP (hover-capable): blue play reveals on hover ===== -->
@@ -129,6 +135,11 @@
                   alt=""
                 />
               </div>
+              <ArtworkSpinner
+                v-if="resolving"
+                class="rounded"
+                spinner-class="size-5"
+              />
               <span v-if="showPlay" class="listitem-play-blue">
                 <Play
                   :size="16"
@@ -245,7 +256,7 @@
         :src="iconHiRes"
         width="30"
         alt=""
-        :class="$vuetify.theme.current.dark ? 'hiresicondark' : 'hiresicon'"
+        :class="isDark ? 'hiresicondark' : 'hiresicon'"
       >
         <v-tooltip activator="parent" location="bottom">
           {{ HiResDetails }}
@@ -274,17 +285,17 @@
       />
 
       <!-- fully played or in progress icon -->
-      <!-- only used for podcast-episodes and audiobook-chapters; the slot stays
-      when unplayed so the durations line up across rows -->
+      <!-- only used for podcast-episodes, audiobooks and collections; the slot
+      stays when unplayed so the durations line up across rows -->
       <span
-        v-if="'fully_played' in item"
+        v-if="'fully_played' in item || item.media_type == MediaType.COLLECTION"
         class="listitem-played-state"
         :role="playedStateLabel ? 'img' : undefined"
         :title="playedStateLabel"
         :aria-label="playedStateLabel"
       >
-        <Check v-if="item.fully_played" />
-        <ClockFading v-else-if="isInProgress" />
+        <Check v-if="playedState === 'fully_played'" />
+        <ClockFading v-else-if="playedState === 'in_progress'" />
       </span>
 
       <!-- favorite (heart) icon -->
@@ -328,16 +339,20 @@
 </template>
 
 <script setup lang="ts">
+import ArtworkSpinner from "@/components/ArtworkSpinner.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
+import { useResolvingItems } from "@/composables/useResolvingItems";
+import { isDark } from "@/composables/useThemePreference";
 import { canHoldFavorite } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { getPlayedState } from "@/helpers/played_state";
 import {
   formatDuration,
   getArtistsString,
@@ -346,7 +361,7 @@ import {
 } from "@/helpers/utils";
 import {
   getListItemProviderIconDomain,
-  isMusicBrainzItem,
+  isExternalItem,
 } from "@/plugins/api/helpers";
 import {
   AlbumType,
@@ -356,6 +371,8 @@ import {
   type MediaCollection,
   type MediaItemType,
   type PodcastEpisode,
+  SortDirection,
+  SortField,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { getBreakpointValue } from "@/plugins/breakpoint";
@@ -392,6 +409,8 @@ export interface Props {
   disablePlayButton?: boolean;
   parentItem?: MediaItemType;
   sortBy?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 
 // touch devices (phones + tablets like iPad) can't hover, so they get an
@@ -419,12 +438,17 @@ const compProps = withDefaults(defineProps<Props>(), {
   isAvailable: true,
   parentItem: undefined,
   sortBy: undefined,
+  sortField: undefined,
+  sortDirection: undefined,
 });
 
 // computed properties
-// a release only MusicBrainz knows: muted rather than shown as unavailable,
-// since it can be opened and added to the library
-const notInLibrary = computed(() => isMusicBrainzItem(compProps.item));
+// an item known only by an external id: muted rather than shown as
+// unavailable, since it can be opened and added to the library
+const notInLibrary = computed(() => isExternalItem(compProps.item));
+
+const { isResolving } = useResolvingItems();
+const resolving = computed(() => isResolving(compProps.item.uri));
 
 const episodeNumber = computed(() =>
   compProps.item.media_type === MediaType.PODCAST_EPISODE
@@ -432,9 +456,11 @@ const episodeNumber = computed(() =>
     : undefined,
 );
 
-// a row that is not available has nothing to play, whatever its flag says
+// a row that is not available has nothing to play, whatever its flag says;
+// an external item is looked up when played
 const showPlay = computed(
-  () => compProps.item.is_playable && compProps.isAvailable,
+  () =>
+    compProps.item.is_playable && (compProps.isAvailable || notInLibrary.value),
 );
 
 // favouring an item changes the library
@@ -471,16 +497,11 @@ const collabArtists = computed(() => {
   );
   return collab.map((a) => a.name).join(" | ");
 });
-const isInProgress = computed(
-  () =>
-    "resume_position_ms" in compProps.item &&
-    !!compProps.item.resume_position_ms,
-);
+const playedState = computed(() => getPlayedState(compProps.item));
 // undefined while unplayed, when the played state shows nothing
 const playedStateLabel = computed(() => {
-  if ("fully_played" in compProps.item && compProps.item.fully_played)
-    return $t("item_fully_played");
-  return isInProgress.value ? $t("item_in_progress") : undefined;
+  if (playedState.value === "fully_played") return $t("item_fully_played");
+  return playedState.value ? $t("item_in_progress") : undefined;
 });
 
 const HiResDetails = computed(() => {
@@ -522,6 +543,8 @@ const onMenu = function (evt: Event) {
     compProps.parentItem,
     true,
     compProps.sortBy,
+    compProps.sortField,
+    compProps.sortDirection,
   );
 };
 
@@ -552,6 +575,9 @@ const onPlayClick = function (evt: PointerEvent) {
     compProps.parentItem,
     undefined,
     compProps.sortBy,
+    undefined,
+    compProps.sortField,
+    compProps.sortDirection,
   );
 };
 </script>

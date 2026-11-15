@@ -1,6 +1,10 @@
 import Players from "@/views/settings/Players.vue";
+import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import type {
+  getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems,
+  removeUnavailablePlayers as removeUnavailable,
+} from "@/helpers/player_settings_actions";
 import {
   PlayerType,
   ProviderType,
@@ -14,31 +18,46 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emitEvent, getPlayerSettingsMenuItems, hasScope, routerPush } =
-  vi.hoisted(() => ({
-    apiMock: {
-      getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
-      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
-      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
-      playerManifests: {},
-      players: {} as Record<
-        string,
-        {
-          player_id: string;
-          available: boolean;
-          needs_setup: boolean;
-          output_protocols: [];
-        }
-      >,
-      providerManifests: {},
-      providers: {},
-      subscribe_multi: vi.fn(),
-    },
-    emitEvent: vi.fn(),
-    getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
-    hasScope: vi.fn<(scope: Scope) => boolean>(),
-    routerPush: vi.fn(),
-  }));
+const {
+  apiMock,
+  emitEvent,
+  getPlayerSettingsMenuItems,
+  hasScope,
+  preferences,
+  removeUnavailablePlayers,
+  routerPush,
+  setPreference,
+  toolbarMenu,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
+    playerManifests: {},
+    players: {} as Record<
+      string,
+      {
+        player_id: string;
+        available: boolean;
+        needs_setup: boolean;
+        output_protocols: [];
+      }
+    >,
+    providerManifests: {},
+    providers: {},
+    subscribe_multi: vi.fn(),
+  },
+  emitEvent: vi.fn(),
+  getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
+  // the preferences the page reads, by key
+  preferences: {} as Record<string, unknown>,
+  removeUnavailablePlayers: vi.fn<typeof removeUnavailable>(),
+  routerPush: vi.fn(),
+  setPreference: vi.fn(),
+  // what the page publishes into the menu of the settings toolbar
+  toolbarMenu: { value: [] as ToolBarMenuItem[] },
+}));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -63,7 +82,28 @@ vi.mock("@/helpers/player_config", async (importOriginal) => ({
 // the menu itself is covered where it is built; here it only has to arrive
 vi.mock("@/helpers/player_settings_actions", () => ({
   getPlayerSettingsMenuItems,
+  removeUnavailablePlayers,
 }));
+
+vi.mock("@/composables/useSettingsToolbarMenu", () => ({
+  useSettingsToolbarMenu: () => toolbarMenu,
+}));
+
+vi.mock("@/composables/userPreferences", async () => {
+  const { computed, reactive } =
+    await vi.importActual<typeof import("vue")>("vue");
+  const values = reactive(preferences);
+  return {
+    useUserPreferences: () => ({
+      getPreference: (key: string, defaultValue: unknown) =>
+        computed(() => values[key] ?? defaultValue),
+      setPreference: (key: string, value: unknown) => {
+        setPreference(key, value);
+        values[key] = value;
+      },
+    }),
+  };
+});
 
 vi.mock("@/helpers/utils", () => ({
   openLinkInNewTab: vi.fn(),
@@ -95,19 +135,6 @@ const playerConfig = {
   values: {},
 };
 
-const ListItemStub = {
-  emits: ["click", "menu"],
-  template: `
-    <button
-      class="player-list-item"
-      @click="$emit('click')"
-      @contextmenu="$emit('menu', $event)"
-    >
-      <slot name="title" />
-    </button>
-  `,
-};
-
 const SettingsPlayerCardStub = {
   props: ["playerConfig"],
   emits: ["click", "menu", "setup"],
@@ -127,6 +154,8 @@ describe("Players", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    for (const key of Object.keys(preferences)) delete preferences[key];
+    toolbarMenu.value = [];
     playerConfig.enabled = true;
     webPlayer.player_id = null;
     apiMock.players = {
@@ -173,7 +202,7 @@ describe("Players", () => {
   });
 
   it.each([
-    ["list", ".player-list-item"],
+    ["list", ".player-row"],
     ["card", ".settings-player-card"],
   ] as const)(
     "starts setup when clicking a setup-required player in %s view",
@@ -195,12 +224,22 @@ describe("Players", () => {
     apiMock.players.kitchen.available = true;
     const wrapper = await mountPlayers("list");
 
-    await wrapper.get(".player-list-item").trigger("click");
+    await wrapper.get(".player-row").trigger("click");
 
     expect(emitEvent).not.toHaveBeenCalledWith(
       "setupFlowDialog",
       expect.anything(),
     );
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
+  it("opens the settings of a player whose provider is not running", async () => {
+    apiMock.players.kitchen.needs_setup = false;
+    apiMock.getProvider.mockReturnValue(undefined);
+    const wrapper = await mountPlayers("list");
+
+    await wrapper.get(".player-row").trigger("click");
+
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
   });
 
@@ -208,7 +247,7 @@ describe("Players", () => {
     playerConfig.enabled = false;
     const wrapper = await mountPlayers("list");
 
-    await wrapper.get(".player-list-item").trigger("click");
+    await wrapper.get(".player-row").trigger("click");
 
     expect(emitEvent).not.toHaveBeenCalledWith(
       "setupFlowDialog",
@@ -217,10 +256,23 @@ describe("Players", () => {
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
   });
 
+  it("opens a player from its name, a button the keyboard can reach", async () => {
+    apiMock.players.kitchen.needs_setup = false;
+    apiMock.players.kitchen.available = true;
+    const wrapper = await mountPlayers("list");
+    const name = wrapper.get('.player-row [data-testid="player-open"]');
+
+    expect(name.element.tagName).toBe("BUTTON");
+    await name.trigger("click");
+
+    expect(routerPush).toHaveBeenCalledTimes(1);
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
   it("opens the shared player menu with links to the settings sections", async () => {
     const wrapper = await mountPlayers("list");
 
-    await wrapper.get(".player-list-item").trigger("contextmenu");
+    await wrapper.get(".player-row").trigger("contextmenu", { button: 2 });
 
     expect(getPlayerSettingsMenuItems).toHaveBeenCalledWith(
       expect.objectContaining({ player_id: "kitchen" }),
@@ -235,7 +287,8 @@ describe("Players", () => {
   it("opens the menu at the touch position for a long-press", async () => {
     const wrapper = await mountPlayers("list");
 
-    await wrapper.get(".player-list-item").trigger("contextmenu", {
+    await wrapper.get(".player-row").trigger("contextmenu", {
+      button: 2,
       touches: [{ clientX: 11, clientY: 22 }],
     });
 
@@ -248,7 +301,7 @@ describe("Players", () => {
   it("labels the player of this device next to its real name", async () => {
     webPlayer.player_id = "kitchen";
     const wrapper = await mountPlayers("list");
-    const row = wrapper.get(".player-list-item");
+    const row = wrapper.get(".player-row");
 
     expect(row.text()).toContain("Kitchen");
     expect(row.get(".player-device-badge-label").text()).toBe("this_device");
@@ -266,23 +319,121 @@ describe("Players", () => {
 
     filters.vm.$emit("update:statuses", ["needs_setup"]);
     await flushPromises();
-    expect(wrapper.find(".player-list-item").exists()).toBe(true);
+    expect(wrapper.find(".player-row").exists()).toBe(true);
 
     filters.vm.$emit("update:statuses", ["available"]);
     await flushPromises();
-    expect(wrapper.find(".player-list-item").exists()).toBe(false);
+    expect(wrapper.find(".player-row").exists()).toBe(false);
+  });
+
+  it("offers to remove the unavailable players in the toolbar menu to who may change player settings", async () => {
+    const offersRemoval = async () => {
+      const wrapper = await mountPlayers("list");
+      const offered = !!toolbarMenuItem(REMOVE_UNAVAILABLE);
+      wrapper.unmount();
+      return offered;
+    };
+
+    expect(await offersRemoval()).toBe(true);
+
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    expect(await offersRemoval()).toBe(false);
+  });
+
+  it("drops the players the server removed from the list", async () => {
+    const wrapper = await mountPlayers("list");
+
+    toolbarMenuItem(REMOVE_UNAVAILABLE)!.action!();
+    expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
+
+    removeUnavailablePlayers.mock.calls[0][0]!(["kitchen"]);
+    await flushPromises();
+    expect(wrapper.find(".player-row").exists()).toBe(false);
+  });
+
+  it("takes its items out of the toolbar menu when it closes", async () => {
+    const wrapper = await mountPlayers("list");
+    expect(toolbarMenu.value).not.toEqual([]);
+
+    wrapper.unmount();
+
+    expect(toolbarMenu.value).toEqual([]);
+  });
+
+  it("shows every player until unavailable players are hidden", async () => {
+    // attic is disabled, so it has no player
+    apiMock.players = {
+      kitchen: unavailablePlayer("kitchen"),
+      office: { ...unavailablePlayer("office"), needs_setup: true },
+      garden: { ...unavailablePlayer("garden"), available: true },
+    };
+    apiMock.getPlayerConfigs.mockResolvedValue(
+      ["kitchen", "attic", "office", "garden"].map((playerId) => ({
+        ...playerConfig,
+        player_id: playerId,
+        name: playerId,
+        enabled: playerId !== "attic",
+      })),
+    );
+    const wrapper = await mountPlayers("list");
+    const listed = () =>
+      wrapper.findAll('[data-testid="player-open"]').map((name) => name.text());
+
+    expect(toolbarMenuItem(HIDE_UNAVAILABLE)!.active).toBe(false);
+    expect(listed()).toHaveLength(4);
+
+    toolbarMenuItem(HIDE_UNAVAILABLE)!.action!();
+    await flushPromises();
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "settings.players.hideUnavailable",
+      true,
+    );
+    expect(toolbarMenuItem(HIDE_UNAVAILABLE)!.active).toBe(true);
+    expect(listed()).toEqual(["attic", "garden", "office"]);
+
+    // the server decides what goes, so the hidden players are not left out
+    toolbarMenuItem(REMOVE_UNAVAILABLE)!.action!();
+    expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
+  });
+
+  it("hides unavailable players when that was chosen before", async () => {
+    preferences["settings.players.hideUnavailable"] = true;
+    apiMock.players = { kitchen: unavailablePlayer("kitchen") };
+
+    const wrapper = await mountPlayers("list");
+
+    expect(wrapper.find(".player-row").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="players-empty"]').exists()).toBe(true);
   });
 
   it("drops a deleted player from the list", async () => {
     const wrapper = await mountPlayers("list");
-    await wrapper.get(".player-list-item").trigger("contextmenu");
+    await wrapper.get(".player-row").trigger("contextmenu", { button: 2 });
 
     getPlayerSettingsMenuItems.mock.calls[0][1]!.onDeleted!();
     await flushPromises();
 
-    expect(wrapper.find(".player-list-item").exists()).toBe(false);
+    expect(wrapper.find(".player-row").exists()).toBe(false);
   });
 });
+
+const REMOVE_UNAVAILABLE = "settings.remove_unavailable_players";
+const HIDE_UNAVAILABLE = "settings.hide_unavailable_players";
+
+/** The item with this label in what the page publishes into the toolbar menu. */
+function toolbarMenuItem(label: string): ToolBarMenuItem | undefined {
+  return toolbarMenu.value.find((item) => item.label === label);
+}
+
+function unavailablePlayer(playerId: string) {
+  return {
+    player_id: playerId,
+    available: false,
+    needs_setup: false,
+    output_protocols: [] as [],
+  };
+}
 
 async function mountPlayers(viewMode: "list" | "card") {
   const wrapper = mount(Players, {
@@ -290,6 +441,8 @@ async function mountPlayers(viewMode: "list" | "card") {
       mocks: {
         $t: (key: string) => key,
       },
+      // the long-press directive is registered by a plugin the test skips
+      directives: { hold: {} },
       provide: {
         playersViewMode: {
           toggleViewMode: vi.fn(),
@@ -300,15 +453,10 @@ async function mountPlayers(viewMode: "list" | "card") {
         AddPlayerGroupDialog: true,
         Button: true,
         Container: passthroughStub,
-        ListItem: ListItemStub,
         PlayerFilters: true,
         PlayerIcon: true,
         RouterLink: true,
         SettingsPlayerCard: SettingsPlayerCardStub,
-        VCol: passthroughStub,
-        VIcon: true,
-        VList: passthroughStub,
-        VRow: passthroughStub,
       },
     },
   });

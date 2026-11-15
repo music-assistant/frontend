@@ -7,3 +7,10 @@ import { authManager } from "@/plugins/auth";
  */
 export const canUseQueueDj = (): boolean =>
   authManager.hasScope(Scope.CONFIG_PROVIDERS_READ);
+
+/**
+ * Whether the signed-in user may play AI Radio shows and so needs the on-air
+ * state: reading it takes only queue control, no plugin settings access.
+ */
+export const canPlayShows = (): boolean =>
+  authManager.hasScope(Scope.QUEUES_CONTROL);

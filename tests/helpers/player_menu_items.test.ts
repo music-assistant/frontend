@@ -8,9 +8,9 @@ import {
   PLAYER_CONTROL_NONE,
   PlayerFeature,
   PlayerType,
+  ProtocolRole,
   type AIRadioHost,
-  type AIRadioSession,
-  type AIRadioStation,
+  type AIRadioQueueDJStatus,
   type Player,
   type PlayerOption,
   type PlayerQueue,
@@ -33,9 +33,7 @@ const {
   queueDjStatusRef,
   togglePlayerPower,
   routerPush,
-  sessionsRef,
   setQueueDj,
-  showsRef,
   storeMock,
 } = vi.hoisted(() => ({
   aiRadioAvailableRef: { value: false },
@@ -44,12 +42,10 @@ const {
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   hostsRef: { value: [] as AIRadioHost[] },
   openAnnouncementDialog: vi.fn(),
-  queueDjStatusRef: { value: {} as Record<string, string> },
+  queueDjStatusRef: { value: {} as AIRadioQueueDJStatus },
   togglePlayerPower: vi.fn(),
   routerPush: vi.fn(),
-  sessionsRef: { value: [] as AIRadioSession[] },
   setQueueDj: vi.fn(),
-  showsRef: { value: [] as AIRadioStation[] },
   storeMock: {
     enabledPlugins: new Set(["milkdrop_visualizer"]),
     showFullscreenPlayer: true,
@@ -57,13 +53,15 @@ const {
   },
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     players: {},
+    providerManifests: { chromecast: { name: "Chromecast" } },
     playerCommandShuffle: vi.fn(),
     playerCommandRepeat: vi.fn(),
-  },
-}));
+  };
+  return { api, default: api };
+});
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
@@ -119,13 +117,6 @@ vi.mock("@/composables/ai-radio/useHosts", () => ({
   }),
 }));
 
-vi.mock("@/composables/ai-radio/useShows", () => ({
-  useShows: () => ({
-    sessions: sessionsRef,
-    shows: showsRef,
-  }),
-}));
-
 vi.mock("vue-sonner", () => ({
   toast: {
     error: vi.fn(),
@@ -176,30 +167,9 @@ function makeHost(overrides: Partial<AIRadioHost> = {}): AIRadioHost {
   };
 }
 
-function makeShow(overrides: Partial<AIRadioStation> = {}): AIRadioStation {
-  return {
-    id: "show-1",
-    name: "Morning Mix",
-    source_playlist_id: "42",
-    source_playlist_provider: "library",
-    host_id: "host-1",
-    ...overrides,
-  };
-}
-
-function makeSession(overrides: Partial<AIRadioSession> = {}): AIRadioSession {
-  return {
-    session_id: "session-1",
-    station_id: "show-1",
-    queue_id: "kitchen",
-    status: "running",
-    created_at: "2026-08-01T00:00:00Z",
-    started_at: "2026-08-01T00:00:00Z",
-    ended_at: null,
-    error: null,
-    last_render_error: null,
-    ...overrides,
-  };
+/** A queue's DJ entry: manually armed with no station, or auto-armed by the show it plays. */
+function djEntry(hostId: string, stationId = ""): AIRadioQueueDJStatus[string] {
+  return { host_id: hostId, station_id: stationId };
 }
 
 describe("getPlayerSetupMenuItem", () => {
@@ -474,8 +444,6 @@ describe("getPlayerMenuItems ai dj", () => {
     aiRadioAvailableRef.value = false;
     hostsRef.value = [];
     queueDjStatusRef.value = {};
-    sessionsRef.value = [];
-    showsRef.value = [];
   });
 
   it("omits the ai_dj entry without an available ai_radio provider", () => {
@@ -506,7 +474,7 @@ describe("getPlayerMenuItems ai dj", () => {
       makeHost({ id: "host-1", name: "Robo DJ" }),
       makeHost({ id: "host-2", name: "Chill Casey" }),
     ];
-    queueDjStatusRef.value = { kitchen: "host-1" };
+    queueDjStatusRef.value = { kitchen: djEntry("host-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -547,10 +515,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("shows a single disabled row naming the show's host while a show is on air on this queue", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
-    showsRef.value = [makeShow({ id: "show-1", host_id: "host-1" })];
-    sessionsRef.value = [
-      makeSession({ queue_id: "kitchen", station_id: "show-1" }),
-    ];
+    queueDjStatusRef.value = { kitchen: djEntry("host-1", "show-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -567,10 +532,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("renders the normal hosts submenu when the running show is on a different queue", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
-    showsRef.value = [makeShow({ id: "show-1", host_id: "host-1" })];
-    sessionsRef.value = [
-      makeSession({ queue_id: "other-queue", station_id: "show-1" }),
-    ];
+    queueDjStatusRef.value = { "other-queue": djEntry("host-1", "show-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -590,10 +552,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("falls back to a nameless label when the on-air show's host can't be resolved", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [];
-    showsRef.value = [makeShow({ id: "show-1", host_id: "deleted-host" })];
-    sessionsRef.value = [
-      makeSession({ queue_id: "kitchen", station_id: "show-1" }),
-    ];
+    queueDjStatusRef.value = { kitchen: djEntry("deleted-host", "show-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -627,7 +586,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("clears the queue's dj via the off entry", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost({ id: "host-1" })];
-    queueDjStatusRef.value = { kitchen: "host-1" };
+    queueDjStatusRef.value = { kitchen: djEntry("host-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -695,6 +654,38 @@ describe("getPlayerMenuItems ai dj", () => {
     expect(labels.indexOf("ai_dj")).toBeGreaterThan(
       labels.indexOf("select_source"),
     );
+  });
+});
+
+describe("getPlayerMenuItems select source", () => {
+  it("names the protocol an app from outside plays on", () => {
+    const player = makePlayer({
+      source_list: [
+        playerSource({ id: "kitchen", name: "Queue", passive: false }),
+        playerSource({ id: "youtube", name: "YouTube" }),
+      ],
+      active_source: "youtube",
+      active_output_protocol: null,
+      protocols: [
+        {
+          protocol_id: "cast-1",
+          domain: "chromecast",
+          provider: "chromecast",
+          role: ProtocolRole.AUDIO,
+          available: true,
+          active: true,
+        },
+      ],
+    });
+
+    const selectSource = getPlayerMenuItems(player, undefined, {
+      context: "player",
+    }).find((item) => item.label === "select_source");
+
+    expect(selectSource?.subItems?.map((item) => item.label)).toEqual([
+      "Queue",
+      "YouTube • Chromecast",
+    ]);
   });
 });
 

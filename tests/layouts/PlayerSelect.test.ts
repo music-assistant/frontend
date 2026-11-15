@@ -121,7 +121,10 @@ vi.mock("@/composables/userPreferences", async () => {
   };
 });
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  resolvePlayer: (await importOriginal<typeof import("@/helpers/players")>())
+    .resolvePlayer,
+  canEditPlayerGroup: (player: Player) => player.can_group_with.length > 0,
   getPlayerDisplayName: (player: Player) =>
     player.player_id === "builtin" ? "This device" : player.name,
   groupMemberPickerVisible: () => true,
@@ -277,6 +280,9 @@ function createPlayer(
     mute_control: "mute",
     needs_setup: false,
     has_setup_flow: false,
+    setup_reason: null,
+    legacy_ids: [],
+    protocols: [],
     output_protocols: [],
     active_output_protocol: null,
     elapsed_time: null,
@@ -287,6 +293,7 @@ function createPlayer(
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    sleep_timer_mode: null,
     active_source_audio: null,
   };
 }
@@ -473,6 +480,21 @@ describe("PlayerSelect", () => {
     await nextTick();
 
     expect(store.activePlayerId).toBe(remembered.player_id);
+  });
+
+  it("selects the player a remembered player was merged into", () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    kitchen.legacy_ids = ["absorbed"];
+    const attic = createPlayer("attic", "Attic", PlaybackState.PLAYING);
+    setActivePlayerPreference("absorbed");
+    api.players = {
+      [attic.player_id]: attic,
+      [kitchen.player_id]: kitchen,
+    };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(kitchen.player_id);
   });
 
   it("waits for the built-in player when it is the remembered one", async () => {
@@ -1169,6 +1191,43 @@ describe("PlayerSelect", () => {
     expect(
       wrapper.find(".player-card").attributes("data-member-controls"),
     ).toBe("true");
+  });
+
+  it("opens the grouping controls of the active player from the fullscreen player", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    kitchen.can_group_with = ["attic"];
+    api.players = {
+      kitchen,
+      attic: createPlayer("attic", "Attic"),
+    };
+    store.activePlayerId = kitchen.player_id;
+    store.showFullscreenPlayer = true;
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+    const card = (playerId: string) =>
+      wrapper.find(`.player-card[data-player-id="${playerId}"]`);
+
+    store.showPlayersMenu = true;
+    await nextTick();
+
+    expect(card("kitchen").attributes("data-member-controls")).toBe("true");
+    expect(card("attic").attributes("data-member-controls")).toBe("false");
+  });
+
+  it("keeps the grouping controls closed when opened from the player bar", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
+    kitchen.can_group_with = ["attic"];
+    api.players = { kitchen };
+    store.activePlayerId = kitchen.player_id;
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+
+    store.showPlayersMenu = true;
+    await nextTick();
+
+    expect(
+      wrapper.find(".player-card").attributes("data-member-controls"),
+    ).toBe("false");
   });
 
   it("scrolls the selected player into view when it is not pinned", async () => {

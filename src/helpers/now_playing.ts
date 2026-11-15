@@ -1,7 +1,9 @@
 // shared navigation for the item the active player is playing, so the player
 // bar and the full screen player land in the same place
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import { openExternalItem } from "@/helpers/open_external_item";
 import api from "@/plugins/api";
+import { isExternalItem } from "@/plugins/api/helpers";
 import { MediaType } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
@@ -25,6 +27,7 @@ export const openCurrentTrackDetails = async function () {
   if (mediaItem && mediaItem.media_type === MediaType.TRACK) {
     // Navigate directly to track detail page
     store.showFullscreenPlayer = false;
+    if (isExternalItem(mediaItem)) return openExternalItem(mediaItem);
     router.push({
       name: "track",
       params: {
@@ -41,7 +44,6 @@ export const openCurrentTrackDetails = async function () {
     : currentMedia.title || "";
 
   try {
-    // Call with positional parameters: (favorite, search, limit, offset, order_by, provider)
     const results = await api.getLibraryTracks(
       undefined, // favorite
       searchTerm, // search
@@ -49,7 +51,7 @@ export const openCurrentTrackDetails = async function () {
       undefined,
       undefined,
       undefined,
-      undefined, // genre_ids
+      undefined, // provider
     );
 
     if (results.length > 0) {

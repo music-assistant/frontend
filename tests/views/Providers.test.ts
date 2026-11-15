@@ -2,19 +2,25 @@ import { flushPromises, shallowMount } from "@vue/test-utils";
 import { ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  CommunityProviderState,
+  type CoreConfig,
   type ProviderConfig,
   ProviderFeature,
   ProviderSharing,
   ProviderStage,
   ProviderStatus,
+  ProviderTier,
   ProviderType,
   type Scope,
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
+import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
 import Providers from "@/views/settings/Providers.vue";
+import { communityProvider } from "../fixtures/communityProvider";
 import { providerConfig } from "../fixtures/providerConfig";
+import { providerManifest } from "../fixtures/providerManifest";
 import {
   BUILTIN_ROLE_SCOPES,
   MEMBER_WITHOUT_OWN_SCOPES,
@@ -34,7 +40,11 @@ const {
   toastMock,
 } = vi.hoisted(() => ({
   apiMock: {
+    dismissCommunityNotice:
+      vi.fn<MusicAssistantApi["dismissCommunityNotice"]>(),
     getAllUsers: vi.fn<MusicAssistantApi["getAllUsers"]>(),
+    getCommunityProviders: vi.fn<MusicAssistantApi["getCommunityProviders"]>(),
+    getCoreConfig: vi.fn<MusicAssistantApi["getCoreConfig"]>(),
     getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
     getShareCandidates: vi.fn<MusicAssistantApi["getShareCandidates"]>(),
@@ -48,6 +58,7 @@ const {
         name: "Spotify",
         self_service: true,
         stage: "stable",
+        tier: "core",
       },
       builtin: {
         allow_disable: false,
@@ -144,24 +155,6 @@ vi.mock("@/helpers/utils", () => ({
 }));
 
 // rendered in place of the real dialog, exposing what it was handed
-const AddDialogStub = vi.hoisted(() => ({
-  name: "AddProviderDialog",
-  props: ["show", "providerType", "multiInstanceOnly", "selfServiceOnly"],
-  template: `
-    <div
-      data-testid="add-dialog"
-      :data-provider-type="providerType ?? ''"
-      :data-multi-instance="String(multiInstanceOnly)"
-      :data-self-service="String(selfServiceOnly)"
-    />
-  `,
-}));
-
-vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
-  default: AddDialogStub,
-}));
-
-// rendered in place of the real dialog, exposing what it was handed
 const AccessDialogStub = vi.hoisted(() => ({
   name: "ProviderAccessDialog",
   props: ["canChangeOwner", "config", "open", "shareCandidates", "users"],
@@ -221,12 +214,14 @@ const ProviderRowStub = {
     "description",
     "accessSummary",
     "statusVariant",
+    "statusIcon",
     "statusLabel",
     "isError",
     "errorText",
-    "stageLabel",
+    "community",
+    "removable",
   ],
-  emits: ["open", "menu", "reconfigure"],
+  emits: ["open", "menu", "reconfigure", "remove"],
   template: `<div data-testid="provider-row">{{ name }}</div>`,
 };
 
@@ -238,12 +233,17 @@ afterEach(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   apiMock.getAllUsers.mockResolvedValue([owner, member]);
+  apiMock.getCommunityProviders.mockResolvedValue([]);
+  apiMock.getCoreConfig.mockResolvedValue({
+    values: {},
+  } as unknown as CoreConfig);
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.getShareCandidates.mockResolvedValue(shareCandidates);
   apiMock.providerManifests.spotify.builtin = false;
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.self_service = true;
   apiMock.providerManifests.spotify.stage = ProviderStage.STABLE;
+  apiMock.providerManifests.spotify.tier = ProviderTier.CORE;
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
@@ -493,20 +493,18 @@ describe("Providers", () => {
     ).not.toContain("settings.reconfigure");
   });
 
-  it("labels the stage badge from the translated stage key", async () => {
-    apiMock.providerManifests.spotify.stage = ProviderStage.DEPRECATED;
+  it("marks a community provider", async () => {
+    apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
 
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(onlyRow(wrapper).props("stageLabel")).toBe(
-      "settings.stage.options.deprecated",
-    );
+    expect(onlyRow(wrapper).props("community")).toBe(true);
   });
 
-  it("hides the stage badge for a stable provider", async () => {
+  it("leaves a core provider unmarked", async () => {
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    expect(onlyRow(wrapper).props("stageLabel")).toBe("");
+    expect(onlyRow(wrapper).props("community")).toBe(false);
   });
 
   it("summarizes a music source without an access record as a household one", async () => {
@@ -705,13 +703,16 @@ describe("Providers", () => {
     expect(menuItems.at(-1).color).toBe("error");
   });
 
-  it("leaves the offered provider types to the route for an admin", async () => {
+  it("opens the Catalog on the type of the page for an admin", async () => {
+    routeMock.query.types = "player";
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
-    const dialog = wrapper.get('[data-testid="add-dialog"]');
-    expect(dialog.attributes("data-provider-type")).toBe("");
-    expect(dialog.attributes("data-multi-instance")).toBe("false");
-    expect(dialog.attributes("data-self-service")).toBe("false");
+    await wrapper.get('[data-testid="add-provider"]').trigger("click");
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "catalog",
+      query: { types: "player" },
+    });
   });
 
   it("offers reconfiguration of a provider that only an admin may set up", async () => {
@@ -731,7 +732,9 @@ describe("Providers", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.get(".empty-state").text()).toContain("no_content");
+    expect(wrapper.get("[data-testid=providers-empty]").text()).toContain(
+      "no_content",
+    );
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
   });
 
@@ -756,6 +759,74 @@ describe("Providers", () => {
     await mountProviders(ProviderStatus.LOADED);
 
     expect(toastMock.error).toHaveBeenCalledWith("auth.users_load_failed");
+  });
+});
+
+describe("Providers with something that moved to the community catalog", () => {
+  const moved = (domain: string, type: ProviderType) =>
+    communityProvider(domain, {
+      state: CommunityProviderState.INSTALLED,
+      notice: "moved",
+      manifest: providerManifest({ domain, name: domain, type }),
+    });
+
+  beforeEach(() => {
+    apiMock.getCommunityProviders.mockResolvedValue([
+      moved("radio", ProviderType.MUSIC),
+      moved("speaker", ProviderType.PLAYER),
+      communityProvider("fm", { state: CommunityProviderState.INSTALLED }),
+    ]);
+  });
+
+  it("tells an admin about the ones of the type of the page", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    const notice = wrapper.getComponent(CommunityMovedNotice);
+    expect(
+      notice
+        .props("providers")
+        .map((provider: { domain: string }) => provider.domain),
+    ).toEqual(["radio"]);
+  });
+
+  it("dismisses one with the server", async () => {
+    apiMock.dismissCommunityNotice.mockResolvedValue(undefined);
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+    const notice = wrapper.getComponent(CommunityMovedNotice);
+
+    notice.vm.$emit("dismiss", notice.props("providers")[0]);
+    await flushPromises();
+
+    expect(apiMock.dismissCommunityNotice).toHaveBeenCalledWith("radio");
+    expect(notice.props("providers")).toEqual([]);
+  });
+
+  it("still lists what is set up when the server refuses the community catalog", async () => {
+    apiMock.getCommunityProviders.mockRejectedValue(
+      new Error("not available in safe mode"),
+    );
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
+    expect(
+      wrapper.getComponent(CommunityMovedNotice).props("providers"),
+    ).toEqual([]);
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("tells a member nothing and asks the server nothing", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(
+      wrapper.getComponent(CommunityMovedNotice).props("providers"),
+    ).toEqual([]);
+    expect(apiMock.getCommunityProviders).not.toHaveBeenCalled();
+    expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
   });
 });
 
@@ -946,13 +1017,28 @@ describe("Providers for a member", () => {
     ).toBe("none");
   });
 
-  it("offers only music sources that allow another account and that members may set up", async () => {
+  it("opens the Catalog on the music sources, whatever type the route names", async () => {
+    routeMock.query.types = "player";
     const wrapper = await mountWithConfigs([ownSource()]);
 
-    const dialog = wrapper.get('[data-testid="add-dialog"]');
-    expect(dialog.attributes("data-provider-type")).toBe("music");
-    expect(dialog.attributes("data-multi-instance")).toBe("true");
-    expect(dialog.attributes("data-self-service")).toBe("true");
+    await wrapper.get('[data-testid="add-provider"]').trigger("click");
+
+    // the Catalog itself keeps a member to what it may add
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "catalog",
+      query: { types: "music" },
+    });
+  });
+
+  it("opens the Catalog from the invitation to add a first source", async () => {
+    const wrapper = await mountWithConfigs([]);
+
+    await wrapper.get('[data-testid="add-provider-empty"]').trigger("click");
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "catalog",
+      query: { types: "music" },
+    });
   });
 
   it("offers no reconfiguration of a provider that only an admin may set up", async () => {
@@ -1045,7 +1131,7 @@ describe("Providers for a member that may not add sources", () => {
       false,
     );
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(false);
-    expect(wrapper.find(".empty-state").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(false);
   });
 });
 
@@ -1057,7 +1143,11 @@ describe("Providers loading", () => {
 
     await mountWithConfigs([]);
 
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(
+      ProviderType.MUSIC,
+      undefined,
+      true,
+    );
   });
 
   it("gives a role that manages only its own music sources the member view", async () => {
@@ -1065,7 +1155,11 @@ describe("Providers loading", () => {
 
     await mountWithConfigs([]);
 
-    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(ProviderType.MUSIC);
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledWith(
+      ProviderType.MUSIC,
+      undefined,
+      true,
+    );
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
     expect(apiMock.getShareCandidates).toHaveBeenCalled();
   });
@@ -1085,9 +1179,95 @@ describe("Providers loading", () => {
     const wrapper = await mountProviders(ProviderStatus.AUTH_REQUIRED);
 
     expect(onlyRow(wrapper).props("statusVariant")).toBe("destructive");
+    expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
     expect(onlyRow(wrapper).props("statusLabel")).toBe(
       "settings.provider_status_auth_required",
     );
+  });
+
+  it.each([
+    [ProviderStatus.LOADING, "loading", "settings.provider_status_loading"],
+    [ProviderStatus.DISABLED, "disabled", "settings.provider_status_disabled"],
+  ])(
+    "shows a %s source as an icon instead of a badge",
+    async (status, icon, label) => {
+      const wrapper = await mountProviders(status);
+
+      expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
+      expect(onlyRow(wrapper).props("statusIcon")).toBe(icon);
+      expect(onlyRow(wrapper).props("statusLabel")).toBe(label);
+    },
+  );
+
+  it("shows a running source without a status", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(onlyRow(wrapper).props("statusVariant")).toBeUndefined();
+    expect(onlyRow(wrapper).props("statusIcon")).toBeUndefined();
+  });
+
+  describe("an entry whose provider is not available", () => {
+    const unavailable = () =>
+      providerConfig({
+        domain: "radio",
+        instance_id: "radio--a",
+        name: "",
+        default_name: "Radio Garden",
+        status: ProviderStatus.UNAVAILABLE,
+        last_error: {
+          error_code: 61,
+          message:
+            "The community catalog blocked this (It sends data elsewhere), so it no longer runs.",
+        },
+      });
+
+    it("is listed as not available with its reason, and cannot be opened", async () => {
+      const wrapper = await mountWithConfigs([unavailable()]);
+
+      const row = onlyRow(wrapper);
+      expect(row.props()).toMatchObject({
+        name: "Radio Garden",
+        manageable: false,
+        removable: true,
+        reconfigurable: false,
+        isError: true,
+        statusVariant: "destructive",
+        statusLabel: "settings.provider_status_unavailable",
+        errorText:
+          "The community catalog blocked this (It sends data elsewhere), so it no longer runs.",
+      });
+    });
+
+    it("is removed after the usual confirmation", async () => {
+      apiMock.removeProviderConfig.mockResolvedValue(undefined);
+      const wrapper = await mountWithConfigs([unavailable()]);
+
+      onlyRow(wrapper).vm.$emit("remove");
+      const removeCall = eventbusMock.emit.mock.calls.find(
+        ([event]) => event === "deleteConfirmationDialog",
+      );
+      expect(removeCall?.[1].message).toBe(
+        "settings.remove_provider_confirm_music",
+      );
+      expect(apiMock.removeProviderConfig).not.toHaveBeenCalled();
+
+      await removeCall?.[1].onConfirm();
+      await flushPromises();
+
+      expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("radio--a");
+      expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(0);
+    });
+
+    it("is not removable for a member who does not own it", async () => {
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+      const wrapper = await mountWithConfigs([
+        { ...otherSource(), status: ProviderStatus.UNAVAILABLE },
+      ]);
+
+      expect(onlyRow(wrapper).props("removable")).toBe(false);
+    });
   });
 
   it("shows no empty state until the providers are loaded", async () => {
@@ -1096,7 +1276,7 @@ describe("Providers loading", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find(".empty-state").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(false);
     expect(wrapper.find('[data-testid="add-provider"]').exists()).toBe(true);
   });
 });
@@ -1149,7 +1329,7 @@ describe("Providers search", () => {
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find(".empty-state").exists()).toBe(true);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(true);
   });
 });
 
@@ -1270,14 +1450,16 @@ async function mountWithConfigs(
         },
       },
       stubs: {
-        AddProviderDialog: AddDialogStub,
         Button: ButtonStub,
+        CommunityMovedTypeNotice: false,
         Container: SlotStub,
         Empty: SlotStub,
         EmptyContent: SlotStub,
         EmptyDescription: SlotStub,
+        EmptyHeader: SlotStub,
         EmptyMedia: SlotStub,
         EmptyTitle: SlotStub,
+        FilterEmptyState: false,
         ItemGroup: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
         ProviderRow: ProviderRowStub,

@@ -1,40 +1,39 @@
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    max-width="480"
-    @update:model-value="emit('update:modelValue', $event)"
+  <AlertDialog
+    :open="modelValue"
+    @update:open="emit('update:modelValue', $event)"
   >
-    <v-card>
-      <v-card-title class="text-h6 pl-6 pb-0">
-        {{ $t("auth.disable_user") }}
-      </v-card-title>
-      <v-card-text class="px-6 pb-2">
-        <p class="text-body-1 mb-4">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{ $t("auth.disable_user") }}</AlertDialogTitle>
+        <AlertDialogDescription>
           {{ $t("auth.confirm_disable_user") }}
-        </p>
-        <div v-if="user" class="user-name-box">
-          {{ user.display_name || user.username }}
-        </div>
-      </v-card-text>
-      <v-card-actions class="pa-6 pt-4">
-        <v-spacer />
-        <v-btn variant="text" @click="emit('update:modelValue', false)">
-          {{ $t("cancel") }}
-        </v-btn>
-        <v-btn
-          color="error"
-          variant="flat"
-          :loading="loading"
-          @click="handleDisable"
-        >
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <div v-if="user" class="bg-destructive/10 rounded-md p-4 font-medium">
+        {{ user.display_name || user.username }}
+      </div>
+      <AlertDialogFooter>
+        <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
+        <Button variant="destructive" :loading="loading" @click="handleDisable">
           {{ $t("auth.disable_user") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </Button>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>
 
 <script setup lang="ts">
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { api } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
 import { ref } from "vue";
@@ -76,14 +75,3 @@ const handleDisable = async () => {
   }
 };
 </script>
-
-<style scoped>
-.user-name-box {
-  background: rgba(var(--v-theme-error), 0.08);
-  border-left: 3px solid rgb(var(--v-theme-error));
-  padding: 12px 16px;
-  border-radius: 4px;
-  font-weight: 500;
-  font-size: 0.938rem;
-}
-</style>

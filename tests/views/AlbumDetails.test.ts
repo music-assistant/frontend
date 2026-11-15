@@ -1,9 +1,21 @@
 import type { MusicAssistantApi } from "@/plugins/api";
-import { ImageType, MediaType, type Album } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  ImageType,
+  ListingType,
+  MediaType,
+  SortDirection,
+  SortField,
+  type Album,
+  type EventMessage,
+  type Track,
+} from "@/plugins/api/interfaces";
+import type { LoadDataParams } from "@/composables/useItemsListing";
 import AlbumDetails from "@/views/AlbumDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
+import { providerMapping } from "../fixtures/providerMapping";
 import { track } from "../fixtures/track";
 
 const {
@@ -65,6 +77,7 @@ vi.mock("@/components/album/albumRows", () => ({
     resolve: mockResolveAlbumRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "library",
+    resolveSource: () => "library",
     sources: mockAlbumRowsSources,
     setSource: mockAlbumRowsSetSource,
   },
@@ -82,7 +95,13 @@ vi.mock("@/components/album/albumData", async (importOriginal) => ({
 vi.mock("@/components/album/AlbumHero.vue", () => ({
   default: {
     name: "AlbumHero",
-    props: ["item", "trackCount", "duration"],
+    props: [
+      "item",
+      "trackCount",
+      "duration",
+      "tracksSortField",
+      "tracksSortDirection",
+    ],
     template: "<div data-hero />",
   },
 }));
@@ -130,7 +149,14 @@ vi.mock("@/components/details/RowsEditor.vue", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["itemtype", "loadItems"],
+    props: [
+      "itemtype",
+      "loadPagedData",
+      "showFavoritesOnlyFilter",
+      "sortListing",
+    ],
+    // the order the listing shows its tracks in
+    data: () => ({ sortField: "duration", sortDirection: "desc" }),
     template: '<div data-row="tracks" :data-itemtype="itemtype" />',
   },
 }));
@@ -142,6 +168,9 @@ const ALL_ROWS = [
   "more_from_artist",
   "provider_mappings",
 ];
+
+// a discography release as the server lists it: its release group id
+const EXTERNAL_ALBUM_ID = "musicbrainz_releasegroupid:rg-1";
 
 const ALBUM_WITH_REVIEW = album({
   item_id: "1",
@@ -172,14 +201,43 @@ function hero(wrapper: VueWrapper) {
   return wrapper.findComponent({ name: "AlbumHero" });
 }
 
+/**
+ * Catches the page's item updates, to hand it an updated album. The page
+ * applies an update once updates stop, so the wait is run straight away.
+ */
+function captureAlbumUpdates() {
+  const onUpdated: Array<(evt: EventMessage) => void> = [];
+  mockSubscribe.mockImplementation(((
+    type: EventType,
+    callback: (evt: EventMessage) => void,
+  ) => {
+    if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
+    return () => {};
+  }) as never);
+  return (data: Album) => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    onUpdated.forEach((callback) => callback({ data } as EventMessage));
+    vi.runAllTimers();
+    vi.useRealTimers();
+  };
+}
+
 /** Runs the loader the tracks listing was handed, the way the listing does. */
-async function loadTracks(wrapper: VueWrapper, libraryOnly = false) {
+async function loadTracks(
+  wrapper: VueWrapper,
+  overrides: Partial<LoadDataParams> = {},
+) {
   const listing = wrapper.findComponent({ name: "ItemsListing" });
-  await (
-    listing.props("loadItems") as (
-      params: Record<string, unknown>,
-    ) => Promise<unknown>
-  )({ libraryOnly });
+  const loadPagedData = listing.props("loadPagedData") as (
+    params: LoadDataParams,
+  ) => Promise<unknown>;
+  await loadPagedData({
+    offset: 0,
+    limit: 50,
+    sortBy: "track_number",
+    search: "",
+    ...overrides,
+  });
   await flushPromises();
 }
 
@@ -237,28 +295,169 @@ describe("AlbumDetails", () => {
     expect(renderedRows(wrapper)).not.toContain("review");
   });
 
-  it("counts and times the album from the tracks the listing loaded", async () => {
+  it("counts and times every track of the album for the hero", async () => {
     const wrapper = await mountDetails();
-    expect(hero(wrapper).props("trackCount")).toBeUndefined();
 
-    await loadTracks(wrapper);
-
+    expect(mockLoadAlbumTracks).toHaveBeenCalledWith(
+      ALBUM_WITH_REVIEW,
+      false,
+      undefined,
+      0,
+    );
     expect(hero(wrapper).props("trackCount")).toBe(2);
     expect(hero(wrapper).props("duration")).toBe(142);
   });
 
-  // the hero describes the album, not the part of it that happens to be in
-  // the library
-  it("ignores a library-only load for those", async () => {
+  // the hero describes the album, not the part of it the listing shows
+  it.each<Partial<LoadDataParams>>([
+    { libraryOnly: true },
+    { favoritesOnly: true },
+    { search: "intro" },
+    { offset: 50 },
+  ])(
+    "keeps the whole album in the hero for a listing load with %o",
+    async (overrides) => {
+      const wrapper = await mountDetails();
+      mockLoadAlbumTracks.mockResolvedValue([
+        track({ item_id: "1", duration: 5 }),
+      ]);
+
+      await loadTracks(wrapper, overrides);
+
+      expect(hero(wrapper).props("trackCount")).toBe(2);
+      expect(hero(wrapper).props("duration")).toBe(142);
+    },
+  );
+
+  it("ignores a late hero reply of the previous album", async () => {
+    let resolvePrevious!: (tracks: Track[]) => void;
+    mockLoadAlbumTracks.mockReturnValueOnce(
+      new Promise<Track[]>((resolve) => (resolvePrevious = resolve)),
+    );
+    const wrapper = await mountDetails(album({ item_id: "9" }));
+
+    mockGetAlbum.mockResolvedValue(ALBUM_WITH_REVIEW);
+    mockLoadAlbumTracks.mockReturnValueOnce(new Promise(() => {}));
+    await wrapper.setProps({ itemId: ALBUM_WITH_REVIEW.item_id });
+    await flushPromises();
+    resolvePrevious([track({ item_id: "1" })]);
+    await flushPromises();
+
+    expect(hero(wrapper).props("trackCount")).toBeUndefined();
+  });
+
+  it("counts and times the album again when it is updated", async () => {
+    const sendUpdate = captureAlbumUpdates();
     const wrapper = await mountDetails();
-    await loadTracks(wrapper);
-
-    mockLoadAlbumTracks.mockResolvedValue([
-      track({ item_id: "1", duration: 5 }),
-    ]);
-    await loadTracks(wrapper, true);
-
     expect(hero(wrapper).props("trackCount")).toBe(2);
+    mockLoadAlbumTracks.mockResolvedValue([
+      track({ item_id: "1", duration: 100 }),
+      track({ item_id: "2", duration: 42 }),
+      track({ item_id: "3", duration: 58 }),
+    ]);
+
+    sendUpdate({ ...ALBUM_WITH_REVIEW, name: "Renamed" });
+    await flushPromises();
+
+    expect(mockLoadAlbumTracks).toHaveBeenLastCalledWith(
+      expect.objectContaining({ name: "Renamed" }),
+      false,
+      undefined,
+      0,
+    );
+    expect(hero(wrapper).props("trackCount")).toBe(3);
+    expect(hero(wrapper).props("duration")).toBe(200);
+  });
+
+  it("keeps the newest count and time when an older load finishes last", async () => {
+    const sendUpdate = captureAlbumUpdates();
+    let resolveFirst!: (tracks: Track[]) => void;
+    let resolveSecond!: (tracks: Track[]) => void;
+    mockLoadAlbumTracks
+      .mockReturnValueOnce(
+        new Promise<Track[]>((resolve) => (resolveFirst = resolve)),
+      )
+      .mockReturnValueOnce(
+        new Promise<Track[]>((resolve) => (resolveSecond = resolve)),
+      );
+    const wrapper = await mountDetails();
+    sendUpdate({ ...ALBUM_WITH_REVIEW, name: "Renamed" });
+
+    resolveSecond([
+      track({ item_id: "1", duration: 100 }),
+      track({ item_id: "2", duration: 42 }),
+      track({ item_id: "3", duration: 58 }),
+    ]);
+    await flushPromises();
+    resolveFirst([track({ item_id: "1", duration: 100 })]);
+    await flushPromises();
+
+    expect(hero(wrapper).props("trackCount")).toBe(3);
+    expect(hero(wrapper).props("duration")).toBe(200);
+  });
+
+  it("hands the hero's play button the order the track listing shows", async () => {
+    const wrapper = await mountDetails();
+
+    expect(hero(wrapper).props("tracksSortField")).toBe(SortField.DURATION);
+    expect(hero(wrapper).props("tracksSortDirection")).toBe(SortDirection.DESC);
+  });
+
+  it("pages album tracks with the server sort", async () => {
+    const wrapper = await mountDetails();
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+    const loadPagedData = listing.props("loadPagedData") as (
+      params: LoadDataParams,
+    ) => Promise<unknown>;
+
+    expect(listing.props("sortListing")).toBe(ListingType.ALBUM_TRACKS);
+    await loadPagedData({
+      offset: 2,
+      limit: 2,
+      sortBy: "duration:desc",
+      sortField: SortField.DURATION,
+      sortDirection: SortDirection.DESC,
+      search: "",
+    });
+
+    expect(mockLoadAlbumTracks).toHaveBeenLastCalledWith(
+      ALBUM_WITH_REVIEW,
+      false,
+      "",
+      2,
+      2,
+      SortField.DURATION,
+      SortDirection.DESC,
+      undefined,
+    );
+  });
+
+  it("shows and passes the server-side favorite filter for album tracks", async () => {
+    const wrapper = await mountDetails();
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+    expect(listing.props("showFavoritesOnlyFilter")).toBe(true);
+
+    const loadPagedData = listing.props("loadPagedData") as (
+      params: LoadDataParams,
+    ) => Promise<unknown>;
+    await loadPagedData({
+      offset: 0,
+      limit: 50,
+      sortBy: "track_number",
+      search: "",
+      favoritesOnly: true,
+    });
+
+    expect(mockLoadAlbumTracks).toHaveBeenCalledWith(
+      ALBUM_WITH_REVIEW,
+      false,
+      "",
+      50,
+      0,
+      undefined,
+      undefined,
+      true,
+    );
   });
 
   it("sends the artist shelf to the artist's own albums listing", async () => {
@@ -367,33 +566,57 @@ describe("AlbumDetails", () => {
     expect(mockGetArtist).toHaveBeenCalledWith("a1", "library");
   });
 
-  // a discography release the server resolves on demand: get_album does not
-  // handle the musicbrainz provider, the generic item lookup does
-  it("resolves a MusicBrainz release through the item lookup", async () => {
+  // an album the server knows only by an external id, looked up on demand
+  it("looks an external album up through the item lookup", async () => {
     const resolved = album({ item_id: "5", name: "Grace" });
     mockGetItem.mockResolvedValue(resolved);
 
-    const wrapper = await mountRoute("rg-1", "musicbrainz");
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
 
     expect(mockGetItem).toHaveBeenCalledWith(
       MediaType.ALBUM,
-      "rg-1",
-      "musicbrainz",
+      EXTERNAL_ALBUM_ID,
+      "external",
     );
     expect(mockGetAlbum).not.toHaveBeenCalled();
     expect(hero(wrapper).props("item")).toEqual(resolved);
   });
 
-  it("leaves the page when no music service has the release", async () => {
+  it("leaves the page when no music service has the album", async () => {
     mockGetItem.mockRejectedValue(new Error("MediaNotFoundError"));
 
-    const wrapper = await mountRoute("rg-1", "musicbrainz");
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
 
     expect(mockBackFromMediaDetails).toHaveBeenCalled();
     expect(hero(wrapper).props("item")).toBeUndefined();
   });
 
-  // resolving a release can take a while; the user may have moved on by then
+  // the album the lookup found is what gets added to the library, not the
+  // external address the page was opened on
+  it("switches to the library copy of the album it was found as", async () => {
+    const onSpotify = providerMapping({
+      item_id: "sp1",
+      provider_domain: "spotify",
+      provider_instance: "spotify--1",
+    });
+    const sendUpdate = captureAlbumUpdates();
+    mockGetItem.mockResolvedValue(
+      album({
+        item_id: "sp1",
+        provider: "spotify",
+        provider_mappings: [onSpotify],
+      }),
+    );
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
+    const inLibrary = album({ item_id: "42", provider_mappings: [onSpotify] });
+
+    sendUpdate(inLibrary);
+    await flushPromises();
+
+    expect(hero(wrapper).props("item")).toMatchObject({ uri: inLibrary.uri });
+  });
+
+  // looking an album up can take a while; the user may have moved on by then
   it("leaves a late failure alone once the page shows another album", async () => {
     let fail: (err: Error) => void = () => {};
     mockGetItem.mockReturnValue(
@@ -401,7 +624,7 @@ describe("AlbumDetails", () => {
         fail = reject;
       }),
     );
-    const wrapper = await mountRoute("rg-1", "musicbrainz");
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
 
     mockGetAlbum.mockResolvedValue(ALBUM_WITH_REVIEW);
     await wrapper.setProps({

@@ -39,6 +39,7 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 vi.mock("vue-router", async () => {
   const { reactive } = await import("vue");
   state.route = reactive(state.route);
@@ -791,6 +792,32 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("keeps equally named artists apart", async () => {
+    const genesis = (itemId: string, provider: string) => ({
+      item_id: itemId,
+      provider,
+      name: "Genesis",
+      media_type: MediaType.ARTIST,
+      uri: `${provider}://artist/${itemId}`,
+    });
+    state.resultsByType[MediaType.ARTIST] = [
+      genesis("a1", "library"),
+      genesis("a2", "spotify"),
+      genesis("a3", "spotify"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "genesis");
+    const items = wrapper
+      .findAll('[data-testid="palette-item"]')
+      .filter((item) => item.text().includes("Genesis"));
+    expect(items).toHaveLength(3);
+
+    wrapper.unmount();
+  });
+
   it("keeps and labels versions of the same title apart", async () => {
     state.resultsByType[MediaType.TRACK] = [
       { ...makeTrack("t1", "Waterloo"), provider: "spotify" },
@@ -834,6 +861,29 @@ describe("CommandCenter", () => {
     expect(wrapper.find('[data-testid="palette-spinner"]').exists()).toBe(
       false,
     );
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("shows one spinner at a time while results stream in", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    const spinners = () => wrapper.findAll('[data-testid="palette-spinner"]');
+
+    // nothing in yet: only the results area spins
+    state.loading.value = true;
+    await typeQuery(wrapper, "bohemian");
+    expect(spinners()).toHaveLength(1);
+
+    // the first results land while other sources still search
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    state.bumpResults();
+    await flushPromises();
+    expect(spinners()).toHaveLength(1);
     expect(wrapper.text()).toContain("Bohemian Rhapsody");
 
     wrapper.unmount();

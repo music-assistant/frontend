@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatAliasName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
+import { SortField } from "@/plugins/api/interfaces";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -87,7 +88,7 @@ watch(
           search: aliasSearch.value,
           limit: SEARCH_RESULT_LIMIT,
           offset: 0,
-          order_by: "name",
+          sort_field: SortField.NAME,
         });
         const allAliases = new Set<string>();
         for (const genre of genres) {

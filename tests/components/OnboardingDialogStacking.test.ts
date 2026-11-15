@@ -6,6 +6,11 @@ import { defineComponent, h, ref } from "vue";
 
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRouter: () => ({ afterEach: () => () => {} }),
+}));
+
 vi.mock("@/composables/useOnboarding", async () => {
   const { ref, computed } = await vi.importActual<typeof import("vue")>("vue");
   return {
@@ -13,6 +18,7 @@ vi.mock("@/composables/useOnboarding", async () => {
       active: ref(true),
       ctx: computed(() => ({ isMember: false })),
       close: vi.fn(),
+      pause: vi.fn(),
       markWelcomed: vi.fn(),
     }),
   };

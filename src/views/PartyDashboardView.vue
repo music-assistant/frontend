@@ -8,6 +8,7 @@
       :opacity="visualizerOpacityPref"
       :player-id="store.activePlayer?.player_id"
       covered-when-fullscreen
+      :force-dark-palette="useLightChrome"
     />
     <!-- Blurred album art background: separate element so the browser can cache the texture -->
     <div
@@ -291,7 +292,7 @@
     <!-- Guest Access Toggle Dialog -->
     <AlertDialog v-model:open="showGuestAccessDialog">
       <AlertDialogContent class="sm:max-w-[480px]">
-        <AlertDialogHeader class="text-left">
+        <AlertDialogHeader>
           <AlertDialogTitle>
             {{
               qrAvailable

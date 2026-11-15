@@ -1,17 +1,17 @@
 <template>
   <!-- the cards answer one question, and the step's own description is what
        asks it: a screen reader reads that before it reads the options -->
-  <div
-    role="group"
-    :aria-labelledby="labelledBy"
-    class="grid auto-rows-fr gap-3 sm:grid-cols-2"
-  >
+  <div role="group" :aria-labelledby="labelledBy" class="grid gap-3">
     <button
       v-for="option in options"
       :key="option.value"
       type="button"
-      class="hover:border-primary focus-visible:ring-ring bg-card flex items-start gap-3 rounded-xl border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
-      :class="{ 'border-primary': active === option.value }"
+      class="focus-visible:ring-ring bg-card flex items-start gap-3 rounded-xl border p-4 text-left transition-shadow focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      :class="
+        active === option.value
+          ? 'ring-primary ring-1'
+          : 'hover:ring-primary/30 hover:ring-1'
+      "
       :aria-pressed="active === option.value"
       :disabled="busy"
       :data-testid="`${testIdPrefix}-${option.value}`"
@@ -22,8 +22,8 @@
       >
         <component :is="option.icon" class="size-6" aria-hidden="true" />
       </span>
-      <span class="flex min-w-0 flex-col gap-1">
-        <span class="flex items-center gap-2">
+      <span class="flex min-w-0 flex-1 flex-col gap-1">
+        <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span class="font-semibold">{{ $t(option.labelKey) }}</span>
           <Badge v-if="option.recommended" as="span" variant="secondary">
             {{ $t("recommended") }}
@@ -32,6 +32,15 @@
         <span class="text-muted-foreground text-sm">
           {{ $t(option.descriptionKey) }}
         </span>
+      </span>
+      <span
+        class="border-primary mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border"
+        aria-hidden="true"
+      >
+        <span
+          v-if="active === option.value"
+          class="bg-primary size-2.5 rounded-full"
+        ></span>
       </span>
     </button>
   </div>

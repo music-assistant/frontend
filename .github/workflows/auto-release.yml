@@ -1,11 +1,11 @@
 name: Auto Release
 
-# Automatically creates a release every night at 04:00 Europe/Amsterdam time if there is at least 1 commit since the last release
+# Automatically creates a release every night at 03:00 Europe/Amsterdam time if there is at least 1 commit since the last release
 # Calculates the next version number (patch increment) and triggers the publish release workflow
 
 on:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "0 3 * * *"
       timezone: "Europe/Amsterdam"
   workflow_dispatch: # Allow manual trigger for testing
 
@@ -103,5 +103,4 @@ jobs:
     with:
       version: ${{ needs.check-and-release.outputs.version }}
     secrets:
-      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       MUSIC_ASSISTANT_BOT_PRIVATE_KEY: ${{ secrets.MUSIC_ASSISTANT_BOT_PRIVATE_KEY }}

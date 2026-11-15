@@ -1,28 +1,30 @@
 <template>
-  <div class="providers-header w-100">
+  <div class="providers-header w-full">
     <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
     <!-- the empty state below carries the add button while there is nothing to list -->
     <Button
       v-if="canOwnSources() && !showMusicEmptyState"
       class="add-provider-btn"
       data-testid="add-provider"
-      @click="showAddProviderDialog = true"
+      @click="openCatalog"
     >
       <Plus class="size-4" />
       {{ addProviderLabel }}
     </Button>
   </div>
 
-  <div class="pl-5 font-weight-medium">
+  <CommunityMovedTypeNotice class="mx-5 mb-4" :type="currentType" />
+
+  <div class="pl-5 font-medium">
     {{
       $t("settings.providers_total", filteredProviders.length, {
         named: { count: filteredProviders.length },
       })
     }}
   </div>
-  <Container
-    :variant="viewMode === 'list' ? 'default' : 'panel'"
-    class="mt-4 px-5"
+  <div
+    class="mt-4 px-5 py-2.5"
+    :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
   >
     <div class="space-y-6">
       <section
@@ -51,8 +53,9 @@
             :key="item.instance_id"
             :variant="viewMode"
             :config="item"
-            :manageable="canManageSource(item)"
+            :manageable="canManageSource(item) && !isUnavailable(item)"
             :reconfigurable="canReconfigureSource(item)"
+            :removable="canManageSource(item) && isUnavailable(item)"
             :syncing="isProviderSyncing(item.instance_id)"
             :name="getProviderName(item)"
             :description="api.providerManifests[item.domain]?.description"
@@ -60,13 +63,15 @@
               canConfigureSourceAccess(item) ? accessSummary(item) : null
             "
             :status-variant="statusVariant(item.status)"
+            :status-icon="statusIcon(item.status)"
             :status-label="statusLabel(item)"
             :is-error="isErrorStatus(item.status)"
             :error-text="getErrorText(item)"
-            :stage-label="stageLabelFor(item)"
+            :community="isCommunityProvider(api.providerManifests[item.domain])"
             @open="openProvider(item)"
             @menu="openMenu($event, item)"
             @reconfigure="reconfigureProvider(item)"
+            @remove="removeSource(item)"
           />
         </component>
       </section>
@@ -74,7 +79,7 @@
 
     <Empty
       v-if="showMusicEmptyState"
-      class="border"
+      class="rounded-(--radius-xl) border"
       data-testid="music-sources-empty"
     >
       <EmptyMedia variant="icon">
@@ -91,27 +96,19 @@
         }}
       </EmptyDescription>
       <EmptyContent v-if="canOwnSources()">
-        <Button
-          data-testid="add-provider-empty"
-          @click="showAddProviderDialog = true"
-        >
+        <Button data-testid="add-provider-empty" @click="openCatalog">
           <Plus class="size-4" />
           {{ $t("settings.add_music_provider") }}
         </Button>
       </EmptyContent>
     </Empty>
 
-    <div
+    <FilterEmptyState
       v-else-if="loaded && filteredProviders.length === 0"
-      class="empty-state"
-    >
-      <v-icon icon="mdi-puzzle-outline" size="64" class="empty-icon" />
-      <div class="empty-title">{{ $t("no_content") }}</div>
-      <div class="empty-message">
-        {{ $t("no_content_filter") }}
-      </div>
-    </div>
-  </Container>
+      :icon="Puzzle"
+      data-testid="providers-empty"
+    />
+  </div>
 
   <!-- Audio analysis status hint -->
   <div
@@ -128,12 +125,6 @@
       </RouterLink>
     </Button>
   </div>
-  <AddProviderDialog
-    v-model:show="showAddProviderDialog"
-    :provider-type="managesAllSources() ? undefined : ProviderType.MUSIC"
-    :multi-instance-only="!managesAllSources()"
-    :self-service-only="!managesAllSources()"
-  />
   <ProviderAccessDialog
     v-model:open="showAccessDialog"
     :config="accessDialogConfig"
@@ -145,8 +136,9 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
+import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
+import CommunityMovedTypeNotice from "@/components/settings/catalog/CommunityMovedTypeNotice.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
 import { Button } from "@/components/ui/button";
@@ -162,12 +154,12 @@ import { useBackgroundTasks } from "@/composables/background-tasks/useBackground
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import { getCatalogRoute } from "@/helpers/provider_catalog";
 import {
-  getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
+  isCommunityProvider,
   providerDisplayName,
   providerRequiresReconfiguration,
-  shouldShowStageBadge,
 } from "@/helpers/provider_config";
 import {
   canConfigureSourceAccess,
@@ -181,17 +173,15 @@ import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_action
 import { api } from "@/plugins/api";
 import {
   type ProviderConfig,
-  ProviderStage,
   ProviderStatus,
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Info, Music, Plus } from "@lucide/vue";
+import { Info, Music, Plus, Puzzle } from "@lucide/vue";
 import { match } from "ts-pattern";
-import { computed, inject, ref } from "vue";
+import { computed, inject } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import AddProviderDialog from "./AddProviderDialog.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -227,14 +217,15 @@ const addProviderLabel = computed(() => {
     .otherwise(() => $t("settings.add_new"));
 });
 
-const showAddProviderDialog = ref(false);
 const { isProviderSyncing } = useBackgroundTasks();
 
 const getProviderName = function (config: ProviderConfig) {
-  return providerDisplayName(
-    config,
-    api.providers[config.instance_id],
-    api.providerManifests[config.domain],
+  return (
+    providerDisplayName(
+      config,
+      api.providers[config.instance_id],
+      api.providerManifests[config.domain],
+    ) || config.instance_id
   );
 };
 
@@ -243,15 +234,25 @@ const isErrorStatus = function (status?: ProviderStatus | null) {
   return (
     status === ProviderStatus.AUTH_REQUIRED ||
     status === ProviderStatus.INCOMPATIBLE ||
-    status === ProviderStatus.ERROR
+    status === ProviderStatus.ERROR ||
+    status === ProviderStatus.UNAVAILABLE
   );
 };
 
-// a healthy provider carries no badge, so only the states worth flagging map to one
+// the provider of the entry is not on this server: it cannot be opened, only removed
+const isUnavailable = function (config: ProviderConfig) {
+  return config.status === ProviderStatus.UNAVAILABLE;
+};
+
+// only a status that needs attention carries a badge
 const statusVariant = function (status?: ProviderStatus | null) {
-  if (isErrorStatus(status)) return "destructive" as const;
-  if (status === ProviderStatus.DISABLED || status === ProviderStatus.LOADING)
-    return "secondary" as const;
+  return isErrorStatus(status) ? ("destructive" as const) : undefined;
+};
+
+// the quiet states show as an icon by the name; a healthy provider shows neither
+const statusIcon = function (status?: ProviderStatus | null) {
+  if (status === ProviderStatus.LOADING) return "loading" as const;
+  if (status === ProviderStatus.DISABLED) return "disabled" as const;
   return undefined;
 };
 
@@ -267,18 +268,6 @@ const statusLabel = function (item: ProviderConfig) {
 const getErrorText = function (item: ProviderConfig) {
   // the server localizes last_error.message for the connection's locale
   return item.last_error?.message ?? "";
-};
-
-const getStageLabel = function (stage?: ProviderStage) {
-  const key = getProviderStageTranslationKey(stage);
-  return key ? $t(key) : "";
-};
-
-// a stage badge only shows for the stages worth flagging; a healthy stable
-// provider carries none
-const stageLabelFor = function (item: ProviderConfig) {
-  const stage = api.providerManifests[item.domain]?.stage;
-  return shouldShowStageBadge(stage) ? getStageLabel(stage) : "";
 };
 
 const {
@@ -305,6 +294,11 @@ const {
   accessSummary,
   openAccessDialog,
 } = useProviderAccess({ managesAllSources, canOwnSources });
+
+// the Catalog opens on the type of this page and only offers what the viewer may add
+const openCatalog = function () {
+  void router.push(getCatalogRoute(currentType.value));
+};
 
 const openProviderOptions = function (providerInstanceId: string) {
   router.push(`/settings/editprovider/${providerInstanceId}`);
@@ -402,33 +396,5 @@ const openMenu = function (evt: Event, item: ProviderConfig) {
     width: 100%;
     align-self: stretch;
   }
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  width: 100%;
-}
-
-.empty-icon {
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
 }
 </style>

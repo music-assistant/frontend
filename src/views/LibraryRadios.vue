@@ -1,13 +1,15 @@
 <template>
   <ItemsListing
     ref="itemsListing"
+    fill-height
     itemtype="radios"
     path="libraryradios"
     :show-duration="false"
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
-    :sort-keys="sortKeys"
+    :sort-listing="ListingType.LIBRARY_RADIOS"
+    library-toolbar
     :update-available="updateAvailable"
     :title="$t('radios')"
     :show-search-button="true"
@@ -30,10 +32,12 @@ import AddManualLink from "@/components/AddManualLink.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   EventMessage,
   EventType,
+  ListingType,
   MediaType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -47,7 +51,9 @@ defineOptions({
 });
 
 const updateAvailable = ref<boolean>(false);
-const total = ref(store.libraryRadiosCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryRadiosCount,
+);
 const showAddEditDialog = ref(false);
 const itemsListing = ref<InstanceType<typeof ItemsListing>>();
 
@@ -66,19 +72,6 @@ const extraMenuItems = computed<ToolBarMenuItem[]>(() =>
       ]
     : [],
 );
-
-const sortKeys = [
-  "name",
-  "name_desc",
-  "sort_name",
-  "sort_name_desc",
-  "timestamp_added",
-  "timestamp_added_desc",
-  "last_played",
-  "last_played_desc",
-  "play_count",
-  "play_count_desc",
-];
 
 onMounted(() => {
   // signal if/when items get added within this library
@@ -102,29 +95,33 @@ onMounted(() => {
 
 const loadItems = async function (params: LoadDataParams) {
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryRadios(
     params.favoritesOnly || undefined,
     params.search,
     params.limit,
     params.offset,
-    params.sortBy,
+    params.sortField,
+    params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.randomSeed,
   );
 };
 
 const setTotals = async function (params: LoadDataParams) {
   if (!params.favoritesOnly && !params.provider) {
-    total.value = store.libraryRadiosCount;
+    setTotal(store.libraryRadiosCount);
     return;
   }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryRadiosCount(params.favoritesOnly || false);
+  await loadTotal(api.getLibraryRadiosCount(params.favoritesOnly || false));
 };
 </script>

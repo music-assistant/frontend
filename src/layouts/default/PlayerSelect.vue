@@ -210,10 +210,12 @@ import {
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
 import {
+  canEditPlayerGroup,
   getPlayerDisplayName,
   isBuiltinPlayer,
   isPlayerActive,
   isSelectablePlayer,
+  resolvePlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { PlayerType, Scope, type Player } from "@/plugins/api/interfaces";
@@ -314,6 +316,7 @@ watch(
         activeElement instanceof HTMLElement && activeElement !== document.body
           ? activeElement
           : null;
+      expandActivePlayerGroupControls();
       void scrollSelectedPlayerIntoView();
       return;
     }
@@ -473,6 +476,17 @@ function toggleExpandedPlayer(playerIds: Set<string>, playerId: string) {
   }
 }
 
+/**
+ * Open the group controls of the active player when the panel is opened from
+ * the fullscreen player, where changing the group is the only reason to open it.
+ */
+function expandActivePlayerGroupControls() {
+  const player = store.activePlayer;
+  if (!popoutFromFullscreen.value || !player || !canEditPlayerGroup(player))
+    return;
+  expandedMemberPlayerIds.add(player.player_id);
+}
+
 function getGroupControlsId(playerId: string) {
   return `player-select-group-${encodeURIComponent(playerId)}`;
 }
@@ -533,8 +547,9 @@ function selectDefaultPlayer() {
   // they show up instead of settling for another player
   if (lastPlayerId === BUILTIN_PLAYER_PREFERENCE) return selectBuiltinPlayer();
   if (lastPlayerId) {
-    if (!(lastPlayerId in api.players)) return;
-    if (isSelectablePlayerId(lastPlayerId)) return lastPlayerId;
+    const lastPlayer = resolvePlayer(lastPlayerId);
+    if (!lastPlayer) return;
+    if (isSelectablePlayer(lastPlayer)) return lastPlayer.player_id;
   }
   const builtinPlayerId = selectBuiltinPlayer();
   if (builtinPlayerId) return builtinPlayerId;

@@ -44,7 +44,6 @@ vi.mock("@/plugins/i18n", () => ({
 
 vi.mock("@/helpers/utils", () => ({
   copyToClipboard: vi.fn(),
-  getAvatarImage: () => "",
   getImageThumbForItem: () => "",
   getMediaImageUrl: (url: string) => url,
 }));

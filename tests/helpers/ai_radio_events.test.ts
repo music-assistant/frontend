@@ -46,7 +46,7 @@ describe("trackAIRadioCache", () => {
     expect(subscribe).not.toHaveBeenCalled();
 
     trackAIRadioCache("hosts_updated", loader());
-    trackAIRadioCache("sessions_updated", loader());
+    trackAIRadioCache("sections_updated", loader());
     await flushPromises();
 
     expect(subscribe).toHaveBeenCalledTimes(1);
@@ -68,7 +68,7 @@ describe("trackAIRadioCache", () => {
     expect(loadHosts).not.toHaveBeenCalled();
 
     emit({ event: "hosts_updated" });
-    emit({ event: "sessions_updated" });
+    emit({ event: "sections_updated" });
     emit({ event: "game_updated", state: {} });
     emit(undefined);
     await flushPromises();
@@ -102,7 +102,7 @@ describe("trackAIRadioCache", () => {
     });
     trackAIRadioCache("hosts_updated", staleLoader);
     trackAIRadioCache("hosts_updated", loadHosts);
-    trackAIRadioCache("sessions_updated", loadStatus);
+    trackAIRadioCache("sections_updated", loadStatus);
 
     state.value = "reconnecting";
     await flushPromises();

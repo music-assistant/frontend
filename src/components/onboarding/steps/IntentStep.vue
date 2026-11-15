@@ -13,8 +13,11 @@
       @select="select"
     />
 
-    <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.intent.settings_note") }}
+    <p
+      class="text-muted-foreground text-sm"
+      data-testid="onboarding-intent-preview"
+    >
+      {{ $t(`onboarding.steps.intent.${shown}.preview`) }}
     </p>
   </section>
 </template>
@@ -23,7 +26,11 @@
 import ChoiceCards, {
   type ChoiceCardOption,
 } from "@/components/onboarding/ChoiceCards.vue";
-import type { OnboardingIntent, OnboardingStepId } from "@/helpers/onboarding";
+import type {
+  OnboardingIntent,
+  OnboardingStepId,
+  StepLeaveOptions,
+} from "@/helpers/onboarding";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { Library, Smartphone } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
@@ -33,7 +40,7 @@ const DESCRIPTION_ID = "onboarding-intent-description";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
-const emit = defineEmits<{
+defineEmits<{
   (e: "advance"): void;
   (e: "navigate", step: OnboardingStepId): void;
   (e: "finish"): void;
@@ -90,7 +97,7 @@ const select = async function (value: OnboardingIntent) {
   if (busy.value) return;
   chosen.value = value;
   pendingSave = save(value);
-  if (await pendingSave) emit("advance");
+  await pendingSave;
 };
 
 /**
@@ -102,9 +109,12 @@ const select = async function (value: OnboardingIntent) {
  * pick the account did not take before. An answer that did not land keeps the
  * wizard here, so the question is never left behind unanswered.
  */
-const beforeLeave = async function (): Promise<boolean> {
+const beforeLeave = async function (
+  options?: StepLeaveOptions,
+): Promise<boolean> {
   if (pendingSave) return await pendingSave;
-  if (shown.value === intent.value) return true;
+  // pausing is not walking past the question, so it answers nothing
+  if (options?.pausing || shown.value === intent.value) return true;
   pendingSave = save(shown.value);
   return await pendingSave;
 };

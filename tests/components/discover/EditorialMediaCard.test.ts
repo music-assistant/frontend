@@ -5,16 +5,20 @@
  * an episode.
  */
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
+import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import {
   ImageType,
   type Album,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
+import { Disc3, Podcast } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { album } from "../../fixtures/album";
+import { artist } from "../../fixtures/artist";
 import { podcast } from "../../fixtures/podcast";
 import { podcastEpisode } from "../../fixtures/podcastEpisode";
+import { track } from "../../fixtures/track";
 
 vi.mock("@/plugins/api", () => {
   const api = { providers: {}, providerManifests: {} };
@@ -63,9 +67,10 @@ const withCover = (overrides: Partial<Album> = {}, cover = COVER) =>
 const release = (overrides: Partial<Album> = {}, cover = COVER) =>
   withCover(
     {
-      item_id: "rg-1",
-      provider: "musicbrainz",
+      item_id: "musicbrainz_releasegroupid:rg-1",
+      provider: "external",
       provider_mappings: [],
+      is_playable: false,
       ...overrides,
     },
     cover,
@@ -111,20 +116,51 @@ describe("EditorialMediaCard", () => {
     expect(wrapper.classes()).not.toContain("ed-card--not-in-library");
   });
 
-  it("falls back to the initials placeholder when the cover fails to load", async () => {
+  it("falls back to the album icon when the cover fails to load", async () => {
     const wrapper = mountCard(release());
     expect(wrapper.get("img").attributes("src")).toBe(COVER);
 
     await wrapper.get("img").trigger("error");
 
     expect(wrapper.find("img").exists()).toBe(false);
-    expect(wrapper.get(".ed-card__initials").text()).toBe("GR");
+    expect(
+      wrapper.get(".ed-card__placeholder").findComponent(Disc3).exists(),
+    ).toBe(true);
+  });
+
+  it("shows the artist icon for an artist without a picture", () => {
+    const wrapper = mountCard(artist());
+
+    expect(
+      wrapper.get(".ed-card__placeholder").findComponent(ArtistIcon).exists(),
+    ).toBe(true);
+  });
+
+  it("shows the podcast icon for an episode without a cover", () => {
+    const wrapper = mountCard(podcastEpisode());
+
+    expect(
+      wrapper.get(".ed-card__placeholder").findComponent(Podcast).exists(),
+    ).toBe(true);
   });
 
   it("offers no play button for a release that is not in the library", () => {
-    const wrapper = mountCard(release());
+    const wrapper = mountCard(release(), false);
 
     expect(wrapper.find(".ed-card__play").exists()).toBe(false);
+  });
+
+  // the server says an external track can be played: it is looked up then
+  it("offers the play button for a track that is not in the library", () => {
+    const topTrack = track({
+      item_id: "musicbrainz_recordingid:rec-1",
+      provider: "external",
+      provider_mappings: [],
+    });
+    const wrapper = mountCard(topTrack, false);
+
+    expect(wrapper.classes()).toContain("ed-card--not-in-library");
+    expect(wrapper.find(".ed-card__play").exists()).toBe(true);
   });
 
   // a metadata refresh replaces the item under the same uri
@@ -146,7 +182,7 @@ describe("EditorialMediaCard", () => {
     });
 
     expect(wrapper.get("img").attributes("src")).toBe(COVER);
-    expect(wrapper.find(".ed-card__initials").exists()).toBe(false);
+    expect(wrapper.find(".ed-card__placeholder").exists()).toBe(false);
   });
 
   it("marks a fully played episode on its cover", () => {

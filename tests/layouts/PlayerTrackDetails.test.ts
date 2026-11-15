@@ -24,6 +24,7 @@ vi.mock("@/layouts/default/PlayerOSD/PlayerFullscreen.vue", () => ({
   default: { template: "<div />" },
 }));
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 // QualityDetailsBtn's audio-processing chain imports ProviderIcon, which
 // needs the real api singleton; stub it since it is never shown here
 // (showQualityDetailsBtn is false in every test below).
@@ -318,6 +319,8 @@ describe("PlayerTrackDetails source badge", () => {
       player_id: "player-1",
       active_source: "player-1",
       source_list: [],
+      active_output_protocol: null,
+      protocols: [],
     });
   });
 

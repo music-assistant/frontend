@@ -10,6 +10,7 @@ import type {
 } from "@/plugins/api/interfaces";
 import AIRadioView from "@/views/AIRadioView.vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
@@ -114,9 +115,10 @@ const getShowFetchCount = () =>
     ([command]) => command === "ai_radio/stations/get",
   ).length;
 
-const getStatusFetchCount = () =>
-  sendCommand.mock.calls.filter(([command]) => command === "ai_radio/status")
-    .length;
+const getDjStatusFetchCount = () =>
+  sendCommand.mock.calls.filter(
+    ([command]) => command === "ai_radio/queue_dj/status",
+  ).length;
 
 function findButtonByText(wrapper: VueWrapper, text: string) {
   return wrapper.findAll("button").find((button) => button.text() === text);
@@ -199,8 +201,9 @@ afterEach(() => {
   routeMock.query = { station_id: STATION_ID };
   useHosts().hosts.value = [];
   useShows().shows.value = [];
-  useShows().sessions.value = [];
+  useShows().djStatus.value = {};
   useShows().playlists.value = [];
+  useShows().loadingDjStatus.value = false;
   document.body.replaceChildren();
 });
 
@@ -286,7 +289,7 @@ describe("AIRadioView host editor / show editor interplay", () => {
 });
 
 describe("AIRadioView status loading", () => {
-  it("fetches the status once on mount and leaves no timers behind", async () => {
+  it("fetches the on-air state once on mount and leaves no timers behind", async () => {
     routeMock.query = {};
     setupSendCommand([]);
     const listeners = trackDocumentListeners();
@@ -299,7 +302,8 @@ describe("AIRadioView status loading", () => {
     const pending = timers.pending();
     timers.stop();
 
-    expect(getStatusFetchCount()).toBe(1);
+    // The provider list is empty here, so nothing but the view itself asks.
+    expect(getDjStatusFetchCount()).toBe(1);
     expect(remainingListeners).not.toContain("visibilitychange");
     expect(pending).toHaveLength(0);
   });
@@ -463,4 +467,28 @@ describe("AIRadioView editing rights", () => {
       );
     },
   );
+});
+
+describe("AIRadioView refresh button", () => {
+  it("stays disabled while the dj-status refresh is still pending", async () => {
+    routeMock.query = {};
+    setupSendCommand([]);
+    const view = await mountView();
+
+    // Every other refresh call has settled by now; only the dj-status one is
+    // still outstanding, but the button must stay busy until it settles too.
+    useShows().loadingDjStatus.value = true;
+    await nextTick();
+    expect(
+      view.find('[aria-label="Refresh"]').attributes("disabled"),
+    ).toBeDefined();
+
+    useShows().loadingDjStatus.value = false;
+    await nextTick();
+    expect(
+      view.find('[aria-label="Refresh"]').attributes("disabled"),
+    ).toBeUndefined();
+
+    view.unmount();
+  });
 });

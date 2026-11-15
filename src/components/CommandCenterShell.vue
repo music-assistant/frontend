@@ -72,4 +72,28 @@ const asSheet = computed(() => store.mobileLayout);
 :root .command-center-sheet-overlay {
   bottom: var(--mobile-navigation-height) !important;
 }
+
+/* a short window, such as a kiosk with its keyboard open, has no room for the
+   search above the player and navigation, so it covers them instead */
+@media (max-height: 500px) {
+  .player-bar-popout.command-center-sheet {
+    z-index: 9999 !important;
+    bottom: calc(
+      var(--device-inset-bottom) + var(--player-bar-popout-gap)
+    ) !important;
+    height: calc(
+      100dvh - var(--player-bar-popout-gap) - var(--player-bar-popout-top-gap) -
+        var(--device-inset-top) - var(--device-inset-bottom)
+    ) !important;
+  }
+
+  :root[data-player-bar-overlay] .player-bar-popout.command-center-sheet {
+    padding-bottom: 0 !important;
+  }
+
+  :root .command-center-sheet-overlay {
+    z-index: 9999 !important;
+    bottom: 0 !important;
+  }
+}
 </style>

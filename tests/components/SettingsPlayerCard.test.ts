@@ -27,8 +27,6 @@ const playerConfig = {
   values: {},
 } as PlayerConfig;
 
-const passthroughStub = { template: "<div><slot /></div>" };
-
 // the long-press directive is registered by a plugin the test skips, so a
 // stand-in captures the handler bound to it
 let holdHandler: (event: Event) => void;
@@ -48,9 +46,6 @@ function mountCard(configOverrides: Partial<PlayerConfig> = {}) {
       stubs: {
         PlayerIcon: true,
         ProtocolChip: true,
-        VCard: passthroughStub,
-        VIcon: true,
-        VBtn: true,
       },
     },
   });
@@ -127,6 +122,56 @@ describe("SettingsPlayerCard", () => {
     expect(wrapper.classes()).toContain("player-unavailable");
   });
 
+  it("names why a player needs setup in its setup warning", () => {
+    apiMock.players = {
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: true,
+        setup_reason: "password_required",
+        output_protocols: [],
+      },
+    };
+    const wrapper = mountCard();
+
+    expect(wrapper.text()).toContain("Password required");
+    expect(wrapper.text()).not.toContain("settings.player_needs_setup");
+  });
+
+  it("calls a player whose provider is not installed not available", () => {
+    apiMock.players = {
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: false,
+        setup_reason: "provider_not_installed",
+        output_protocols: [],
+      },
+    };
+    const wrapper = mountCard();
+
+    expect(wrapper.get('[data-testid="player-setup-reason"]').text()).toBe(
+      "This player is not (yet) available",
+    );
+  });
+
+  it("names no reason for a disabled player", () => {
+    apiMock.players = {
+      kitchen: {
+        player_id: "kitchen",
+        available: false,
+        needs_setup: false,
+        setup_reason: "provider_not_installed",
+        output_protocols: [],
+      },
+    };
+    const wrapper = mountCard({ enabled: false });
+
+    expect(wrapper.find('[data-testid="player-setup-reason"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("dims a disabled card even when the player is available", () => {
     apiMock.players = {
       kitchen: {
@@ -139,6 +184,19 @@ describe("SettingsPlayerCard", () => {
     const wrapper = mountCard({ enabled: false });
 
     expect(wrapper.classes()).toContain("player-disabled");
+  });
+
+  it("opens the player from its name, a button the keyboard can reach", async () => {
+    apiMock.players = {
+      kitchen: { available: true, needs_setup: false, output_protocols: [] },
+    };
+    const wrapper = mountCard();
+    const name = wrapper.get('[data-testid="player-open"]');
+
+    expect(name.element.tagName).toBe("BUTTON");
+    await name.trigger("click");
+
+    expect(wrapper.emitted("click")).toEqual([[playerConfig]]);
   });
 
   it("emits menu and suppresses the native menu on right-click", () => {

@@ -4,6 +4,7 @@ import type {
   MusicQuizSupportedHostState,
   MusicQuizTriviaHostState,
 } from "@/composables/music-quiz/useMusicQuiz";
+import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { nextTick, ref, type Ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -214,6 +215,33 @@ describe("MusicQuizDashboardView host actions", () => {
     await wrapper.get('[data-testid="start-now"]').trigger("click");
 
     expect(mockStart).toHaveBeenCalledOnce();
+  });
+
+  it("unlocks the audio of this browser when it starts a game played here", async () => {
+    const primeAudio = vi.spyOn(webPlayer, "primeAudio").mockReturnValue(true);
+    webPlayer.player_id = "laptop";
+    state.value = {
+      ...HOST_STATE,
+      phase: "lobby",
+      playback: {
+        mode: "venue",
+        venue_player_id: "laptop",
+        venue_player_name: "Laptop",
+      },
+    };
+    try {
+      const wrapper = mountDashboard();
+
+      await wrapper.get('[data-testid="start-now"]').trigger("click");
+
+      expect(primeAudio).toHaveBeenCalledOnce();
+      expect(primeAudio.mock.invocationCallOrder[0]).toBeLessThan(
+        mockStart.mock.invocationCallOrder[0],
+      );
+    } finally {
+      primeAudio.mockRestore();
+      webPlayer.player_id = null;
+    }
   });
 
   it("shows preparation progress while the game starts", async () => {

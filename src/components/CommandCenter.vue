@@ -19,7 +19,7 @@
         :placeholder="$t('type_to_search')"
         class="placeholder:text-muted-foreground flex h-12 w-full rounded-md bg-transparent py-3 text-base outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <Spinner v-if="isSearching" class="size-4 shrink-0" />
+      <Spinner v-if="showInputSpinner" class="size-4 shrink-0" />
       <button
         v-if="query"
         type="button"
@@ -591,8 +591,16 @@ const onEnterKey = function (event: KeyboardEvent) {
   runSearch();
 };
 
+// Media types whose items are never collapsed by name: same-named playlists
+// are different lists, and same-named artists are different people (a real
+// library match is already removed by provider mapping in the search merge).
+const NAME_DEDUPE_EXEMPT_TYPES = new Set<MediaType>([
+  MediaType.PLAYLIST,
+  MediaType.ARTIST,
+]);
+
 const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
-  if (!item.name || item.media_type === MediaType.PLAYLIST) return null;
+  if (!item.name || NAME_DEDUPE_EXEMPT_TYPES.has(item.media_type)) return null;
   const artist =
     "artists" in item ? item.artists[0]?.name.toLowerCase() || "" : "";
   const version = (item.version ?? "").toLowerCase();
@@ -665,6 +673,12 @@ const hasMediaResults = computed(() =>
   mediaSections.value.some((section) => section.items.length),
 );
 
+// one spinner at a time: the results area shows its own until the first results
+// land, and a single type keeps loading behind the spinner below its results
+const showInputSpinner = computed(
+  () => isSearching.value && hasMediaResults.value && !singleType.value,
+);
+
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
   const label = $t(item.media_type);
   const artists =
@@ -677,6 +691,7 @@ const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
 const onMediaSelect = function (item: MediaItemTypeOrItemMapping) {
   recordRecentSearch();
   close();
+  store.showFullscreenPlayer = false;
   router.push({
     name: item.media_type,
     params: { itemId: item.item_id, provider: item.provider },
@@ -765,6 +780,7 @@ const pageResults = computed(() => {
 
 const goToPage = function (page: MenuItem) {
   close();
+  store.showFullscreenPlayer = false;
   router.push(page.path);
 };
 
@@ -851,7 +867,9 @@ onUnmounted(() => {
 watch(
   () => route.fullPath,
   () => {
-    if (isOpen.value) close();
+    if (!isOpen.value) return;
+    close();
+    store.showFullscreenPlayer = false;
   },
 );
 
