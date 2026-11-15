@@ -38,7 +38,7 @@
     <div class="flex flex-wrap items-center gap-1.5">
       <Badge
         v-if="community"
-        variant="secondary"
+        variant="community"
         data-testid="catalog-card-community"
       >
         {{ $t("settings.provider_community") }}

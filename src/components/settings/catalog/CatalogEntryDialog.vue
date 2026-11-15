@@ -24,7 +24,7 @@
           v-if="community || isSetUp || showStageBadge"
           class="flex flex-wrap items-center gap-1.5"
         >
-          <Badge v-if="community" variant="secondary">
+          <Badge v-if="community" variant="community">
             {{ $t("settings.provider_community") }}
           </Badge>
           <ProviderStageBadge :stage="entry.manifest.stage" />
