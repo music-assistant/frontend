@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { markRaw, nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AudioProcessingStage from "@/components/AudioProcessingStage.vue";
@@ -211,6 +211,22 @@ describe("AudioProcessingStage settings link", () => {
     expect(storeMock.showPlayersMenu).toBe(false);
     expect(routerMock.push).toHaveBeenCalledWith(to);
     expect(wrapper.emitted("navigate")).toHaveLength(1);
+  });
+
+  it("opens the exact page a link works out when clicked", async () => {
+    const to = { name: "editplayerdsp", params: { playerId: "kitchen" } };
+    const exact = { ...to, query: { stage: "2" } };
+    const wrapper = mountStage({
+      key: "dsp-filter-0-0",
+      icon: TestIcon,
+      title: "Parametric EQ",
+      link: { to, label: "Open DSP settings", resolve: async () => exact },
+    });
+
+    await wrapper.get("button.audio-processing-stage-link").trigger("click");
+    await flushPromises();
+
+    expect(routerMock.push).toHaveBeenCalledWith(exact);
   });
 });
 

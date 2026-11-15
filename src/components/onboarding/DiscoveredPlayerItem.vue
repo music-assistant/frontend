@@ -26,7 +26,7 @@
         autocomplete="off"
         data-testid="onboarding-player-name-input"
         @keydown.enter.prevent="commitRename"
-        @keydown.esc="cancelRename"
+        @keydown.esc.stop="cancelRename"
         @blur="commitRename"
       />
     </ItemContent>

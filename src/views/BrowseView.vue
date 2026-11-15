@@ -10,6 +10,8 @@
       :show-track-number="false"
       :show-select-button="!isRoot && !hasOnlyFolders"
       :sort-listing="ListingType.BROWSE"
+      library-toolbar
+      :show-count="false"
       :load-paged-data="loadItems"
       :path="path"
       :allow-key-hooks="true"
@@ -54,6 +56,7 @@ import ToolbarHeading, {
   type ToolbarHeadingItem,
 } from "@/components/ToolbarHeading.vue";
 import { Button } from "@/components/ui/button";
+import { parentBrowsePath } from "@/helpers/browse_path";
 import api from "@/plugins/api";
 import {
   ListingType,
@@ -175,16 +178,5 @@ async function findInParentListing(
     return undefined;
   }
   return knownFolders.get(path);
-}
-
-function parentBrowsePath(path: string): string {
-  const separatorIndex = path.indexOf("://");
-  const prefixLength = separatorIndex < 0 ? 0 : separatorIndex + 3;
-  const subPath = path.slice(prefixLength);
-  // a provider's own level is listed at the browse root
-  if (!subPath) return "root";
-  return (
-    path.slice(0, prefixLength) + subPath.split("/").slice(0, -1).join("/")
-  );
 }
 </script>

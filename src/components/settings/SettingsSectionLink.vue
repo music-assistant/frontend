@@ -5,17 +5,17 @@
     class="group rounded-(--radius-xl) text-inherit no-underline outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
   >
     <Card
-      class="h-full gap-1 rounded-(--radius-xl) px-6 pt-5 pb-6 transition duration-200 group-hover:-translate-y-1 group-hover:border-primary/30 group-hover:shadow-lg max-md:px-4 max-md:pt-4 max-md:pb-5"
+      class="h-full gap-1 rounded-(--radius-xl) card-hover px-6 pt-5 pb-6 max-md:px-4 max-md:pt-4 max-md:pb-5"
     >
       <div class="mb-2.5 flex items-center justify-between">
         <span
-          class="flex size-10 shrink-0 items-center justify-center rounded-(--radius-lg) text-white shadow-sm transition-transform duration-200 group-hover:scale-110 group-hover:rotate-[5deg]"
+          class="flex size-10 shrink-0 items-center justify-center rounded-(--radius-lg) text-white shadow-sm"
           :style="iconStyle"
         >
           <component :is="section.icon" class="size-5" aria-hidden="true" />
         </span>
         <span
-          class="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground transition duration-200 group-hover:translate-x-1 group-hover:bg-primary/10 group-hover:text-primary max-md:size-7"
+          class="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary max-md:size-7"
         >
           <ChevronRight class="size-5" aria-hidden="true" />
         </span>
@@ -52,7 +52,7 @@
         </ItemDescription>
       </ItemContent>
       <ChevronRight
-        class="size-5 text-muted-foreground opacity-60 transition group-hover:translate-x-0.5 group-hover:opacity-100"
+        class="size-5 text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100"
         aria-hidden="true"
       />
     </RouterLink>

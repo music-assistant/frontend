@@ -19,6 +19,7 @@
     :allow-collapse="true"
     :hide-on-empty="false"
     :sort-listing="ListingType.LIBRARY_GENRES"
+    library-toolbar
     :limit="50"
     :infinite-scroll="false"
     :load-paged-data="section.load"
@@ -65,6 +66,9 @@ const loadSection = (contentType: MediaType | "music") => {
       sort_field: params.sortField,
       sort_direction: params.sortDirection,
       hide_empty: params.hideEmptyFilter,
+      ...(params.randomSeed === undefined
+        ? {}
+        : { random_seed: params.randomSeed }),
     });
   };
 };

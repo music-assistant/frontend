@@ -246,8 +246,7 @@
     "create_playlist_on": "Ustvari nov seznam predvajanja na {0}",
     "view": {
         "list": "Seznam",
-        "panel": "Ploščice",
-        "panel_compact": "Male ikone"
+        "panel": "Ploščice"
     },
     "play_replace": "Predvajaj zdaj (počisti čakalno vrsto)",
     "played": "Igrano",

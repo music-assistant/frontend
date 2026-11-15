@@ -5,6 +5,7 @@ import { podcast } from "../../fixtures/podcast";
 import { providerMapping } from "../../fixtures/providerMapping";
 
 vi.mock("@/plugins/api", () => ({ api: {} }));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => false }));
 vi.mock("@/components/details/DetailHero.vue", () => ({
   default: { template: '<div><slot name="main" /></div>' },
@@ -49,7 +50,7 @@ describe("PodcastHero", () => {
       }),
     );
 
-    const badge = wrapper.find(".podcast-hero__badge");
+    const badge = wrapper.find(".item-source-badge");
     expect(badge.attributes("aria-label")).toBe("in_library");
     expect(
       wrapper.findComponent({ name: "ProviderIcon" }).props("domain"),
@@ -64,6 +65,6 @@ describe("PodcastHero", () => {
       }),
     );
 
-    expect(wrapper.find(".podcast-hero__badge").exists()).toBe(false);
+    expect(wrapper.find(".item-source-badge").exists()).toBe(false);
   });
 });

@@ -285,7 +285,11 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     });
   };
 
-  const chapterClicked = (_item: MediaItemType, chapter: MediaItemChapter) => {
+  // a bookmark seeks the same way, to its start
+  const chapterClicked = (
+    _item: MediaItemType,
+    chapter: Pick<MediaItemChapter, "start">,
+  ) => {
     const player = store.activePlayer;
     if (!player) return;
     api.playerCommandSeek(player.player_id, chapter.start);

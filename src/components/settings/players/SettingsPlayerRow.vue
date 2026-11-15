@@ -36,13 +36,21 @@
       <PlayerSetupWarning
         v-if="needsSetup"
         class="self-start"
+        :reason="setupReason"
         @setup="emit('setup', playerConfig)"
       />
       <div v-else class="flex min-w-0 items-center gap-2">
         <span class="truncate text-sm text-muted-foreground">
           {{ providerName }}
         </span>
-        <span class="inline-flex flex-wrap gap-1 max-[960px]:hidden">
+        <span
+          v-if="isUnavailable && setupReason"
+          class="truncate text-sm text-muted-foreground"
+          data-testid="player-setup-reason"
+        >
+          · {{ setupReason }}
+        </span>
+        <span v-else class="inline-flex flex-wrap gap-1 max-[960px]:hidden">
           <ProtocolChip
             v-for="protocol in outputProtocols"
             :key="protocol.output_protocol_id"
@@ -56,6 +64,7 @@
         :enabled="playerConfig.enabled"
         :needs-setup="needsSetup"
         :unavailable="isUnavailable"
+        :reason="setupReason"
         class="size-5"
       />
       <Button
@@ -108,6 +117,7 @@ const {
   isUnavailable,
   isThisDevice,
   needsSetup,
+  setupReason,
   providerName,
   outputProtocols,
 } = useSettingsPlayer(toRef(props, "playerConfig"));

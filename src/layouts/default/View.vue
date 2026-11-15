@@ -37,9 +37,10 @@
           <player-rename-dialog />
           <item-context-menu />
           <command-center />
-          <!-- kept last so it portals after the other dialogs, which share
-               its z-index, and a confirmation asked from one of them (e.g.
+          <!-- kept last so they portal after the other dialogs, which share
+               their z-index, and a confirmation asked from one of them (e.g.
                the search popup) appears on top -->
+          <stream-held-dialog />
           <dialog-delete-confirmation />
           <AddManualLink
             v-model="showEditItemDialog"
@@ -65,6 +66,7 @@ import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
+import StreamHeldDialog from "@/components/StreamHeldDialog.vue";
 import TourOverlay from "@/components/tour/TourOverlay.vue";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {

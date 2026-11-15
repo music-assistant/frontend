@@ -102,13 +102,7 @@
               :label="$t('smart_playlist.rules_dialog_title')"
               @click="emit('show-rules')"
             />
-            <span
-              v-if="!isPhone"
-              class="inline-flex size-9 flex-none items-center justify-center rounded-lg border border-white/25 bg-black/40"
-              :title="providerBadgeTitle"
-            >
-              <ProviderIcon :domain="providerDomain" :size="20" />
-            </span>
+            <DetailHeroSourceBadge :item="item" />
           </div>
         </div>
       </div>
@@ -127,15 +121,14 @@ import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlaylistAccessSummary from "@/components/PlaylistAccessSummary.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import { isMusicAssistantPlaylist } from "@/helpers/playlist_access";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatTotalDuration } from "@/helpers/duration";
 import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type {
   Playlist,
   SortDirection,
@@ -195,15 +188,5 @@ const facts = computed(() => {
   }
   if (props.duration) parts.push(formatTotalDuration(props.duration));
   return parts;
-});
-
-const providerDomain = computed(() =>
-  props.item ? getProviderIconDomain(props.item) : "",
-);
-
-const providerBadgeTitle = computed(() => {
-  const domain = providerDomain.value;
-  if (domain === "library") return $t("in_library");
-  return api.getProviderManifest(domain)?.name ?? domain;
 });
 </script>

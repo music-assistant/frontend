@@ -458,9 +458,13 @@ describe("PlaylistDetails", () => {
       const refreshedTracks = [track({ name: "Updated track" })];
       apiMock.getPlaylistTracks.mockClear().mockResolvedValue(refreshedTracks);
 
+      // the page applies an update once updates stop
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
       onUpdated.forEach((callback) =>
         callback({ data: { ...item, name: "Renamed" } } as EventMessage),
       );
+      vi.runAllTimers();
+      vi.useRealTimers();
       await flushPromises();
 
       expect(apiMock.getPlaylistTracks).toHaveBeenCalledWith(

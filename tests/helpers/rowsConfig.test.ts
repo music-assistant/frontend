@@ -19,6 +19,7 @@ import {
   mergeOrder,
   readRowsConfig,
   resolveRowsConfig,
+  storedRowsConfig,
   withRowHidden,
   withRowsOrder,
   writeRowsConfig,
@@ -61,6 +62,16 @@ describe("rowsConfig", () => {
         hidden: ["a"],
         shown: [],
         order: [],
+      });
+    });
+  });
+
+  describe("storedRowsConfig", () => {
+    it("fills in the arrays a config leaves out", () => {
+      expect(storedRowsConfig({ order: ["b"] })).toEqual({
+        hidden: [],
+        shown: [],
+        order: ["b"],
       });
     });
   });

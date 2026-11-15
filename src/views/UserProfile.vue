@@ -1,6 +1,6 @@
 <template>
   <div class="user-profile">
-    <Container variant="comfortable" class="profile-container">
+    <div class="profile-container">
       <div class="profile-content space-y-6">
         <ProfileSettings />
         <PasswordSettings />
@@ -14,7 +14,7 @@
           @created="loadTokens"
         />
       </div>
-    </Container>
+    </div>
 
     <Dialog v-model:open="showRevokeDialog">
       <DialogContent class="sm:max-w-md">
@@ -57,7 +57,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import LongLivedTokensList from "@/components/profile/LongLivedTokensList.vue";
 import PasswordSettings from "@/components/profile/PasswordSettings.vue";
 import ProfileSettings from "@/components/profile/ProfileSettings.vue";
@@ -154,7 +153,6 @@ onMounted(() => {
 
 .profile-container {
   padding: 24px 20px;
-  max-width: 900px;
   margin: 0 auto;
   width: 100%;
 }

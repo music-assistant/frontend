@@ -78,8 +78,7 @@ vi.mock("@/helpers/icon", () => ({
 vi.mock("@/plugins/api/helpers", () => ({
   isAudioSource: vi.fn(() => false),
   // what the real helper does, which this module-wide mock would otherwise hide
-  isMusicBrainzItem: (item: { provider: string }) =>
-    item.provider === "musicbrainz",
+  isExternalItem: (item: { provider: string }) => item.provider === "external",
   isItemInLibrary: vi.fn(() => true),
   itemIsAvailable: vi.fn(() => true),
   itemSupportsPlayLog: vi.fn(() => false),

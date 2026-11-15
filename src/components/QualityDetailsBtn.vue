@@ -123,7 +123,6 @@ export const imgCoverLight = new URL(
   "@/assets/cover_light.png",
   import.meta.url,
 ).href;
-export const iconFolder = new URL("@/assets/folder.svg", import.meta.url).href;
 </script>
 
 <style>

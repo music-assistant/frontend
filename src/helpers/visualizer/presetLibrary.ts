@@ -6,15 +6,12 @@
 
 type PresetMap = Record<string, object>;
 
-interface PresetPack {
-  getPresets: () => PresetMap;
-}
-
 let cache: PresetMap | null = null;
 let loading: Promise<PresetMap> | null = null;
 
 // The UMD packs may arrive plain, under `default`, or under `default.default`
-// depending on the bundler's CJS interop; probe all nestings.
+// depending on the bundler's CJS interop; probe all nestings. The packs export
+// the preset map itself, recognised by `baseVals`.
 function packPresets(module: unknown): PresetMap {
   const record = module as Record<string, unknown>;
   const candidates = [
@@ -22,9 +19,14 @@ function packPresets(module: unknown): PresetMap {
     record.default,
     (record.default as Record<string, unknown> | undefined)?.default,
   ];
-  for (const candidate of candidates) {
-    if (candidate && typeof (candidate as PresetPack).getPresets === "function")
-      return (candidate as PresetPack).getPresets();
+  // deepest first, so a wrapper never matches before the map it wraps
+  for (const candidate of [...candidates].reverse()) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const entries = Object.entries(candidate).filter(
+      ([, value]) =>
+        typeof value === "object" && value !== null && "baseVals" in value,
+    );
+    if (entries.length) return Object.fromEntries(entries);
   }
   return {};
 }
@@ -40,7 +42,7 @@ export async function loadPresetLibrary(): Promise<PresetMap> {
     Object.assign(presets, packPresets(base));
     try {
       const extra: unknown =
-        await import("butterchurn-presets/lib/butterchurnPresetsExtra.min.js");
+        await import("butterchurn-presets/dist/extra.min.js");
       Object.assign(presets, packPresets(extra));
     } catch {
       // Extra pack is optional; the base pack alone is fine.
@@ -71,4 +73,13 @@ export async function randomPresetName(): Promise<string> {
   // butterchurn's own default rather than propagating undefined.
   if (names.length === 0) return "";
   return names[Math.floor(Math.random() * names.length)];
+}
+
+/** Favourites still in the library; a stored name can outlive its preset. */
+export function availableFavorites(
+  favorites: string[],
+  names: string[],
+): string[] {
+  const known = new Set(names);
+  return favorites.filter((name) => known.has(name));
 }

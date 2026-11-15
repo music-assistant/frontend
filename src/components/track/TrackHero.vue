@@ -25,14 +25,10 @@
             <span v-if="item.version" class="track-hero__version">
               ({{ item.version }})
             </span>
-            <span
+            <ExplicitBadge
               v-if="item.metadata?.explicit"
-              class="track-hero__explicit"
-              role="img"
-              :title="$t('tooltip.explicit')"
-              :aria-label="$t('tooltip.explicit')"
-              >E</span
-            >
+              class="track-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
+            />
           </h1>
 
           <div class="track-hero__meta">
@@ -91,19 +87,8 @@
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
-            <span
-              v-if="!isPhone"
-              class="track-hero__badge"
-              :title="providerBadgeTitle"
-            >
-              <ProviderIcon :domain="providerDomain" :size="20" />
-            </span>
-            <span
-              v-if="
-                item.audio_metadata?.bpm || item.audio_metadata?.musical_key
-              "
-              class="track-hero__badge"
-            >
+            <DetailHeroSourceBadge :item="item" />
+            <span v-if="hasAudioAnalysis" class="track-hero__badge">
               <AudioAnalysisMetadata :audio-metadata="item.audio_metadata" />
             </span>
             <span v-if="qualityLabel" class="track-hero__pill">
@@ -127,8 +112,9 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import {
   audioFormatLabel,
   bestAudioFormat,
@@ -136,11 +122,8 @@ import {
 } from "@/components/track/trackData";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatDuration } from "@/helpers/utils";
-import { api } from "@/plugins/api";
-import { getProviderIconDomain } from "@/plugins/api/helpers";
 import type { Track } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { $t } from "@/plugins/i18n";
 import { Disc, Music, Orbit } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -166,14 +149,9 @@ const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
 
-const providerDomain = computed(() =>
-  props.item ? getProviderIconDomain(props.item) : "",
-);
-
-const providerBadgeTitle = computed(() => {
-  const domain = providerDomain.value;
-  if (domain === "library") return $t("in_library");
-  return api.getProviderManifest(domain)?.name ?? domain;
+const hasAudioAnalysis = computed(() => {
+  const metadata = props.item?.audio_metadata;
+  return !!(metadata?.bpm || metadata?.musical_key || metadata?.energy_level);
 });
 
 const qualityLabel = computed(() => {
@@ -236,19 +214,7 @@ const gotoItem = function (
   color: rgba(255, 255, 255, 0.7);
 }
 .track-hero__explicit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
   margin-left: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1;
-  text-shadow: none;
   vertical-align: middle;
 }
 

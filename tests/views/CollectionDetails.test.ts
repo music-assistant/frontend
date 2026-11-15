@@ -10,16 +10,21 @@ const { getAudiobookCollection } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/plugins/api", () => ({
-  api: { getAudiobookCollection },
+  api: { getAudiobookCollection, subscribe_multi: () => () => {} },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-vi.mock("@/components/InfoHeader.vue", () => ({
-  default: { name: "InfoHeader", props: ["item"], template: "<div />" },
+vi.mock("@/components/collection/CollectionHero.vue", () => ({
+  default: { name: "CollectionHero", props: ["item"], template: "<div />" },
 }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["loadPagedData", "parentItem"],
+    props: {
+      loadPagedData: Function,
+      parentItem: Object,
+      libraryToolbar: Boolean,
+      detailRow: Boolean,
+    },
     template: "<div />",
   },
 }));
@@ -71,6 +76,16 @@ describe("CollectionDetails", () => {
     });
   });
 
+  it("sorts and filters the collection from its title bar", async () => {
+    const wrapper = mount(CollectionDetails, {
+      props: { itemId: "audiobook___Test Collection", provider: "library" },
+    });
+    const listing = wrapper.findComponent({ name: "ItemsListing" });
+
+    expect(listing.props("libraryToolbar")).toBe(true);
+    expect(listing.props("detailRow")).toBe(true);
+  });
+
   it("remounts the listing and resets its header when the collection changes", async () => {
     const wrapper = mount(CollectionDetails, {
       props: { itemId: "audiobook___First", provider: "library" },
@@ -83,7 +98,7 @@ describe("CollectionDetails", () => {
     });
     await flushPromises();
     expect(
-      wrapper.findComponent({ name: "InfoHeader" }).props("item"),
+      wrapper.findComponent({ name: "CollectionHero" }).props("item"),
     ).toBeDefined();
 
     await wrapper.setProps({ itemId: "audiobook___Second" });
@@ -91,7 +106,7 @@ describe("CollectionDetails", () => {
     const nextListing = wrapper.findComponent({ name: "ItemsListing" });
     expect(nextListing.vm).not.toBe(listing.vm);
     expect(
-      wrapper.findComponent({ name: "InfoHeader" }).props("item"),
+      wrapper.findComponent({ name: "CollectionHero" }).props("item"),
     ).toBeUndefined();
     await nextListing.props("loadPagedData")({
       offset: 0,
