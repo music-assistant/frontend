@@ -24,9 +24,11 @@
         </Button>
       </div>
     </div>
+    <!-- the row clips what leaves it, so its padding holds the lift and the
+         shadow of a hovered card, and its negative margins keep it in place -->
     <div
       ref="scroller"
-      class="-mx-6 flex snap-x snap-mandatory scroll-px-6 gap-4 overflow-x-auto px-6 pb-2 max-md:-mx-3 max-md:scroll-px-3 max-md:px-3"
+      class="-mx-6 -mt-1 -mb-3 flex snap-x snap-mandatory scroll-px-6 gap-4 overflow-x-auto px-6 pt-1 pb-5 max-md:-mx-3 max-md:scroll-px-3 max-md:px-3"
     >
       <div
         v-for="entry in entries"
