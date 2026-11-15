@@ -10,7 +10,8 @@
         </p>
         <ul
           v-if="items.length"
-          class="mt-3 max-h-60 list-disc overflow-y-auto rounded-md border py-2 pr-3 pl-8 text-sm break-words"
+          tabindex="0"
+          class="mt-3 max-h-60 list-disc overflow-y-auto rounded-md border py-2 pr-3 pl-8 text-sm break-words outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
           data-testid="delete-confirmation-items"
         >
           <li v-for="(item, index) in items" :key="index">{{ item }}</li>

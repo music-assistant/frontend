@@ -124,6 +124,8 @@ describe("DialogDeleteConfirmation", () => {
       "Kitchen",
       "Garage",
     ]);
+    // a long list scrolls, which the keyboard only does for an element it can focus
+    expect(list.attributes("tabindex")).toBe("0");
   });
 
   it("shows no list without items, also after a confirmation with them", async () => {
