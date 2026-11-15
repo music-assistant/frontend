@@ -69,14 +69,25 @@
         v-bind="stepView.props"
         @advance="next"
         @navigate="goTo"
-        @finish="finishOnboarding"
+        @finish="finishOnboarding()"
       />
     </ScrollFade>
 
     <footer
       v-if="ready && showForwardAction"
-      class="flex shrink-0 items-center justify-end gap-2"
+      class="flex shrink-0 flex-col items-center justify-end gap-2 sm:flex-row"
     >
+      <Button
+        v-if="offerTour"
+        variant="outline"
+        class="w-full sm:w-auto"
+        :disabled="finishing"
+        data-testid="onboarding-tour"
+        @click="finishOnboarding(true)"
+      >
+        <Route class="size-4" aria-hidden="true" />
+        {{ $t("tour.start") }}
+      </Button>
       <Button
         v-if="isSummary"
         class="w-full sm:w-auto"
@@ -105,9 +116,7 @@ import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
 import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
-import FinishStep, {
-  type FinishOptions,
-} from "@/components/onboarding/steps/FinishStep.vue";
+import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
@@ -128,7 +137,7 @@ import {
 } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft } from "@lucide/vue";
+import { ArrowLeft, Route } from "@lucide/vue";
 import {
   computed,
   markRaw,
@@ -257,6 +266,11 @@ const trackTitleKey = computed(() =>
 );
 
 const isSummary = computed(() => currentStep.value?.kind === "summary");
+const offerTour = computed(
+  () =>
+    isSummary.value &&
+    (ctx.value.isMember || ctx.value.answers.intent !== "phone_apps"),
+);
 
 const stepView = computed(() => {
   const id = currentId.value;
@@ -337,11 +351,11 @@ const next = async function () {
 
 // The tour is only given once onboarding has let go: a finish that did not
 // land keeps the wizard up, and the tour waits with it.
-const finishOnboarding = async function (options?: FinishOptions) {
+const finishOnboarding = async function (tour = false) {
   if (finishing.value) return;
   finishing.value = true;
   try {
-    if ((await finish()) && options?.tour) startTour();
+    if ((await finish()) && tour) startTour();
   } finally {
     finishing.value = false;
   }

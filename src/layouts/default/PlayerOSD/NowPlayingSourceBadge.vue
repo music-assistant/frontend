@@ -13,8 +13,8 @@
         : 'bg-background/40 backdrop-blur-md'
     "
     role="img"
-    :aria-label="$t('tooltip.playing_from', [nowPlayingSource.name])"
-    :title="$t('tooltip.playing_from', [nowPlayingSource.name])"
+    :aria-label="$t('tooltip.playing_from', [nowPlayingSource.label])"
+    :title="$t('tooltip.playing_from', [nowPlayingSource.label])"
   >
     <img
       v-if="iconDataUri"
@@ -30,7 +30,7 @@
       aria-hidden="true"
     />
     <span v-if="!iconOnly" class="truncate">
-      {{ nowPlayingSource.name }}
+      {{ nowPlayingSource.label }}
     </span>
   </Badge>
 </template>

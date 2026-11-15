@@ -1,6 +1,11 @@
 <template>
   <div>
-    <Toolbar :icon="Settings">
+    <Toolbar
+      :icon="Settings"
+      :menu-items="toolbarMenuItems"
+      :enforce-overflow-menu="true"
+      :menu-active="toolbarMenuActive"
+    >
       <template #title>
         <ToolbarHeading
           :title="t('settings.settings')"
@@ -86,6 +91,7 @@ import { Button } from "@/components/ui/button";
 import { ItemGroup } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
+import { provideSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
@@ -110,6 +116,13 @@ const { getPreference, setPreference } = useUserPreferences();
 // the provider settings page publishes the name it shows, so the crumb above
 // it cannot disagree with its heading
 const editedProviderName = provideEditedProviderName();
+
+// the page on screen puts what it offers in the toolbar's overflow menu
+const toolbarMenuItems = provideSettingsToolbarMenu();
+// an option that is on shows on the menu button
+const toolbarMenuActive = computed(() =>
+  toolbarMenuItems.value.some((item) => item.active),
+);
 
 const settingsViewMode = ref<"list" | "card">("card");
 const savedSettingsViewMode = getPreference<"list" | "card">(
@@ -298,12 +311,10 @@ const onboardingLinkKey = computed(() =>
   isAdminTrack() ? "onboarding.run_again" : "onboarding.welcome_again",
 );
 const { open: openOnboarding } = useOnboarding();
-// The setup wizard opens where a paused setup was left, or else on whatever is
-// left to set up. The welcome has been shown by the time this link is any use,
-// so nothing is left to do on it and it would otherwise open on its own
-// summary: showing it again means showing it from the top.
+// Running the wizard again starts at its first choice; the paused banner
+// separately resumes wherever the user left it.
 const launchOnboarding = () =>
-  openOnboarding(isAdminTrack() ? undefined : "welcome");
+  openOnboarding(isAdminTrack() ? "intent" : "welcome");
 
 const settingsSections = computed(() =>
   availableSettingsSections((scope) => authManager.hasScope(scope)),
