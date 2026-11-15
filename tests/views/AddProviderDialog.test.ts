@@ -75,6 +75,38 @@ beforeEach(() => {
 });
 
 describe("AddProviderDialog", () => {
+  it("prioritizes app receivers without hiding other plugins", async () => {
+    apiMock.providerManifests = {
+      party: providerManifest({
+        domain: "party",
+        name: "Party",
+        type: ProviderType.PLUGIN,
+      }),
+      spotify_connect: providerManifest({
+        domain: "spotify_connect",
+        name: "Spotify Connect",
+        type: ProviderType.PLUGIN,
+        stage: ProviderStage.BETA,
+      }),
+      airplay_receiver: providerManifest({
+        domain: "airplay_receiver",
+        name: "AirPlay Receiver",
+        type: ProviderType.PLUGIN,
+        stage: ProviderStage.ALPHA,
+      }),
+      spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
+    };
+    routeMock.query = { types: ProviderType.PLUGIN };
+
+    await openDialog();
+
+    expect(providerNames()).toEqual([
+      "Spotify Connect",
+      "AirPlay Receiver",
+      "Party",
+    ]);
+  });
+
   it("focuses the search field on a non-touch device", async () => {
     await openDialog();
 
@@ -235,7 +267,9 @@ describe("AddProviderDialog", () => {
     ).toBeNull();
     expect(
       document
-        .querySelector("[data-testid='community-marker'] [data-slot='badge']")
+        .querySelector(
+          "[data-testid='provider-maintainers'] [data-slot='badge']",
+        )
         ?.textContent?.trim(),
     ).toBe("settings.provider_community");
     expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_maintained_by", {
@@ -243,7 +277,7 @@ describe("AddProviderDialog", () => {
     });
   });
 
-  it("adds no community line to a core provider", async () => {
+  it("names the maintainers of a core provider without the Community badge", async () => {
     apiMock.providerManifests = {
       spotify: providerManifest({
         domain: "spotify",
@@ -254,8 +288,27 @@ describe("AddProviderDialog", () => {
 
     await openDialog();
 
+    const line = document.querySelector("[data-testid='provider-maintainers']");
+    expect(line?.textContent?.trim()).toBe("settings.provider_maintained_by");
+    expect(line?.querySelector("[data-slot='badge']")).toBeNull();
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_maintained_by", {
+      maintainers: "@jane",
+    });
+  });
+
+  it("adds no maintainer line to a provider only the project owns", async () => {
+    apiMock.providerManifests = {
+      spotify: providerManifest({
+        domain: "spotify",
+        name: "Spotify",
+        codeowners: ["@music-assistant"],
+      }),
+    };
+
+    await openDialog();
+
     expect(
-      document.querySelector("[data-testid='community-marker']"),
+      document.querySelector("[data-testid='provider-maintainers']"),
     ).toBeNull();
   });
 

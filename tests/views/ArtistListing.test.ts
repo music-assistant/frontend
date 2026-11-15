@@ -284,6 +284,32 @@ describe("ArtistListing", () => {
     expect(mockReplace).toHaveBeenCalledWith({ query: { other: "kept" } });
   });
 
+  // the artist page's "view all" hands each release listing the source its
+  // shelf shows
+  it("opens the singles listing on a source carried in by the route", async () => {
+    api.providers["spotify--abc"] = {
+      instance_id: "spotify--abc",
+      name: "Spotify",
+      supported_features: [ProviderFeature.ARTIST_ALBUMS],
+    } as ProviderInstance;
+    routeQuery.source = "spotify--abc";
+
+    const props = listing(
+      await mountListing(
+        "singles",
+        artist({
+          provider_mappings: [
+            providerMapping({ provider_instance: "spotify--abc" }),
+          ],
+        }),
+      ),
+    ).props();
+
+    expect(props.providerOverride).toBe("spotify--abc");
+    expect(props.providerFilterOptions).toEqual(["spotify--abc"]);
+    expect(props.defaultProvider).toBe("library");
+  });
+
   it("ignores a carried source the listing does not offer", async () => {
     routeQuery.source = "tidal--gone";
 

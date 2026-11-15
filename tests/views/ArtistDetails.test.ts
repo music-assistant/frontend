@@ -25,11 +25,15 @@ const {
   mockResolveArtistRows,
   mockArtistRowSources,
   mockLoadArtistReleases,
+  mockArtistAlbumsCountBySource,
   mockLoadArtistDiscography,
+  mockLoadArtistDiscographyCount,
   mockLoadArtistTracks,
+  mockLoadArtistTracksCount,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
   mockLoadArtistAppearsOn,
+  mockLoadArtistAppearsOnCount,
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockGetArtistAudiobooks: vi.fn<MusicAssistantApi["getArtistAudiobooks"]>(),
@@ -38,11 +42,15 @@ const {
   mockResolveArtistRows: vi.fn(),
   mockArtistRowSources: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
+  mockArtistAlbumsCountBySource: vi.fn(),
   mockLoadArtistDiscography: vi.fn(),
+  mockLoadArtistDiscographyCount: vi.fn(),
   mockLoadArtistTracks: vi.fn(),
+  mockLoadArtistTracksCount: vi.fn(),
   mockLoadArtistTopTracks: vi.fn(),
   mockLoadSimilarArtists: vi.fn(),
   mockLoadArtistAppearsOn: vi.fn(),
+  mockLoadArtistAppearsOnCount: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -69,6 +77,7 @@ vi.mock("@/components/artist/artistRows", () => ({
     resolve: mockResolveArtistRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "all",
+    resolveSource: () => "all",
     sources: mockArtistRowSources,
   },
 }));
@@ -78,11 +87,15 @@ vi.mock("@/components/artist/artistRows", () => ({
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
+  artistAlbumsCountBySource: mockArtistAlbumsCountBySource,
   loadArtistDiscography: mockLoadArtistDiscography,
+  loadArtistDiscographyCount: mockLoadArtistDiscographyCount,
   loadArtistTracks: mockLoadArtistTracks,
+  loadArtistTracksCount: mockLoadArtistTracksCount,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
   loadArtistAppearsOn: mockLoadArtistAppearsOn,
+  loadArtistAppearsOnCount: mockLoadArtistAppearsOnCount,
 }));
 
 vi.mock("@/components/artist/ArtistHero.vue", () => ({
@@ -105,7 +118,7 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
-    props: ["title", "items"],
+    props: ["title", "items", "itemCount", "viewAllTo"],
     template: '<div :data-row="title" />',
   },
 }));
@@ -203,13 +216,17 @@ describe("ArtistDetails", () => {
     // a library artist mapped to a provider that can supply the row
     mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
+    mockArtistAlbumsCountBySource.mockReset().mockResolvedValue(4);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([album()]);
+    mockLoadArtistDiscographyCount.mockReset().mockResolvedValue(1);
     mockLoadArtistTracks.mockReset().mockResolvedValue([track()]);
+    mockLoadArtistTracksCount.mockReset().mockResolvedValue(1);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([track()]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([artist()]);
     mockLoadArtistAppearsOn
       .mockReset()
       .mockResolvedValue([album({ item_id: "3" })]);
+    mockLoadArtistAppearsOnCount.mockReset().mockResolvedValue(1);
   });
 
   it("renders the rows in the resolved order", async () => {
@@ -321,6 +338,27 @@ describe("ArtistDetails", () => {
       .findAllComponents({ name: "ReleaseShelf" })
       .find((component) => component.props("title") === "discography");
     expect(shelf?.props("items")).toHaveLength(50);
+    expect(shelf?.props("itemCount")).toBe(1);
+  });
+
+  // the listing opens on what the shelf shows, an automatic row's provider included
+  it("opens a release shelf's listing on the shelf's source", async () => {
+    const wrapper = await mountDetails(artist({ item_id: "7" }));
+
+    const viewAll = (title: string) =>
+      wrapper
+        .findAllComponents({ name: "ReleaseShelf" })
+        .find((component) => component.props("title") === title)
+        ?.props("viewAllTo");
+    expect(viewAll("albums")).toEqual({
+      name: "artistlisting",
+      params: { provider: "library", itemId: "7", listing: "albums" },
+      query: { source: "all" },
+    });
+    expect(viewAll("singles_eps")).toMatchObject({
+      params: { listing: "singles" },
+      query: { source: "all" },
+    });
   });
 
   describe("discography heading", () => {

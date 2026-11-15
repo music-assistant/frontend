@@ -20,6 +20,7 @@
         "soundtrack": "Soundtrack"
     },
     "albums": "Albums",
+    "alphabet_jump": "Jump to letter",
     "appears_on": "Appears on",
     "artist": "Artist",
     "artist_albums": "Albums",
@@ -775,6 +776,10 @@
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
         },
+        "show_letter_index": {
+            "label": "Show A to Z index",
+            "description": "Adds a letter bar to the artists, albums and tracks lists so you can jump straight to a letter. Only shown when the list is sorted by name and you are not searching."
+        },
         "audiobook_chapter_progress": {
             "label": "Show audiobook chapter progress",
             "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."
@@ -994,6 +999,7 @@
         "sort_name": "Alphabetically by sort name",
         "track_number": "Track number",
         "year": "Release year",
+        "release_date": "Release date",
         "position_desc": "Position (descending)",
         "album": "Album (alphabetical)",
         "album_name": "Album",
@@ -1120,10 +1126,12 @@
         "user_options": "User options",
         "help": "Help",
         "view_all": "View all {name}",
+        "view_all_count": "View all {name} ({count})",
         "artwork": "Artwork",
         "import_file": "Import file",
         "bpm": "Tempo (beats per minute)",
         "musical_key": "Musical key",
+        "energy_level": "Energy level, from 1 (calmest) to 10 (most energetic)",
         "show_dashboard": "Cast dashboard to a device",
         "collapse_collections": "Collapse collections",
         "mute": "Mute",
@@ -2414,6 +2422,9 @@
         "empty_desc": "No tracks match your current rules. Loosen a filter or pick a different seed to get started.",
         "empty_title": "Nothing to play yet",
         "favorites_yes": "Yes",
+        "favorites_only": "Only favorites",
+        "favorites_exclude": "Exclude favorites",
+        "favorites_exclude_hint": "Your liked tracks are always excluded, even when they match another rule.",
         "field_album_is": "Album is",
         "field_album_is_not": "Album is not",
         "field_artist_is": "Artist is",
@@ -2617,6 +2628,7 @@
     },
     "singles_eps": "Singles & EPs",
     "view_all": "View all",
+    "view_all_count": "View all ({count})",
     "n_in_library": "{count} in library",
     "album_radio": "Album endless mix",
     "playlist_radio": "Playlist endless mix",
@@ -2658,6 +2670,7 @@
     "row_source": "Source",
     "source_library": "Your library",
     "source_all": "All sources",
+    "source_auto": "Automatic",
     "row_hidden": "Hidden",
     "reorder_row": "Reorder row",
     "hide_row": "Hide row",
@@ -2755,6 +2768,7 @@
     "audio_analysis": "Audio analysis",
     "bpm": "BPM",
     "musical_key": "Key",
+    "energy_level": "Energy",
     "audio_overlay": "Audio overlay",
     "audio_overlay_explanation": "Mix a looping ambient sound into this queue's playback.",
     "audio_overlay_enable": "Enable overlay",
@@ -2881,6 +2895,10 @@
             "fixed": "Fixed preset"
         },
         "fixed_preset": "Preset",
+        "palette_ramp": "Recolor everything to the artwork",
+        "palette_ramp_description": "Remap the whole picture into the artwork's colors, keeping the preset's own brightness so motion and detail survive. At full strength every preset takes on the album's palette.",
+        "palette_colors": "Color elements from the artwork",
+        "palette_colors_description": "Color the preset's waveform and borders with the artwork palette. Only presets that draw those elements are affected.",
         "beat_switch": "Switch preset on downbeat",
         "beat_switch_description": "Switch to another preset on a downbeat. Overrides a fixed preset.",
         "beat_dwell": "Minimum time between switches",
@@ -2921,6 +2939,7 @@
         "step_counter": "Step {current} of {total}",
         "step_completed": "{step}, completed",
         "next": "Next",
+        "continue": "Continue",
         "skip": "Skip for now",
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
@@ -2928,13 +2947,17 @@
         "needs_attention": "Needs attention",
         "set_up": "Done",
         "still_to_do": "Still to do",
-        "all_done": "Everything on the list is set up.",
+        "explore_more": "Explore more",
+        "all_done": "You can finish setup now and add more features whenever you like.",
+        "listen_from_apps": "Try playing from your music apps",
+        "spotify_connect_hint": "In Spotify Connect's settings, choose the speakers you want to use. Then open Spotify's device picker and select one of those speakers.",
+        "airplay_receiver_hint": "In AirPlay Receiver's settings, choose the speakers you want to use. Then open the AirPlay audio picker on your Apple device and select the receiver for your speaker.",
         "players_count": "{count} player | {count} players",
         "music_sources_count": "{count} music source | {count} music sources",
         "plugins_count": "{count} plugin | {count} plugins",
         "run_again": "Run the setup wizard again",
         "paused_title": "Setup paused",
-        "paused_text": "Pick up where you left off, now or later from the settings.",
+        "paused_text": "Continue now, or open the setup wizard again later from the settings.",
         "resume": "Resume",
         "pause": "Pause setup",
         "dismiss": "Dismiss",
@@ -2961,17 +2984,19 @@
                 "ready": "Signed in as {name}."
             },
             "intent": {
-                "title": "Choose how you want to use Music Assistant",
-                "description": "This sets what Music Assistant does first. Everything stays available, whichever you pick.",
+                "title": "How would you like to use Music Assistant?",
+                "description": "Choose your starting point. You can use every feature with either option.",
+                "summary_title": "Your setup choice",
                 "phone_apps": {
-                    "label": "From the apps on my phone",
-                    "description": "Stream from Spotify, AirPlay and other apps to the speakers in your home."
+                    "label": "Connect my music apps to my speakers",
+                    "description": "Keep choosing music in apps like Spotify, or use AirPlay. Music Assistant works in the background to connect them to your speakers, without setting up a music library.",
+                    "preview": "Next, we'll add your speakers, connect your music apps and show you how to start listening."
                 },
                 "music_hub": {
-                    "label": "As my music hub",
-                    "description": "Bring your streaming services and local music together in one library."
-                },
-                "settings_note": "You can change this later from the settings."
+                    "label": "The full Music Assistant experience",
+                    "description": "Bring your music services, local music and speakers together in one place. Browse, search and build playlists in Music Assistant. You can still play from Spotify Connect and AirPlay.",
+                    "preview": "Next, we'll connect your music services and add your speakers, then explore more features."
+                }
             },
             "music_sources": {
                 "title": "Add your music sources",
@@ -2990,13 +3015,19 @@
             },
             "plugins": {
                 "title": "Add plugins",
-                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later."
+                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later.",
+                "phone_apps_title": "Connect your music apps",
+                "phone_apps_description": "Add Spotify Connect or the AirPlay receiver, then open its settings to choose your speakers. Other plugins are available here too.",
+                "connect": "Connect a music app"
             },
             "core_settings": {
-                "title": "Check your server settings",
-                "intro": "The addresses Music Assistant is using right now. They are worked out automatically and are normally right, so you can simply move on.",
+                "title": "Access Music Assistant",
+                "intro": "Music Assistant works on your home network automatically. Set up remote access if you'd also like to listen when you're away.",
+                "network_details": "Server and network details",
                 "internal_address": "Internal address",
                 "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
+                "external_address": "External address",
+                "external_address_hint": "Where you reach Music Assistant from outside your home, through your reverse proxy.",
                 "stream_address": "Stream server address",
                 "stream_address_hint": "Where your players fetch the audio from.",
                 "address_unknown": "Not available",
@@ -3006,7 +3037,7 @@
                     "unreachable": "Not reachable from this device",
                     "unchecked": "Could not check from this device"
                 },
-                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, set it under the advanced settings.",
+                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, change it with Edit below.",
                 "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system}, in {webserver} and {streams}.",
                 "remote": {
                     "title": "Listen from outside your home",
@@ -3035,7 +3066,8 @@
             },
             "finish": {
                 "title": "Finish setup",
-                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings."
+                "description": "Nice work setting things up. Here's a quick recap, and you can change any of this later from the settings.",
+                "phone_apps_description": "Here's a recap of your speakers and app connections. You can add a music library and other features later from the settings."
             },
             "welcome": {
                 "title": "Make yourself at home",
@@ -3080,10 +3112,6 @@
         "end": "End the tour",
         "next": "Next",
         "step_counter": "{current} of {total}",
-        "offer": {
-            "title": "Want a quick look around?",
-            "description": "A short tour points out the main parts of the app. You can take it again any time from your profile menu."
-        },
         "stops": {
             "menu": {
                 "title": "The menu",
