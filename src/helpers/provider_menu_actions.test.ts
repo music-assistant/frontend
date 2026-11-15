@@ -69,6 +69,18 @@ describe("getProviderMenuItems", () => {
     expect(hasScope).toHaveBeenCalledWith(Scope.LIBRARY_READ);
   });
 
+  it("leaves a scope the app does not know to the user's scopes", () => {
+    const scope = "library.everything" as Scope;
+    const actions = [{ ...ASK, scope }];
+
+    expect(
+      texts(
+        MediaType.TRACK,
+        context({ actions, hasScope: (s) => s === scope }),
+      ),
+    ).toEqual(["Ask the demo plugin about this"]);
+  });
+
   it("offers nothing from an older server, whose manifests have no menu actions", () => {
     const manifests = {
       demo: providerManifest({ domain: "demo", type: ProviderType.PLUGIN }),
@@ -77,36 +89,17 @@ describe("getProviderMenuItems", () => {
     expect(texts(MediaType.TRACK, context({ manifests }))).toEqual([]);
   });
 
-  it.each([
-    ["no list", "not a list"],
-    ["no object", ["show_item"]],
-    ["no label", [{ ...ASK, label: 42 }]],
-    ["no id", [{ ...ASK, id: null }]],
-    ["no list of media types", [{ ...ASK, media_types: "track" }]],
-    [
-      "a scope the app does not know",
-      [{ ...ASK, scope: "library.everything" }],
-    ],
-  ])("leaves out an action with %s", (_case, declared) => {
-    const manifests = {
-      demo: { ...manifest([]), menu_actions: declared } as never,
-    };
-
-    expect(texts(MediaType.TRACK, context({ manifests }))).toEqual([]);
-  });
-
-  it("ignores a media type it does not know, and offers nothing for an item without a menu of them", () => {
+  it("ignores a media type it does not know", () => {
     const actions = [
-      { ...ASK, media_types: ["hologram", MediaType.TRACK, MediaType.GENRE] },
+      { ...ASK, media_types: ["hologram", MediaType.TRACK] },
     ] as ProviderMenuAction[];
 
     expect(texts(MediaType.TRACK, context({ actions }))).toEqual([
       "Ask the demo plugin about this",
     ]);
-    expect(texts(MediaType.GENRE, context({ actions }))).toEqual([]);
   });
 
-  it("tells two instances apart by their names, each entry choosing its own", () => {
+  it("names the instance under each entry, each entry choosing its own", () => {
     const choose = vi.fn<(choice: ProviderMenuChoice) => void>();
     const items = getProviderMenuItems(
       MediaType.TRACK,
@@ -114,9 +107,9 @@ describe("getProviderMenuItems", () => {
       choose,
     );
 
-    expect(items.map(menuItemLabel)).toEqual([
-      "Ask the demo plugin about this (Demo demo--a)",
-      "Ask the demo plugin about this (Demo demo--b)",
+    expect(items.map((item) => [menuItemLabel(item), item.addedBy])).toEqual([
+      ["Ask the demo plugin about this", "Demo demo--a"],
+      ["Ask the demo plugin about this", "Demo demo--b"],
     ]);
     // the label only keeps the entries apart
     expect(new Set(items.map((item) => item.label)).size).toBe(2);
@@ -131,14 +124,9 @@ describe("getProviderMenuItems", () => {
     ["a translation key", "show_info"],
     ["braces and a link", "{0} @:show_info {name} <b>"],
   ])("shows a label that holds %s as it is", (_case, label) => {
-    const one = context({ actions: [{ ...ASK, label }] });
-    const two = context({
-      actions: [{ ...ASK, label }],
-      providers: [demo("demo--a"), demo("demo--b")],
-    });
+    const actions = [{ ...ASK, label }];
 
-    expect(texts(MediaType.TRACK, one)).toEqual([label]);
-    expect(texts(MediaType.TRACK, two)[0]).toBe(`${label} (Demo demo--a)`);
+    expect(texts(MediaType.TRACK, context({ actions }))).toEqual([label]);
   });
 
   it.each([

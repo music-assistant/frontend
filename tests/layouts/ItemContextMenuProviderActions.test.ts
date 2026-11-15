@@ -147,13 +147,13 @@ describe("the menu of a media item", () => {
   });
 
   it.each([
-    ["a member", BUILTIN_ROLE_SCOPES.user, Scope.LIBRARY_WRITE, true],
-    ["a guest", BUILTIN_ROLE_SCOPES.guest, Scope.LIBRARY_WRITE, false],
-    ["a member", BUILTIN_ROLE_SCOPES.user, Scope.ALL, false],
-    ["an admin", BUILTIN_ROLE_SCOPES.admin, Scope.ALL, true],
+    ["a member", Scope.LIBRARY_WRITE, true, BUILTIN_ROLE_SCOPES.user],
+    ["a guest", Scope.LIBRARY_WRITE, false, BUILTIN_ROLE_SCOPES.guest],
+    ["a member", Scope.ALL, false, BUILTIN_ROLE_SCOPES.user],
+    ["an admin", Scope.ALL, true, BUILTIN_ROLE_SCOPES.admin],
   ])(
     "offers %s an entry that needs %s: %s",
-    async (_who, scopes, scope, offered) => {
+    async (_who, scope, offered, scopes) => {
       hasScope.mockImplementation(scopeChecker(scopes));
       apiMock.providerManifests = { demo: manifest([{ ...ASK, scope }]) };
 
@@ -202,7 +202,7 @@ describe("the ways to play a media item", () => {
     expect(withoutPlayer.at(-2)!.disabled).toBe(true);
   });
 
-  it("offer the entry once per instance, told apart by the instance's name", async () => {
+  it("offer the entry once per instance, each named under it", async () => {
     apiMock.providers = {
       ...apiMock.providers,
       "demo--2": instance("demo--2"),
@@ -210,9 +210,13 @@ describe("the ways to play a media item", () => {
 
     const items = await getPlaybackContextMenuItems([song]);
 
-    expect(items.filter((item) => item.text).map((item) => item.text)).toEqual([
-      "Send to the frame (Demo demo)",
-      "Send to the frame (Demo demo--2)",
+    expect(
+      items
+        .filter((item) => item.text)
+        .map((item) => [item.text, item.addedBy]),
+    ).toEqual([
+      ["Send to the frame", "Demo demo"],
+      ["Send to the frame", "Demo demo--2"],
     ]);
   });
 });

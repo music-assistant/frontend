@@ -1113,7 +1113,6 @@
         "remove_provider_acknowledge": "I understand that this removes music from my library"
     },
     "show_info": "Show info",
-    "menu_action_of_instance": "{action} ({instance})",
     "show_select_boxes": "Show selection boxes",
     "shuffle": "Shuffle",
     "sort": {

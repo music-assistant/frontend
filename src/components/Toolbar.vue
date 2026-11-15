@@ -122,7 +122,16 @@
                 <MenuItemIcon :icon="menuItem.icon" />
                 <span v-if="menuItem.active" :class="ACTIVE_DOT_CLASS"></span>
               </span>
-              <span class="min-w-0 flex-1 truncate">{{
+              <span
+                v-if="menuItem.addedBy"
+                class="flex min-w-0 flex-1 flex-col"
+              >
+                <span class="truncate">{{ menuItemLabel(menuItem) }}</span>
+                <span class="truncate text-xs text-muted-foreground">{{
+                  menuItem.addedBy
+                }}</span>
+              </span>
+              <span v-else class="min-w-0 flex-1 truncate">{{
                 menuItemLabel(menuItem)
               }}</span>
             </DropdownMenuItem>

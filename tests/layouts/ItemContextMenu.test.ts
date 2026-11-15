@@ -184,6 +184,31 @@ describe("ItemContextMenu", () => {
     wrapper.unmount();
   });
 
+  it("names who added an item on a muted line under it, as it is", async () => {
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [
+        {
+          label: "provider_menu_action/demo/a",
+          text: "Ask the demo plugin about this",
+          addedBy: "{0} @:show_info",
+        },
+      ],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+
+    const [label, addedBy] = wrapper.findAll("span.truncate");
+    expect(label.text()).toBe("Ask the demo plugin about this");
+    expect(addedBy.text()).toBe("{0} @:show_info");
+    expect(addedBy.classes()).toEqual(
+      expect.arrayContaining(["text-muted-foreground", "text-xs"]),
+    );
+    wrapper.unmount();
+  });
+
   it("keeps a long text on one line, cut off as the other entries", async () => {
     // a translated label may be 80 characters long
     const long =
@@ -191,17 +216,20 @@ describe("ItemContextMenu", () => {
     expect(long).toHaveLength(80);
     const wrapper = mountContextMenu();
     eventHandlers.get("contextmenu")?.({
-      items: [{ label: "provider_menu_action/demo/a", text: long }],
+      items: [
+        { label: "provider_menu_action/demo/a", text: long, addedBy: long },
+      ],
       posX: 10,
       posY: 20,
     });
     await nextTick();
     await nextTick();
 
-    const row = wrapper.get("span.truncate");
-    expect(row.text()).toBe(long);
-    expect(row.classes()).toEqual(
-      expect.arrayContaining(["truncate", "min-w-0", "flex-1"]),
+    const lines = wrapper.findAll("span.truncate");
+    expect(lines.map((line) => line.text())).toEqual([long, long]);
+    // the column may shrink, so each line is cut off within the menu
+    expect([...lines[0].element.parentElement!.classList]).toEqual(
+      expect.arrayContaining(["min-w-0", "flex-1"]),
     );
     wrapper.unmount();
   });

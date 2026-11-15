@@ -125,7 +125,13 @@
           @select="onSelect($event, menuItem)"
         >
           <MenuItemIcon :icon="menuItem.icon" />
-          <span class="flex-1 truncate min-w-0">{{
+          <span v-if="menuItem.addedBy" class="flex flex-1 flex-col min-w-0">
+            <span class="truncate">{{ menuItemLabel(menuItem) }}</span>
+            <span class="truncate text-muted-foreground text-xs">{{
+              menuItem.addedBy
+            }}</span>
+          </span>
+          <span v-else class="flex-1 truncate min-w-0">{{
             menuItemLabel(menuItem)
           }}</span>
           <Check v-if="menuItem.selected" class="ml-auto size-4" />
@@ -1757,6 +1763,8 @@ const providerMenuItems = function (
   ).map((menuItem) => ({ ...menuItem, disabled }));
 };
 
+// an entry that needs a player is left out or disabled without one, since the
+// server refuses it then
 const runProviderMenuAction = async function (
   choice: ProviderMenuChoice,
   uri: string,
