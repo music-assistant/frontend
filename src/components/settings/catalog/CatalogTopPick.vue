@@ -75,11 +75,6 @@
             v-if="isPersonalSuggestion(shown!)"
             variant="ghost"
             class="text-muted-foreground"
-            :aria-label="
-              $t('settings.catalog.dont_suggest_named', {
-                name: current.manifest.name,
-              })
-            "
             data-testid="catalog-top-pick-dismiss"
             @click="emit('dismiss', current.manifest.domain)"
           >

@@ -1190,9 +1190,12 @@ describe("Catalog suggestions from the server", () => {
       topPick()!.querySelector("[data-testid='catalog-top-pick-reason']")
         ?.textContent,
     ).toContain(reason);
-    expect(
-      topPick()!.querySelector("[data-testid='catalog-top-pick-dismiss']"),
-    ).not.toBeNull();
+    // named by what it says, for voice control; the heading names the pick
+    const dismiss = topPick()!.querySelector(
+      "[data-testid='catalog-top-pick-dismiss']",
+    )!;
+    expect(dismiss.textContent?.trim()).toBe("settings.catalog.dont_suggest");
+    expect(dismiss.hasAttribute("aria-label")).toBe(false);
   });
 
   it("says no more than Top pick for a popular pick, and offers no way to let it go", async () => {

@@ -9,7 +9,7 @@
       v-if="dismissible"
       variant="ghost"
       size="icon-sm"
-      class="absolute top-2 right-2 z-10 size-7 rounded-full bg-black/25 text-white hover:bg-black/40 hover:text-white"
+      class="absolute top-2 right-2 z-10 size-8 rounded-full bg-black/25 text-white hover:bg-black/40 hover:text-white"
       :aria-label="
         $t('settings.catalog.dont_suggest_named', { name: entry.manifest.name })
       "
