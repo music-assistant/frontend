@@ -33,7 +33,7 @@
             data-testid="catalog-installed-row"
           >
             <ItemMedia>
-              <ProviderIcon :domain="item.config.domain" :size="40" />
+              <CatalogIcon :domain="item.config.domain" :size="40" />
             </ItemMedia>
             <ItemContent>
               <ItemTitle class="flex flex-wrap items-center gap-2">
@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import CatalogIcon from "@/components/settings/catalog/CatalogIcon.vue";
 import CatalogSectionHeading from "@/components/settings/catalog/CatalogSectionHeading.vue";
 import { Badge } from "@/components/ui/badge";
 import {

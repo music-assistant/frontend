@@ -119,6 +119,7 @@
         <CatalogIconTile
           :src="iconSrc"
           :size="112"
+          :on-dark="onDark"
           class="relative shadow-xl max-md:size-20"
         />
       </CatalogArt>
@@ -183,7 +184,7 @@ const reasonText = computed(() => {
 });
 
 const { community } = useCatalogEntryDetails(() => current.value!);
-const { iconSrc, color } = useCatalogArt(current);
+const { iconSrc, onDark, color } = useCatalogArt(current);
 
 // on a touch screen a swipe moves to the next or the previous pick
 useSwipe(useTemplateRef<HTMLElement>("hero"), {

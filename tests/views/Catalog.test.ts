@@ -148,6 +148,11 @@ const SVG_GREEN = `data:image/svg+xml;base64,${btoa(
   '<svg><circle fill="#1DB954"/><path fill="#fff"/></svg>',
 )}`;
 
+// an icon drawn in white only, as Bose SoundTouch's
+const SVG_WHITE = `data:image/svg+xml;base64,${btoa(
+  '<svg><path style="fill:#ffffff"/></svg>',
+)}`;
+
 let configs: ProviderConfig[] = [];
 // what the server keeps of the community catalog
 let communityEnabled = false;
@@ -970,6 +975,86 @@ describe("Catalog lists of a type", () => {
         Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
       }
     }
+  });
+});
+
+describe("Catalog icons drawn in white only", () => {
+  beforeEach(() => {
+    for (const [domain, icon] of [
+      ["sonos", SVG_WHITE],
+      ["spotify", SVG_GREEN],
+    ]) {
+      apiMock.providerManifests[domain] = {
+        ...apiMock.providerManifests[domain],
+        icon_images: [ProviderIconVariant.DEFAULT],
+      };
+      apiMock.providerIcons[`${domain}:default`] = icon;
+    }
+  });
+
+  const tileOf = (root: ParentNode | null | undefined) =>
+    root
+      ?.querySelector("[data-testid='catalog-icon-tile']")
+      ?.getAttribute("data-tile");
+
+  it("puts it on a dark tile in the top pick", async () => {
+    recommendations = [suggest("sonos", CatalogRecommendationReason.POPULAR)];
+
+    await mountCatalog();
+
+    expect(tileOf(topPick())).toBe("dark");
+  });
+
+  it("puts it on a dark tile in a tile of Discover, and a coloured one on a light tile", async () => {
+    // Spotify leads the hero; what is new is never picked
+    recommendations = [
+      suggest("spotify", CatalogRecommendationReason.POPULAR),
+      suggest("sonos", CatalogRecommendationReason.NEW),
+    ];
+
+    await mountCatalog();
+
+    expect(tileOf(topPick())).toBe("light");
+    expect(
+      tileOf(
+        document.querySelector(
+          "[data-testid='catalog-new'] [data-testid='catalog-tile'][data-domain='sonos']",
+        ),
+      ),
+    ).toBe("dark");
+  });
+
+  it("puts it on a dark tile in the list of its type and in its details", async () => {
+    await mountList("player");
+
+    expect(tileOf(cardFor("sonos"))).toBe("dark");
+    await openDetail("sonos");
+    expect(
+      tileOf(document.querySelector("[data-testid='catalog-detail']")),
+    ).toBe("dark");
+  });
+
+  it("keeps a coloured icon, and a community icon that is not white, as it is", async () => {
+    communityEnabled = true;
+    community = [
+      RADIO,
+      {
+        ...RADIO,
+        domain: "fm",
+        icon: SVG_WHITE,
+        manifest: { ...RADIO.manifest, domain: "fm", name: "FM" },
+      },
+    ];
+    await mountList();
+
+    expect(tileOf(cardFor("spotify"))).toBeUndefined();
+    expect(tileOf(cardFor("radio"))).toBeUndefined();
+    expect(tileOf(cardFor("fm"))).toBe("dark");
+    expect(
+      cardFor("fm")
+        .querySelector("[data-testid='catalog-icon-image']")
+        ?.getAttribute("src"),
+    ).toBe(SVG_WHITE);
   });
 });
 

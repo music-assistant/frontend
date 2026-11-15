@@ -20,7 +20,12 @@
       <X class="size-4" aria-hidden="true" />
     </Button>
     <div class="flex flex-1 flex-col px-4 pb-4">
-      <CatalogIconTile :src="iconSrc" :size="52" class="relative -mt-7 mb-3" />
+      <CatalogIconTile
+        :src="iconSrc"
+        :size="52"
+        :on-dark="onDark"
+        class="relative -mt-7 mb-3"
+      />
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h3 class="m-0 text-base leading-snug font-semibold">
           <!-- the name stretches over the tile, so the whole tile opens the
@@ -120,5 +125,5 @@ const emit = defineEmits<{
 }>();
 
 const { community, byline } = useCatalogEntryDetails(() => props.entry);
-const { iconSrc, color } = useCatalogArt(() => props.entry);
+const { iconSrc, onDark, color } = useCatalogArt(() => props.entry);
 </script>
