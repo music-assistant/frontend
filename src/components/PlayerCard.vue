@@ -45,21 +45,35 @@
           </span>
         </button>
         <div
-          class="player-card-main pointer-events-none relative z-[1] flex min-w-0 flex-1"
-          :class="stackMediaDetails ? 'flex-col gap-1.5' : 'items-center gap-3'"
+          class="player-card-main pointer-events-none relative z-[1] flex min-w-0 flex-1 items-center gap-3"
         >
           <div
-            v-if="stackMediaDetails"
-            class="player-card-header flex min-w-0 items-start gap-2"
+            class="bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
           >
-            <PlayerIcon
-              :icon="player.icon"
-              :grouped="isGroupedPlayer"
-              :size="20"
-              class="player-card-icon shrink-0"
+            <img
+              v-if="artworkUrl"
+              :src="artworkUrl"
+              alt=""
+              class="size-full object-cover"
+              loading="lazy"
+              @error="artworkFailed = true"
             />
+            <PlayerIcon
+              v-else
+              :icon="player.icon"
+              :grouped="
+                player.type === PlayerType.PLAYER &&
+                player.group_members.some(
+                  (playerId) => playerId !== player.player_id,
+                )
+              "
+              :size="24"
+              class="opacity-80"
+            />
+          </div>
+
+          <div class="min-w-0 flex-1 py-0.5">
             <PlayerCardTitle
-              class="flex-1"
               :player-name="cardPlayerName"
               :member-names="displayedGroupMemberNames"
               :member-layout="groupMemberLayout"
@@ -68,88 +82,50 @@
             >
               <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
             </PlayerCardTitle>
-          </div>
-          <div
-            v-if="!stackMediaDetails || hasStackedDetails"
-            class="player-card-media-row"
-            :class="
-              useStackedMediaLayout
-                ? 'flex min-w-0 items-center gap-3'
-                : 'contents'
-            "
-          >
-            <div
-              v-if="!stackMediaDetails || hasSelectedMedia"
-              class="player-card-media bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
+            <Badge
+              v-if="player.needs_setup"
+              variant="secondary"
+              class="mt-0.5 gap-1 text-[10px]"
+              :style="{ color: 'rgb(var(--v-theme-warning))' }"
             >
-              <img
-                v-if="artworkUrl"
-                :src="artworkUrl"
-                alt=""
-                class="size-full object-cover"
-                loading="lazy"
-                @error="artworkFailed = true"
-              />
-              <Music
-                v-else-if="stackMediaDetails"
-                class="player-card-media-placeholder text-muted-foreground size-5"
-              />
-              <PlayerIcon
-                v-else
-                :icon="player.icon"
-                :grouped="isGroupedPlayer"
-                :size="24"
-                class="opacity-80"
-              />
-            </div>
-
-            <div class="min-w-0 flex-1 py-0.5">
-              <PlayerCardTitle
-                v-if="!stackMediaDetails"
-                :player-name="cardPlayerName"
-                :member-names="displayedGroupMemberNames"
-                :member-layout="groupMemberLayout"
-                :playing="isPlaying"
-                :selected="isSelectedPlayer"
-              >
-                <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
-              </PlayerCardTitle>
-              <Badge
-                v-if="player.needs_setup"
-                variant="secondary"
-                class="mt-0.5 gap-1 text-[10px]"
-                :style="{ color: 'rgb(var(--v-theme-warning))' }"
-              >
-                <TriangleAlert class="size-3" />
-                {{ setupReason ?? $t("settings.setup_required") }}
-              </Badge>
-              <p
-                v-if="player.type === PlayerType.SOURCE"
-                class="text-muted-foreground truncate text-xs"
-              >
-                {{ $t("player_type.source") }}
-              </p>
-              <p
-                v-if="player.powered !== false && player.current_media?.title"
-                class="truncate text-xs font-medium"
-              >
-                {{ player.current_media.title }}
-              </p>
-              <p
-                v-if="player.powered !== false && mediaByline"
-                class="player-card-media-byline text-foreground/60 truncate text-xs"
-              >
-                {{ mediaByline }}
-              </p>
-            </div>
+              <TriangleAlert class="size-3" />
+              {{ setupReason ?? $t("settings.setup_required") }}
+            </Badge>
+            <p
+              v-if="player.type === PlayerType.SOURCE"
+              class="text-muted-foreground truncate text-xs"
+            >
+              {{ $t("player_type.source") }}
+            </p>
+            <p
+              v-if="stackMediaDetails && mediaSummary"
+              class="player-card-media-summary text-muted-foreground truncate text-xs"
+            >
+              {{ mediaSummary }}
+            </p>
+            <p
+              v-if="
+                !stackMediaDetails &&
+                player.powered !== false &&
+                player.current_media?.title
+              "
+              class="truncate text-xs font-medium"
+            >
+              {{ player.current_media.title }}
+            </p>
+            <p
+              v-if="
+                !stackMediaDetails && player.powered !== false && mediaByline
+              "
+              class="text-muted-foreground truncate text-xs"
+            >
+              {{ mediaByline }}
+            </p>
           </div>
         </div>
       </div>
 
-      <div
-        class="player-card-actions flex shrink-0 items-center"
-        :class="{ 'self-end mb-1.5': useStackedMediaLayout }"
-      >
+      <div class="player-card-actions flex shrink-0 items-center">
         <Button
           v-if="
             player.power_control !== PLAYER_CONTROL_NONE &&
@@ -271,7 +247,6 @@ import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import {
   EllipsisVertical,
-  Music,
   Pause,
   Play,
   Power,
@@ -329,6 +304,7 @@ const menuDisabled = computed(() =>
 
 const artworkUrl = computed(() => {
   if (
+    props.stackMediaDetails ||
     artworkFailed.value ||
     props.player.powered === false ||
     !props.player.current_media?.image_url ||
@@ -346,23 +322,13 @@ const mediaByline = computed(() =>
     .join(" • "),
 );
 
-const hasSelectedMedia = computed(
-  () =>
-    props.player.powered !== false &&
-    (props.player.playback_state === PlaybackState.PLAYING ||
-      props.player.playback_state === PlaybackState.PAUSED ||
-      Boolean(
-        props.player.current_media?.title ||
-        mediaByline.value ||
-        props.player.current_media?.image_url,
-      )),
-);
-
-const hasStackedDetails = computed(
-  () =>
-    hasSelectedMedia.value ||
-    props.player.needs_setup ||
-    props.player.type === PlayerType.SOURCE,
+// panel cards show what is playing on one line under the player name
+const mediaSummary = computed(() =>
+  props.player.powered === false
+    ? ""
+    : [props.player.current_media?.title, mediaByline.value]
+        .filter(Boolean)
+        .join(" • "),
 );
 
 const isPlaying = computed(
@@ -375,18 +341,6 @@ const isSelectedPlayer = computed(
   () =>
     props.showSelectedIndicator === true &&
     props.player.player_id === store.activePlayerId,
-);
-
-const isGroupedPlayer = computed(
-  () =>
-    props.player.type === PlayerType.PLAYER &&
-    props.player.group_members.some(
-      (playerId) => playerId !== props.player.player_id,
-    ),
-);
-
-const useStackedMediaLayout = computed(
-  () => props.stackMediaDetails === true && hasStackedDetails.value,
 );
 
 const canPlayPause = computed(

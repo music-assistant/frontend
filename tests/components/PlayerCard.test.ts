@@ -639,64 +639,50 @@ describe("PlayerCard", () => {
     expect(members.classes()).toContain("text-[11px]");
   });
 
-  it("stacks player identity above media only when requested", () => {
-    const player = createPlayer({
-      playback_state: PlaybackState.PLAYING,
-      current_media: createPlayerMedia({
-        title: "Hate Me Now",
-        artist: "Nas",
+  it("keeps panel cards to one row with a single media line", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        playback_state: PlaybackState.PLAYING,
+        current_media: createPlayerMedia({
+          title: "Hate Me Now",
+          artist: "Nas",
+          album: "I Am...",
+          image_url: "https://example.test/cover.jpg",
+        }),
       }),
-    });
+      { stackMediaDetails: true },
+    );
 
-    const mainCard = mountPlayerCard(player);
-    expect(mainCard.find(".player-card-main").classes()).not.toContain(
+    expect(wrapper.find(".player-card-main").classes()).not.toContain(
       "flex-col",
     );
-    expect(mainCard.find(".player-card-actions").classes()).not.toContain(
-      "self-end",
+    expect(wrapper.get(".player-card-media-summary").text()).toBe(
+      "Hate Me Now • Nas • I Am...",
     );
-    mainCard.unmount();
-
-    const selectorCard = mountPlayerCard(player, {
-      stackMediaDetails: true,
-    });
-    expect(selectorCard.find(".player-card-main").classes()).toContain(
-      "flex-col",
+    expect(wrapper.get(".player-card-media-summary").classes()).toEqual(
+      expect.arrayContaining(["text-muted-foreground", "truncate"]),
     );
-    expect(
-      selectorCard
-        .find(".player-card-main > .player-card-header .player-card-title")
-        .exists(),
-    ).toBe(true);
-    expect(
-      selectorCard.find(".player-card-media-row .player-card-title").exists(),
-    ).toBe(false);
-    expect(selectorCard.find(".player-card-media-row").text()).toContain(
-      "Hate Me Now",
-    );
-    expect(selectorCard.get(".player-card-media-byline").classes()).toContain(
-      "text-foreground/60",
-    );
-    expect(
-      selectorCard.get(".player-card-media-byline").classes(),
-    ).not.toContain("text-muted-foreground");
-    expect(selectorCard.find(".player-card-actions").classes()).toContain(
+    expect(wrapper.find(".player-card-actions").classes()).not.toContain(
       "self-end",
     );
   });
 
-  it("keeps idle selector cards to the player icon and name", () => {
-    const wrapper = mountPlayerCard(createPlayer(), {
-      stackMediaDetails: true,
-    });
+  it.each([
+    ["idle", createPlayer()],
+    ["powered off", createPlayer({ powered: false })],
+    [
+      "powered off with media",
+      createPlayer({
+        powered: false,
+        current_media: createPlayerMedia({ title: "Hate Me Now" }),
+      }),
+    ],
+  ])("leaves the media line out of %s panel cards", (_state, player) => {
+    const wrapper = mountPlayerCard(player, { stackMediaDetails: true });
 
-    expect(wrapper.classes()).not.toContain("opacity-80");
-    const header = wrapper.get(".player-card-main > .player-card-header");
-    expect(header.find(".player-icon").exists()).toBe(true);
-    expect(header.get(".player-card-name").text()).toBe("Kitchen");
-    expect(wrapper.find(".player-card-media-row").exists()).toBe(false);
-    expect(wrapper.find(".player-card-actions").classes()).not.toContain(
-      "self-end",
+    expect(wrapper.find(".player-card-media-summary").exists()).toBe(false);
+    expect(wrapper.find(".player-card-main").classes()).toContain(
+      "items-center",
     );
   });
 
@@ -708,49 +694,48 @@ describe("PlayerCard", () => {
         playback_state: PlaybackState.PLAYING,
         current_media: createPlayerMedia({
           title: "Hate Me Now",
+          artist: "Nas",
           image_url: "https://example.test/cover.jpg",
         }),
       }),
     ],
     [
-      "paused without artwork",
+      "paused with artwork",
       createPlayer({
         playback_state: PlaybackState.PAUSED,
-        current_media: createPlayerMedia({ title: "Hate Me Now" }),
+        current_media: createPlayerMedia({
+          title: "Hate Me Now",
+          image_url: "https://example.test/cover.jpg",
+        }),
       }),
     ],
+    [
+      "powered off",
+      createPlayer({
+        powered: false,
+        current_media: createPlayerMedia({
+          image_url: "https://example.test/cover.jpg",
+        }),
+      }),
+    ],
+    ["needing setup", createPlayer({ available: false, needs_setup: true })],
+    ["an audio input", createPlayer({ type: PlayerType.SOURCE })],
   ])(
-    "shows the player icon before the name in selector cards when %s",
+    "shows the player icon tile before the name in panel cards when %s",
     (_state, player) => {
       const wrapper = mountPlayerCard(player, { stackMediaDetails: true });
+      const [tile, details] = wrapper.get(".player-card-main").element.children;
 
-      const header = wrapper.get(".player-card-main > .player-card-header");
-      expect(header.element.firstElementChild?.classList).toContain(
-        "player-icon",
+      expect(tile.querySelector(".player-icon")).not.toBeNull();
+      expect(tile.classList).toContain("size-11");
+      expect(details.firstElementChild?.classList).toContain(
+        "player-card-title",
       );
-      expect(header.get(".player-card-name").text()).toBe("Kitchen");
       expect(wrapper.findAll(".player-icon")).toHaveLength(1);
+      expect(wrapper.find("img").exists()).toBe(false);
+      expect(wrapper.get(".player-card-name").text()).toBe("Kitchen");
     },
   );
-
-  it("shows a music note in the selector media slot without artwork", () => {
-    const wrapper = mountPlayerCard(
-      createPlayer({
-        playback_state: PlaybackState.PLAYING,
-        current_media: createPlayerMedia({ title: "Hate Me Now" }),
-      }),
-      { stackMediaDetails: true },
-    );
-
-    expect(
-      wrapper
-        .find(".player-card-media .player-card-media-placeholder")
-        .exists(),
-    ).toBe(true);
-    expect(wrapper.find(".player-card-media .player-icon").exists()).toBe(
-      false,
-    );
-  });
 
   it("reserves a title slot for the playing-state indicator", () => {
     const idleCard = mountPlayerCard(createPlayer(), {
@@ -788,7 +773,7 @@ describe("PlayerCard", () => {
     const wrapper = mountPlayerCard(
       createPlayer({ playback_state: PlaybackState.PLAYING }),
     );
-    const title = wrapper.get(".player-card-media-row .player-card-title");
+    const title = wrapper.get(".player-card-main .player-card-title");
     const indicator = title.get(".player-playback-indicator");
 
     expect(indicator.classes()).not.toContain("hidden");
