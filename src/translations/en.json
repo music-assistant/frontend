@@ -161,6 +161,10 @@
             "unavailable": "Unavailable",
             "disabled": "Disabled"
         },
+        "setup_reason": {
+            "pairing_required": "Pairing required",
+            "password_required": "Password required"
+        },
         "player_status_label": "Status",
         "player_type_label": "Player type",
         "playerproviders": "Player support",
@@ -972,6 +976,12 @@
         },
         "delete_player_title": "Delete {0}?",
         "delete_player_confirmation": "This player will be removed from Music Assistant. Its settings are lost and it can only come back by setting it up again.",
+        "hide_unavailable_players": "Hide unavailable players",
+        "remove_unavailable_players": "Remove unavailable players",
+        "remove_unavailable_players_title": "Remove unavailable players?",
+        "remove_unavailable_players_confirmation": "This removes one player whose device can no longer be found, along with its settings. | This removes {count} players whose devices can no longer be found, along with their settings.",
+        "no_unavailable_players": "There are no unavailable players to remove",
+        "unavailable_players_removed": "No unavailable players were found | Removed one unavailable player | Removed {count} unavailable players",
         "queue_settings_description": "Playback settings for the queue this player plays from",
         "dsp_description": "Filters and gain applied to everything this player plays",
         "player_options_description": "Options and readings the player itself offers",
@@ -1231,6 +1241,7 @@
         "import_file": "Import file",
         "bpm": "Tempo (beats per minute)",
         "musical_key": "Musical key",
+        "energy_level": "Energy level, from 1 (calmest) to 10 (most energetic)",
         "show_dashboard": "Cast dashboard to a device",
         "collapse_collections": "Collapse collections",
         "mute": "Mute",
@@ -2769,6 +2780,7 @@
     "row_source": "Source",
     "source_library": "Your library",
     "source_all": "All sources",
+    "source_auto": "Automatic",
     "row_hidden": "Hidden",
     "reorder_row": "Reorder row",
     "hide_row": "Hide row",
@@ -2866,6 +2878,7 @@
     "audio_analysis": "Audio analysis",
     "bpm": "BPM",
     "musical_key": "Key",
+    "energy_level": "Energy",
     "audio_overlay": "Audio overlay",
     "audio_overlay_explanation": "Mix a looping ambient sound into this queue's playback.",
     "audio_overlay_enable": "Enable overlay",
@@ -2992,6 +3005,10 @@
             "fixed": "Fixed preset"
         },
         "fixed_preset": "Preset",
+        "palette_ramp": "Recolor everything to the artwork",
+        "palette_ramp_description": "Remap the whole picture into the artwork's colors, keeping the preset's own brightness so motion and detail survive. At full strength every preset takes on the album's palette.",
+        "palette_colors": "Color elements from the artwork",
+        "palette_colors_description": "Color the preset's waveform and borders with the artwork palette. Only presets that draw those elements are affected.",
         "beat_switch": "Switch preset on downbeat",
         "beat_switch_description": "Switch to another preset on a downbeat. Overrides a fixed preset.",
         "beat_dwell": "Minimum time between switches",
@@ -3050,7 +3067,7 @@
         "plugins_count": "{count} plugin | {count} plugins",
         "run_again": "Run the setup wizard again",
         "paused_title": "Setup paused",
-        "paused_text": "Pick up where you left off, now or later from the settings.",
+        "paused_text": "Continue now, or open the setup wizard again later from the settings.",
         "resume": "Resume",
         "pause": "Pause setup",
         "dismiss": "Dismiss",
@@ -3116,9 +3133,11 @@
             "core_settings": {
                 "title": "Access Music Assistant",
                 "intro": "Music Assistant works on your home network automatically. Set up remote access if you'd also like to listen when you're away.",
-                "network_details": "Network details",
+                "network_details": "Server and network details",
                 "internal_address": "Internal address",
                 "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
+                "external_address": "External address",
+                "external_address_hint": "Where you reach Music Assistant from outside your home, through your reverse proxy.",
                 "stream_address": "Stream server address",
                 "stream_address_hint": "Where your players fetch the audio from.",
                 "address_unknown": "Not available",
@@ -3128,7 +3147,7 @@
                     "unreachable": "Not reachable from this device",
                     "unchecked": "Could not check from this device"
                 },
-                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, set it under the advanced settings.",
+                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, change it with Edit below.",
                 "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system}, in {webserver} and {streams}.",
                 "remote": {
                     "title": "Listen from outside your home",
@@ -3203,10 +3222,6 @@
         "end": "End the tour",
         "next": "Next",
         "step_counter": "{current} of {total}",
-        "offer": {
-            "title": "Want a quick look around?",
-            "description": "A short tour points out the main parts of the app. You can take it again any time from your profile menu."
-        },
         "stops": {
             "menu": {
                 "title": "The menu",
