@@ -44,6 +44,8 @@ export function useCommunityCatalog() {
   // bumped by every read that starts and every list a command brings back, so a
   // read only applies its answer when nothing newer came in meanwhile
   let latest = 0;
+  // an install that ends after the page is gone starts no setup
+  let unmounted = false;
 
   // whether the page has what it needs from the community catalog, either way
   const settled = computed(() => status.value !== "loading");
@@ -107,7 +109,8 @@ export function useCommunityCatalog() {
    *
    * @param provider - What the community catalog offers.
    * @returns The manifest to add it with, or undefined when the install failed,
-   *   was already running, or brought back the settings it had before.
+   *   was already running, brought back the settings it had before, or ended
+   *   after the page was left.
    */
   const install = async function (
     provider: CommunityProvider,
@@ -131,7 +134,7 @@ export function useCommunityCatalog() {
           { name },
         ),
       );
-      return restored ? undefined : result.manifest;
+      return restored || unmounted ? undefined : result.manifest;
     } catch (err) {
       toast.error(String(err));
       return undefined;
@@ -184,6 +187,7 @@ export function useCommunityCatalog() {
   });
 
   onBeforeUnmount(() => {
+    unmounted = true;
     unsubCatalogUpdated?.();
   });
 
