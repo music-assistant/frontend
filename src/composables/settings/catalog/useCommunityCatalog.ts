@@ -49,6 +49,11 @@ export function useCommunityCatalog() {
   const removing = ref(new Set<string>());
   const updating = ref(new Set<string>());
   const updatingAll = ref(false);
+  // bumped by every read that starts and every list a command brings back, so a
+  // read only applies its answer when nothing newer came in meanwhile
+  let latest = 0;
+  // an install that ends after the page is gone starts no setup
+  let unmounted = false;
 
   // whether the page has what it needs from the community catalog, either way
   const settled = computed(() => status.value !== "loading");
@@ -72,11 +77,13 @@ export function useCommunityCatalog() {
 
   const load = async function () {
     if (!isAdmin) return;
+    const own = ++latest;
     try {
       const [config, list] = await Promise.all([
         api.getCoreConfig(COMMUNITY_CATALOG_DOMAIN),
         api.getCommunityProviders(),
       ]);
+      if (own !== latest) return;
       switchEntry.value = config.values[COMMUNITY_CATALOG_ENABLED_KEY];
       autoUpdateEntry.value =
         config.values[COMMUNITY_CATALOG_AUTO_UPDATE_KEY] ?? null;
@@ -122,7 +129,8 @@ export function useCommunityCatalog() {
    *
    * @param provider - What the community catalog offers.
    * @returns The manifest to add it with, or undefined when the install failed,
-   *   was already running, or brought back the settings it had before.
+   *   was already running, brought back the settings it had before, or ended
+   *   after the page was left.
    */
   const install = async function (
     provider: CommunityProvider,
@@ -136,6 +144,8 @@ export function useCommunityCatalog() {
       // settings kept from before load again with it, and then there is nothing to add
       const restored =
         (await api.getProviderConfigs(undefined, provider.domain)).length > 0;
+      // the add flow reads the manifest the server just registered
+      await api.fetchProviderManifests();
       toast.success(
         $t(
           restored
@@ -144,9 +154,7 @@ export function useCommunityCatalog() {
           { name },
         ),
       );
-      // the add flow reads the manifest the server just registered
-      await api.fetchProviderManifests();
-      return restored ? undefined : result.manifest;
+      return restored || unmounted ? undefined : result.manifest;
     } catch (err) {
       toast.error(String(err));
       return undefined;
@@ -304,7 +312,7 @@ export function useCommunityCatalog() {
   const refresh = async function () {
     refreshing.value = true;
     try {
-      providers.value = await api.refreshCommunityProviders();
+      setProviders(await api.refreshCommunityProviders());
       const count = updateCount.value;
       toast.success(
         count
@@ -332,6 +340,7 @@ export function useCommunityCatalog() {
   });
 
   onBeforeUnmount(() => {
+    unmounted = true;
     unsubCatalogUpdated?.();
   });
 
@@ -376,9 +385,16 @@ export function useCommunityCatalog() {
   }
 
   function replaceProvider(provider: CommunityProvider) {
-    providers.value = providers.value.map((item) =>
-      item.domain === provider.domain ? provider : item,
+    setProviders(
+      providers.value.map((item) =>
+        item.domain === provider.domain ? provider : item,
+      ),
     );
+  }
+
+  function setProviders(list: CommunityProvider[]) {
+    providers.value = list;
+    latest++;
   }
 
   return {

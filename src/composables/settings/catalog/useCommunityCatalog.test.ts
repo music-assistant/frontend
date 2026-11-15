@@ -193,6 +193,41 @@ describe("useCommunityCatalog", () => {
     expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
+  it("drops the answer of a read that a newer list overtook", async () => {
+    const { catalog } = mountCatalog();
+    await flushPromises();
+    let finishRead!: (value: CommunityProvider[]) => void;
+    apiMock.getCommunityProviders.mockReturnValue(
+      new Promise((resolve) => (finishRead = resolve)),
+    );
+    const refreshed = communityProvider("radio", { latest_version: "1.3.0" });
+    apiMock.refreshCommunityProviders.mockResolvedValue([refreshed]);
+
+    const read = apiMock.subscribe.mock.calls[0][1]();
+    await catalog.refresh();
+    finishRead([RADIO]);
+    await read;
+
+    expect(catalog.listed.value).toEqual([refreshed]);
+  });
+
+  it("applies the answer of the latest read when an older one comes back later", async () => {
+    const { catalog } = mountCatalog();
+    await flushPromises();
+    let finishOlder!: (value: CommunityProvider[]) => void;
+    const newer = communityProvider("radio", { latest_version: "1.3.0" });
+    apiMock.getCommunityProviders
+      .mockReturnValueOnce(new Promise((resolve) => (finishOlder = resolve)))
+      .mockResolvedValueOnce([newer]);
+
+    const older = apiMock.subscribe.mock.calls[0][1]();
+    await apiMock.subscribe.mock.calls[0][1]();
+    finishOlder([RADIO]);
+    await older;
+
+    expect(catalog.listed.value).toEqual([newer]);
+  });
+
   describe("the switch", () => {
     it("is only saved once the own-risk text is confirmed", async () => {
       apiMock.saveCoreConfig.mockImplementation(saveSwitch);
@@ -321,6 +356,20 @@ describe("useCommunityCatalog", () => {
         "settings.catalog.community.installed_restored_toast radio",
       );
       expect(apiMock.fetchProviderManifests).toHaveBeenCalled();
+    });
+
+    it("only reports it installed once the manifest to add it with is read", async () => {
+      apiMock.installCommunityProvider.mockResolvedValue(
+        communityProvider("radio", { state: CommunityProviderState.INSTALLED }),
+      );
+      apiMock.fetchProviderManifests.mockRejectedValue(new Error("offline"));
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      await expect(catalog.install(RADIO)).resolves.toBe(undefined);
+
+      expect(toastMock.success).not.toHaveBeenCalled();
+      expect(toastMock.error).toHaveBeenCalledExactlyOnceWith("Error: offline");
     });
 
     it("does nothing while it is being installed already", async () => {

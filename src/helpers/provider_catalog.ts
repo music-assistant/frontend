@@ -197,16 +197,6 @@ export const buildCatalogEntries = (
     .map((provider) => provider.manifest);
   const known = [...manifests, ...justInstalled]
     .filter((manifest) => isOfferable(manifest, restrictions))
-    // one the community catalog withdrew keeps running, but is no longer offered;
-    // one still on offer may already be registered
-    .filter((manifest) => {
-      const provider = communityByDomain.get(manifest.domain);
-      return (
-        !provider ||
-        provider.state === CommunityProviderState.AVAILABLE ||
-        isCommunityRunning(provider)
-      );
-    })
     .map((manifest): CatalogEntry => {
       const instances = configs.filter(
         (config) => config.domain === manifest.domain,
