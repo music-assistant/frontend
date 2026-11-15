@@ -1,4 +1,5 @@
 import { artistProvidersForFeature } from "@/components/artist/artistData";
+import { DISCOGRAPHY_TYPES_PREFERENCE_KEY } from "@/components/artist/discographyRows";
 import {
   createRowRegistry,
   rowSourceLabel,
@@ -19,6 +20,7 @@ export type ArtistRowId =
   | "singles_eps"
   | "appears_on"
   | "discography"
+  | "discography_second"
   | "similar_artists"
   | "audiobooks"
   | "audiobooks_all" // authors / narrators only
@@ -53,7 +55,18 @@ export const ARTIST_ROWS: readonly ArtistRowDefinition[] = [
     supportsSource: true,
   },
   { id: "appears_on", labelKey: "appears_on", audience: "music" },
-  { id: "discography", labelKey: "discography", audience: "music" },
+  {
+    id: "discography",
+    labelKey: "discography_first_row",
+    audience: "music",
+  },
+  {
+    id: "discography_second",
+    labelKey: "discography_second_row",
+    audience: "music",
+    // a split of the discography row, so it starts out hidden along with it
+    hiddenWith: "discography",
+  },
   {
     id: "similar_artists",
     labelKey: "similar_artists",
@@ -91,13 +104,16 @@ export function availableArtistRowIds(
  *
  * A row's sources are the library for a release row and every provider at once
  * for a row the server aggregates, then each provider able to supply the row;
- * the first of them is the default. A provider (non-library) artist offers no
- * choice and always stays on its own provider.
+ * the first of them is the default. A release row that a provider can supply
+ * starts with "auto" instead, which the page resolves from the library's count
+ * for the row. A provider (non-library) artist offers no choice and always
+ * stays on its own provider.
  */
 export const artistRows = createRowRegistry<ArtistRowId, Artist>({
   rows: ARTIST_ROWS,
   preferenceKey: ARTIST_ROWS_PREFERENCE_KEY,
   sourcesPreferenceKey: ARTIST_ROW_SOURCES_PREFERENCE_KEY,
+  extraPreferenceKeys: [DISCOGRAPHY_TYPES_PREFERENCE_KEY],
   sourceCandidates: rowSourceCandidates,
   defaultSource: (_id, artist, candidates) =>
     artist.provider === "library" ? candidates[0] : artist.provider,
@@ -120,8 +136,9 @@ const ROW_FEATURES: Partial<Record<ArtistRowId, ProviderFeature>> = {
 /** The sources a row of a library artist could be fed from, whether or not it has a picker. */
 function rowSourceCandidates(id: ArtistRowId, artist: Artist): RowSource[] {
   if (artist.provider !== "library") return [];
-  const first: RowSource = RELEASE_ROWS.includes(id) ? "library" : "all";
-  return [first, ...rowSourceProviders(id, artist)];
+  const providers = rowSourceProviders(id, artist);
+  if (!RELEASE_ROWS.includes(id)) return ["all", ...providers];
+  return providers.length ? ["auto", "library", ...providers] : ["library"];
 }
 
 /**

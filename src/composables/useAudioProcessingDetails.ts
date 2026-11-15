@@ -18,7 +18,14 @@ import {
   audioQualityToTier,
   type QualityTier,
 } from "@/composables/useStreamQuality";
-import { dspFilterIcon, dspFilterText } from "@/helpers/audioProcessing";
+import {
+  areDspFilterEqual,
+  DSP_STAGE_QUERY_KEY,
+  dspFilterIcon,
+  dspFilterPosition,
+  dspFilterText,
+  type DSPStage,
+} from "@/helpers/audioProcessing";
 import { getPlayerDisplayName } from "@/helpers/players";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
@@ -32,6 +39,8 @@ import {
   AudioQuality,
   ContentType,
   CrossfadeMode,
+  type DSPConfig,
+  type DSPFilter,
   DSPFilterType,
   DSPState,
   type ItemMapping,
@@ -51,6 +60,8 @@ type Translate = (key: string, values?: TranslationValue[]) => string;
 export interface AudioProcessingStageLink {
   to: RouteLocationRaw;
   label: string;
+  // works out a more exact page when clicked, falling back to `to`
+  resolve?: () => Promise<RouteLocationRaw>;
 }
 
 interface AudioProcessingDisplayStageBase {
@@ -117,6 +128,7 @@ export interface AudioProcessingDetailsDependencies {
   players: Record<string, AudioProcessingDisplayPlayer>;
   // whether the user may open the settings pages the stages link to
   canOpenSettings: boolean;
+  loadDSPConfig: (playerId: string) => Promise<DSPConfig>;
 }
 
 const KNOWN_CONTENT_TYPES = new Set<string>(Object.values(ContentType));
@@ -204,6 +216,7 @@ export function useAudioProcessingDetails(
         getPlayerName: getPlayerDisplayName,
         players: api.players,
         canOpenSettings: authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+        loadDSPConfig: (playerId) => api.getDSPConfig(playerId),
       },
       toValue(crossfadeIntent),
       toValue(queueId),
@@ -391,7 +404,8 @@ function buildOutputDisplay(
   const { translate, getPresetName, getIRName } = dependencies;
   const { dsp, player_ids: playerIds } = output;
   const stages: AudioProcessingDisplayStage[] = [];
-  const dspLink = dspSettingsLink(playerIds, dependencies);
+  const dspPlayerId = dspSettingsPlayerId(playerIds, dependencies);
+  const dspLink = dspSettingsLink(dspPlayerId, dependencies);
 
   if (shouldShowDSPState(dsp)) {
     stages.push({
@@ -421,7 +435,7 @@ function buildOutputDisplay(
       title: translate("streamdetails.input_gain", [
         formatNumber(dsp.input_gain, 1, dependencies.locale),
       ]),
-      link: dspLink,
+      link: dspSettingsLink(dspPlayerId, dependencies, "input"),
     });
   }
   for (const [filterIndex, filter] of dsp.filters.entries()) {
@@ -434,7 +448,7 @@ function buildOutputDisplay(
       icon: dspFilterIcon(filter),
       title: dspFilterText(filter),
       subtitleParts: irName ? [irName] : undefined,
-      link: dspLink,
+      link: dspFilterLink(dspPlayerId, dsp.filters, filterIndex, dependencies),
     });
   }
   if (dsp.output_gain) {
@@ -444,7 +458,7 @@ function buildOutputDisplay(
       title: translate("streamdetails.output_gain", [
         formatNumber(dsp.output_gain, 1, dependencies.locale),
       ]),
-      link: dspLink,
+      link: dspSettingsLink(dspPlayerId, dependencies, "output"),
     });
   }
 
@@ -509,19 +523,70 @@ function destinationStage(
 
 // DSP is set per speaker, so an output that feeds several speakers has no
 // single settings page to open
-function dspSettingsLink(
+function dspSettingsPlayerId(
   playerIds: string[],
   dependencies: AudioProcessingDetailsDependencies,
-): AudioProcessingStageLink | undefined {
+): string | undefined {
   if (!dependencies.canOpenSettings) return undefined;
   const destinations = resolveDestinations(playerIds, dependencies);
   if (destinations.length !== 1) return undefined;
   const { playerId } = destinations[0];
   // a player the frontend does not know has no settings page to open
-  if (!dependencies.players[playerId]) return undefined;
+  return dependencies.players[playerId] ? playerId : undefined;
+}
+
+function dspSettingsLink(
+  playerId: string | undefined,
+  dependencies: AudioProcessingDetailsDependencies,
+  stage?: DSPStage,
+): AudioProcessingStageLink | undefined {
+  if (!playerId) return undefined;
   return {
-    to: { name: "editplayerdsp", params: { playerId } },
+    to: dspSettingsRoute(playerId, stage),
     label: dependencies.translate("open_dsp_settings"),
+  };
+}
+
+function dspSettingsRoute(
+  playerId: string,
+  stage?: DSPStage,
+): RouteLocationRaw {
+  return {
+    name: "editplayerdsp",
+    params: { playerId },
+    ...(stage === undefined
+      ? {}
+      : { query: { [DSP_STAGE_QUERY_KEY]: String(stage) } }),
+  };
+}
+
+// Opens the filter itself, found in the player's DSP config by its settings
+// when clicked; without a match the page opens as it otherwise does.
+function dspFilterLink(
+  playerId: string | undefined,
+  shownFilters: DSPFilter[],
+  shownIndex: number,
+  dependencies: AudioProcessingDetailsDependencies,
+): AudioProcessingStageLink | undefined {
+  if (!playerId) return undefined;
+  const link = dspSettingsLink(playerId, dependencies)!;
+  const filter = shownFilters[shownIndex];
+  const occurrence = shownFilters
+    .slice(0, shownIndex)
+    .filter((shown) => areDspFilterEqual(shown, filter)).length;
+  return {
+    ...link,
+    resolve: async () => {
+      // the page loads the config again and reports a failure itself
+      const config = await dependencies
+        .loadDSPConfig(playerId)
+        .catch(() => undefined);
+      const position =
+        config && dspFilterPosition(config.filters, filter, occurrence);
+      return position === undefined
+        ? link.to
+        : dspSettingsRoute(playerId, position);
+    },
   };
 }
 

@@ -32,6 +32,11 @@ export type OnboardingStepId =
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
 
+export const APP_RECEIVER_INSTRUCTIONS: Readonly<Record<string, string>> = {
+  spotify_connect: "onboarding.spotify_connect_hint",
+  airplay_receiver: "onboarding.airplay_receiver_hint",
+};
+
 /** How the wizard leaves a step: moving on, or pausing the setup. */
 export interface StepLeaveOptions {
   pausing?: boolean;
@@ -106,9 +111,6 @@ export interface OnboardingStep {
   kind: OnboardingStepKind;
   // optional by nature: the wizard offers a skip instead of a Next
   optional?: boolean;
-  // a core step the answers pushed to the back: it no longer leads the wizard
-  // and offers a skip, but stays listed as still to do rather than dropped
-  deferred?: boolean;
   appliesTo(ctx: OnboardingContext): boolean;
   isDone(ctx: OnboardingContext): boolean;
 }
@@ -132,6 +134,8 @@ function hasConfiguredProvider(
 // sign in, so the setup reads as one list from its first step.
 const onAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin || ctx.firstRun;
 const onMemberTrack = (ctx: OnboardingContext) => ctx.isMember;
+const onFullSetup = (ctx: OnboardingContext) =>
+  onAdminTrack(ctx) && ctx.answers.intent !== "phone_apps";
 
 /**
  * A step that can be ticked off. The review steps and the summary are there to
@@ -164,7 +168,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   {
     id: "music_sources",
     kind: "step",
-    appliesTo: onAdminTrack,
+    appliesTo: onFullSetup,
     isDone: (ctx) => hasConfiguredProvider(ctx, ProviderType.MUSIC),
   },
   {
@@ -178,12 +182,20 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     kind: "step",
     optional: true,
     appliesTo: onAdminTrack,
-    isDone: (ctx) => hasConfiguredProvider(ctx, ProviderType.PLUGIN),
+    isDone: (ctx) =>
+      ctx.answers.intent === "phone_apps"
+        ? ctx.providers.some(
+            (provider) =>
+              provider.type === ProviderType.PLUGIN &&
+              !provider.builtin &&
+              Object.hasOwn(APP_RECEIVER_INSTRUCTIONS, provider.domain),
+          )
+        : hasConfiguredProvider(ctx, ProviderType.PLUGIN),
   },
   {
     id: "core_settings",
     kind: "review",
-    appliesTo: onAdminTrack,
+    appliesTo: onFullSetup,
     // nothing to tick off: the server ships with settings that work, so there
     // is never anything missing here. What keeps the wizard from walking past
     // this step is its kind, not this answer.
@@ -193,7 +205,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     id: "invite_members",
     kind: "step",
     optional: true,
-    appliesTo: onAdminTrack,
+    appliesTo: onFullSetup,
     // done once the household is more than the admin setting it up; not
     // knowing who is in it is not the same as nobody else being in it
     isDone: (ctx) => ctx.memberCount != null && ctx.memberCount > 1,
@@ -232,6 +244,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   {
     id: "own_sources",
     kind: "step",
+    optional: true,
     // a member-track step, but only for a role that may add its own sources
     appliesTo: (ctx) => ctx.isMember && ctx.canOwnSources,
     isDone: (ctx) => ctx.ownedMusicSourceCount > 0,
@@ -244,51 +257,27 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   },
 ];
 
-/**
- * Apply the answers to the running order. Answers only reorder and de-emphasize
- * steps, they never take one away: someone who came for the players can still
- * add a music source from the same wizard. Only the admin track has anything
- * to reorder, so the member track comes back exactly as it went in.
- */
-export function orderSteps(
-  steps: readonly OnboardingStep[],
-  answers: OnboardingAnswers,
-): OnboardingStep[] {
-  if (answers.intent !== "phone_apps") return [...steps];
-
-  const musicSources = steps.find((step) => step.id === "music_sources");
-  if (!musicSources) return [...steps];
-
-  // streaming from phone apps works without a music source in Music Assistant,
-  // so it moves behind the plugins and stops blocking the finish
-  const ordered = steps.filter((step) => step.id !== "music_sources");
-  ordered.splice(deferredIndex(ordered), 0, {
-    ...musicSources,
-    deferred: true,
-  });
-  return ordered;
-}
-
-/** Where a deferred step goes: behind the plugins, but before the review. */
-function deferredIndex(steps: OnboardingStep[]): number {
-  const pluginsIndex = steps.findIndex((step) => step.id === "plugins");
-  if (pluginsIndex !== -1) return pluginsIndex + 1;
-  // nothing to sit behind: stay ahead of the first step that is nothing to do,
-  // which is no place to leave something that still is
-  const tailIndex = steps.findIndex((step) => !isTodo(step));
-  if (tailIndex !== -1) return tailIndex;
-  return steps.length;
-}
-
 /** Every step this context can see, in the order it should run in. */
 export function applicableSteps(ctx: OnboardingContext): OnboardingStep[] {
-  return orderSteps(
-    ONBOARDING_STEPS.filter((step) => step.appliesTo(ctx)),
-    ctx.answers,
+  return ONBOARDING_STEPS.filter((step) => step.appliesTo(ctx)).map((step) =>
+    step.id === "plugins" && ctx.answers.intent === "phone_apps"
+      ? { ...step, optional: false }
+      : step,
   );
 }
 
-/** The steps still to do — what the wizard's summary lists. */
+/** The translation key for a step's title in this setup. */
+export function stepTitleKey(
+  id: OnboardingStepId,
+  answers: OnboardingAnswers = {},
+): string {
+  if (id === "plugins" && answers.intent === "phone_apps") {
+    return "onboarding.steps.plugins.phone_apps_title";
+  }
+  return `onboarding.steps.${id}.title`;
+}
+
+/** The steps not set up, including optional invitations. */
 export function pendingSteps(ctx: OnboardingContext): OnboardingStep[] {
   return applicableSteps(ctx).filter(
     (step) => isTodo(step) && !step.isDone(ctx),

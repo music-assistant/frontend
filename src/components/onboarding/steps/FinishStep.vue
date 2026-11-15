@@ -1,8 +1,22 @@
 <template>
   <section class="flex flex-col gap-5">
     <p class="text-muted-foreground text-sm">
-      {{ $t(`onboarding.steps.${stepId}.description`) }}
+      {{ $t(descriptionKey) }}
     </p>
+
+    <div v-if="receiverInstructions.length > 0" class="flex flex-col gap-2">
+      <h3 class="text-sm font-semibold">
+        {{ $t("onboarding.listen_from_apps") }}
+      </h3>
+      <p
+        v-for="instruction in receiverInstructions"
+        :key="instruction"
+        class="text-muted-foreground text-sm"
+        data-testid="onboarding-receiver-instructions"
+      >
+        {{ $t(instruction) }}
+      </p>
+    </div>
 
     <div v-if="done.length > 0" class="flex flex-col gap-2">
       <h3 class="text-sm font-semibold">{{ $t(doneHeadingKey) }}</h3>
@@ -10,17 +24,27 @@
         <Item
           v-for="step in done"
           :key="step.id"
+          as="button"
+          type="button"
           variant="outline"
           size="sm"
+          class="enabled:hover:bg-accent/50 w-full text-left transition-colors enabled:cursor-pointer"
+          :disabled="busy || step.id === 'account'"
           data-testid="onboarding-summary-done"
+          @click="emit('navigate', step.id)"
         >
           <ItemMedia>
             <CircleCheck class="text-primary size-4" aria-hidden="true" />
           </ItemMedia>
           <ItemContent>
-            <ItemTitle>{{ $t(`onboarding.steps.${step.id}.title`) }}</ItemTitle>
+            <ItemTitle>{{ $t(doneTitleKey(step.id)) }}</ItemTitle>
             <ItemDescription v-if="countLabels[step.id]">
               {{ countLabels[step.id] }}
+            </ItemDescription>
+            <ItemDescription
+              v-else-if="step.id === 'intent' && ctx.answers.intent"
+            >
+              {{ $t(`onboarding.steps.intent.${ctx.answers.intent}.label`) }}
             </ItemDescription>
             <!-- the welcome asked one thing; the summary says what came of it -->
             <ItemDescription
@@ -31,34 +55,7 @@
               }}
             </ItemDescription>
           </ItemContent>
-        </Item>
-      </ItemGroup>
-    </div>
-
-    <div v-if="pending.length > 0" class="flex flex-col gap-2">
-      <h3 class="text-sm font-semibold">{{ $t("onboarding.still_to_do") }}</h3>
-      <ItemGroup class="gap-2">
-        <Item
-          v-for="step in pending"
-          :key="step.id"
-          as="button"
-          type="button"
-          variant="outline"
-          size="sm"
-          class="hover:bg-accent/50 w-full cursor-pointer text-left transition-colors"
-          data-testid="onboarding-summary-pending"
-          @click="emit('navigate', step.id)"
-        >
-          <ItemMedia>
-            <Circle class="text-muted-foreground size-4" aria-hidden="true" />
-          </ItemMedia>
-          <ItemContent>
-            <ItemTitle>{{ $t(`onboarding.steps.${step.id}.title`) }}</ItemTitle>
-          </ItemContent>
-          <ItemActions>
-            <Badge v-if="step.optional || step.deferred" variant="outline">
-              {{ $t("optional") }}
-            </Badge>
+          <ItemActions v-if="step.id !== 'account'">
             <ChevronRight
               class="text-muted-foreground size-4"
               aria-hidden="true"
@@ -70,36 +67,55 @@
 
     <!-- the member track sets nothing up, so it has no list to be at the end
          of and nothing to say is done -->
-    <p v-else-if="!isMemberSummary" class="text-muted-foreground text-sm">
+    <p
+      v-if="essentials.length === 0 && !isMemberSummary"
+      class="text-muted-foreground text-sm"
+    >
       {{ $t("onboarding.all_done") }}
     </p>
 
-    <Item variant="muted" data-testid="onboarding-tour-offer">
-      <ItemMedia variant="icon">
-        <Route aria-hidden="true" />
-      </ItemMedia>
-      <ItemContent>
-        <ItemTitle>{{ $t("tour.offer.title") }}</ItemTitle>
-        <ItemDescription>{{ $t("tour.offer.description") }}</ItemDescription>
-      </ItemContent>
-      <ItemActions>
-        <Button
+    <div
+      v-for="group in pendingGroups"
+      :key="group.titleKey"
+      class="flex flex-col gap-2"
+    >
+      <h3 class="text-sm font-semibold">{{ $t(group.titleKey) }}</h3>
+      <ItemGroup class="gap-2">
+        <Item
+          v-for="step in group.steps"
+          :key="step.id"
+          as="button"
+          type="button"
           variant="outline"
           size="sm"
+          class="hover:bg-accent/50 w-full cursor-pointer text-left transition-colors"
           :disabled="busy"
-          data-testid="onboarding-tour"
-          @click="emit('finish', { tour: true })"
+          :data-testid="group.testId"
+          @click="emit('navigate', step.id)"
         >
-          {{ $t("tour.start") }}
-        </Button>
-      </ItemActions>
-    </Item>
+          <ItemMedia>
+            <Circle class="text-muted-foreground size-4" aria-hidden="true" />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>{{ $t(stepTitleKey(step.id, ctx.answers)) }}</ItemTitle>
+          </ItemContent>
+          <ItemActions>
+            <Badge v-if="step.optional" variant="outline">
+              {{ $t("optional") }}
+            </Badge>
+            <ChevronRight
+              class="text-muted-foreground size-4"
+              aria-hidden="true"
+            />
+          </ItemActions>
+        </Item>
+      </ItemGroup>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Item,
   ItemActions,
@@ -114,20 +130,16 @@ import {
   useOnboarding,
 } from "@/composables/useOnboarding";
 import {
+  APP_RECEIVER_INSTRUCTIONS,
   experienceOf,
   isTodo,
+  stepTitleKey,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ChevronRight, Circle, CircleCheck, Route } from "@lucide/vue";
+import { ChevronRight, Circle, CircleCheck } from "@lucide/vue";
 import { computed } from "vue";
-
-/** What the summary asks for on the way out. */
-export interface FinishOptions {
-  // walk the user through the app once onboarding has closed
-  tour?: boolean;
-}
 
 const props = defineProps<{
   busy?: boolean;
@@ -140,10 +152,48 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "advance"): void;
   (e: "navigate", step: OnboardingStepId): void;
-  (e: "finish", options?: FinishOptions): void;
+  (e: "finish"): void;
 }>();
 
 const { ctx, steps, pending, expertMode } = useOnboarding();
+
+const isMemberSummary = computed(() => props.stepId === "all_set");
+const appFirst = computed(
+  () => !isMemberSummary.value && ctx.value.answers.intent === "phone_apps",
+);
+const descriptionKey = computed(() =>
+  appFirst.value
+    ? "onboarding.steps.finish.phone_apps_description"
+    : `onboarding.steps.${props.stepId}.description`,
+);
+const essentials = computed(() =>
+  pending.value.filter((step) => !step.optional),
+);
+const pendingGroups = computed(() =>
+  [
+    {
+      titleKey: "onboarding.still_to_do",
+      testId: "onboarding-summary-pending",
+      steps: essentials.value,
+    },
+    {
+      titleKey: "onboarding.explore_more",
+      testId: "onboarding-summary-optional",
+      steps: pending.value.filter((step) => step.optional),
+    },
+  ].filter((group) => group.steps.length > 0),
+);
+
+const receiverInstructions = computed(() =>
+  !appFirst.value
+    ? []
+    : configuredProviders(ProviderType.PLUGIN)
+        .filter((provider) => !provider.needsAttention)
+        .flatMap((provider) => {
+          const key = APP_RECEIVER_INSTRUCTIONS[provider.domain];
+          return key ? [key] : [];
+        }),
+);
 
 // A review is nothing to set up and nothing to do, so it is on neither list.
 // Neither is a welcome the member only closed: being done with them is not the
@@ -154,7 +204,7 @@ const done = computed(() =>
     (step) =>
       isTodo(step) &&
       step.isDone(ctx.value) &&
-      // own_sources is an invitation, surfaced under "still to do" while it is
+      // own_sources is an invitation, surfaced under "Explore more" while it is
       // open, not a choice to look back on once it is done
       step.id !== "own_sources" &&
       (step.id !== "welcome" || expertMode.value != null),
@@ -162,6 +212,11 @@ const done = computed(() =>
 );
 const countLabel = (key: string, count: number) =>
   count > 0 ? $t(key, count, { named: { count } }) : undefined;
+// the setup choice is looked back on as the choice made, not the question asked
+const doneTitleKey = (id: OnboardingStepId) =>
+  id === "intent"
+    ? "onboarding.steps.intent.summary_title"
+    : stepTitleKey(id, ctx.value.answers);
 const countLabels = computed<Partial<Record<OnboardingStepId, string>>>(() => ({
   players: countLabel("onboarding.players_count", ctx.value.playerCount),
   music_sources: countLabel(
@@ -174,7 +229,6 @@ const countLabels = computed<Partial<Record<OnboardingStepId, string>>>(() => ({
   ),
 }));
 
-const isMemberSummary = computed(() => props.stepId === "all_set");
 // a member set nothing up: what their summary looks back at is the answer they
 // gave, so it is not headed as a list of things that are now in place
 const doneHeadingKey = computed(() =>

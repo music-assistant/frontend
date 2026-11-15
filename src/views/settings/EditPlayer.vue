@@ -153,7 +153,7 @@
       class="mb-4"
     >
       <div class="disabled-banner">
-        <span>{{ $t("settings.player_needs_setup") }}</span>
+        <span>{{ setupReason ?? $t("settings.player_needs_setup") }}</span>
         <v-btn
           size="small"
           color="warning"
@@ -175,7 +175,7 @@
       class="mb-4"
     >
       <div class="disabled-banner">
-        <span>{{ $t("settings.player_not_available") }}</span>
+        <span>{{ setupReason ?? $t("settings.player_not_available") }}</span>
       </div>
     </v-alert>
 
@@ -239,6 +239,7 @@ import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
 import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { getPlayerSetupReason } from "@/helpers/players";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { eventbus } from "@/plugins/eventbus";
@@ -296,6 +297,8 @@ const player = computed(() =>
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
 );
+
+const setupReason = computed(() => getPlayerSetupReason(player.value));
 
 // the docs of a beta server live on the beta site
 const documentationUrl = computed(() => getExternalLinkUrl(PLAYER_DOCS_URL));

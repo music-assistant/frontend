@@ -1,6 +1,6 @@
 <template>
-  <!-- audio analysis details (bpm / musical key), only present on full track details -->
-  <Popover v-if="bpm || musicalKey">
+  <!-- audio analysis details (bpm / musical key / energy), only present on full track details -->
+  <Popover v-if="bpm || musicalKey || energyLevel">
     <PopoverTrigger as-child>
       <Button
         type="button"
@@ -47,6 +47,18 @@
               {{ $t("musical_key") }}
             </div>
           </div>
+          <div
+            v-if="energyLevel"
+            class="bg-accent/50 rounded-md px-3 py-2 text-center"
+            :title="$t('tooltip.energy_level')"
+          >
+            <div class="text-base font-semibold tabular-nums">
+              {{ energyLevel }}
+            </div>
+            <div class="text-muted-foreground text-xs">
+              {{ $t("energy_level") }}
+            </div>
+          </div>
         </div>
       </div>
     </PopoverContent>
@@ -77,4 +89,7 @@ const musicalKey = computed(() => {
   const camelotKey = props.audioMetadata?.camelot_key;
   return camelotKey ? `${key} (${camelotKey})` : key;
 });
+const energyLevel = computed(
+  () => props.audioMetadata?.energy_level ?? undefined,
+);
 </script>

@@ -31,10 +31,11 @@ watch(
   ([newActivePlayer]) => {
     if (!newActivePlayer) return;
     const newPlayerString = newActivePlayer.toString().toLowerCase();
-    // newActivePlayer can be either player id or player name
+    // newActivePlayer can be either player id (also one it had before a merge) or player name
     const newPlayerId = Object.values(api.players).find((p) => {
       return (
         (p.player_id.toLowerCase() === newPlayerString ||
+          p.legacy_ids.some((id) => id.toLowerCase() === newPlayerString) ||
           p.name.toLowerCase() === newPlayerString) &&
         isSelectablePlayer(p)
       );

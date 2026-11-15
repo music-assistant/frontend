@@ -1,12 +1,13 @@
 // Shared handlers for the click/play/menu interactions on a media item,
 // dispatching to the details views and the item context menu.
-import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
+import { openExternalItem } from "@/helpers/open_external_item";
 import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
+import { ApiCommandError } from "@/plugins/api/errors";
+import { isExternalItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemType,
@@ -64,7 +65,10 @@ export const handlePlayBtnClick = async function (
   // button appears dead (e.g. while the connection is re-establishing)
   const onPlayError = (err: Error) => {
     console.error("Play action failed:", err);
-    toast.error($t("play_failed"));
+    // a server error with a reason already got its own toast from the api
+    if (!(err instanceof ApiCommandError && err.details)) {
+      toast.error($t("play_failed"));
+    }
   };
   // we show the play menu for the item once (if playerTip has not been dismissed)
   if (!forceMenu && store.activePlayer?.available) {
@@ -132,14 +136,9 @@ export const handleMediaItemClick = async function (
   posY: number,
   parentItem?: MediaItemType,
 ) {
-  // a MusicBrainz release has nothing to play: the server resolves it to the
-  // same album on one of the user's music services, whose page then opens
-  if (isMusicBrainzItem(item)) {
-    return openMusicBrainzItem(item);
-  }
-
   // open menu when item is unavailable so the user has a way to remove/refresh the item
-  if (!itemIsAvailable(item)) {
+  // (an external item is looked up when it is opened or played)
+  if (!itemIsAvailable(item) && !isExternalItem(item)) {
     handleMenuBtnClick(item, posX, posY, undefined, false);
     return;
   }
@@ -183,6 +182,7 @@ export const handleMediaItemClick = async function (
   }
 
   // all other: go to details view
+  if (isExternalItem(item)) return openExternalItem(item);
   router.push({
     name: item.media_type,
     params: {

@@ -169,7 +169,7 @@ async function isAnotherTabActive(): Promise<boolean> {
 }
 
 // Per-device settings that feed resolvePreferredMode().
-const WEB_PLAYER_ENABLED = "web_player_enabled";
+export const WEB_PLAYER_ENABLED = "web_player_enabled";
 
 let highestPriority: string | undefined;
 let modeSyncInitialized = false;

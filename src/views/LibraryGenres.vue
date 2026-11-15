@@ -66,6 +66,9 @@ const loadSection = (contentType: MediaType | "music") => {
       sort_field: params.sortField,
       sort_direction: params.sortDirection,
       hide_empty: params.hideEmptyFilter,
+      ...(params.randomSeed === undefined
+        ? {}
+        : { random_seed: params.randomSeed }),
     });
   };
 };

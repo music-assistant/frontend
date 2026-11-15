@@ -41,6 +41,8 @@
       :show-track-number="true"
       :show-refresh-button="false"
       :sort-listing="ListingType.PODCAST_EPISODES"
+      library-toolbar
+      :show-count="false"
       :load-paged-data="loadOtherEpisodes"
       :title="$t('other_episodes')"
       detail-row
