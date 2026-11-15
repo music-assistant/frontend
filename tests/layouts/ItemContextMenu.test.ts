@@ -161,4 +161,48 @@ describe("ItemContextMenu", () => {
     expect(wrapper.get("[data-test-popout]").text()).toBe("kitchen");
     wrapper.unmount();
   });
+
+  it("shows the text of an item as it is, never as a translation", async () => {
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [
+        { label: "provider_menu_action/demo/a", text: "show_info" },
+        {
+          label: "provider_menu_action/demo/b",
+          text: "{0} @:show_info <b>bold</b>",
+        },
+      ],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+
+    const rows = wrapper.findAll("span.truncate").map((row) => row.text());
+    expect(rows).toEqual(["show_info", "{0} @:show_info <b>bold</b>"]);
+    expect(wrapper.find("b").exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("keeps a long text on one line, cut off as the other entries", async () => {
+    // a translated label may be 80 characters long
+    const long =
+      "Ask the demo plugin about this track and all it knows about it, all at once, now";
+    expect(long).toHaveLength(80);
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [{ label: "provider_menu_action/demo/a", text: long }],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+
+    const row = wrapper.get("span.truncate");
+    expect(row.text()).toBe(long);
+    expect(row.classes()).toEqual(
+      expect.arrayContaining(["truncate", "min-w-0", "flex-1"]),
+    );
+    wrapper.unmount();
+  });
 });
