@@ -3,9 +3,10 @@
 /** The colour for an icon without a main colour of its own. */
 export const NEUTRAL_ICON_COLOR = "#64748b";
 
-// a fill or a gradient stop, as an attribute or in a style
+// a fill or a gradient stop, as an attribute or in a style; what an rgb()
+// holds is bounded, so an unclosed one cannot make every match scan the rest
 const FILL_PATTERN =
-  /(?:fill|stop-color)\s*(?:=\s*["']|:)\s*(#[0-9a-f]{3,8}\b|rgba?\([^)]*\))/gi;
+  /(?:fill|stop-color)\s*(?:=\s*["']|:)\s*(#[0-9a-f]{3,8}\b|rgba?\([\d\s.,%/]{1,40}\))/gi;
 const SVG_DATA_URI = /^data:image\/svg\+xml((?:;[^,;]*)*),(.*)$/is;
 // lightness above or below which a colour reads as white or black, and the
 // saturation below which it reads as grey

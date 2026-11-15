@@ -47,6 +47,17 @@ describe("getIconColor", () => {
     expect(getIconColor("data:image/png;base64,iVBORw0KGgo=")).toBeNull();
   });
 
+  it("reads an svg full of unclosed colours quickly", () => {
+    const svg = base64Svg(
+      `<svg>${'<path fill="rgb(12 34 56 '.repeat(12_000)}</svg>`,
+    );
+    const started = performance.now();
+
+    expect(getIconColor(svg)).toBeNull();
+    // a pattern that scans the rest of the text for every fill takes seconds
+    expect(performance.now() - started).toBeLessThan(250);
+  });
+
   it.each([
     ["broken base64", "data:image/svg+xml;base64,%%%not base64"],
     ["a broken escape", "data:image/svg+xml,%E0%A4%A"],
