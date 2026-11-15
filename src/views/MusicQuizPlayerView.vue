@@ -113,10 +113,7 @@
         :score-delta="playerRoundScoreLabel"
         :round-results="playerRoundResults"
       >
-        <template
-          v-if="listenInEnabled && activeState.mode === 'remote'"
-          #actions
-        >
+        <template v-if="showVolumeControl" #actions>
           <MusicQuizVolumeControl />
         </template>
       </MusicQuizPlayerHeader>
@@ -204,7 +201,7 @@ import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { webPlayer } from "@/plugins/web_player";
+import { isPlaybackMode, webPlayer } from "@/plugins/web_player";
 import { ArrowLeft, CircleStop, Clock3 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -261,6 +258,14 @@ const listenInEnabled = computed(() => {
     supportsMusicQuizListenIn(definition.game, currentState)
   );
 });
+// the volume control sets the output of this tab's own web player
+const showVolumeControl = computed(
+  () =>
+    listenInEnabled.value &&
+    activeState.value?.mode === "remote" &&
+    isPlaybackMode(webPlayer.tabMode) &&
+    !!webPlayer.player_id,
+);
 const unsupportedGame = computed(() => {
   const activeGame = state.value ?? info.value;
   return !!activeGame && !resolvedDefinition.value;
