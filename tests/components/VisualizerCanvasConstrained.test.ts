@@ -11,15 +11,7 @@ import { TV_MAX_FPS, TV_PROFILE } from "@/helpers/visualizer/quality";
 import api from "@/plugins/api";
 import { reportVisualizerCapability } from "@/plugins/visualizer-relay";
 import { flushPromises, mount } from "@vue/test-utils";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type ColorCallback = (palette: Record<string, unknown>) => void;
 type StateCallback = (state: string) => void;
@@ -126,7 +118,10 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, dimension),
   );
 
-  beforeAll(() => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    relayPlayerIds.length = 0;
+    createVisualizerEngine.mockImplementation(async () => engine);
     for (const dimension of canvasDimensions) {
       Object.defineProperty(HTMLCanvasElement.prototype, dimension, {
         configurable: true,
@@ -142,7 +137,7 @@ describe("VisualizerCanvas on a cast dashboard", () => {
     );
   });
 
-  afterAll(() => {
+  afterEach(() => {
     canvasDimensions.forEach((dimension, index) => {
       const original = originalDimensions[index];
       if (original) {
@@ -152,12 +147,6 @@ describe("VisualizerCanvas on a cast dashboard", () => {
       }
     });
     vi.unstubAllGlobals();
-  });
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    relayPlayerIds.length = 0;
-    createVisualizerEngine.mockImplementation(async () => engine);
   });
 
   // The butterchurn chunk is megabytes, and a cast receiver resolves its player
