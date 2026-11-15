@@ -9,7 +9,7 @@
       @dismiss="letGo"
     />
 
-    <CatalogPopularRow
+    <CatalogSuggestionRow
       v-for="row in rows"
       :key="row.key"
       :suggestions="row.suggestions"
@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import CatalogBrowseTypes from "@/components/settings/catalog/CatalogBrowseTypes.vue";
 import CatalogCommunityBanner from "@/components/settings/catalog/CatalogCommunityBanner.vue";
-import CatalogPopularRow from "@/components/settings/catalog/CatalogPopularRow.vue";
+import CatalogSuggestionRow from "@/components/settings/catalog/CatalogSuggestionRow.vue";
 import CatalogTopPick from "@/components/settings/catalog/CatalogTopPick.vue";
 import { useDismissedSuggestions } from "@/composables/settings/catalog/useDismissedSuggestions";
 import {
