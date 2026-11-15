@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, setPreference } = vi.hoisted(() => ({
+const { storeMock, setPreference, setPreferences } = vi.hoisted(() => ({
   storeMock: { currentUser: { preferences: {} as Record<string, unknown> } },
   setPreference: vi.fn(),
+  setPreferences: vi.fn(),
 }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: setPreference,
+  setUserPreferences: setPreferences,
 }));
 
 import {
@@ -22,6 +24,7 @@ describe("audiobookRows", () => {
   beforeEach(() => {
     storeMock.currentUser.preferences = {};
     setPreference.mockReset();
+    setPreferences.mockReset();
   });
 
   it("defaults to description, chapters and provider details without source pickers", () => {
@@ -62,13 +65,8 @@ describe("audiobookRows", () => {
       }),
     );
     await audiobookRows.reset();
-    expect(setPreference).toHaveBeenLastCalledWith(
-      AUDIOBOOK_ROWS_PREFERENCE_KEY,
-      {
-        hidden: [],
-        shown: [],
-        order: [],
-      },
-    );
+    expect(setPreferences).toHaveBeenCalledExactlyOnceWith({
+      [AUDIOBOOK_ROWS_PREFERENCE_KEY]: { hidden: [], shown: [], order: [] },
+    });
   });
 });
