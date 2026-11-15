@@ -31,15 +31,18 @@
       class="-mx-6 -mt-1 -mb-3 flex snap-x snap-mandatory scroll-px-6 gap-4 overflow-x-auto px-6 pt-1 pb-5 max-md:-mx-3 max-md:scroll-px-3 max-md:px-3"
     >
       <div
-        v-for="entry in entries"
-        :key="entry.manifest.domain"
+        v-for="suggestion in suggestions"
+        :key="suggestion.entry.manifest.domain"
         class="w-64 shrink-0 snap-start max-sm:w-[72%]"
       >
         <CatalogTile
-          :entry="entry"
-          :installing="installing.has(entry.manifest.domain)"
-          @open="emit('open', entry)"
-          @add="emit('add', entry)"
+          :entry="suggestion.entry"
+          :installing="installing.has(suggestion.entry.manifest.domain)"
+          :paired-with="suggestion.pairedWith"
+          :dismissible="isPersonalSuggestion(suggestion)"
+          @open="emit('open', suggestion.entry)"
+          @add="emit('add', suggestion.entry)"
+          @dismiss="emit('dismiss', suggestion.entry.manifest.domain)"
         />
       </div>
     </div>
@@ -49,13 +52,17 @@
 <script setup lang="ts">
 import CatalogTile from "@/components/settings/catalog/CatalogTile.vue";
 import { Button } from "@/components/ui/button";
+import {
+  type CatalogSuggestion,
+  isPersonalSuggestion,
+} from "@/helpers/catalog_recommendations";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
 import { $t } from "@/plugins/i18n";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { useTemplateRef } from "vue";
 
 interface Props {
-  entries: CatalogEntry[];
+  suggestions: CatalogSuggestion[];
   title: string;
   // the domains being installed from the community catalog
   installing: ReadonlySet<string>;
@@ -66,6 +73,7 @@ defineProps<Props>();
 const emit = defineEmits<{
   (e: "open", entry: CatalogEntry): void;
   (e: "add", entry: CatalogEntry): void;
+  (e: "dismiss", domain: string): void;
 }>();
 
 const scroller = useTemplateRef<HTMLElement>("scroller");

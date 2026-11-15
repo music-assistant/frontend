@@ -67,7 +67,7 @@ export const CATALOG_TYPES: readonly CatalogType[] = [
   },
 ];
 
-/** Listed first, in this order. */
+/** What the add dialog lists first, in this order. */
 export const POPULAR_PROVIDERS: readonly string[] = [
   "spotify",
   "tidal",
@@ -118,15 +118,6 @@ export interface CatalogEntry {
   canAdd: boolean;
   // what the community catalog lists for it, for one that comes from there
   community?: CommunityProvider;
-}
-
-/** A row of entries to scroll through above the list. */
-export interface CatalogRow {
-  // names the row in its test id: catalog-<key>
-  key: string;
-  // the translation key of its title
-  title: string;
-  entries: CatalogEntry[];
 }
 
 /** A type of the Catalog with how many entries it lists. */
@@ -304,127 +295,8 @@ export const sortPopularFirst = (
     return compareNames(a.manifest.name, b.manifest.name);
   });
 
-/** The popular entries that can be added, in their popular order. */
-export const getPopularEntries = (
-  entries: readonly CatalogEntry[],
-): CatalogEntry[] =>
-  sortPopularFirst(
-    entries.filter(
-      (entry) =>
-        entry.canAdd && POPULAR_PROVIDERS.includes(entry.manifest.domain),
-    ),
-  );
-
 /** How many entries a list shows at first, and how many more each time after. */
 export const CATALOG_PAGE_SIZE = 24;
-
-/** How many entries a row of what is new in the community catalog shows at most. */
-export const COMMUNITY_ROW_SIZE = 8;
-
-/** How long an addition or a release counts as new in the community catalog. */
-export const COMMUNITY_RECENT_MS = 30 * 24 * 60 * 60 * 1000;
-
-export interface CommunityHighlights {
-  // the latest additions to the community catalog
-  added: CatalogEntry[];
-  // the latest releases among the rest
-  updated: CatalogEntry[];
-}
-
-/**
- * What is new in the community catalog among the entries that can be added,
- * newest first: added, or with a latest version released, within
- * COMMUNITY_RECENT_MS. An entry is in one row at most, and one without a valid
- * date for a row is left out of it.
- *
- * @param entries - The Catalog entries.
- * @param now - The current time, in milliseconds since the epoch.
- */
-export const getCommunityHighlights = (
-  entries: readonly CatalogEntry[],
-  now: number,
-): CommunityHighlights => {
-  const since = now - COMMUNITY_RECENT_MS;
-  const community = entries.filter((entry) => entry.community && entry.canAdd);
-  const added = newestFirst(community, (provider) => provider.added, since);
-  const addedDomains = new Set(added.map((entry) => entry.manifest.domain));
-  const updated = newestFirst(
-    community.filter((entry) => !addedDomains.has(entry.manifest.domain)),
-    (provider) => provider.released,
-    since,
-  );
-  return { added, updated };
-};
-
-/** How many top picks the Discover tab offers at most. */
-export const TOP_PICK_COUNT = 4;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * The top picks for the user, at most TOP_PICK_COUNT: the popular entries that
- * can be added or, once none is left, what is new in the community catalog when
- * asked for. The pick of the day comes first: it moves on to the next one every
- * day, the order staying the same. Empty when there is nothing to pick.
- *
- * @param entries - The Catalog entries.
- * @param withCommunity - Whether to pick from what is new in the community catalog.
- * @param now - The current time, in milliseconds since the epoch.
- */
-export const getTopPicks = (
-  entries: readonly CatalogEntry[],
-  withCommunity: boolean,
-  now: number,
-): CatalogEntry[] => {
-  const popular = getPopularEntries(entries);
-  let candidates = popular;
-  if (!popular.length && withCommunity) {
-    const { added, updated } = getCommunityHighlights(entries, now);
-    candidates = [...added, ...updated];
-  }
-  const picks = candidates.slice(0, TOP_PICK_COUNT);
-  const first = picks.length ? getLocalDayNumber(now) % picks.length : 0;
-  return [...picks.slice(first), ...picks.slice(0, first)];
-};
-
-/**
- * The rows of the Discover tab, each with something to show: the popular
- * entries, and what is new in the community catalog when asked for.
- *
- * @param entries - The Catalog entries.
- * @param withCommunity - Whether to show what is new in the community catalog.
- * @param now - The current time, in milliseconds since the epoch.
- * @param pick - The top pick shown above the rows, left out of them.
- */
-export const getCatalogRows = (
-  entries: readonly CatalogEntry[],
-  withCommunity: boolean,
-  now: number,
-  pick?: CatalogEntry,
-): CatalogRow[] => {
-  const highlights = withCommunity
-    ? getCommunityHighlights(entries, now)
-    : { added: [], updated: [] };
-  const notPick = (entry: CatalogEntry) =>
-    entry.manifest.domain !== pick?.manifest.domain;
-  return [
-    {
-      key: "popular",
-      title: "settings.catalog.popular",
-      entries: getPopularEntries(entries).filter(notPick),
-    },
-    {
-      key: "community-new",
-      title: "settings.catalog.community.new_title",
-      entries: highlights.added.filter(notPick),
-    },
-    {
-      key: "community-updated",
-      title: "settings.catalog.community.updated_title",
-      entries: highlights.updated.filter(notPick),
-    },
-  ].filter((row) => row.entries.length);
-};
 
 export const CATALOG_DISCOVER_TAB = "discover";
 export const CATALOG_INSTALLED_TAB = "installed";
@@ -556,31 +428,6 @@ export const groupInstalledProviders = (
 /** The GitHub profile of a maintainer, by its handle. */
 export const getMaintainerProfileUrl = (handle: string) =>
   `https://github.com/${handle.replace(/^@/, "")}`;
-
-function newestFirst(
-  entries: readonly CatalogEntry[],
-  getDate: (provider: CommunityProvider) => string | null,
-  since: number,
-): CatalogEntry[] {
-  // a date that is not a date parses to NaN, which is never this recent
-  return entries
-    .map((entry) => ({
-      entry,
-      time: Date.parse(getDate(entry.community!) ?? ""),
-    }))
-    .filter(({ time }) => time >= since)
-    .sort((a, b) => b.time - a.time)
-    .slice(0, COMMUNITY_ROW_SIZE)
-    .map(({ entry }) => entry);
-}
-
-// days counted on the user's own calendar, so the pick changes at midnight
-function getLocalDayNumber(now: number): number {
-  const date = new Date(now);
-  return Math.floor(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS,
-  );
-}
 
 function popularRank(domain: string): number {
   const index = POPULAR_PROVIDERS.indexOf(domain);

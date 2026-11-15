@@ -6,17 +6,19 @@
       :installing="installing"
       @open="emit('open', $event)"
       @add="emit('add', $event)"
+      @dismiss="letGo"
     />
 
-    <CatalogPopularRow
+    <CatalogSuggestionRow
       v-for="row in rows"
       :key="row.key"
-      :entries="row.entries"
-      :title="$t(row.title)"
+      :suggestions="row.suggestions"
+      :title="$t(row.title, { version: releaseLine })"
       :installing="installing"
       :data-testid="`catalog-${row.key}`"
       @open="emit('open', $event)"
       @add="emit('add', $event)"
+      @dismiss="letGo"
     />
 
     <CatalogCommunityBanner
@@ -31,21 +33,32 @@
 <script setup lang="ts">
 import CatalogBrowseTypes from "@/components/settings/catalog/CatalogBrowseTypes.vue";
 import CatalogCommunityBanner from "@/components/settings/catalog/CatalogCommunityBanner.vue";
-import CatalogPopularRow from "@/components/settings/catalog/CatalogPopularRow.vue";
+import CatalogSuggestionRow from "@/components/settings/catalog/CatalogSuggestionRow.vue";
 import CatalogTopPick from "@/components/settings/catalog/CatalogTopPick.vue";
+import { useDismissedSuggestions } from "@/composables/settings/catalog/useDismissedSuggestions";
 import {
-  type CatalogEntry,
-  type CatalogTypeCount,
-  getCatalogRows,
+  getCatalogSuggestions,
+  getReleaseLine,
+  getSuggestionRows,
   getTopPicks,
+} from "@/helpers/catalog_recommendations";
+import type {
+  CatalogEntry,
+  CatalogTypeCount,
 } from "@/helpers/provider_catalog";
-import type { ProviderType } from "@/plugins/api/interfaces";
+import { api } from "@/plugins/api";
+import type {
+  CatalogRecommendation,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
 interface Props {
   entries: CatalogEntry[];
-  // whether the community catalog is enabled, to show what is new in it
+  // what the server suggests, as it sent it
+  recommendations: CatalogRecommendation[];
+  // whether the community catalog is enabled for the user, to show what is new in it
   withCommunity: boolean;
   // whether to offer to enable the community catalog
   offerCommunity: boolean;
@@ -63,16 +76,30 @@ const emit = defineEmits<{
   (e: "select-type", type: ProviderType): void;
 }>();
 
-const picks = computed(() =>
-  getTopPicks(props.entries, props.withCommunity, Date.now()),
+const { dismissed, dismiss } = useDismissedSuggestions();
+
+const letGo = (domain: string) => {
+  const entry = props.entries.find((item) => item.manifest.domain === domain);
+  void dismiss(domain, entry?.manifest.name ?? domain);
+};
+
+const suggestions = computed(() =>
+  getCatalogSuggestions(
+    props.entries,
+    props.recommendations,
+    dismissed.value,
+    (domain) => api.providerManifests[domain]?.name,
+  ),
 );
 
+const picks = computed(() => getTopPicks(suggestions.value, Date.now()));
+
 const rows = computed(() =>
-  getCatalogRows(
-    props.entries,
-    props.withCommunity,
-    Date.now(),
-    picks.value[0],
-  ),
+  getSuggestionRows(suggestions.value, props.withCommunity, picks.value[0]),
+);
+
+// the release line of the server, which names what is new in it
+const releaseLine = computed(() =>
+  getReleaseLine(api.serverInfo.value?.server_version ?? ""),
 );
 </script>

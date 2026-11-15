@@ -65,6 +65,7 @@ import {
   AuthExchangeResult,
   AuthorizationStart,
   AuthProvider,
+  CatalogRecommendation,
   ConfigActionResult,
   ConfigEntry,
   ConfigValueType,
@@ -2960,6 +2961,14 @@ export class MusicAssistantApi {
     // included.
     return this.sendCommand("config/providers/share_candidates", undefined, {
       // callers show their own error toast; avoid a duplicate global one
+      suppressGlobalError: true,
+    });
+  }
+
+  public getCatalogRecommendations(): Promise<CatalogRecommendation[]> {
+    // What the Marketplace suggests the calling user adds, and why. The page
+    // shows itself without suggestions when this fails, so it reports nothing.
+    return this.sendCommand("catalog/recommendations", undefined, {
       suppressGlobalError: true,
     });
   }

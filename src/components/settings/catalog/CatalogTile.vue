@@ -5,8 +5,27 @@
     :data-domain="entry.manifest.domain"
   >
     <CatalogArt :color="color" class="h-20 shrink-0" />
+    <Button
+      v-if="dismissible"
+      variant="ghost"
+      size="icon-sm"
+      class="absolute top-2 right-2 z-10 size-8 rounded-full bg-black/25 text-white hover:bg-black/40 hover:text-white"
+      :aria-label="
+        $t('settings.catalog.dont_suggest_named', { name: entry.manifest.name })
+      "
+      :title="$t('settings.catalog.dont_suggest')"
+      data-testid="catalog-card-dismiss"
+      @click="emit('dismiss')"
+    >
+      <X class="size-4" aria-hidden="true" />
+    </Button>
     <div class="flex flex-1 flex-col px-4 pb-4">
-      <CatalogIconTile :src="iconSrc" :size="52" class="relative -mt-7 mb-3" />
+      <CatalogIconTile
+        :src="iconSrc"
+        :size="52"
+        :on-dark="onDark"
+        class="relative -mt-7 mb-3"
+      />
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h3 class="m-0 text-base leading-snug font-semibold">
           <!-- the name stretches over the tile, so the whole tile opens the
@@ -36,6 +55,14 @@
       </p>
       <div class="mt-3 flex items-center justify-between gap-3">
         <span
+          v-if="pairedWith"
+          class="min-w-0 truncate text-xs text-primary"
+          data-testid="catalog-card-paired"
+        >
+          {{ $t("settings.catalog.goes_well_with", { name: pairedWith }) }}
+        </span>
+        <span
+          v-else
           class="min-w-0 truncate text-xs text-muted-foreground"
           data-testid="catalog-card-credit"
         >
@@ -77,12 +104,16 @@ import { useCatalogArt } from "@/composables/settings/catalog/useCatalogArt";
 import { useCatalogEntryDetails } from "@/composables/settings/catalog/useCatalogEntryDetails";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
 import { $t } from "@/plugins/i18n";
-import { Plus } from "@lucide/vue";
+import { Plus, X } from "@lucide/vue";
 
 interface Props {
   entry: CatalogEntry;
   // whether it is being installed from the community catalog
   installing?: boolean;
+  // the name of what it goes well with, said in place of its type
+  pairedWith?: string | null;
+  // whether the user may ask not to have it suggested any more
+  dismissible?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -90,8 +121,9 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: "open"): void;
   (e: "add"): void;
+  (e: "dismiss"): void;
 }>();
 
 const { community, byline } = useCatalogEntryDetails(() => props.entry);
-const { iconSrc, color } = useCatalogArt(() => props.entry);
+const { iconSrc, onDark, color } = useCatalogArt(() => props.entry);
 </script>

@@ -1,4 +1,4 @@
-import { getIconColor } from "@/helpers/icon_color";
+import { getIconColor, isDrawnInWhite } from "@/helpers/icon_color";
 import { describe, expect, it } from "vitest";
 
 const base64Svg = (svg: string) => `data:image/svg+xml;base64,${btoa(svg)}`;
@@ -26,6 +26,12 @@ describe("getIconColor", () => {
         ),
       ),
     ).toBe("#3949ab");
+  });
+
+  it("reads the colour of an icon drawn in strokes", () => {
+    expect(
+      getIconColor(textSvg('<svg><path fill="none" stroke="#e53935"/></svg>')),
+    ).toBe("#e53935");
   });
 
   it("finds nothing in an svg of only black, white and grey", () => {
@@ -68,5 +74,52 @@ describe("getIconColor", () => {
     ["undefined", undefined],
   ])("finds nothing without throwing for %s", (_name, input) => {
     expect(getIconColor(input)).toBeNull();
+  });
+});
+
+describe("isDrawnInWhite", () => {
+  it.each([
+    ["white only, in a style", '<svg><path style="fill:#ffffff"/></svg>', true],
+    [
+      "white fills, strokes and stops",
+      '<svg><stop stop-color="#FFF"/><path fill="white" stroke="rgb(250, 250, 250)"/></svg>',
+      true,
+    ],
+    [
+      "white with a colour",
+      '<svg><path fill="#fff"/><circle fill="#1DB954"/></svg>',
+      false,
+    ],
+    [
+      "white with black stated",
+      '<svg><path fill="#fff"/><path stroke="black"/></svg>',
+      false,
+    ],
+    ["no colour stated", '<svg><path d="M0 0h1v1z"/></svg>', false],
+    [
+      "only a reference",
+      '<svg><path fill="url(#g)" stroke="none"/></svg>',
+      false,
+    ],
+  ])("answers for an svg of %s", (_name, svg, white) => {
+    expect(isDrawnInWhite(base64Svg(svg))).toBe(white);
+    expect(isDrawnInWhite(textSvg(svg))).toBe(white);
+  });
+
+  it("does not read an image that is not an svg, or nothing", () => {
+    expect(isDrawnInWhite("data:image/png;base64,iVBORw0KGgo=")).toBe(false);
+    expect(isDrawnInWhite("data:image/svg+xml;base64,%%%")).toBe(false);
+    expect(isDrawnInWhite(null)).toBe(false);
+  });
+
+  it("reads an svg full of unclosed colours quickly", () => {
+    const svg = base64Svg(
+      `<svg>${'<path stroke="rgb(250 250 250 '.repeat(12_000)}</svg>`,
+    );
+    const started = performance.now();
+
+    expect(isDrawnInWhite(svg)).toBe(false);
+    // a pattern that scans the rest of the text for every stroke takes seconds
+    expect(performance.now() - started).toBeLessThan(250);
   });
 });

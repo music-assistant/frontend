@@ -28,6 +28,13 @@
           aria-atomic="true"
           data-testid="catalog-top-pick-live"
         >
+          <p
+            v-if="reasonText"
+            class="m-0 -mb-1 text-sm font-medium text-primary"
+            data-testid="catalog-top-pick-reason"
+          >
+            {{ reasonText }}
+          </p>
           <h2
             class="m-0 text-2xl leading-tight font-semibold"
             data-testid="catalog-top-pick-name"
@@ -64,15 +71,26 @@
           >
             {{ $t("details") }}
           </Button>
+          <Button
+            v-if="isPersonalSuggestion(shown!)"
+            variant="ghost"
+            class="text-muted-foreground"
+            data-testid="catalog-top-pick-dismiss"
+            @click="emit('dismiss', current.manifest.domain)"
+          >
+            {{ $t("settings.catalog.dont_suggest") }}
+          </Button>
         </div>
         <div v-if="picks.length > 1" class="-ml-1.5 flex">
           <button
             v-for="(pick, index) in picks"
-            :key="pick.manifest.domain"
+            :key="pick.entry.manifest.domain"
             type="button"
             class="group flex size-6 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             :aria-label="
-              $t('settings.catalog.show_pick', { name: pick.manifest.name })
+              $t('settings.catalog.show_pick', {
+                name: pick.entry.manifest.name,
+              })
             "
             :aria-current="index === shownIndex"
             data-testid="catalog-top-pick-dot"
@@ -96,6 +114,7 @@
         <CatalogIconTile
           :src="iconSrc"
           :size="112"
+          :on-dark="onDark"
           class="relative shadow-xl max-md:size-20"
         />
       </CatalogArt>
@@ -111,7 +130,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCatalogArt } from "@/composables/settings/catalog/useCatalogArt";
 import { useCatalogEntryDetails } from "@/composables/settings/catalog/useCatalogEntryDetails";
+import {
+  type CatalogSuggestion,
+  isPersonalSuggestion,
+} from "@/helpers/catalog_recommendations";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
+import { CatalogRecommendationReason } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Plus, Star } from "@lucide/vue";
 import { useSwipe } from "@vueuse/core";
@@ -119,7 +143,7 @@ import { computed, ref, useTemplateRef } from "vue";
 
 interface Props {
   // the pick of the day first
-  picks: CatalogEntry[];
+  picks: CatalogSuggestion[];
   // the domains being installed from the community catalog
   installing: ReadonlySet<string>;
 }
@@ -129,6 +153,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: "open", entry: CatalogEntry): void;
   (e: "add", entry: CatalogEntry): void;
+  (e: "dismiss", domain: string): void;
 }>();
 
 const selected = ref(0);
@@ -137,12 +162,24 @@ const selected = ref(0);
 const shownIndex = computed(() =>
   selected.value < props.picks.length ? selected.value : 0,
 );
-const current = computed<CatalogEntry | undefined>(
+const shown = computed<CatalogSuggestion | undefined>(
   () => props.picks[shownIndex.value],
 );
+const current = computed(() => shown.value?.entry);
+
+// why it is picked, when that is more than being popular
+const reasonText = computed(() => {
+  if (shown.value?.reason === CatalogRecommendationReason.DISCOVERED)
+    return $t("settings.catalog.discovered_title");
+  if (shown.value?.pairedWith)
+    return $t("settings.catalog.goes_well_with", {
+      name: shown.value.pairedWith,
+    });
+  return "";
+});
 
 const { community } = useCatalogEntryDetails(() => current.value!);
-const { iconSrc, color } = useCatalogArt(current);
+const { iconSrc, onDark, color } = useCatalogArt(current);
 
 // on a touch screen a swipe moves to the next or the previous pick
 useSwipe(useTemplateRef<HTMLElement>("hero"), {

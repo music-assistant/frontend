@@ -1901,6 +1901,23 @@ export interface CommunityProvider {
   notice: string | null;
 }
 
+export enum CatalogRecommendationReason {
+  // Why the Marketplace suggests a provider, in the order the suggestions come in.
+  DISCOVERED = "discovered",
+  COMPLEMENTS = "complements",
+  POPULAR = "popular",
+  NEW = "new",
+  UPDATED = "updated",
+}
+
+export interface CatalogRecommendation {
+  // A provider the Marketplace suggests the user adds, and why.
+  domain: string;
+  reason: CatalogRecommendationReason;
+  // for complements: the domain of the provider it goes well with, which is set up
+  detail: string | null;
+}
+
 export interface ProviderInstance {
   // Provider instance details when a provider is serialized over the api.
   type: ProviderType;

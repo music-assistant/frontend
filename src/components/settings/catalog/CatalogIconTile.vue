@@ -1,8 +1,11 @@
 <template>
   <!-- the icon is only ever an image of a data URI -->
   <span
-    class="flex shrink-0 items-center justify-center rounded-[24%] bg-white shadow-md ring-1 ring-black/5"
+    class="flex shrink-0 items-center justify-center rounded-[24%] shadow-md ring-1"
+    :class="onDark ? 'bg-slate-600 ring-white/10' : 'bg-white ring-black/5'"
     :style="{ width: `${size}px`, height: `${size}px` }"
+    :data-tile="onDark ? 'dark' : 'light'"
+    data-testid="catalog-icon-tile"
   >
     <img
       v-if="src"
@@ -22,6 +25,9 @@ interface Props {
   // the icon as a data URI, or null while it loads or when there is none
   src: string | null | undefined;
   size: number;
+  // whether the icon is drawn in white only, so it needs a dark tile; the slate
+  // keeps a black shape visible as well
+  onDark?: boolean;
 }
 
 defineProps<Props>();

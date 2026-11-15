@@ -1,7 +1,9 @@
 <template>
+  <!-- an icon drawn in white only disappears on a light card, so it gets the dark tile -->
+  <CatalogIconTile v-if="onDark" :src="src" :size="size" on-dark />
   <!-- the icon of the community catalog is a data URI, so it is only ever an image -->
   <img
-    v-if="imageIcon"
+    v-else-if="imageIcon"
     :src="imageIcon"
     alt=""
     class="shrink-0 object-contain"
@@ -13,6 +15,8 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import CatalogIconTile from "@/components/settings/catalog/CatalogIconTile.vue";
+import { useCatalogIcon } from "@/composables/settings/catalog/useCatalogIcon";
 import { getCommunityIconUrl } from "@/helpers/community_catalog";
 import { computed } from "vue";
 
@@ -26,4 +30,9 @@ interface Props {
 const props = defineProps<Props>();
 
 const imageIcon = computed(() => getCommunityIconUrl(props.icon));
+
+const { src, onDark } = useCatalogIcon(
+  () => props.domain,
+  () => props.icon,
+);
 </script>
