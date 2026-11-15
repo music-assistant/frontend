@@ -83,7 +83,7 @@
               @click="reload"
             >
               <RefreshCw class="size-4" aria-hidden="true" />
-              {{ $t("settings.retry") }}
+              {{ $t("settings.catalog.try_again") }}
             </Button>
           </EmptyContent>
         </Empty>

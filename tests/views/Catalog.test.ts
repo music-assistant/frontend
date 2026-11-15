@@ -261,8 +261,8 @@ describe("Catalog", () => {
     await wrapper.get("[data-slot='input-group-control']").setValue("nothing");
 
     expect(
-      document.querySelector("[data-testid='catalog-empty']"),
-    ).not.toBeNull();
+      document.querySelector("[data-testid='catalog-empty']")?.textContent,
+    ).toContain("settings.catalog.no_match");
   });
 
   it("opens on the type the route names, with a link to its settings page", async () => {

@@ -122,6 +122,7 @@
           v-if="documentationUrl"
           as="a"
           variant="outline"
+          class="no-underline"
           :href="documentationUrl"
           target="_blank"
           rel="noopener noreferrer"
@@ -133,6 +134,7 @@
         <Button
           as="a"
           variant="outline"
+          class="no-underline"
           :href="helpUrl"
           target="_blank"
           rel="noopener noreferrer"
@@ -158,6 +160,7 @@
           v-if="!entry.community"
           as="a"
           variant="outline"
+          class="no-underline"
           :href="FEATURE_REQUESTS_URL"
           target="_blank"
           rel="noopener noreferrer"

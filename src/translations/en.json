@@ -688,6 +688,8 @@
             "installed_empty_title": "Nothing added yet",
             "installed_empty": "What you add from the Marketplace shows up here.",
             "load_failed": "Could not load the Marketplace",
+            "try_again": "Try again",
+            "no_match": "Nothing matches your search or filter",
             "type": {
                 "music": "Music source",
                 "player": "Player support",
