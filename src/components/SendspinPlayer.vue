@@ -89,15 +89,12 @@ const muted = toRef(webPlayerOutput, "muted");
 const playerState = ref<"synchronized" | "error">("synchronized");
 
 // Watch for volume/mute changes from UI
-watch(volume, (newVolume) => {
+// One watcher for both: each SDK setter reports the full player state back
+// through onStateChange, which would overwrite a pending change of the other.
+watch([volume, muted], ([newVolume, newMuted]) => {
   localStorage.setItem(VOLUME_STORAGE_KEY, String(newVolume));
   if (player) {
     player.setVolume(newVolume);
-  }
-});
-
-watch(muted, (newMuted) => {
-  if (player) {
     player.setMuted(newMuted);
   }
 });
@@ -383,8 +380,10 @@ onMounted(() => {
           },
         });
         // set before connecting so the server is told the saved volume, not the default
+        const mutedBeforeStart = muted.value;
         player.setVolume(volume.value);
-        player.setMuted(muted.value);
+        // setVolume reports the SDK's restored mute back; keep a mute set before the player existed
+        if (mutedBeforeStart) player.setMuted(true);
 
         return player.connect().then(registerPairing);
       })

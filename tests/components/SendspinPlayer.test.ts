@@ -21,6 +21,13 @@ import {
   vi,
 } from "vitest";
 
+interface SendspinState {
+  isPlaying: boolean;
+  volume: number;
+  muted: boolean;
+  playerState: "synchronized" | "error";
+}
+
 const { originalUserAgentDescriptor } = vi.hoisted(() => {
   const originalUserAgentDescriptor = Object.getOwnPropertyDescriptor(
     navigator,
@@ -129,15 +136,12 @@ const {
     mockSendspinUnlock: vi.fn<() => Promise<void>>(),
     sendspinState: {
       pairingToken: null as string | null,
+      // the mute the SDK restores from its own storage when a player is created
+      restoredMuted: false,
       lastOptions: null as {
         clientName?: string;
         reconnect?: { onReconnected?: () => void };
-        onStateChange?: (state: {
-          isPlaying: boolean;
-          volume: number;
-          muted: boolean;
-          playerState: "synchronized" | "error";
-        }) => void;
+        onStateChange?: (state: SendspinState) => void;
       } | null,
     },
     mockUseMediaBrowserMetaData: vi.fn(() => vi.fn()),
@@ -212,8 +216,21 @@ vi.mock("@/helpers/players", async (importOriginal) => ({
 
 vi.mock("@sendspin/sendspin-js", () => ({
   SendspinPlayer: class {
+    private state: SendspinState = {
+      isPlaying: false,
+      volume: 100,
+      muted: sendspinState.restoredMuted,
+      playerState: "synchronized",
+    };
     constructor(options: (typeof sendspinState)["lastOptions"]) {
-      sendspinState.lastOptions = options;
+      // State a test emits becomes this player's state, as in the SDK.
+      sendspinState.lastOptions = options && {
+        ...options,
+        onStateChange: (state) => {
+          this.state = state;
+          options.onStateChange?.(state);
+        },
+      };
     }
     connect = mockSendspinConnect;
     get pairingToken() {
@@ -221,8 +238,15 @@ vi.mock("@sendspin/sendspin-js", () => ({
     }
     destroy = mockSendspinDestroy;
     setCorrectionMode = vi.fn();
-    setMuted = mockSendspinSetMuted;
-    setVolume = mockSendspinSetVolume;
+    // Like the SDK, each setter reports the full player state synchronously.
+    setMuted = (muted: boolean) => {
+      mockSendspinSetMuted(muted);
+      sendspinState.lastOptions?.onStateChange?.({ ...this.state, muted });
+    };
+    setVolume = (volume: number) => {
+      mockSendspinSetVolume(volume);
+      sendspinState.lastOptions?.onStateChange?.({ ...this.state, volume });
+    };
     unlock = mockSendspinUnlock;
   },
 }));
@@ -283,6 +307,7 @@ describe("SendspinPlayer MediaSession", () => {
     mockSendspinSetMuted.mockReset();
     mockSendspinSetVolume.mockReset();
     webPlayerOutput.muted = false;
+    sendspinState.restoredMuted = false;
     sendspinState.pairingToken = "SP:0TESTTOKEN";
     sendspinState.lastOptions = null;
     mockSendspinUnlock.mockReset();
@@ -564,6 +589,40 @@ describe("SendspinPlayer MediaSession", () => {
     expect(mockSendspinSetMuted.mock.invocationCallOrder[0]).toBeLessThan(
       mockSendspinConnect.mock.invocationCallOrder[0],
     );
+    expect(webPlayerOutput.muted).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("keeps the mute the player restores on start", async () => {
+    sendspinState.restoredMuted = true;
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+
+    expect(mockSendspinSetMuted).not.toHaveBeenCalledWith(false);
+    expect(webPlayerOutput.muted).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("unmutes when the volume is changed while muted", async () => {
+    mockPrepareSendspinSession.mockResolvedValue(undefined);
+    const wrapper = mount(SendspinPlayer, {
+      props: { playerId: "web-player" },
+    });
+    await flushPromises();
+    webPlayerOutput.muted = true;
+    await nextTick();
+    mockSendspinSetMuted.mockClear();
+
+    webPlayerOutput.volume = 40;
+    webPlayerOutput.muted = false;
+    await nextTick();
+
+    expect(mockSendspinSetVolume).toHaveBeenLastCalledWith(40);
+    expect(mockSendspinSetMuted).toHaveBeenLastCalledWith(false);
+    expect(webPlayerOutput.muted).toBe(false);
     wrapper.unmount();
   });
 
