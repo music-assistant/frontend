@@ -480,11 +480,10 @@ export const showContextMenuForMediaItem = async function (
 
   const menuTargets = await withFullItemDetails(mediaItems);
 
-  const contextMenuItems = await getContextMenuItems(
-    menuTargets,
-    parentItem,
-    options,
-  );
+  const contextMenuItems = [
+    ...(await getContextMenuItems(menuTargets, parentItem, options)),
+    ...getDeclaredContextMenuItems(menuTargets),
+  ];
 
   let menuItems: ContextMenuItem[] = [];
 
@@ -1539,8 +1538,21 @@ export const getContextMenuItems = async function (
       icon: Trash2,
     });
   }
-  contextMenuItems.push(...providerMenuItems(items, false));
   return contextMenuItems;
+};
+
+/**
+ * The menu entries the provider instances add to the menu of a single item,
+ * for the actions that act on no player; they go after the entries of
+ * getContextMenuItems. Read in a computed, they follow the providers and
+ * their manifests.
+ *
+ * @param items - The selection the menu is for.
+ */
+export const getDeclaredContextMenuItems = function (
+  items: MediaItemTypeOrItemMapping[],
+): ContextMenuItem[] {
+  return providerMenuItems(items, false);
 };
 
 /**

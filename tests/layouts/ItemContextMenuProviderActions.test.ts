@@ -3,13 +3,15 @@
  * manifest, and run them through the one command for it.
  */
 import {
-  getContextMenuItems,
+  getDeclaredContextMenuItems,
   getPlaybackContextMenuItems,
+  showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
   type ContextMenuItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import {
+  type MediaItemType,
   MediaType,
   type ProviderMenuAction,
   ProviderType,
@@ -18,6 +20,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { computed, reactive } from "vue";
 import { providerManifest } from "../fixtures/providerManifest";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
@@ -103,7 +106,7 @@ beforeEach(() => {
 
 describe("the menu of a media item", () => {
   it("ends with the entries that act on no player, shown as they are", async () => {
-    const items = await getContextMenuItems([song]);
+    const items = await itemMenu([song]);
 
     const last = items.at(-1)!;
     expect(last.text).toBe("Ask the demo plugin about this");
@@ -117,7 +120,7 @@ describe("the menu of a media item", () => {
       open_url: null,
     });
 
-    await choose(await getContextMenuItems([song]), ASK.label);
+    await choose(await itemMenu([song]), ASK.label);
 
     expect(apiMock.invokeProviderMenuAction).toHaveBeenCalledExactlyOnceWith(
       "demo",
@@ -131,7 +134,7 @@ describe("the menu of a media item", () => {
   });
 
   it("says the action is done when the provider answers nothing", async () => {
-    await choose(await getContextMenuItems([song]), ASK.label);
+    await choose(await itemMenu([song]), ASK.label);
 
     expect(toastMock.success).toHaveBeenCalledWith("Action completed");
   });
@@ -139,16 +142,51 @@ describe("the menu of a media item", () => {
   it("leaves a failure to the api's own message", async () => {
     apiMock.invokeProviderMenuAction.mockRejectedValue(new Error("refused"));
 
-    await choose(await getContextMenuItems([song]), ASK.label);
+    await choose(await itemMenu([song]), ASK.label);
 
     expect(toastMock.success).not.toHaveBeenCalled();
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
   it("offers nothing for a selection of more than one item", async () => {
-    const items = await getContextMenuItems([song, song]);
+    const items = await itemMenu([song, song]);
 
     expect(items.filter((item) => item.text)).toEqual([]);
+  });
+
+  it.each([
+    [
+      "that is not available",
+      track({ provider_mappings: [providerMapping({ available: false })] }),
+    ],
+    ["of MusicBrainz", release],
+  ])("offers nothing for an item %s", (_case, item) => {
+    expect(getDeclaredContextMenuItems([item])).toEqual([]);
+  });
+
+  it("follows the providers when read in a computed", () => {
+    apiMock.providers = reactive({ ...apiMock.providers });
+    const names = computed(() =>
+      getDeclaredContextMenuItems([song]).map((item) => item.addedBy),
+    );
+    expect(names.value).toEqual(["Demo demo"]);
+
+    (apiMock.providers.demo as { name: string }).name = "Kitchen helper";
+    expect(names.value).toEqual(["Kitchen helper"]);
+
+    delete apiMock.providers.demo;
+    expect(names.value).toEqual([]);
+  });
+
+  it("shows a message that equals a translation key as it is", async () => {
+    apiMock.invokeProviderMenuAction.mockResolvedValue({
+      message: "show_info",
+      open_url: null,
+    });
+
+    await choose(await itemMenu([song]), ASK.label);
+
+    expect(toastMock.success).toHaveBeenCalledWith("show_info");
   });
 
   it.each([
@@ -162,7 +200,7 @@ describe("the menu of a media item", () => {
       hasScope.mockImplementation(scopeChecker(scopes));
       apiMock.providerManifests = { demo: manifest([{ ...ASK, scope }]) };
 
-      const items = await getContextMenuItems([song]);
+      const items = await itemMenu([song]);
 
       expect(items.some((item) => item.text === ASK.label)).toBe(offered);
     },
@@ -251,6 +289,12 @@ function manifest(actions: ProviderMenuAction[]) {
     ...providerManifest({ domain: "demo", type: ProviderType.PLUGIN }),
     menu_actions: actions,
   };
+}
+
+/** The menu of a media item, as it opens. */
+async function itemMenu(items: MediaItemType[]) {
+  await showContextMenuForMediaItem(items);
+  return emittedMenus.at(-1)!.items;
 }
 
 async function choose(items: ContextMenuItem[], text: string) {
