@@ -1157,6 +1157,12 @@ describe("MusicAssistantApi error handling", () => {
     expect(api.serverOutdated).toBe(false);
   });
 
+  it("asks a server from before the new player model to update", () => {
+    // the stored player configs the players settings rely on arrived with schema 113
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 112 };
+    expect(api.serverOutdated).toBe(true);
+  });
+
   it("loads the roles the server lists", async () => {
     const roles = [
       {
