@@ -1,8 +1,18 @@
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { showUri, useShows } from "@/composables/ai-radio/useShows";
 import api, { type MusicAssistantApi } from "@/plugins/api";
-import type { AIRadioStation, Scope, Player } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  type AIRadioStation,
+  type MediaItemImage,
+  type Player,
+  type Playlist,
+  type Scope,
+} from "@/plugins/api/interfaces";
+import { Sparkles } from "@lucide/vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
@@ -199,3 +209,54 @@ describe("ShowCard editing rights", () => {
     expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
   });
 });
+
+describe("ShowCard artwork", () => {
+  afterEach(() => {
+    useShows().playlists.value = [];
+  });
+
+  it("shows the AI Radio icon while the show's playlist is unknown", () => {
+    const wrapper = renderCard();
+
+    expect(
+      wrapper.get(".show-card__fallback").findComponent(Sparkles).exists(),
+    ).toBe(true);
+  });
+
+  it("shows the AI Radio icon when the show's playlist has no artwork", () => {
+    useShows().playlists.value = [playlist([])];
+    const wrapper = renderCard();
+
+    expect(
+      wrapper.get(".show-card__fallback").findComponent(Sparkles).exists(),
+    ).toBe(true);
+    expect(wrapper.findComponent(MediaItemThumb).exists()).toBe(false);
+  });
+
+  it("shows the playlist's artwork when it has some", () => {
+    useShows().playlists.value = [
+      playlist([
+        {
+          type: ImageType.THUMB,
+          path: "https://example.com/cover.jpg",
+          provider: "library",
+          remotely_accessible: true,
+        },
+      ]),
+    ];
+    const wrapper = renderCard();
+
+    expect(wrapper.findComponent(MediaItemThumb).exists()).toBe(true);
+    expect(wrapper.find(".show-card__fallback").exists()).toBe(false);
+  });
+});
+
+function playlist(images: MediaItemImage[]): Playlist {
+  return {
+    item_id: show.source_playlist_id,
+    provider: show.source_playlist_provider,
+    name: "Pirate songs",
+    media_type: MediaType.PLAYLIST,
+    metadata: { images },
+  } as unknown as Playlist;
+}

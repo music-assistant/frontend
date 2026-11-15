@@ -301,6 +301,85 @@ describe("PlayerTimeline", () => {
     expect(api.playMedia).not.toHaveBeenCalled();
   });
 
+  // with chapter progress the track spans the playing chapter only
+  it.each([
+    [
+      false,
+      [
+        ["In the first", "00:30 · First", "25%"],
+        ["In the second", "01:30 · Second", "75%"],
+      ],
+    ],
+    [true, [["In the second", "01:30 · Second", "50%"]]],
+  ])(
+    "marks the bookmarks on the track, chapter progress %s",
+    async (chapterProgress, expected) => {
+      api.queues["q1"] = {
+        queue_id: "q1",
+        state: PlaybackState.PAUSED,
+        active: true,
+        current_item: {},
+      };
+      api.queueElapsedTime["q1"] = {
+        elapsed_time: 75,
+        elapsed_time_last_updated: NOW,
+      };
+      store.currentUser = {
+        preferences: { audiobook_chapter_progress: chapterProgress },
+      };
+      store.curQueueItem = {
+        queue_item_id: "qi-1",
+        media_item: {
+          media_type: MediaType.AUDIOBOOK,
+          metadata: {
+            chapters: [
+              { position: 1, name: "First", start: 0, end: 60 },
+              { position: 2, name: "Second", start: 60, end: 120 },
+            ],
+          },
+        },
+      };
+      store.activePlayer = {
+        player_id: "p1",
+        active_source: "q1",
+        playback_state: PlaybackState.PAUSED,
+        current_media: {
+          duration: 120,
+          media_type: MediaType.AUDIOBOOK,
+          queue_item_id: "qi-1",
+        },
+      };
+      api.playerCommandSeek.mockClear();
+
+      mountTimeline({
+        SliderRoot: { template: "<div><slot /></div>" },
+        SliderTrack: { template: "<div><slot /></div>" },
+      });
+      const bookmark = {
+        provider_instance: "audiobookshelf--1",
+        item_id: "book1",
+        stored_by_music_assistant: false,
+      };
+      await wrapper!.setProps({
+        bookmarks: [
+          { ...bookmark, name: "In the first", start: 30 },
+          { ...bookmark, name: "In the second", start: 90 },
+        ],
+      });
+      const markers = wrapper!.findAll('[data-testid="bookmark-tick"]');
+
+      // named with its position and chapter, as its tooltip shows it
+      expect(
+        markers.map((x) => [
+          ...x.attributes("aria-label")!.split(", "),
+          (x.element as HTMLElement).style.left,
+        ]),
+      ).toEqual(expected);
+      await markers[markers.length - 1].trigger("click");
+      expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
+    },
+  );
+
   it("keeps the final chapter-relative position at exact media completion", async () => {
     api.queues["q1"] = {
       queue_id: "q1",
@@ -481,6 +560,82 @@ describe("PlayerTimeline", () => {
     // the timers are released rather than left spinning behind a frozen label
     expect(timerCount()).toEqual({ raf: 0, interval: 0 });
     expect(await elapsedLabelAfter(20)).toBe("00:34");
+  });
+
+  it("shows Live and stops ticking once a radio stream stops", async () => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 300,
+        elapsed_time: 30,
+        elapsed_time_last_updated: NOW,
+      },
+    };
+
+    mountTimeline();
+    expect(await elapsedLabelAfter(4)).toBe("00:34");
+
+    store.activePlayer = {
+      ...store.activePlayer,
+      playback_state: PlaybackState.IDLE,
+    };
+    await nextTick();
+    expect(timerCount()).toEqual({ raf: 0, interval: 0 });
+    expect(elapsedLabel()).toBe("Live");
+  });
+
+  it.each([
+    [
+      "with its position",
+      { elapsed_time: 100, elapsed_time_last_updated: NOW },
+      "07:10",
+    ],
+    ["without its position", {}, ""],
+  ])("shows a radio song's length only %s", (_case, songTiming, total) => {
+    api.queues["q1"] = {
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: true,
+    };
+    // the queue counts from when the station was tuned in
+    api.queueElapsedTime["q1"] = {
+      elapsed_time: 1289,
+      elapsed_time_last_updated: NOW,
+    };
+    store.activePlayer = {
+      player_id: "p1",
+      active_source: "q1",
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 430,
+        ...songTiming,
+      },
+    };
+
+    mountTimeline();
+    expect(wrapper!.find(".time-text-right").text()).toBe(total);
+  });
+
+  it("stops a radio song's position at its end until the next song arrives", async () => {
+    store.activePlayer = {
+      player_id: "p1",
+      playback_state: PlaybackState.PLAYING,
+      current_media: {
+        media_type: MediaType.RADIO,
+        duration: 301,
+        elapsed_time: 290,
+        elapsed_time_last_updated: NOW,
+      },
+    };
+
+    mountTimeline();
+    expect(await elapsedLabelAfter(20)).toBe("05:01");
+
+    await wrapper!.find(".time-text-left").trigger("click");
+    expect(elapsedLabel()).toBe("-00:00");
   });
 
   it("shows no position when no source reports one", async () => {

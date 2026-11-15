@@ -24,6 +24,9 @@
         },
         "visualizer_opacity": {
             "label": "Visualiser opacity"
+        },
+        "volume_slider_mode": {
+            "label": "Volume slider behaviour"
         }
     },
     "sync_now": "Synchronise now",
@@ -80,5 +83,11 @@
     },
     "favorites_menu": "Favourite options",
     "favorites_menu_liked": "Favourite options, liked",
-    "favorites_menu_disliked": "Favourite options, disliked"
+    "favorites_menu_disliked": "Favourite options, disliked",
+    "sort": {
+        "favorite_timestamp": "Date favourited"
+    },
+    "listing_filters": {
+        "favorites_only": "Only favourites"
+    }
 }

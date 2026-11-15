@@ -1,15 +1,18 @@
 <template>
   <span
-    class="explicit-badge"
+    class="explicit-badge inline-flex size-4 items-center justify-center [text-shadow:none]"
     :class="{ 'explicit-badge--overlay': overlay }"
     role="img"
     :title="$t('tooltip.explicit')"
     :aria-label="$t('tooltip.explicit')"
-    >E</span
   >
+    <!-- Crop the SVG padding so both the painted badge and its layout stay 16px. -->
+    <ExplicitIcon class="size-4 shrink-0" viewBox="2 2 20 20" />
+  </span>
 </template>
 
 <script setup lang="ts">
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import { $t } from "@/plugins/i18n";
 
 export interface Props {
@@ -21,20 +24,11 @@ withDefaults(defineProps<Props>(), { overlay: false });
 
 <style scoped>
 .explicit-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  background: rgba(var(--v-theme-on-surface), 0.12);
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  --explicit-icon-square: rgba(var(--v-theme-on-surface), 0.12);
+  --explicit-icon-letter: rgba(var(--v-theme-on-surface), 0.7);
 }
 .explicit-badge--overlay {
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  --explicit-icon-square: rgba(0, 0, 0, 0.55);
+  --explicit-icon-letter: #fff;
 }
 </style>

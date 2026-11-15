@@ -14,15 +14,14 @@
     variant="button"
     @click="cycleRepeatMode"
   >
-    <IconRepeatOff v-if="repeatMode === RepeatMode.OFF" :size="size" />
-    <IconRepeat v-else-if="repeatMode === RepeatMode.ALL" :size="size" />
-    <IconRepeatOnce v-else :size="size" />
+    <RepeatIcon :mode="repeatMode" :size="size" />
   </Icon>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
+import RepeatIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatIcon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import { useExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -31,7 +30,6 @@ import { Player, PlayerQueue, RepeatMode } from "@/plugins/api/interfaces";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { computed, toRef } from "vue";
-import { IconRepeat, IconRepeatOff, IconRepeatOnce } from "@tabler/icons-vue";
 
 // properties
 export interface Props {

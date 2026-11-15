@@ -302,6 +302,35 @@
               />
             </div>
           </section>
+
+          <StatisticsTeaserRow
+            v-else-if="row.kind === 'statistics'"
+            class="ed-section"
+            :class="{ 'ed-dimmed': editMode && row.hidden }"
+            :active="!row.hidden"
+          >
+            <template #edit-controls>
+              <div v-if="editMode" class="ed-edit-controls">
+                <button
+                  class="ed-drag-handle"
+                  :aria-label="$t('queue_reorder')"
+                  @pointerdown.stop.prevent="startItemDrag($event, idx)"
+                  @click.stop
+                >
+                  <GripVertical />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="$t('tooltip.toggle_row')"
+                  @click="toggleRow(row)"
+                >
+                  <Eye v-if="!row.hidden" />
+                  <EyeOff v-else />
+                </Button>
+              </div>
+            </template>
+          </StatisticsTeaserRow>
         </div>
 
         <!-- Floating ghost that follows the pointer while dragging a row -->
@@ -354,6 +383,7 @@ import {
   GENRES_ROW_ID,
   IN_PROGRESS_ROW_ID,
   PLAYERS_ROW_ID,
+  STATISTICS_ROW_ID,
   TOP_PICKS_ROW_ID,
   resolveDiscoverRowsConfig,
   setDiscoverRowHidden,
@@ -394,6 +424,7 @@ import { store } from "@/plugins/store";
 import { Eye, EyeOff, GripVertical, ListFilter, RefreshCw } from "@lucide/vue";
 import {
   computed,
+  defineAsyncComponent,
   nextTick,
   onBeforeUnmount,
   onMounted,
@@ -401,6 +432,11 @@ import {
   watch,
 } from "vue";
 import { useRouter } from "vue-router";
+
+// the chart library loads with the statistics row, not with Discover
+const StatisticsTeaserRow = defineAsyncComponent(
+  () => import("@/components/statistics/StatisticsTeaserRow.vue"),
+);
 
 const props = withDefaults(defineProps<{ editMode?: boolean }>(), {
   editMode: false,
@@ -616,7 +652,8 @@ const refreshTopPicks = async () => {
 };
 
 // --- Unified row list: visibility + ordering via the discover.rows pref ---
-type DiscoverRowKind = "players" | "top_picks" | "recommendation" | "genres";
+type DiscoverRowKind =
+  "players" | "top_picks" | "recommendation" | "genres" | "statistics";
 
 interface DiscoverRow {
   id: string;
@@ -650,6 +687,7 @@ const availableRowIds = computed<string[]>(() => {
   for (const uri of recUris) {
     if (!ids.includes(uri)) ids.push(uri);
   }
+  ids.push(STATISTICS_ROW_ID);
   if (genres.value.length > 0) ids.push(GENRES_ROW_ID);
   return ids;
 });
@@ -681,6 +719,13 @@ const allRows = computed<DiscoverRow[]>(() => {
         id,
         kind: "genres",
         title: $t("browse_by_genre"),
+        hidden: hidden.has(id),
+      });
+    } else if (id === STATISTICS_ROW_ID) {
+      rows.push({
+        id,
+        kind: "statistics",
+        title: $t("statistics"),
         hidden: hidden.has(id),
       });
     } else {

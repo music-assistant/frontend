@@ -498,8 +498,7 @@
     "create_playlist_on": "Izveidot jaunu mūzikas sarakstu {0}",
     "view": {
         "list": "Saraksta skats",
-        "panel": "Attēlu skats",
-        "panel_compact": "Kompaktais attēlu skats"
+        "panel": "Attēlu skats"
     },
     "play_replace": "Atskaņot Tagad (notīrīt rindu)",
     "played": "Atskaņots",

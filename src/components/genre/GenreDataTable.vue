@@ -81,7 +81,6 @@ import { genreContentTypeIcon } from "@/helpers/genre";
 import { toSentenceCase } from "@/helpers/utils";
 import type { Genre } from "@/plugins/api/interfaces";
 import { MediaType } from "@/plugins/api/interfaces";
-import { VIcon } from "vuetify/components";
 import GenreDataTableRowActions from "./GenreDataTableRowActions.vue";
 
 interface FilterOption {
@@ -249,8 +248,7 @@ const columns: ColumnDef<GenreRow>[] = [
           title: genreTaxonomyLabel(row.original.genre),
         },
         [
-          h(VIcon, {
-            icon: genreContentTypeIcon(row.original.genre.content_type),
+          h(genreContentTypeIcon(row.original.genre.content_type), {
             size: 16,
             class: "text-muted-foreground",
             "aria-hidden": "true",

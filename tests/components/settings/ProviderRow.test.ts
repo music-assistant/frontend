@@ -8,6 +8,7 @@ vi.mock("vue-i18n", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-i18n")>()),
   useI18n: () => ({ t: (key: string) => key }),
 }));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 enableAutoUnmount(afterEach);
 
@@ -216,22 +217,83 @@ describe("ProviderRow", () => {
   );
 
   it.each(VARIANTS)(
-    "shows the stage badge when a stage label is set (%s)",
+    "shows a loading source as a spinner by its name (%s)",
     (variant) => {
-      const wrapper = mountRow({ variant, stageLabel: "Beta" });
+      const wrapper = mountRow({
+        variant,
+        statusIcon: "loading",
+        statusLabel: "Loading",
+      });
 
-      expect(wrapper.get('[data-testid="stage-badge"]').text()).toBe("Beta");
+      const icon = wrapper.get('[data-testid="provider-status-icon"]');
+      expect(icon.attributes("aria-label")).toBe("Loading");
+      expect(icon.get("svg").classes()).toContain("animate-spin");
+      expect(wrapper.find('[data-testid="provider-status"]').exists()).toBe(
+        false,
+      );
     },
   );
 
   it.each(VARIANTS)(
-    "hides the stage badge when the stage label is empty (%s)",
+    "shows a disabled source as a still icon by its name (%s)",
     (variant) => {
-      const wrapper = mountRow({ variant, stageLabel: "" });
+      const wrapper = mountRow({
+        variant,
+        statusIcon: "disabled",
+        statusLabel: "Disabled",
+      });
 
-      expect(wrapper.find('[data-testid="stage-badge"]').exists()).toBe(false);
+      const icon = wrapper.get('[data-testid="provider-status-icon"]');
+      expect(icon.attributes("aria-label")).toBe("Disabled");
+      expect(icon.get("svg").classes()).not.toContain("animate-spin");
     },
   );
+
+  it.each(VARIANTS)("shows no status icon by default (%s)", (variant) => {
+    const wrapper = mountRow({ variant });
+
+    expect(wrapper.find('[data-testid="provider-status-icon"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it.each(VARIANTS)(
+    "puts the community icon after the status icon (%s)",
+    (variant) => {
+      const wrapper = mountRow({
+        variant,
+        statusIcon: "disabled",
+        statusLabel: "Disabled",
+        community: true,
+      });
+
+      const testIds = wrapper
+        .findAll('[data-testid$="-icon"], [data-testid="community-marker"]')
+        .map((el) => el.attributes("data-testid"));
+      expect(testIds).toEqual(["provider-status-icon", "community-marker"]);
+    },
+  );
+
+  it.each(VARIANTS)(
+    "marks a community provider with an icon by its name (%s)",
+    (variant) => {
+      const wrapper = mountRow({ variant, community: true });
+
+      expect(
+        wrapper
+          .get('[data-testid="community-marker"]')
+          .attributes("aria-label"),
+      ).toBe("settings.provider_community_maintained");
+    },
+  );
+
+  it.each(VARIANTS)("leaves a core provider unmarked (%s)", (variant) => {
+    const wrapper = mountRow({ variant, community: false });
+
+    expect(wrapper.find('[data-testid="community-marker"]').exists()).toBe(
+      false,
+    );
+  });
 
   it.each(VARIANTS)(
     "shows the reconfigure action and emits reconfigure when in error and reconfigurable (%s)",
@@ -392,20 +454,48 @@ describe("ProviderRow", () => {
     expect(wrapper.text().split("Authentication required")).toHaveLength(2);
   });
 
+  it.each(VARIANTS)(
+    "offers to remove an entry that cannot be opened (%s)",
+    async (variant) => {
+      const wrapper = mountRow({
+        variant,
+        manageable: false,
+        removable: true,
+        isError: true,
+        errorText: "This provider is no longer available.",
+      });
+
+      expect(wrapper.find('[data-testid="provider-open"]').exists()).toBe(
+        false,
+      );
+      expect(wrapper.text()).toContain("This provider is no longer available.");
+      await wrapper.get('[data-testid="provider-remove"]').trigger("click");
+
+      expect(wrapper.emitted("remove")).toHaveLength(1);
+      expect(wrapper.emitted("open")).toBeUndefined();
+    },
+  );
+
+  it.each(VARIANTS)("offers no remove by default (%s)", (variant) => {
+    const wrapper = mountRow({ variant, isError: true });
+
+    expect(wrapper.find('[data-testid="provider-remove"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("adds interactive hover styling to the card root when manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: true });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).toContain("cursor-pointer");
-    expect(root.classes()).toContain("hover:-translate-y-0.5");
+    expect(root.classes()).toContain("card-hover");
   });
 
   it("leaves the card root static when not manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: false });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).not.toContain("cursor-pointer");
-    expect(root.classes()).not.toContain("hover:-translate-y-0.5");
+    expect(root.classes()).not.toContain("card-hover");
   });
 });
 

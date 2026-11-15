@@ -3,7 +3,7 @@
     class="detail-hero"
     :class="{
       'detail-hero--phone': isPhone,
-      'min-h-[calc(100vw+8rem)]': artworkLayout,
+      'min-h-[calc(100vw+8rem)] bg-black': artworkLayout,
     }"
     :style="{
       '--detail-hero-height': `${height}px`,
@@ -17,7 +17,7 @@
         class="detail-hero__backdrop"
         :class="
           artworkLayout
-            ? 'bottom-auto aspect-square bg-top [mask-image:linear-gradient(to_bottom,black_55%,transparent)]'
+            ? 'bottom-auto aspect-square bg-top [mask-image:linear-gradient(to_bottom,black_70%,transparent)]'
             : [
                 { 'detail-hero__backdrop--blurred': blurBackdrop },
                 { 'scale-[1.04] blur-[6px]': softenBackdrop && !blurBackdrop },
@@ -94,7 +94,11 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
-import { ImageType, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
@@ -163,9 +167,13 @@ useIntersectionObserver(
   { root: pageScroller, rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
 );
 
-// a phone shows the item's own artwork across the top, faded into the page
+// a phone shows the item's own artwork across the top, fading into black just
+// above the title in both themes; a collection's images are the covers of its
+// stack, which it shows instead
 const phoneArtwork = computed(() =>
-  isPhone.value ? getImageThumbForItem(props.item, ImageType.THUMB) : undefined,
+  isPhone.value && props.item?.media_type !== MediaType.COLLECTION
+    ? getImageThumbForItem(props.item, ImageType.THUMB)
+    : undefined,
 );
 const artworkLayout = computed(() => !!phoneArtwork.value);
 
@@ -178,6 +186,10 @@ const backdropStyle = computed(() =>
 );
 
 watch(() => props.item, buildMenu, { immediate: true });
+watch(
+  () => props.editableRows,
+  () => buildMenu(props.item),
+);
 
 // pinning or unpinning the item in the sidebar changes its menu entry
 const { getPreference } = useUserPreferences();
@@ -330,8 +342,9 @@ async function buildMenu(item?: MediaItemType) {
   display: none;
 }
 
+/* the bottom margin clears the strip where the hero fades into the page */
 .detail-hero--phone .detail-hero__body {
-  margin: auto 16px 16px;
+  margin: auto 16px 28px;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;

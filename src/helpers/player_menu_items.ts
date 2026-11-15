@@ -11,7 +11,11 @@ import {
   Scope,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { getPlayerDisplayName, isSelectablePlayer } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  getSourceLabel,
+  isSelectablePlayer,
+} from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { resolveExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -278,7 +282,7 @@ export const getPlayerMenuItems = (
       subItems: selectableSources
         .map((s) => {
           return {
-            label: s.name,
+            label: getSourceLabel(player, s),
             labelArgs: [],
             disabled: s.id == player.active_source,
             selected: s.id == player.active_source,

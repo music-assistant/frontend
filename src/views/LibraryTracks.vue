@@ -8,7 +8,9 @@
     :show-favorites-only-filter="true"
     :show-track-number="false"
     :load-paged-data="loadItems"
+    :load-letter-index="loadLetterIndex"
     :sort-listing="ListingType.LIBRARY_TRACKS"
+    library-toolbar
     :show-album="true"
     :update-available="updateAvailable"
     :title="$t('tracks')"
@@ -33,6 +35,7 @@ import AddManualLink from "@/components/AddManualLink.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { onLibrarySyncCompleted } from "@/composables/useLibrarySync";
+import { useListingTotal } from "@/composables/useListingTotal";
 import api from "@/plugins/api";
 import {
   EventMessage,
@@ -51,7 +54,9 @@ defineOptions({
 });
 
 const updateAvailable = ref<boolean>(false);
-const total = ref(store.libraryTracksCount);
+const { total, setTotal, loadTotal } = useListingTotal(
+  store.libraryTracksCount,
+);
 const showAddEditDialog = ref(false);
 const itemsListing = ref<InstanceType<typeof ItemsListing>>();
 
@@ -94,7 +99,9 @@ onMounted(() => {
 const loadItems = async function (params: LoadDataParams) {
   params.favoritesOnly = params.favoritesOnly || undefined;
   updateAvailable.value = false;
-  setTotals(params);
+  // the count only changes with the filters, and those start over from the
+  // first page: the pages after it keep the count they have
+  if (!params.offset) setTotals(params);
   return await api.getLibraryTracks(
     params.favoritesOnly,
     params.search,
@@ -104,20 +111,32 @@ const loadItems = async function (params: LoadDataParams) {
     params.sortDirection,
     params.provider && params.provider.length > 0 ? params.provider : undefined,
     params.genreIds,
+    params.randomSeed,
   );
+};
+
+const loadLetterIndex = function (params: LoadDataParams) {
+  return api.getLibraryLetterIndex("tracks", {
+    favorite: params.favoritesOnly || undefined,
+    search: params.search,
+    sort_field: params.sortField,
+    sort_direction: params.sortDirection,
+    provider: params.provider?.length ? params.provider : undefined,
+    genre: params.genreIds,
+  });
 };
 
 const setTotals = async function (params: LoadDataParams) {
   if (!params.favoritesOnly && !params.provider) {
-    total.value = store.libraryTracksCount;
+    setTotal(store.libraryTracksCount);
     return;
   }
   // When provider filter is active, we can't get accurate count from the count endpoint
   // The total will be determined by the actual results returned
   if (params.provider && params.provider.length > 0) {
-    total.value = undefined;
+    setTotal(undefined);
     return;
   }
-  total.value = await api.getLibraryTracksCount(params.favoritesOnly || false);
+  await loadTotal(api.getLibraryTracksCount(params.favoritesOnly || false));
 };
 </script>

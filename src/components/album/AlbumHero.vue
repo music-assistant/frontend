@@ -26,14 +26,10 @@
             <span v-if="item.version" class="album-hero__version">
               ({{ item.version }})
             </span>
-            <span
+            <ExplicitBadge
               v-if="item.metadata?.explicit"
-              class="album-hero__explicit"
-              role="img"
-              :title="$t('tooltip.explicit')"
-              :aria-label="$t('tooltip.explicit')"
-              >E</span
-            >
+              class="album-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
+            />
           </h1>
 
           <div class="album-hero__meta">
@@ -100,6 +96,7 @@ import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatTotalDuration } from "@/helpers/duration";
@@ -221,19 +218,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   color: rgba(255, 255, 255, 0.7);
 }
 .album-hero__explicit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
   margin-left: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1;
-  text-shadow: none;
   vertical-align: middle;
 }
 

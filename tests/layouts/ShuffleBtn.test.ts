@@ -1,5 +1,6 @@
 import ShuffleBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleBtn.vue";
 import ShuffleIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleIcon.vue";
+import ShuffleOffIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleOffIcon.vue";
 import api from "@/plugins/api";
 import {
   MediaType,
@@ -182,6 +183,7 @@ describe("ShuffleBtn", () => {
       const wrapper = mountButton({ player: live });
 
       expect(wrapper.findComponent(ShuffleIcon).exists()).toBe(false);
+      expect(wrapper.findComponent(ShuffleOffIcon).exists()).toBe(true);
 
       live.source_list = [
         playerSource({

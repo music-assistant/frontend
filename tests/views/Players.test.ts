@@ -1,6 +1,10 @@
 import Players from "@/views/settings/Players.vue";
+import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import type {
+  getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems,
+  removeUnavailablePlayers as removeUnavailable,
+} from "@/helpers/player_settings_actions";
 import {
   PlayerType,
   ProviderType,
@@ -14,31 +18,46 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emitEvent, getPlayerSettingsMenuItems, hasScope, routerPush } =
-  vi.hoisted(() => ({
-    apiMock: {
-      getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
-      getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
-      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
-      playerManifests: {},
-      players: {} as Record<
-        string,
-        {
-          player_id: string;
-          available: boolean;
-          needs_setup: boolean;
-          output_protocols: [];
-        }
-      >,
-      providerManifests: {},
-      providers: {},
-      subscribe_multi: vi.fn(),
-    },
-    emitEvent: vi.fn(),
-    getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
-    hasScope: vi.fn<(scope: Scope) => boolean>(),
-    routerPush: vi.fn(),
-  }));
+const {
+  apiMock,
+  emitEvent,
+  getPlayerSettingsMenuItems,
+  hasScope,
+  preferences,
+  removeUnavailablePlayers,
+  routerPush,
+  setPreference,
+  toolbarMenu,
+} = vi.hoisted(() => ({
+  apiMock: {
+    getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
+    getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
+    playerManifests: {},
+    players: {} as Record<
+      string,
+      {
+        player_id: string;
+        available: boolean;
+        needs_setup: boolean;
+        output_protocols: [];
+      }
+    >,
+    providerManifests: {},
+    providers: {},
+    subscribe_multi: vi.fn(),
+  },
+  emitEvent: vi.fn(),
+  getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
+  // the preferences the page reads, by key
+  preferences: {} as Record<string, unknown>,
+  removeUnavailablePlayers: vi.fn<typeof removeUnavailable>(),
+  routerPush: vi.fn(),
+  setPreference: vi.fn(),
+  // what the page publishes into the menu of the settings toolbar
+  toolbarMenu: { value: [] as ToolBarMenuItem[] },
+}));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -63,7 +82,28 @@ vi.mock("@/helpers/player_config", async (importOriginal) => ({
 // the menu itself is covered where it is built; here it only has to arrive
 vi.mock("@/helpers/player_settings_actions", () => ({
   getPlayerSettingsMenuItems,
+  removeUnavailablePlayers,
 }));
+
+vi.mock("@/composables/useSettingsToolbarMenu", () => ({
+  useSettingsToolbarMenu: () => toolbarMenu,
+}));
+
+vi.mock("@/composables/userPreferences", async () => {
+  const { computed, reactive } =
+    await vi.importActual<typeof import("vue")>("vue");
+  const values = reactive(preferences);
+  return {
+    useUserPreferences: () => ({
+      getPreference: (key: string, defaultValue: unknown) =>
+        computed(() => values[key] ?? defaultValue),
+      setPreference: (key: string, value: unknown) => {
+        setPreference(key, value);
+        values[key] = value;
+      },
+    }),
+  };
+});
 
 vi.mock("@/helpers/utils", () => ({
   openLinkInNewTab: vi.fn(),
@@ -114,6 +154,8 @@ describe("Players", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    for (const key of Object.keys(preferences)) delete preferences[key];
+    toolbarMenu.value = [];
     playerConfig.enabled = true;
     webPlayer.player_id = null;
     apiMock.players = {
@@ -188,6 +230,16 @@ describe("Players", () => {
       "setupFlowDialog",
       expect.anything(),
     );
+    expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
+  });
+
+  it("opens the settings of a player whose provider is not running", async () => {
+    apiMock.players.kitchen.needs_setup = false;
+    apiMock.getProvider.mockReturnValue(undefined);
+    const wrapper = await mountPlayers("list");
+
+    await wrapper.get(".player-row").trigger("click");
+
     expect(routerPush).toHaveBeenCalledWith("/settings/editplayer/kitchen");
   });
 
@@ -274,6 +326,87 @@ describe("Players", () => {
     expect(wrapper.find(".player-row").exists()).toBe(false);
   });
 
+  it("offers to remove the unavailable players in the toolbar menu to who may change player settings", async () => {
+    const offersRemoval = async () => {
+      const wrapper = await mountPlayers("list");
+      const offered = !!toolbarMenuItem(REMOVE_UNAVAILABLE);
+      wrapper.unmount();
+      return offered;
+    };
+
+    expect(await offersRemoval()).toBe(true);
+
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    expect(await offersRemoval()).toBe(false);
+  });
+
+  it("drops the players the server removed from the list", async () => {
+    const wrapper = await mountPlayers("list");
+
+    toolbarMenuItem(REMOVE_UNAVAILABLE)!.action!();
+    expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
+
+    removeUnavailablePlayers.mock.calls[0][0]!(["kitchen"]);
+    await flushPromises();
+    expect(wrapper.find(".player-row").exists()).toBe(false);
+  });
+
+  it("takes its items out of the toolbar menu when it closes", async () => {
+    const wrapper = await mountPlayers("list");
+    expect(toolbarMenu.value).not.toEqual([]);
+
+    wrapper.unmount();
+
+    expect(toolbarMenu.value).toEqual([]);
+  });
+
+  it("shows every player until unavailable players are hidden", async () => {
+    // attic is disabled, so it has no player
+    apiMock.players = {
+      kitchen: unavailablePlayer("kitchen"),
+      office: { ...unavailablePlayer("office"), needs_setup: true },
+      garden: { ...unavailablePlayer("garden"), available: true },
+    };
+    apiMock.getPlayerConfigs.mockResolvedValue(
+      ["kitchen", "attic", "office", "garden"].map((playerId) => ({
+        ...playerConfig,
+        player_id: playerId,
+        name: playerId,
+        enabled: playerId !== "attic",
+      })),
+    );
+    const wrapper = await mountPlayers("list");
+    const listed = () =>
+      wrapper.findAll('[data-testid="player-open"]').map((name) => name.text());
+
+    expect(toolbarMenuItem(HIDE_UNAVAILABLE)!.active).toBe(false);
+    expect(listed()).toHaveLength(4);
+
+    toolbarMenuItem(HIDE_UNAVAILABLE)!.action!();
+    await flushPromises();
+
+    expect(setPreference).toHaveBeenCalledWith(
+      "settings.players.hideUnavailable",
+      true,
+    );
+    expect(toolbarMenuItem(HIDE_UNAVAILABLE)!.active).toBe(true);
+    expect(listed()).toEqual(["attic", "garden", "office"]);
+
+    // the server decides what goes, so the hidden players are not left out
+    toolbarMenuItem(REMOVE_UNAVAILABLE)!.action!();
+    expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
+  });
+
+  it("hides unavailable players when that was chosen before", async () => {
+    preferences["settings.players.hideUnavailable"] = true;
+    apiMock.players = { kitchen: unavailablePlayer("kitchen") };
+
+    const wrapper = await mountPlayers("list");
+
+    expect(wrapper.find(".player-row").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="players-empty"]').exists()).toBe(true);
+  });
+
   it("drops a deleted player from the list", async () => {
     const wrapper = await mountPlayers("list");
     await wrapper.get(".player-row").trigger("contextmenu", { button: 2 });
@@ -284,6 +417,23 @@ describe("Players", () => {
     expect(wrapper.find(".player-row").exists()).toBe(false);
   });
 });
+
+const REMOVE_UNAVAILABLE = "settings.remove_unavailable_players";
+const HIDE_UNAVAILABLE = "settings.hide_unavailable_players";
+
+/** The item with this label in what the page publishes into the toolbar menu. */
+function toolbarMenuItem(label: string): ToolBarMenuItem | undefined {
+  return toolbarMenu.value.find((item) => item.label === label);
+}
+
+function unavailablePlayer(playerId: string) {
+  return {
+    player_id: playerId,
+    available: false,
+    needs_setup: false,
+    output_protocols: [] as [],
+  };
+}
 
 async function mountPlayers(viewMode: "list" | "card") {
   const wrapper = mount(Players, {

@@ -498,8 +498,7 @@
     "create_playlist_on": "Vytvořit nový playlist na {0}",
     "view": {
         "list": "Seznam",
-        "panel": "Náhledy",
-        "panel_compact": "Malé náhledy"
+        "panel": "Náhledy"
     },
     "play_replace": "Přehrát nyní (vymazat frontu)",
     "played": "Přehráno",
