@@ -153,12 +153,12 @@ describe("useProviderCatalog for an admin", () => {
     expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
-  it("reports a failing load", async () => {
+  it("leaves the message of a failing load to the api", async () => {
     apiMock.getProviderConfigs.mockRejectedValue(new Error("refused"));
     const { catalog } = mountCatalog();
     await flushPromises();
 
-    expect(toastMock.error).toHaveBeenCalledWith("Error: refused");
+    expect(toastMock.error).not.toHaveBeenCalled();
     expect(catalog.loaded.value).toBe(false);
     expect(catalog.failed.value).toBe(true);
   });
