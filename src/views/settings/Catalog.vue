@@ -1,41 +1,18 @@
 <template>
-  <div class="flex flex-col gap-6 p-6 max-md:px-3 max-md:py-4">
-    <header class="flex items-center gap-4">
-      <span
-        class="flex size-12 shrink-0 items-center justify-center rounded-(--radius-lg) bg-primary/10 text-primary"
-      >
-        <Blocks class="size-6" aria-hidden="true" />
-      </span>
-      <div class="min-w-0">
-        <h1 class="m-0 text-2xl leading-tight font-semibold">
-          {{ $t("settings.catalog.title") }}
-        </h1>
-        <p class="m-0 mt-1 text-sm text-muted-foreground">
-          {{ $t("settings.catalog.description") }}
-        </p>
-      </div>
-      <!-- only the community catalog has options here, so only an admin gets the menu -->
-      <Button
-        v-if="community.isAdmin"
-        data-testid="catalog-menu"
-        variant="ghost"
-        size="icon-sm"
-        class="ml-auto shrink-0 self-start"
-        aria-haspopup="menu"
-        :aria-label="$t('more_options')"
-        :disabled="!community.settled"
-        @click="openMenu"
-      >
-        <MoreVertical class="size-4" />
-      </Button>
-    </header>
-
-    <CatalogCommunityBanner
-      v-if="community.available && !community.enabled"
-      @enable="community.setEnabled(true)"
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <!-- only the community catalog has options here, so only an admin gets the menu -->
+    <CatalogHeader
+      :installed-count="loaded ? installedCount : null"
+      :update-count="community.updateCount"
+      :installed-open="activeTab === CATALOG_INSTALLED_TAB"
+      :menu-items="community.isAdmin ? getMenuItems : undefined"
+      :menu-disabled="!community.settled"
+      @toggle-installed="toggleInstalled"
     />
+
+    <!-- a state of the page rather than an offer, so it shows on every tab -->
     <CatalogCommunityUnavailable
-      v-else-if="community.status === 'unavailable'"
+      v-if="community.status === 'unavailable'"
       :reason="community.unavailableReason"
     />
 
@@ -44,135 +21,127 @@
       @dismiss="community.dismissNotice"
     />
 
-    <Tabs
-      :model-value="activeTab"
-      class="gap-6"
-      @update:model-value="selectTab"
+    <!-- what is set up decides what may be added, so nothing shows before it is known -->
+    <Empty
+      v-if="!loaded && failed"
+      class="rounded-(--radius-xl) border"
+      data-testid="catalog-load-failed"
     >
-      <!-- the tabs scroll sideways on a phone rather than wrapping -->
-      <div class="-mx-6 overflow-x-auto px-6 max-md:-mx-3 max-md:px-3">
-        <TabsList variant="line" data-testid="catalog-tabs">
-          <TabsTrigger :value="CATALOG_ALL_TAB">
-            {{ $t("settings.catalog.all") }}
-          </TabsTrigger>
-          <TabsTrigger
-            v-for="type in tabTypes"
-            :key="type.type"
-            :value="type.type"
-          >
-            {{ $t(type.label) }}
-          </TabsTrigger>
-          <TabsTrigger :value="CATALOG_INSTALLED_TAB">
-            {{ $t("settings.catalog.installed") }}
-            <span v-if="loaded" class="text-muted-foreground">{{
-              installedCount
-            }}</span>
-            <Badge
-              v-if="community.updateCount"
-              class="h-5 min-w-5 rounded-full px-1.5"
-              :aria-label="
-                $t(
-                  'settings.catalog.community.updates_waiting',
-                  community.updateCount,
-                  { named: { count: community.updateCount } },
-                )
-              "
-              data-testid="catalog-updates-count"
-            >
-              {{ community.updateCount }}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
-      </div>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <CircleAlert />
+        </EmptyMedia>
+        <EmptyTitle>{{ $t("settings.catalog.load_failed") }}</EmptyTitle>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button variant="outline" data-testid="catalog-retry" @click="reload">
+          <RefreshCw class="size-4" aria-hidden="true" />
+          {{ $t("settings.catalog.try_again") }}
+        </Button>
+      </EmptyContent>
+    </Empty>
+    <div
+      v-else-if="!ready"
+      class="flex min-h-24 items-center justify-center"
+      data-testid="catalog-loading"
+    >
+      <Spinner class="size-8" />
+    </div>
 
-      <!-- one panel, for whichever tab is picked -->
-      <TabsContent :value="activeTab" class="flex flex-col gap-6">
-        <!-- what is set up decides what may be added, so nothing shows before it is known -->
-        <Empty
-          v-if="!loaded && failed"
-          class="rounded-(--radius-xl) border"
-          data-testid="catalog-load-failed"
-        >
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <CircleAlert />
-            </EmptyMedia>
-            <EmptyTitle>{{ $t("settings.catalog.load_failed") }}</EmptyTitle>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button
-              variant="outline"
-              data-testid="catalog-retry"
-              @click="reload"
-            >
-              <RefreshCw class="size-4" aria-hidden="true" />
-              {{ $t("settings.catalog.try_again") }}
-            </Button>
-          </EmptyContent>
-        </Empty>
+    <template v-else>
+      <SearchInput
+        v-if="activeTab !== CATALOG_INSTALLED_TAB"
+        v-model="searchQuery"
+        :placeholder="$t('settings.catalog.search')"
+        clearable
+        class="w-full"
+      />
+
+      <!-- the Installed view has no tab of its own: the tabs lead back from it -->
+      <Tabs
+        :model-value="activeTab"
+        class="gap-6"
+        @update:model-value="selectTab"
+      >
+        <!-- the tabs scroll sideways on a phone rather than wrapping -->
         <div
-          v-else-if="!ready"
-          class="flex min-h-24 items-center justify-center"
-          data-testid="catalog-loading"
+          ref="tabStrip"
+          class="relative -mx-6 overflow-x-auto px-6 [scrollbar-width:none] max-md:-mx-3 max-md:px-3"
         >
-          <Spinner class="size-8" />
+          <TabsList variant="line" data-testid="catalog-tabs">
+            <TabsTrigger :value="CATALOG_DISCOVER_TAB">
+              {{ $t("settings.catalog.discover") }}
+            </TabsTrigger>
+            <TabsTrigger
+              v-for="{ type, count } in tabCounts"
+              :key="type.type"
+              :value="type.type"
+            >
+              {{ $t(type.label) }}
+              <span class="text-sm text-muted-foreground">{{ count }}</span>
+            </TabsTrigger>
+          </TabsList>
         </div>
 
-        <template v-else-if="activeTab === CATALOG_INSTALLED_TAB">
-          <CatalogCommunityInstalled
-            v-if="showCommunityInstalled"
-            :providers="community.installed"
-            :removing="community.removing"
-            :is-updating="community.isUpdating"
-            :updating-all="community.updatingAll"
-            @remove="community.remove"
-            @update="community.update"
-            @update-all="community.updateAll"
+        <TabsContent
+          v-if="activeTab !== CATALOG_INSTALLED_TAB"
+          :value="activeTab"
+        >
+          <!-- a search on Discover looks through everything -->
+          <CatalogDiscover
+            v-if="!activeType && !searchQuery.trim()"
+            :entries="entries"
+            :with-community="community.enabled"
+            :offer-community="community.available && !community.enabled"
+            :types="typeCounts"
+            :installing="community.installing"
+            @open="openDetail"
+            @add="addEntry"
+            @enable-community="community.setEnabled(true)"
+            @select-type="selectTab"
           />
-          <CatalogInstalled :groups="installed" />
-        </template>
-
-        <template v-else>
-          <div class="flex flex-wrap items-center gap-2">
-            <SearchInput
-              v-model="searchQuery"
-              :placeholder="$t('search')"
-              clearable
-              class="max-w-md min-w-48 flex-1"
-            />
-            <FacetedFilter
-              v-model="selectedStages"
-              :title="$t('settings.stage.label')"
-              :options="stageOptions"
-            />
-            <RouterLink
-              v-if="activeType"
-              :to="getTypeSettingsRoute(activeType.type)"
-              class="ml-auto flex items-center gap-1 text-sm text-primary no-underline hover:underline"
-              data-testid="catalog-manage-link"
-            >
-              {{ $t(activeType.manageLabel) }}
-              <ChevronRight class="size-4" aria-hidden="true" />
-            </RouterLink>
-          </div>
-
-          <CatalogBrowse
-            :entries="filteredEntries"
-            :rows="rows"
-            :title="listTitle"
+          <CatalogTypeList
+            v-else
+            :key="activeTab"
+            v-model:stages="selectedStages"
+            :entries="listEntries"
+            :query="searchQuery"
+            :title="
+              activeType
+                ? $t(activeType.label)
+                : $t('settings.catalog.search_results')
+            "
+            :type="activeType"
             :installing="community.installing"
             @open="openDetail"
             @add="addEntry"
           />
-        </template>
-      </TabsContent>
-    </Tabs>
+        </TabsContent>
+      </Tabs>
+
+      <div
+        v-if="activeTab === CATALOG_INSTALLED_TAB"
+        class="flex flex-col gap-8"
+      >
+        <CatalogCommunityInstalled
+          v-if="showCommunityInstalled"
+          :providers="community.installed"
+          :removing="community.removing"
+          :is-updating="community.isUpdating"
+          :updating-all="community.updatingAll"
+          @remove="community.remove"
+          @update="community.update"
+          @update-all="community.updateAll"
+        />
+        <CatalogInstalled :groups="installed" />
+      </div>
+    </template>
 
     <i18n-t
       keypath="settings.catalog.missing"
       tag="p"
       scope="global"
-      class="m-0 text-center text-sm text-muted-foreground"
+      class="m-0 pt-4 pb-2 text-center text-sm text-muted-foreground"
       data-testid="catalog-request"
     >
       <template #link>
@@ -206,17 +175,15 @@
 </template>
 
 <script setup lang="ts">
-import FacetedFilter from "@/components/FacetedFilter.vue";
-import CatalogBrowse from "@/components/settings/catalog/CatalogBrowse.vue";
 import CatalogCommunityInstalled from "@/components/settings/catalog/CatalogCommunityInstalled.vue";
-import CatalogCommunityBanner from "@/components/settings/catalog/CatalogCommunityBanner.vue";
 import CatalogCommunityUnavailable from "@/components/settings/catalog/CatalogCommunityUnavailable.vue";
+import CatalogDiscover from "@/components/settings/catalog/CatalogDiscover.vue";
 import CatalogEntryDialog from "@/components/settings/catalog/CatalogEntryDialog.vue";
+import CatalogHeader from "@/components/settings/catalog/CatalogHeader.vue";
 import CatalogInstalled from "@/components/settings/catalog/CatalogInstalled.vue";
+import CatalogTypeList from "@/components/settings/catalog/CatalogTypeList.vue";
 import CommunityInstallNote from "@/components/settings/catalog/CommunityInstallNote.vue";
 import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
-import { Badge } from "@/components/ui/badge";
-import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -225,42 +192,30 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { SearchInput } from "@/components/ui/search-input";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCatalogDetail } from "@/composables/settings/catalog/useCatalogDetail";
 import { useCommunityCatalog } from "@/composables/settings/catalog/useCommunityCatalog";
 import { useProviderCatalog } from "@/composables/settings/catalog/useProviderCatalog";
-import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { getCommunityCatalogMenuItems } from "@/helpers/community_catalog_menu";
 import { startAddProvider } from "@/helpers/provider_add";
 import {
-  ADDABLE_PROVIDER_STAGES,
-  CATALOG_ALL_TAB,
+  CATALOG_DISCOVER_TAB,
   CATALOG_INSTALLED_TAB,
-  CATALOG_TYPES,
   type CatalogEntry,
   type CatalogTab,
+  countCatalogTypes,
   FEATURE_REQUESTS_URL,
   filterCatalogEntries,
-  getCatalogRows,
   getCatalogTab,
   getCatalogTabQuery,
   getCatalogType,
-  getTypeSettingsRoute,
   needsInstall,
 } from "@/helpers/provider_catalog";
-import { getProviderStageTranslationKey } from "@/helpers/provider_config";
-import { eventbus } from "@/plugins/eventbus";
-import { $t } from "@/plugins/i18n";
-import {
-  Blocks,
-  ChevronRight,
-  CircleAlert,
-  MoreVertical,
-  RefreshCw,
-} from "@lucide/vue";
-import { computed, reactive, ref } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { CircleAlert, RefreshCw } from "@lucide/vue";
+import { computed, nextTick, reactive, ref, useTemplateRef, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
@@ -288,87 +243,77 @@ const pendingAdd = ref<{ entry: CatalogEntry; onStart?: () => void } | null>(
 const noteOpen = ref(false);
 
 const searchQuery = ref("");
+// the stage filter belongs to the list of one tab, and starts empty on each
 const selectedStages = ref<string[]>([]);
 
 const { selectedEntry, detailOpen, openDetail, closeDetail } =
   useCatalogDetail(entries);
 
 // a type gets a tab only when there is something of it to add
-const tabTypes = computed(() =>
-  CATALOG_TYPES.filter((type) =>
-    entries.value.some((entry) => entry.manifest.type === type.type),
-  ),
-);
+const typeCounts = computed(() => countCatalogTypes(entries.value));
 
 const activeTab = computed(() =>
   getCatalogTab(
     route.query,
-    tabTypes.value.map((type) => type.type),
+    typeCounts.value.map(({ type }) => type.type),
   ),
 );
 
 const activeType = computed(() => getCatalogType(activeTab.value));
 
+// what each tab lists with the search, and on the active tab its stage filter
+const tabCounts = computed(() =>
+  typeCounts.value.map(({ type }) => ({
+    type,
+    count: filterCatalogEntries(entries.value, {
+      types: [type.type],
+      query: searchQuery.value,
+      stages: type.type === activeTab.value ? selectedStages.value : [],
+    }).length,
+  })),
+);
+
+const listEntries = computed(() =>
+  activeType.value
+    ? entries.value.filter(
+        (entry) => entry.manifest.type === activeType.value!.type,
+      )
+    : entries.value,
+);
+
 const installedCount = computed(() =>
   installed.value.reduce((count, group) => count + group.items.length, 0),
 );
 
-const stageOptions = computed(() =>
-  ADDABLE_PROVIDER_STAGES.map((stage) => ({
-    label: $t(getProviderStageTranslationKey(stage)!),
-    value: stage,
-  })),
-);
+const getMenuItems = () => getCommunityCatalogMenuItems(community);
 
-const typeEntries = computed(() =>
-  filterCatalogEntries(entries.value, {
-    types: activeType.value ? [activeType.value.type] : [],
-  }),
-);
-
-const filteredEntries = computed(() =>
-  filterCatalogEntries(typeEntries.value, {
-    query: searchQuery.value,
-    stages: selectedStages.value,
-  }),
-);
-
-// the rows lead the tab only until a search or a filter narrows it down;
-// what is new in the community catalog only leads All, while it is shown
-const rows = computed(() =>
-  searchQuery.value.trim() || selectedStages.value.length
-    ? []
-    : getCatalogRows(
-        typeEntries.value,
-        !activeType.value && community.enabled,
-        Date.now(),
-      ),
-);
-
-const listTitle = computed(() =>
-  activeType.value
-    ? $t(activeType.value.label)
-    : $t("settings.catalog.everything"),
-);
+watch(activeTab, () => {
+  selectedStages.value = [];
+});
 
 const selectTab = (tab: string | number) => {
   void router.replace({ query: getCatalogTabQuery(tab as CatalogTab) });
 };
 
-const openMenu = (evt: MouseEvent) => {
-  // a click from the keyboard carries no coordinates, so fall back to the
-  // button itself and the menu opens against it rather than in the corner
-  const { x, y } = getEventPosition(evt);
-  const trigger =
-    x || y
-      ? undefined
-      : (evt.currentTarget as HTMLElement | null)?.getBoundingClientRect();
-  eventbus.emit("contextmenu", {
-    items: getCommunityCatalogMenuItems(community),
-    posX: trigger ? trigger.left : x,
-    posY: trigger ? trigger.bottom : y,
-  });
+const toggleInstalled = () => {
+  selectTab(
+    activeTab.value === CATALOG_INSTALLED_TAB
+      ? CATALOG_DISCOVER_TAB
+      : CATALOG_INSTALLED_TAB,
+  );
 };
+
+// on a phone the tabs are wider than the screen: keep the active one in view
+const tabStrip = useTemplateRef<HTMLElement>("tabStrip");
+watch([activeTab, tabStrip], async () => {
+  await nextTick();
+  const strip = tabStrip.value;
+  const active = strip?.querySelector<HTMLElement>("[data-state='active']");
+  if (!strip || !active) return;
+  const left =
+    active.offsetLeft - strip.clientWidth / 2 + active.offsetWidth / 2;
+  strip.scrollTo?.({ left, behavior: "smooth" });
+});
 
 // one from the community catalog is added only after its note is confirmed,
 // shown each time

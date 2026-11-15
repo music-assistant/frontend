@@ -11,7 +11,7 @@
     class="text-muted-foreground flex items-center gap-1.5 text-xs"
     data-testid="provider-maintainers"
   >
-    <Badge v-if="community" variant="secondary">{{
+    <Badge v-if="community" variant="community">{{
       $t("settings.provider_community")
     }}</Badge>
     <span v-if="maintainedBy" class="min-w-0">{{ maintainedBy }}</span>

@@ -33,9 +33,9 @@
       <div
         v-for="entry in entries"
         :key="entry.manifest.domain"
-        class="w-72 shrink-0 snap-start max-sm:w-[85%]"
+        class="w-64 shrink-0 snap-start max-sm:w-[72%]"
       >
-        <CatalogCard
+        <CatalogTile
           :entry="entry"
           :installing="installing.has(entry.manifest.domain)"
           @open="emit('open', entry)"
@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
+import CatalogTile from "@/components/settings/catalog/CatalogTile.vue";
 import { Button } from "@/components/ui/button";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
 import { $t } from "@/plugins/i18n";

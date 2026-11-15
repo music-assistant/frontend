@@ -140,6 +140,14 @@ export const getCommunityLinkUrl = (
 };
 
 /**
+ * An icon the community catalog gives, to show as an image: only a data URI of
+ * an image, so it never loads anything from elsewhere; undefined otherwise.
+ */
+export const getCommunityIconUrl = (
+  icon?: string | null,
+): string | undefined => (icon?.startsWith("data:image/") ? icon : undefined);
+
+/**
  * A date the catalog gives, such as when a version was released, for display in
  * UTC; empty when it is not a date.
  *

@@ -6,6 +6,7 @@ import {
   type CoreConfig,
   EventType,
   type ProviderConfig,
+  ProviderIconVariant,
   type ProviderManifest,
   ProviderSharing,
   ProviderStage,
@@ -41,10 +42,12 @@ const { apiMock, hasScope, routeMock, routerMock, storeMock, toastMock } =
   vi.hoisted(() => ({
     apiMock: {
       providerManifests: {} as Record<string, ProviderManifest>,
+      providerIcons: {} as Record<string, string | null>,
       providers: {} as Record<string, unknown>,
       serverInfo: { value: undefined },
       getProviderConfigs: vi.fn(),
       getProvider: vi.fn(),
+      getProviderIcon: vi.fn(),
       getProviderName: vi.fn(),
       subscribe: vi.fn(),
       getCoreConfig: vi.fn(),
@@ -135,6 +138,11 @@ const MANIFESTS = [
   }),
 ];
 
+// an icon with one clear colour, as the server encodes it
+const SVG_GREEN = `data:image/svg+xml;base64,${btoa(
+  '<svg><circle fill="#1DB954"/><path fill="#fff"/></svg>',
+)}`;
+
 let configs: ProviderConfig[] = [];
 // what the server keeps of the community catalog
 let communityEnabled = false;
@@ -158,6 +166,7 @@ beforeEach(() => {
       MANIFESTS.map((manifest) => [manifest.domain, manifest]),
     ),
   );
+  apiMock.providerIcons = reactive({});
   configs = [
     providerConfig({
       domain: "chromecast",
@@ -210,54 +219,291 @@ afterEach(() => {
 });
 
 describe("Catalog", () => {
-  it("offers a tab per type with something to add, and the installed view", async () => {
+  it("offers Discover and a tab per type with something to add, with its count", async () => {
     await mountCatalog();
 
     expect(tabLabels()).toEqual([
-      "settings.catalog.all",
-      "settings.music_sources",
-      "settings.playerproviders",
-      "settings.catalog.installed2",
+      "settings.catalog.discover",
+      "settings.music_sources2",
+      "settings.playerproviders2",
     ]);
   });
 
-  it("leads with the popular row, then lists everything", async () => {
+  it("counts what is set up on the Installed button, and opens the Installed view with it", async () => {
     await mountCatalog();
 
-    expect(cardNames("[data-testid='catalog-popular']")).toEqual([
-      "Spotify",
-      "Sonos",
-    ]);
-    expect(cardNames("[data-testid='catalog-list']")).toEqual([
-      "Chromecast",
-      "Sonos",
-      "SoundCloud",
-      "Spotify",
-    ]);
+    const button = installedButton();
+    expect(button.textContent?.replace(/\s+/g, "")).toBe(
+      "settings.catalog.installed2",
+    );
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+
+    button.click();
+    expect(routerMock.replace).toHaveBeenCalledWith({
+      query: { view: "installed" },
+    });
   });
 
-  it("drops the popular row while searching", async () => {
+  it("leads Discover back from the Installed view with the same button", async () => {
+    routeMock.query = { view: "installed" };
+    await mountCatalog();
+
+    expect(installedButton().getAttribute("aria-pressed")).toBe("true");
+    expect(
+      document.querySelector("[data-slot='tabs-trigger'][data-state='active']"),
+    ).toBeNull();
+
+    installedButton().click();
+    expect(routerMock.replace).toHaveBeenCalledWith({ query: {} });
+  });
+
+  describe("on Discover", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-11-14T12:00:00"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("leads with the pick of the day, and leaves it out of the popular row", async () => {
+      await mountCatalog();
+
+      // Spotify and Sonos are the popular ones that can be added
+      const pick = topPick()!.getAttribute("data-domain");
+      expect(["spotify", "sonos"]).toContain(pick);
+      expect(cardNames("[data-testid='catalog-popular']")).toEqual([
+        pick === "spotify" ? "Sonos" : "Spotify",
+      ]);
+      expect(document.querySelector("[data-testid='catalog-list']")).toBeNull();
+    });
+
+    it("picks the next one the next day", async () => {
+      const today = await mountCatalog();
+      const first = topPick()!.getAttribute("data-domain");
+      today.unmount();
+
+      vi.setSystemTime(new Date("2026-11-15T12:00:00"));
+      await mountCatalog();
+
+      expect(topPick()!.getAttribute("data-domain")).not.toBe(first);
+    });
+
+    it("switches between the picks with its dots, and adds the one shown", async () => {
+      const emit = vi.spyOn(eventbus, "emit");
+      await mountCatalog();
+      const first = topPick()!.getAttribute("data-domain");
+      const dots = topPick()!.querySelectorAll<HTMLElement>(
+        "[data-testid='catalog-top-pick-dot']",
+      );
+      expect(dots).toHaveLength(2);
+      expect(dots[0].getAttribute("aria-current")).toBe("true");
+
+      dots[1].click();
+      await flushPromises();
+
+      const second = topPick()!.getAttribute("data-domain");
+      expect(second).not.toBe(first);
+      expect(dots[1].getAttribute("aria-current")).toBe("true");
+      topPick()!
+        .querySelector<HTMLElement>("[data-testid='catalog-top-pick-add']")!
+        .click();
+      expect(emit).toHaveBeenCalledWith("setupFlowDialog", {
+        kind: "provider",
+        domain: second,
+      });
+      emit.mockRestore();
+    });
+
+    it("reads out the pick that a dot switches to", async () => {
+      await mountCatalog();
+
+      topPick()!
+        .querySelectorAll<HTMLElement>(
+          "[data-testid='catalog-top-pick-dot']",
+        )[1]
+        .click();
+      await flushPromises();
+
+      const live = topPick()!.querySelector(
+        "[data-testid='catalog-top-pick-live']",
+      )!;
+      expect(live.getAttribute("aria-live")).toBe("polite");
+      const shown =
+        topPick()!.getAttribute("data-domain") === "spotify"
+          ? "Spotify"
+          : "Sonos";
+      expect(live.textContent).toContain(shown);
+      expect(
+        live.querySelector("[data-testid='catalog-top-pick-name']"),
+      ).not.toBeNull();
+    });
+
+    it("moves to the next pick with a swipe to the left", async () => {
+      await mountCatalog();
+      const first = topPick()!.getAttribute("data-domain");
+
+      const touch = (type: string, clientX: number) =>
+        topPick()!.dispatchEvent(
+          Object.assign(new Event(type), {
+            touches: [{ clientX, clientY: 100 }],
+          }),
+        );
+      touch("touchstart", 300);
+      touch("touchmove", 100);
+      touch("touchend", 100);
+      await flushPromises();
+
+      expect(topPick()!.getAttribute("data-domain")).not.toBe(first);
+    });
+
+    it("opens the details of the pick", async () => {
+      await mountCatalog();
+
+      topPick()!
+        .querySelector<HTMLElement>("[data-testid='catalog-top-pick-open']")!
+        .click();
+      await flushPromises();
+
+      expect(
+        document.querySelector("[data-testid='catalog-detail']")?.textContent,
+      ).toContain(
+        topPick()!
+          .querySelector("[data-testid='catalog-top-pick-name']")!
+          .textContent!.trim(),
+      );
+    });
+
+    it("draws the pick in the main colour of its icon", async () => {
+      apiMock.providerManifests.sonos = {
+        ...apiMock.providerManifests.sonos,
+        icon_images: [ProviderIconVariant.DEFAULT],
+      };
+      apiMock.providerManifests.spotify = {
+        ...apiMock.providerManifests.spotify,
+        icon_images: [ProviderIconVariant.DEFAULT],
+      };
+      apiMock.providerIcons["sonos:default"] = SVG_GREEN;
+      apiMock.providerIcons["spotify:default"] = SVG_GREEN;
+      await mountCatalog();
+
+      const art = topPick()!.querySelector<HTMLElement>(
+        "[data-testid='catalog-art']",
+      )!;
+      expect(art.style.getPropertyValue("--catalog-art")).toBe("#1db954");
+      expect(
+        topPick()!
+          .querySelector("[data-testid='catalog-icon-image']")
+          ?.getAttribute("src"),
+      ).toBe(SVG_GREEN);
+    });
+
+    it("has no top pick when every popular one is added", async () => {
+      configs.push(
+        providerConfig({
+          domain: "sonos",
+          type: ProviderType.PLAYER,
+          instance_id: "sonos--a",
+        }),
+      );
+      apiMock.providerManifests.spotify = {
+        ...apiMock.providerManifests.spotify,
+        multi_instance: false,
+      };
+
+      await mountCatalog();
+
+      expect(topPick()).toBeNull();
+      expect(
+        document.querySelector("[data-testid='catalog-popular']"),
+      ).toBeNull();
+    });
+
+    it("opens the tab of a type from Browse everything", async () => {
+      await mountCatalog();
+
+      const tiles = [
+        ...document.querySelectorAll<HTMLElement>(
+          "[data-testid='catalog-browse-type']",
+        ),
+      ];
+      expect(
+        tiles.map((tile) => tile.textContent?.replace(/\s+/g, "")),
+      ).toEqual([
+        "settings.music_sourcessettings.catalog.to_choose_from2",
+        "settings.playerproviderssettings.catalog.to_choose_from2",
+      ]);
+      tiles[1].click();
+
+      expect(routerMock.replace).toHaveBeenCalledWith({
+        query: { types: "player" },
+      });
+    });
+  });
+
+  it("shows the matches of a search on Discover in place of its rows", async () => {
     const wrapper = await mountCatalog();
 
     await wrapper.get("[data-slot='input-group-control']").setValue("sound");
 
     expect(
-      document.querySelector("[data-testid='catalog-popular']"),
+      document.querySelector("[data-testid='catalog-discover']"),
     ).toBeNull();
+    expect(
+      document.querySelector("[data-testid='catalog-list'] h2")?.textContent,
+    ).toBe("settings.catalog.search_results");
     expect(cardNames("[data-testid='catalog-list']")).toEqual(["SoundCloud"]);
   });
 
-  it("drops the popular row while a stage is picked", async () => {
-    const wrapper = await mountCatalog();
+  it("searches only the type of its tab", async () => {
+    const wrapper = await mountList("player");
+
+    // SoundCloud matches as well, but is a music source
+    await wrapper.get("[data-slot='input-group-control']").setValue("so");
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual(["Sonos"]);
+  });
+
+  it("counts on each tab what it lists with the search", async () => {
+    await mountCatalog();
+
+    await search("sound");
+
+    expect(tabLabels()).toEqual([
+      "settings.catalog.discover",
+      "settings.music_sources1",
+      "settings.playerproviders0",
+    ]);
+  });
+
+  it("counts a stage filter on its own tab only", async () => {
+    const wrapper = await mountList();
 
     wrapper
       .findComponent({ name: "FacetedFilter" })
       .vm.$emit("update:modelValue", [ProviderStage.BETA]);
     await flushPromises();
 
-    expect(
-      document.querySelector("[data-testid='catalog-popular']"),
-    ).toBeNull();
+    expect(tabLabels()).toEqual([
+      "settings.catalog.discover",
+      "settings.music_sources1",
+      "settings.playerproviders2",
+    ]);
+  });
+
+  it("filters the list of a type by stage", async () => {
+    const wrapper = await mountList();
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "SoundCloud",
+      "Spotify",
+    ]);
+
+    wrapper
+      .findComponent({ name: "FacetedFilter" })
+      .vm.$emit("update:modelValue", [ProviderStage.BETA]);
+    await flushPromises();
+
     expect(cardNames("[data-testid='catalog-list']")).toEqual(["SoundCloud"]);
   });
 
@@ -291,7 +537,7 @@ describe("Catalog", () => {
 
     await wrapper
       .findAll("[data-slot='tabs-trigger']")
-      .find((tab) => tab.text() === "settings.playerproviders")!
+      .find((tab) => tab.text().startsWith("settings.playerproviders"))!
       .trigger("mousedown", { button: 0 });
 
     expect(routerMock.replace).toHaveBeenCalledWith({
@@ -300,7 +546,7 @@ describe("Catalog", () => {
   });
 
   it("offers a jump instead of Add for a single-instance provider that is set up", async () => {
-    await mountCatalog();
+    await mountList("player");
 
     const card = cardFor("chromecast");
     expect(
@@ -314,7 +560,7 @@ describe("Catalog", () => {
   });
 
   it("keeps Add next to the jump for a provider that allows another instance", async () => {
-    await mountCatalog();
+    await mountList();
 
     const card = cardFor("spotify", "[data-testid='catalog-list']");
     expect(
@@ -326,14 +572,14 @@ describe("Catalog", () => {
   });
 
   it("credits the maintainers or the team on a card", async () => {
-    await mountCatalog();
+    await mountList();
 
     expect(
       cardFor("soundcloud").querySelector("[data-testid='catalog-card-credit']")
         ?.textContent,
     ).toContain("settings.catalog.by_maintainers");
     expect(
-      cardFor("sonos", "[data-testid='catalog-list']").querySelector(
+      cardFor("spotify", "[data-testid='catalog-list']").querySelector(
         "[data-testid='catalog-card-credit']",
       )?.textContent,
     ).toContain("settings.catalog.by_team");
@@ -341,7 +587,7 @@ describe("Catalog", () => {
 
   it("starts the setup flow from the Add on a card", async () => {
     const emit = vi.spyOn(eventbus, "emit");
-    await mountCatalog();
+    await mountList("player");
 
     cardFor("sonos", "[data-testid='catalog-list']")
       .querySelector<HTMLElement>("[data-testid='catalog-card-add']")!
@@ -355,7 +601,7 @@ describe("Catalog", () => {
   });
 
   it("shows the details of a card with help, documentation and Add", async () => {
-    await mountCatalog();
+    await mountList();
 
     await openDetail("spotify");
 
@@ -380,7 +626,7 @@ describe("Catalog", () => {
   });
 
   it("credits the maintainers and contributors in the details", async () => {
-    await mountCatalog();
+    await mountList();
 
     await openDetail("soundcloud");
 
@@ -400,7 +646,7 @@ describe("Catalog", () => {
 
   it("closes the details when Add starts the setup flow", async () => {
     const emit = vi.spyOn(eventbus, "emit");
-    await mountCatalog();
+    await mountList("player");
     await openDetail("sonos");
 
     document
@@ -456,7 +702,7 @@ describe("Catalog", () => {
   });
 
   it("names what the Add and Manage on a card are for", async () => {
-    await mountCatalog();
+    await mountList();
 
     const card = cardFor("spotify", "[data-testid='catalog-list']");
     expect(
@@ -479,7 +725,9 @@ describe("Catalog", () => {
     )!;
     const panel = document.getElementById(tab.getAttribute("aria-controls")!);
     expect(panel?.getAttribute("role")).toBe("tabpanel");
-    expect(panel?.querySelector("[data-testid='catalog-list']")).not.toBeNull();
+    expect(
+      panel?.querySelector("[data-testid='catalog-discover']"),
+    ).not.toBeNull();
   });
 
   it.each<Record<string, string>>([{}, { view: "installed" }])(
@@ -497,7 +745,9 @@ describe("Catalog", () => {
       expect(
         document.querySelector("[data-testid='catalog-installed-empty']"),
       ).toBeNull();
-      expect(tabLabels().at(-1)).toBe("settings.catalog.installed");
+      expect(
+        document.querySelector("[data-testid='catalog-installed-count']"),
+      ).toBeNull();
     },
   );
 
@@ -516,8 +766,13 @@ describe("Catalog", () => {
     expect(
       document.querySelector("[data-testid='catalog-load-failed']"),
     ).toBeNull();
-    expect(cardFor("chromecast")).toBeTruthy();
-    expect(tabLabels().at(-1)).toBe("settings.catalog.installed2");
+    expect(
+      document.querySelector("[data-testid='catalog-discover']"),
+    ).not.toBeNull();
+    expect(
+      document.querySelector("[data-testid='catalog-installed-count']")
+        ?.textContent,
+    ).toBe("2");
   });
 
   it("asks what is missing at the bottom", async () => {
@@ -533,6 +788,176 @@ describe("Catalog", () => {
   });
 });
 
+describe("Catalog lists of a type", () => {
+  // 30 more music sources, 32 in all
+  beforeEach(() => {
+    for (let index = 10; index < 40; index++) {
+      apiMock.providerManifests[`source${index}`] = providerManifest({
+        domain: `source${index}`,
+        name: `Source ${index}`,
+        stage: index < 13 ? ProviderStage.BETA : ProviderStage.STABLE,
+      });
+    }
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shows 24 at a time, with Show more and how many of all are shown", async () => {
+    const wrapper = await mountList();
+
+    expect(cardNames("[data-testid='catalog-list']")).toHaveLength(24);
+    expect(
+      document.querySelector("[data-testid='catalog-list-count']")?.textContent,
+    ).toContain("settings.catalog.shown_of 24 32");
+
+    await wrapper.get("[data-testid='catalog-show-more']").trigger("click");
+
+    expect(cardNames("[data-testid='catalog-list']")).toHaveLength(32);
+    expect(
+      document.querySelector("[data-testid='catalog-show-more']"),
+    ).toBeNull();
+    expect(
+      document.querySelector("[data-testid='catalog-list-count']"),
+    ).toBeNull();
+  });
+
+  it("starts again at 24 after another search", async () => {
+    const wrapper = await mountList();
+    await wrapper.get("[data-testid='catalog-show-more']").trigger("click");
+
+    await search("Source");
+
+    expect(cardNames("[data-testid='catalog-list']")).toHaveLength(24);
+    expect(
+      document.querySelector("[data-testid='catalog-list-count']")?.textContent,
+    ).toContain("settings.catalog.shown_of 24 30");
+  });
+
+  it("counts what a stage filter leaves", async () => {
+    const wrapper = await mountList();
+
+    wrapper
+      .findComponent({ name: "FacetedFilter" })
+      .vm.$emit("update:modelValue", [ProviderStage.BETA]);
+    await flushPromises();
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "SoundCloud",
+      "Source 10",
+      "Source 11",
+      "Source 12",
+    ]);
+    expect(
+      document.querySelector("[data-testid='catalog-show-more']"),
+    ).toBeNull();
+  });
+
+  it("lists compact rows on a phone, each opening its details", async () => {
+    onPhone();
+    await mountList("player");
+
+    expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
+    const rows = [
+      ...document.querySelectorAll("[data-testid='catalog-list-row']"),
+    ];
+    expect(rows.map((row) => row.getAttribute("data-domain"))).toEqual([
+      "chromecast",
+      "sonos",
+    ]);
+    // one set up that allows no other says so instead of offering Add
+    expect(
+      rows[0].querySelector("[data-testid='catalog-card-add']"),
+    ).toBeNull();
+    expect(rows[0].textContent).toContain("settings.catalog.added");
+    expect(rows[1].textContent).toContain("settings.catalog.type.player");
+
+    rows[1]
+      .querySelector<HTMLElement>("[data-testid='catalog-card-open']")!
+      .click();
+    await flushPromises();
+
+    expect(
+      document.querySelector("[data-testid='catalog-detail']")?.textContent,
+    ).toContain("Sonos");
+  });
+
+  it("warns of the stage of an entry on its compact row", async () => {
+    apiMock.providerManifests.source13 = {
+      ...apiMock.providerManifests.source13,
+      stage: ProviderStage.ALPHA,
+    };
+    onPhone();
+    await mountList();
+
+    const row = (domain: string) =>
+      document.querySelector(
+        `[data-testid='catalog-list-row'][data-domain='${domain}']`,
+      )!;
+    expect(row("source13").textContent).toContain(
+      "settings.stage.options.alpha",
+    );
+    expect(row("soundcloud").textContent).toContain(
+      "settings.stage.options.beta",
+    );
+    expect(row("source14").textContent).not.toContain("settings.stage.options");
+  });
+
+  it("scrolls the active tab to the middle of the strip of tabs", async () => {
+    const scrollTo = vi.fn();
+    HTMLElement.prototype.scrollTo = scrollTo;
+    // the strip is 300 wide; the active tab starts at 400 and is 100 wide
+    const isActive = (element: HTMLElement) =>
+      element.getAttribute("data-state") === "active";
+    const offsets = [
+      vi
+        .spyOn(HTMLElement.prototype, "offsetLeft", "get")
+        .mockImplementation(function (this: HTMLElement) {
+          return isActive(this) ? 400 : 0;
+        }),
+      vi
+        .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+        .mockImplementation(function (this: HTMLElement) {
+          return isActive(this) ? 100 : 0;
+        }),
+    ];
+    const clientWidth = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "clientWidth",
+    );
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => 300,
+    });
+    try {
+      await mountList("player");
+
+      expect(scrollTo).toHaveBeenLastCalledWith({
+        left: 300,
+        behavior: "smooth",
+      });
+      expect(
+        (scrollTo.mock.contexts.at(-1) as HTMLElement).querySelector(
+          "[data-testid='catalog-tabs']",
+        ),
+      ).not.toBeNull();
+    } finally {
+      offsets.forEach((spy) => spy.mockRestore());
+      delete (HTMLElement.prototype as Partial<HTMLElement>).scrollTo;
+      if (clientWidth) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          "clientWidth",
+          clientWidth,
+        );
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+      }
+    }
+  });
+});
+
 describe("Catalog for a member", () => {
   beforeEach(() => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
@@ -543,13 +968,16 @@ describe("Catalog for a member", () => {
 
     await mountCatalog();
 
-    // a player tab it cannot use opens everything it may add instead
+    // a player tab it cannot use opens Discover instead
     expect(tabLabels()).toEqual([
-      "settings.catalog.all",
-      "settings.music_sources",
-      "settings.catalog.installed1",
+      "settings.catalog.discover",
+      "settings.music_sources1",
     ]);
-    expect(cardNames("[data-testid='catalog-list']")).toEqual(["Spotify"]);
+    expect(topPick()?.getAttribute("data-domain")).toBe("spotify");
+    expect(
+      document.querySelector("[data-testid='catalog-installed-count']")
+        ?.textContent,
+    ).toBe("1");
   });
 
   describe("with a source shared with it", () => {
@@ -569,7 +997,7 @@ describe("Catalog for a member", () => {
     });
 
     it("does not count it as added or offer to manage it", async () => {
-      await mountCatalog();
+      await mountList();
 
       const card = cardFor("spotify", "[data-testid='catalog-list']");
       expect(
@@ -668,7 +1096,7 @@ describe("Catalog with the community catalog", () => {
       expect(confirmations[0].message).toBe(OWN_RISK);
       expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
       expect(banner()).not.toBeNull();
-      expect(document.querySelector("[data-domain='radio']")).toBeNull();
+      expect(tabLabels()).toContain("settings.music_sources2");
 
       await confirmations[0].onConfirm();
       await flushPromises();
@@ -681,6 +1109,7 @@ describe("Catalog with the community catalog", () => {
       expect(toastMock.success).toHaveBeenCalledWith(
         "settings.catalog.community.enabled_toast",
       );
+      await search("Radio");
       expect(cardNames("[data-testid='catalog-list']")).toContain(
         "Radio Garden",
       );
@@ -697,13 +1126,14 @@ describe("Catalog with the community catalog", () => {
     expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
     expect(banner()).not.toBeNull();
     expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
-    expect(document.querySelector("[data-domain='radio']")).toBeNull();
+    expect(tabLabels()).toContain("settings.music_sources2");
   });
 
   it("switches off from the menu without a confirmation, and hides what it offers", async () => {
     communityEnabled = true;
     community = [RADIO];
     await mountCatalog();
+    await search("Radio");
     expect(cardNames("[data-testid='catalog-list']")).toContain("Radio Garden");
 
     await chooseInMenu("settings.catalog.community.disable");
@@ -737,6 +1167,7 @@ describe("Catalog with the community catalog", () => {
     });
     expect(menuLabels()).toEqual(MENU_WHILE_ON);
     expect(banner()).toBeNull();
+    await search("Radio");
     expect(cardNames("[data-testid='catalog-list']")).toContain("Radio Garden");
     expect(toastMock.success).not.toHaveBeenCalled();
     expect(toastMock.error).not.toHaveBeenCalled();
@@ -783,6 +1214,24 @@ describe("Catalog with the community catalog", () => {
     expect(banner()).not.toBeNull();
   });
 
+  it("offers it on Discover only", async () => {
+    await mountList();
+
+    expect(banner()).toBeNull();
+  });
+
+  it("opens the menu under its button, wherever it was tapped", async () => {
+    await mountCatalog();
+
+    menuButton()!.dispatchEvent(
+      new MouseEvent("click", { clientX: 500, clientY: 400 }),
+    );
+
+    const { posX, posY } = menus.at(-1)!;
+    const rect = menuButton()!.getBoundingClientRect();
+    expect([posX, posY]).toEqual([rect.left, rect.bottom]);
+  });
+
   it("never shows the banner to a user who dismissed it", async () => {
     storeMock.currentUser.preferences = {
       "catalog.communityBannerDismissed": true,
@@ -798,17 +1247,26 @@ describe("Catalog with the community catalog", () => {
     beforeEach(() => {
       communityEnabled = true;
       community = [RADIO];
+      // what it offers is listed on the tab of its type
+      routeMock.query = { types: "music" };
     });
 
     it("shows no banner", async () => {
+      routeMock.query = {};
       await mountCatalog();
 
       expect(banner()).toBeNull();
     });
 
-    it("lists what it offers in All and in its type, searchable, with the badge and maintainer", async () => {
-      const wrapper = await mountCatalog();
+    it("lists what it offers in a search on Discover, with the badge and maintainer", async () => {
+      routeMock.query = {};
+      await mountCatalog();
 
+      await search("world");
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual([
+        "Radio Garden",
+      ]);
       const card = cardFor("radio", "[data-testid='catalog-list']");
       expect(
         card.querySelector("[data-testid='catalog-card-community']"),
@@ -816,16 +1274,9 @@ describe("Catalog with the community catalog", () => {
       expect(
         card.querySelector("[data-testid='catalog-card-credit']")?.textContent,
       ).toContain("settings.catalog.by_maintainers @jane");
-
-      await wrapper.get("[data-slot='input-group-control']").setValue("world");
-      expect(cardNames("[data-testid='catalog-list']")).toEqual([
-        "Radio Garden",
-      ]);
     });
 
     it("lists it in the tab of its type", async () => {
-      routeMock.query = { types: "music" };
-
       await mountCatalog();
 
       expect(cardNames("[data-testid='catalog-list']")).toContain(
@@ -1100,6 +1551,9 @@ describe("Catalog with the community catalog", () => {
 
     it("lists it again when the community catalog changes", async () => {
       await mountCatalog();
+      expect(cardNames("[data-testid='catalog-list']")).toContain(
+        "Radio Garden",
+      );
       const onUpdated = apiMock.subscribe.mock.calls.find(
         ([event]) => event === EventType.COMMUNITY_CATALOG_UPDATED,
       )![1];
@@ -1259,6 +1713,7 @@ describe("Catalog with the community catalog", () => {
     async (_case, offered) => {
       const credits = ["![x](https://tracker.example/p.png) [me](https://x.y)"];
       const manifest = { ...RADIO.manifest, credits };
+      routeMock.query = { types: "music" };
       if (offered) {
         communityEnabled = true;
         community = [{ ...RADIO, manifest }];
@@ -1465,6 +1920,19 @@ describe("Catalog with the community catalog", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it.each<Record<string, string>>([{}, { types: "music" }])(
+    "says it is not available on every tab (%o)",
+    async (query) => {
+      apiMock.getCommunityProviders.mockRejectedValue(new Error("refused"));
+      routeMock.query = query;
+
+      await mountCatalog();
+
+      expect(unavailableNotice()).not.toBeNull();
+      expect(banner()).toBeNull();
+    },
+  );
+
   it("says why it is not available in the server's words when the server gave a reason", async () => {
     apiMock.getCommunityProviders.mockRejectedValue(
       new ApiCommandError("Not available in safe mode.", 1),
@@ -1508,6 +1976,19 @@ describe("Catalog with the community catalog", () => {
     expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
     expect(banner()).toBeNull();
     expect(menuButton()!.disabled).toBe(true);
+  });
+
+  it("finds none of it in a search by a user who is not an admin", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    communityEnabled = true;
+    community = [RADIO];
+    await mountCatalog();
+
+    await search("Radio");
+
+    expect(
+      document.querySelector("[data-testid='catalog-empty']"),
+    ).not.toBeNull();
   });
 
   it.each<Record<string, string>>([{}, { view: "installed" }])(
@@ -1807,7 +2288,7 @@ describe("Catalog with updates from the community catalog", () => {
       },
     ];
     apiMock.updateCommunityProviders.mockResolvedValue(community);
-    await mountCatalog();
+    await mountList();
 
     await openDetail("radio");
 
@@ -1868,7 +2349,7 @@ describe("Catalog with updates from the community catalog", () => {
         released: "soon",
       },
     ];
-    await mountCatalog();
+    await mountList();
 
     await openDetail("radio");
 
@@ -1969,6 +2450,7 @@ describe("Catalog with updates from the community catalog", () => {
 
     expect(document.querySelector("[data-testid='catalog-detail']")).toBeNull();
     expect(routerMock.replace).toHaveBeenCalledWith({ query: {} });
+    await search("Spotify");
     await openDetail("spotify");
     expect(
       document.querySelector("[data-testid='catalog-detail']")?.textContent,
@@ -2018,7 +2500,7 @@ describe("Catalog with updates from the community catalog", () => {
       vi.useRealTimers();
     });
 
-    it("leads All with what is new and what was updated in the last 30 days, newest first, each once", async () => {
+    it("shows on Discover what is new and what was updated in the last 30 days, newest first, each once", async () => {
       await mountCatalog();
 
       expect(cardNames("[data-testid='catalog-community-new']")).toEqual([
@@ -2032,6 +2514,30 @@ describe("Catalog with updates from the community catalog", () => {
         document.querySelector("[data-testid='catalog-community-new'] h2")
           ?.textContent,
       ).toContain("settings.catalog.community.new_title");
+    });
+
+    it("makes what is new the top pick once every popular one is added", async () => {
+      configs.push(
+        providerConfig({
+          domain: "sonos",
+          type: ProviderType.PLAYER,
+          instance_id: "sonos--a",
+        }),
+      );
+      apiMock.providerManifests.spotify = {
+        ...apiMock.providerManifests.spotify,
+        multi_instance: false,
+      };
+
+      await mountCatalog();
+
+      const pick = topPick()!.getAttribute("data-domain")!;
+      expect(["dj", "lyrics", "radio"]).toContain(pick);
+      expect(
+        document.querySelectorAll(
+          `[data-testid='catalog-tile'][data-domain='${pick}']`,
+        ),
+      ).toHaveLength(0);
     });
 
     it("leaves out a row with nothing to show", async () => {
@@ -2195,6 +2701,41 @@ async function mountCatalog() {
   });
   await flushPromises();
   return wrapper;
+}
+
+// a screen as narrow as a phone's
+function onPhone() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === "(max-width: 767px)",
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
+}
+
+// the list of a type, on its tab
+async function mountList(type = "music") {
+  routeMock.query = { types: type };
+  return mountCatalog();
+}
+
+async function search(text: string) {
+  const input = document.querySelector<HTMLInputElement>(
+    "[data-slot='input-group-control']",
+  )!;
+  input.value = text;
+  input.dispatchEvent(new Event("input"));
+  await flushPromises();
+}
+
+function installedButton(): HTMLElement {
+  return document.querySelector<HTMLElement>(
+    "[data-testid='catalog-installed-button']",
+  )!;
+}
+
+function topPick(): Element | null {
+  return document.querySelector("[data-testid='catalog-top-pick']");
 }
 
 async function openDetail(domain: string) {
