@@ -15,6 +15,7 @@ import AlbumDetails from "@/views/AlbumDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
+import { providerMapping } from "../fixtures/providerMapping";
 import { track } from "../fixtures/track";
 
 const {
@@ -588,6 +589,31 @@ describe("AlbumDetails", () => {
 
     expect(mockBackFromMediaDetails).toHaveBeenCalled();
     expect(hero(wrapper).props("item")).toBeUndefined();
+  });
+
+  // the album the lookup found is what gets added to the library, not the
+  // external address the page was opened on
+  it("switches to the library copy of the album it was found as", async () => {
+    const onSpotify = providerMapping({
+      item_id: "sp1",
+      provider_domain: "spotify",
+      provider_instance: "spotify--1",
+    });
+    const sendUpdate = captureAlbumUpdates();
+    mockGetItem.mockResolvedValue(
+      album({
+        item_id: "sp1",
+        provider: "spotify",
+        provider_mappings: [onSpotify],
+      }),
+    );
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
+    const inLibrary = album({ item_id: "42", provider_mappings: [onSpotify] });
+
+    sendUpdate(inLibrary);
+    await flushPromises();
+
+    expect(hero(wrapper).props("item")).toMatchObject({ uri: inLibrary.uri });
   });
 
   // looking an album up can take a while; the user may have moved on by then

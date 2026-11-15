@@ -237,6 +237,34 @@ describe("the context menu of an external album", () => {
     expect(apiMock.playMedia.mock.calls[0][0]).toEqual([inLibrary.uri]);
   });
 
+  it("is left out when the rest of a selection is enqueued", async () => {
+    const mapping = providerMapping({ in_library: true });
+    const inLibrary = album({ item_id: "1", provider_mappings: [mapping] });
+    apiMock.getLibraryItem.mockResolvedValue(inLibrary);
+    apiMock.providers = {
+      [mapping.provider_instance]: { available: true, supported_features: [] },
+    };
+    storeMock.activePlayer = { player_id: "p1", available: true };
+
+    await showContextMenuForMediaItem(
+      [inLibrary, release],
+      undefined,
+      0,
+      0,
+      true,
+      true,
+    );
+    apiMock.providers = {};
+    storeMock.activePlayer = undefined;
+    const add = emittedMenus[0].items
+      .find((entry) => entry.label === "enqueue")
+      ?.subItems?.find((entry) => entry.label === "queue_option.add");
+    expect(add).toBeDefined();
+    add?.action?.();
+
+    expect(apiMock.playMedia.mock.calls[0][0]).toEqual([inLibrary.uri]);
+  });
+
   it("is left out when the rest of a selection goes into a playlist", async () => {
     const mapping = providerMapping({ in_library: true });
     const inLibrary = album({ item_id: "1", provider_mappings: [mapping] });

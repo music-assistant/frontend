@@ -926,12 +926,9 @@ export const getContextMenuItems = async function (
       favoriteState(item) === false;
 
     // the actions run on the library copy while the next menu is built from
-    // the item the caller holds, so its state has to follow (an external item
-    // in the selection was not acted on)
+    // the item the caller holds, so its state has to follow
     const markFavorite = (favorite: boolean | null) => {
-      for (const item of items) {
-        if (!isExternalItem(item)) setFavoriteState(item, favorite);
-      }
+      for (const item of items) setFavoriteState(item, favorite);
     };
 
     if (favoritableItems.length > 0) {
@@ -1639,7 +1636,7 @@ export const getPlaybackContextMenuItems = async function (
   // "Enqueue..." submenu with all enqueue options
   playMenuItems.push({
     label: "enqueue",
-    subItems: buildEnqueueMenuItems(items, defaultEnqueueOption),
+    subItems: buildEnqueueMenuItems(playableItems, defaultEnqueueOption),
     icon: ListMusic,
     labelArgs: [],
   });
