@@ -132,6 +132,7 @@ import {
 } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
+  CatalogRecommendationReason,
   ProviderConfig,
   ProviderManifest,
   ProviderType,
@@ -160,6 +161,7 @@ const emit = defineEmits<{
 
 const route = useRoute();
 const providerConfigs = ref<ProviderConfig[]>([]);
+const popularDomains = ref<string[]>([]);
 const searchQuery = ref("");
 const selectedProviderStages = ref<string[]>([]);
 
@@ -199,6 +201,7 @@ const availableProviders = computed(() =>
         selfServiceOnly: props.selfServiceOnly,
       },
     ).filter((entry) => entry.canAdd),
+    popularDomains.value,
   ),
 );
 
@@ -218,7 +221,10 @@ const filteredProviders = computed(() =>
 );
 
 const loadItems = async function () {
-  providerConfigs.value = await api.getProviderConfigs();
+  [providerConfigs.value, popularDomains.value] = await Promise.all([
+    api.getProviderConfigs(),
+    getPopularDomains(),
+  ]);
 };
 
 const addProvider = function (provider: ProviderManifest) {
@@ -264,4 +270,16 @@ watch(
     }
   },
 );
+
+// the providers the server calls popular, in its order; none when it does not answer
+async function getPopularDomains(): Promise<string[]> {
+  try {
+    const recommendations = await api.getCatalogRecommendations();
+    return recommendations
+      .filter(({ reason }) => reason === CatalogRecommendationReason.POPULAR)
+      .map(({ domain }) => domain);
+  } catch {
+    return [];
+  }
+}
 </script>
