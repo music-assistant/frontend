@@ -206,7 +206,7 @@ export function useCommunityCatalog() {
     const version = provider.latest_version;
     updating.value.add(domain);
     try {
-      providers.value = await api.updateCommunityProviders(domain);
+      setProviders(await api.updateCommunityProviders(domain));
     } catch (err) {
       toast.error(String(err));
       return;
@@ -237,7 +237,7 @@ export function useCommunityCatalog() {
       .map((provider) => [provider.domain, provider.latest_version] as const);
     updatingAll.value = true;
     try {
-      providers.value = await api.updateCommunityProviders();
+      setProviders(await api.updateCommunityProviders());
     } catch (err) {
       toast.error(String(err));
       return;

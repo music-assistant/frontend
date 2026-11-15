@@ -88,8 +88,10 @@ let confirmations: DeleteConfirmationDialogEvent[] = [];
 const onConfirmation = (event: DeleteConfirmationDialogEvent) =>
   confirmations.push(event);
 
+type Catalog = ReturnType<typeof useCommunityCatalog>;
+
 function mountCatalog() {
-  let catalog!: ReturnType<typeof useCommunityCatalog>;
+  let catalog!: Catalog;
   const wrapper = mount(
     defineComponent({
       setup() {
@@ -647,6 +649,35 @@ describe("useCommunityCatalog", () => {
       expect(catalog.installed.value).toEqual([other, wentBack]);
       expect(catalog.updating.value.has("radio")).toBe(false);
     });
+
+    it.each([
+      ["one", (catalog: Catalog) => catalog.update(current)],
+      ["all", (catalog: Catalog) => catalog.updateAll()],
+    ])(
+      "keeps the result of updating %s when a read that started meanwhile comes back later",
+      async (_which, start) => {
+        let finish!: (value: CommunityProvider[]) => void;
+        apiMock.updateCommunityProviders.mockReturnValue(
+          new Promise((resolve) => (finish = resolve)),
+        );
+        const { catalog } = mountCatalog();
+        await flushPromises();
+        let finishRead!: (value: CommunityProvider[]) => void;
+        apiMock.getCommunityProviders.mockReturnValue(
+          new Promise((resolve) => (finishRead = resolve)),
+        );
+
+        const result = start(catalog);
+        // read while the new version was still live
+        const read = apiMock.subscribe.mock.calls[0][1]();
+        finish([wentBack, other]);
+        await result;
+        finishRead([updated, other]);
+        await read;
+
+        expect(catalog.installed.value).toEqual([other, wentBack]);
+      },
+    );
 
     it("reports the server's error and keeps the list", async () => {
       apiMock.updateCommunityProviders.mockRejectedValue({
