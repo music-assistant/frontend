@@ -41,6 +41,9 @@ export function useCommunityCatalog() {
   const refreshing = ref(false);
   const installing = ref(new Set<string>());
   const removing = ref(new Set<string>());
+  // bumped by every read that starts and every list a command brings back, so a
+  // read only applies its answer when nothing newer came in meanwhile
+  let latest = 0;
 
   // whether the page has what it needs from the community catalog, either way
   const settled = computed(() => status.value !== "loading");
@@ -54,11 +57,13 @@ export function useCommunityCatalog() {
 
   const load = async function () {
     if (!isAdmin) return;
+    const own = ++latest;
     try {
       const [config, list] = await Promise.all([
         api.getCoreConfig(COMMUNITY_CATALOG_DOMAIN),
         api.getCommunityProviders(),
       ]);
+      if (own !== latest) return;
       switchEntry.value = config.values[COMMUNITY_CATALOG_ENABLED_KEY];
       providers.value = list;
       status.value = "ready";
@@ -158,7 +163,7 @@ export function useCommunityCatalog() {
   const refresh = async function () {
     refreshing.value = true;
     try {
-      providers.value = await api.refreshCommunityProviders();
+      setProviders(await api.refreshCommunityProviders());
       toast.success($t("settings.catalog.community.refreshed"));
     } catch (err) {
       toast.error(String(err));
@@ -223,9 +228,16 @@ export function useCommunityCatalog() {
   }
 
   function replaceProvider(provider: CommunityProvider) {
-    providers.value = providers.value.map((item) =>
-      item.domain === provider.domain ? provider : item,
+    setProviders(
+      providers.value.map((item) =>
+        item.domain === provider.domain ? provider : item,
+      ),
     );
+  }
+
+  function setProviders(list: CommunityProvider[]) {
+    providers.value = list;
+    latest++;
   }
 
   return {
