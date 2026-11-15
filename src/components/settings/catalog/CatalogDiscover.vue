@@ -58,6 +58,8 @@ interface Props {
   entries: CatalogEntry[];
   // what the server suggests, as it sent it
   recommendations: CatalogRecommendation[];
+  // whether the community catalog is enabled for the user, to show what is new in it
+  withCommunity: boolean;
   // whether to offer to enable the community catalog
   offerCommunity: boolean;
   types: CatalogTypeCount[];
@@ -88,7 +90,7 @@ const suggestions = computed(() =>
 const picks = computed(() => getTopPicks(suggestions.value, Date.now()));
 
 const rows = computed(() =>
-  getSuggestionRows(suggestions.value, picks.value[0]),
+  getSuggestionRows(suggestions.value, props.withCommunity, picks.value[0]),
 );
 
 // the release line of the server, which names what is new in it

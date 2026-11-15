@@ -55,7 +55,7 @@ interface RowDefinition {
   key: string;
   title: string;
   reason: CatalogRecommendationReason;
-  // for new: whether the row holds what is new in the community catalog
+  // whether the row holds only entries of the community catalog, or none of them
   community?: boolean;
 }
 
@@ -91,6 +91,7 @@ const ROWS: readonly RowDefinition[] = [
     key: "community-updated",
     title: "settings.catalog.community.updated_title",
     reason: CatalogRecommendationReason.UPDATED,
+    community: true,
   },
 ];
 
@@ -156,32 +157,38 @@ export const getTopPicks = (
 
 /**
  * The rows of the Discover tab, in their order, each with at most
- * CATALOG_ROW_SIZE suggestions and only when it has any.
+ * CATALOG_ROW_SIZE suggestions and only when it has any. The rows of the
+ * community catalog only come while it is enabled for the user.
  *
  * @param suggestions - The suggestions, in the server's order.
+ * @param withCommunity - Whether the community catalog is enabled for the user.
  * @param pick - The top pick shown above the rows, left out of the first row it is in.
  */
 export const getSuggestionRows = (
   suggestions: readonly CatalogSuggestion[],
+  withCommunity: boolean,
   pick?: CatalogSuggestion,
 ): CatalogRow[] => {
   let pickShown = !pick;
-  return ROWS.map(({ key, title, reason, community }) => {
-    let inRow = suggestions.filter(
-      (suggestion) =>
-        suggestion.reason === reason &&
-        (community === undefined ||
-          isFromCommunity(suggestion.entry) === community),
-    );
-    if (
-      !pickShown &&
-      inRow.some((suggestion) => isSameEntry(suggestion, pick!))
-    ) {
-      inRow = inRow.filter((suggestion) => !isSameEntry(suggestion, pick!));
-      pickShown = true;
-    }
-    return { key, title, suggestions: inRow.slice(0, CATALOG_ROW_SIZE) };
-  }).filter((row) => row.suggestions.length);
+  const shown = withCommunity ? ROWS : ROWS.filter((row) => !row.community);
+  return shown
+    .map(({ key, title, reason, community }) => {
+      let inRow = suggestions.filter(
+        (suggestion) =>
+          suggestion.reason === reason &&
+          (community === undefined ||
+            isFromCommunity(suggestion.entry) === community),
+      );
+      if (
+        !pickShown &&
+        inRow.some((suggestion) => isSameEntry(suggestion, pick!))
+      ) {
+        inRow = inRow.filter((suggestion) => !isSameEntry(suggestion, pick!));
+        pickShown = true;
+      }
+      return { key, title, suggestions: inRow.slice(0, CATALOG_ROW_SIZE) };
+    })
+    .filter((row) => row.suggestions.length);
 };
 
 /** Whether a suggestion is about the user's own setup, so the user may let it go. */

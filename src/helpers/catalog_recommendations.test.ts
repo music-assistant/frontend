@@ -151,14 +151,17 @@ describe("getTopPicks", () => {
 
 describe("getSuggestionRows", () => {
   it("shows a row per reason in their order, built-in news apart from the community's", () => {
-    const rows = getSuggestionRows([
-      suggestion("radio", NEW, true),
-      suggestion("dj", UPDATED, true),
-      suggestion("tidal", POPULAR),
-      suggestion("soundcloud", NEW),
-      suggestion("lastfm", COMPLEMENTS),
-      suggestion("bose", DISCOVERED),
-    ]);
+    const rows = getSuggestionRows(
+      [
+        suggestion("radio", NEW, true),
+        suggestion("dj", UPDATED, true),
+        suggestion("tidal", POPULAR),
+        suggestion("soundcloud", NEW),
+        suggestion("lastfm", COMPLEMENTS),
+        suggestion("bose", DISCOVERED),
+      ],
+      true,
+    );
 
     expect(
       rows.map((row) => [row.key, row.title, domains(row.suggestions)]),
@@ -172,12 +175,36 @@ describe("getSuggestionRows", () => {
     ]);
   });
 
+  it("leaves the community catalog out while it is not enabled for the user", () => {
+    const rows = getSuggestionRows(
+      [
+        suggestion("radio", NEW, true),
+        suggestion("dj", UPDATED, true),
+        suggestion("soundcloud", NEW),
+        // an installed one may well be on the network
+        suggestion("dj", DISCOVERED, true),
+      ],
+      false,
+    );
+
+    expect(rows.map((row) => [row.key, domains(row.suggestions)])).toEqual([
+      ["discovered", ["dj"]],
+      ["new", ["soundcloud"]],
+    ]);
+  });
+
+  it("keeps whatever is updated out of the rows unless it is of the community catalog", () => {
+    const rows = getSuggestionRows([suggestion("tidal", UPDATED)], true);
+
+    expect(rows).toEqual([]);
+  });
+
   it("shows at most CATALOG_ROW_SIZE in a row", () => {
     const many = Array.from({ length: CATALOG_ROW_SIZE + 3 }, (_, index) =>
       suggestion(`source${index}`, POPULAR),
     );
 
-    expect(getSuggestionRows(many)[0].suggestions).toHaveLength(
+    expect(getSuggestionRows(many, true)[0].suggestions).toHaveLength(
       CATALOG_ROW_SIZE,
     );
   });
@@ -186,6 +213,7 @@ describe("getSuggestionRows", () => {
     const sonos = suggestion("sonos", DISCOVERED);
     const rows = getSuggestionRows(
       [sonos, suggestion("bose", DISCOVERED), suggestion("sonos", POPULAR)],
+      true,
       sonos,
     );
 
@@ -199,7 +227,7 @@ describe("getSuggestionRows", () => {
     const sonos = suggestion("sonos", DISCOVERED);
 
     expect(
-      getSuggestionRows([sonos, suggestion("tidal", POPULAR)], sonos).map(
+      getSuggestionRows([sonos, suggestion("tidal", POPULAR)], true, sonos).map(
         (row) => row.key,
       ),
     ).toEqual(["popular"]);

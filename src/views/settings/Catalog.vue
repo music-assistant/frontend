@@ -92,6 +92,7 @@
             v-if="!activeType && !searchQuery.trim()"
             :entries="entries"
             :recommendations="recommendations"
+            :with-community="community.enabled"
             :offer-community="community.available && !community.enabled"
             :types="typeCounts"
             :installing="community.installing"

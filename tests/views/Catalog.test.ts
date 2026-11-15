@@ -2894,6 +2894,65 @@ describe("Catalog with updates from the community catalog", () => {
       ]);
     });
 
+    describe("of an installed community entry", () => {
+      // installed, so its manifest is known; a user who is not an admin may add one too
+      const INSTALLED_RADIO = providerManifest({
+        domain: "radio",
+        name: "Radio Garden",
+        tier: ProviderTier.COMMUNITY,
+        multi_instance: true,
+      });
+
+      beforeEach(() => {
+        apiMock.providerManifests.radio = INSTALLED_RADIO;
+        community = [
+          communityProvider("radio", {
+            state: CommunityProviderState.INSTALLED,
+            installed_version: "1.2.0",
+            manifest: INSTALLED_RADIO,
+          }),
+        ];
+        recommendations = [
+          suggest("spotify", CatalogRecommendationReason.NEW),
+          suggest("radio", CatalogRecommendationReason.NEW),
+          suggest("radio", CatalogRecommendationReason.UPDATED),
+        ];
+      });
+
+      it.each([
+        ["a user who is not an admin", "user", true],
+        ["an admin with the community catalog disabled", "admin", false],
+      ] as const)(
+        "shows %s no community row, and keeps it out of what is new in the version",
+        async (_who, role, enabled) => {
+          hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES[role]));
+          communityEnabled = enabled;
+
+          await mountCatalog();
+
+          expect(rowKeys()).toEqual(["new"]);
+          expect(cardNames("[data-testid='catalog-new']")).toEqual(["Spotify"]);
+        },
+      );
+
+      it("shows its rows to an admin with the community catalog enabled", async () => {
+        await mountCatalog();
+
+        expect(rowKeys()).toEqual([
+          "new",
+          "community-new",
+          "community-updated",
+        ]);
+        expect(cardNames("[data-testid='catalog-new']")).toEqual(["Spotify"]);
+        expect(cardNames("[data-testid='catalog-community-new']")).toEqual([
+          "Radio Garden",
+        ]);
+        expect(cardNames("[data-testid='catalog-community-updated']")).toEqual([
+          "Radio Garden",
+        ]);
+      });
+    });
+
     it("shows no rows on the tab of a type, or while searching", async () => {
       routeMock.query = { types: "music" };
       const wrapper = await mountCatalog();
