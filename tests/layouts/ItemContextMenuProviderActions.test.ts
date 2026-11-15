@@ -79,6 +79,11 @@ const SEND: ProviderMenuAction = {
 
 // a track of the test provider, which is loaded
 const song = track({ provider_mappings: [providerMapping()] });
+// a MusicBrainz entry, which has nothing to play
+const release = track({
+  provider: "musicbrainz",
+  provider_mappings: [providerMapping()],
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -200,6 +205,14 @@ describe("the ways to play a media item", () => {
     const withoutPlayer = emittedMenus[1].items;
     expect(withoutPlayer.at(-1)!.disabled).toBe(true);
     expect(withoutPlayer.at(-2)!.disabled).toBe(true);
+  });
+
+  it("are left out for a selection of two, of which one can be played", async () => {
+    const items = await getPlaybackContextMenuItems([song, release]);
+    expect(items.filter((item) => item.text)).toEqual([]);
+
+    await showPlayMenuForMediaItem([song, release]);
+    expect(emittedMenus[0].items.filter((item) => item.text)).toEqual([]);
   });
 
   it("offer the entry once per instance, each named under it", async () => {

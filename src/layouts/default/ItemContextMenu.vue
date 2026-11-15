@@ -596,7 +596,7 @@ export const showPlayMenuForMediaItem = async function (
     });
   }
   playMenuItems.push(
-    ...providerMenuItems(playableItems, true, !store.activePlayer),
+    ...providerMenuItems(mediaItems, true, !store.activePlayer),
   );
 
   if (playMenuItems.length == 0) playMenuItems = [];
@@ -1653,7 +1653,7 @@ export const getPlaybackContextMenuItems = async function (
     icon: ListMusic,
     labelArgs: [],
   });
-  playMenuItems.push(...providerMenuItems(playableItems, true));
+  playMenuItems.push(...providerMenuItems(items, true));
   // Multi-select mark as played/unplayed for podcast episodes
   if (
     authManager.hasScope(Scope.LIBRARY_WRITE) &&
@@ -1741,9 +1741,9 @@ export const getPlaybackContextMenuItems = async function (
 };
 
 /**
- * The menu entries the provider instances declare for a single item: those that
- * act on a player, which get the player chosen when an entry is picked, or the
- * others.
+ * The menu entries the provider instances declare for a selection of one item:
+ * those that act on a player, which get the player chosen when an entry is
+ * picked, or the others. A selection of several items gets none.
  */
 const providerMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
