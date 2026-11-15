@@ -42,10 +42,13 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
 vi.mock("@/plugins/api", () => ({ api: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
-// a translation shows its key followed by the values it names
+// a translation shows its key followed by the values it names, or its count
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string, named?: Record<string, unknown>) =>
-    [key, ...Object.values(named ?? {})].join(" "),
+  $t: (key: string, named?: Record<string, unknown> | number) =>
+    [
+      key,
+      ...(typeof named === "number" ? [named] : Object.values(named ?? {})),
+    ].join(" "),
 }));
 
 const OWN_RISK = "They run as part of your server, at your own risk.";
@@ -403,7 +406,7 @@ describe("useCommunityCatalog", () => {
   });
 
   describe("refreshing", () => {
-    it("fetches the list now and reports it", async () => {
+    it("fetches the list now and says when no update waits", async () => {
       const { catalog } = mountCatalog();
       await flushPromises();
       apiMock.refreshCommunityProviders.mockResolvedValue([]);
@@ -412,9 +415,35 @@ describe("useCommunityCatalog", () => {
 
       expect(catalog.listed.value).toEqual([]);
       expect(toastMock.success).toHaveBeenCalledWith(
-        "settings.catalog.community.refreshed",
+        "settings.catalog.community.no_updates",
       );
       expect(catalog.refreshing.value).toBe(false);
+    });
+
+    it("says how many updates the list it fetched has on offer", async () => {
+      const { catalog } = mountCatalog();
+      await flushPromises();
+      apiMock.refreshCommunityProviders.mockResolvedValue([
+        communityProvider("radio", {
+          state: CommunityProviderState.UPDATE_AVAILABLE,
+          installed_version: "1.1.0",
+        }),
+        communityProvider("fm", {
+          state: CommunityProviderState.UPDATE_AVAILABLE,
+          installed_version: "0.1.0",
+        }),
+        communityProvider("jazz", {
+          state: CommunityProviderState.INSTALLED,
+          installed_version: "1.2.0",
+        }),
+        communityProvider("news"),
+      ]);
+
+      await catalog.refresh();
+
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.updates_waiting 2",
+      );
     });
 
     it("reports a failed refresh", async () => {

@@ -1388,7 +1388,7 @@ describe("Catalog with the community catalog", () => {
 
       expect(apiMock.refreshCommunityProviders).toHaveBeenCalled();
       expect(toastMock.success).toHaveBeenCalledWith(
-        "settings.catalog.community.refreshed",
+        "settings.catalog.community.no_updates",
       );
       expect(
         installedRows().map((row) => row.getAttribute("data-domain")),

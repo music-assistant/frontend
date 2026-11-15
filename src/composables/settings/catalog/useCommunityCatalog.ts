@@ -295,12 +295,19 @@ export function useCommunityCatalog() {
     replaceProvider({ ...provider, notice: null });
   };
 
-  /** Fetch the community catalog from the project now. */
+  /** Fetch the community catalog now, and say how many updates wait. */
   const refresh = async function () {
     refreshing.value = true;
     try {
       providers.value = await api.refreshCommunityProviders();
-      toast.success($t("settings.catalog.community.refreshed"));
+      const count = updateCount.value;
+      toast.success(
+        count
+          ? $t("settings.catalog.community.updates_waiting", count, {
+              named: { count },
+            })
+          : $t("settings.catalog.community.no_updates"),
+      );
     } catch (err) {
       toast.error(String(err));
     } finally {
