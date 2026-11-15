@@ -15,8 +15,10 @@ import { providerServiceName } from "@/plugins/api/helpers";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 
-// "library" = in-library items, "all" = every provider at once, else a provider instance id
-export type RowSource = "library" | "all" | (string & {});
+// "library" = in-library items, "all" = every provider at once, "auto" = the
+// library while it holds items for the row, else the first provider offered;
+// else a provider instance id
+export type RowSource = "library" | "all" | "auto" | (string & {});
 
 export interface RowDefinition<Id extends string> {
   id: Id;
@@ -68,14 +70,27 @@ export interface RowRegistry<Id extends string, Item> {
   reset(): Promise<void>;
   /** The user's saved source for a row, if any. */
   getSource(id: Id): RowSource | undefined;
+  /** Saves the user's source for a row; undefined or "auto" clears it, so the row follows its default. */
   setSource(id: Id, source: RowSource | undefined): Promise<void>;
   /** The sources offered in the picker for a row of this item; [] unless the row supportsSource. */
   sources(id: Id, item: Item): RowSource[];
   /**
-   * The source that actually feeds a row for this item: the saved one while it
-   * is still among the candidates, otherwise the default.
+   * The source chosen for a row of this item: the saved one while it is still
+   * among the candidates, otherwise the default. Can be "auto", which
+   * resolveSource turns into the source that feeds the row.
    */
   effectiveSource(id: Id, item: Item): RowSource;
+  /**
+   * The source a row is fed from: the effective one, with "auto" worked out
+   * from `libraryHasItems` (whether the library holds items for the row) to the
+   * library when it does, else the first provider offered. Undefined while an
+   * automatic row's `libraryHasItems` is unknown.
+   */
+  resolveSource(
+    id: Id,
+    item: Item,
+    libraryHasItems?: boolean,
+  ): RowSource | undefined;
 }
 
 /**
@@ -111,6 +126,17 @@ export function createRowRegistry<Id extends string, Item>(
   const getSource = function (id: Id): RowSource | undefined {
     const source = savedSources()[id];
     return typeof source === "string" ? source : undefined;
+  };
+
+  const effectiveSource = function (id: Id, item: Item): RowSource {
+    const candidates = sourceCandidates(id, item);
+    const saved = getSource(id);
+    if (saved && candidates.includes(saved)) return saved;
+    // a streaming service is offered once, through one of its accounts
+    const sameService =
+      saved && candidates.find((c) => isSameStreamingService(c, saved));
+    if (sameService) return sameService;
+    return defaultSource(id, item, candidates);
   };
 
   return {
@@ -157,7 +183,7 @@ export function createRowRegistry<Id extends string, Item>(
     async setSource(id, source) {
       if (!sourcesPreferenceKey) return;
       const sources = { ...savedSources() };
-      if (source) {
+      if (source && source !== "auto") {
         sources[id] = source;
       } else {
         delete sources[id];
@@ -168,15 +194,13 @@ export function createRowRegistry<Id extends string, Item>(
       if (!byId[id].supportsSource) return [];
       return sourceCandidates(id, item);
     },
-    effectiveSource(id, item) {
-      const candidates = sourceCandidates(id, item);
-      const saved = getSource(id);
-      if (saved && candidates.includes(saved)) return saved;
-      // a streaming service is offered once, through one of its accounts
-      const sameService =
-        saved && candidates.find((c) => isSameStreamingService(c, saved));
-      if (sameService) return sameService;
-      return defaultSource(id, item, candidates);
+    effectiveSource,
+    resolveSource(id, item, libraryHasItems) {
+      const source = effectiveSource(id, item);
+      if (source !== "auto") return source;
+      if (libraryHasItems === undefined) return undefined;
+      if (libraryHasItems) return "library";
+      return sourceCandidates(id, item).find(isProviderSource) ?? "library";
     },
   };
 }
@@ -206,12 +230,14 @@ export function rowSourceOptions<Id extends string, Item>(
 export function rowSourceLabel(source: RowSource): string {
   if (source === "library") return $t("source_library");
   if (source === "all") return $t("source_all");
+  if (source === "auto") return $t("source_auto");
   const provider = api.providers[source];
   return provider ? providerServiceName(provider) : source;
 }
 
 /**
- * A row's source as a reader-facing badge: "In your library", "All sources", or
+ * A row's source as a reader-facing badge: "In your library", "All sources",
+ * "Automatic" (while an automatic row is still being worked out), or
  * "On <Provider>", with the provider's domain for its icon. Undefined when the
  * source is unknown.
  */
@@ -221,6 +247,7 @@ export function rowSourceDisplay(
   if (!source) return undefined;
   if (source === "library") return { label: $t("in_library") };
   if (source === "all") return { label: $t("source_all") };
+  if (source === "auto") return { label: $t("source_auto") };
   const provider = api.getProvider(source);
   return {
     label: $t("on_provider", [
@@ -228,6 +255,11 @@ export function rowSourceDisplay(
     ]),
     domain: provider?.domain,
   };
+}
+
+/** Whether a source is a single provider rather than the library, every provider or "auto". */
+function isProviderSource(source: RowSource): boolean {
+  return source !== "library" && source !== "all" && source !== "auto";
 }
 
 /** Whether two sources are accounts of the same streaming service. */

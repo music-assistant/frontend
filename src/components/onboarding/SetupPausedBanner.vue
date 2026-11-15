@@ -39,6 +39,6 @@ import { $t } from "@/plugins/i18n";
 import { CirclePause, X } from "@lucide/vue";
 
 // a paused setup stays offered on every page until it is resumed or dismissed;
-// dismissed, it is still picked up again from the settings
+// dismissed, the wizard can still be opened from the settings
 const { showPausedBanner, open, dismissPaused } = useOnboarding();
 </script>
