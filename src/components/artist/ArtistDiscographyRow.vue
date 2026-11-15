@@ -7,6 +7,7 @@
     :view-all-to="viewAllTo"
     :view-all-name="typeNames"
     :item-count="itemCount"
+    :empty-message="$t('discography_types_empty')"
     :parent-item="artist"
     @edit-rows="emit('edit-rows')"
   >
