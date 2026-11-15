@@ -40,6 +40,9 @@ export function useAudiobookDetails(route: () => AudiobookDetailsRoute) {
   );
 
   useDetailItemUpdates(itemDetails, {
+    get providerItem() {
+      return { ...route(), mediaType: MediaType.AUDIOBOOK };
+    },
     onUpdate: () => {
       applyPlayState();
       void refreshProgress();

@@ -10,6 +10,7 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, reactive, type EffectScope } from "vue";
 import { audiobook } from "../../tests/fixtures/audiobook";
+import { providerMapping } from "../../tests/fixtures/providerMapping";
 import { useAudiobookDetails } from "./useAudiobookDetails";
 
 const { getAudiobook, subscribe, storeMock, toastError } = vi.hoisted(() => ({
@@ -175,6 +176,23 @@ describe("useAudiobookDetails", () => {
       });
     },
   );
+
+  it("follows a provider audiobook into the library", async () => {
+    getAudiobook.mockResolvedValueOnce(audiobook({ provider: "provider" }));
+    const { itemDetails } = setup("provider");
+    await flushPromises();
+    vi.useFakeTimers();
+    listeners.get(EventType.MEDIA_ITEM_UPDATED)!({
+      data: audiobook({
+        item_id: "9",
+        provider_mappings: [
+          providerMapping({ item_id: "1", provider_instance: "provider" }),
+        ],
+      }),
+    } as EventMessage);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(itemDetails.value?.uri).toBe("library://audiobook/9");
+  });
 
   it("refetches personal progress after metadata-only refresh without replacing metadata or favorite", async () => {
     const { itemDetails } = setup("provider");
