@@ -19,6 +19,7 @@ import { computed, type Ref } from "vue";
 export function useDiscographyRows(
   visibleRows: Ref<ArtistRowId[]>,
   items: Record<DiscographyRowId, Ref<Album[] | undefined>>,
+  counts?: Record<DiscographyRowId, Ref<number | undefined>>,
 ) {
   const rowItems = computed<Record<DiscographyRowId, Album[] | undefined>>(
     () => ({
@@ -67,7 +68,7 @@ export function useDiscographyRows(
   /** The row's release types for the rows editor, with its count once loaded. */
   function meta(rowId: DiscographyRowId): string {
     const summary = discographyTypesLabel(discographyTypes(rowId));
-    const count = rowItems.value[rowId]?.length;
+    const count = counts ? counts[rowId].value : rowItems.value[rowId]?.length;
     return count ? `${summary} · ${count}` : summary;
   }
 

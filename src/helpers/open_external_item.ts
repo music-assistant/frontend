@@ -7,14 +7,14 @@ import router from "@/plugins/router";
 import { toast } from "vue-sonner";
 
 /**
- * Open the page of the item on one of the user's music services that this
- * MusicBrainz item resolves to.
+ * Open the page of the item, in the library or on one of the user's music
+ * services, that this external item is found as.
  *
- * The user stays where they are while it resolves and when none of their
- * services has it. A repeated click while it resolves does nothing, and
- * nothing opens when the user moved to another page meanwhile.
+ * The user stays where they are while it is looked up and when it is not
+ * found. A repeated click while it is looked up does nothing, and nothing
+ * opens when the user moved to another page meanwhile.
  */
-export const openMusicBrainzItem = async function (
+export const openExternalItem = async function (
   item: MediaItemTypeOrItemMapping,
 ): Promise<void> {
   const { isResolving, markResolving } = useResolvingItems();
