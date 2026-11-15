@@ -564,7 +564,7 @@
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
-        "no_group_providers": "None of the player support you added can create groups",
+        "no_group_providers": "The player support you added cannot create groups",
         "provider_codeowners": "Contributed\/maintained by",
         "provider_credits": "Made possible by",
         "provider_community": "Community",
