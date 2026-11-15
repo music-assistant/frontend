@@ -49,6 +49,8 @@ const { apiMock, hasScope, routeMock, routerMock, storeMock, toastMock } =
       serverInfo: {
         value: undefined as { server_version: string } | undefined,
       },
+      // the connection: reactive in each test, as the api's own
+      state: { value: "initialized" },
       getProviderConfigs: vi.fn(),
       getProvider: vi.fn(),
       getProviderIcon: vi.fn(),
@@ -86,7 +88,14 @@ const RouterLinkStub = vi.hoisted(() => ({
   template: `<a :data-to="JSON.stringify(to)"><slot /></a>`,
 }));
 
-vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
+  default: apiMock,
+  ConnectionState: {
+    INITIALIZED: "initialized",
+    RECONNECTING: "reconnecting",
+  },
+}));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
@@ -179,6 +188,7 @@ beforeEach(() => {
     ),
   );
   apiMock.providerIcons = reactive({});
+  apiMock.state = reactive({ value: "initialized" });
   configs = [
     providerConfig({
       domain: "chromecast",
@@ -1343,6 +1353,22 @@ describe("Catalog suggestions from the server", () => {
 
     await serverSays(EventType.COMMUNITY_CATALOG_UPDATED);
     expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(3);
+  });
+
+  it("asks again when the connection is back, not when it is first made", async () => {
+    await mountCatalog();
+    expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(1);
+
+    apiMock.state.value = "reconnecting";
+    await flushPromises();
+    expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(1);
+
+    recommendations = [FOUND];
+    apiMock.state.value = "initialized";
+    await flushPromises();
+
+    expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(2);
+    expect(topPick()!.getAttribute("data-domain")).toBe("sonos");
   });
 
   it("asks again when the community catalog is enabled", async () => {

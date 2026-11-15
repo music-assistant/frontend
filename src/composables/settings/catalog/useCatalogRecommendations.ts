@@ -1,4 +1,4 @@
-import { api } from "@/plugins/api";
+import { api, ConnectionState } from "@/plugins/api";
 import {
   type CatalogRecommendation,
   EventType,
@@ -14,7 +14,8 @@ import {
 
 /**
  * What the server suggests the current user adds, kept in step with what is set
- * up and with the community catalog. Empty when the server does not answer.
+ * up, with the community catalog and with the connection. Empty when the server
+ * does not answer.
  *
  * @param communityEnabled - Whether the community catalog is enabled, or
  *   undefined while that is not known; enabling or disabling it loads again.
@@ -47,6 +48,15 @@ export function useCatalogRecommendations(
     () => toValue(communityEnabled),
     (_enabled, before) => {
       if (before !== undefined) void load();
+    },
+  );
+
+  // an answer lost while the connection was down, or one from before, is asked again
+  watch(
+    () => api.state?.value,
+    (state, previous) => {
+      if (state === ConnectionState.INITIALIZED && previous !== state)
+        void load();
     },
   );
 
