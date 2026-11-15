@@ -1138,6 +1138,7 @@ describe("MusicAssistantApi error handling", () => {
   });
 
   it.each<[string, (api: MusicAssistantApi) => Promise<unknown>]>([
+    ["catalog/recommendations", (api) => api.getCatalogRecommendations()],
     ["community_catalog/providers", (api) => api.getCommunityProviders()],
     ["community_catalog/refresh", (api) => api.refreshCommunityProviders()],
     [
