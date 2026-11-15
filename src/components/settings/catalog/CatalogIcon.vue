@@ -13,9 +13,8 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { getCommunityIconUrl } from "@/helpers/community_catalog";
 import { computed } from "vue";
-
-const DATA_IMAGE_PREFIX = "data:image/";
 
 interface Props {
   domain: string;
@@ -26,7 +25,5 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const imageIcon = computed(() =>
-  props.icon?.startsWith(DATA_IMAGE_PREFIX) ? props.icon : undefined,
-);
+const imageIcon = computed(() => getCommunityIconUrl(props.icon));
 </script>

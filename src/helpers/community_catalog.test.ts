@@ -8,6 +8,7 @@ import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
   canRetryCommunityVersion,
   formatCatalogDate,
+  getCommunityIconUrl,
   getCommunityLinkUrl,
   getCommunityStateLabel,
   getCommunityStateText,
@@ -230,5 +231,18 @@ describe("getCommunityLinkUrl", () => {
     expect(getCommunityLinkUrl("javascript:alert(1)")).toBeUndefined();
     expect(getCommunityLinkUrl("not a url")).toBeUndefined();
     expect(getCommunityLinkUrl(null)).toBeUndefined();
+  });
+});
+
+describe("getCommunityIconUrl", () => {
+  it("shows the icon only as a data URI of an image", () => {
+    expect(getCommunityIconUrl("data:image/png;base64,iVBORw0KGgo=")).toBe(
+      "data:image/png;base64,iVBORw0KGgo=",
+    );
+    expect(getCommunityIconUrl("https://tracker.example/icon.png")).toBe(
+      undefined,
+    );
+    expect(getCommunityIconUrl("data:text/html,<script>")).toBe(undefined);
+    expect(getCommunityIconUrl(null)).toBe(undefined);
   });
 });
