@@ -12,15 +12,20 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 const passthroughStub = { template: "<div><slot /></div>" };
 
 describe("the overflow menu of the toolbar", () => {
-  it("names who added an entry on a muted line under it, cut off as the rest", () => {
+  it("shows a plugin's entries as they are in a submenu under its name, cut off as the rest", () => {
     const wrapper = mount(Toolbar, {
       props: {
         menuItems: [
           { label: "settings" },
           {
-            label: "provider_menu_action/demo/a",
-            text: "Ask the demo plugin about this",
-            addedBy: "{0} @:show_info",
+            label: "provider_menu/demo",
+            text: "{0} @:show_info",
+            subItems: [
+              {
+                label: "provider_menu_action/demo/a",
+                text: "Ask the demo plugin about this",
+              },
+            ],
           },
         ],
       },
@@ -31,6 +36,9 @@ describe("the overflow menu of the toolbar", () => {
           DropdownMenu: passthroughStub,
           DropdownMenuContent: passthroughStub,
           DropdownMenuItem: passthroughStub,
+          DropdownMenuSub: passthroughStub,
+          DropdownMenuSubContent: passthroughStub,
+          DropdownMenuSubTrigger: passthroughStub,
           DropdownMenuTrigger: passthroughStub,
         },
       },
@@ -39,16 +47,16 @@ describe("the overflow menu of the toolbar", () => {
     const lines = wrapper.findAll("span.truncate");
     expect(lines.map((line) => line.text())).toEqual([
       "settings",
-      "Ask the demo plugin about this",
       "{0} @:show_info",
+      "Ask the demo plugin about this",
     ]);
-    expect(lines[2].classes()).toEqual(
-      expect.arrayContaining(["text-muted-foreground", "text-xs"]),
+    expect(lines.every((line) => line.classes().includes("min-w-0"))).toBe(
+      true,
     );
-    // the column may shrink, so each line is cut off within the capped menu
-    expect([...lines[1].element.parentElement!.classList]).toEqual(
-      expect.arrayContaining(["min-w-0", "flex-1"]),
-    );
+    // the menu and the submenu are capped, so a long entry is cut off on a phone
     expect(wrapper.find(".max-w-\\[350px\\]").exists()).toBe(true);
+    expect(lines[2].element.parentElement!.parentElement!.classList).toContain(
+      "max-w-[min(92vw,350px)]",
+    );
   });
 });

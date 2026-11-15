@@ -114,12 +114,15 @@ beforeEach(() => {
 });
 
 describe("the menu of a media item", () => {
-  it("ends with the entries that act on no player, shown as they are", async () => {
+  it("ends with one entry per plugin, its entries in a submenu under it", async () => {
     const items = await itemMenu([song]);
 
     const last = items.at(-1)!;
-    expect(last.text).toBe("Ask the demo plugin about this");
-    expect(last.icon).toBe("mdi-information-outline");
+    expect(last.text).toBe("Demo demo");
+    expect(last.subItems!.map((sub) => [sub.text, sub.icon])).toEqual([
+      ["Ask the demo plugin about this", "mdi-information-outline"],
+      ["Send to the frame", expect.anything()],
+    ]);
     expect(items.filter((item) => item.text)).toHaveLength(1);
   });
 
@@ -140,6 +143,46 @@ describe("the menu of a media item", () => {
     expect(toastMock.success).toHaveBeenCalledWith(
       "The demo plugin was asked about it",
     );
+  });
+
+  it("runs an entry that acts on a player on the player chosen when it is picked", async () => {
+    const items = await itemMenu([song]);
+    storeMock.activePlayer = { player_id: "player-2" };
+
+    await choose(items, SEND.label);
+
+    expect(apiMock.invokeProviderMenuAction).toHaveBeenCalledWith(
+      "demo",
+      "send",
+      song.uri,
+      "player-2",
+    );
+  });
+
+  it("holds an entry that acts on a player without one, the submenu still there", async () => {
+    storeMock.activePlayer = undefined;
+
+    const plugin = (await itemMenu([song])).at(-1)!;
+
+    expect(plugin.disabled).toBeUndefined();
+    expect(plugin.subItems!.map((sub) => [sub.text, sub.disabled])).toEqual([
+      ["Ask the demo plugin about this", false],
+      ["Send to the frame", true],
+    ]);
+  });
+
+  it("offers only the entries that act on no player in a menu without the ways to play", async () => {
+    await showContextMenuForMediaItem([song], undefined, 0, 0, false);
+    const plugin = emittedMenus.at(-1)!.items.at(-1)!;
+
+    expect(plugin.subItems!.map((sub) => sub.text)).toEqual([
+      "Ask the demo plugin about this",
+    ]);
+    expect(getDeclaredContextMenuItems([song])).toEqual([
+      expect.objectContaining({
+        subItems: [expect.objectContaining({ text: ASK.label })],
+      }),
+    ]);
   });
 
   it("says the action is done when the provider answers nothing", async () => {
@@ -180,14 +223,14 @@ describe("the menu of a media item", () => {
       undefined,
     );
 
-    const playItems = await getPlaybackContextMenuItems([externalSong]);
-    expect(playItems.at(-1)!.text).toBe("Send to the frame");
+    await showPlayMenuForMediaItem(externalSong);
+    expect(emittedMenus.at(-1)!.items.at(-1)!.text).toBe("Demo demo");
   });
 
   it("follows the providers when read in a computed", () => {
     apiMock.providers = reactive({ ...apiMock.providers });
     const names = computed(() =>
-      getDeclaredContextMenuItems([song]).map((item) => item.addedBy),
+      getDeclaredContextMenuItems([song]).map((item) => item.text),
     );
     expect(names.value).toEqual(["Demo demo"]);
 
@@ -222,72 +265,54 @@ describe("the menu of a media item", () => {
 
       const items = await itemMenu([song]);
 
-      expect(items.some((item) => item.text === ASK.label)).toBe(offered);
+      expect(entries(items).includes(ASK.label)).toBe(offered);
     },
   );
 });
 
 describe("the ways to play a media item", () => {
-  it("end with the entries that act on a player, which get the chosen player", async () => {
+  it("leave the plugin entries to the end of the menu", async () => {
     const items = await getPlaybackContextMenuItems([song]);
 
-    expect(items.map((item) => item.text ?? item.label).slice(-2)).toEqual([
-      "enqueue",
-      "Send to the frame",
-    ]);
-    // the player chosen in the menu's header when the entry is picked
-    storeMock.activePlayer = { player_id: "player-2" };
-    await choose(items, SEND.label);
-    expect(apiMock.invokeProviderMenuAction).toHaveBeenCalledWith(
-      "demo",
-      "send",
-      song.uri,
-      "player-2",
-    );
+    expect(items.filter((item) => item.text)).toEqual([]);
   });
 
-  it("are left out without a player, as the other ways to play", async () => {
-    storeMock.activePlayer = undefined;
-
-    expect(await getPlaybackContextMenuItems([song])).toEqual([]);
-  });
-
-  it("end the menu of the play button, held without a player as the others", async () => {
+  it("end the menu of the play button with the entries that act on a player, held without a player as the others", async () => {
     await showPlayMenuForMediaItem(song);
     const withPlayer = emittedMenus[0].items.at(-1)!;
-    expect(withPlayer.text).toBe("Send to the frame");
-    expect(withPlayer.disabled).toBe(false);
+    expect(withPlayer.text).toBe("Demo demo");
+    expect(withPlayer.subItems!.map((sub) => [sub.text, sub.disabled])).toEqual(
+      [["Send to the frame", false]],
+    );
 
     storeMock.activePlayer = undefined;
     await showPlayMenuForMediaItem(song);
     const withoutPlayer = emittedMenus[1].items;
-    expect(withoutPlayer.at(-1)!.disabled).toBe(true);
+    expect(withoutPlayer.at(-1)!.disabled).toBeUndefined();
+    expect(withoutPlayer.at(-1)!.subItems![0].disabled).toBe(true);
     expect(withoutPlayer.at(-2)!.disabled).toBe(true);
   });
 
   it("are left out for a selection of two, of which one can be played", async () => {
-    const items = await getPlaybackContextMenuItems([song, release]);
-    expect(items.filter((item) => item.text)).toEqual([]);
-
     await showPlayMenuForMediaItem([song, release]);
     expect(emittedMenus[0].items.filter((item) => item.text)).toEqual([]);
   });
 
-  it("offer the entry once per instance, each named under it", async () => {
+  it("offer one entry per instance, named after it", async () => {
     apiMock.providers = {
       ...apiMock.providers,
       "demo--2": instance("demo--2"),
     };
 
-    const items = await getPlaybackContextMenuItems([song]);
+    await showPlayMenuForMediaItem(song);
 
     expect(
-      items
+      emittedMenus[0].items
         .filter((item) => item.text)
-        .map((item) => [item.text, item.addedBy]),
+        .map((item) => [item.text, ...entries([item])]),
     ).toEqual([
-      ["Send to the frame", "Demo demo"],
-      ["Send to the frame", "Demo demo--2"],
+      ["Demo demo", "Send to the frame"],
+      ["Demo demo--2", "Send to the frame"],
     ]);
   });
 });
@@ -311,13 +336,21 @@ function manifest(actions: ProviderMenuAction[]) {
   };
 }
 
-/** The menu of a media item, as it opens. */
+/** The menu of a media item with the ways to play it, as it opens. */
 async function itemMenu(items: MediaItemType[]) {
-  await showContextMenuForMediaItem(items);
+  await showContextMenuForMediaItem(items, undefined, 0, 0, true, true);
   return emittedMenus.at(-1)!.items;
 }
 
+/** The texts of the entries in the plugins' submenus of a menu. */
+function entries(items: ContextMenuItem[]) {
+  return items.flatMap((item) =>
+    (item.subItems ?? []).flatMap((sub) => (sub.text ? [sub.text] : [])),
+  );
+}
+
 async function choose(items: ContextMenuItem[], text: string) {
-  items.find((item) => item.text === text)!.action!();
+  items.flatMap((item) => item.subItems ?? []).find((sub) => sub.text === text)!
+    .action!();
   await flushPromises();
 }

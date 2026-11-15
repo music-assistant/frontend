@@ -96,11 +96,12 @@
               menuItemLabel(menuItem)
             }}</span>
           </DropdownMenuSubTrigger>
+          <!-- capped as the menu itself, so a long entry is cut off on a phone -->
           <DropdownMenuSubContent
             align="start"
             :align-offset="-5"
             :side-offset="6"
-            class="max-h-[70vh] overflow-y-auto"
+            class="max-h-[70vh] max-w-[min(92vw,350px)] overflow-y-auto"
           >
             <DropdownMenuItem
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
@@ -127,13 +128,7 @@
           @select="onSelect($event, menuItem)"
         >
           <MenuItemIcon :icon="menuItem.icon" />
-          <span v-if="menuItem.addedBy" class="flex flex-1 flex-col min-w-0">
-            <span class="truncate">{{ menuItemLabel(menuItem) }}</span>
-            <span class="truncate text-muted-foreground text-xs">{{
-              menuItem.addedBy
-            }}</span>
-          </span>
-          <span v-else class="flex-1 truncate min-w-0">{{
+          <span class="flex-1 truncate min-w-0">{{
             menuItemLabel(menuItem)
           }}</span>
           <Check v-if="menuItem.selected" class="ml-auto size-4" />
@@ -353,6 +348,7 @@ import { showActionResult } from "@/helpers/action_result";
 import {
   getProviderMenuItems,
   type ProviderMenuChoice,
+  type ProviderMenuContext,
 } from "@/helpers/provider_menu_actions";
 import {
   canAddToPlaylist,
@@ -480,19 +476,19 @@ export const showContextMenuForMediaItem = async function (
 
   const menuTargets = await withFullItemDetails(mediaItems);
 
-  const contextMenuItems = [
-    ...(await getContextMenuItems(menuTargets, parentItem, options)),
-    ...getDeclaredContextMenuItems(menuTargets),
-  ];
-
-  let menuItems: ContextMenuItem[] = [];
-
   // the play section, its player header included, is for an item that can be
   // played at all
   const withPlayMenu =
     includePlayMenuItems &&
     menuTargets[0].is_playable &&
     (itemIsAvailable(menuTargets[0]) || isExternalItem(menuTargets[0]));
+
+  const contextMenuItems = [
+    ...(await getContextMenuItems(menuTargets, parentItem, options)),
+    ...getDeclaredContextMenuItems(menuTargets, withPlayMenu),
+  ];
+
+  let menuItems: ContextMenuItem[] = [];
   if (withPlayMenu) {
     // Play menu items first, then context items
     menuItems = await getPlaybackContextMenuItems(
@@ -591,9 +587,7 @@ export const showPlayMenuForMediaItem = async function (
       disabled: !store.activePlayer,
     });
   }
-  playMenuItems.push(
-    ...providerMenuItems(mediaItems, true, !store.activePlayer),
-  );
+  playMenuItems.push(...providerMenuItems(mediaItems, "player"));
 
   if (playMenuItems.length == 0) playMenuItems = [];
 
@@ -1546,17 +1540,19 @@ export const getContextMenuItems = async function (
 };
 
 /**
- * The menu entries the provider instances add to the menu of a single item,
- * for the actions that act on no player; they go after the entries of
- * getContextMenuItems. Read in a computed, they follow the providers and
- * their manifests.
+ * The submenus the provider instances add to the menu of a single item, one
+ * per instance; they go after the entries of getContextMenuItems. Read in a
+ * computed, they follow the providers and their manifests.
  *
  * @param items - The selection the menu is for.
+ * @param withPlayer - Whether the menu offers the ways to play the item and so
+ * also the entries that act on the chosen player.
  */
 export const getDeclaredContextMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
+  withPlayer = false,
 ): ContextMenuItem[] {
-  return providerMenuItems(items, false);
+  return providerMenuItems(items, withPlayer ? "all" : "other");
 };
 
 /**
@@ -1669,7 +1665,6 @@ export const getPlaybackContextMenuItems = async function (
     icon: ListMusic,
     labelArgs: [],
   });
-  playMenuItems.push(...providerMenuItems(items, true));
   // Multi-select mark as played/unplayed for podcast episodes
   if (
     authManager.hasScope(Scope.LIBRARY_WRITE) &&
@@ -1757,14 +1752,13 @@ export const getPlaybackContextMenuItems = async function (
 };
 
 /**
- * The menu entries the provider instances declare for a selection of one item:
- * those that act on a player, which get the player chosen when an entry is
- * picked, or the others. A selection of several items gets none.
+ * The submenus of the provider instances for a selection of one item, with the
+ * entries of the given kind; an entry that acts on a player gets the player
+ * chosen when it is picked. A selection of several items gets none.
  */
 const providerMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
-  requiresPlayer: boolean,
-  disabled = false,
+  offer: ProviderMenuContext["offer"],
 ): ContextMenuItem[] {
   const item = items[0];
   // the server looks an external item up by its uri, as for the app's own actions
@@ -1773,21 +1767,21 @@ const providerMenuItems = function (
   return getProviderMenuItems(
     item.media_type,
     {
-      requiresPlayer,
+      offer,
+      hasPlayer: !!store.activePlayer,
       providers: Object.values(api.providers),
       manifests: api.providerManifests,
       hasScope: (scope) => authManager.hasScope(scope),
     },
-    (choice) => void runProviderMenuAction(choice, item.uri, requiresPlayer),
-  ).map((menuItem) => ({ ...menuItem, disabled }));
+    (choice) => void runProviderMenuAction(choice, item.uri),
+  );
 };
 
-// an entry that needs a player is left out or disabled without one, since the
-// server refuses it then
+// an entry that needs a player is disabled without one, since the server
+// refuses it then
 const runProviderMenuAction = async function (
   choice: ProviderMenuChoice,
   uri: string,
-  withPlayer: boolean,
 ) {
   try {
     showActionResult(
@@ -1795,7 +1789,7 @@ const runProviderMenuAction = async function (
         choice.instanceId,
         choice.actionId,
         uri,
-        withPlayer ? store.activePlayer?.player_id : undefined,
+        choice.requiresPlayer ? store.activePlayer?.player_id : undefined,
       ),
     );
   } catch {

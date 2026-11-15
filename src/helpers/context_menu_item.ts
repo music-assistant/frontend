@@ -10,8 +10,6 @@ export interface ContextMenuItem {
   label: string;
   // shown as it is in place of the label, for text that arrives ready to show
   text?: string;
-  // who added the entry to the menu, shown as it is on a muted line under it
-  addedBy?: string;
   // positional for a `{0}` message, named for a `{name}` one
   labelArgs?: Array<string | number> | Record<string, string | number>;
   action?: () => void;

@@ -184,14 +184,25 @@ describe("ItemContextMenu", () => {
     wrapper.unmount();
   });
 
-  it("names who added an item on a muted line under it, as it is", async () => {
+  it("shows a plugin's entries as they are in a submenu under its name, cut off as the other entries", async () => {
+    // a translated label may be 80 characters long
+    const long =
+      "Ask the demo plugin about this track and all it knows about it, all at once, now";
+    expect(long).toHaveLength(80);
     const wrapper = mountContextMenu();
     eventHandlers.get("contextmenu")?.({
       items: [
         {
-          label: "provider_menu_action/demo/a",
-          text: "Ask the demo plugin about this",
-          addedBy: "{0} @:show_info",
+          label: "provider_menu/demo",
+          text: "{0} @:show_info",
+          subItems: [
+            { label: "provider_menu_action/demo/a", text: long },
+            {
+              label: "provider_menu_action/demo/b",
+              text: "Send to the frame",
+              disabled: true,
+            },
+          ],
         },
       ],
       posX: 10,
@@ -200,36 +211,21 @@ describe("ItemContextMenu", () => {
     await nextTick();
     await nextTick();
 
-    const [label, addedBy] = wrapper.findAll("span.truncate");
-    expect(label.text()).toBe("Ask the demo plugin about this");
-    expect(addedBy.text()).toBe("{0} @:show_info");
-    expect(addedBy.classes()).toEqual(
-      expect.arrayContaining(["text-muted-foreground", "text-xs"]),
-    );
-    wrapper.unmount();
-  });
-
-  it("keeps a long text on one line, cut off as the other entries", async () => {
-    // a translated label may be 80 characters long
-    const long =
-      "Ask the demo plugin about this track and all it knows about it, all at once, now";
-    expect(long).toHaveLength(80);
-    const wrapper = mountContextMenu();
-    eventHandlers.get("contextmenu")?.({
-      items: [
-        { label: "provider_menu_action/demo/a", text: long, addedBy: long },
-      ],
-      posX: 10,
-      posY: 20,
-    });
-    await nextTick();
-    await nextTick();
-
     const lines = wrapper.findAll("span.truncate");
-    expect(lines.map((line) => line.text())).toEqual([long, long]);
-    // the column may shrink, so each line is cut off within the menu
-    expect([...lines[0].element.parentElement!.classList]).toEqual(
-      expect.arrayContaining(["min-w-0", "flex-1"]),
+    expect(lines.map((line) => line.text())).toEqual([
+      "{0} @:show_info",
+      long,
+      "Send to the frame",
+    ]);
+    expect(lines.every((line) => line.classes().includes("min-w-0"))).toBe(
+      true,
+    );
+    // the submenu is capped as the menu, so a long entry is cut off on a phone
+    expect(lines[1].element.parentElement!.parentElement!.classList).toContain(
+      "max-w-[min(92vw,350px)]",
+    );
+    expect(lines[2].element.parentElement!.getAttribute("disabled")).toBe(
+      "true",
     );
     wrapper.unmount();
   });

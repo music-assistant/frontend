@@ -1,6 +1,7 @@
 // The menu entries a provider declares in its manifest, as the menu of a media
 // item shows them. A manifest may come from outside the project, so what it says
-// is only ever shown as text, with the provider named under it.
+// is only ever shown as text, in a submenu under the provider's name.
+import ProviderIcon from "@/components/ProviderIcon.vue";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import type {
   MediaType,
@@ -9,7 +10,7 @@ import type {
   Scope,
 } from "@/plugins/api/interfaces";
 import { Puzzle } from "@lucide/vue";
-import { markRaw } from "vue";
+import { type Component, defineComponent, h, markRaw } from "vue";
 
 // a plain material design icon name, as the server accepts it
 const ICON_PATTERN = /^mdi-[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -19,12 +20,16 @@ const MAX_ICON_LENGTH = 64;
 export interface ProviderMenuChoice {
   instanceId: string;
   actionId: string;
+  // whether the action acts on a player, which is then passed with it
+  requiresPlayer: boolean;
 }
 
-/** Where the entries go: with the ways to play the item, or in its own menu. */
+/** Which entries a menu offers, and what the user sees and may do. */
 export interface ProviderMenuContext {
-  // the entries of actions that act on a player, or the others
-  requiresPlayer: boolean;
+  // the entries of actions that act on a player, the others, or all of them
+  offer: "player" | "other" | "all";
+  // whether a player is chosen; without one an entry that acts on a player is disabled
+  hasPlayer: boolean;
   // the provider instances the user sees
   providers: readonly ProviderInstance[];
   manifests: Readonly<Record<string, ProviderManifest>>;
@@ -33,10 +38,10 @@ export interface ProviderMenuContext {
 
 /**
  * The menu entries the available provider instances declare for an item of a
- * media type, for the actions that act on a player or for the others: those of
- * a media type the item has, with a scope the user holds. Each instance gets its
- * own entry, with the instance named under the label (or its provider, for an
- * instance without a name).
+ * media type: one entry per instance, named and drawn as the instance, with
+ * its entries for the item in a submenu, sorted by name. An instance offers
+ * the entries of a media type the item has, of the kind the menu offers and
+ * with a scope the user holds; an instance without any is left out.
  *
  * @param mediaType - The media type of the item.
  * @param context - Which entries, and what the user sees and may do.
@@ -52,35 +57,61 @@ export const getProviderMenuItems = (
     .flatMap((provider) => {
       const manifest = context.manifests[provider.domain];
       // an older server declares none
-      return (manifest?.menu_actions ?? [])
+      const subItems = (manifest?.menu_actions ?? [])
         .filter(
           (action) =>
-            action.requires_player === context.requiresPlayer &&
+            (context.offer === "all" ||
+              action.requires_player === (context.offer === "player")) &&
             action.media_types.includes(mediaType) &&
             context.hasScope(action.scope),
         )
         .map((action) => ({
-          provider,
-          action,
-          // an instance renamed to blanks is named after its provider
-          addedBy:
-            provider.name.trim() || manifest?.name.trim() || provider.domain,
+          // the label only names the entry; what it says is its text
+          label: `provider_menu_action/${provider.instance_id}/${action.id}`,
+          text: action.label,
+          icon: isPlainIconName(action.icon) ? action.icon : markRaw(Puzzle),
+          disabled: action.requires_player && !context.hasPlayer,
+          action: () =>
+            choose({
+              instanceId: provider.instance_id,
+              actionId: action.id,
+              requiresPlayer: action.requires_player,
+            }),
         }));
+      if (!subItems.length) return [];
+      return [
+        {
+          label: `provider_menu/${provider.instance_id}`,
+          // an instance renamed to blanks is named after its provider
+          text:
+            provider.name.trim() || manifest?.name.trim() || provider.domain,
+          icon: providerIcon(provider.domain),
+          subItems,
+        },
+      ];
     })
     .sort((a, b) =>
-      a.addedBy.localeCompare(b.addedBy, undefined, { sensitivity: "base" }),
-    )
-    .map(({ provider, action, addedBy }) => ({
-      // the label only names the entry; what it says is its text
-      label: `provider_menu_action/${provider.instance_id}/${action.id}`,
-      text: action.label,
-      addedBy,
-      icon: isPlainIconName(action.icon) ? action.icon : markRaw(Puzzle),
-      action: () =>
-        choose({ instanceId: provider.instance_id, actionId: action.id }),
-    }));
+      a.text.localeCompare(b.text, undefined, { sensitivity: "base" }),
+    );
 };
 
 function isPlainIconName(icon: string | null): icon is string {
   return !!icon && icon.length <= MAX_ICON_LENGTH && ICON_PATTERN.test(icon);
+}
+
+// one component per domain, so a menu that is built again keeps its icons
+const providerIcons = new Map<string, Component>();
+
+function providerIcon(domain: string): Component {
+  let icon = providerIcons.get(domain);
+  if (!icon) {
+    icon = markRaw(
+      defineComponent({
+        name: "ProviderMenuIcon",
+        render: () => h(ProviderIcon, { domain, size: 20 }),
+      }),
+    );
+    providerIcons.set(domain, icon);
+  }
+  return icon;
 }

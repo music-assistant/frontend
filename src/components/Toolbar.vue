@@ -82,7 +82,7 @@
                 align="start"
                 :align-offset="-5"
                 :side-offset="6"
-                class="max-h-[70vh] min-w-56 overflow-y-auto"
+                class="max-h-[70vh] min-w-56 max-w-[min(92vw,350px)] overflow-y-auto"
               >
                 <template
                   v-for="subItem of menuItem.subItems.filter((x) => !x.hide)"
@@ -123,16 +123,7 @@
                 <MenuItemIcon :icon="menuItem.icon" />
                 <span v-if="menuItem.active" :class="ACTIVE_DOT_CLASS"></span>
               </span>
-              <span
-                v-if="menuItem.addedBy"
-                class="flex min-w-0 flex-1 flex-col"
-              >
-                <span class="truncate">{{ menuItemLabel(menuItem) }}</span>
-                <span class="truncate text-xs text-muted-foreground">{{
-                  menuItem.addedBy
-                }}</span>
-              </span>
-              <span v-else class="min-w-0 flex-1 truncate">{{
+              <span class="min-w-0 flex-1 truncate">{{
                 menuItemLabel(menuItem)
               }}</span>
             </DropdownMenuItem>
