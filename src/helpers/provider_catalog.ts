@@ -126,6 +126,12 @@ export interface CatalogRow {
   entries: CatalogEntry[];
 }
 
+/** A type of the Catalog with how many entries it lists. */
+export interface CatalogTypeCount {
+  type: CatalogType;
+  count: number;
+}
+
 export interface CatalogFilter {
   query?: string;
   types?: readonly string[];
@@ -275,6 +281,20 @@ export const filterCatalogEntries = (
   );
 };
 
+/**
+ * The types the Catalog lists entries of, in the order of its tabs, each with
+ * how many.
+ *
+ * @param entries - The Catalog entries.
+ */
+export const countCatalogTypes = (
+  entries: readonly CatalogEntry[],
+): CatalogTypeCount[] =>
+  CATALOG_TYPES.map((type) => ({
+    type,
+    count: entries.filter((entry) => entry.manifest.type === type.type).length,
+  })).filter(({ count }) => count > 0);
+
 /** The entries with the popular ones first, in their popular order. */
 export const sortPopularFirst = (
   entries: readonly CatalogEntry[],
@@ -296,6 +316,9 @@ export const getPopularEntries = (
         entry.canAdd && POPULAR_PROVIDERS.includes(entry.manifest.domain),
     ),
   );
+
+/** How many entries a list shows at first, and how many more each time after. */
+export const CATALOG_PAGE_SIZE = 24;
 
 /** How many entries a row of what is new in the community catalog shows at most. */
 export const COMMUNITY_ROW_SIZE = 8;
@@ -335,53 +358,89 @@ export const getCommunityHighlights = (
   return { added, updated };
 };
 
+/** How many top picks the Discover tab offers at most. */
+export const TOP_PICK_COUNT = 4;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /**
- * The rows that lead a tab of the Catalog, each with something to show: the
- * popular entries, and what is new in the community catalog when asked for.
+ * The top picks for the user, at most TOP_PICK_COUNT: the popular entries that
+ * can be added or, once none is left, what is new in the community catalog when
+ * asked for. The pick of the day comes first: it moves on to the next one every
+ * day, the order staying the same. Empty when there is nothing to pick.
  *
- * @param entries - The Catalog entries of the tab.
+ * @param entries - The Catalog entries.
+ * @param withCommunity - Whether to pick from what is new in the community catalog.
+ * @param now - The current time, in milliseconds since the epoch.
+ */
+export const getTopPicks = (
+  entries: readonly CatalogEntry[],
+  withCommunity: boolean,
+  now: number,
+): CatalogEntry[] => {
+  const popular = getPopularEntries(entries);
+  let candidates = popular;
+  if (!popular.length && withCommunity) {
+    const { added, updated } = getCommunityHighlights(entries, now);
+    candidates = [...added, ...updated];
+  }
+  const picks = candidates.slice(0, TOP_PICK_COUNT);
+  const first = picks.length ? getLocalDayNumber(now) % picks.length : 0;
+  return [...picks.slice(first), ...picks.slice(0, first)];
+};
+
+/**
+ * The rows of the Discover tab, each with something to show: the popular
+ * entries, and what is new in the community catalog when asked for.
+ *
+ * @param entries - The Catalog entries.
  * @param withCommunity - Whether to show what is new in the community catalog.
  * @param now - The current time, in milliseconds since the epoch.
+ * @param pick - The top pick shown above the rows, left out of them.
  */
 export const getCatalogRows = (
   entries: readonly CatalogEntry[],
   withCommunity: boolean,
   now: number,
+  pick?: CatalogEntry,
 ): CatalogRow[] => {
   const highlights = withCommunity
     ? getCommunityHighlights(entries, now)
     : { added: [], updated: [] };
+  const notPick = (entry: CatalogEntry) =>
+    entry.manifest.domain !== pick?.manifest.domain;
   return [
     {
       key: "popular",
       title: "settings.catalog.popular",
-      entries: getPopularEntries(entries),
+      entries: getPopularEntries(entries).filter(notPick),
     },
     {
       key: "community-new",
       title: "settings.catalog.community.new_title",
-      entries: highlights.added,
+      entries: highlights.added.filter(notPick),
     },
     {
       key: "community-updated",
       title: "settings.catalog.community.updated_title",
-      entries: highlights.updated,
+      entries: highlights.updated.filter(notPick),
     },
   ].filter((row) => row.entries.length);
 };
 
-export const CATALOG_ALL_TAB = "all";
+export const CATALOG_DISCOVER_TAB = "discover";
 export const CATALOG_INSTALLED_TAB = "installed";
 /** The route query that opens the details of an entry, by its domain. */
 export const CATALOG_DETAIL_QUERY = "detail";
 
-/** A tab of the Catalog: everything, one type, or what is set up. */
+/** A view of the Catalog: the Discover tab, the tab of one type, or what is set up. */
 export type CatalogTab =
-  typeof CATALOG_ALL_TAB | typeof CATALOG_INSTALLED_TAB | ProviderType;
+  typeof CATALOG_DISCOVER_TAB | typeof CATALOG_INSTALLED_TAB | ProviderType;
 
 /**
- * The Catalog tab a route query opens: the Installed view for `view=installed`,
- * else the first type in `types` that is one of the given ones, else everything.
+ * The Catalog view a route query opens: the Installed view for `view=installed`,
+ * else the tab of the first type in `types` that is one of the given ones, else
+ * the Discover tab.
  *
  * @param query - The query of the Catalog route.
  * @param types - The types that have a tab.
@@ -392,12 +451,12 @@ export const getCatalogTab = (
 ): CatalogTab => {
   if (query.view === CATALOG_INSTALLED_TAB) return CATALOG_INSTALLED_TAB;
   const type = String(query.types ?? "").split(",")[0];
-  return types.find((item) => item === type) ?? CATALOG_ALL_TAB;
+  return types.find((item) => item === type) ?? CATALOG_DISCOVER_TAB;
 };
 
-/** The route query that opens a Catalog tab. */
+/** The route query that opens a Catalog view. */
 export const getCatalogTabQuery = (tab: CatalogTab): LocationQueryRaw => {
-  if (tab === CATALOG_ALL_TAB) return {};
+  if (tab === CATALOG_DISCOVER_TAB) return {};
   if (tab === CATALOG_INSTALLED_TAB) return { view: CATALOG_INSTALLED_TAB };
   return { types: tab };
 };
@@ -515,6 +574,14 @@ function newestFirst(
     .sort((a, b) => b.time - a.time)
     .slice(0, COMMUNITY_ROW_SIZE)
     .map(({ entry }) => entry);
+}
+
+// days counted on the user's own calendar, so the pick changes at midnight
+function getLocalDayNumber(now: number): number {
+  const date = new Date(now);
+  return Math.floor(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS,
+  );
 }
 
 function popularRank(domain: string): number {

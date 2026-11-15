@@ -13,7 +13,8 @@ import { providerConfig } from "../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
   buildCatalogEntries,
-  CATALOG_ALL_TAB,
+  countCatalogTypes,
+  CATALOG_DISCOVER_TAB,
   CATALOG_INSTALLED_TAB,
   type CatalogEntry,
   COMMUNITY_RECENT_MS,
@@ -30,11 +31,13 @@ import {
   getManageRoute,
   getMaintainerProfileUrl,
   getPopularEntries,
+  getTopPicks,
   groupInstalledProviders,
   isOfferable,
   MEMBER_ADD_RESTRICTIONS,
   needsInstall,
   sortPopularFirst,
+  TOP_PICK_COUNT,
 } from "./provider_catalog";
 
 // the time the rows of what is new are made at
@@ -452,6 +455,25 @@ describe("filterCatalogEntries", () => {
   });
 });
 
+describe("countCatalogTypes", () => {
+  it("counts the entries per type, in tab order, leaving out a type without any", () => {
+    const counts = countCatalogTypes(buildCatalogEntries(MANIFESTS, CONFIGS));
+
+    expect(counts.map(({ type, count }) => [type.type, count])).toEqual([
+      [ProviderType.MUSIC, 4],
+      [ProviderType.PLAYER, 3],
+      [ProviderType.METADATA, 1],
+      [ProviderType.PLUGIN, 3],
+      [ProviderType.AUDIO_ANALYSIS, 1],
+    ]);
+    expect(
+      countCatalogTypes(
+        buildCatalogEntries(MANIFESTS, [], { types: [ProviderType.MUSIC] }),
+      ).map(({ type }) => type.type),
+    ).toEqual([ProviderType.MUSIC]);
+  });
+});
+
 describe("getPopularEntries", () => {
   it("lists the popular entries in their popular order", () => {
     expect(
@@ -500,18 +522,18 @@ describe("catalog tabs", () => {
   const types = [ProviderType.MUSIC, ProviderType.PLAYER];
 
   it.each([
-    [{}, CATALOG_ALL_TAB],
+    [{}, CATALOG_DISCOVER_TAB],
     [{ types: "player" }, ProviderType.PLAYER],
     [{ types: "player,music" }, ProviderType.PLAYER],
-    [{ types: "plugin" }, CATALOG_ALL_TAB],
-    [{ types: "bogus" }, CATALOG_ALL_TAB],
+    [{ types: "plugin" }, CATALOG_DISCOVER_TAB],
+    [{ types: "bogus" }, CATALOG_DISCOVER_TAB],
     [{ view: "installed", types: "music" }, CATALOG_INSTALLED_TAB],
   ])("opens %o on the %s tab", (query, tab) => {
     expect(getCatalogTab(query, types)).toBe(tab);
   });
 
   it.each([
-    [CATALOG_ALL_TAB, {}],
+    [CATALOG_DISCOVER_TAB, {}],
     [CATALOG_INSTALLED_TAB, { view: "installed" }],
     [ProviderType.METADATA, { types: "metadata" }],
   ] as const)("keeps the %s tab in the query", (tab, query) => {
@@ -706,6 +728,98 @@ describe("getCatalogRows", () => {
       getCatalogRows(entries.slice(0, 1), true, NOW).map((row) => row.key),
     ).toEqual(["community-new"]);
     expect(getCatalogRows([], true, NOW)).toEqual([]);
+  });
+
+  it("leaves the top pick out of every row", () => {
+    const rows = getCatalogRows(entries, true, NOW, entries[3]);
+    expect(domains(rows[0].entries)).toEqual(["tidal"]);
+
+    const withoutRadio = getCatalogRows(entries, true, NOW, entries[0]);
+    expect(withoutRadio.map((row) => row.key)).toEqual([
+      "popular",
+      "community-updated",
+    ]);
+  });
+});
+
+describe("getTopPicks", () => {
+  // noon, so the day is the same in every time zone
+  const day = (date: string) => Date.parse(`${date}T12:00:00Z`);
+  const popular = [
+    "spotify",
+    "tidal",
+    "filesystem_local",
+    "sonos",
+    "chromecast",
+  ];
+  const entries = [
+    ...popular.map((domain) => ({
+      manifest: manifestOf(domain),
+      instances: [],
+      canAdd: true,
+    })),
+    { manifest: manifestOf("fanarttv"), instances: [], canAdd: true },
+  ];
+
+  it("picks the first popular entries that can be added, one more each day", () => {
+    const today = getTopPicks(entries, false, day("2026-11-14"));
+    const tomorrow = getTopPicks(entries, false, day("2026-11-15"));
+
+    expect(today).toHaveLength(TOP_PICK_COUNT);
+    expect(new Set(domains(today))).toEqual(
+      new Set(["spotify", "tidal", "filesystem_local", "sonos"]),
+    );
+    // the same picks in the same order, the next one leading
+    expect(domains(tomorrow)).toEqual([
+      ...domains(today).slice(1),
+      domains(today)[0],
+    ]);
+    expect(domains(getTopPicks(entries, false, day("2026-11-18")))).toEqual(
+      domains(today),
+    );
+  });
+
+  it("keeps the pick for the whole day", () => {
+    expect(
+      domains(getTopPicks(entries, false, Date.parse("2026-11-14T00:30:00"))),
+    ).toEqual(
+      domains(getTopPicks(entries, false, Date.parse("2026-11-14T23:30:00"))),
+    );
+  });
+
+  it("leaves out what cannot be added", () => {
+    const picks = getTopPicks(
+      entries.map((entry) =>
+        entry.manifest.domain === "spotify"
+          ? { ...entry, canAdd: false }
+          : entry,
+      ),
+      false,
+      day("2026-11-14"),
+    );
+
+    expect(domains(picks)).not.toContain("spotify");
+    expect(domains(picks)).toContain("chromecast");
+  });
+
+  it("picks what is new in the community catalog once every popular entry is added", () => {
+    const added = [
+      ...entries.map((entry) => ({ ...entry, canAdd: false })),
+      communityEntry("radio", { added: "2026-11-20T00:00:00Z" }),
+      communityEntry("dj", {
+        added: "2026-01-01T00:00:00Z",
+        released: "2026-11-21T00:00:00Z",
+      }),
+    ];
+
+    expect(new Set(domains(getTopPicks(added, true, NOW)))).toEqual(
+      new Set(["radio", "dj"]),
+    );
+    expect(getTopPicks(added, false, NOW)).toEqual([]);
+  });
+
+  it("has nothing to pick without entries", () => {
+    expect(getTopPicks([], true, NOW)).toEqual([]);
   });
 });
 

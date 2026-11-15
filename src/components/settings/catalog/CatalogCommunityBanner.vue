@@ -1,22 +1,20 @@
 <template>
-  <Alert
+  <section
     v-if="!dismissed"
-    role="note"
-    class="flex items-center gap-3 rounded-(--radius-xl) py-3 pr-3 pl-4 max-md:flex-col max-md:items-start [&>svg]:size-5 [&>svg]:translate-y-0"
+    class="flex items-center gap-6 rounded-(--radius-xl) border border-dashed border-violet-500/40 bg-violet-500/5 p-6 max-md:flex-col max-md:items-stretch max-md:gap-4 max-md:p-5"
     data-testid="community-banner"
   >
-    <UsersRound class="shrink-0" aria-hidden="true" />
-    <div class="min-w-0 flex-1">
-      <AlertTitle>
+    <div class="min-w-0 flex-1 space-y-1">
+      <h2 class="m-0 text-lg font-semibold">
         {{ $t("settings.catalog.community.banner_title") }}
-      </AlertTitle>
-      <AlertDescription>
+      </h2>
+      <p class="m-0 text-sm leading-relaxed text-muted-foreground">
         {{ $t("settings.catalog.community.banner_description") }}
-      </AlertDescription>
+      </p>
     </div>
     <div class="flex shrink-0 flex-wrap gap-2">
       <Button
-        size="sm"
+        class="max-md:flex-1"
         data-testid="community-banner-enable"
         @click="emit('enable')"
       >
@@ -24,18 +22,17 @@
       </Button>
       <Button
         variant="ghost"
-        size="sm"
+        class="max-md:flex-1"
         data-testid="community-banner-dismiss"
         @click="dismiss"
       >
         {{ $t("settings.catalog.community.banner_dismiss") }}
       </Button>
     </div>
-  </Alert>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   setUserPreference,
@@ -43,7 +40,6 @@ import {
 } from "@/composables/userPreferences";
 import { COMMUNITY_BANNER_DISMISSED_PREFERENCE } from "@/helpers/community_catalog";
 import { $t } from "@/plugins/i18n";
-import { UsersRound } from "@lucide/vue";
 
 const emit = defineEmits<{
   (e: "enable"): void;
