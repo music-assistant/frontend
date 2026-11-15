@@ -1,6 +1,9 @@
 // What can be added and how the Catalog and the add dialog list it. Both decide
 // from here, so they never offer a different set.
-import { isCommunityRunning } from "@/helpers/community_catalog";
+import {
+  isCommunityProblem,
+  isCommunityRunning,
+} from "@/helpers/community_catalog";
 import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
   getProviderMaintainers,
@@ -203,15 +206,10 @@ export const buildCatalogEntries = (
     .map((provider) => provider.manifest);
   const known = [...manifests, ...justInstalled]
     .filter((manifest) => isOfferable(manifest, restrictions))
-    // one the community catalog withdrew keeps running, but is no longer offered;
-    // one still on offer may already be registered
+    // one the community catalog stopped can still be among the manifests for a moment
     .filter((manifest) => {
       const provider = communityByDomain.get(manifest.domain);
-      return (
-        !provider ||
-        provider.state === CommunityProviderState.AVAILABLE ||
-        isCommunityRunning(provider)
-      );
+      return !provider || !isCommunityProblem(provider);
     })
     .map((manifest): CatalogEntry => {
       const instances = configs.filter(

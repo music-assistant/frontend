@@ -23,7 +23,6 @@ import {
   ref,
   toValue,
 } from "vue";
-import { toast } from "vue-sonner";
 
 /**
  * What the Catalog lists for the current user: an entry for everything it may
@@ -74,9 +73,9 @@ export function useProviderCatalog(
         managesAllSources() ? undefined : ProviderType.MUSIC,
       );
       loaded.value = true;
-    } catch (err) {
+    } catch {
+      // the api reports a refused read itself, and the page offers another try
       failed.value = true;
-      toast.error(String(err));
     }
   };
 

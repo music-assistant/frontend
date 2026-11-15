@@ -1349,6 +1349,32 @@ describe("Catalog with the community catalog", () => {
       emit.mockRestore();
     });
 
+    it("finishes the install but starts no setup once the page is left", async () => {
+      const emit = vi.spyOn(eventbus, "emit");
+      let finishInstall!: (provider: CommunityProvider) => void;
+      apiMock.installCommunityProvider.mockReturnValue(
+        new Promise((resolve) => (finishInstall = resolve)),
+      );
+      const wrapper = await mountCatalog();
+      clickAdd("radio");
+      await flushPromises();
+      continueNote();
+      await flushPromises();
+
+      wrapper.unmount();
+      finishInstall({ ...RADIO, state: CommunityProviderState.INSTALLED });
+      await flushPromises();
+
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "settings.catalog.community.installed_toast Radio Garden",
+      );
+      expect(emit).not.toHaveBeenCalledWith(
+        "setupFlowDialog",
+        expect.anything(),
+      );
+      emit.mockRestore();
+    });
+
     it("adds nothing after the install when the settings it had before are back", async () => {
       const emit = vi.spyOn(eventbus, "emit");
       // the server loads the settings entry kept from before with the install

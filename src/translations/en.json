@@ -720,7 +720,7 @@
                 "banner_dismiss": "Don't show again",
                 "unavailable": "Community catalog not available",
                 "unavailable_title": "The community catalog is not available right now",
-                "unavailable_message": "Anything you installed from it does not run until it is available again.",
+                "unavailable_message": "What you installed from it does not show here until it is available again.",
                 "confirm_title": "Enable the community catalog?",
                 "confirm": "Enable",
                 "enabled_toast": "The community catalog is enabled",

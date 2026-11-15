@@ -255,10 +255,12 @@ describe("buildCatalogEntries with the community catalog", () => {
         self_service: false,
       }),
     }),
-    // withdrawn, still running: its manifest is listed, but it is not offered
+    // withdrawn, still running: the server lists its manifest
     communityProvider("old", {
       state: CommunityProviderState.WITHDRAWN,
-      manifest: manifest("old", "Old", ProviderType.MUSIC),
+      manifest: manifest("old", "Old", ProviderType.MUSIC, {
+        multi_instance: true,
+      }),
     }),
     // blocked: the server no longer lists its manifest
     communityProvider("bad", {
@@ -269,7 +271,7 @@ describe("buildCatalogEntries with the community catalog", () => {
   const manifests = [
     ...MANIFESTS,
     installedManifest,
-    manifest("old", "Old", ProviderType.MUSIC),
+    manifest("old", "Old", ProviderType.MUSIC, { multi_instance: true }),
   ];
   const entries = buildCatalogEntries(manifests, [], {}, undefined, community);
 
@@ -283,6 +285,7 @@ describe("buildCatalogEntries with the community catalog", () => {
       "fanart.tv",
       "Local disk",
       "Lyrics",
+      "Old",
       "Party",
       "Radio",
       "Sonos",
@@ -305,13 +308,39 @@ describe("buildCatalogEntries with the community catalog", () => {
     });
   });
 
-  it("leaves out what it no longer offers or blocked", () => {
-    expect(entries.find((item) => item.manifest.domain === "old")).toBe(
-      undefined,
-    );
+  it("leaves out what it blocked", () => {
     expect(entries.find((item) => item.manifest.domain === "bad")).toBe(
       undefined,
     );
+  });
+
+  it("keeps one it withdrew, so another one can be added", () => {
+    const configs = [providerConfig({ domain: "old" })];
+
+    const listed = entry(
+      buildCatalogEntries(manifests, configs, {}, undefined, community),
+      "old",
+    );
+
+    expect(listed).toMatchObject({ instances: configs, canAdd: true });
+    expect(needsInstall(listed)).toBe(false);
+  });
+
+  it("shows one it withdrew that allows a single one as set up", () => {
+    const configs = [providerConfig({ domain: "old" })];
+    const single = manifest("old", "Old", ProviderType.MUSIC);
+
+    expect(
+      entry(
+        buildCatalogEntries([...MANIFESTS, single], configs, {}, undefined, [
+          communityProvider("old", {
+            state: CommunityProviderState.WITHDRAWN,
+            manifest: single,
+          }),
+        ]),
+        "old",
+      ),
+    ).toMatchObject({ instances: configs, canAdd: false });
   });
 
   it("applies the restrictions to what it offers", () => {
@@ -365,11 +394,7 @@ describe("buildCatalogEntries with the community catalog", () => {
     });
   });
 
-  it.each([
-    CommunityProviderState.BLOCKED,
-    CommunityProviderState.UNAVAILABLE,
-    CommunityProviderState.WITHDRAWN,
-  ])(
+  it.each([CommunityProviderState.BLOCKED, CommunityProviderState.UNAVAILABLE])(
     "leaves out one that is %s, whether or not the server lists its manifest",
     (state) => {
       const provider = communityProvider("radio", {
