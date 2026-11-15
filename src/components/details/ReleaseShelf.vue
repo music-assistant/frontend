@@ -86,7 +86,7 @@ import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import { parseBool } from "@/helpers/parse";
 import { panelViewItemResponsive } from "@/helpers/utils";
-import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
+import { isExternalItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
   MediaType,
@@ -175,7 +175,7 @@ const viewAllLabel = computed(() =>
 const subtitle = function (item: Album | Playlist | ItemMapping): string {
   if (item.media_type === MediaType.PLAYLIST && "owner" in item && item.owner)
     return item.owner;
-  if (isMusicBrainzItem(item)) return $t("not_in_library");
+  if (isExternalItem(item)) return $t("not_in_library");
   if ("album_type" in item && item.album_type !== AlbumType.UNKNOWN) {
     return $t(`album_type.${item.album_type}`);
   }

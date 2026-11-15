@@ -83,6 +83,7 @@ vi.mock("@/components/artist/artistRows", () => ({
     resolve: mockResolveArtistRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "all",
+    resolveSource: () => "all",
     sources: mockArtistRowSources,
   },
 }));
@@ -124,7 +125,7 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
-    props: ["title", "items", "itemCount"],
+    props: ["title", "items", "itemCount", "viewAllTo"],
     template: '<div :data-row="title" />',
   },
 }));
@@ -379,6 +380,26 @@ describe("ArtistDetails", () => {
       .find((component) => component.props("title") === "discography");
     expect(shelf?.props("items")).toHaveLength(50);
     expect(shelf?.props("itemCount")).toBe(1);
+  });
+
+  // the listing opens on what the shelf shows, an automatic row's provider included
+  it("opens a release shelf's listing on the shelf's source", async () => {
+    const wrapper = await mountDetails(artist({ item_id: "7" }));
+
+    const viewAll = (title: string) =>
+      wrapper
+        .findAllComponents({ name: "ReleaseShelf" })
+        .find((component) => component.props("title") === title)
+        ?.props("viewAllTo");
+    expect(viewAll("albums")).toEqual({
+      name: "artistlisting",
+      params: { provider: "library", itemId: "7", listing: "albums" },
+      query: { source: "all" },
+    });
+    expect(viewAll("singles_eps")).toMatchObject({
+      params: { listing: "singles" },
+      query: { source: "all" },
+    });
   });
 
   describe("discography heading", () => {

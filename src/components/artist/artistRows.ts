@@ -111,8 +111,10 @@ export function availableArtistRowIds(
  *
  * A row's sources are the library for a release row and every provider at once
  * for a row the server aggregates, then each provider able to supply the row;
- * the first of them is the default. A provider (non-library) artist offers no
- * choice and always stays on its own provider.
+ * the first of them is the default. A release row that a provider can supply
+ * starts with "auto" instead, which the page resolves from the library's count
+ * for the row. A provider (non-library) artist offers no choice and always
+ * stays on its own provider.
  */
 export const artistRows = createRowRegistry<ArtistRowId, Artist>({
   rows: ARTIST_ROWS,
@@ -142,9 +144,10 @@ const ROW_FEATURES: Partial<Record<ArtistRowId, ProviderFeature>> = {
 /** The sources a row of a library artist could be fed from, whether or not it has a picker. */
 function rowSourceCandidates(id: ArtistRowId, artist: Artist): RowSource[] {
   if (artist.provider !== "library") return [];
-  if (id === "playlists") return rowSourceProviders(id, artist);
-  const first: RowSource = RELEASE_ROWS.includes(id) ? "library" : "all";
-  return [first, ...rowSourceProviders(id, artist)];
+  const providers = rowSourceProviders(id, artist);
+  if (id === "playlists") return providers;
+  if (!RELEASE_ROWS.includes(id)) return ["all", ...providers];
+  return providers.length ? ["auto", "library", ...providers] : ["library"];
 }
 
 /**
