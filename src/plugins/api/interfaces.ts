@@ -1508,6 +1508,7 @@ export interface QueueItem {
   extra_attributes?: {
     party_guest?: boolean; // true if added by party guest
     party_boosted?: boolean; // true if added as "boost" (play next)
+    party_skip_votes?: number; // guests that voted to skip this (currently playing) item
     playback_speed?: number; // current playback speed multiplier (audiobook/podcast)
   };
 }
@@ -1828,6 +1829,25 @@ export interface ProviderManifest {
   icon_images: ProviderIconVariant[];
   // depends on: domain of another provider that is required for this provider
   depends_on: string | null;
+  // menu_actions: entries this provider adds to the menu of a media item;
+  // absent from an older server
+  menu_actions?: ProviderMenuAction[];
+}
+
+export interface ProviderMenuAction {
+  // An entry a provider adds to the menu of a media item.
+  // id: names the action within its provider
+  id: string;
+  // label: the text of the entry, already in the user's language
+  label: string;
+  // media_types: the kinds of media item the entry is offered for
+  media_types: MediaType[];
+  // scope: what a user needs to see and use the entry
+  scope: Scope;
+  // icon: name of a material design icon, such as mdi-image-frame
+  icon: string | null;
+  // requires_player: whether the action acts on a player, which the app then passes
+  requires_player: boolean;
 }
 
 export enum ProviderStage {
@@ -2306,6 +2326,8 @@ export interface PartyConfig {
   enable_skip_song: boolean;
   skip_song_limit: number;
   skip_song_refill_minutes: number;
+  // Number of distinct guests that must vote before the current song is skipped
+  skip_votes_required: number;
   karaoke_mode: boolean;
   highlight_ahead: boolean;
   request_badge_color?: string;

@@ -33,9 +33,9 @@
       <div
         v-for="suggestion in suggestions"
         :key="suggestion.entry.manifest.domain"
-        class="w-64 shrink-0 snap-start max-sm:w-[72%]"
+        class="w-72 shrink-0 snap-start max-sm:w-[72%]"
       >
-        <CatalogTile
+        <CatalogCard
           :entry="suggestion.entry"
           :installing="installing.has(suggestion.entry.manifest.domain)"
           :paired-with="suggestion.pairedWith"
@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import CatalogTile from "@/components/settings/catalog/CatalogTile.vue";
+import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import { Button } from "@/components/ui/button";
 import {
   type CatalogSuggestion,

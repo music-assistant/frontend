@@ -1534,11 +1534,13 @@ export class MusicAssistantApi {
   public getAudiobook(
     item_id: string,
     provider_instance_id_or_domain: string,
+    options?: CommandOptions,
   ): Promise<Audiobook> {
-    return this.sendCommand("music/audiobooks/get_audiobook", {
-      item_id,
-      provider_instance_id_or_domain,
-    });
+    return this.sendCommand(
+      "music/audiobooks/get_audiobook",
+      { item_id, provider_instance_id_or_domain },
+      options,
+    );
   }
 
   public getAudiobookCollection(
@@ -2901,6 +2903,23 @@ export class MusicAssistantApi {
     return this.sendCommand("config/providers/invoke_action", {
       instance_id,
       action,
+    });
+  }
+
+  public async invokeProviderMenuAction(
+    instance_id: string,
+    action_id: string,
+    uri: string,
+    player_id?: string,
+  ): Promise<ConfigActionResult | null> {
+    // Run a menu action a provider instance declares, for a media item, and
+    // on the given player for an action that requires one. Returns nothing,
+    // or the outcome to show the user.
+    return this.sendCommand("providers/invoke_menu_action", {
+      instance_id,
+      action_id,
+      uri,
+      player_id,
     });
   }
 

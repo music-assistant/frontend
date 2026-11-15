@@ -29,16 +29,6 @@ export function useCatalogEntryDetails(entry: MaybeRefOrGetter<CatalogEntry>) {
   // the people maintaining it; none when only the team does
   const maintainers = computed(() => getEntryMaintainers(toValue(entry)));
 
-  // what a short listing says under the name: the type, or who maintains one
-  // from the community catalog
-  const byline = computed(() =>
-    community.value && maintainers.value.length
-      ? $t("settings.catalog.by_maintainers", {
-          maintainers: maintainers.value.join(", "),
-        })
-      : typeLabel.value,
-  );
-
   const isSetUp = computed(() => toValue(entry).instances.length > 0);
 
   const manageRoute = computed(() => getManageRoute(toValue(entry)));
@@ -53,7 +43,6 @@ export function useCatalogEntryDetails(entry: MaybeRefOrGetter<CatalogEntry>) {
     typeLabel,
     community,
     maintainers,
-    byline,
     isSetUp,
     manageRoute,
     repositoryUrl,

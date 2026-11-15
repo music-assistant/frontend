@@ -67,19 +67,6 @@ export const CATALOG_TYPES: readonly CatalogType[] = [
   },
 ];
 
-/** What the add dialog lists first, in this order. */
-export const POPULAR_PROVIDERS: readonly string[] = [
-  "spotify",
-  "tidal",
-  "qobuz",
-  "filesystem_local",
-  "sonos",
-  "chromecast",
-  "airplay",
-  "spotify_connect",
-  "airplay_receiver",
-];
-
 /** The stages a provider that can be added may have, to filter on. */
 export const ADDABLE_PROVIDER_STAGES: readonly ProviderStage[] = [
   ProviderStage.STABLE,
@@ -284,18 +271,27 @@ export const countCatalogTypes = (
     count: entries.filter((entry) => entry.manifest.type === type.type).length,
   })).filter(({ count }) => count > 0);
 
-/** The entries with the popular ones first, in their popular order. */
+/**
+ * The entries with the popular ones first, in their popular order, the others by name.
+ *
+ * @param entries - The entries to sort.
+ * @param popular - The domains of the popular providers, most popular first.
+ */
 export const sortPopularFirst = (
   entries: readonly CatalogEntry[],
+  popular: readonly string[],
 ): CatalogEntry[] =>
   [...entries].sort((a, b) => {
-    const aRank = popularRank(a.manifest.domain);
-    const bRank = popularRank(b.manifest.domain);
+    const aRank = popularRank(popular, a.manifest.domain);
+    const bRank = popularRank(popular, b.manifest.domain);
     if (aRank !== bRank) return aRank - bRank;
     return compareNames(a.manifest.name, b.manifest.name);
   });
 
-/** How many entries a list shows at first, and how many more each time after. */
+/**
+ * How many entries a list shows at first, and how many more each time after: a
+ * multiple of every column count of the list, so each page fills its last row.
+ */
 export const CATALOG_PAGE_SIZE = 24;
 
 export const CATALOG_DISCOVER_TAB = "discover";
@@ -429,9 +425,9 @@ export const groupInstalledProviders = (
 export const getMaintainerProfileUrl = (handle: string) =>
   `https://github.com/${handle.replace(/^@/, "")}`;
 
-function popularRank(domain: string): number {
-  const index = POPULAR_PROVIDERS.indexOf(domain);
-  return index === -1 ? POPULAR_PROVIDERS.length : index;
+function popularRank(popular: readonly string[], domain: string): number {
+  const index = popular.indexOf(domain);
+  return index === -1 ? popular.length : index;
 }
 
 function compareNames(a: string, b: string): number {
