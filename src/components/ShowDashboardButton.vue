@@ -8,7 +8,7 @@
         :class="activeSession ? activePillClass : ''"
         :aria-label="$t('tooltip.show_dashboard')"
         :title="$t('tooltip.show_dashboard')"
-        @click="loadDashboards"
+        @click="refreshDashboards"
       >
         <TvMinimal
           class="size-(--icon-size)"
@@ -17,54 +17,66 @@
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" :class="contentClass">
-      <div
-        v-if="loading"
-        class="text-muted-foreground px-2 py-1.5 text-sm"
-        data-testid="cast-dashboard-loading"
-      >
-        {{ $t("dashboard.loading") }}
-      </div>
-      <div
-        v-else-if="!dashboards.length"
-        class="text-muted-foreground px-2 py-1.5 text-sm"
-        data-testid="cast-dashboard-empty"
-      >
-        {{ $t("dashboard.no_devices") }}
-      </div>
-      <DropdownMenuItem
-        v-for="device in sortedDashboards"
-        :key="device.dashboard_id"
-        data-testid="cast-dashboard-device"
-        @click="selectDevice(device)"
-      >
-        <div class="flex min-w-0 items-center gap-1.5">
-          <DashboardDeviceIcon
-            :provider-domain-hint="device.provider_domain_hint"
-            :size="14"
-          />
-          <span class="truncate">{{ device.name }}</span>
+      <template v-if="canShowHere">
+        <DropdownMenuItem
+          data-testid="cast-dashboard-this-device"
+          @click="showHere"
+        >
+          <MonitorSmartphone />
+          <span>{{ $t("this_device") }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator v-if="canCast" />
+      </template>
+      <template v-if="canCast">
+        <div
+          v-if="loading"
+          class="text-muted-foreground px-2 py-1.5 text-sm"
+          data-testid="cast-dashboard-loading"
+        >
+          {{ $t("dashboard.loading") }}
         </div>
-        <Check v-if="isActiveDevice(device)" class="ml-auto size-4" />
-      </DropdownMenuItem>
-      <template v-if="activeSession">
+        <div
+          v-else-if="!dashboards.length"
+          class="text-muted-foreground px-2 py-1.5 text-sm"
+          data-testid="cast-dashboard-empty"
+        >
+          {{ $t("dashboard.no_devices") }}
+        </div>
+        <DropdownMenuItem
+          v-for="device in sortedDashboards"
+          :key="device.dashboard_id"
+          data-testid="cast-dashboard-device"
+          @click="selectDevice(device)"
+        >
+          <div class="flex min-w-0 items-center gap-1.5">
+            <DashboardDeviceIcon
+              :provider-domain-hint="device.provider_domain_hint"
+              :size="14"
+            />
+            <span class="truncate">{{ device.name }}</span>
+          </div>
+          <Check v-if="isActiveDevice(device)" class="ml-auto size-4" />
+        </DropdownMenuItem>
+        <template v-if="activeSession">
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            data-testid="cast-dashboard-disconnect"
+            @click="disconnect"
+          >
+            <Unplug />
+            <span>{{ $t("dashboard.disconnect", [activeSession.name]) }}</span>
+          </DropdownMenuItem>
+        </template>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          variant="destructive"
-          data-testid="cast-dashboard-disconnect"
-          @click="disconnect"
+          data-testid="cast-dashboard-get-url"
+          @click="copyDashboardUrlToClipboard"
         >
-          <Unplug />
-          <span>{{ $t("dashboard.disconnect", [activeSession.name]) }}</span>
+          <v-icon icon="mdi-link" size="16" />
+          <span>{{ $t("dashboard.get_url") }}</span>
         </DropdownMenuItem>
       </template>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        data-testid="cast-dashboard-get-url"
-        @click="copyDashboardUrlToClipboard"
-      >
-        <v-icon icon="mdi-link" size="16" />
-        <span>{{ $t("dashboard.get_url") }}</span>
-      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
@@ -92,7 +104,9 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { Check, TvMinimal, Unplug } from "@lucide/vue";
+import router from "@/plugins/router";
+import { store } from "@/plugins/store";
+import { Check, MonitorSmartphone, TvMinimal, Unplug } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 import { copyToClipboard } from "@/helpers/utils";
@@ -139,13 +153,24 @@ const canGetUrl = computed(() => {
   );
 });
 
+// The now playing dashboard can also show on the device in hand, which needs
+// no cast device and no URL; a guest session is kept to its own pages.
+const canShowHere = computed(
+  () =>
+    props.dashboard === "now_playing" && !authManager.isGuestAccessSession?.(),
+);
+
+const canCast = computed(
+  () =>
+    canShowDashboards.value && (dashboards.value.length > 0 || canGetUrl.value),
+);
+
 // A dashboard viewer can't cast a dashboard itself.
 const showButton = computed(
   () =>
     apiReady.value &&
-    canShowDashboards.value &&
     !authManager.isDashboardViewer?.() &&
-    (dashboards.value.length > 0 || canGetUrl.value),
+    (canShowHere.value || canCast.value),
 );
 
 // The overlay variant styles its own active state; elsewhere an active session
@@ -176,9 +201,10 @@ const unsubscribers: Array<() => void> = [];
 
 onMounted(async () => {
   await waitForApiInitialization();
-  if (unmounted || !canShowDashboards.value) return;
+  if (unmounted) return;
 
   apiReady.value = true;
+  if (!canShowDashboards.value) return;
   fetchSessions();
   loadDashboards();
   unsubscribers.push(
@@ -202,6 +228,22 @@ async function fetchSessions() {
   } catch (error) {
     console.error("Failed to load dashboard sessions:", error);
   }
+}
+
+// Opening the menu refreshes the cast devices, for a role that may cast.
+function refreshDashboards() {
+  if (canShowDashboards.value) loadDashboards();
+}
+
+// The dashboard opens over the app; leaving it returns to the fullscreen
+// player this button sits in.
+function showHere() {
+  open.value = false;
+  store.showFullscreenPlayer = false;
+  void router.push({
+    name: "now-playing",
+    query: props.playerId ? { player: props.playerId } : {},
+  });
 }
 
 async function loadDashboards() {
