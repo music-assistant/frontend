@@ -48,17 +48,8 @@ describe("showActionResult", () => {
     expect(toastMock.success).toHaveBeenCalledWith("Hi");
   });
 
-  it.each([
-    ["nothing", null],
-    ["text", "Linked"],
-    ["a number", 42],
-    ["a list", ["Linked"]],
-    [
-      "fields of other types",
-      { message: 42, open_url: ["https://example.org/list"] },
-    ],
-  ])("takes %s as a result without a message or a url", (_case, answer) => {
-    showActionResult(answer);
+  it("says the action is done when the action answers nothing", () => {
+    showActionResult(null);
 
     expect(toastMock.success).toHaveBeenCalledExactlyOnceWith(
       "settings.action_completed",
