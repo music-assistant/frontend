@@ -12,49 +12,39 @@
         :link-label="$t(group.type.manageLabel)"
         :link-to="getTypeSettingsRoute(group.type.type)"
       />
-      <ItemGroup class="gap-2">
-        <!-- a source shared with the user is listed, but its settings are not
-             the user's to open -->
-        <Item
+      <!-- a source shared with the user is listed, but its settings are not
+           the user's to open -->
+      <CatalogGrid>
+        <CatalogBannerCard
           v-for="item in group.items"
           :key="item.config.instance_id"
-          as-child
-          variant="outline"
-          class="rounded-(--radius-xl)"
-          :class="{
-            'hover:bg-accent/50': item.manageable,
-            'opacity-60': !item.config.enabled,
-          }"
+          :domain="item.config.domain"
+          :name="item.name"
+          :to="
+            item.manageable ? getInstanceSettingsRoute(item.config) : undefined
+          "
+          :class="{ 'opacity-60': !item.config.enabled }"
+          data-testid="catalog-installed-card"
+          :data-domain="item.config.domain"
         >
-          <component
-            :is="item.manageable ? RouterLink : 'div'"
-            :to="item.manageable ? getInstanceSettingsRoute(item.config) : null"
-            class="text-inherit no-underline"
-            data-testid="catalog-installed-row"
+          <template v-if="!item.config.enabled" #badges>
+            <Badge variant="outline">
+              {{ $t("settings.provider_status_disabled") }}
+            </Badge>
+          </template>
+          <p
+            v-if="subtitle(item)"
+            class="m-0 mt-0.5 text-xs text-muted-foreground"
           >
-            <ItemMedia>
-              <CatalogIcon :domain="item.config.domain" :size="40" />
-            </ItemMedia>
-            <ItemContent>
-              <ItemTitle class="flex flex-wrap items-center gap-2">
-                {{ item.name }}
-                <Badge v-if="!item.config.enabled" variant="outline">
-                  {{ $t("settings.provider_status_disabled") }}
-                </Badge>
-              </ItemTitle>
-              <ItemDescription v-if="subtitle(item)">
-                {{ subtitle(item) }}
-              </ItemDescription>
-            </ItemContent>
-            <ItemActions v-if="item.manageable">
-              <ChevronRight
-                class="size-4 text-muted-foreground"
-                aria-hidden="true"
-              />
-            </ItemActions>
-          </component>
-        </Item>
-      </ItemGroup>
+            {{ subtitle(item) }}
+          </p>
+          <p
+            class="m-0 mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground"
+          >
+            {{ description(item) }}
+          </p>
+        </CatalogBannerCard>
+      </CatalogGrid>
     </section>
   </div>
 
@@ -78,7 +68,8 @@
 </template>
 
 <script setup lang="ts">
-import CatalogIcon from "@/components/settings/catalog/CatalogIcon.vue";
+import CatalogBannerCard from "@/components/settings/catalog/CatalogBannerCard.vue";
+import CatalogGrid from "@/components/settings/catalog/CatalogGrid.vue";
 import CatalogSectionHeading from "@/components/settings/catalog/CatalogSectionHeading.vue";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -89,15 +80,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemGroup,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
-import {
   getInstanceSettingsRoute,
   getTypeSettingsRoute,
   type InstalledGroup,
@@ -105,8 +87,7 @@ import {
 } from "@/helpers/provider_catalog";
 import { api } from "@/plugins/api";
 import { $t } from "@/plugins/i18n";
-import { ChevronRight, PackageOpen } from "@lucide/vue";
-import { RouterLink } from "vue-router";
+import { PackageOpen } from "@lucide/vue";
 
 interface Props {
   groups: InstalledGroup[];
@@ -119,4 +100,7 @@ const subtitle = (item: InstalledProvider) => {
   const providerName = api.providerManifests[item.config.domain]?.name;
   return providerName && providerName !== item.name ? providerName : "";
 };
+
+const description = (item: InstalledProvider) =>
+  api.providerManifests[item.config.domain]?.description ?? "";
 </script>
