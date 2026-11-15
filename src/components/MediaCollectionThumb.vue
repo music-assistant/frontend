@@ -76,6 +76,8 @@ function thumbStyle(index: number) {
 <style scoped>
 .thumb-stack {
   position: relative;
+  /* keeps the covers' z-indexes below the overlays of the card or row */
+  isolation: isolate;
   aspect-ratio: 1;
 }
 
