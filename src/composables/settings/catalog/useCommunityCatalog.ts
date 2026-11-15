@@ -121,6 +121,8 @@ export function useCommunityCatalog() {
       // settings kept from before load again with it, and then there is nothing to add
       const restored =
         (await api.getProviderConfigs(undefined, provider.domain)).length > 0;
+      // the add flow reads the manifest the server just registered
+      await api.fetchProviderManifests();
       toast.success(
         $t(
           restored
@@ -129,8 +131,6 @@ export function useCommunityCatalog() {
           { name },
         ),
       );
-      // the add flow reads the manifest the server just registered
-      await api.fetchProviderManifests();
       return restored ? undefined : result.manifest;
     } catch (err) {
       toast.error(String(err));

@@ -350,6 +350,20 @@ describe("useCommunityCatalog", () => {
       expect(apiMock.fetchProviderManifests).toHaveBeenCalled();
     });
 
+    it("only reports it installed once the manifest to add it with is read", async () => {
+      apiMock.installCommunityProvider.mockResolvedValue(
+        communityProvider("radio", { state: CommunityProviderState.INSTALLED }),
+      );
+      apiMock.fetchProviderManifests.mockRejectedValue(new Error("offline"));
+      const { catalog } = mountCatalog();
+      await flushPromises();
+
+      await expect(catalog.install(RADIO)).resolves.toBe(undefined);
+
+      expect(toastMock.success).not.toHaveBeenCalled();
+      expect(toastMock.error).toHaveBeenCalledExactlyOnceWith("Error: offline");
+    });
+
     it("does nothing while it is being installed already", async () => {
       let finishInstall!: (value: CommunityProvider) => void;
       apiMock.installCommunityProvider.mockReturnValue(
