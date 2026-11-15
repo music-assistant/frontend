@@ -24,6 +24,7 @@ import { computed, reactive } from "vue";
 import { providerManifest } from "../fixtures/providerManifest";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { album } from "../fixtures/album";
 import { track } from "../fixtures/track";
 
 const { apiMock, emittedMenus, hasScope, storeMock, toastMock } = vi.hoisted(
@@ -82,10 +83,18 @@ const SEND: ProviderMenuAction = {
 
 // a track of the test provider, which is loaded
 const song = track({ provider_mappings: [providerMapping()] });
-// an item known only by an external id
-const release = track({
+// a release known only by an external id, which can not be played as it is
+const release = album({
+  item_id: "musicbrainz_releasegroupid:rg-1",
   provider: "external",
-  provider_mappings: [providerMapping()],
+  provider_mappings: [],
+  is_playable: false,
+});
+// a track known only by an external id, which the server looks up when played
+const externalSong = track({
+  item_id: "isrc:USX9P0812345",
+  provider: "external",
+  provider_mappings: [],
 });
 
 beforeEach(() => {
@@ -154,14 +163,25 @@ describe("the menu of a media item", () => {
     expect(items.filter((item) => item.text)).toEqual([]);
   });
 
-  it.each([
-    [
-      "that is not available",
-      track({ provider_mappings: [providerMapping({ available: false })] }),
-    ],
-    ["known only by an external id", release],
-  ])("offers nothing for an item %s", (_case, item) => {
-    expect(getDeclaredContextMenuItems([item])).toEqual([]);
+  it("offers nothing for an item that is not available", () => {
+    const unavailable = track({
+      provider_mappings: [providerMapping({ available: false })],
+    });
+
+    expect(getDeclaredContextMenuItems([unavailable])).toEqual([]);
+  });
+
+  it("offers the entries for an external item, run by its own uri", async () => {
+    await choose(getDeclaredContextMenuItems([externalSong]), ASK.label);
+    expect(apiMock.invokeProviderMenuAction).toHaveBeenCalledWith(
+      "demo",
+      "show_item",
+      "external://track/isrc:USX9P0812345",
+      undefined,
+    );
+
+    const playItems = await getPlaybackContextMenuItems([externalSong]);
+    expect(playItems.at(-1)!.text).toBe("Send to the frame");
   });
 
   it("follows the providers when read in a computed", () => {

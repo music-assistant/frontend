@@ -1767,7 +1767,8 @@ const providerMenuItems = function (
   disabled = false,
 ): ContextMenuItem[] {
   const item = items[0];
-  if (items.length !== 1 || !itemIsAvailable(item) || isExternalItem(item))
+  // the server looks an external item up by its uri, as for the app's own actions
+  if (items.length !== 1 || !(itemIsAvailable(item) || isExternalItem(item)))
     return [];
   return getProviderMenuItems(
     item.media_type,
