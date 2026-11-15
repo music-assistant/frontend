@@ -1,4 +1,5 @@
 import Catalog from "@/views/settings/Catalog.vue";
+import { ApiCommandError } from "@/plugins/api/errors";
 import {
   type CommunityProvider,
   CommunityProviderState,
@@ -1436,6 +1437,24 @@ describe("Catalog with the community catalog", () => {
       document.querySelectorAll("[data-testid='catalog-installed-group']"),
     ).toHaveLength(2);
     expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("says why it is not available in the server's words when the server gave a reason", async () => {
+    apiMock.getCommunityProviders.mockRejectedValue(
+      new ApiCommandError("Not available in safe mode.", 1),
+    );
+
+    await mountCatalog();
+
+    expect(unavailableNotice()?.textContent).toContain(
+      "Not available in safe mode.",
+    );
+    expect(unavailableNotice()?.textContent).not.toContain(
+      "settings.catalog.community.unavailable_title",
+    );
+    expect(unavailableNotice()?.textContent).toContain(
+      "settings.catalog.community.unavailable_message",
+    );
   });
 
   it("loads it again on retry from the menu after the server refused it", async () => {

@@ -7,7 +7,7 @@
   >
     <CircleAlert />
     <AlertTitle class="line-clamp-none">
-      {{ $t("settings.catalog.community.unavailable_title") }}
+      {{ reason || $t("settings.catalog.community.unavailable_title") }}
     </AlertTitle>
     <AlertDescription>
       {{ $t("settings.catalog.community.unavailable_message") }}
@@ -19,4 +19,11 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { $t } from "@/plugins/i18n";
 import { CircleAlert } from "@lucide/vue";
+
+interface Props {
+  // why it is not available, in the server's words; the general text without it
+  reason?: string | null;
+}
+
+defineProps<Props>();
 </script>

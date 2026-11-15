@@ -9,6 +9,7 @@ import {
 } from "@/helpers/community_catalog";
 import { getCatalogType } from "@/helpers/provider_catalog";
 import { api } from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import {
   type CommunityProvider,
   type ConfigEntry,
@@ -39,6 +40,8 @@ export function useCommunityCatalog() {
   const switchEntry = ref<ConfigEntry | null>(null);
   const autoUpdateEntry = ref<ConfigEntry | null>(null);
   const status = ref<CommunityCatalogStatus>(isAdmin ? "loading" : "ready");
+  // why it is not available, when the server said so
+  const unavailableReason = ref<string | null>(null);
   const saving = ref(false);
   const savingAutoUpdate = ref(false);
   const refreshing = ref(false);
@@ -79,8 +82,10 @@ export function useCommunityCatalog() {
         config.values[COMMUNITY_CATALOG_AUTO_UPDATE_KEY] ?? null;
       providers.value = list;
       status.value = "ready";
-    } catch {
+    } catch (err) {
       // refused in safe mode, or out of reach: the page says it is not available
+      unavailableReason.value =
+        err instanceof ApiCommandError ? err.message : null;
       status.value = "unavailable";
     }
   };
@@ -379,6 +384,7 @@ export function useCommunityCatalog() {
   return {
     isAdmin,
     status,
+    unavailableReason,
     settled,
     available,
     enabled,

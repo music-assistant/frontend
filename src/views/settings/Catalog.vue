@@ -36,6 +36,7 @@
     />
     <CatalogCommunityUnavailable
       v-else-if="community.status === 'unavailable'"
+      :reason="community.unavailableReason"
     />
 
     <CommunityMovedNotice
