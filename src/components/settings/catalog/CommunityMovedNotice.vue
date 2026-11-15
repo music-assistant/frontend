@@ -9,7 +9,7 @@
       :data-domain="provider.domain"
     >
       <Info />
-      <AlertTitle>
+      <AlertTitle class="line-clamp-none">
         {{
           $t("settings.catalog.community.moved_title", {
             name: provider.manifest.name,
