@@ -147,6 +147,7 @@
           v-if="repositoryUrl"
           as="a"
           variant="outline"
+          class="no-underline"
           :href="repositoryUrl"
           target="_blank"
           rel="noopener noreferrer"
