@@ -45,9 +45,10 @@ describe("the overflow menu of the toolbar", () => {
     expect(lines[2].classes()).toEqual(
       expect.arrayContaining(["text-muted-foreground", "text-xs"]),
     );
-    // the column may shrink, so each line is cut off within the menu
+    // the column may shrink, so each line is cut off within the capped menu
     expect([...lines[1].element.parentElement!.classList]).toEqual(
       expect.arrayContaining(["min-w-0", "flex-1"]),
     );
+    expect(wrapper.find(".max-w-\\[350px\\]").exists()).toBe(true);
   });
 });

@@ -5,12 +5,14 @@
 -->
 <template>
   <DropdownMenu :open="show" :modal="modal" @update:open="onOpenChange">
+    <!-- capped at the room the screen leaves, so a long menu scrolls instead
+         of running off it -->
     <DropdownMenuContent
       data-item-context-menu
       :reference="reference"
       align="end"
       :side-offset="0"
-      class="z-[999999] min-w-[300px] max-w-[350px] max-h-[85vh] overflow-y-auto"
+      class="z-[999999] min-w-[300px] max-w-[350px] max-h-[min(85vh,var(--reka-dropdown-menu-content-available-height))] overflow-y-auto"
       @close-auto-focus="onCloseAutoFocus"
     >
       <!-- play menu header -->

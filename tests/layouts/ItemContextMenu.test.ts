@@ -233,4 +233,22 @@ describe("ItemContextMenu", () => {
     );
     wrapper.unmount();
   });
+
+  it("keeps a long menu within the room the screen leaves, scrolling the rest", async () => {
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [{ label: "show_info" }],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+
+    expect(wrapper.get("[data-item-context-menu]").classes()).toEqual(
+      expect.arrayContaining([
+        "max-h-[min(85vh,var(--reka-dropdown-menu-content-available-height))]",
+        "overflow-y-auto",
+      ]),
+    );
+    wrapper.unmount();
+  });
 });
