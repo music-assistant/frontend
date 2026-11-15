@@ -976,10 +976,9 @@ export class MusicAssistantApi {
    * Every album, EP and single MusicBrainz credits to a library artist, newest first.
    *
    * Only library artists are supported; the list is empty when MusicBrainz doesn't know
-   * the artist. The releases that are not in the library come back as MusicBrainz items
-   * (provider "musicbrainz", without provider mappings), which the server resolves to a
-   * real album when one is opened or added. `album_types` limits the list to
-   * releases of those types.
+   * the artist. The releases that are not in the library come back as external items
+   * (provider "external", without provider mappings), which the server looks up when one
+   * is opened or added. `album_types` limits the list to releases of those types.
    */
   public getArtistDiscography(
     item_id: string,

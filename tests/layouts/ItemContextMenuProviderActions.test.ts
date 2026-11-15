@@ -82,9 +82,9 @@ const SEND: ProviderMenuAction = {
 
 // a track of the test provider, which is loaded
 const song = track({ provider_mappings: [providerMapping()] });
-// a MusicBrainz entry, which has nothing to play
+// an item known only by an external id
 const release = track({
-  provider: "musicbrainz",
+  provider: "external",
   provider_mappings: [providerMapping()],
 });
 
@@ -159,7 +159,7 @@ describe("the menu of a media item", () => {
       "that is not available",
       track({ provider_mappings: [providerMapping({ available: false })] }),
     ],
-    ["of MusicBrainz", release],
+    ["known only by an external id", release],
   ])("offers nothing for an item %s", (_case, item) => {
     expect(getDeclaredContextMenuItems([item])).toEqual([]);
   });

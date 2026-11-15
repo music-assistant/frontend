@@ -1,7 +1,9 @@
 // shared navigation for the item the active player is playing, so the player
 // bar and the full screen player land in the same place
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import { openExternalItem } from "@/helpers/open_external_item";
 import api from "@/plugins/api";
+import { isExternalItem } from "@/plugins/api/helpers";
 import { MediaType } from "@/plugins/api/interfaces";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
@@ -25,6 +27,7 @@ export const openCurrentTrackDetails = async function () {
   if (mediaItem && mediaItem.media_type === MediaType.TRACK) {
     // Navigate directly to track detail page
     store.showFullscreenPlayer = false;
+    if (isExternalItem(mediaItem)) return openExternalItem(mediaItem);
     router.push({
       name: "track",
       params: {
