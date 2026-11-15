@@ -1400,9 +1400,15 @@ describe("Catalog with the community catalog", () => {
     await mountCatalog();
 
     expect(banner()).toBeNull();
+    expect(unavailableNotice()?.textContent).toContain(
+      "settings.catalog.community.unavailable_title",
+    );
+    expect(unavailableNotice()?.textContent).toContain(
+      "settings.catalog.community.unavailable_message",
+    );
     expect(menuLabels()).toEqual([
       "settings.catalog.community.unavailable",
-      "settings.retry",
+      "settings.catalog.try_again",
     ]);
     expect(openMenu()[0].disabled).toBe(true);
     expect(
@@ -1418,11 +1424,14 @@ describe("Catalog with the community catalog", () => {
     apiMock.getCommunityProviders.mockRejectedValueOnce(new Error("refused"));
     await mountCatalog();
 
-    await chooseInMenu("settings.retry");
+    expect(unavailableNotice()).not.toBeNull();
+
+    await chooseInMenu("settings.catalog.try_again");
 
     expect(apiMock.getCommunityProviders).toHaveBeenCalledTimes(2);
     expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
     expect(banner()).not.toBeNull();
+    expect(unavailableNotice()).toBeNull();
   });
 
   it("waits for the community catalog before showing the page", async () => {
@@ -1495,6 +1504,10 @@ async function clickBannerEnable() {
 
 function banner(): Element | null {
   return document.querySelector("[data-testid='community-banner']");
+}
+
+function unavailableNotice(): Element | null {
+  return document.querySelector("[data-testid='community-unavailable']");
 }
 
 function menuButton(): HTMLButtonElement | null {

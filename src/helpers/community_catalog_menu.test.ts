@@ -63,7 +63,7 @@ describe("the menu of the community catalog", () => {
 
     expect(items.map((item) => [item.label, !!item.disabled])).toEqual([
       ["settings.catalog.community.unavailable", true],
-      ["settings.retry", false],
+      ["settings.catalog.try_again", false],
     ]);
     items[1].action!();
     expect(state.retry).toHaveBeenCalled();
