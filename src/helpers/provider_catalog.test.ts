@@ -81,6 +81,19 @@ const CONFIGS: ProviderConfig[] = [
 ];
 
 describe("what can be added", () => {
+  // as the server lists them
+  const POPULAR = [
+    "spotify",
+    "tidal",
+    "qobuz",
+    "filesystem_local",
+    "sonos",
+    "chromecast",
+    "airplay",
+    "spotify_connect",
+    "airplay_receiver",
+  ];
+
   // the list the add dialog shows: what may be added, popular first
   const addable = (types: ProviderType[] = [], restrictions = {}) =>
     names(
@@ -89,6 +102,7 @@ describe("what can be added", () => {
           buildCatalogEntries(MANIFESTS, CONFIGS, restrictions).filter(
             (entry) => entry.canAdd,
           ),
+          POPULAR,
         ),
         { types },
       ),
@@ -131,6 +145,7 @@ describe("what can be added", () => {
           buildCatalogEntries(MANIFESTS, [], {
             types: [ProviderType.PLUGIN],
           }),
+          POPULAR,
         ),
       ),
     ).toEqual(["Spotify Connect", "AirPlay Receiver", "Party"]);
