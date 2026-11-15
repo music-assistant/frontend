@@ -1,20 +1,23 @@
 /**
- * A discography lists releases that are on none of the user's music services:
- * MusicBrainz items without provider mappings. They can be opened and added to
- * the library, which the server resolves to a real album, but not played.
+ * The server lists items it knows only by an external id: a discography
+ * release, a top track. They have no provider mappings and are looked up when
+ * they are opened, played or added to the library. Whether one can be played as
+ * it is comes from the server: a track can, an album can not.
  */
 import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
-import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
+import { openExternalItem } from "@/helpers/open_external_item";
 import { Scope } from "@/plugins/api/interfaces";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
+import { itemMapping } from "../fixtures/itemMapping";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
+import { track } from "../fixtures/track";
 
 const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
   emittedMenus: [] as ContextMenuDialogEvent[],
@@ -58,16 +61,17 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-vi.mock("@/helpers/open_musicbrainz_item", () => ({
-  openMusicBrainzItem: vi.fn(),
+vi.mock("@/helpers/open_external_item", () => ({
+  openExternalItem: vi.fn(),
 }));
 
-// a release as the discography sends it: the MusicBrainz release group id, the
-// library artist, and no provider mappings at all
+// a release as the discography sends it: the release group id in the external
+// form, the library artist, and no provider mappings at all
 const release = album({
-  item_id: "rg-1",
-  provider: "musicbrainz",
+  item_id: "musicbrainz_releasegroupid:rg-1",
+  provider: "external",
   provider_mappings: [],
+  is_playable: false,
   year: 1994,
   artists: [artist({ item_id: "7", name: "Jeff Buckley" })],
 });
@@ -86,7 +90,7 @@ beforeEach(() => {
   emittedMenus.length = 0;
 });
 
-describe("the context menu of a MusicBrainz release", () => {
+describe("the context menu of an external album", () => {
   it("offers opening it and adding it to the library", async () => {
     const labels = (await openMenu()).map((entry) => entry.label);
 
@@ -102,7 +106,7 @@ describe("the context menu of a MusicBrainz release", () => {
     expect(showInfo).toBeDefined();
     showInfo?.action?.();
 
-    expect(openMusicBrainzItem).toHaveBeenCalledWith(release);
+    expect(openExternalItem).toHaveBeenCalledWith(release);
   });
 
   it("offers nothing that needs an item on a music service", async () => {
@@ -151,20 +155,20 @@ describe("the context menu of a MusicBrainz release", () => {
   });
 
   // the server hands back the library album for a release that is in the
-  // library, so a MusicBrainz item is by definition outside it
+  // library, so an external item is by definition outside it
   it("does not look for a library counterpart", async () => {
     await openMenu();
 
     expect(apiMock.getLibraryItem).not.toHaveBeenCalled();
   });
 
-  it("adds it by its uri, which the server resolves to a real album", async () => {
+  it("adds it by its uri, which the server looks up", async () => {
     const menu = await openMenu();
 
     await menu.find((entry) => entry.label === "add_library")?.action?.();
 
     expect(apiMock.addItemToLibrary).toHaveBeenCalledWith(
-      "musicbrainz://album/rg-1",
+      "external://album/musicbrainz_releasegroupid:rg-1",
     );
   });
 
@@ -233,6 +237,34 @@ describe("the context menu of a MusicBrainz release", () => {
     expect(apiMock.playMedia.mock.calls[0][0]).toEqual([inLibrary.uri]);
   });
 
+  it("is left out when the rest of a selection is enqueued", async () => {
+    const mapping = providerMapping({ in_library: true });
+    const inLibrary = album({ item_id: "1", provider_mappings: [mapping] });
+    apiMock.getLibraryItem.mockResolvedValue(inLibrary);
+    apiMock.providers = {
+      [mapping.provider_instance]: { available: true, supported_features: [] },
+    };
+    storeMock.activePlayer = { player_id: "p1", available: true };
+
+    await showContextMenuForMediaItem(
+      [inLibrary, release],
+      undefined,
+      0,
+      0,
+      true,
+      true,
+    );
+    apiMock.providers = {};
+    storeMock.activePlayer = undefined;
+    const add = emittedMenus[0].items
+      .find((entry) => entry.label === "enqueue")
+      ?.subItems?.find((entry) => entry.label === "queue_option.add");
+    expect(add).toBeDefined();
+    add?.action?.();
+
+    expect(apiMock.playMedia.mock.calls[0][0]).toEqual([inLibrary.uri]);
+  });
+
   it("is left out when the rest of a selection goes into a playlist", async () => {
     const mapping = providerMapping({ in_library: true });
     const inLibrary = album({ item_id: "1", provider_mappings: [mapping] });
@@ -288,5 +320,94 @@ describe("the context menu of a MusicBrainz release", () => {
     vi.mocked(authManager.hasScope).mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),
     );
+  });
+});
+
+describe("the context menu of an external track", () => {
+  // a top track as the server lists it: the recording id in the external form,
+  // the library artist, and its album in the external form as well
+  const topTrack = track({
+    item_id: "musicbrainz_recordingid:rec-1",
+    provider: "external",
+    provider_mappings: [],
+    artists: [artist({ item_id: "7", name: "Jeff Buckley" })],
+    album: itemMapping({
+      item_id: "musicbrainz_albumid:rel-1",
+      provider: "external",
+      name: "Grace",
+      is_playable: false,
+    }),
+  });
+
+  async function openTrackMenu() {
+    await showContextMenuForMediaItem(topTrack, undefined, 0, 0, true, true);
+    return emittedMenus[0];
+  }
+
+  beforeEach(() => {
+    storeMock.activePlayer = { player_id: "p1", available: true };
+  });
+
+  afterEach(() => {
+    storeMock.activePlayer = undefined;
+  });
+
+  it("plays it by its uri, which the server looks up when it plays", async () => {
+    const menu = await openTrackMenu();
+    const playNow = menu.items.find((entry) => entry.label === "play_now");
+
+    expect(menu.showPlayMenuHeader).toBe(true);
+    expect(playNow).toBeDefined();
+    playNow?.action?.();
+
+    expect(apiMock.playMedia.mock.calls[0][0]).toEqual([topTrack.uri]);
+  });
+
+  it("offers the other queue options too", async () => {
+    const enqueue = (await openTrackMenu()).items.find(
+      (entry) => entry.label === "enqueue",
+    );
+
+    expect(enqueue?.subItems?.length).toBeGreaterThan(0);
+  });
+
+  it("gets a play menu", async () => {
+    await showPlayMenuForMediaItem(topTrack, undefined, 0, 0);
+
+    expect(emittedMenus).toHaveLength(1);
+    expect(emittedMenus[0].items.length).toBeGreaterThan(0);
+  });
+
+  it("opens its page and its album through the lookup", async () => {
+    const { items } = await openTrackMenu();
+
+    items.find((entry) => entry.label === "show_info")?.action?.();
+    items.find((entry) => entry.label === "goto_album")?.action?.();
+
+    expect(openExternalItem).toHaveBeenCalledWith(topTrack);
+    expect(openExternalItem).toHaveBeenCalledWith(topTrack.album);
+    expect(items.map((entry) => entry.label)).toContain("goto_artist");
+  });
+
+  it("adds it to the library by its uri, which the server looks up", async () => {
+    const { items } = await openTrackMenu();
+
+    await items.find((entry) => entry.label === "add_library")?.action?.();
+
+    expect(apiMock.addItemToLibrary).toHaveBeenCalledWith(
+      "external://track/musicbrainz_recordingid:rec-1",
+    );
+    expect(apiMock.getLibraryItem).not.toHaveBeenCalled();
+  });
+
+  it("offers nothing that needs a track that was found", async () => {
+    const labels = (await openTrackMenu()).items.map((entry) => entry.label);
+
+    expect(labels).not.toContain("add_playlist");
+    expect(labels).not.toContain("favorites_add");
+    expect(labels).not.toContain("favorites_dislike");
+    expect(labels).not.toContain("goto_track_radio");
+    expect(labels).not.toContain("refresh_item");
+    expect(labels).not.toContain("remove_library");
   });
 });
