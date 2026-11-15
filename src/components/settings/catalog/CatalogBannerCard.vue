@@ -78,7 +78,7 @@ const emit = defineEmits<{
 }>();
 
 const STRETCHED_CLASS =
-  "outline-none after:absolute after:inset-0 after:rounded-(--radius-xl) focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50";
+  "outline-none after:absolute after:inset-0 after:rounded-(--radius-xl) focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50 focus-visible:after:ring-inset";
 
 const { iconSrc, onDark, color } = useCatalogArt(
   () => props.domain,
