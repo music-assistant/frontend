@@ -153,7 +153,7 @@
         "player_not_available": "This player is not (yet) available",
         "player_option_error": "Error while setting player option: {key} {value}",
         "server_logs_load_failed": "Failed to load server logs",
-        "player_provider": "Player provider",
+        "player_provider": "Player support",
         "player_settings": "Player settings",
         "player_status": {
             "available": "Available",
@@ -451,7 +451,7 @@
             "label": "This group type does not support DSP when playing to multiple devices."
         },
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
-        "playerprovider": "Player provider",
+        "playerprovider": "Player support",
         "providers_total": "{count} total | {count} total",
         "stage": {
             "label": "Stage",
@@ -564,7 +564,7 @@
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
-        "no_group_providers": "You currently do not have any player providers that support creating groups",
+        "no_group_providers": "None of the player support you added can create groups",
         "provider_codeowners": "Contributed\/maintained by",
         "provider_credits": "Made possible by",
         "provider_community": "Community",
@@ -803,7 +803,7 @@
         },
         "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
         "queue_global_settings_link": "Open global queue settings",
-        "protocol_provider_unavailable": "The player provider for this output protocol is currently unavailable.",
+        "protocol_provider_unavailable": "The player support for this output protocol is currently unavailable.",
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
         "protocol_configure_title": "Configure {name}",
         "protocol_configure_title_via": "Configure {name} (over {base})",
@@ -3027,9 +3027,9 @@
             "players": {
                 "title": "Add your players",
                 "description": "The players Music Assistant already found. Switch off any you do not want to use, and rename them as you like.",
-                "description_empty": "Music Assistant finds your speakers through player providers, such as Sonos, Chromecast or AirPlay.",
+                "description_empty": "Music Assistant finds your speakers through the player support you add, such as Sonos, Chromecast or AirPlay.",
                 "empty": "No players found yet",
-                "no_provider_hint": "Add a player provider and its players show up here.",
+                "no_provider_hint": "Add player support for your speakers and they show up here.",
                 "discovering_hint": "Finding players can take a moment. Make sure your speakers are switched on and on the same network as Music Assistant.",
                 "add_more": "Add more players",
                 "discovered_by": "Discovered by",
