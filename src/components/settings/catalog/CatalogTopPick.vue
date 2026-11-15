@@ -21,17 +21,25 @@
             {{ $t("settings.provider_community") }}
           </Badge>
         </div>
-        <h2
-          class="m-0 text-2xl leading-tight font-semibold"
-          data-testid="catalog-top-pick-name"
+        <!-- another pick replaces this text above the dots, so it is read out -->
+        <div
+          class="flex flex-col gap-3"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="catalog-top-pick-live"
         >
-          {{ current.manifest.name }}
-        </h2>
-        <p
-          class="m-0 line-clamp-2 max-w-prose text-sm leading-relaxed text-muted-foreground"
-        >
-          {{ current.manifest.description }}
-        </p>
+          <h2
+            class="m-0 text-2xl leading-tight font-semibold"
+            data-testid="catalog-top-pick-name"
+          >
+            {{ current.manifest.name }}
+          </h2>
+          <p
+            class="m-0 line-clamp-2 max-w-prose text-sm leading-relaxed text-muted-foreground"
+          >
+            {{ current.manifest.description }}
+          </p>
+        </div>
         <div class="mt-1 flex flex-wrap gap-2">
           <Button
             :loading="installing.has(current.manifest.domain)"

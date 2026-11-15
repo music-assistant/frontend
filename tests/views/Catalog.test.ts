@@ -316,6 +316,30 @@ describe("Catalog", () => {
       emit.mockRestore();
     });
 
+    it("reads out the pick that a dot switches to", async () => {
+      await mountCatalog();
+
+      topPick()!
+        .querySelectorAll<HTMLElement>(
+          "[data-testid='catalog-top-pick-dot']",
+        )[1]
+        .click();
+      await flushPromises();
+
+      const live = topPick()!.querySelector(
+        "[data-testid='catalog-top-pick-live']",
+      )!;
+      expect(live.getAttribute("aria-live")).toBe("polite");
+      const shown =
+        topPick()!.getAttribute("data-domain") === "spotify"
+          ? "Spotify"
+          : "Sonos";
+      expect(live.textContent).toContain(shown);
+      expect(
+        live.querySelector("[data-testid='catalog-top-pick-name']"),
+      ).not.toBeNull();
+    });
+
     it("moves to the next pick with a swipe to the left", async () => {
       await mountCatalog();
       const first = topPick()!.getAttribute("data-domain");
