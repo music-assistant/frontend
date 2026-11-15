@@ -6,7 +6,7 @@
       :installing="installing"
       @open="emit('open', $event)"
       @add="emit('add', $event)"
-      @dismiss="dismiss"
+      @dismiss="letGo"
     />
 
     <CatalogPopularRow
@@ -18,7 +18,7 @@
       :data-testid="`catalog-${row.key}`"
       @open="emit('open', $event)"
       @add="emit('add', $event)"
-      @dismiss="dismiss"
+      @dismiss="letGo"
     />
 
     <CatalogCommunityBanner
@@ -77,6 +77,11 @@ const emit = defineEmits<{
 }>();
 
 const { dismissed, dismiss } = useDismissedSuggestions();
+
+const letGo = (domain: string) => {
+  const entry = props.entries.find((item) => item.manifest.domain === domain);
+  void dismiss(domain, entry?.manifest.name ?? domain);
+};
 
 const suggestions = computed(() =>
   getCatalogSuggestions(

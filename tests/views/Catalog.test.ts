@@ -1232,13 +1232,82 @@ describe("Catalog suggestions from the server", () => {
       expect(apiMock.updateUser).toHaveBeenCalledWith(
         "jane",
         { preferences: { "catalog.dismissedSuggestions": ["soundcloud"] } },
-        undefined,
+        { suppressGlobalError: true },
       );
       expect(document.querySelector("[data-domain='soundcloud']")).toBeNull();
       expect(rowKeys()).toEqual(["discovered"]);
 
       await search("SoundCloud");
       expect(cardNames("[data-testid='catalog-list']")).toEqual(["SoundCloud"]);
+    });
+
+    it("says so, names it, and brings it back with Undo", async () => {
+      recommendations = [...FOUR_FOUND, GOES_WELL];
+      await mountCatalog();
+
+      document
+        .querySelector<HTMLElement>(
+          "[data-domain='soundcloud'] [data-testid='catalog-card-dismiss']",
+        )!
+        .click();
+      await flushPromises();
+
+      expect(toastMock.success).toHaveBeenCalledExactlyOnceWith(
+        "settings.catalog.not_suggested_toast SoundCloud",
+        {
+          action: {
+            label: "settings.catalog.undo",
+            onClick: expect.any(Function),
+          },
+        },
+      );
+      expect(document.querySelector("[data-domain='soundcloud']")).toBeNull();
+
+      toastMock.success.mock.calls[0][1].action.onClick();
+      await flushPromises();
+
+      expect(apiMock.updateUser).toHaveBeenLastCalledWith(
+        "jane",
+        { preferences: { "catalog.dismissedSuggestions": [] } },
+        { suppressGlobalError: true },
+      );
+      expect(
+        document.querySelector(
+          "[data-testid='catalog-complements'] [data-domain='soundcloud']",
+        ),
+      ).not.toBeNull();
+      expect(toastMock.success).toHaveBeenLastCalledWith(
+        "settings.catalog.suggested_again_toast SoundCloud",
+      );
+      expect(toastMock.error).not.toHaveBeenCalled();
+    });
+
+    it("says once that it could not be saved, and keeps suggesting it", async () => {
+      recommendations = [...FOUR_FOUND, GOES_WELL];
+      apiMock.updateUser.mockRejectedValue(new Error("refused"));
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      await mountCatalog();
+
+      document
+        .querySelector<HTMLElement>(
+          "[data-domain='soundcloud'] [data-testid='catalog-card-dismiss']",
+        )!
+        .click();
+      await flushPromises();
+
+      // the api is asked to keep its own message away, so this is the only one
+      expect(apiMock.updateUser).toHaveBeenCalledWith(
+        "jane",
+        expect.anything(),
+        { suppressGlobalError: true },
+      );
+      expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
+        "settings.catalog.dont_suggest_failed SoundCloud",
+      );
+      expect(toastMock.success).not.toHaveBeenCalled();
+      expect(
+        document.querySelector("[data-domain='soundcloud']"),
+      ).not.toBeNull();
     });
 
     it("offers it only on what is about the user's own setup", async () => {
@@ -1276,7 +1345,7 @@ describe("Catalog suggestions from the server", () => {
       expect(apiMock.updateUser).toHaveBeenCalledWith(
         "jane",
         { preferences: { "catalog.dismissedSuggestions": ["sonos"] } },
-        undefined,
+        { suppressGlobalError: true },
       );
       expect(topPick()).toBeNull();
     });
@@ -1303,7 +1372,7 @@ describe("Catalog suggestions from the server", () => {
             "catalog.dismissedSuggestions": ["sonos", "soundcloud"],
           },
         },
-        undefined,
+        { suppressGlobalError: true },
       );
       expect(topPick()).toBeNull();
     });
