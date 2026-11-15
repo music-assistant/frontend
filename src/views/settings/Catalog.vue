@@ -91,7 +91,7 @@
           <CatalogDiscover
             v-if="!activeType && !searchQuery.trim()"
             :entries="entries"
-            :with-community="community.enabled"
+            :recommendations="recommendations"
             :offer-community="community.available && !community.enabled"
             :types="typeCounts"
             :installing="community.installing"
@@ -197,6 +197,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCatalogDetail } from "@/composables/settings/catalog/useCatalogDetail";
 import { useCommunityCatalog } from "@/composables/settings/catalog/useCommunityCatalog";
+import { useCatalogRecommendations } from "@/composables/settings/catalog/useCatalogRecommendations";
 import { useProviderCatalog } from "@/composables/settings/catalog/useProviderCatalog";
 import { getCommunityCatalogMenuItems } from "@/helpers/community_catalog_menu";
 import { startAddProvider } from "@/helpers/provider_add";
@@ -226,8 +227,16 @@ const { entries, installed, loaded, failed, reload } = useProviderCatalog(
   () => community.listed,
 );
 
-// the community catalog joins the list, so the page waits for it too
-const ready = computed(() => loaded.value && community.settled);
+const { recommendations, settled: recommendationsSettled } =
+  useCatalogRecommendations(() =>
+    community.settled ? community.enabled : undefined,
+  );
+
+// the community catalog joins the list and the suggestions lead Discover, so
+// the page waits for both too
+const ready = computed(
+  () => loaded.value && community.settled && recommendationsSettled.value,
+);
 
 // the Installed view looks after it while it is shown or anything is installed
 const showCommunityInstalled = computed(

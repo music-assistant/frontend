@@ -1,6 +1,8 @@
 import Catalog from "@/views/settings/Catalog.vue";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
+  type CatalogRecommendation,
+  CatalogRecommendationReason,
   type CommunityProvider,
   CommunityProviderState,
   type CoreConfig,
@@ -44,7 +46,9 @@ const { apiMock, hasScope, routeMock, routerMock, storeMock, toastMock } =
       providerManifests: {} as Record<string, ProviderManifest>,
       providerIcons: {} as Record<string, string | null>,
       providers: {} as Record<string, unknown>,
-      serverInfo: { value: undefined },
+      serverInfo: {
+        value: undefined as { server_version: string } | undefined,
+      },
       getProviderConfigs: vi.fn(),
       getProvider: vi.fn(),
       getProviderIcon: vi.fn(),
@@ -52,6 +56,7 @@ const { apiMock, hasScope, routeMock, routerMock, storeMock, toastMock } =
       subscribe: vi.fn(),
       getCoreConfig: vi.fn(),
       saveCoreConfig: vi.fn(),
+      getCatalogRecommendations: vi.fn(),
       getCommunityProviders: vi.fn(),
       refreshCommunityProviders: vi.fn(),
       installCommunityProvider: vi.fn(),
@@ -148,6 +153,8 @@ let configs: ProviderConfig[] = [];
 let communityEnabled = false;
 let communityAutoUpdate = false;
 let community: CommunityProvider[] = [];
+// what the server suggests
+let recommendations: CatalogRecommendation[] = [];
 let confirmations: DeleteConfirmationDialogEvent[] = [];
 const onConfirmation = (event: DeleteConfirmationDialogEvent) =>
   confirmations.push(event);
@@ -189,6 +196,14 @@ beforeEach(() => {
   communityEnabled = false;
   communityAutoUpdate = false;
   community = [];
+  apiMock.serverInfo.value = undefined;
+  recommendations = [
+    suggest("spotify", CatalogRecommendationReason.POPULAR),
+    suggest("sonos", CatalogRecommendationReason.POPULAR),
+  ];
+  apiMock.getCatalogRecommendations.mockImplementation(
+    async () => recommendations,
+  );
   // the server offers what is not installed only while the switch is on
   apiMock.getCommunityProviders.mockImplementation(async () =>
     community.filter(
@@ -955,6 +970,304 @@ describe("Catalog lists of a type", () => {
         Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
       }
     }
+  });
+});
+
+describe("Catalog suggestions from the server", () => {
+  const FOUND = suggest("sonos", CatalogRecommendationReason.DISCOVERED);
+  const GOES_WELL = suggest(
+    "soundcloud",
+    CatalogRecommendationReason.COMPLEMENTS,
+    "spotify",
+  );
+  const POPULAR = suggest("spotify", CatalogRecommendationReason.POPULAR);
+  // four found on the network fill the hero, so nothing after them is picked
+  const FOUR_FOUND = [10, 11, 12, 13].map((index) =>
+    suggest(`source${index}`, CatalogRecommendationReason.DISCOVERED),
+  );
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-14T12:00:00"));
+    for (let index = 10; index < 20; index++) {
+      apiMock.providerManifests[`source${index}`] = providerManifest({
+        domain: `source${index}`,
+        name: `Source ${index}`,
+      });
+    }
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("shows a row per reason in their order, in the server's order, leaving out what it does not know", async () => {
+    // nothing set up, so Chromecast can be suggested
+    configs = [];
+    recommendations = [
+      suggest("spotify", CatalogRecommendationReason.POPULAR),
+      suggest("unknown", CatalogRecommendationReason.POPULAR),
+      suggest("sonos", CatalogRecommendationReason.POPULAR),
+      suggest("chromecast", "favourite"),
+      suggest("soundcloud", CatalogRecommendationReason.NEW),
+      suggest("chromecast", CatalogRecommendationReason.NEW),
+    ];
+    await mountCatalog();
+
+    const pick = topPick()!.getAttribute("data-domain");
+    // the pick leads the popular row, so it is left out of it
+    expect(cardNames("[data-testid='catalog-popular']")).toEqual(
+      pick === "spotify" ? ["Sonos"] : ["Spotify"],
+    );
+    expect(rowKeys()).toEqual(["popular", "new"]);
+    expect(cardNames("[data-testid='catalog-new']")).toEqual([
+      "SoundCloud",
+      "Chromecast",
+    ]);
+  });
+
+  it("shows at most eight in a row", async () => {
+    recommendations = Array.from({ length: 10 }, (_, index) =>
+      suggest(`source${index + 10}`, CatalogRecommendationReason.NEW),
+    );
+
+    await mountCatalog();
+
+    expect(cardNames("[data-testid='catalog-new']")).toEqual(
+      Array.from({ length: 8 }, (_, index) => `Source ${index + 10}`),
+    );
+  });
+
+  it("says what a suggestion goes well with in place of its type", async () => {
+    recommendations = [...FOUR_FOUND, GOES_WELL];
+
+    await mountCatalog();
+
+    expect(rowKeys()).toEqual(["discovered", "complements"]);
+    const tile = document.querySelector(
+      "[data-testid='catalog-complements'] [data-testid='catalog-tile']",
+    )!;
+    expect(
+      tile.querySelector("[data-testid='catalog-card-paired']")?.textContent,
+    ).toContain("settings.catalog.goes_well_with Spotify");
+    expect(
+      tile.querySelector("[data-testid='catalog-card-credit']"),
+    ).toBeNull();
+    // a tile of another row keeps its type
+    expect(
+      document.querySelector(
+        "[data-testid='catalog-discovered'] [data-testid='catalog-card-credit']",
+      )?.textContent,
+    ).toContain("settings.catalog.type.music");
+  });
+
+  it("picks what is found first, then what goes well, then what is popular", async () => {
+    // five to pick from: the popular one is the one left out
+    recommendations = [POPULAR, GOES_WELL, ...FOUR_FOUND.slice(0, 3)];
+
+    await mountCatalog();
+
+    const shown = [
+      ...topPick()!.querySelectorAll("[data-testid='catalog-top-pick-dot']"),
+    ].map((dot) =>
+      dot
+        .getAttribute("aria-label")!
+        .replace("settings.catalog.show_pick ", ""),
+    );
+    const start = shown.indexOf("Source 10");
+    expect([...shown.slice(start), ...shown.slice(0, start)]).toEqual([
+      "Source 10",
+      "Source 11",
+      "Source 12",
+      "SoundCloud",
+    ]);
+  });
+
+  it.each([
+    [FOUND, "settings.catalog.discovered_title"],
+    [GOES_WELL, "settings.catalog.goes_well_with Spotify"],
+  ])("says why the pick is picked (%o)", async (recommendation, reason) => {
+    recommendations = [recommendation];
+
+    await mountCatalog();
+
+    expect(
+      topPick()!.querySelector("[data-testid='catalog-top-pick-reason']")
+        ?.textContent,
+    ).toContain(reason);
+    expect(
+      topPick()!.querySelector("[data-testid='catalog-top-pick-dismiss']"),
+    ).not.toBeNull();
+  });
+
+  it("says no more than Top pick for a popular pick, and offers no way to let it go", async () => {
+    recommendations = [POPULAR];
+
+    await mountCatalog();
+
+    expect(
+      topPick()!.querySelector("[data-testid='catalog-top-pick-reason']"),
+    ).toBeNull();
+    expect(
+      topPick()!.querySelector("[data-testid='catalog-top-pick-dismiss']"),
+    ).toBeNull();
+    expect(
+      document.querySelector("[data-testid='catalog-card-dismiss']"),
+    ).toBeNull();
+  });
+
+  describe("letting a suggestion go", () => {
+    beforeEach(() => {
+      apiMock.updateUser.mockResolvedValue(undefined);
+    });
+
+    it("stops suggesting it from its tile, and keeps it in its list", async () => {
+      recommendations = [...FOUR_FOUND, GOES_WELL];
+      await mountCatalog();
+      const dismiss = document.querySelector<HTMLElement>(
+        "[data-domain='soundcloud'] [data-testid='catalog-card-dismiss']",
+      )!;
+      expect(dismiss.getAttribute("aria-label")).toBe(
+        "settings.catalog.dont_suggest_named SoundCloud",
+      );
+
+      dismiss.click();
+      await flushPromises();
+
+      expect(apiMock.updateUser).toHaveBeenCalledWith(
+        "jane",
+        { preferences: { "catalog.dismissedSuggestions": ["soundcloud"] } },
+        undefined,
+      );
+      expect(document.querySelector("[data-domain='soundcloud']")).toBeNull();
+      expect(rowKeys()).toEqual(["discovered"]);
+
+      await search("SoundCloud");
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["SoundCloud"]);
+    });
+
+    it("offers it only on what is about the user's own setup", async () => {
+      recommendations = [
+        ...FOUR_FOUND,
+        GOES_WELL,
+        suggest("source14", CatalogRecommendationReason.POPULAR),
+        suggest("source15", CatalogRecommendationReason.NEW),
+      ];
+
+      await mountCatalog();
+
+      const dismissible = [
+        ...document.querySelectorAll("[data-testid='catalog-card-dismiss']"),
+      ].map((button) =>
+        button
+          .closest("[data-testid='catalog-tile']")!
+          .getAttribute("data-domain"),
+      );
+      expect(dismissible).toHaveLength(4);
+      expect(dismissible).toContain("soundcloud");
+      expect(dismissible).not.toContain("source14");
+      expect(dismissible).not.toContain("source15");
+    });
+
+    it("stops suggesting the pick from the hero", async () => {
+      recommendations = [FOUND];
+      await mountCatalog();
+
+      topPick()!
+        .querySelector<HTMLElement>("[data-testid='catalog-top-pick-dismiss']")!
+        .click();
+      await flushPromises();
+
+      expect(apiMock.updateUser).toHaveBeenCalledWith(
+        "jane",
+        { preferences: { "catalog.dismissedSuggestions": ["sonos"] } },
+        undefined,
+      );
+      expect(topPick()).toBeNull();
+    });
+
+    it("keeps what was let go before, and adds to it", async () => {
+      recommendations = [FOUND, GOES_WELL];
+      storeMock.currentUser.preferences = {
+        "catalog.dismissedSuggestions": ["sonos", 42],
+      };
+      await mountCatalog();
+
+      expect(topPick()!.getAttribute("data-domain")).toBe("soundcloud");
+      expect(document.querySelector("[data-domain='sonos']")).toBeNull();
+
+      topPick()!
+        .querySelector<HTMLElement>("[data-testid='catalog-top-pick-dismiss']")!
+        .click();
+      await flushPromises();
+
+      expect(apiMock.updateUser).toHaveBeenCalledWith(
+        "jane",
+        {
+          preferences: {
+            "catalog.dismissedSuggestions": ["sonos", "soundcloud"],
+          },
+        },
+        undefined,
+      );
+      expect(topPick()).toBeNull();
+    });
+  });
+
+  it.each([
+    ["is refused", () => Promise.reject(new Error("Unknown command"))],
+    ["answers with something else", () => Promise.resolve({ wrong: true })],
+  ])(
+    "shows Discover without suggestions when the server %s",
+    async (_case, answer) => {
+      apiMock.getCatalogRecommendations.mockImplementation(answer);
+
+      await mountCatalog();
+
+      expect(
+        document.querySelector("[data-testid='catalog-discover']"),
+      ).not.toBeNull();
+      expect(topPick()).toBeNull();
+      expect(rowKeys()).toEqual([]);
+      expect(
+        document.querySelector("[data-testid='catalog-browse']"),
+      ).not.toBeNull();
+      expect(banner()).not.toBeNull();
+      expect(toastMock.error).not.toHaveBeenCalled();
+    },
+  );
+
+  it("waits for the suggestions before showing the page", async () => {
+    apiMock.getCatalogRecommendations.mockReturnValue(new Promise(() => {}));
+
+    await mountCatalog();
+
+    expect(
+      document.querySelector("[data-testid='catalog-loading']"),
+    ).not.toBeNull();
+  });
+
+  it("asks again when something is added or removed, or the community catalog changes", async () => {
+    await mountCatalog();
+    expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(1);
+
+    recommendations = [FOUND];
+    await serverSays(EventType.PROVIDERS_UPDATED);
+    expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(2);
+    expect(topPick()!.getAttribute("data-domain")).toBe("sonos");
+
+    await serverSays(EventType.COMMUNITY_CATALOG_UPDATED);
+    expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(3);
+  });
+
+  it("asks again when the community catalog is enabled", async () => {
+    await mountCatalog();
+
+    await clickBannerEnable();
+    await confirmations[0].onConfirm();
+    await flushPromises();
+
+    expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -2024,6 +2337,8 @@ describe("Catalog with the community catalog", () => {
       expect(document.querySelector("[data-domain='radio']")).toBeNull();
       expect(apiMock.getCommunityProviders).not.toHaveBeenCalled();
       expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
+      // what to suggest is not part of the community catalog
+      expect(apiMock.getCatalogRecommendations).toHaveBeenCalled();
     },
   );
 });
@@ -2459,97 +2774,38 @@ describe("Catalog with updates from the community catalog", () => {
 
   describe("what is new", () => {
     beforeEach(() => {
-      // 30 days back is October 15: Radio Garden was added before it, but
-      // its latest version was released after it
-      vi.useFakeTimers({ toFake: ["Date"] });
-      vi.setSystemTime(new Date("2026-11-14T00:00:00Z"));
       communityEnabled = true;
       community = [
         RADIO,
         communityProvider("dj", {
-          added: "2026-11-05T00:00:00Z",
-          released: "2026-11-06T00:00:00Z",
           manifest: providerManifest({
             domain: "dj",
             name: "DJ",
             tier: ProviderTier.COMMUNITY,
           }),
         }),
-        communityProvider("lyrics", {
-          added: "not a date",
-          released: "2026-11-10T00:00:00Z",
-          manifest: providerManifest({
-            domain: "lyrics",
-            name: "Lyrics",
-            tier: ProviderTier.COMMUNITY,
-          }),
-        }),
-        communityProvider("archive", {
-          added: "2025-01-01T00:00:00Z",
-          released: "2026-10-01T00:00:00Z",
-          manifest: providerManifest({
-            domain: "archive",
-            name: "Archive",
-            tier: ProviderTier.COMMUNITY,
-          }),
-        }),
       ];
+      // only rows: nothing to pick
+      recommendations = [
+        suggest("soundcloud", CatalogRecommendationReason.NEW),
+        suggest("radio", CatalogRecommendationReason.NEW),
+        suggest("dj", CatalogRecommendationReason.UPDATED),
+      ];
+      apiMock.serverInfo.value = { server_version: "2.11.0b3" };
     });
 
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it("shows on Discover what is new and what was updated in the last 30 days, newest first, each once", async () => {
+    it("shows what is new in this release line, and what is new and updated in the community catalog", async () => {
       await mountCatalog();
 
+      expect(topPick()).toBeNull();
+      expect(rowKeys()).toEqual(["new", "community-new", "community-updated"]);
+      expect(rowTitle("new")).toBe("settings.catalog.new_in_version 2.11");
+      expect(cardNames("[data-testid='catalog-new']")).toEqual(["SoundCloud"]);
       expect(cardNames("[data-testid='catalog-community-new']")).toEqual([
+        "Radio Garden",
+      ]);
+      expect(cardNames("[data-testid='catalog-community-updated']")).toEqual([
         "DJ",
-      ]);
-      expect(cardNames("[data-testid='catalog-community-updated']")).toEqual([
-        "Lyrics",
-        "Radio Garden",
-      ]);
-      expect(
-        document.querySelector("[data-testid='catalog-community-new'] h2")
-          ?.textContent,
-      ).toContain("settings.catalog.community.new_title");
-    });
-
-    it("makes what is new the top pick once every popular one is added", async () => {
-      configs.push(
-        providerConfig({
-          domain: "sonos",
-          type: ProviderType.PLAYER,
-          instance_id: "sonos--a",
-        }),
-      );
-      apiMock.providerManifests.spotify = {
-        ...apiMock.providerManifests.spotify,
-        multi_instance: false,
-      };
-
-      await mountCatalog();
-
-      const pick = topPick()!.getAttribute("data-domain")!;
-      expect(["dj", "lyrics", "radio"]).toContain(pick);
-      expect(
-        document.querySelectorAll(
-          `[data-testid='catalog-tile'][data-domain='${pick}']`,
-        ),
-      ).toHaveLength(0);
-    });
-
-    it("leaves out a row with nothing to show", async () => {
-      community = [RADIO];
-
-      await mountCatalog();
-
-      expect(
-        document.querySelector("[data-testid='catalog-community-new']"),
-      ).toBeNull();
-      expect(cardNames("[data-testid='catalog-community-updated']")).toEqual([
-        "Radio Garden",
       ]);
     });
 
@@ -2557,34 +2813,14 @@ describe("Catalog with updates from the community catalog", () => {
       routeMock.query = { types: "music" };
       const wrapper = await mountCatalog();
 
-      expect(
-        document.querySelector("[data-testid='catalog-community-new']"),
-      ).toBeNull();
+      expect(rowKeys()).toEqual([]);
 
       routeMock.query = {};
       wrapper.unmount();
-      const all = await mountCatalog();
-      await all.get("[data-slot='input-group-control']").setValue("dj");
-
-      expect(
-        document.querySelector("[data-testid='catalog-community-new']"),
-      ).toBeNull();
-    });
-
-    it("shows no rows while the community catalog is off", async () => {
-      communityEnabled = false;
-      community = [
-        communityProvider("radio", { state: CommunityProviderState.INSTALLED }),
-      ];
-
       await mountCatalog();
+      await search("dj");
 
-      expect(
-        document.querySelector("[data-testid='catalog-community-new']"),
-      ).toBeNull();
-      expect(
-        document.querySelector("[data-testid='catalog-community-updated']"),
-      ).toBeNull();
+      expect(rowKeys()).toEqual([]);
     });
   });
 });
@@ -2609,6 +2845,14 @@ function communityCoreConfig(enabled: boolean): CoreConfig {
       auto_update: { key: "auto_update", value: communityAutoUpdate },
     },
   } as unknown as CoreConfig;
+}
+
+// the server sends an event, to everything on the page that listens to it
+async function serverSays(event: EventType) {
+  for (const [subscribed, callback] of apiMock.subscribe.mock.calls) {
+    if (subscribed === event) await callback();
+  }
+  await flushPromises();
 }
 
 // the server says the community catalog changed
@@ -2685,6 +2929,30 @@ function installedRow(domain: string): Element {
   );
   if (!row) throw new Error(`no installed row for ${domain}`);
   return row;
+}
+
+function suggest(
+  domain: string,
+  reason: CatalogRecommendationReason | string,
+  detail: string | null = null,
+): CatalogRecommendation {
+  return { domain, reason: reason as CatalogRecommendationReason, detail };
+}
+
+function rowKeys(): string[] {
+  return [
+    ...document.querySelectorAll(
+      "[data-testid='catalog-discover'] > section[data-testid^='catalog-']",
+    ),
+  ]
+    .map((row) => row.getAttribute("data-testid")!.replace("catalog-", ""))
+    .filter((key) => !["top-pick", "browse"].includes(key));
+}
+
+function rowTitle(key: string): string | undefined {
+  return document
+    .querySelector(`[data-testid='catalog-${key}'] h2`)
+    ?.textContent?.trim();
 }
 
 async function mountCatalog() {
