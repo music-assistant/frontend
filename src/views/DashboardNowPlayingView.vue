@@ -1,5 +1,22 @@
 <template>
-  <div class="now-playing-view" :style="{ background: backgroundGradient }">
+  <div
+    class="now-playing-view"
+    :class="{ 'cursor-pointer': onDevice }"
+    :style="{ background: backgroundGradient }"
+    @click="leave"
+  >
+    <!-- the click-anywhere and Escape exits are invisible to screen readers,
+         so a touch user who relies on one needs a labelled control as well -->
+    <Button
+      v-if="onDevice"
+      variant="ghost"
+      size="icon-sm"
+      class="absolute top-[max(1rem,2vh)] left-[max(1rem,2vw)] z-2"
+      :aria-label="$t('close')"
+      @click.stop="leave"
+    >
+      <X class="size-5" />
+    </Button>
     <VisualizerCanvas
       v-if="visualizerActive"
       :preset="visualizerPresetPref"
@@ -45,7 +62,8 @@
         </template>
       </div>
 
-      <div class="now-playing-timeline">
+      <!-- seeking or switching the time display is not a way out -->
+      <div class="now-playing-timeline" @click.stop>
         <PlayerTimeline
           :show-labels="true"
           :color="timelineColor"
@@ -60,7 +78,9 @@
 import MarqueeText from "@/components/MarqueeText.vue";
 import VisualizerCanvas from "@/components/VisualizerCanvas.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import { Button } from "@/components/ui/button";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
+import { useEscapeBack } from "@/composables/useEscapeBack";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getPlayerDisplayName } from "@/helpers/players";
@@ -70,11 +90,14 @@ import {
   paletteFromServer,
 } from "@/helpers/utils";
 import PlayerTimeline from "@/layouts/default/PlayerOSD/PlayerTimeline.vue";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
+import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import { useColorMode } from "@vueuse/core";
 import Color from "color";
-import { computed, onMounted } from "vue";
+import { X } from "@lucide/vue";
+import { computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
@@ -85,6 +108,45 @@ onMounted(() => {
   if (typeof playerId === "string" && playerId) {
     store.activePlayerId = playerId;
   }
+});
+
+// Opened from the player on this device, rather than cast to a display or
+// opened as a kiosk link (?frameless), the view hides the app's chrome while it
+// is shown and leaves on Escape, the close button, or a click, back to the
+// player it was opened from.
+const onDevice =
+  !authManager.isDashboardViewer?.() && route.query.frameless === undefined;
+const framelessBefore = store.frameless;
+// Only a leave this view itself asked for reopens the player it came from; an
+// unmount for another reason, e.g. the command center navigating elsewhere,
+// must not pop the player up over that destination.
+let leftExplicitly = false;
+
+const leave = () => {
+  if (!onDevice) return;
+  leftExplicitly = true;
+  if (router.options.history.state.back) router.back();
+  else void router.push("/");
+};
+
+// Escape already has a job while a dialog, menu or popover is open above this
+// view, so useEscapeBack defers to those (and to an editable field) before
+// leaving here.
+useEscapeBack(leave, () => onDevice);
+
+onMounted(() => {
+  if (!onDevice) return;
+  store.frameless = true;
+  // Browser Forward can remount this view with the flag a previous visit's
+  // leave() set, which would wrongly reserve Escape for a fullscreen player
+  // that isn't actually covering this one and suspend the visualizer under it.
+  store.showFullscreenPlayer = false;
+});
+
+onUnmounted(() => {
+  if (!onDevice) return;
+  store.frameless = framelessBefore;
+  if (leftExplicitly) store.showFullscreenPlayer = true;
 });
 
 // Synced marquee scrolling for the title/artist, same as the fullscreen player.
@@ -144,7 +206,9 @@ const backgroundGradient = computed(() => {
   color: var(--text-color, #fff);
 }
 
-/* Lift content above the visualizer layer (z-index 0). */
+/* Lift content above the visualizer layer (z-index 0). Tailwind's utilities
+   carry !important (src/styles/style.css), so the close button's own
+   `absolute`/`z-2` utilities still win over this. */
 .now-playing-view > *:not(.visualizer-layer) {
   position: relative;
   z-index: 1;

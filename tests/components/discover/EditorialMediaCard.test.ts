@@ -18,6 +18,7 @@ import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
 import { podcast } from "../../fixtures/podcast";
 import { podcastEpisode } from "../../fixtures/podcastEpisode";
+import { track } from "../../fixtures/track";
 
 vi.mock("@/plugins/api", () => {
   const api = { providers: {}, providerManifests: {} };
@@ -66,9 +67,10 @@ const withCover = (overrides: Partial<Album> = {}, cover = COVER) =>
 const release = (overrides: Partial<Album> = {}, cover = COVER) =>
   withCover(
     {
-      item_id: "rg-1",
-      provider: "musicbrainz",
+      item_id: "musicbrainz_releasegroupid:rg-1",
+      provider: "external",
       provider_mappings: [],
+      is_playable: false,
       ...overrides,
     },
     cover,
@@ -143,9 +145,22 @@ describe("EditorialMediaCard", () => {
   });
 
   it("offers no play button for a release that is not in the library", () => {
-    const wrapper = mountCard(release());
+    const wrapper = mountCard(release(), false);
 
     expect(wrapper.find(".ed-card__play").exists()).toBe(false);
+  });
+
+  // the server says an external track can be played: it is looked up then
+  it("offers the play button for a track that is not in the library", () => {
+    const topTrack = track({
+      item_id: "musicbrainz_recordingid:rec-1",
+      provider: "external",
+      provider_mappings: [],
+    });
+    const wrapper = mountCard(topTrack, false);
+
+    expect(wrapper.classes()).toContain("ed-card--not-in-library");
+    expect(wrapper.find(".ed-card__play").exists()).toBe(true);
   });
 
   // a metadata refresh replaces the item under the same uri
