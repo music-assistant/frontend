@@ -382,18 +382,20 @@ describe("buildCatalogEntries with the community catalog", () => {
   });
 
   it.each([CommunityProviderState.BLOCKED, CommunityProviderState.UNAVAILABLE])(
-    "leaves out one that is %s, which the server does not list",
+    "leaves out one that is %s, whether or not the server lists its manifest",
     (state) => {
       const provider = communityProvider("radio", {
         state,
         manifest: installedManifest,
       });
 
-      expect(
-        buildCatalogEntries(MANIFESTS, [], {}, undefined, [provider]).find(
-          (item) => item.manifest.domain === "radio",
-        ),
-      ).toBe(undefined);
+      for (const known of [MANIFESTS, manifests]) {
+        expect(
+          buildCatalogEntries(known, [], {}, undefined, [provider]).find(
+            (item) => item.manifest.domain === "radio",
+          ),
+        ).toBe(undefined);
+      }
     },
   );
 });
