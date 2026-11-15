@@ -130,7 +130,7 @@
             </template>
             <template v-else>
               <RotateCcw class="size-4" aria-hidden="true" />
-              {{ $t("settings.catalog.community.retry_version") }}
+              {{ $t("settings.catalog.try_again") }}
             </template>
           </Button>
           <Button

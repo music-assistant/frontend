@@ -755,7 +755,6 @@
                 "no_updates": "No updates waiting",
                 "restart_hint": "Version {version} is ready. Restart Music Assistant to finish the update.",
                 "failed_version": "Version {version} did not load on your server, so Music Assistant put the previous version back.",
-                "retry_version": "Try again",
                 "retry_version_named": "Try {name} again",
                 "auto_update": "Update automatically",
                 "auto_update_on_toast": "Updates now install automatically. Nothing updates while something is playing.",

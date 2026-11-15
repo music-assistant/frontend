@@ -1660,7 +1660,7 @@ describe("Catalog with updates from the community catalog", () => {
           ?.textContent,
       ).toContain("settings.catalog.community.failed_version 2.0.0");
       expect(updateButton("fm").textContent).toContain(
-        "settings.catalog.community.retry_version",
+        "settings.catalog.try_again",
       );
 
       // the server lists it as before: the version did not load again
