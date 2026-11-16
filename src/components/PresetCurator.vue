@@ -1,6 +1,6 @@
 <!--
-  Favorites curator: live preview plus the searchable preset list; click or
-  hover previews, the star curates. Side by side in a wide host, stacked in
+  Favorites curator: live preview plus the searchable preset list; a click
+  previews, the star curates. Side by side in a wide host, stacked in
   the sheet.
 -->
 <template>
@@ -13,7 +13,7 @@
       :class="{ 'xl:w-[480px] 2xl:w-[560px]': sideBySide }"
     >
       <div class="aspect-video w-full overflow-hidden rounded-md border">
-        <PresetPreviewCanvas :preset="previewName" />
+        <PresetPreviewCanvas :preset="previewedPreset" />
       </div>
     </div>
     <div
@@ -32,7 +32,6 @@
       <div
         data-test="preset-list"
         class="min-h-0 flex-1 overflow-y-auto rounded-md border p-1"
-        @pointerleave="onRowHover(null)"
       >
         <div
           v-for="name in filteredNames"
@@ -44,7 +43,6 @@
             { 'bg-accent text-accent-foreground': name === previewedPreset },
           ]"
           @click="previewPreset(name)"
-          @pointerenter="onRowHover(name)"
         >
           <button
             type="button"
@@ -74,12 +72,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { Star } from "@lucide/vue";
 import PresetPreviewCanvas from "@/components/PresetPreviewCanvas.vue";
 import { Input } from "@/components/ui/input";
 import { sortFavoritesFirst } from "@/helpers/visualizer/presetLibrary";
-import { isHoverCapablePointer } from "@/helpers/visualizer/pointer";
 import { $t } from "@/plugins/i18n";
 
 const props = defineProps<{
@@ -94,10 +91,6 @@ const emit = defineEmits<{
   "update:previewed": [name: string | null];
 }>();
 
-// Dwell before previewing a hovered row, so pointer travel doesn't thrash
-// preset (shader) compiles.
-const HOVER_DWELL_MS = 150;
-
 const previewedPreset = ref<string | null>(null);
 
 // Only a pick by the user is reported; the initial seed is not one.
@@ -105,32 +98,6 @@ const previewPreset = (name: string) => {
   previewedPreset.value = name;
   emit("update:previewed", name);
 };
-
-const hoveredPreset = ref<string | null>(null);
-let hoverTimer: number | null = null;
-
-// Touch fires pointerenter too; previews there stay tap-driven.
-const hoverCapable = isHoverCapablePointer();
-
-const clearHoverTimer = () => {
-  if (hoverTimer !== null) window.clearTimeout(hoverTimer);
-  hoverTimer = null;
-};
-
-const onRowHover = (name: string | null) => {
-  if (!hoverCapable) return;
-  clearHoverTimer();
-  if (name === null) {
-    hoveredPreset.value = null;
-    return;
-  }
-  hoverTimer = window.setTimeout(() => {
-    hoverTimer = null;
-    hoveredPreset.value = name;
-  }, HOVER_DWELL_MS);
-};
-
-onBeforeUnmount(clearHoverTimer);
 
 const orderedNames = ref<string[]>([]);
 
@@ -155,9 +122,4 @@ const filteredNames = computed(() => {
     name.toLowerCase().includes(query),
   );
 });
-
-// Hovered row, else the clicked one.
-const previewName = computed(
-  () => hoveredPreset.value ?? previewedPreset.value,
-);
 </script>
