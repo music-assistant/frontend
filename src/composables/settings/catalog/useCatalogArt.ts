@@ -1,7 +1,6 @@
 import { useCatalogIcon } from "@/composables/settings/catalog/useCatalogIcon";
 import { getIconColor, NEUTRAL_ICON_COLOR } from "@/helpers/icon_color";
-import type { CatalogEntry } from "@/helpers/provider_catalog";
-import { computed, type MaybeRefOrGetter, toValue } from "vue";
+import { computed, type MaybeRefOrGetter } from "vue";
 
 /**
  * What the drawn image of a Catalog entry is made of: its icon as a data URI,
@@ -9,15 +8,14 @@ import { computed, type MaybeRefOrGetter, toValue } from "vue";
  * is none), whether that icon needs a dark background, and its main colour, or
  * a neutral one.
  *
- * @param entry - The entry drawn, if any.
+ * @param domain - The domain of the entry, if any.
+ * @param communityIcon - The icon the community catalog gives for it, if any.
  */
 export function useCatalogArt(
-  entry: MaybeRefOrGetter<CatalogEntry | undefined>,
+  domain: MaybeRefOrGetter<string | undefined>,
+  communityIcon: MaybeRefOrGetter<string | null | undefined>,
 ) {
-  const { src: iconSrc, onDark } = useCatalogIcon(
-    () => toValue(entry)?.manifest.domain,
-    () => toValue(entry)?.community?.icon,
-  );
+  const { src: iconSrc, onDark } = useCatalogIcon(domain, communityIcon);
 
   const color = computed(
     () => getIconColor(iconSrc.value) ?? NEUTRAL_ICON_COLOR,
