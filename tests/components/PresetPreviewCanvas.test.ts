@@ -4,6 +4,7 @@
  */
 import PresetPreviewCanvas from "@/components/PresetPreviewCanvas.vue";
 import { SYNTHETIC_PALETTE } from "@/helpers/visualizer/syntheticPalette";
+import { store } from "@/plugins/store";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,6 +37,11 @@ vi.mock("@/composables/userPreferences", () => ({
   }),
 }));
 
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await import("vue");
+  return { store: reactive({ showFullscreenPlayer: false }) };
+});
+
 vi.mock("@/composables/useThemePreference", () => ({
   isDark: { value: false },
 }));
@@ -43,6 +49,7 @@ vi.mock("@/composables/useThemePreference", () => ({
 describe("PresetPreviewCanvas", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    store.showFullscreenPlayer = false;
   });
 
   it("loads the preset instantly and applies the user's palette settings to the synthetic palette", async () => {
@@ -95,5 +102,45 @@ describe("PresetPreviewCanvas", () => {
 
     expect(engineMock.destroy).toHaveBeenCalledTimes(1);
     expect(engineMock.loadPresetByName).not.toHaveBeenCalled();
+  });
+
+  it("releases the engine while the fullscreen player covers the page and restarts after", async () => {
+    const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });
+    await flushPromises();
+    store.showFullscreenPlayer = true;
+    await flushPromises();
+    expect(engineMock.destroy).toHaveBeenCalledTimes(1);
+
+    store.showFullscreenPlayer = false;
+    await flushPromises();
+    expect(createVisualizerEngine).toHaveBeenCalledTimes(2);
+    expect(engineMock.loadPresetByName).toHaveBeenLastCalledWith("A", 0);
+    wrapper.unmount();
+  });
+
+  it("shows an unavailable state when the engine cannot start, and retries", async () => {
+    createVisualizerEngine.mockResolvedValueOnce(null as never);
+    const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Preview unavailable");
+
+    await wrapper.setProps({ preset: "B" });
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("Preview unavailable");
+    expect(engineMock.loadPresetByName).toHaveBeenLastCalledWith("B", 0);
+    wrapper.unmount();
+  });
+
+  it("shows the unavailable state when engine creation rejects", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    createVisualizerEngine.mockRejectedValueOnce(new Error("no gl"));
+    const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Preview unavailable");
+    consoleError.mockRestore();
+    wrapper.unmount();
   });
 });

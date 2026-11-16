@@ -3042,6 +3042,7 @@
         "favorites": "Favorite presets",
         "no_favorites": "No favorites yet. Star presets to build your curated list.",
         "browse_presets": "Browse presets",
+        "preview_unavailable": "Preview unavailable in this browser",
         "use_previewed": "Use previewed: {0}",
         "credits": "Credits",
         "credits_butterchurn": "Rendering powered by Butterchurn by Jordan Berg (MIT license), the WebGL implementation of MilkDrop 2.",
