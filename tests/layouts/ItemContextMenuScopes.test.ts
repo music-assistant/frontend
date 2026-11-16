@@ -35,6 +35,7 @@ const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
     sendCommand: vi.fn(),
+    providerManifests: {},
     players: {},
     state: { value: "initialized" },
   },

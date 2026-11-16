@@ -38,6 +38,7 @@
 
 <script setup lang="ts">
 import {
+  ARTIST_RELEASE_TYPES,
   artistAlbumsBySource,
   loadArtistAppearsOn,
   loadArtistDiscography,
@@ -101,17 +102,6 @@ interface ListingConfig {
   // a source carried in by a link, shown on arrival instead of the saved one
   providerOverride?: RowSource;
 }
-
-const RELEASE_TYPES: Record<"albums" | "singles_eps", AlbumType[]> = {
-  albums: [
-    AlbumType.ALBUM,
-    AlbumType.COMPILATION,
-    AlbumType.LIVE,
-    AlbumType.SOUNDTRACK,
-    AlbumType.UNKNOWN,
-  ],
-  singles_eps: [AlbumType.SINGLE, AlbumType.EP],
-};
 
 const router = useRouter();
 const route = useRoute();
@@ -304,10 +294,22 @@ function sourceSelection(rowId: "albums" | "singles_eps") {
     libraryFilterOption: true,
     providerFilterOptions: artistRows
       .sources(rowId, artist)
-      .filter((source) => source !== "library"),
-    defaultProvider: artistRows.effectiveSource(rowId, artist),
+      .filter((source) => source !== "library" && source !== "auto"),
+    defaultProvider: rowDefaultSource(rowId, artist),
     providerOverride: carriedSource(rowId),
   };
+}
+
+/**
+ * The source a release listing falls back to: the row's own. An automatic row
+ * is worked out on the artist page, whose "view all" carries it in, so here it
+ * starts on the library.
+ */
+function rowDefaultSource(
+  rowId: "albums" | "singles_eps",
+  artist: Artist,
+): RowSource {
+  return artistRows.resolveSource(rowId, artist) ?? "library";
 }
 
 /** Reads the source and discography types a link carried in, off the url. */
@@ -324,16 +326,16 @@ function takeLinkedQuery() {
 }
 
 /**
- * The source a "view all" link carried in, when it is one the albums listing
+ * The source a "view all" link carried in, when it is one the release listing
  * offers. The listing opens on it instead of the saved filter, without saving
  * it, so the user's own preference stays as it was.
  */
 function carriedSource(rowId: "albums" | "singles_eps"): RowSource | undefined {
   const artist = itemDetails.value;
-  if (rowId !== "albums" || !artist || linkedSource === undefined) {
+  if (!artist || linkedSource === undefined) {
     return undefined;
   }
-  return artistRows.sources("albums", artist).includes(linkedSource)
+  return artistRows.sources(rowId, artist).includes(linkedSource)
     ? linkedSource
     : undefined;
 }
@@ -345,10 +347,9 @@ async function loadArtistAlbumPage(
 ): Promise<MediaItemType[]> {
   if (!itemDetails.value) return [];
   const source =
-    params.provider?.[0] ??
-    artistRows.effectiveSource(rowId, itemDetails.value);
+    params.provider?.[0] ?? rowDefaultSource(rowId, itemDetails.value);
   activeSource.value = source;
-  const rowTypes = RELEASE_TYPES[rowId];
+  const rowTypes = ARTIST_RELEASE_TYPES[rowId];
   const albumTypes = params.albumType?.length
     ? rowTypes.filter((albumType) => params.albumType?.includes(albumType))
     : rowTypes;

@@ -98,6 +98,36 @@ describe("ShareView", () => {
     },
   );
 
+  it.each(["rejection", "null", "unsupported"] as const)(
+    "shows an error when resolution returns %s",
+    async (outcome) => {
+      if (outcome === "rejection") {
+        apiMock.resolveSharedItem.mockRejectedValue(
+          new Error("Resolution failed"),
+        );
+      } else {
+        apiMock.resolveSharedItem.mockResolvedValue(
+          outcome === "null"
+            ? null
+            : { media_type: "playlist", provider: "library", item_id: "1" },
+        );
+      }
+      const wrapper = mount(ShareView, {
+        props: { payload: encode({ type: "track", title: "Track" }) },
+      });
+      await flushPromises();
+
+      await vi.waitFor(() =>
+        expect(wrapper.get('[role="alert"]').text()).toContain(
+          "share.resolve_failed",
+        ),
+      );
+      expect(apiMock.resolveSharedItem).toHaveBeenCalledOnce();
+      expect(routerMock.replace).not.toHaveBeenCalled();
+      wrapper.unmount();
+    },
+  );
+
   it("ignores an old resolution after the payload changes", async () => {
     const pending = deferred<{
       media_type: string;

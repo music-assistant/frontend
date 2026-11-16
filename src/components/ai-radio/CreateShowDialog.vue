@@ -111,9 +111,9 @@ import {
   resolveShowPlayerId,
   type ShowDraft,
 } from "@/helpers/ai_radio";
+import { resolvePlayer } from "@/helpers/players";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import api from "@/plugins/api";
 import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
@@ -234,7 +234,7 @@ async function playAfterCreate(stationId: string, defaultPlayerId?: string) {
   const playerId = resolveShowPlayerId(
     { default_player_id: defaultPlayerId },
     store.activePlayerId,
-    api.players,
+    resolvePlayer,
   );
   if (!playerId) {
     toast.error($t("providers.ai_radio.card.no_player"));

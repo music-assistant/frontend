@@ -4,6 +4,7 @@
  */
 import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
+import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
 import {
   ProviderType,
   UserRole,
@@ -14,7 +15,7 @@ import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { nextTick, type Component } from "vue";
+import { defineComponent, nextTick, type Component } from "vue";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
@@ -326,7 +327,7 @@ describe("the link back into onboarding", () => {
     store.currentUser = undefined;
   });
 
-  it("offers an admin the setup wizard again", async () => {
+  it("opens the admin setup wizard again at the setup choice", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     store.currentUser = user({ username: "admin", role: UserRole.ADMIN });
 
@@ -336,8 +337,7 @@ describe("the link back into onboarding", () => {
 
     await link.trigger("click");
 
-    // the setup opens on whatever is left to set up
-    expect(onboardingOpen).toHaveBeenCalledWith(undefined);
+    expect(onboardingOpen).toHaveBeenCalledWith("intent");
 
     wrapper.unmount();
   });
@@ -369,6 +369,51 @@ describe("the link back into onboarding", () => {
     const wrapper = mountOverview();
 
     expect(wrapper.find("[data-testid=run-onboarding]").exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+});
+
+describe("Settings toolbar menu", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+  });
+
+  it("offers in its overflow menu what the page below it publishes", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routeState.name = "playersettings";
+    const ToolbarStub = {
+      props: ["menuItems", "enforceOverflowMenu", "menuActive"],
+      template: '<div><slot name="title" /><slot name="append" /></div>',
+    };
+    const page = defineComponent({
+      setup() {
+        useSettingsToolbarMenu().value = [
+          { label: "settings.hide_unavailable_players", active: true },
+        ];
+        return () => null;
+      },
+    });
+    const wrapper = mount(Settings, {
+      global: {
+        stubs: {
+          Toolbar: ToolbarStub,
+          ToolbarHeading: ToolbarHeadingStub,
+          RouterView: page,
+          VBtn: true,
+          VDivider: true,
+        },
+      },
+    });
+    await nextTick();
+
+    const toolbar = wrapper.getComponent(ToolbarStub);
+    expect(toolbar.props("menuItems")).toEqual([
+      { label: "settings.hide_unavailable_players", active: true },
+    ]);
+    expect(toolbar.props("enforceOverflowMenu")).toBe(true);
+    // an option that is on shows on the menu button
+    expect(toolbar.props("menuActive")).toBe(true);
 
     wrapper.unmount();
   });

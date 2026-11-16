@@ -3,10 +3,18 @@ import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import type { Scope, Track } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
+import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import { track } from "../fixtures/track";
+
+// the entries providers add, as reactive as the providers they come from
+const { declared } = await vi.hoisted(async () => {
+  const { reactive } = await import("vue");
+  return { declared: reactive({ labels: [] as string[] }) };
+});
 
 const { apiMock, authMock, storeMock, eventbusMock } = vi.hoisted(() => ({
   apiMock: {
@@ -32,12 +40,14 @@ vi.mock("vue-router", async (importOriginal) => ({
 // the context menu builder pulls in the whole action layer, unrelated to the
 // header's own controls
 vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
-  getContextMenuItems: vi.fn(() => Promise.resolve([])),
+  getContextMenuItems: vi.fn(() => Promise.resolve([{ label: "show_info" }])),
+  getDeclaredContextMenuItems: () =>
+    declared.labels.map((label) => ({ label })),
 }));
 
 // heavy children the favorite control does not depend on
 vi.mock("@/components/Toolbar.vue", () => ({
-  default: { name: "Toolbar", template: "<div />" },
+  default: { name: "Toolbar", props: ["menuItems"], template: "<div />" },
 }));
 vi.mock("@/components/MarkdownText.vue", () => ({
   default: { name: "MarkdownText", template: "<div />" },
@@ -142,5 +152,28 @@ describe("InfoHeader favorite menu", () => {
 
     expect(badge.attributes("aria-hidden")).toBe("true");
     expect(badge.attributes("aria-describedby")).toBeTruthy();
+  });
+});
+
+describe("InfoHeader menu", () => {
+  it("follows the entries providers add, without building the menu again", async () => {
+    declared.labels = [];
+    vi.mocked(getContextMenuItems).mockClear();
+    authMock.hasScope.mockReturnValue(true);
+    const wrapper = mountHeader(track());
+    await flushPromises();
+    const labels = () =>
+      (
+        wrapper.findComponent({ name: "Toolbar" }).props("menuItems") as Array<{
+          label: string;
+        }>
+      ).map((item) => item.label);
+    expect(labels()).toEqual(["show_info"]);
+
+    declared.labels = ["provider_menu_action/demo/ask"];
+    await nextTick();
+
+    expect(labels()).toEqual(["show_info", "provider_menu_action/demo/ask"]);
+    expect(getContextMenuItems).toHaveBeenCalledTimes(1);
   });
 });

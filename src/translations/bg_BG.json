@@ -611,7 +611,9 @@
         "artist_name": "Изпълнител",
         "random": "Случайно",
         "random_play_count": "Случайно (първо най-малко пускани)",
-        "album_name": "Албум"
+        "album_name": "Албум",
+        "sort_by": "Сортиране по",
+        "sort_by_current": "Сортиране по: {0}"
     },
     "state": {
         "idle": "празен ход",
@@ -686,7 +688,9 @@
     "view": {
         "list": "Списъчен изглед",
         "panel": "Изглед с миниатюри",
-        "discovery": "Откриване"
+        "discovery": "Откриване",
+        "view_as": "Преглед като",
+        "list_short": "Списък"
     },
     "play_replace": "Възпроизвеждане сега (изчистване на опашката)",
     "played": "Възпроизведени",
@@ -1816,5 +1820,46 @@
     "items_load_failed": "Не можаха да се заредят елементите.",
     "featured_artists": "Представени изпълнители",
     "review_setup": "Преглед",
-    "n_audiobooks": "{count} аудиокнига | {count} аудиокниги"
+    "n_audiobooks": "{count} аудиокнига | {count} аудиокниги",
+    "listing_filters": {
+        "title": "Филтри",
+        "clear_all": "Изчистване на всичко",
+        "favorites_only": "Само любими",
+        "library_only": "Само в библиотеката",
+        "genre": "Жанр",
+        "album_type": "Тип на албума",
+        "source": "Източник"
+    },
+    "statistics": "Статистика",
+    "statistics_subtitle": "Какво сте пускали в Music Assistant",
+    "statistics_period": "Период",
+    "statistics_chart_accessible_summary": "{title}. {values}",
+    "statistics_genre_other": "Друг",
+    "statistics_genres_accessible": "Жанрове: {values}",
+    "statistics_minutes": "{count} min | {count} min",
+    "statistics_most_played": "Най-често възпроизвежданите песни",
+    "statistics_column_rank": "#",
+    "statistics_column_title": "Заглавие",
+    "period_today": "Днес",
+    "period_week": "Последните 7 дни",
+    "period_month": "Последните 30 дни",
+    "period_year": "Последните 365 дни",
+    "open_item_failed": "Неуспешно отваряне на този елемент.",
+    "chapters_and_bookmarks": "Глави & отметки",
+    "chapters_and_bookmarks_tab": "Всички",
+    "bookmarks": "Отметки",
+    "add_bookmark": "Добавяне на отметка",
+    "add_bookmark_at": "Добавяне на отметка в {time}",
+    "rename_bookmark": "Преименуване на отметката",
+    "delete_bookmark": "Изтриване на отметката",
+    "delete_bookmark_confirm": "Изтриване на отметката \"{name}\"?",
+    "bookmark_name": "Име",
+    "bookmark_added": "Отметката е добавена",
+    "bookmark_renamed": "Отметката е преименувана",
+    "bookmark_deleted": "Отметката е изтрита",
+    "bookmark_add_failed": "Неуспешно добавяне на отметката",
+    "bookmark_rename_failed": "Отметката не може да бъде преименувана",
+    "bookmark_delete_failed": "Отметката не може да бъде изтрита",
+    "playlist_moved_to_top": "Преместено в началото на плейлиста",
+    "playlist_moved_to_bottom": "Преместено в долната част на плейлиста"
 }

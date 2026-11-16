@@ -5,12 +5,14 @@
 -->
 <template>
   <DropdownMenu :open="show" :modal="modal" @update:open="onOpenChange">
+    <!-- capped at the room the screen leaves, so a long menu scrolls instead
+         of running off it -->
     <DropdownMenuContent
       data-item-context-menu
       :reference="reference"
       align="end"
       :side-offset="0"
-      class="z-[999999] min-w-[300px] max-w-[350px] max-h-[85vh] overflow-y-auto"
+      class="z-[999999] min-w-[300px] max-w-[350px] max-h-[min(85vh,var(--reka-dropdown-menu-content-available-height))] overflow-y-auto"
       @close-auto-focus="onCloseAutoFocus"
     >
       <!-- play menu header -->
@@ -94,27 +96,32 @@
               menuItemLabel(menuItem)
             }}</span>
           </DropdownMenuSubTrigger>
+          <!-- capped as the menu itself, so a long entry is cut off on a phone -->
           <DropdownMenuSubContent
             align="start"
             :align-offset="-5"
             :side-offset="6"
-            class="max-h-[70vh] overflow-y-auto"
+            class="max-h-[70vh] max-w-[min(92vw,350px)] overflow-y-auto"
           >
-            <DropdownMenuItem
+            <template
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
               :key="subMenuItem.label"
-              :disabled="subMenuItem.disabled === true"
-              :variant="
-                subMenuItem.color === 'error' ? 'destructive' : 'default'
-              "
-              @select="onSelect($event, subMenuItem)"
             >
-              <MenuItemIcon :icon="subMenuItem.icon" />
-              <span class="flex-1 truncate min-w-0">{{
-                menuItemLabel(subMenuItem)
-              }}</span>
-              <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                :disabled="subMenuItem.disabled === true"
+                :variant="
+                  subMenuItem.color === 'error' ? 'destructive' : 'default'
+                "
+                @select="onSelect($event, subMenuItem)"
+              >
+                <MenuItemIcon :icon="subMenuItem.icon" />
+                <span class="flex-1 truncate min-w-0">{{
+                  menuItemLabel(subMenuItem)
+                }}</span>
+                <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator v-if="subMenuItem.separatorAfter" />
+            </template>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <!-- leaf item -->
@@ -146,7 +153,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
@@ -195,7 +201,7 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
     action: () => {
       store.activePlayerId = player.player_id;
     },
-    icon: getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK),
+    icon: getPlayerIcon(player),
     selected: store.activePlayerId == player.player_id,
     close_on_click: false,
   }));
@@ -338,10 +344,20 @@ import {
 } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
-import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
-import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
 import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
+import { openExternalItem } from "@/helpers/open_external_item";
+import {
+  getPlayerDisplayName,
+  getPlayerIcon,
+  playerVisible,
+} from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
+import { showActionResult } from "@/helpers/action_result";
+import {
+  getProviderMenuItems,
+  type ProviderMenuChoice,
+  type ProviderMenuContext,
+} from "@/helpers/provider_menu_actions";
 import {
   canAddToPlaylist,
   canEditPlaylistItems,
@@ -358,8 +374,8 @@ import {
 import {
   getPlaylistMigrationProviders,
   isAudioSource,
+  isExternalItem,
   isItemInLibrary,
-  isMusicBrainzItem,
   itemIsAvailable,
   itemSupportsPlayLog,
   providerSupportsPlaylistMove,
@@ -468,20 +484,19 @@ export const showContextMenuForMediaItem = async function (
 
   const menuTargets = await withFullItemDetails(mediaItems);
 
-  const contextMenuItems = await getContextMenuItems(
-    menuTargets,
-    parentItem,
-    options,
-  );
-
-  let menuItems: ContextMenuItem[] = [];
-
   // the play section, its player header included, is for an item that can be
   // played at all
   const withPlayMenu =
     includePlayMenuItems &&
     menuTargets[0].is_playable &&
-    itemIsAvailable(menuTargets[0]);
+    (itemIsAvailable(menuTargets[0]) || isExternalItem(menuTargets[0]));
+
+  const contextMenuItems = [
+    ...(await getContextMenuItems(menuTargets, parentItem, options)),
+    ...getDeclaredContextMenuItems(menuTargets, withPlayMenu),
+  ];
+
+  let menuItems: ContextMenuItem[] = [];
   if (withPlayMenu) {
     // Play menu items first, then context items
     menuItems = await getPlaybackContextMenuItems(
@@ -531,10 +546,7 @@ export const showPlayMenuForMediaItem = async function (
     ? item
     : [item];
   if (mediaItems.length == 0) return;
-  // a MusicBrainz release in the selection has nothing to play
-  const playableItems = mediaItems.filter(
-    (x) => x.is_playable && !isMusicBrainzItem(x),
-  );
+  const playableItems = mediaItems.filter((x) => x.is_playable);
   if (playableItems.length == 0) return;
   const firstItem = playableItems[0];
 
@@ -583,6 +595,7 @@ export const showPlayMenuForMediaItem = async function (
       disabled: !store.activePlayer,
     });
   }
+  playMenuItems.push(...providerMenuItems(mediaItems, "player"));
 
   if (playMenuItems.length == 0) playMenuItems = [];
 
@@ -629,14 +642,14 @@ export const getContextMenuItems = async function (
       MediaType.PODCAST_EPISODE,
       MediaType.TRACK,
     ].includes(items[0].media_type) &&
-    (itemIsAvailable(items[0]) || isMusicBrainzItem(items[0]))
+    (itemIsAvailable(items[0]) || isExternalItem(items[0]))
   ) {
     contextMenuItems.push({
       label: "show_info",
       labelArgs: [],
       action: () => {
-        if (isMusicBrainzItem(firstItem)) {
-          openMusicBrainzItem(firstItem);
+        if (isExternalItem(firstItem)) {
+          openExternalItem(firstItem);
           return;
         }
         router.push({
@@ -708,7 +721,7 @@ export const getContextMenuItems = async function (
   // go to artist(s)
   if (
     items.length === 1 &&
-    itemIsAvailable(items[0]) &&
+    (itemIsAvailable(items[0]) || isExternalItem(items[0])) &&
     "artists" in items[0] &&
     (items[0] as Track | Album).artists.length === 1
   ) {
@@ -717,6 +730,10 @@ export const getContextMenuItems = async function (
         label: "goto_artist",
         labelArgs: [artist.name],
         action: () => {
+          if (isExternalItem(artist)) {
+            openExternalItem(artist);
+            return;
+          }
           router.push({
             name: "artist",
             params: {
@@ -731,7 +748,9 @@ export const getContextMenuItems = async function (
   }
   // go to album
   const trackAlbum =
-    items.length === 1 && itemIsAvailable(items[0]) && "album" in items[0]
+    items.length === 1 &&
+    (itemIsAvailable(items[0]) || isExternalItem(items[0])) &&
+    "album" in items[0]
       ? (items[0] as Track).album
       : null;
   if (trackAlbum) {
@@ -739,6 +758,10 @@ export const getContextMenuItems = async function (
       label: "goto_album",
       labelArgs: [trackAlbum.name],
       action: () => {
+        if (isExternalItem(trackAlbum)) {
+          openExternalItem(trackAlbum);
+          return;
+        }
         router.push({
           name: "album",
           params: {
@@ -771,11 +794,11 @@ export const getContextMenuItems = async function (
   // which provider items and item mappings do not carry, so resolve the
   // counterpart the library holds. Library rows are verified too since a
   // row can outlive its item (a list kept open, a cached search result).
-  // A MusicBrainz release is skipped: the server hands back the library album
-  // for a release that is in the library, so this one is outside it.
+  // An external item is skipped: the server hands back the library item for
+  // one that is in the library, so this one is outside it.
   let libraryItem: MediaItemType | undefined;
   if (
-    !isMusicBrainzItem(firstItem) &&
+    !isExternalItem(firstItem) &&
     [
       MediaType.ALBUM,
       MediaType.ARTIST,
@@ -809,11 +832,11 @@ export const getContextMenuItems = async function (
   // Only the first item of a selection is resolved, so a single item acts
   // on its library counterpart while a multi-selection keeps its own
   // identity.
-  // (a MusicBrainz release has no library row to act on)
+  // (an external item has no library row to act on)
   const actionTargets =
     items.length === 1
       ? [resolvedItem]
-      : items.filter((item) => !isMusicBrainzItem(item));
+      : items.filter((item) => !isExternalItem(item));
   // a library row alone is not membership, since the backend also keeps
   // rows for relatives of saved items, so the resolved row is checked too
   const inLibrary =
@@ -835,14 +858,14 @@ export const getContextMenuItems = async function (
       MediaType.RADIO,
       MediaType.TRACK,
     ].includes(resolvedItem.media_type) &&
-    (itemIsAvailable(resolvedItem) || isMusicBrainzItem(resolvedItem))
+    (itemIsAvailable(resolvedItem) || isExternalItem(resolvedItem))
   ) {
     contextMenuItems.push({
       label: "add_library",
       labelArgs: [],
       action: () => {
         for (const item of items) {
-          // a release none of the music services has is refused with a toast
+          // an external item no music service has is refused with a toast
           api.addItemToLibrary(addableItem(item)).catch(() => undefined);
           // optimistically flag the mappings so the derived state re-evaluates
           if ("provider_mappings" in item)
@@ -925,12 +948,9 @@ export const getContextMenuItems = async function (
       favoriteState(item) === false;
 
     // the actions run on the library copy while the next menu is built from
-    // the item the caller holds, so its state has to follow (a MusicBrainz
-    // release in the selection was not acted on)
+    // the item the caller holds, so its state has to follow
     const markFavorite = (favorite: boolean | null) => {
-      for (const item of items) {
-        if (!isMusicBrainzItem(item)) setFavoriteState(item, favorite);
-      }
+      for (const item of items) setFavoriteState(item, favorite);
     };
 
     if (favoritableItems.length > 0) {
@@ -1299,7 +1319,7 @@ export const getContextMenuItems = async function (
     ![MediaType.COLLECTION, MediaType.PODCAST_EPISODE].includes(
       items[0].media_type,
     ) &&
-    !isMusicBrainzItem(items[0]) &&
+    !isExternalItem(items[0]) &&
     ((managesLibrary && items[0] == parentItem) || canFindOnMusicServices)
   ) {
     contextMenuItems.push({
@@ -1533,6 +1553,22 @@ export const getContextMenuItems = async function (
 };
 
 /**
+ * The submenus the provider instances add to the menu of a single item, one
+ * per instance; they go after the entries of getContextMenuItems. Read in a
+ * computed, they follow the providers and their manifests.
+ *
+ * @param items - The selection the menu is for.
+ * @param withPlayer - Whether the menu offers the ways to play the item and so
+ * also the entries that act on the chosen player.
+ */
+export const getDeclaredContextMenuItems = function (
+  items: MediaItemTypeOrItemMapping[],
+  withPlayer = false,
+): ContextMenuItem[] {
+  return providerMenuItems(items, withPlayer ? "all" : "other");
+};
+
+/**
   Generates playback-related context menu items based on the given media items and their parent.
   This includes "Play now", the "Enqueue options" submenu and "Play from here" (for playlists/albums).
   An AudioSource only gets "Play now": it cannot be queued for later.
@@ -1545,14 +1581,14 @@ export const getPlaybackContextMenuItems = async function (
   sortDirection?: SortDirection,
 ) {
   const playMenuItems: ContextMenuItem[] = [];
-  if (items.length == 0 || !itemIsAvailable(items[0])) {
+  if (
+    items.length == 0 ||
+    (!itemIsAvailable(items[0]) && !isExternalItem(items[0]))
+  ) {
     return playMenuItems;
   }
 
-  // a MusicBrainz release in the selection has nothing to play
-  const playableItems = items.filter(
-    (x) => x.is_playable && !isMusicBrainzItem(x),
-  );
+  const playableItems = items.filter((x) => x.is_playable);
   if (playableItems.length == 0) return playMenuItems;
   const firstItem = playableItems[0];
 
@@ -1638,7 +1674,7 @@ export const getPlaybackContextMenuItems = async function (
   // "Enqueue..." submenu with all enqueue options
   playMenuItems.push({
     label: "enqueue",
-    subItems: buildEnqueueMenuItems(items, defaultEnqueueOption),
+    subItems: buildEnqueueMenuItems(playableItems, defaultEnqueueOption),
     icon: ListMusic,
     labelArgs: [],
   });
@@ -1726,6 +1762,52 @@ export const getPlaybackContextMenuItems = async function (
     }
   }
   return playMenuItems;
+};
+
+/**
+ * The submenus of the provider instances for a selection of one item, with the
+ * entries of the given kind; an entry that acts on a player gets the player
+ * chosen when it is picked. A selection of several items gets none.
+ */
+const providerMenuItems = function (
+  items: MediaItemTypeOrItemMapping[],
+  offer: ProviderMenuContext["offer"],
+): ContextMenuItem[] {
+  const item = items[0];
+  // the server looks an external item up by its uri, as for the app's own actions
+  if (items.length !== 1 || !(itemIsAvailable(item) || isExternalItem(item)))
+    return [];
+  return getProviderMenuItems(
+    item.media_type,
+    {
+      offer,
+      hasPlayer: !!store.activePlayer,
+      providers: Object.values(api.providers),
+      manifests: api.providerManifests,
+      hasScope: (scope) => authManager.hasScope(scope),
+    },
+    (choice) => void runProviderMenuAction(choice, item.uri),
+  );
+};
+
+// an entry that needs a player is disabled without one, since the server
+// refuses it then
+const runProviderMenuAction = async function (
+  choice: ProviderMenuChoice,
+  uri: string,
+) {
+  try {
+    showActionResult(
+      await api.invokeProviderMenuAction(
+        choice.instanceId,
+        choice.actionId,
+        uri,
+        choice.requiresPlayer ? store.activePlayer?.player_id : undefined,
+      ),
+    );
+  } catch {
+    // the api reports the failure itself
+  }
 };
 
 // Radio and AudioSource are both live, infinite streams and share a single enqueue
@@ -1852,8 +1934,8 @@ const playPodcastFromHereMenuItem = function (
 const addableItem = function (
   item: MediaItemTypeOrItemMapping,
 ): string | MediaItemTypeOrItemMapping {
-  // the server resolves a MusicBrainz uri to the album on a music service
-  if (isMusicBrainzItem(item)) return item.uri;
+  // the server looks an external item up by its uri
+  if (isExternalItem(item)) return item.uri;
   if (item.provider !== "library" || !("provider_mappings" in item)) {
     return item;
   }

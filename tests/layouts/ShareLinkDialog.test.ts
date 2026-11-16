@@ -4,6 +4,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deflateRawSync } from "node:zlib";
 import * as shareLinks from "@/helpers/share_links";
+import { ApiCommandError } from "@/plugins/api";
 
 const { apiMock, copyToClipboardMock, storeMock, toastError, toastSuccess } =
   vi.hoisted(() => ({
@@ -20,7 +21,13 @@ const { apiMock, copyToClipboardMock, storeMock, toastError, toastSuccess } =
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
   ApiCommandError: class ApiCommandError extends Error {
-    details?: string;
+    constructor(
+      message: string,
+      _errorCode: number,
+      public readonly details?: string,
+    ) {
+      super(message);
+    }
   },
 }));
 vi.mock("@/helpers/utils", () => ({ copyToClipboard: copyToClipboardMock }));
@@ -98,12 +105,107 @@ function mountDialog() {
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
+  apiMock.generateShareLink.mockReset();
+  copyToClipboardMock.mockReset();
   storeMock.dialogActive = false;
   apiMock.generateShareLink.mockResolvedValue(shareUrl("Track"));
   copyToClipboardMock.mockResolvedValue(true);
 });
 
 describe("ShareLinkDialog clipboard request state", () => {
+  it.each(["details", "fallback"] as const)(
+    "closes and reports a generation failure with %s",
+    async (kind) => {
+      const error = new ApiCommandError(
+        "Generation failed",
+        1,
+        kind === "details" ? "Provider unavailable" : undefined,
+      );
+      apiMock.generateShareLink.mockRejectedValueOnce(error);
+      const wrapper = mountDialog();
+      openPreview("uri");
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid="share-dialog"]').exists()).toBe(false);
+      expect(toastError).toHaveBeenCalledExactlyOnceWith(
+        kind === "details" ? "Provider unavailable" : "share.preview_failed",
+      );
+      wrapper.unmount();
+    },
+  );
+
+  it("copies the share link, reports success and closes the dialog", async () => {
+    const wrapper = mountDialog();
+    openPreview("uri");
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="copy-share"]').exists()).toBe(true),
+    );
+    await wrapper.get('[data-testid="copy-share"]').trigger("click");
+    await flushPromises();
+
+    expect(copyToClipboardMock).toHaveBeenCalledExactlyOnceWith(
+      shareUrl("Track"),
+    );
+    expect(toastSuccess).toHaveBeenCalledExactlyOnceWith("share.link_copied");
+    expect(wrapper.find('[data-testid="share-dialog"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it.each(["false", "rejection"] as const)(
+    "reports a clipboard %s and keeps the dialog open",
+    async (outcome) => {
+      if (outcome === "false") copyToClipboardMock.mockResolvedValueOnce(false);
+      else
+        copyToClipboardMock.mockRejectedValueOnce(
+          new Error("Clipboard failed"),
+        );
+      const wrapper = mountDialog();
+      openPreview("uri");
+      await vi.waitFor(() =>
+        expect(wrapper.find('[data-testid="copy-share"]').exists()).toBe(true),
+      );
+      await wrapper.get('[data-testid="copy-share"]').trigger("click");
+      await flushPromises();
+
+      expect(toastError).toHaveBeenCalledExactlyOnceWith(
+        "share.link_copy_failed",
+      );
+      expect(toastSuccess).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid="share-dialog"]').exists()).toBe(true);
+      wrapper.unmount();
+    },
+  );
+
+  it("copies the MA link and all provider links as text", async () => {
+    vi.spyOn(shareLinks, "decodeSharePreview").mockResolvedValueOnce({
+      title: "Track",
+      links: [
+        {
+          domain: "spotify",
+          name: "Spotify",
+          url: "https://open.spotify.com/track/1",
+        },
+        { domain: "tidal", name: "Tidal", url: "https://tidal.com/track/2" },
+      ],
+    });
+    const wrapper = mountDialog();
+    openPreview("uri");
+    await flushPromises();
+    const copyAll = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("share.copy_all"));
+    expect(copyAll).toBeDefined();
+    await copyAll!.trigger("click");
+    await flushPromises();
+
+    expect(copyToClipboardMock).toHaveBeenCalledExactlyOnceWith(
+      `share.title: ${shareUrl("Track")}\nSpotify: https://open.spotify.com/track/1\nTidal: https://tidal.com/track/2`,
+    );
+    expect(toastSuccess).toHaveBeenCalledExactlyOnceWith("share.link_copied");
+    expect(wrapper.find('[data-testid="share-dialog"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
   it("layers the preview and backdrop above the mobile sidebar", async () => {
     const wrapper = mountDialog();
     openPreview("uri");

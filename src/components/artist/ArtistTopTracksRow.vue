@@ -38,6 +38,7 @@
             :class="{
               'artist-top-tracks__track--playing': isNowPlaying(track),
             }"
+            :aria-busy="isResolving(track.uri) || undefined"
             role="button"
             tabindex="0"
             @click.capture="swallowClickAfterTrackHold"
@@ -59,7 +60,15 @@
               <template v-else>{{ index + 1 }}</template>
             </span>
             <span class="artist-top-tracks__art relative">
-              <MediaItemThumb :item="track" :size="40" />
+              <MediaItemThumb
+                :item="track"
+                :size="40"
+                :class="{ 'opacity-55 grayscale': isExternalItem(track) }"
+              />
+              <ArtworkSpinner
+                v-if="isResolving(track.uri)"
+                spinner-class="size-4"
+              />
               <RowPlayButton
                 v-if="canPlay(track)"
                 overlay
@@ -69,7 +78,12 @@
               />
             </span>
             <span class="artist-top-tracks__text">
-              <span class="artist-top-tracks__name">{{ track.name }}</span>
+              <span class="artist-top-tracks__name">
+                {{ track.name }}
+                <span v-if="track.version" class="artist-top-tracks__version"
+                  >({{ track.version }})</span
+                >
+              </span>
               <span class="artist-top-tracks__album">{{
                 albumLine(track)
               }}</span>
@@ -120,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import ArtworkSpinner from "@/components/ArtworkSpinner.vue";
 import DetailSectionTitle from "@/components/details/DetailSectionTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import type { RowSource, SourceOption } from "@/components/details/rowRegistry";
@@ -132,6 +147,7 @@ import {
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
 import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
+import { useResolvingItems } from "@/composables/useResolvingItems";
 import {
   handleMediaItemClick,
   handleMenuBtnClick,
@@ -146,7 +162,7 @@ import {
   type ItemMapping,
   type Track,
 } from "@/plugins/api/interfaces";
-import { itemIsAvailable } from "@/plugins/api/helpers";
+import { isExternalItem, itemIsAvailable } from "@/plugins/api/helpers";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -215,8 +231,12 @@ const {
 
 const playActionInProgress = usePlayActionInProgress();
 
-// a track that is not available has nothing to play, whatever its flag says
-const canPlay = (track: Track) => track.is_playable && itemIsAvailable(track);
+const { isResolving } = useResolvingItems();
+
+// a track that is not available has nothing to play, whatever its flag says;
+// an external track is looked up when played
+const canPlay = (track: Track) =>
+  track.is_playable && (itemIsAvailable(track) || isExternalItem(track));
 
 const playLabel = (track: Track) => `${$t("play")} ${track.name}`;
 
@@ -289,7 +309,10 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
 }
 .artist-top-tracks__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(max(260px, calc((100% - 32px) / 3)), 1fr)
+  );
   grid-auto-rows: 56px;
   column-gap: 16px;
   min-height: 184px;
@@ -348,6 +371,9 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
 }
 .artist-top-tracks__track--playing .artist-top-tracks__name {
   color: rgb(var(--v-theme-primary));
+}
+.artist-top-tracks__version {
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 .artist-top-tracks__album {
   display: block;
