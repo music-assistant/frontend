@@ -141,7 +141,7 @@ describe("web player preferred mode", () => {
   });
 
   it("reports whether an audio unlock handler is ready", () => {
-    const handler = vi.fn(() => true);
+    const handler = vi.fn(() => Promise.resolve(true));
 
     expect(webPlayer.primeAudio()).toBe(false);
     registerWebPlayerAudioUnlock(handler);
@@ -149,6 +149,25 @@ describe("web player preferred mode", () => {
     expect(handler).toHaveBeenCalledOnce();
     clearWebPlayerAudioUnlock(handler);
     expect(webPlayer.primeAudio()).toBe(false);
+  });
+
+  it("settles with whether the audio unlock succeeded", async () => {
+    await expect(webPlayer.unlockAudio()).resolves.toBe(false);
+
+    const failing = vi.fn(() => Promise.resolve(false));
+    registerWebPlayerAudioUnlock(failing);
+    await expect(webPlayer.unlockAudio()).resolves.toBe(false);
+    clearWebPlayerAudioUnlock(failing);
+
+    const notReady = vi.fn((): false => false);
+    registerWebPlayerAudioUnlock(notReady);
+    await expect(webPlayer.unlockAudio()).resolves.toBe(false);
+    clearWebPlayerAudioUnlock(notReady);
+
+    const working = vi.fn(() => Promise.resolve(true));
+    registerWebPlayerAudioUnlock(working);
+    await expect(webPlayer.unlockAudio()).resolves.toBe(true);
+    clearWebPlayerAudioUnlock(working);
   });
 
   it("uses receive-only Sendspin for Music Quiz guests", async () => {

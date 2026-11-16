@@ -6,6 +6,7 @@ import {
   webPlayer,
   webPlayerOutput,
   WebPlayerMode,
+  type WebPlayerAudioUnlock,
 } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { user } from "../fixtures/user";
@@ -127,7 +128,8 @@ const {
     mockPlayerCommandPrevious,
     mockPlayerCommandSeek,
     mockPrepareSendspinSession: vi.fn(),
-    mockRegisterWebPlayerAudioUnlock: vi.fn<(handler: () => boolean) => void>(),
+    mockRegisterWebPlayerAudioUnlock:
+      vi.fn<(handler: WebPlayerAudioUnlock) => void>(),
     mockSendCommand,
     mockSendspinConnect: vi.fn<() => Promise<void>>(),
     mockSendspinDestroy: vi.fn<(reason?: string) => void>(),
@@ -401,7 +403,7 @@ describe("SendspinPlayer MediaSession", () => {
     resolvePrepare();
     await flushPromises();
 
-    expect(unlockAudio()).toBe(true);
+    await expect(unlockAudio()).resolves.toBe(true);
     expect(mockSendspinUnlock).toHaveBeenCalledOnce();
     wrapper.unmount();
   });
@@ -659,7 +661,7 @@ describe("SendspinPlayer MediaSession", () => {
     wrapper.unmount();
   });
 
-  it("logs rejected iOS audio unlocks", async () => {
+  it("reports and logs rejected iOS audio unlocks", async () => {
     const error = new Error("unlock failed");
     mockPrepareSendspinSession.mockResolvedValue(undefined);
     mockSendspinUnlock.mockRejectedValue(error);
@@ -669,8 +671,7 @@ describe("SendspinPlayer MediaSession", () => {
     });
     await flushPromises();
 
-    expect(getAudioUnlockHandler()()).toBe(true);
-    await flushPromises();
+    await expect(getAudioUnlockHandler()()).resolves.toBe(false);
 
     expect(debugSpy).toHaveBeenCalledWith(
       "Sendspin: failed to prime audio for listen-in",
@@ -1084,7 +1085,7 @@ describe("SendspinPlayer MediaSession", () => {
   });
 });
 
-function getAudioUnlockHandler(): () => boolean {
+function getAudioUnlockHandler(): WebPlayerAudioUnlock {
   const handler = mockRegisterWebPlayerAudioUnlock.mock.calls.at(-1)?.[0];
   if (!handler) throw new Error("Audio unlock handler was not registered");
   return handler;
