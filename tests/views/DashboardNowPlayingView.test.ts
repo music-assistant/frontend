@@ -1,3 +1,5 @@
+import { api } from "@/plugins/api";
+import type { Player } from "@/plugins/api/interfaces";
 import DashboardNowPlayingView from "@/views/DashboardNowPlayingView.vue";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -29,9 +31,10 @@ const { authMock, routeMock, routerMock, storeMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: { baseUrl: "" },
-}));
+vi.mock("@/plugins/api", () => {
+  const api = { baseUrl: "", players: {} as Record<string, Player> };
+  return { default: api, api };
+});
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
@@ -54,13 +57,19 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
   getPlayerDisplayName: (player: { name: string }) => player.name,
+  resolvePlayer: (await importOriginal<typeof import("@/helpers/players")>())
+    .resolvePlayer,
 }));
 
 vi.mock("@vueuse/core", () => ({
   useColorMode: () => ({ value: "light" }),
 }));
+
+function listedPlayer(playerId: string, legacyIds: string[] = []): Player {
+  return { player_id: playerId, legacy_ids: legacyIds } as unknown as Player;
+}
 
 // PlayerTimeline stub avoids pulling in transport/waveform machinery; MarqueeText needs a slot passthrough so title/artist text stays assertable.
 function mountView() {
@@ -88,12 +97,29 @@ describe("DashboardNowPlayingView", () => {
     storeMock.showFullscreenPlayer = false;
     storeMock.activePlayerId = undefined;
     storeMock.activePlayer = undefined;
+    api.players = {};
   });
 
   it("pins the active player from the player query param on mount", () => {
+    api.players = { "player-1": listedPlayer("player-1") };
     routeMock.query = { player: "player-1" };
     mountView();
     expect(storeMock.activePlayerId).toBe("player-1");
+  });
+
+  it("pins the player an old id in the player query param was merged into", () => {
+    api.players = { kitchen: listedPlayer("kitchen", ["absorbed"]) };
+    routeMock.query = { player: "absorbed" };
+    mountView();
+    expect(storeMock.activePlayerId).toBe("kitchen");
+  });
+
+  it("leaves a player query param that names no listed player alone", () => {
+    api.players = { kitchen: listedPlayer("kitchen") };
+    storeMock.activePlayerId = "kitchen";
+    routeMock.query = { player: "Kitchen" };
+    mountView();
+    expect(storeMock.activePlayerId).toBe("kitchen");
   });
 
   it("shows a fallback message when no player is active", () => {
