@@ -104,17 +104,27 @@ describe("PresetPreviewCanvas", () => {
     expect(engineMock.loadPresetByName).not.toHaveBeenCalled();
   });
 
-  it("releases the engine while the fullscreen player covers the page and restarts after", async () => {
+  it("pauses while the fullscreen player covers the page and resumes after, keeping the engine", async () => {
     const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });
     await flushPromises();
     store.showFullscreenPlayer = true;
     await flushPromises();
-    expect(engineMock.destroy).toHaveBeenCalledTimes(1);
+    expect(engineMock.setPaused).toHaveBeenLastCalledWith(true, false);
+    expect(engineMock.destroy).not.toHaveBeenCalled();
 
     store.showFullscreenPlayer = false;
     await flushPromises();
-    expect(createVisualizerEngine).toHaveBeenCalledTimes(2);
-    expect(engineMock.loadPresetByName).toHaveBeenLastCalledWith("A", 0);
+    expect(engineMock.setPaused).toHaveBeenLastCalledWith(false, false);
+    expect(createVisualizerEngine).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+
+  it("does not start an engine while covered", async () => {
+    store.showFullscreenPlayer = true;
+    const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });
+    await flushPromises();
+
+    expect(createVisualizerEngine).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 

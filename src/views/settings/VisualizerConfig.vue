@@ -353,6 +353,10 @@ import {
 import { expertModeSetting } from "@/helpers/expert_mode";
 import { isHoverCapablePointer } from "@/helpers/visualizer/pointer";
 import {
+  resolveFixedPreset,
+  USE_PREVIEWED_VALUE,
+} from "@/helpers/visualizer/previewedPreset";
+import {
   listPresetNames,
   toggleFavoriteName,
 } from "@/helpers/visualizer/presetLibrary";
@@ -366,8 +370,6 @@ import VisualizerSliderRow from "./VisualizerSliderRow.vue";
 
 const QUALITY_TIERS = Object.keys(QUALITY_PROFILES);
 const PRESET_MODES = ["random", "random_favorites", "fixed"];
-// Sentinel so the "use previewed" entry can't collide with the list below it.
-const USE_PREVIEWED_VALUE = "__use_previewed__";
 
 const { getPreference, setPreference } = useUserPreferences();
 const enabledPref = computed(() => expertModeSetting("visualizer_enabled"));
@@ -417,8 +419,7 @@ const hoverCapable = isHoverCapablePointer();
 const curatorPreviewed = ref<string | null>(null);
 
 const selectFixedPreset = (value: string) => {
-  const name =
-    value === USE_PREVIEWED_VALUE ? (curatorPreviewed.value ?? "") : value;
+  const name = resolveFixedPreset(value, curatorPreviewed.value);
   if (name) setPref("visualizer_preset", name);
 };
 

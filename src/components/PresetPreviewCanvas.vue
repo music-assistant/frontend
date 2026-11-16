@@ -2,7 +2,7 @@
   MilkDrop preset preview: one engine re-pointed per preset change (extra
   WebGL contexts risk Chrome evicting the running fullscreen visualizer), fed
   by a synthetic waveform and recoloured from a synthetic blue palette through
-  the user's own palette settings. The engine is released while the
+  the user's own palette settings. The render loop is paused while the
   fullscreen player covers the page.
 -->
 <template>
@@ -40,8 +40,8 @@ let engine: VisualizerEngine | null = null;
 let engineCreating: Promise<VisualizerEngine | null> | null = null;
 let unmounted = false;
 
-// Release the GPU while the fullscreen player covers the page, as the
-// visualizer canvas does.
+// The running fullscreen visualizer needs the GPU to itself; the engine keeps
+// its GL context, so this pauses it rather than recreating it.
 const covered = computed(() => store.showFullscreenPlayer);
 
 // The preview sits on black whatever the app theme.
@@ -58,13 +58,8 @@ const applyPalette = () => {
 
 watch([paletteColors, paletteRamp, paletteRampStrength], applyPalette);
 
-const releaseEngine = () => {
-  engine?.destroy();
-  engine = null;
-  engineCreating = null;
-};
-
 const ensureEngine = async (): Promise<VisualizerEngine | null> => {
+  if (engine) return engine;
   if (!canvasEl.value) return null;
   engineCreating ??= createVisualizerEngine(canvasEl.value, frameSource).catch(
     (error: unknown) => {
@@ -72,11 +67,9 @@ const ensureEngine = async (): Promise<VisualizerEngine | null> => {
       return null;
     },
   );
-  const creating = engineCreating;
-  const created = await creating;
-  // Unmounted or covered mid-create: tear down, or the render loop outlives
-  // its owner.
-  if (unmounted || creating !== engineCreating) {
+  const created = await engineCreating;
+  // Unmounted mid-create: tear down, or the render loop outlives the canvas.
+  if (unmounted) {
     created?.destroy();
     return null;
   }
@@ -91,18 +84,14 @@ const ensureEngine = async (): Promise<VisualizerEngine | null> => {
 watch(
   [() => props.preset, covered],
   async ([name, isCovered]) => {
-    if (isCovered) {
-      releaseEngine();
-      return;
-    }
-    if (!name) {
+    if (isCovered || !name) {
       engine?.setPaused(true, false);
       return;
     }
     // The canvas needs layout before the engine reads its size.
     await nextTick();
     const eng = await ensureEngine();
-    if (!eng || props.preset !== name) return;
+    if (!eng || props.preset !== name || covered.value) return;
     eng.setPaused(false, false);
     await eng.loadPresetByName(name, 0);
   },
@@ -111,6 +100,7 @@ watch(
 
 onBeforeUnmount(() => {
   unmounted = true;
-  releaseEngine();
+  engine?.destroy();
+  engine = null;
 });
 </script>
