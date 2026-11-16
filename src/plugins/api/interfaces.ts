@@ -251,6 +251,7 @@ export enum SortField {
   PROVIDER = "provider",
   FAVORITE_TIMESTAMP = "favorite_timestamp",
   ORIGINAL = "original",
+  RELEASE_DATE = "release_date",
 }
 
 export enum SortDirection {
@@ -263,6 +264,13 @@ export interface SortOptionInfo {
   supports_direction: boolean;
   default_direction: SortDirection | null;
   label_key: string | null;
+}
+
+// where a letter starts in a library listing sorted by name: the letter ("#"
+// for numbers and symbols) and the row of its first item in the listing order
+export interface LetterIndexEntry {
+  letter: string;
+  offset: number;
 }
 
 export enum LinkType {
@@ -423,6 +431,12 @@ export enum PlaybackState {
   PLAYING = "playing",
 }
 
+export enum SleepTimerMode {
+  DURATION = "duration",
+  END_OF_ITEM = "end_of_item",
+  END_OF_CHAPTER = "end_of_chapter",
+}
+
 export enum PlayerType {
   PLAYER = "player", // A regular player.
   STEREO_PAIR = "stereo_pair",
@@ -489,7 +503,11 @@ export enum EventType {
   PLAYLOG_UPDATED = "playlog_updated",
   // a user's like, dislike or unset on an item changed; object_id is the item uri
   FAVORITE_UPDATED = "favorite_updated",
+  // a user's bookmarks of one copy changed; object_id is the copy's uri, data the user id
+  BOOKMARKS_UPDATED = "bookmarks_updated",
   PROVIDERS_UPDATED = "providers_updated",
+  // the community catalog or the provider manifests changed
+  COMMUNITY_CATALOG_UPDATED = "community_catalog_updated",
   TASKS_UPDATED = "tasks_updated",
   MUSIC_SYNC_COMPLETED = "music_sync_completed",
   PLAYER_CONFIG_UPDATED = "player_config_updated",
@@ -535,6 +553,11 @@ export enum ProviderFeature {
   ARTIST_TOPALBUMS = "artist_topalbums",
   AUTHOR_AUDIOBOOKS = "author_audiobooks",
   NARRATOR_AUDIOBOOKS = "narrator_audiobooks",
+  // bookmarks of the user per mediatype: read, and add/rename/remove
+  AUDIOBOOK_BOOKMARKS = "audiobook_bookmarks",
+  AUDIOBOOK_BOOKMARKS_EDIT = "audiobook_bookmarks_edit",
+  PODCAST_EPISODE_BOOKMARKS = "podcast_episode_bookmarks",
+  PODCAST_EPISODE_BOOKMARKS_EDIT = "podcast_episode_bookmarks_edit",
   // library edit (=add/remove) feature per mediatype
   LIBRARY_ARTISTS_EDIT = "library_artists_edit",
   LIBRARY_ALBUMS_EDIT = "library_albums_edit",
@@ -549,6 +572,7 @@ export enum ProviderFeature {
   SIMILAR_ARTISTS = "similar_artists",
   // playlist-specific features
   PLAYLIST_TRACKS_EDIT = "playlist_tracks_edit",
+  PLAYLIST_TRACKS_MOVE = "playlist_tracks_move",
   PLAYLIST_CREATE = "playlist_create",
   PLAYLIST_CREATE_TRACKS = "playlist_create_tracks",
   PLAYLIST_CREATE_AUDIOBOOKS = "playlist_create_audiobooks",
@@ -682,6 +706,8 @@ export interface ErrorResultMessage extends ResultMessageBase {
 
   error_code: number;
   details: string | null;
+  // context a client can act on without parsing `details`; the keys depend on the error
+  data: Record<string, unknown> | null;
 }
 
 export interface EventMessage {
@@ -892,6 +918,8 @@ export interface SetupFlowStep {
   last_step?: boolean | null;
   // url [EXTERNAL]: url the user must open (e.g. an OAuth authorize url)
   url?: string | null;
+  // copy_text [FORM, EXTERNAL]: optional value the user can copy to the clipboard
+  copy_text?: string | null;
   // progress_text [PROGRESS]: localized status message
   progress_text?: string | null;
   // progress [PROGRESS]: optional completion fraction between 0 and 1
@@ -1030,6 +1058,15 @@ export interface MediaItemChapter {
   end: number | null;
 }
 
+// a user's bookmark on one provider copy of a media item
+export interface MediaItemBookmark {
+  name: string;
+  start: number;
+  provider_instance: string;
+  item_id: string;
+  stored_by_music_assistant: boolean;
+}
+
 // a collection groups related items, most commonly an audiobook series
 export interface MediaItemCollection {
   title: string;
@@ -1117,6 +1154,13 @@ export type StatisticsGranularity = "hour" | "day" | "week" | "month";
 /** How `statistics/listening_time` groups its minutes. */
 export type StatisticsGroupBy = "artist" | "genre";
 
+/** Whose plays the statistics commands combine; empty is the current user. */
+export interface StatisticsUsers {
+  // user ids or usernames
+  users?: string[];
+  all_users?: boolean;
+}
+
 /** A ranked media item and its completed-play count from statistics endpoints. */
 export interface StatisticsTopItemResult {
   item: ItemMapping;
@@ -1164,6 +1208,8 @@ export interface AudioMetadata {
   musical_key: string | null;
   // Camelot wheel notation of musical_key, e.g. "11A"
   camelot_key: string | null;
+  // 1 (calmest) to 10 (most energetic)
+  energy_level: number | null;
 }
 
 export interface Track extends MediaItem {
@@ -1300,8 +1346,17 @@ export interface RecommendationFolder extends BrowseFolder {
   supports_provider_filter: boolean;
 }
 
+// computed over all items of a collection, also when it holds a filtered subset
+export interface MediaCollectionMetadata extends MediaItemMetadata {
+  total_items: number | null;
+  duration: number | null;
+  fully_played: boolean | null;
+  in_progress: boolean | null;
+}
+
 export interface MediaCollection<M extends MediaItemType> extends MediaItem {
   items: M[];
+  metadata: MediaCollectionMetadata;
 }
 
 // unlike the server alias of the same name this includes BrowseFolder, because
@@ -1452,6 +1507,7 @@ export interface QueueItem {
   extra_attributes?: {
     party_guest?: boolean; // true if added by party guest
     party_boosted?: boolean; // true if added as "boost" (play next)
+    party_skip_votes?: number; // guests that voted to skip this (currently playing) item
     playback_speed?: number; // current playback speed multiplier (audiobook/podcast)
   };
 }
@@ -1539,6 +1595,27 @@ export interface OutputProtocol {
   // derived_from: for a derived transport that rides on another protocol (e.g. a Sendspin
   // bridge over an AirPlay player), the output_protocol_id of the base output; null for direct outputs
   derived_from: string | null;
+}
+
+export enum ProtocolRole {
+  // The role a protocol has within a player.
+  NATIVE = "native", // the vendor-specific protocol of the device, with full control
+  CONTROL = "control", // controls the device (e.g. power, volume) but does not play audio
+  AUDIO = "audio", // a generic protocol that plays audio on the device (e.g. AirPlay)
+  VIRTUAL = "virtual", // a protocol without a physical device behind it (e.g. a group player)
+  UNKNOWN = "unknown",
+}
+
+export interface PlayerProtocolInfo {
+  // A protocol a player is made up of (e.g. the device's own protocol plus AirPlay and Chromecast).
+  protocol_id: string; // Unique ID of the protocol (its own id, not the player id)
+  domain: string; // Domain of the protocol's provider, e.g. "airplay", "sonos"
+  provider: string; // instance_id of the protocol's provider
+  role: ProtocolRole;
+  available: boolean; // Whether this protocol is currently available
+  // active: the player's current playback path: the protocol of an app Music Assistant
+  // did not start that the player shows, else the one of its active output
+  active: boolean;
 }
 
 export interface DeviceInfo {
@@ -1675,8 +1752,16 @@ export interface Player {
   volume_control: string;
   mute_control: string;
   needs_setup: boolean;
+  // setup_reason: why the player needs setup or has no way to play at all, such as
+  // "pairing_required" or "provider_not_installed"; null when it gave no reason
+  setup_reason: string | null;
   // this player (or a wrapped protocol child) offers a setup flow that can be re-run on demand
   has_setup_flow: boolean;
+  // legacy_ids: ids the player was known under before (such as a player merged into it),
+  // which it keeps answering to
+  legacy_ids: string[];
+  // protocols: the protocols the player is made up of, also those that are away
+  protocols: PlayerProtocolInfo[];
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
@@ -1690,6 +1775,11 @@ export interface Player {
   // sleep_timer_expires_at: unix (utc) timestamp at which the active sleep timer
   // will stop playback, or null when no sleep timer is set.
   sleep_timer_expires_at: number | null;
+
+  // sleep_timer_mode: the point at which the active sleep timer stops playback, or
+  // null when no sleep timer is set. For END_OF_ITEM/END_OF_CHAPTER,
+  // sleep_timer_expires_at is an estimate while playing and null while paused.
+  sleep_timer_mode: SleepTimerMode | null;
 
   // active_source_audio: audio-path snapshot for a live external source (e.g.
   // Spotify Connect) playing on active_source; null while a queue item is
@@ -1728,12 +1818,35 @@ export interface ProviderManifest {
   // this provider itself, instead of only a user who manages every music source
   self_service: boolean;
   stage: ProviderStage;
+  // tier: who builds and maintains the provider
+  tier: ProviderTier;
+  // support_url: where the maintainer takes reports, null = the project's support repository
+  support_url: string | null;
   // icon: material design icon
   icon: string | null;
   // icon_images: which icon variants this provider supplies as image files.
   icon_images: ProviderIconVariant[];
   // depends on: domain of another provider that is required for this provider
   depends_on: string | null;
+  // menu_actions: entries this provider adds to the menu of a media item;
+  // absent from an older server
+  menu_actions?: ProviderMenuAction[];
+}
+
+export interface ProviderMenuAction {
+  // An entry a provider adds to the menu of a media item.
+  // id: names the action within its provider
+  id: string;
+  // label: the text of the entry, already in the user's language
+  label: string;
+  // media_types: the kinds of media item the entry is offered for
+  media_types: MediaType[];
+  // scope: what a user needs to see and use the entry
+  scope: Scope;
+  // icon: name of a material design icon, such as mdi-image-frame
+  icon: string | null;
+  // requires_player: whether the action acts on a player, which the app then passes
+  requires_player: boolean;
 }
 
 export enum ProviderStage {
@@ -1745,6 +1858,11 @@ export enum ProviderStage {
   DEPRECATED = "deprecated",
 }
 
+export enum ProviderTier {
+  CORE = "core",
+  COMMUNITY = "community",
+}
+
 export enum ProviderStatus {
   LOADED = "loaded",
   LOADING = "loading",
@@ -1752,6 +1870,8 @@ export enum ProviderStatus {
   AUTH_REQUIRED = "auth_required",
   INCOMPATIBLE = "incompatible",
   ERROR = "error",
+  // the code of the provider is not on this server; the reason is in last_error
+  UNAVAILABLE = "unavailable",
 }
 
 export interface ProviderError {
@@ -1760,6 +1880,62 @@ export interface ProviderError {
   // client renders it directly.
   error_code: number;
   message: string;
+}
+
+export enum CommunityProviderState {
+  AVAILABLE = "available",
+  INSTALLED = "installed",
+  UPDATE_AVAILABLE = "update_available",
+  RESTART_REQUIRED = "restart_required",
+  BLOCKED = "blocked",
+  UNAVAILABLE = "unavailable",
+  WITHDRAWN = "withdrawn",
+}
+
+export interface CommunityProvider {
+  // A provider of the community catalog: one that can be installed, or one that is.
+  domain: string;
+  // owner/name of the repository on GitHub
+  repository: string;
+  maintainers: string[];
+  // a data URI to show in an image element
+  icon: string | null;
+  // the manifest of the installed version, else the one of the latest version
+  manifest: ProviderManifest;
+  state: CommunityProviderState;
+  installed_version: string | null;
+  latest_version: string | null;
+  // the version that becomes active at the next start of the server
+  pending_version: string | null;
+  // a version that failed to load here; installed again only when asked for by domain
+  failed_version: string | null;
+  // ISO dates: when it entered the catalog, and when latest_version was released
+  added: string | null;
+  released: string | null;
+  // what the catalog says about a provider it blocked or withdrew, and where it explains it
+  reason: string | null;
+  reason_url: string | null;
+  // why an installed provider does not run
+  error: ProviderError | null;
+  // what the app tells the admin until it is dismissed: "moved"
+  notice: string | null;
+}
+
+export enum CatalogRecommendationReason {
+  // Why the Marketplace suggests a provider, in the order the suggestions come in.
+  DISCOVERED = "discovered",
+  COMPLEMENTS = "complements",
+  POPULAR = "popular",
+  NEW = "new",
+  UPDATED = "updated",
+}
+
+export interface CatalogRecommendation {
+  // A provider the Marketplace suggests the user adds, and why.
+  domain: string;
+  reason: CatalogRecommendationReason;
+  // for complements: the domain of the provider it goes well with, which is set up
+  detail: string | null;
 }
 
 export interface ProviderInstance {
@@ -2149,6 +2325,8 @@ export interface PartyConfig {
   enable_skip_song: boolean;
   skip_song_limit: number;
   skip_song_refill_minutes: number;
+  // Number of distinct guests that must vote before the current song is skipped
+  skip_votes_required: number;
   karaoke_mode: boolean;
   highlight_ahead: boolean;
   request_badge_color?: string;
@@ -2169,6 +2347,7 @@ export interface SmartPlaylistRules {
   album_ids: number[];
   folder_paths?: string[];
   favorites_only: boolean;
+  exclude_favorites?: boolean;
   explicit?: boolean | null;
   seed_track_uris?: string[];
   seed_artist_uris?: string[];

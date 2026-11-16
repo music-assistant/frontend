@@ -1,7 +1,9 @@
 import { keepOwnFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
 import { api } from "@/plugins/api";
+import { EXTERNAL_PROVIDER } from "@/plugins/api/helpers";
 import {
   EventType,
+  type MediaType,
   type EventMessage,
   type MediaItem,
   type MediaItemType,
@@ -15,9 +17,11 @@ const ITEM_UPDATE_DELAY_MS = 2000;
 export interface DetailItemUpdatesOptions {
   /**
    * The provider item the page was opened with; an update to an item mapped to
-   * it also replaces the item, as when a provider item was added to the library.
+   * it with the same media type also replaces the item, as when a provider item
+   * was added to the library. For an external address, the item it was found
+   * as takes its place.
    */
-  providerItem?: { itemId: string; provider: string };
+  providerItem?: { itemId: string; provider: string; mediaType: MediaType };
   /** Called after the item was replaced by an update. */
   onUpdate?: () => void;
 }
@@ -39,7 +43,10 @@ export function useDetailItemUpdates<T extends MediaItem>(
 ): void {
   const matches = (updatedItem: MediaItemType) =>
     item.value?.uri === updatedItem.uri ||
-    mapsToProviderItem(updatedItem, options.providerItem);
+    mapsToProviderItem(
+      updatedItem,
+      foundProviderItem(options.providerItem, item.value),
+    );
 
   let pending: MediaItemType | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -65,7 +72,9 @@ export function useDetailItemUpdates<T extends MediaItem>(
 
   // the user's own like or dislike, wherever they made it
   const unsubFavorite = subscribeOwnFavorites((update) => {
-    if (item.value?.uri === update.uri) item.value.favorite = update.favorite;
+    if (item.value?.uri === update.uri) {
+      item.value.favorite = update.favorite;
+    }
   });
 
   onScopeDispose(() => {
@@ -75,11 +84,34 @@ export function useDetailItemUpdates<T extends MediaItem>(
   });
 }
 
+/**
+ * The provider item updates are matched against: the one the page was opened
+ * with, or for an external address the item it was found as.
+ */
+function foundProviderItem(
+  providerItem: DetailItemUpdatesOptions["providerItem"],
+  shown: MediaItem | undefined,
+): DetailItemUpdatesOptions["providerItem"] {
+  if (providerItem?.provider !== EXTERNAL_PROVIDER || !shown) {
+    return providerItem;
+  }
+  return {
+    itemId: shown.item_id,
+    provider: shown.provider,
+    mediaType: providerItem.mediaType,
+  };
+}
+
 function mapsToProviderItem(
   updatedItem: MediaItemType,
   providerItem: DetailItemUpdatesOptions["providerItem"],
 ): boolean {
-  if (!providerItem || !("provider_mappings" in updatedItem)) return false;
+  if (
+    !providerItem ||
+    updatedItem.media_type !== providerItem.mediaType ||
+    !("provider_mappings" in updatedItem)
+  )
+    return false;
   return updatedItem.provider_mappings.some(
     (mapping) =>
       mapping.item_id === providerItem.itemId &&

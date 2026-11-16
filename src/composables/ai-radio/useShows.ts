@@ -212,14 +212,14 @@ function isStopping(showId: string): boolean {
   return stoppingShowIds.has(showId);
 }
 
-/** Plays a show as its radio media item on the queue the given player plays from. */
+/** Plays a show as its radio media item on the given player. */
 async function startShow(showId: string, playerId: string): Promise<void> {
   startingShowIds.add(showId);
   dismissNoAiProviderAlert();
   try {
     // the card reports the failure itself, so the API's own toast would double it
     await api.playMedia(showUri(showId), undefined, {
-      queue_id: activeQueueId(playerId),
+      queue_id: playerId,
       suppressGlobalError: true,
     });
     toast.success($t("providers.ai_radio.toast.live_starting"));
@@ -273,14 +273,6 @@ function reportStartError(message: string): void {
 
 function dismissNoAiProviderAlert(): void {
   noAiProviderAlert.value = false;
-}
-
-/** The queue a player plays from: its group leader's when synced, else its own (mirrors api.playMedia's default). */
-function activeQueueId(playerId: string): string {
-  const player = api.players[playerId];
-  return player?.active_source && player.active_source in api.queues
-    ? player.active_source
-    : playerId;
 }
 
 /** Background refetch: there is no user action to attach an error toast to. */

@@ -155,7 +155,7 @@ describe("WelcomeStep", () => {
     wrapper.unmount();
   });
 
-  it("persists the answer and moves the wizard on", async () => {
+  it("persists the answer without moving the wizard on", async () => {
     const wrapper = await mountStep();
 
     await card(wrapper, "expert").trigger("click");
@@ -166,7 +166,7 @@ describe("WelcomeStep", () => {
       // the step's own message is the only one the member should get
       { suppressGlobalError: true },
     );
-    expect(wrapper.emitted("advance")).toHaveLength(1);
+    expect(wrapper.emitted("advance")).toBeUndefined();
 
     wrapper.unmount();
   });
@@ -356,7 +356,7 @@ describe("WelcomeStep", () => {
     await flushPromises();
 
     expect(setUserPreferencesMock).toHaveBeenCalledOnce();
-    expect(wrapper.emitted("advance")).toHaveLength(1);
+    expect(wrapper.emitted("advance")).toBeUndefined();
 
     wrapper.unmount();
   });

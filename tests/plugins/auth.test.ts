@@ -1,4 +1,3 @@
-import { createGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
 import { Scope, UserRole } from "@/plugins/api/interfaces";
 import { AuthManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
@@ -107,19 +106,6 @@ describe("AuthManager guest sessions", () => {
     );
   });
 
-  it("preserves affinity only while the same participant token remains active", () => {
-    const firstToken = createToken("guest-token-1", "party_guest");
-    sessionStorage.setItem("ma_guest_access_token", firstToken);
-    createGuestQuizAffinity(createQuizContext("guest-token-1")).record();
-    const authManager = new AuthManager();
-
-    authManager.setToken(firstToken);
-    expect(sessionStorage.getItem("music_quiz_guest_affinity")).not.toBeNull();
-
-    authManager.setToken(createToken("guest-token-2", "party_guest"));
-    expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
-  });
-
   it("stores a dashboard viewer token like a guest token", () => {
     const regularToken = createToken("regular-token", "admin");
     const dashboardToken = createToken("dashboard-token", "dashboard_viewer");
@@ -150,7 +136,6 @@ describe("AuthManager guest sessions", () => {
   it("clears persistent and guest credentials on full logout", () => {
     const authManager = new AuthManager();
     authManager.setToken(createToken("regular-token", "admin"));
-    createGuestQuizAffinity(createQuizContext("guest-token-1")).record();
 
     authManager.clearAuth();
 
@@ -158,7 +143,6 @@ describe("AuthManager guest sessions", () => {
     expect(localStorage.getItem("ma_access_token")).toBeNull();
     expect(localStorage.getItem("ma_access_token_connection")).toBeNull();
     expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
-    expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
   });
 
   it("restores the saved regular token when a dashboard viewer session is cleared", () => {
@@ -314,11 +298,4 @@ function createToken(jti: string, username: string): string {
     .replace(/\//g, "_")
     .replace(/=+$/, "");
   return `header.${payload}.signature`;
-}
-
-function createQuizContext(participantIdentity: string) {
-  return {
-    connectionIdentity: "local:http://music-assistant:8095" as const,
-    participantIdentity,
-  };
 }

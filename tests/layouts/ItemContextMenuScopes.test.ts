@@ -33,7 +33,9 @@ const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
     sendCommand: vi.fn(),
+    providerManifests: {},
     players: {},
+    state: { value: "initialized" },
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   storeMock: {
@@ -41,7 +43,11 @@ const { apiMock, hasScope, storeMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
+vi.mock("@/plugins/api", () => ({
+  default: apiMock,
+  api: apiMock,
+  ConnectionState: { INITIALIZED: "initialized" },
+}));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/plugins/eventbus", () => ({

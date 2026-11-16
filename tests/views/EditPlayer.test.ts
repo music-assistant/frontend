@@ -259,6 +259,35 @@ describe("EditPlayer", () => {
     expect(wrapper.text()).toContain("settings.player_not_available");
   });
 
+  it("says why the player needs setup", async () => {
+    apiMock.players = {
+      "player-1": playerState({
+        available: false,
+        needsSetup: true,
+        setupReason: "pairing_required",
+      }),
+    };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.text()).toContain("settings.setup_reason.pairing_required");
+    expect(wrapper.text()).not.toContain("settings.player_needs_setup");
+  });
+
+  it("calls a player whose provider is not installed not available", async () => {
+    apiMock.players = {
+      "player-1": playerState({
+        available: false,
+        setupReason: "provider_not_installed",
+      }),
+    };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.text()).toContain("settings.player_not_available");
+    expect(wrapper.text()).not.toContain("provider_not_installed");
+  });
+
   it("offers to enable a disabled player", async () => {
     apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
     apiMock.savePlayerConfig.mockResolvedValueOnce(playerConfig());
@@ -540,11 +569,13 @@ function playerState({
   hasSetupFlow = true,
   needsSetup = false,
   playerId = "player-1",
+  setupReason = null,
 }: {
   available?: boolean;
   hasSetupFlow?: boolean;
   needsSetup?: boolean;
   playerId?: string;
+  setupReason?: string | null;
 } = {}) {
   return {
     available,
@@ -556,6 +587,7 @@ function playerState({
     options: [],
     output_protocols: [],
     player_id: playerId,
+    setup_reason: setupReason,
     supported_features: [],
     type: PlayerType.PLAYER,
   };

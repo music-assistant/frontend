@@ -30,6 +30,7 @@ const { apiMock, authMock, storeMock, mockEventbusEmit } = vi.hoisted(() => ({
     providers: {} as Record<string, unknown>,
     getProvider: vi.fn(),
     getLibraryItem: vi.fn(),
+    providerManifests: {},
     players: {},
   },
   authMock: {

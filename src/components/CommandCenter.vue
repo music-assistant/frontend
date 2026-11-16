@@ -691,6 +691,7 @@ const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
 const onMediaSelect = function (item: MediaItemTypeOrItemMapping) {
   recordRecentSearch();
   close();
+  store.showFullscreenPlayer = false;
   router.push({
     name: item.media_type,
     params: { itemId: item.item_id, provider: item.provider },
@@ -779,6 +780,7 @@ const pageResults = computed(() => {
 
 const goToPage = function (page: MenuItem) {
   close();
+  store.showFullscreenPlayer = false;
   router.push(page.path);
 };
 
@@ -865,7 +867,9 @@ onUnmounted(() => {
 watch(
   () => route.fullPath,
   () => {
-    if (isOpen.value) close();
+    if (!isOpen.value) return;
+    close();
+    store.showFullscreenPlayer = false;
   },
 );
 

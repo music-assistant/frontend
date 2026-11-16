@@ -1,0 +1,398 @@
+// Reordering the tracks of a playlist listing by dragging one row or a block
+// of selected rows. A move shows at once and is saved on the provider; nothing
+// moves or removes the playlist's tracks again until the listed rows are read
+// back, failed or not, so every listed position is the provider's.
+import { useListDragReorder } from "@/composables/useListDragReorder";
+import {
+  blockStartIndex,
+  movedOrder,
+  moveListedItems,
+  playlistPosition,
+  reloadedRowLocator,
+  type UndoneMove,
+} from "@/helpers/playlist_reorder";
+import { api, ConnectionState } from "@/plugins/api";
+import {
+  EventType,
+  TaskStatus,
+  type BackgroundTask,
+  type EventMessage,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
+import { Ref, computed, reactive, toRaw, watch } from "vue";
+
+const FINISHED_TASK_STATUSES = new Set([
+  TaskStatus.SUCCESS,
+  TaskStatus.PARTIAL_SUCCESS,
+  TaskStatus.FAILED,
+  TaskStatus.CANCELLED,
+]);
+
+/**
+ * Sends an edit that runs as a background task, such as a removal of playlist
+ * tracks, and resolves once the task has finished or is no longer listed. The
+ * task may end before its reply arrives, so its reports are listened for
+ * before it is sent. Reports sent while disconnected are missed, so the tasks
+ * are listed again once the server is reached; an account that may not list
+ * them waits for the next report instead.
+ */
+export const untilTaskEnds = (send: () => Promise<BackgroundTask>) =>
+  new Promise<void>((resolve, reject) => {
+    let taskId: string | undefined;
+    // task lists that came before the reply told the task's id
+    const early: BackgroundTask[][] = [];
+    let ended = false;
+    const stop = () => {
+      ended = true;
+      // the api is still calling its listeners, which unsubscribing now
+      // would cut short
+      queueMicrotask(unsubscribe);
+      stopWatchingConnection();
+    };
+    // a list from before the task was created does not hold it, so only one
+    // from after the reply tells that it ended by leaving it out
+    const endFrom = (tasks: BackgroundTask[], afterReply = true) => {
+      if (ended) return;
+      if (taskId === undefined) {
+        early.push(tasks);
+        return;
+      }
+      const current = tasks.find(({ id }) => id === taskId);
+      if (current ? !FINISHED_TASK_STATUSES.has(current.status) : !afterReply)
+        return;
+      stop();
+      resolve();
+    };
+    const listTasks = async () => {
+      try {
+        endFrom(await api.getTasks({ suppressGlobalError: true }));
+      } catch {
+        // the next report ends the wait all the same
+      }
+    };
+    const unsubscribe = api.subscribe(
+      EventType.TASKS_UPDATED,
+      (event: EventMessage) => endFrom(event.data as BackgroundTask[]),
+    ) as () => void;
+    const stopWatchingConnection = watch(
+      () => api.state.value,
+      (state) => {
+        if (state === ConnectionState.INITIALIZED) void listTasks();
+      },
+    );
+    send().then(
+      (task) => {
+        taskId = task.id;
+        for (const tasks of early.splice(0)) endFrom(tasks, false);
+        endFrom([task]);
+      },
+      (error: unknown) => {
+        stop();
+        reject(error);
+      },
+    );
+  });
+
+// Counts per playlist id, for edits on their way from outside the playlist's
+// listing (such as the track menu), and for every edit that is saving or
+// being read back; the listed positions are out of date until it is done.
+const outsideEdits = reactive(new Map<string, number>());
+const pendingEdits = reactive(new Map<string, number>());
+
+// Counts per playlist id of the edits sent, so a listing can tell whether it
+// read back the latest one, such as a listing opened while a move saved.
+const sentEdits = new Map<string, number>();
+const editsSent = (id: string) => sentEdits.get(id) ?? 0;
+
+const hold = (counts: Map<string, number>, id: string) =>
+  counts.set(id, (counts.get(id) ?? 0) + 1);
+const release = (counts: Map<string, number>, id: string) => {
+  const left = (counts.get(id) ?? 1) - 1;
+  if (left > 0) counts.set(id, left);
+  else counts.delete(id);
+};
+
+/** Whether the server takes commands, so a move can be saved and read back. */
+export const canSavePlaylistMoves = () =>
+  api.state.value === ConnectionState.INITIALIZED;
+
+/** Whether an edit of the playlist's order is saving or being read back. */
+export const isPlaylistEditPending = (id: string) => pendingEdits.has(id);
+
+/**
+ * Send an edit of the playlist's order from outside its listing, such as a
+ * move or removal from the track menu; the listing reads its rows back once
+ * it is done and holds back its own moves until then. Resolves whether the
+ * edit was made.
+ */
+export const sendPlaylistEdit = async function (
+  id: string,
+  edit: () => Promise<unknown>,
+) {
+  // an edit sent while reconnecting fails, and its rows could not be read back
+  if (!canSavePlaylistMoves()) return false;
+  hold(outsideEdits, id);
+  hold(pendingEdits, id);
+  sentEdits.set(id, editsSent(id) + 1);
+  try {
+    await edit();
+    return true;
+  } catch {
+    // the api already reports the failure to the user, such as the server
+    // turning the edit away while another one is running; the listing reads
+    // the order back all the same
+    return false;
+  } finally {
+    // the listing takes over the hold before this one ends
+    release(outsideEdits, id);
+    release(pendingEdits, id);
+  }
+};
+
+interface PlaylistTrackReorderOptions {
+  // Element holding the rows, anchoring the ghost and the row positions.
+  listEl: Ref<HTMLElement | null>;
+  // The listed rows.
+  items: Ref<MediaItemType[]>;
+  // Library id of the playlist the rows belong to.
+  playlistId: () => string | undefined;
+  // The rows show the playlist's own order with nothing filtered out, so a
+  // row's index is its position minus one.
+  inOwnOrder: () => boolean;
+  // Indices of the selected rows; grabbing one of them drags them all.
+  selectedIndices: () => number[];
+  // Height of every row in px; the list is virtualized, so rows are not measured.
+  rowHeight: number;
+  // Re-reads the listed rows from the provider.
+  reload: () => Promise<void>;
+  // Called each time the rows were read back, with the row read back that
+  // stands for one listed before, when it can be told.
+  onReloaded?: (
+    locate: (row: MediaItemType) => MediaItemType | undefined,
+  ) => void;
+  // Called when a move replaced rows by copies at their new places, with the
+  // row that now stands for an old one.
+  onRowsReplaced?: (
+    replacement: (row: MediaItemType) => MediaItemType | undefined,
+  ) => void;
+}
+
+export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
+  const { listEl, items, playlistId, inOwnOrder, reload } = options;
+
+  // An edit is saving or being read back, here or from outside the listing;
+  // another move waits, so it never starts from positions the provider no
+  // longer holds.
+  const saving = computed(() => {
+    const id = playlistId();
+    return id !== undefined && isPlaylistEditPending(id);
+  });
+
+  // this listing is reading its rows back, and the playlist changed meanwhile
+  let settling = false;
+  let changedMeanwhile = false;
+  // the playlist and its count of sent edits as of this listing's rows; rows
+  // loaded while an edit is held may be from before it
+  const initialId = playlistId();
+  let readBack =
+    initialId === undefined || isPlaylistEditPending(initialId)
+      ? undefined
+      : { id: initialId, edits: editsSent(initialId) };
+
+  // Saves a move, if any, and reads the rows back while holding off other
+  // edits; a change reported meanwhile is read back as well. `undo` holds the
+  // order from before the move, to match the rows back to when it fails.
+  const settle = async function (
+    save?: () => Promise<void>,
+    undo?: UndoneMove,
+  ) {
+    if (settling) {
+      changedMeanwhile = true;
+      return;
+    }
+    const id = playlistId();
+    settling = true;
+    if (id !== undefined) hold(pendingEdits, id);
+    try {
+      let undone: UndoneMove | undefined;
+      try {
+        await save?.();
+      } catch {
+        // the api already reports the failure to the user; the provider may
+        // have stored part of the move, so its order is read back all the same
+        undone = undo;
+      }
+      do {
+        changedMeanwhile = false;
+        if (id !== undefined) readBack = { id, edits: editsSent(id) };
+        await reload();
+        const locate = reloadedRowLocator(toRaw(items.value), undone);
+        undone = undefined;
+        options.onReloaded?.((row) => locate(toRaw(row)));
+      } while (changedMeanwhile);
+    } finally {
+      settling = false;
+      if (id !== undefined) release(pendingEdits, id);
+    }
+  };
+
+  // Reads the rows back after the playlist changed.
+  const refresh = () => settle();
+
+  // An edit sent from outside the listing has finished: read the order back
+  // before the listed positions are used again.
+  watch(
+    () => {
+      const id = playlistId();
+      return id !== undefined && outsideEdits.has(id);
+    },
+    (pending, wasPending) => {
+      if (!pending && wasPending) void settle();
+    },
+    // take over the hold before the edit releases it
+    { flush: "sync" },
+  );
+
+  // An edit made elsewhere, such as by a listing of the playlist closed while
+  // its move saved, has finished: read the order back if this listing has
+  // not yet.
+  watch(
+    () => {
+      const id = playlistId();
+      return id !== undefined && isPlaylistEditPending(id);
+    },
+    (pending, wasPending) => {
+      const id = playlistId();
+      if (pending || !wasPending || id === undefined || settling) return;
+      if (readBack?.id !== id || readBack.edits !== editsSent(id))
+        void settle();
+    },
+    // hold the edits before the listing offers them again
+    { flush: "sync" },
+  );
+
+  // The playlist may have changed while the server was out of reach: read the
+  // rows back before the listed positions are used again.
+  watch(
+    () => api.state.value === ConnectionState.INITIALIZED,
+    (connected, wasConnected) => {
+      if (connected && !wasConnected && playlistId() !== undefined)
+        void settle();
+    },
+    // hold the edits before the reconnected listing offers them again
+    { flush: "sync" },
+  );
+
+  const moveRows = async function (indices: number[], toIndex: number) {
+    const id = playlistId();
+    const before = toRaw(items.value);
+    const rows = [...new Set(indices)].sort((a, b) => a - b);
+    if (id === undefined || saving.value || !inOwnOrder() || !rows.length)
+      return;
+    if (!canSavePlaylistMoves()) return;
+    if (rows[0] < 0 || rows[rows.length - 1] >= before.length) return;
+    if (toIndex < 0 || toIndex + rows.length > before.length) return;
+    if (rows.every((row, offset) => row === toIndex + offset)) return;
+    const positions = rows.map((row) => playlistPosition(before[row]));
+    if (positions.some((position) => position === undefined)) return;
+
+    // the moved rows are copies holding their new positions
+    const after = moveListedItems(before, rows, toIndex);
+    const order = movedOrder(before.length, rows, toIndex);
+    items.value = after;
+    const pairs = new Map(
+      order.map((from, index) => [before[from], after[index]]),
+    );
+    options.onRowsReplaced?.((row) => pairs.get(toRaw(row)));
+    sentEdits.set(id, editsSent(id) + 1);
+    const indexBefore = new Map(
+      order.map((from, index) => [after[index], from]),
+    );
+    await settle(
+      () =>
+        positions.length === 1
+          ? api.movePlaylistTrack(id, positions[0]!, toIndex + 1)
+          : api.movePlaylistTracks(id, positions as number[], toIndex + 1),
+      { before, indexBefore },
+    );
+  };
+
+  // Grabbing a selected row moves every selected row.
+  const movesBlock = (source: number) => {
+    const selected = options.selectedIndices();
+    return selected.length > 1 && selected.includes(source);
+  };
+  const rowsMovedBy = (source: number) =>
+    movesBlock(source)
+      ? [...new Set(options.selectedIndices())].sort((a, b) => a - b)
+      : [source];
+
+  // Move `rows` to start at `toIndex`; returns the row the one at `source`
+  // now is, when they moved.
+  const moveFrom = (
+    source: number,
+    rows: number[],
+    toIndex: number,
+  ): number | undefined => {
+    const before = toRaw(items.value);
+    void moveRows(rows, toIndex);
+    if (toRaw(items.value) === before) return undefined;
+    return toIndex + rows.indexOf(source);
+  };
+
+  // A drag dropped the row at `source` to rest at `finalIndex`.
+  const dropAt = (source: number, finalIndex: number) => {
+    const rows = rowsMovedBy(source);
+    // the drop slot as an index before the drag lifted the source out
+    const dropBefore = finalIndex > source ? finalIndex + 1 : finalIndex;
+    return moveFrom(source, rows, blockStartIndex(rows, dropBefore));
+  };
+
+  // Move a row, or the block it is in, one place by keyboard; returns the row
+  // it now is, when it moved.
+  const moveBy = (index: number, delta: number) => {
+    const rows = rowsMovedBy(index);
+    // the block steps past the row beyond its edge in that direction
+    const edge =
+      delta > 0 ? rows[rows.length - 1] + 1 + delta : rows[0] + delta;
+    const dropBefore = Math.min(Math.max(edge, 0), items.value.length);
+    return moveFrom(index, rows, blockStartIndex(rows, dropBefore));
+  };
+
+  // The rows and playlist a drag started on; a drop on a listing that was
+  // replaced meanwhile would move a different track.
+  let dragRows: MediaItemType[] | undefined;
+  let dragPlaylistId: string | undefined;
+
+  const drag = useListDragReorder({
+    listEl,
+    count: () => items.value.length,
+    onCommit: (source, finalIndex) => {
+      if (toRaw(items.value) !== dragRows) return;
+      if (playlistId() !== dragPlaylistId) return;
+      void dropAt(source, finalIndex);
+    },
+    // a scattered block dropped by its grabbed row still gathers there
+    commitsInPlace: (source) => movesBlock(source),
+    rowBox: (index) =>
+      index >= 0 && index < items.value.length
+        ? { top: index * options.rowHeight, height: options.rowHeight }
+        : undefined,
+  });
+
+  const startDrag = (evt: PointerEvent, index: number) => {
+    if (saving.value) return;
+    dragRows = toRaw(items.value);
+    dragPlaylistId = playlistId();
+    drag.startItemDrag(evt, index);
+  };
+
+  return {
+    ...drag,
+    startDrag,
+    moveRows,
+    moveBy,
+    refresh,
+    saving,
+  };
+}

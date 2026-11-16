@@ -6,6 +6,19 @@ import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
+const { setPreference } = vi.hoisted(() => ({ setPreference: vi.fn() }));
+vi.mock("@/composables/userPreferences", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/composables/userPreferences")>();
+  return {
+    ...actual,
+    useUserPreferences: () => ({
+      ...actual.useUserPreferences(),
+      setPreference,
+    }),
+  };
+});
+
 // Only the fields the timeline and the elapsed-time resolver read are mocked;
 // both are reactive so a state change is picked up the way the real store's is.
 vi.mock("@/plugins/api", async () => {
@@ -217,41 +230,7 @@ describe("PlayerTimeline", () => {
   });
 
   it("seeks from a chapter-relative position to the absolute media position", async () => {
-    api.queues["q1"] = {
-      queue_id: "q1",
-      state: PlaybackState.PAUSED,
-      active: true,
-      current_item: {},
-    };
-    api.queueElapsedTime["q1"] = {
-      elapsed_time: 75,
-      elapsed_time_last_updated: NOW,
-    };
-    store.currentUser = {
-      preferences: { audiobook_chapter_progress: true },
-    };
-    store.curQueueItem = {
-      queue_item_id: "qi-1",
-      media_item: {
-        media_type: MediaType.AUDIOBOOK,
-        metadata: {
-          chapters: [
-            { position: 1, name: "First", start: 0, end: 60 },
-            { position: 2, name: "Second", start: 60, end: 120 },
-          ],
-        },
-      },
-    };
-    store.activePlayer = {
-      player_id: "p1",
-      active_source: "q1",
-      playback_state: PlaybackState.PAUSED,
-      current_media: {
-        duration: 120,
-        media_type: MediaType.AUDIOBOOK,
-        queue_item_id: "qi-1",
-      },
-    };
+    playTwoChapterBook(true, 75);
 
     mountTimeline({
       SliderRoot: {
@@ -263,80 +242,94 @@ describe("PlayerTimeline", () => {
     expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 70);
   });
 
-  it("seeks to a chapter start without reloading the media", async () => {
-    store.currentUser = {
-      preferences: { audiobook_chapter_progress: false },
-    };
-    store.curQueueItem = {
-      queue_item_id: "qi-1",
-      media_item: {
-        media_type: MediaType.AUDIOBOOK,
-        metadata: {
-          chapters: [
-            { position: 1, name: "First", start: 0, end: 60 },
-            { position: 2, name: "Second", start: 60, end: 120 },
-          ],
-        },
-      },
-    };
-    store.activePlayer = {
-      player_id: "p1",
-      playback_state: PlaybackState.PAUSED,
-      current_media: {
-        duration: 120,
-        media_type: MediaType.AUDIOBOOK,
-        queue_item_id: "qi-1",
-      },
-    };
-    api.playerCommandSeek.mockClear();
-    api.playMedia.mockClear();
+  it("splits the track into chapters and names the hovered one", async () => {
+    playTwoChapterBook(false, 0);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 120, 8),
+    );
 
     mountTimeline({
-      SliderRoot: { template: "<div><slot /></div>" },
+      SliderRoot: { template: '<div class="slider-root"><slot /></div>' },
       SliderTrack: { template: "<div><slot /></div>" },
     });
-    await wrapper!.find('button[aria-label="Second"]').trigger("click");
+    expect(wrapper!.findAll('[data-testid="chapter-segment"]')).toHaveLength(2);
+    expect(wrapper!.get('[data-testid="timeline-chapter-name"]').text()).toBe(
+      "Chapter 1 of 2",
+    );
 
-    expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 60);
-    expect(api.playMedia).not.toHaveBeenCalled();
+    await wrapper!.find(".slider-root").trigger("pointermove", { clientX: 90 });
+
+    await nextTick();
+    expect(
+      document.body.querySelector('[data-testid="timeline-hover-label"]')
+        ?.textContent,
+    ).toContain("01:30 · Second");
   });
 
+  it.each([false, true])(
+    "counts the playing chapter and switches chapter progress from it, chapter progress %s",
+    async (chapterProgress) => {
+      playTwoChapterBook(chapterProgress, 75);
+      setPreference.mockClear();
+
+      mountTimeline();
+      const name = wrapper!.get('[data-testid="timeline-chapter-name"]');
+      expect(name.text()).toBe("Chapter 2 of 2");
+      await name.trigger("click");
+      expect(setPreference).toHaveBeenCalledWith(
+        "audiobook_chapter_progress",
+        !chapterProgress,
+      );
+    },
+  );
+
+  // with chapter progress the track spans the playing chapter only
+  it.each([
+    [
+      false,
+      [
+        ["In the first", "00:30 · First", "25%"],
+        ["In the second", "01:30 · Second", "75%"],
+      ],
+    ],
+    [true, [["In the second", "00:30 · Second", "50%"]]],
+  ])(
+    "marks the bookmarks on the track, chapter progress %s",
+    async (chapterProgress, expected) => {
+      playTwoChapterBook(chapterProgress, 75);
+      api.playerCommandSeek.mockClear();
+
+      mountTimeline({
+        SliderRoot: { template: "<div><slot /></div>" },
+        SliderTrack: { template: "<div><slot /></div>" },
+      });
+      const bookmark = {
+        provider_instance: "audiobookshelf--1",
+        item_id: "book1",
+        stored_by_music_assistant: false,
+      };
+      await wrapper!.setProps({
+        bookmarks: [
+          { ...bookmark, name: "In the first", start: 30 },
+          { ...bookmark, name: "In the second", start: 90 },
+        ],
+      });
+      const markers = wrapper!.findAll('[data-testid="bookmark-tick"]');
+
+      // named with its position and chapter, as its tooltip shows it
+      expect(
+        markers.map((x) => [
+          ...x.attributes("aria-label")!.split(", "),
+          (x.element as HTMLElement).style.left,
+        ]),
+      ).toEqual(expected);
+      await markers[markers.length - 1].trigger("click");
+      expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 90);
+    },
+  );
+
   it("keeps the final chapter-relative position at exact media completion", async () => {
-    api.queues["q1"] = {
-      queue_id: "q1",
-      state: PlaybackState.PAUSED,
-      active: true,
-      current_item: {},
-    };
-    api.queueElapsedTime["q1"] = {
-      elapsed_time: 120,
-      elapsed_time_last_updated: NOW,
-    };
-    store.currentUser = {
-      preferences: { audiobook_chapter_progress: true },
-    };
-    store.curQueueItem = {
-      queue_item_id: "qi-1",
-      media_item: {
-        media_type: MediaType.AUDIOBOOK,
-        metadata: {
-          chapters: [
-            { position: 1, name: "First", start: 0, end: 60 },
-            { position: 2, name: "Second", start: 60, end: 120 },
-          ],
-        },
-      },
-    };
-    store.activePlayer = {
-      player_id: "p1",
-      active_source: "q1",
-      playback_state: PlaybackState.PAUSED,
-      current_media: {
-        duration: 120,
-        media_type: MediaType.AUDIOBOOK,
-        queue_item_id: "qi-1",
-      },
-    };
+    playTwoChapterBook(true, 120);
 
     mountTimeline();
     expect(elapsedLabel()).toBe("01:00");
@@ -628,6 +621,45 @@ describe("PlayerTimeline", () => {
     expect(api.playerCommandSeek).toHaveBeenCalledWith("p1", 153);
   });
 });
+
+// a paused two-chapter audiobook of 120 seconds at the given position
+function playTwoChapterBook(chapterProgress: boolean, elapsed: number) {
+  api.queues["q1"] = {
+    queue_id: "q1",
+    state: PlaybackState.PAUSED,
+    active: true,
+    current_item: {},
+  };
+  api.queueElapsedTime["q1"] = {
+    elapsed_time: elapsed,
+    elapsed_time_last_updated: NOW,
+  };
+  store.currentUser = {
+    preferences: { audiobook_chapter_progress: chapterProgress },
+  };
+  store.curQueueItem = {
+    queue_item_id: "qi-1",
+    media_item: {
+      media_type: MediaType.AUDIOBOOK,
+      metadata: {
+        chapters: [
+          { position: 1, name: "First", start: 0, end: 60 },
+          { position: 2, name: "Second", start: 60, end: 120 },
+        ],
+      },
+    },
+  };
+  store.activePlayer = {
+    player_id: "p1",
+    active_source: "q1",
+    playback_state: PlaybackState.PAUSED,
+    current_media: {
+      duration: 120,
+      media_type: MediaType.AUDIOBOOK,
+      queue_item_id: "qi-1",
+    },
+  };
+}
 
 function mountTimeline(extraStubs: Record<string, unknown> = {}) {
   wrapper = mount(PlayerTimeline, {

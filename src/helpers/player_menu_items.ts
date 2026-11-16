@@ -15,6 +15,7 @@ import {
   getPlayerDisplayName,
   getPlayerIcon,
   getPlayerName,
+  getSourceLabel,
   isBuiltinPlayer,
   isSelectablePlayer,
 } from "@/helpers/players";
@@ -312,7 +313,7 @@ export const getPlayerMenuItems = (
       subItems: selectableSources
         .map((s) => {
           return {
-            label: s.name,
+            label: getSourceLabel(player, s),
             labelArgs: [],
             disabled: s.id == player.active_source,
             selected: s.id == player.active_source,

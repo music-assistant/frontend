@@ -8,6 +8,7 @@ import {
   PLAYER_CONTROL_NONE,
   PlayerFeature,
   PlayerType,
+  ProtocolRole,
   type AIRadioHost,
   type AIRadioQueueDJStatus,
   type Player,
@@ -56,11 +57,12 @@ const {
 vi.mock("@/plugins/api", () => {
   const api = {
     players: {},
+    providerManifests: { chromecast: { name: "Chromecast" } },
     playerCommandShuffle: vi.fn(),
     playerCommandRepeat: vi.fn(),
     queueCommandTransfer: vi.fn(),
   };
-  return { default: api, api };
+  return { api, default: api };
 });
 
 const { webPlayerMock } = vi.hoisted(() => ({
@@ -667,6 +669,38 @@ describe("getPlayerMenuItems ai dj", () => {
     expect(labels.indexOf("ai_dj")).toBeGreaterThan(
       labels.indexOf("select_source"),
     );
+  });
+});
+
+describe("getPlayerMenuItems select source", () => {
+  it("names the protocol an app from outside plays on", () => {
+    const player = makePlayer({
+      source_list: [
+        playerSource({ id: "kitchen", name: "Queue", passive: false }),
+        playerSource({ id: "youtube", name: "YouTube" }),
+      ],
+      active_source: "youtube",
+      active_output_protocol: null,
+      protocols: [
+        {
+          protocol_id: "cast-1",
+          domain: "chromecast",
+          provider: "chromecast",
+          role: ProtocolRole.AUDIO,
+          available: true,
+          active: true,
+        },
+      ],
+    });
+
+    const selectSource = getPlayerMenuItems(player, undefined, {
+      context: "player",
+    }).find((item) => item.label === "select_source");
+
+    expect(selectSource?.subItems?.map((item) => item.label)).toEqual([
+      "Queue",
+      "YouTube • Chromecast",
+    ]);
   });
 });
 

@@ -1,6 +1,8 @@
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
+  EventType,
   ImageType,
+  type EventMessage,
   type Artist,
   type MediaItemImage,
   type Track,
@@ -10,6 +12,7 @@ import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
+import { providerMapping } from "../fixtures/providerMapping";
 import { track } from "../fixtures/track";
 
 const {
@@ -370,5 +373,47 @@ describe("TrackDetails", () => {
       "data:image/png;base64,cover-2",
     );
     expect(hero(wrapper).props("blurBackdrop")).toBe(true);
+  });
+
+  // the track the lookup found is what gets added to the library, not the
+  // external address the page was opened on
+  it("switches to the library copy of the track it was found as", async () => {
+    const onUpdated: Array<(evt: EventMessage) => void> = [];
+    mockSubscribe.mockImplementation(((
+      type: EventType,
+      callback: (evt: EventMessage) => void,
+    ) => {
+      if (type === EventType.MEDIA_ITEM_UPDATED) onUpdated.push(callback);
+      return () => {};
+    }) as never);
+    const onSpotify = providerMapping({
+      item_id: "sp1",
+      provider_domain: "spotify",
+      provider_instance: "spotify--1",
+    });
+    mockGetTrack.mockResolvedValue(
+      track({
+        item_id: "sp1",
+        provider: "spotify",
+        provider_mappings: [onSpotify],
+      }),
+    );
+    const wrapper = mount(TrackDetails, {
+      props: { itemId: "musicbrainz_recordingid:rec-1", provider: "external" },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+    await flushPromises();
+    const inLibrary = track({ item_id: "42", provider_mappings: [onSpotify] });
+
+    // the page applies an update once updates stop, so the wait is run at once
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    onUpdated.forEach((callback) =>
+      callback({ data: inLibrary } as EventMessage),
+    );
+    vi.runAllTimers();
+    vi.useRealTimers();
+    await flushPromises();
+
+    expect(hero(wrapper).props("item")).toMatchObject({ uri: inLibrary.uri });
   });
 });

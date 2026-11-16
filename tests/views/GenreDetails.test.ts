@@ -106,7 +106,11 @@ vi.mock("@/components/discover/EditorialMediaCard.vue", () => ({
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["itemtype", "forcedViewMode"],
+    props: {
+      itemtype: String,
+      forcedViewMode: String,
+      libraryToolbar: Boolean,
+    },
     template:
       '<div data-row="listing" :data-itemtype="itemtype" :data-view-mode="forcedViewMode" />',
   },
@@ -186,6 +190,16 @@ describe("GenreDetails row preferences", () => {
       );
     },
   );
+
+  it("sorts and filters each row from its title bar", async () => {
+    const wrapper = await mountDetails("panel");
+    const listings = wrapper.findAllComponents({ name: "ItemsListing" });
+
+    expect(listings.length).toBeGreaterThan(0);
+    expect(listings.every((listing) => listing.props("libraryToolbar"))).toBe(
+      true,
+    );
+  });
 
   it("leaves discovery shelves unaffected by hidden and reordered traditional rows", async () => {
     const wrapper = await mountDetails("discovery", {

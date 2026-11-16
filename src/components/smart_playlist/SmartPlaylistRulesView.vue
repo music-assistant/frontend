@@ -235,6 +235,15 @@ const ruleRows = computed<RuleViewRow[]>(() => {
       value: $t("smart_playlist.favorites_yes"),
     });
   }
+  if (r.exclude_favorites) {
+    rows.push({
+      key: "favorite-not",
+      icon: Ban,
+      label: $t("smart_playlist.field_favorite"),
+      exclude: true,
+      value: $t("smart_playlist.favorites_exclude"),
+    });
+  }
 
   const albumTypeNames = (r.album_types ?? []).map((at) =>
     $t(`album_type.${at}`),
