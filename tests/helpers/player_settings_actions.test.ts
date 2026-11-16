@@ -403,7 +403,7 @@ describe("removeUnavailablePlayers", () => {
       "attic",
     ]);
 
-    await removeUnavailablePlayers();
+    await removeUnavailablePlayers([]);
 
     expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
     expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledWith(true);
@@ -415,6 +415,32 @@ describe("removeUnavailablePlayers", () => {
     );
   });
 
+  it("names the players as the settings list does, in its order, and an unlisted one by its id", async () => {
+    apiMock.removeUnavailablePlayers.mockResolvedValueOnce([
+      "kitchen",
+      "lost",
+      "attic",
+      "garage",
+    ]);
+    // the settings list, which also holds a player the server keeps
+    const listedConfigs = [
+      playerConfig({ player_id: "attic", name: "Attic speaker" }),
+      playerConfig({ player_id: "garage", default_name: "Garage Cast" }),
+      // without a name of its own, the list shows the name the player reports
+      playerConfig({ player_id: "kitchen" }),
+      playerConfig({ player_id: "office", name: "Office" }),
+    ];
+
+    await removeUnavailablePlayers(listedConfigs);
+
+    expect(emitEvent).toHaveBeenCalledWith(
+      "deleteConfirmationDialog",
+      expect.objectContaining({
+        items: ["Attic speaker", "Garage Cast", "Kitchen", "lost"],
+      }),
+    );
+  });
+
   it("removes the players and reports the ones the server removed", async () => {
     apiMock.removeUnavailablePlayers
       .mockResolvedValueOnce(["kitchen"])
@@ -422,7 +448,7 @@ describe("removeUnavailablePlayers", () => {
     storeMock.activePlayerId = "kitchen";
     const onRemoved = vi.fn();
 
-    await removeUnavailablePlayers(onRemoved);
+    await removeUnavailablePlayers([], onRemoved);
     await confirmation().onConfirm();
 
     expect(apiMock.removeUnavailablePlayers).toHaveBeenLastCalledWith();
@@ -437,7 +463,7 @@ describe("removeUnavailablePlayers", () => {
     apiMock.removeUnavailablePlayers.mockResolvedValueOnce(["kitchen"]);
     const onRemoved = vi.fn();
 
-    await removeUnavailablePlayers(onRemoved);
+    await removeUnavailablePlayers([], onRemoved);
 
     expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();
     expect(onRemoved).not.toHaveBeenCalled();
@@ -446,7 +472,7 @@ describe("removeUnavailablePlayers", () => {
   it("says so when there is nothing to remove, without asking", async () => {
     apiMock.removeUnavailablePlayers.mockResolvedValueOnce([]);
 
-    await removeUnavailablePlayers();
+    await removeUnavailablePlayers([]);
 
     expect(toastMock.info).toHaveBeenCalledWith(
       "settings.no_unavailable_players",
@@ -460,7 +486,7 @@ describe("removeUnavailablePlayers", () => {
       new Error("Players are still being found, try again in 42 seconds"),
     );
 
-    await removeUnavailablePlayers();
+    await removeUnavailablePlayers([]);
 
     expect(emitEvent).not.toHaveBeenCalled();
     expect(apiMock.removeUnavailablePlayers).toHaveBeenCalledOnce();

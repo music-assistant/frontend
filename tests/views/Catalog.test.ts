@@ -709,7 +709,10 @@ describe("Catalog", () => {
       ProviderType.PLAYER,
     ]);
     expect(
-      linkTarget("[data-testid='catalog-installed-row']", groups[1]),
+      linkTarget(
+        "[data-testid='catalog-installed-card'] [data-testid='catalog-card-open']",
+        groups[1],
+      ),
     ).toEqual({
       name: "editprovider",
       params: { instanceId: "chromecast--a" },
@@ -830,10 +833,6 @@ describe("Catalog lists of a type", () => {
     }
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("shows 24 at a time, with Show more and how many of all are shown", async () => {
     const wrapper = await mountList();
 
@@ -884,54 +883,24 @@ describe("Catalog lists of a type", () => {
     ).toBeNull();
   });
 
-  it("lists compact rows on a phone, each opening its details", async () => {
-    onPhone();
-    await mountList("player");
-
-    expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
-    const rows = [
-      ...document.querySelectorAll("[data-testid='catalog-list-row']"),
-    ];
-    expect(rows.map((row) => row.getAttribute("data-domain"))).toEqual([
-      "chromecast",
-      "sonos",
-    ]);
-    // one set up that allows no other says so instead of offering Add
-    expect(
-      rows[0].querySelector("[data-testid='catalog-card-add']"),
-    ).toBeNull();
-    expect(rows[0].textContent).toContain("settings.catalog.added");
-    expect(rows[1].textContent).toContain("settings.catalog.type.player");
-
-    rows[1]
-      .querySelector<HTMLElement>("[data-testid='catalog-card-open']")!
-      .click();
-    await flushPromises();
-
-    expect(
-      document.querySelector("[data-testid='catalog-detail']")?.textContent,
-    ).toContain("Sonos");
-  });
-
-  it("warns of the stage of an entry on its compact row", async () => {
+  it("warns of the stage of an entry on its card", async () => {
     apiMock.providerManifests.source13 = {
       ...apiMock.providerManifests.source13,
       stage: ProviderStage.ALPHA,
     };
-    onPhone();
     await mountList();
 
-    const row = (domain: string) =>
-      document.querySelector(
-        `[data-testid='catalog-list-row'][data-domain='${domain}']`,
-      )!;
-    expect(row("source13").textContent).toContain(
+    const card = (domain: string) =>
+      cardFor(domain, "[data-testid='catalog-list']");
+    expect(card("source13").textContent).toContain(
       "settings.stage.options.alpha",
     );
-    expect(row("soundcloud").textContent).toContain(
+    expect(card("soundcloud").textContent).toContain(
       "settings.stage.options.beta",
     );
-    expect(row("source14").textContent).not.toContain("settings.stage.options");
+    expect(card("source14").textContent).not.toContain(
+      "settings.stage.options",
+    );
   });
 
   it("scrolls the active tab to the middle of the strip of tabs", async () => {
@@ -1028,7 +997,7 @@ describe("Catalog icons drawn in white only", () => {
     expect(
       tileOf(
         document.querySelector(
-          "[data-testid='catalog-new'] [data-testid='catalog-tile'][data-domain='sonos']",
+          "[data-testid='catalog-new'] [data-testid='catalog-card'][data-domain='sonos']",
         ),
       ),
     ).toBe("dark");
@@ -1044,7 +1013,7 @@ describe("Catalog icons drawn in white only", () => {
     ).toBe("dark");
   });
 
-  it("keeps a coloured icon, and a community icon that is not white, as it is", async () => {
+  it("puts a coloured icon, and a community icon that is not white, on a light tile", async () => {
     communityEnabled = true;
     community = [
       RADIO,
@@ -1057,8 +1026,8 @@ describe("Catalog icons drawn in white only", () => {
     ];
     await mountList();
 
-    expect(tileOf(cardFor("spotify"))).toBeUndefined();
-    expect(tileOf(cardFor("radio"))).toBeUndefined();
+    expect(tileOf(cardFor("spotify"))).toBe("light");
+    expect(tileOf(cardFor("radio"))).toBe("light");
     expect(tileOf(cardFor("fm"))).toBe("dark");
     expect(
       cardFor("fm")
@@ -1140,7 +1109,7 @@ describe("Catalog suggestions from the server", () => {
 
     expect(rowKeys()).toEqual(["discovered", "complements"]);
     const tile = document.querySelector(
-      "[data-testid='catalog-complements'] [data-testid='catalog-tile']",
+      "[data-testid='catalog-complements'] [data-testid='catalog-card']",
     )!;
     expect(
       tile.querySelector("[data-testid='catalog-card-paired']")?.textContent,
@@ -1148,12 +1117,12 @@ describe("Catalog suggestions from the server", () => {
     expect(
       tile.querySelector("[data-testid='catalog-card-credit']"),
     ).toBeNull();
-    // a tile of another row keeps its type
+    // a card of another row says who maintains it
     expect(
       document.querySelector(
         "[data-testid='catalog-discovered'] [data-testid='catalog-card-credit']",
       )?.textContent,
-    ).toContain("settings.catalog.type.music");
+    ).toContain("settings.catalog.by_team");
   });
 
   it("picks what is found first, then what goes well, then what is popular", async () => {
@@ -1327,7 +1296,7 @@ describe("Catalog suggestions from the server", () => {
         ...document.querySelectorAll("[data-testid='catalog-card-dismiss']"),
       ].map((button) =>
         button
-          .closest("[data-testid='catalog-tile']")!
+          .closest("[data-testid='catalog-card']")!
           .getAttribute("data-domain"),
       );
       expect(dismissible).toHaveLength(4);
@@ -1512,12 +1481,14 @@ describe("Catalog for a member", () => {
 
       await mountCatalog();
 
-      const row = document.querySelector(
-        "[data-testid='catalog-installed-row']",
+      const card = document.querySelector(
+        "[data-testid='catalog-installed-card']",
       )!;
-      expect(row.textContent).toContain("Shared Spotify");
-      expect(row.tagName).toBe("DIV");
-      expect(row.hasAttribute("data-to")).toBe(false);
+      expect(card.textContent).toContain("Shared Spotify");
+      expect(
+        card.querySelector("[data-testid='catalog-card-open']"),
+      ).toBeNull();
+      expect(card.querySelector("[data-to]")).toBeNull();
     });
 
     it("links its own source next to the shared one", async () => {
@@ -1537,7 +1508,11 @@ describe("Catalog for a member", () => {
 
       await mountCatalog();
 
-      expect(linkTarget("[data-testid='catalog-installed-row']")).toEqual({
+      expect(
+        linkTarget(
+          "[data-testid='catalog-installed-card'] [data-testid='catalog-card-open']",
+        ),
+      ).toEqual({
         name: "editprovider",
         params: { instanceId: "spotify--own" },
       });
@@ -1791,16 +1766,16 @@ describe("Catalog with the community catalog", () => {
       expect(icon?.getAttribute("src")).toBe(COMMUNITY_ICON);
     });
 
-    it("shows the icon by its domain for an icon that is not a data URI", async () => {
+    it("never loads an icon that is not a data URI", async () => {
       community = [{ ...RADIO, icon: "https://tracker.example/icon.png" }];
 
       await mountCatalog();
 
       const card = cardFor("radio", "[data-testid='catalog-list']");
+      expect(card.querySelector("img")).toBeNull();
       expect(
-        card.querySelector("[data-testid='catalog-icon-image']"),
-      ).toBeNull();
-      expect(card.querySelector("provider-icon-stub")).not.toBeNull();
+        card.querySelector("[data-testid='catalog-icon-tile']"),
+      ).not.toBeNull();
     });
 
     it("shows its maintainers, code, documentation, help and version in the details", async () => {
@@ -3161,13 +3136,13 @@ function continueNote() {
 
 function installedRows(): Element[] {
   return [
-    ...document.querySelectorAll("[data-testid='community-installed-row']"),
+    ...document.querySelectorAll("[data-testid='community-installed-card']"),
   ];
 }
 
 function installedRow(domain: string): Element {
   const row = document.querySelector(
-    `[data-testid='community-installed-row'][data-domain='${domain}']`,
+    `[data-testid='community-installed-card'][data-domain='${domain}']`,
   );
   if (!row) throw new Error(`no installed row for ${domain}`);
   return row;
@@ -3211,16 +3186,6 @@ async function mountCatalog() {
   });
   await flushPromises();
   return wrapper;
-}
-
-// a screen as narrow as a phone's
-function onPhone() {
-  vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: query === "(max-width: 767px)",
-    media: query,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-  }));
 }
 
 // the list of a type, on its tab

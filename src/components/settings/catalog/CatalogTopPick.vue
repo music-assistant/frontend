@@ -179,7 +179,10 @@ const reasonText = computed(() => {
 });
 
 const { community } = useCatalogEntryDetails(() => current.value!);
-const { iconSrc, onDark, color } = useCatalogArt(current);
+const { iconSrc, onDark, color } = useCatalogArt(
+  () => current.value?.manifest.domain,
+  () => current.value?.community?.icon,
+);
 
 // on a touch screen a swipe moves to the next or the previous pick
 useSwipe(useTemplateRef<HTMLElement>("hero"), {
