@@ -119,6 +119,28 @@ describe("PresetPreviewCanvas", () => {
     wrapper.unmount();
   });
 
+  it("halts an engine that finishes starting after the player covered the page, then loads on uncover", async () => {
+    let resolveCreate: (engine: typeof engineMock) => void = () => {};
+    createVisualizerEngine.mockReturnValueOnce(
+      new Promise((resolve) => (resolveCreate = resolve)),
+    );
+    const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });
+    await flushPromises();
+    store.showFullscreenPlayer = true;
+    await flushPromises();
+    resolveCreate(engineMock);
+    await flushPromises();
+
+    expect(engineMock.setPaused).toHaveBeenLastCalledWith(true, false);
+    expect(engineMock.loadPresetByName).not.toHaveBeenCalled();
+
+    store.showFullscreenPlayer = false;
+    await flushPromises();
+    expect(engineMock.setPaused).toHaveBeenLastCalledWith(false, false);
+    expect(engineMock.loadPresetByName).toHaveBeenCalledWith("A", 0);
+    wrapper.unmount();
+  });
+
   it("does not start an engine while covered", async () => {
     store.showFullscreenPlayer = true;
     const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });

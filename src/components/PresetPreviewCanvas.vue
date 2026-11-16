@@ -91,7 +91,14 @@ watch(
     // The canvas needs layout before the engine reads its size.
     await nextTick();
     const eng = await ensureEngine();
-    if (!eng || props.preset !== name || covered.value) return;
+    if (!eng) return;
+    // Covered or cleared while the engine was starting: it renders from
+    // creation, so halt it; the next change resumes it.
+    if (covered.value || !props.preset) {
+      eng.setPaused(true, false);
+      return;
+    }
+    if (props.preset !== name) return;
     eng.setPaused(false, false);
     await eng.loadPresetByName(name, 0);
   },
