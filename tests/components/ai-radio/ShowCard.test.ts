@@ -32,8 +32,8 @@ const { playMedia, sendCommand } = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     players: {},
     queues: {},
     providers: {},
@@ -42,8 +42,9 @@ vi.mock("@/plugins/api", () => ({
       async () => [],
     ),
     playMedia,
-  },
-}));
+  };
+  return { default: api, api };
+});
 
 vi.mock("@/plugins/store", () => ({
   store: { activePlayerId: "kitchen", enabledPlugins: new Set<string>() },
@@ -128,6 +129,24 @@ describe("ShowCard play/stop", () => {
   it("prefers the show's default player over the active one while it is available", async () => {
     api.players.bedroom = { player_id: "bedroom", available: true } as Player;
     const wrapper = renderCard({ default_player_id: "bedroom" });
+
+    await wrapper.find('[aria-label="Play"]').trigger("click");
+    await flushPromises();
+
+    expect(playMedia).toHaveBeenCalledWith(showUri(show.id), undefined, {
+      queue_id: "bedroom",
+      suppressGlobalError: true,
+    });
+    delete api.players.bedroom;
+  });
+
+  it("plays on the player a default device was merged into", async () => {
+    api.players.bedroom = {
+      player_id: "bedroom",
+      available: true,
+      legacy_ids: ["attic"],
+    } as unknown as Player;
+    const wrapper = renderCard({ default_player_id: "attic" });
 
     await wrapper.find('[aria-label="Play"]').trigger("click");
     await flushPromises();
