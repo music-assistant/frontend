@@ -71,8 +71,8 @@ let unmounted = false;
 // asynchronously (after the server groups this player), so the library would
 // otherwise unlock its audio outside the gesture and stay silent.
 const primeAudio = (): Promise<boolean> | false => {
-  if (!isIOS) return Promise.resolve(true);
   if (!player) return false;
+  if (!isIOS) return Promise.resolve(true);
   return player.unlock().then(
     () => true,
     (error) => {
