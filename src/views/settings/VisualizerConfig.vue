@@ -213,9 +213,7 @@
           </div>
           <Select
             :model-value="presetPref || undefined"
-            @update:model-value="
-              (v: unknown) => setPref('visualizer_preset', String(v))
-            "
+            @update:model-value="(v: unknown) => selectFixedPreset(String(v))"
           >
             <SelectTrigger class="w-full shrink-0 sm:w-72">
               <SelectValue :placeholder="$t('visualizer.preset_random')" />
@@ -225,7 +223,7 @@
                 v-if="curatorPreviewed && curatorPreviewed !== presetPref"
               >
                 <SelectItem
-                  :value="curatorPreviewed"
+                  :value="USE_PREVIEWED_VALUE"
                   class="[&>span:last-child]:min-w-0 [&>span:last-child]:overflow-hidden"
                 >
                   <span class="block max-w-full break-words">
@@ -368,6 +366,8 @@ import VisualizerSliderRow from "./VisualizerSliderRow.vue";
 
 const QUALITY_TIERS = Object.keys(QUALITY_PROFILES);
 const PRESET_MODES = ["random", "random_favorites", "fixed"];
+// Sentinel so the "use previewed" entry can't collide with the list below it.
+const USE_PREVIEWED_VALUE = "__use_previewed__";
 
 const { getPreference, setPreference } = useUserPreferences();
 const enabledPref = computed(() => expertModeSetting("visualizer_enabled"));
@@ -412,8 +412,15 @@ const setPref = (key: string, value: unknown) => {
 
 const hoverCapable = isHoverCapablePointer();
 
-// Last preset clicked in the curator; offered at the top of the fixed picker.
+// Last preset the user clicked in the curator; offered at the top of the
+// fixed picker.
 const curatorPreviewed = ref<string | null>(null);
+
+const selectFixedPreset = (value: string) => {
+  const name =
+    value === USE_PREVIEWED_VALUE ? (curatorPreviewed.value ?? "") : value;
+  if (name) setPref("visualizer_preset", name);
+};
 
 const toggleFavorite = (name: string) => {
   setPref(

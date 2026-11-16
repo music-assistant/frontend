@@ -4,7 +4,7 @@
  */
 import PresetCurator from "@/components/PresetCurator.vue";
 import { mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/PresetPreviewCanvas.vue", () => ({
   default: {
@@ -25,7 +25,7 @@ const mountCurator = (favorites: string[] = []) =>
   mount(PresetCurator, { props: { presetNames: NAMES, favorites } });
 
 const rowNames = (wrapper: ReturnType<typeof mountCurator>) =>
-  wrapper.findAll("span.break-words").map((row) => row.text());
+  wrapper.findAll("[data-test=preset-name]").map((row) => row.text());
 
 describe("PresetCurator", () => {
   beforeEach(() => {
@@ -33,11 +33,18 @@ describe("PresetCurator", () => {
     hoverCapable.value = true;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("lists favourites first and previews the first row", () => {
     const wrapper = mountCurator(["Gamma"]);
     expect(rowNames(wrapper)).toEqual(["Gamma", "alpha", "Beta"]);
     expect(wrapper.get("[data-test=preview]").text()).toBe("Gamma");
-    expect(wrapper.emitted("update:previewed")?.at(-1)).toEqual(["Gamma"]);
+  });
+
+  it("does not report the seeded preview as a pick", () => {
+    expect(mountCurator(["Gamma"]).emitted("update:previewed")).toBeUndefined();
   });
 
   it("filters by search text", async () => {
@@ -48,34 +55,42 @@ describe("PresetCurator", () => {
 
   it("previews the clicked row", async () => {
     const wrapper = mountCurator();
-    await wrapper.findAll("[class*=cursor-pointer]")[2].trigger("click");
+    await wrapper.findAll("[data-test=preset-row]")[2].trigger("click");
     expect(wrapper.get("[data-test=preview]").text()).toBe("Gamma");
+    expect(wrapper.emitted("update:previewed")?.at(-1)).toEqual(["Gamma"]);
+  });
+
+  it("previews from the keyboard through a focusable name button", async () => {
+    const wrapper = mountCurator();
+    const name = wrapper.findAll("[data-test=preset-name]")[2];
+    expect(name.element.tagName).toBe("BUTTON");
+    await name.trigger("click");
     expect(wrapper.emitted("update:previewed")?.at(-1)).toEqual(["Gamma"]);
   });
 
   it("emits the star toggle without moving the preview", async () => {
     const wrapper = mountCurator();
-    await wrapper.findAll("button")[2].trigger("click");
+    await wrapper.findAll("button[aria-pressed]")[2].trigger("click");
     expect(wrapper.emitted("toggle-favorite")).toEqual([["Gamma"]]);
     expect(wrapper.get("[data-test=preview]").text()).toBe("alpha");
   });
 
   it("previews a hovered row after the dwell, then falls back to the clicked one", async () => {
     const wrapper = mountCurator();
-    const rows = wrapper.findAll("[class*=cursor-pointer]");
+    const rows = wrapper.findAll("[data-test=preset-row]");
     await rows[1].trigger("pointerenter");
     expect(wrapper.get("[data-test=preview]").text()).toBe("alpha");
     await vi.advanceTimersByTimeAsync(HOVER_DWELL_MS);
     expect(wrapper.get("[data-test=preview]").text()).toBe("Beta");
 
-    await wrapper.get(".overflow-y-auto").trigger("pointerleave");
+    await wrapper.get("[data-test=preset-list]").trigger("pointerleave");
     expect(wrapper.get("[data-test=preview]").text()).toBe("alpha");
   });
 
   it("ignores hover on touch devices", async () => {
     hoverCapable.value = false;
     const wrapper = mountCurator();
-    await wrapper.findAll("[class*=cursor-pointer]")[1].trigger("pointerenter");
+    await wrapper.findAll("[data-test=preset-row]")[1].trigger("pointerenter");
     await vi.advanceTimersByTimeAsync(HOVER_DWELL_MS);
     expect(wrapper.get("[data-test=preview]").text()).toBe("alpha");
   });

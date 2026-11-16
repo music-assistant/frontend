@@ -30,18 +30,20 @@
         class="h-8 shrink-0"
       />
       <div
+        data-test="preset-list"
         class="min-h-0 flex-1 overflow-y-auto rounded-md border p-1"
         @pointerleave="onRowHover(null)"
       >
         <div
           v-for="name in filteredNames"
           :key="name"
+          data-test="preset-row"
           class="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent hover:text-accent-foreground"
           :class="[
             sideBySide ? 'py-1' : 'py-2',
             { 'bg-accent text-accent-foreground': name === previewedPreset },
           ]"
-          @click="previewedPreset = name"
+          @click="previewPreset(name)"
           @pointerenter="onRowHover(name)"
         >
           <button
@@ -57,7 +59,14 @@
               :fill="favorites.includes(name) ? 'currentColor' : 'none'"
             />
           </button>
-          <span class="min-w-0 flex-1 break-words">{{ name }}</span>
+          <button
+            type="button"
+            data-test="preset-name"
+            class="min-w-0 flex-1 break-words text-left"
+            :aria-current="name === previewedPreset"
+          >
+            {{ name }}
+          </button>
         </div>
       </div>
     </div>
@@ -90,7 +99,12 @@ const emit = defineEmits<{
 const HOVER_DWELL_MS = 150;
 
 const previewedPreset = ref<string | null>(null);
-watch(previewedPreset, (name) => emit("update:previewed", name));
+
+// Only a pick by the user is reported; the initial seed is not one.
+const previewPreset = (name: string) => {
+  previewedPreset.value = name;
+  emit("update:previewed", name);
+};
 
 const hoveredPreset = ref<string | null>(null);
 let hoverTimer: number | null = null;
