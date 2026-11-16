@@ -107,11 +107,11 @@
             >
               <div
                 v-if="isPlaying"
-                class="player-playing-indicator shrink-0"
+                class="player-playing-indicator shrink-0 [&_.bar]:h-3 [&_.bar]:w-0.5 [&_.now-playing-icon]:m-0 [&_.now-playing-icon]:h-3 [&_.now-playing-icon]:gap-0.5"
                 role="img"
                 :aria-label="$t('state.playing')"
               >
-                <NowPlayingBadge :show-badge="false" icon-style="margin: 0" />
+                <NowPlayingBadge :show-badge="false" />
               </div>
               <span v-if="mediaSummary" class="truncate">
                 {{ mediaSummary }}
