@@ -552,9 +552,10 @@ describe("Catalog", () => {
 
     await mountCatalog();
 
+    // Sonos is suggested, so it leads
     expect(cardNames("[data-testid='catalog-list']")).toEqual([
-      "Chromecast",
       "Sonos",
+      "Chromecast",
     ]);
     expect(linkTarget("[data-testid='catalog-manage-link']")).toEqual({
       name: "providersettings",
@@ -955,6 +956,126 @@ describe("Catalog lists of a type", () => {
       }
     }
   });
+});
+
+describe("Catalog badges on the lists", () => {
+  beforeEach(() => {
+    apiMock.serverInfo.value = { server_version: "2.11.0b3" };
+    for (const index of [10, 11, 12]) {
+      apiMock.providerManifests[`source${index}`] = providerManifest({
+        domain: `source${index}`,
+        name: `Source ${index}`,
+      });
+    }
+    recommendations = [
+      suggest("source12", CatalogRecommendationReason.POPULAR),
+      suggest("soundcloud", CatalogRecommendationReason.POPULAR),
+      suggest("source11", CatalogRecommendationReason.NEW),
+      suggest("source12", CatalogRecommendationReason.DISCOVERED),
+      // set up already, though another one can be added
+      suggest("spotify", CatalogRecommendationReason.DISCOVERED),
+    ];
+  });
+
+  it("says why each is suggested and lists those first, the strongest reason first", async () => {
+    await mountList();
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "Source 12",
+      "Source 11",
+      "SoundCloud",
+      "Source 10",
+      "Spotify",
+    ]);
+    // every label is given the release line, as the rows of Discover are
+    expect(badges("[data-testid='catalog-list']")).toEqual({
+      source12: "settings.catalog.discovered_title 2.11",
+      source11: "settings.catalog.new_in_version 2.11",
+      soundcloud: "settings.catalog.popular 2.11",
+    });
+    expect(
+      cardFor("spotify").querySelector("[data-testid='catalog-card-added']"),
+    ).not.toBeNull();
+  });
+
+  it("keeps the suggested ones first in a search over every type", async () => {
+    await mountCatalog();
+    await search("o");
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "Source 12",
+      "Source 11",
+      "SoundCloud",
+      "Chromecast",
+      "Sonos",
+      "Source 10",
+      "Spotify",
+    ]);
+  });
+
+  it("puts no badge on what the user let go, nor lists it first", async () => {
+    storeMock.currentUser.preferences["catalog.dismissedSuggestions"] = [
+      "source12",
+    ];
+
+    await mountList();
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "Source 11",
+      "SoundCloud",
+      "Source 10",
+      "Source 12",
+      "Spotify",
+    ]);
+    expect(Object.keys(badges("[data-testid='catalog-list']"))).toEqual([
+      "source11",
+      "soundcloud",
+    ]);
+  });
+
+  it("lists by name without badges when the server gives no suggestions", async () => {
+    apiMock.getCatalogRecommendations.mockRejectedValue(
+      new ApiCommandError("Invalid command: catalog/recommendations", 9),
+    );
+
+    await mountList();
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "SoundCloud",
+      "Source 10",
+      "Source 11",
+      "Source 12",
+      "Spotify",
+    ]);
+    expect(badges("[data-testid='catalog-list']")).toEqual({});
+  });
+
+  it("keeps the badges off Discover", async () => {
+    await mountCatalog();
+
+    expect(
+      document.querySelector("[data-testid='catalog-discover']"),
+    ).not.toBeNull();
+    expect(document.querySelector("[data-testid='catalog-card-badge']")).toBe(
+      null,
+    );
+  });
+
+  // the badge on each card of a list that has one, by its domain
+  function badges(container: string): Record<string, string> {
+    return Object.fromEntries(
+      [
+        ...document.querySelectorAll(
+          `${container} [data-testid='catalog-card']`,
+        ),
+      ].flatMap((card) => {
+        const badge = card.querySelector("[data-testid='catalog-card-badge']");
+        return badge
+          ? [[card.getAttribute("data-domain"), badge.textContent?.trim()]]
+          : [];
+      }),
+    );
+  }
 });
 
 describe("Catalog icons drawn in white only", () => {
