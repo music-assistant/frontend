@@ -19,18 +19,7 @@
     </div>
 
     <template v-if="matches.length">
-      <!-- a phone lists compact rows, a wider screen cards -->
-      <div v-if="isPhone" class="flex flex-col gap-2">
-        <CatalogListRow
-          v-for="entry in shown"
-          :key="entry.manifest.domain"
-          :entry="entry"
-          :installing="installing.has(entry.manifest.domain)"
-          @open="emit('open', entry)"
-          @add="emit('add', entry)"
-        />
-      </div>
-      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <CatalogGrid>
         <CatalogCard
           v-for="entry in shown"
           :key="entry.manifest.domain"
@@ -39,7 +28,7 @@
           @open="emit('open', entry)"
           @add="emit('add', entry)"
         />
-      </div>
+      </CatalogGrid>
       <div
         v-if="shown.length < matches.length"
         class="flex flex-col items-center gap-2 pt-2"
@@ -83,7 +72,7 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
-import CatalogListRow from "@/components/settings/catalog/CatalogListRow.vue";
+import CatalogGrid from "@/components/settings/catalog/CatalogGrid.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -102,7 +91,6 @@ import {
 import { getProviderStageTranslationKey } from "@/helpers/provider_config";
 import { $t } from "@/plugins/i18n";
 import { ChevronRight, SearchX } from "@lucide/vue";
-import { useMediaQuery } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 
@@ -123,8 +111,6 @@ const emit = defineEmits<{
   (e: "open", entry: CatalogEntry): void;
   (e: "add", entry: CatalogEntry): void;
 }>();
-
-const isPhone = useMediaQuery("(max-width: 767px)");
 
 // the stages picked in the filter, kept by the page for the number on its tab
 const stages = defineModel<string[]>("stages", { required: true });

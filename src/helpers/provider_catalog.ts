@@ -288,7 +288,10 @@ export const sortPopularFirst = (
     return compareNames(a.manifest.name, b.manifest.name);
   });
 
-/** How many entries a list shows at first, and how many more each time after. */
+/**
+ * How many entries a list shows at first, and how many more each time after: a
+ * multiple of every column count of the list, so each page fills its last row.
+ */
 export const CATALOG_PAGE_SIZE = 24;
 
 export const CATALOG_DISCOVER_TAB = "discover";
