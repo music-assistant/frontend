@@ -6,6 +6,7 @@
     :show-provider="false"
     :show-favorites-only-filter="true"
     :load-paged-data="loadItems"
+    :load-letter-index="loadLetterIndex"
     :show-album-artists-only-filter="true"
     :update-available="updateAvailable"
     :title="$t('artists')"
@@ -61,6 +62,19 @@ const loadItems = async function (params: LoadDataParams) {
     ArtistType.SINGER,
     params.randomSeed,
   );
+};
+
+const loadLetterIndex = function (params: LoadDataParams) {
+  return api.getLibraryLetterIndex("artists", {
+    favorite: params.favoritesOnly || undefined,
+    search: params.search,
+    sort_field: params.sortField,
+    sort_direction: params.sortDirection,
+    album_artists_only: params.albumArtistsFilter,
+    provider: params.provider?.length ? params.provider : undefined,
+    genre: params.genreIds,
+    artist_type: ArtistType.SINGER,
+  });
 };
 
 const setTotals = async function (params: LoadDataParams) {

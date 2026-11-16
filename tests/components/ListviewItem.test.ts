@@ -1,8 +1,9 @@
 /**
- * The row's own looks for a release that is not in the library: the muted
- * treatment (instead of the unavailable one), its artwork kept, and a subtitle
- * that says where it stands. Also the subtitle of a slim album mapping and of a
- * podcast episode.
+ * The row's own looks for an item that is not in the library: the muted
+ * treatment (instead of the unavailable one), its artwork kept, a subtitle that
+ * says where a release stands, and a play button only for what the server says
+ * can be played. Also the subtitle of a slim album mapping and of a podcast
+ * episode.
  */
 import ListviewItem from "@/components/ListviewItem.vue";
 import {
@@ -17,6 +18,7 @@ import { describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 import { podcastEpisode } from "../fixtures/podcastEpisode";
+import { track } from "../fixtures/track";
 
 vi.mock("@/plugins/api", () => {
   const api = { providers: {} };
@@ -55,9 +57,10 @@ vi.mock("@/components/MediaItemThumb.vue", () => ({
 
 const release = (overrides: Partial<Album> = {}) =>
   album({
-    item_id: "rg-1",
-    provider: "musicbrainz",
+    item_id: "musicbrainz_releasegroupid:rg-1",
+    provider: "external",
     provider_mappings: [],
+    is_playable: false,
     name: "Grace",
     artists: [artist({ name: "Jeff Buckley" })],
     ...overrides,
@@ -85,10 +88,10 @@ describe("ListviewItem for a release that is not in the library", () => {
 
     expect(
       wrapper.getComponent({ name: "MediaItemThumb" }).props("item"),
-    ).toMatchObject({ item_id: "rg-1" });
+    ).toMatchObject({ item_id: "musicbrainz_releasegroupid:rg-1" });
   });
 
-  // the play overlay follows availability, not the release's own flag
+  // the server says an external album can not be played as it is
   it("offers no play button", () => {
     const wrapper = mountRow(release(), false);
 
@@ -121,6 +124,32 @@ describe("ListviewItem for a release that is not in the library", () => {
     expect(wrapper.get(".subtitle").text()).toBe(
       "album_type.single • Jeff Buckley • 1994",
     );
+  });
+});
+
+describe("ListviewItem for a track that is not in the library", () => {
+  // a top track known by its recording id, which the server looks up when played
+  const topTrack = track({
+    item_id: "musicbrainz_recordingid:rec-1",
+    provider: "external",
+    provider_mappings: [],
+    name: "Hallelujah",
+  });
+
+  it("is muted like a release and keeps its play button", () => {
+    // a track row shows its artists and album in vuetify's item group
+    const wrapper = mount(ListviewItem, {
+      props: { item: topTrack, isSelected: false, isAvailable: false },
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: { VItemGroup: true, VItem: true },
+      },
+    });
+    const row = wrapper.getComponent({ name: "ListItem" });
+
+    expect(row.classes()).toContain("not-in-library");
+    expect(row.classes()).not.toContain("unavailable");
+    expect(wrapper.find(".listitem-play-blue").exists()).toBe(true);
   });
 });
 

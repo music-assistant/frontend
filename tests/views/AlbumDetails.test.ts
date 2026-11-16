@@ -15,6 +15,7 @@ import AlbumDetails from "@/views/AlbumDetails.vue";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
+import { providerMapping } from "../fixtures/providerMapping";
 import { track } from "../fixtures/track";
 
 const {
@@ -76,6 +77,7 @@ vi.mock("@/components/album/albumRows", () => ({
     resolve: mockResolveAlbumRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "library",
+    resolveSource: () => "library",
     sources: mockAlbumRowsSources,
     setSource: mockAlbumRowsSetSource,
   },
@@ -166,6 +168,9 @@ const ALL_ROWS = [
   "more_from_artist",
   "provider_mappings",
 ];
+
+// a discography release as the server lists it: its release group id
+const EXTERNAL_ALBUM_ID = "musicbrainz_releasegroupid:rg-1";
 
 const ALBUM_WITH_REVIEW = album({
   item_id: "1",
@@ -561,33 +566,57 @@ describe("AlbumDetails", () => {
     expect(mockGetArtist).toHaveBeenCalledWith("a1", "library");
   });
 
-  // a discography release the server resolves on demand: get_album does not
-  // handle the musicbrainz provider, the generic item lookup does
-  it("resolves a MusicBrainz release through the item lookup", async () => {
+  // an album the server knows only by an external id, looked up on demand
+  it("looks an external album up through the item lookup", async () => {
     const resolved = album({ item_id: "5", name: "Grace" });
     mockGetItem.mockResolvedValue(resolved);
 
-    const wrapper = await mountRoute("rg-1", "musicbrainz");
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
 
     expect(mockGetItem).toHaveBeenCalledWith(
       MediaType.ALBUM,
-      "rg-1",
-      "musicbrainz",
+      EXTERNAL_ALBUM_ID,
+      "external",
     );
     expect(mockGetAlbum).not.toHaveBeenCalled();
     expect(hero(wrapper).props("item")).toEqual(resolved);
   });
 
-  it("leaves the page when no music service has the release", async () => {
+  it("leaves the page when no music service has the album", async () => {
     mockGetItem.mockRejectedValue(new Error("MediaNotFoundError"));
 
-    const wrapper = await mountRoute("rg-1", "musicbrainz");
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
 
     expect(mockBackFromMediaDetails).toHaveBeenCalled();
     expect(hero(wrapper).props("item")).toBeUndefined();
   });
 
-  // resolving a release can take a while; the user may have moved on by then
+  // the album the lookup found is what gets added to the library, not the
+  // external address the page was opened on
+  it("switches to the library copy of the album it was found as", async () => {
+    const onSpotify = providerMapping({
+      item_id: "sp1",
+      provider_domain: "spotify",
+      provider_instance: "spotify--1",
+    });
+    const sendUpdate = captureAlbumUpdates();
+    mockGetItem.mockResolvedValue(
+      album({
+        item_id: "sp1",
+        provider: "spotify",
+        provider_mappings: [onSpotify],
+      }),
+    );
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
+    const inLibrary = album({ item_id: "42", provider_mappings: [onSpotify] });
+
+    sendUpdate(inLibrary);
+    await flushPromises();
+
+    expect(hero(wrapper).props("item")).toMatchObject({ uri: inLibrary.uri });
+  });
+
+  // looking an album up can take a while; the user may have moved on by then
   it("leaves a late failure alone once the page shows another album", async () => {
     let fail: (err: Error) => void = () => {};
     mockGetItem.mockReturnValue(
@@ -595,7 +624,7 @@ describe("AlbumDetails", () => {
         fail = reject;
       }),
     );
-    const wrapper = await mountRoute("rg-1", "musicbrainz");
+    const wrapper = await mountRoute(EXTERNAL_ALBUM_ID, "external");
 
     mockGetAlbum.mockResolvedValue(ALBUM_WITH_REVIEW);
     await wrapper.setProps({

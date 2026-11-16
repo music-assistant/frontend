@@ -55,7 +55,9 @@
     "player_type": {
         "group": "组",
         "player": "播放器",
-        "stereo_pair": "立体声配对"
+        "stereo_pair": "立体声配对",
+        "unknown": "未知",
+        "source": "音频输入"
     },
     "players": "播放器",
     "playlist": "播放列表",
@@ -152,7 +154,8 @@
                 "el_GR": "希腊语",
                 "lt_LT": "立陶宛语",
                 "lv_LV": "拉脱维亚语",
-                "bg_BG": "保加利亚语"
+                "bg_BG": "保加利亚语",
+                "zh_TW": "中文（繁体）"
             }
         },
         "dynamic_members": {
@@ -241,6 +244,10 @@
             },
             "balance": {
                 "help": "将声音向左或右扬声器偏移。仅适用于立体声音频。"
+            },
+            "compressor": {
+                "preset": "预设",
+                "custom": "自定义"
             }
         },
         "dsp_note_multi_device_group": {
@@ -372,7 +379,8 @@
             "options": "播放器选项",
             "preferences": "首选项",
             "display_settings": "显示",
-            "dsp": "DSP"
+            "dsp": "DSP",
+            "volume_control": "音量控制"
         },
         "remote_access_qr_code": "二维码",
         "remote_access_qr_code_description": "使用手机摄像头扫描即可立即连接。",
@@ -391,7 +399,10 @@
         },
         "enable_browser_controls": {
             "label": "启用浏览器媒体控制",
-            "description": "允许使用浏览器的内置媒体控件（如键盘上的媒体键）控制播放。"
+            "description": "允许使用浏览器的内置媒体控件（如键盘上的媒体键）控制播放。",
+            "options": {
+                "disabled": "已禁用"
+            }
         },
         "settings_saved": "设置已保存",
         "protocol_no_settings": "该输出协议没有任何附加配置",
@@ -505,7 +516,175 @@
         "customize_menu": {
             "label": "自定义菜单",
             "description": "将导航菜单切换至编辑模式，以便显示、隐藏、重新排序和重命名其项目"
-        }
+        },
+        "start_setup": "开始设置",
+        "setup_required": "需要进行设置",
+        "setup_flow": {
+            "next": "下一个",
+            "finish": "结束",
+            "done": "完成",
+            "open_external": "打开",
+            "external_waiting": "正在等待您完成此步骤……",
+            "external_fallback": "如果窗口未打开，请点击此处",
+            "success_title": "一切就绪！",
+            "aborted_title": "设置已取消",
+            "aborted_text": "设置未完成。",
+            "open_settings": "打开设置",
+            "setup_player_title": "设置播放器",
+            "expires_in": "到期时间 {0}",
+            "external_default_title": "在浏览器中继续",
+            "external_default_text": "将打开一个新的浏览器窗口，供您登录并授权“Music Assistant”。操作完成后请返回此处——此对话框将自动继续。",
+            "external_host": "打开 {0}",
+            "session_ended_title": "设置会话结束",
+            "session_ended_text": "设置会话已结束——可能已经完成。请检查您的服务提供商或播放器以确认。",
+            "reconfigure_title": "重新配置 {0}"
+        },
+        "options": "选项",
+        "hass_controls": {
+            "title": {
+                "volume_controls": "选择音量控制",
+                "mute_controls": "选择静音控制"
+            },
+            "no_device": "无设备",
+            "no_area": "无区域",
+            "already_added": "已添加",
+            "role": {
+                "volume": "音量",
+                "mute": "静音"
+            }
+        },
+        "known_issues": "已知问题",
+        "provider_status_loaded": "运行中",
+        "provider_status_loading": "加载中",
+        "provider_status_disabled": "已禁用",
+        "provider_status_unknown": "未知",
+        "provider_settings": "{name} 设置",
+        "delete_player_title": "删除 {0} ？",
+        "delete_player_confirmation": "此播放器将从音乐助手移除。其设置将丢失，只能通过重新设置才能恢复。",
+        "volume_slider_mode": {
+            "label": "音量滑块行为",
+            "description": "绝对模式：轻点或拖动滑块可将音量设置为该位置。相对模式：拖动时会以半速从当前音量向上或向下调整，这样更容易精确控制细微的音量变化。",
+            "options": {
+                "absolute": "绝对（跳转到指定位置）",
+                "relative": "相对 (拖动以调整)"
+            }
+        },
+        "player_status": {
+            "available": "可用",
+            "needs_setup": "需要设置",
+            "unavailable": "不可用"
+        },
+        "player_status_label": "状态",
+        "server_name": "服务器名称",
+        "server_internal_url": "内部 URL",
+        "server_external_url": "外部 URL",
+        "server_remote_access": "远程访问",
+        "source_access": {
+            "share_action": "共享",
+            "owner": "所有者",
+            "household": "共享（无所有者）",
+            "sharing": "共享",
+            "shared_users": "已共享至",
+            "options": {
+                "private": "只有我",
+                "everyone": "包括访客在内的所有人",
+                "not_shared": "未共享"
+            },
+            "hints": {
+                "private": "只有所有者才能使用此资源。",
+                "everyone": "任何用户都可以使用此资源。"
+            },
+            "share_title": "共享 {name}"
+        },
+        "set_custom_name": "设置自定义名称",
+        "storage": {
+            "title": "存储",
+            "description": "音乐可能来自的文件夹、驱动器和网络共享",
+            "load_failed": "无法加载存储",
+            "music_locations_empty": "目前还没有包含音乐的文件夹、驱动器或网络共享。",
+            "server_storage": "服务器存储",
+            "usage": {
+                "data": "数据",
+                "cache": "缓存"
+            },
+            "kind": {
+                "builtin_media": "Home Assistant 媒体文件夹",
+                "container_volume": "Docker 卷",
+                "network_share": "网络共享",
+                "local_disk": "本地磁盘",
+                "manual": "文件夹"
+            },
+            "share_type": {
+                "cifs": "SMB",
+                "nfs": "NFS"
+            },
+            "read_only": "只读",
+            "unavailable": "不可用",
+            "used_space": "{0} 已使用",
+            "add_network_share": "添加网络共享",
+            "add_local_folder": "在此服务器上添加一个文件夹",
+            "share_added": "网络共享已添加",
+            "share_saved": "网络共享已保存",
+            "share_reloaded": "网络共享已重新加载",
+            "share_removed": "网络共享已移除",
+            "share_save_failed": "无法保存网络共享",
+            "share_reload_failed": "无法重新加载网络共享",
+            "share_remove_failed": "无法删除网络共享",
+            "folder_added": "已添加文件夹",
+            "folder_removed": "文件夹已删除",
+            "share_dialog": {
+                "server": "服务器",
+                "server_hint": "NAS 或计算机的名称或 IP 地址，例如 nas.local 或 192.168.1.10",
+                "share_name_hint": "共享文件夹的名称，例如 music",
+                "export_path": "导出路径",
+                "export_path_hint": "服务器共享的文件夹，例如 \/volume1\/music",
+                "username": "用户名",
+                "password": "密码",
+                "password_keep": "留空以保留当前密码",
+                "read_only_hint": "音乐助手可以读取共享内容，但无法对其进行修改。",
+                "version": "协议版本",
+                "version_auto": "自动"
+            },
+            "folder_dialog": {
+                "description": "在此服务器上创建一个文件夹，供您的音乐源使用。",
+                "path": "文件夹路径",
+                "path_hint": "文件夹的完整路径，例如 \/home\/me\/Music"
+            },
+            "use_as_source": "用作音乐源"
+        },
+        "folder_picker": {
+            "selected": "已选择文件夹",
+            "none_selected": "未选择文件夹",
+            "locations": "存储位置",
+            "all_locations": "所有位置",
+            "breadcrumb": "文件夹路径",
+            "open_folder": "打开 {name}",
+            "no_subfolders": "此文件夹没有子文件夹。",
+            "use_folder": "使用此文件夹",
+            "folder_selected": "已选中",
+            "browse_failed": "无法打开文件夹",
+            "empty_text": "目前尚无可供选择的文件夹、驱动器或网络共享。请选择“管理存储”以添加一个。",
+            "empty_text_member": "目前尚无可供选择的文件夹、驱动器或网络共享。请联系管理员添加一个。",
+            "manage": "管理存储"
+        },
+        "sync_in_progress": "正在同步...",
+        "library_sync": "媒体库同步",
+        "storage_location": "存储位置",
+        "server_url": {
+            "internet": "互联网",
+            "local_network": "本地网络",
+            "use_remote_access": "使用远程访问",
+            "remote_access_description": "与访客共享的链接可通过远程访问打开。",
+            "remote_access_hint": "无法通过互联网访问？即使没有公共URL，远程访问也能正常工作。",
+            "set_up_remote_access": "设置远程访问",
+            "automatic": "自动",
+            "detected_after_save": "保存后自动检测",
+            "copy_remote": "复制远程访问链接",
+            "copy_detected": "复制本地网络 URL",
+            "copied": "已复制  URL",
+            "copy_failed": "无法复制  URL"
+        },
+        "error_loading_sort_options": "加载排序选项时出错"
     },
     "show_info": "显示信息",
     "show_select_boxes": "显示选择框",
@@ -534,7 +713,16 @@
         "last_played_desc": "上次播放（倒序）",
         "play_count": "播放次数",
         "play_count_desc": "播放次数（倒序）",
-        "album_sort_name": "唱片集（排序名称）"
+        "album_sort_name": "唱片集（排序名称）",
+        "ascending": "升序",
+        "ascending_abbreviation": "升序",
+        "descending": "倒序",
+        "descending_abbreviation": "倒序",
+        "favorite_timestamp": "收藏日期",
+        "artist_name": "艺术家",
+        "random": "随机",
+        "sort_by": "排序方式",
+        "sort_by_current": "按以下方式排序：{0}"
     },
     "state": {
         "idle": "闲置",
@@ -606,7 +794,17 @@
         "artwork": "艺术作品",
         "import_file": "导入文件",
         "bpm": "节奏（每分钟拍数）",
-        "musical_key": "调号"
+        "musical_key": "调号",
+        "show_dashboard": "将仪表盘投屏到设备上",
+        "collapse_collections": "折叠此列表",
+        "volume_down": "音量降低",
+        "volume_up": "音量调高",
+        "show_full_path": "显示完整路径",
+        "show_menu": "显示\/隐藏菜单",
+        "show_context_menu": "显示上下文菜单",
+        "scroll_left": "向左滚动",
+        "scroll_right": "向右滚动",
+        "hide_provider": "隐藏音乐源"
     },
     "topresult": "最佳结果",
     "track": "歌曲",
@@ -637,7 +835,8 @@
     "view": {
         "list": "列表视图",
         "panel": "缩略图视图",
-        "discovery": "发现"
+        "discovery": "发现",
+        "list_short": "列表"
     },
     "play_replace": "立即播放(清除播放列表)",
     "played": "已播放",
@@ -787,7 +986,8 @@
             "bit_perfect_unknown_detail": "无法实现位完美状态。"
         },
         "processing_header": "处理",
-        "more_info_for": "更多信息 {item}"
+        "more_info_for": "更多信息 {item}",
+        "open_played_from": "打开 {0}"
     },
     "select_source": "选择来源",
     "play_replace_next": "播放下一个（清除队列）",
@@ -904,7 +1104,16 @@
         "select_players": "选择播放器",
         "save_changes": "保存更改",
         "update_password": "更新密码",
-        "guest_role": "访客"
+        "guest_role": "访客",
+        "tokens_load_failed": "无法加载访问令牌",
+        "users_load_failed": "无法加载用户",
+        "service_role": "服务",
+        "system_user": "系统",
+        "system_user_hint": "Home Assistant 使用此账户登录，因此无法更改该账户的用户名、角色和密码。",
+        "permissions": {
+            "library": "媒体库",
+            "server": "服务器"
+        }
     },
     "login": {
         "subtitle": "连接到您的音乐服务器",
@@ -952,7 +1161,19 @@
         "scan_qr_code": "扫描二维码",
         "scan_qr_hint": "将摄像头对准 Music Assistant 服务器设置中显示的二维码。",
         "qr_invalid": "无效的二维码。请扫描 Music Assistant 的远程 ID 二维码。",
-        "qr_camera_error": "无法访问摄像头。请检查权限。"
+        "qr_camera_error": "无法访问摄像头。请检查权限。",
+        "error_party_auth_failed": "无法加入派对",
+        "remote_only_info": "远程连接到您的 Music Assistant 服务器",
+        "server_address_hint": "请输入您的 Music Assistant 服务器的完整 URL",
+        "connecting_ingress": "正在通过 Home Assistant 连接……",
+        "connecting_local_party": "正在连接到派对……",
+        "connecting_remote_party": "正在连接到派对……",
+        "joining_party": "正在加入派对……",
+        "reconnecting": "重新连接",
+        "reconnecting_message": "正在尝试重新连接到服务器……",
+        "error_ingress_failed": "无法通过 Home Assistant 登录",
+        "guest_ended_party_title": "您的派对会话已结束",
+        "guest_ended_party_message": "请主持人再次分享派对链接或二维码，以便重新加入。"
     },
     "yes": "是",
     "no": "否",
@@ -1351,11 +1572,23 @@
             "return_to_host_panel": "返回主机面板"
         },
         "ai_radio": {
+            "actions": {
+                "discard": "丢弃",
+                "delete": "删除",
+                "saving": "保存..."
+            },
             "fields": {
-                "shuffle_playlist_tracks": "随机播放列表曲目"
+                "shuffle_playlist_tracks": "随机播放列表曲目",
+                "language": "语言"
             },
             "field_descriptions": {
                 "shuffle_playlist_tracks": "以随机顺序播放源播放列表。关闭此选项可按播放列表本身的顺序播放。"
+            },
+            "customize": {
+                "prompt_placeholders_label": "占位符 — 点击复制：",
+                "prompt_placeholder_copied": "已将 {0} 复制到剪贴板",
+                "prompt_placeholder_copy_failed": "无法将 {0} 复制到剪贴板",
+                "prompt_placeholder_copy_aria": "复制 {0}"
             }
         }
     },
@@ -1577,7 +1810,9 @@
         "unit_months": "个月",
         "last_played_ago": "前",
         "op_greater_than": "大于",
-        "op_less_than": "小于"
+        "op_less_than": "小于",
+        "field_folder": "文件夹",
+        "field_folder_is": "文件夹是"
     },
     "explore": "探索",
     "shortcuts": "快捷方式",
@@ -1693,5 +1928,165 @@
     "searching": "正在搜索……",
     "pause": "暂停",
     "play_failed": "执行动作失败",
-    "show_audio_chain_details_for_quality": "显示音频链详情（{quality}）"
+    "show_audio_chain_details_for_quality": "显示音频链详情（{quality}）",
+    "dashboard": {
+        "disconnect": "断开 {0}",
+        "loading": "正在加载设备……",
+        "no_devices": "未找到任何设备",
+        "get_url": "获取仪表盘 URL",
+        "uri_copied": "仪表盘 URL 已复制到剪贴板",
+        "uri_copy_failed": "无法将仪表盘 URL 复制到剪贴板"
+    },
+    "reconfigure_player": "重新配置播放器",
+    "configure_player": "配置播放器",
+    "plugins": "插件",
+    "play_from_beginning": "从头开始播放",
+    "error_generic": "出错了，请重试。",
+    "volume": "音量",
+    "player_select": {
+        "disable_player_title": "禁用 {0} ？",
+        "display_options": "显示选项",
+        "rename_player": "重命名播放器",
+        "rename_player_description": "请为该播放器输入一个新名称。",
+        "show_grouped_players": "显示组成员"
+    },
+    "menu": "菜单",
+    "play_announcement_message": "消息",
+    "play_announcement_playing": "正在播放...",
+    "play_announcement_volume": "音量",
+    "play_announcement_volume_default": "播放器默认",
+    "play_announcement_connecting": "正在连接...",
+    "reload": "重新加载",
+    "open_settings": "设置",
+    "faceted_filter": {
+        "clear": "清除筛选条件",
+        "clear_all_for": "清除所有 {title} 筛选条件",
+        "clear_for": "清除 {title} 筛选条件",
+        "remove_filter": "移除 {label} 筛选条件",
+        "search_for": "搜索 {title}",
+        "selected": "{count} 已选择"
+    },
+    "clear": "清除",
+    "pagination": {
+        "first_page": "转到首页",
+        "previous_page": "转到上一页",
+        "next_page": "转到下一页",
+        "last_page": "转到最后一页"
+    },
+    "data_table": {
+        "view": "查看",
+        "hide": "隐藏"
+    },
+    "sidebar": {
+        "title": "侧边栏",
+        "toggle": "切换侧边栏",
+        "expand": "展开侧边栏",
+        "collapse": "折叠侧边栏"
+    },
+    "loading_short": "加载中",
+    "pages": "页",
+    "command_center_open": "打开",
+    "import_playlist_match_policy_label": "歌曲匹配",
+    "import_playlist_match_policy_exact_description": "仅将歌曲与完全相同的发行版本进行匹配。",
+    "import_playlist_match_policy_same_recording_title": "相同的录音（推荐）",
+    "import_playlist_match_policy_same_recording_description": "优先选择完全匹配的结果，否则接受来自不同版本的相同录音。",
+    "import_playlist_match_policy_best_effort_title": "尽最大努力",
+    "import_playlist_match_policy_best_effort_description": "如果希望精确匹配，则选择相同的录音；否则，接受最接近的可用匹配项。",
+    "migrate_playlist": {
+        "action": "迁移播放列表",
+        "title": "迁移播放列表",
+        "match_policy": {
+            "same_recording": {
+                "title": "相同的录音"
+            },
+            "best_effort": {
+                "title": "尽最大努力",
+                "description": "如果希望精确匹配，则选择相同的录音；否则，接受最接近的可用匹配项。"
+            }
+        },
+        "submit": "迁移"
+    },
+    "previous_track": "上一首",
+    "next_track": "下一首",
+    "author": "作者",
+    "artist_entity_type": {
+        "group": "组",
+        "other": "其他"
+    },
+    "view_all": "查看全部",
+    "edit_rows": "编辑行",
+    "row_source": "来源",
+    "source_library": "您的媒体库",
+    "row_hidden": "隐藏",
+    "reorder_row": "重新排序行",
+    "hide_row": "隐藏行",
+    "show_row": "显示行",
+    "admin_only": "仅限管理员",
+    "done": "完成",
+    "onboarding": {
+        "title": "设置 Music Assistant",
+        "resume": "恢复",
+        "pause": "暂停设置",
+        "dismiss": "关闭"
+    },
+    "play_on_this_device": "在此设备上播放",
+    "about_episode": "关于本集",
+    "next_episode": "下一集",
+    "other_episodes": "其他剧集",
+    "previous_episode": "上一集",
+    "grid_size": "封面尺寸",
+    "episode_number": "剧集 {0}",
+    "duration_hours_minutes": "{hours} 小时 {minutes} 分钟",
+    "duration_hours": "{hours} 小时",
+    "duration_minutes": "{minutes} 分钟",
+    "tracklist_heading": "歌曲",
+    "skip_back_seconds": "倒退 {0} 秒",
+    "skip_forward_seconds": "快进 {0} 秒",
+    "track_table": {
+        "title": "标题",
+        "track_number": "歌曲编号",
+        "year": "年"
+    },
+    "select_all": "全选",
+    "listing_filters": {
+        "title": "筛选条件",
+        "controls": "列表控件",
+        "clear_all": "清除全部",
+        "favorites_only": "仅显示收藏项",
+        "album_artists_only": "仅限专辑艺术家",
+        "library_only": "仅限媒体库",
+        "hide_fully_played": "隐藏已完全播放的",
+        "collapse_collections": "折叠此列表",
+        "genres_shown": "显示",
+        "genre": "流派",
+        "any_genre": "任何流派",
+        "album_type": "专辑类型",
+        "any_album_type": "任何专辑类型",
+        "source": "来源",
+        "any_source": "任何来源"
+    },
+    "statistics": "统计数据",
+    "statistics_play_item": "播放 {name}",
+    "statistics_top_genre": "热门流派",
+    "statistics_genre_other": "其他",
+    "statistics_genres_accessible": "流派: {values}",
+    "statistics_release_years": "发布年份",
+    "statistics_heatmap_less": "更少",
+    "statistics_heatmap_more": "更多",
+    "statistics_most_played": "播放次数最多的歌曲",
+    "statistics_top_tracks": "热门歌曲",
+    "statistics_top_albums": "热门专辑",
+    "statistics_top_artists": "顶级艺术家",
+    "statistics_top_playlists": "热门播放列表",
+    "statistics_column_rank": "#",
+    "statistics_column_title": "标题",
+    "statistics_column_share": "分享",
+    "statistics_section_failed": "无法加载这些统计数据。",
+    "statistics_load_failed": "部分统计数据无法加载。",
+    "no_statistics_data": "暂无收听记录",
+    "period_today": "今天",
+    "period_week": "过去7天",
+    "period_month": "过去30天",
+    "period_year": "过去365天",
+    "period_all_time": "所有时间"
 }

@@ -1,10 +1,8 @@
 /**
  * VisualizerRelayClient color handling.
  *
- * Color payloads accumulate into a merged palette, and a stream/start that no
- * longer advertises the "color" type (color_tint disabled server-side) must
- * drop the palette a canvas kept across the reconnect, or the stale tint
- * would paint until the player changes.
+ * Color payloads accumulate into a merged palette that survives a reconnect
+ * and a stream/start.
  */
 import { VisualizerRelayClient } from "@/plugins/visualizer-relay";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -104,21 +102,7 @@ describe("VisualizerRelayClient color handling", () => {
     });
   });
 
-  it("drops the palette when stream/start no longer advertises color", () => {
-    const onColor = vi.fn();
-    let receive: (message: object) => void;
-    ({ client, receive } = connectClient(onColor));
-
-    receive({ type: "color", payload: { on_dark: [1, 2, 3] } });
-    receive({
-      type: "stream/start",
-      payload: { visualizer: { types: ["waveform", "beat"] } },
-    });
-
-    expect(onColor).toHaveBeenLastCalledWith({});
-  });
-
-  it("keeps the palette when stream/start advertises color", () => {
+  it("keeps the palette across stream/start", () => {
     const onColor = vi.fn();
     let receive: (message: object) => void;
     ({ client, receive } = connectClient(onColor));

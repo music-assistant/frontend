@@ -319,6 +319,8 @@ describe("PlayerTrackDetails source badge", () => {
       player_id: "player-1",
       active_source: "player-1",
       source_list: [],
+      active_output_protocol: null,
+      protocols: [],
     });
   });
 

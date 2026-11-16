@@ -25,7 +25,7 @@
           :source-domain="topTracksSourceDisplay?.domain"
           :source-options="sourceOptions('top_tracks')"
           :source-value="topTracksSource"
-          :artist-track-count="artistTracks?.length"
+          :artist-track-count="artistTracksCount"
           :empty-message="$t('artist_row_empty')"
           @edit-rows="rowsEditorOpen = true"
           @select-source="(source) => selectRowSource('top_tracks', source)"
@@ -40,9 +40,10 @@
           :source-label="albumsSourceDisplay?.label"
           :source-domain="albumsSourceDisplay?.domain"
           :source-options="sourceOptions('albums')"
-          :source-value="albumsSource"
+          :source-value="albumsSelectedSource"
           :items="albumItems"
-          :view-all-to="listingRoute('albums')"
+          :view-all-to="listingRoute('albums', albumsSource)"
+          :item-count="albumsCount"
           :empty-message="albumsEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
@@ -59,9 +60,10 @@
           :source-label="singlesSourceDisplay?.label"
           :source-domain="singlesSourceDisplay?.domain"
           :source-options="sourceOptions('singles_eps')"
-          :source-value="singlesSource"
+          :source-value="singlesSelectedSource"
           :items="singleItems"
-          :view-all-to="listingRoute('singles')"
+          :view-all-to="listingRoute('singles', singlesSource)"
+          :item-count="singlesCount"
           :empty-message="singlesEmptyMessage"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
@@ -75,6 +77,7 @@
           :meta="isPhone ? undefined : $t('appears_on_hint')"
           :items="appearsOnItems"
           :view-all-to="listingRoute('appears_on')"
+          :item-count="appearsOnCount"
           :parent-item="itemDetails"
           @edit-rows="rowsEditorOpen = true"
         />
@@ -86,6 +89,7 @@
           :row-id="rowId"
           :artist="itemDetails"
           :items="discographyRowItems[rowId]"
+          :item-count="discographyRowCounts[rowId]"
           :show-heading="showsDiscographyHeading(rowId)"
           :class="{
             'mb-[16px] max-[600px]:mb-[8px]': discographyContinuesBelow(rowId),
@@ -274,16 +278,24 @@ const visibleRows = computed(() => {
 
 const {
   artistTracks,
+  artistTracksCount,
   topTracksItems,
   albumItems,
   singleItems,
+  albumsCount,
+  singlesCount,
   appearsOnItems,
+  appearsOnCount,
   discographyItems,
+  discographyCount,
   discographySecondItems,
+  discographySecondCount,
   similarArtistItems,
   albumsMeta,
   albumsSource,
   singlesSource,
+  albumsSelectedSource,
+  singlesSelectedSource,
   topTracksSource,
   similarArtistsSource,
   albumsSourceDisplay,
@@ -310,10 +322,21 @@ const {
   showsHeading: showsDiscographyHeading,
   continuesBelow: discographyContinuesBelow,
   meta: discographyMeta,
-} = useDiscographyRows(visibleRows, {
-  discography: discographyItems,
-  discography_second: discographySecondItems,
-});
+} = useDiscographyRows(
+  visibleRows,
+  {
+    discography: discographyItems,
+    discography_second: discographySecondItems,
+  },
+  {
+    discography: discographyCount,
+    discography_second: discographySecondCount,
+  },
+);
+const discographyRowCounts = computed(() => ({
+  discography: discographyCount.value,
+  discography_second: discographySecondCount.value,
+}));
 
 // an empty release row explains the library case; from a provider source the
 // badge already names it, so a neutral line is enough
@@ -331,14 +354,15 @@ const singlesEmptyMessage = computed(() =>
 // how much each row currently holds, for the editor's per-row meta line (it
 // adds the source itself)
 const rowMeta = computed<Partial<Record<ArtistRowId, string>>>(() => ({
-  top_tracks: artistTracks.value?.length
-    ? topTracksMeta(artistTracks.value.length)
+  top_tracks: artistTracksCount.value
+    ? topTracksMeta(artistTracksCount.value)
     : undefined,
   albums: albumsMeta.value,
-  singles_eps: singleItems.value?.length
-    ? String(singleItems.value.length)
-    : undefined,
-  appears_on: $t("appears_on_hint"),
+  singles_eps: singlesCount.value ? String(singlesCount.value) : undefined,
+  appears_on:
+    appearsOnCount.value === undefined
+      ? $t("appears_on_hint")
+      : `${appearsOnCount.value} · ${$t("appears_on_hint")}`,
   discography: discographyMeta("discography"),
   discography_second: discographyMeta("discography_second"),
 }));
@@ -524,8 +548,11 @@ function hasSourcePicker(rowId: ArtistRowId): boolean {
   return artistRows.sources(rowId, itemDetails.value).length > 1;
 }
 
-/** The "View all" target of a shelf. */
-function listingRoute(listing: string): RouteLocationRaw | undefined {
+/** The "View all" target of a shelf, opened on the source the shelf shows when it has one. */
+function listingRoute(
+  listing: string,
+  source?: RowSource,
+): RouteLocationRaw | undefined {
   if (!itemDetails.value) return undefined;
   return {
     name: "artistlisting",
@@ -534,6 +561,7 @@ function listingRoute(listing: string): RouteLocationRaw | undefined {
       itemId: itemDetails.value.item_id,
       listing,
     },
+    query: source ? { source } : undefined,
   };
 }
 </script>

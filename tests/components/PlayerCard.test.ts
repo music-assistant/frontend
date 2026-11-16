@@ -195,6 +195,9 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     mute_control: "mute",
     needs_setup: false,
     has_setup_flow: false,
+    setup_reason: null,
+    legacy_ids: [],
+    protocols: [],
     output_protocols: [],
     active_output_protocol: null,
     elapsed_time: null,
@@ -337,6 +340,19 @@ describe("PlayerCard", () => {
       wrapper.find(".player-select-action").attributes("disabled"),
     ).toBeUndefined();
     expect(wrapper.find('[aria-label="play"]').attributes("disabled")).toBe("");
+  });
+
+  it("names why a player needs setup", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        available: false,
+        needs_setup: true,
+        setup_reason: "pairing_required",
+      }),
+    );
+
+    expect(wrapper.text()).toContain("Pairing required");
+    expect(wrapper.text()).not.toContain("settings.setup_required");
   });
 
   it("offers the setup menu for a player that needs setup", async () => {

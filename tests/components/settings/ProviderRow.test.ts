@@ -454,20 +454,48 @@ describe("ProviderRow", () => {
     expect(wrapper.text().split("Authentication required")).toHaveLength(2);
   });
 
+  it.each(VARIANTS)(
+    "offers to remove an entry that cannot be opened (%s)",
+    async (variant) => {
+      const wrapper = mountRow({
+        variant,
+        manageable: false,
+        removable: true,
+        isError: true,
+        errorText: "This provider is no longer available.",
+      });
+
+      expect(wrapper.find('[data-testid="provider-open"]').exists()).toBe(
+        false,
+      );
+      expect(wrapper.text()).toContain("This provider is no longer available.");
+      await wrapper.get('[data-testid="provider-remove"]').trigger("click");
+
+      expect(wrapper.emitted("remove")).toHaveLength(1);
+      expect(wrapper.emitted("open")).toBeUndefined();
+    },
+  );
+
+  it.each(VARIANTS)("offers no remove by default (%s)", (variant) => {
+    const wrapper = mountRow({ variant, isError: true });
+
+    expect(wrapper.find('[data-testid="provider-remove"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("adds interactive hover styling to the card root when manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: true });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).toContain("cursor-pointer");
-    expect(root.classes()).toContain("hover:-translate-y-0.5");
+    expect(root.classes()).toContain("card-hover");
   });
 
   it("leaves the card root static when not manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: false });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).not.toContain("cursor-pointer");
-    expect(root.classes()).not.toContain("hover:-translate-y-0.5");
+    expect(root.classes()).not.toContain("card-hover");
   });
 });
 

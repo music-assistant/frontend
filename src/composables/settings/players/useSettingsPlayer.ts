@@ -1,5 +1,9 @@
 import { getPlayerName } from "@/helpers/player_config";
-import { isBuiltinPlayer, isPlayerUnavailable } from "@/helpers/players";
+import {
+  getPlayerSetupReason,
+  isBuiltinPlayer,
+  isPlayerUnavailable,
+} from "@/helpers/players";
 import { api } from "@/plugins/api";
 import type { PlayerConfig } from "@/plugins/api/interfaces";
 import { computed, type Ref } from "vue";
@@ -14,6 +18,10 @@ export function useSettingsPlayer(playerConfig: Ref<PlayerConfig>) {
   );
   const needsSetup = computed(
     () => playerConfig.value.enabled && (player.value?.needs_setup ?? false),
+  );
+  // why the player needs setup or can not play, when it says so
+  const setupReason = computed(() =>
+    playerConfig.value.enabled ? getPlayerSetupReason(player.value) : undefined,
   );
   const providerName = computed(() => {
     const deviceInfo = player.value?.device_info;
@@ -32,6 +40,7 @@ export function useSettingsPlayer(playerConfig: Ref<PlayerConfig>) {
     isUnavailable,
     isThisDevice,
     needsSetup,
+    setupReason,
     providerName,
     outputProtocols,
   };

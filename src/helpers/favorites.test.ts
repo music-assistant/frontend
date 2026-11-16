@@ -161,6 +161,18 @@ describe("canHoldFavorite", () => {
   it("turns down a media type that holds no favorite", () => {
     expect(canHoldFavorite(audioSource())).toBe(false);
   });
+
+  // the state belongs to a library item, which an item the server has not
+  // looked up yet does not have
+  it("turns down an item known only by an external id", () => {
+    const topTrack = track({
+      item_id: "musicbrainz_recordingid:rec-1",
+      provider: "external",
+      provider_mappings: [],
+    });
+
+    expect(canHoldFavorite(topTrack)).toBe(false);
+  });
 });
 
 describe("setFavoriteState", () => {
