@@ -83,3 +83,27 @@ export function availableFavorites(
   const known = new Set(names);
   return favorites.filter((name) => known.has(name));
 }
+
+/** Favourites first, then alphabetical (case-insensitive). */
+export function sortFavoritesFirst(
+  names: string[],
+  favorites: string[],
+): string[] {
+  return [...names].sort((a, b) => {
+    const favDiff =
+      Number(favorites.includes(b)) - Number(favorites.includes(a));
+    return favDiff !== 0
+      ? favDiff
+      : a.localeCompare(b, undefined, { sensitivity: "base" });
+  });
+}
+
+/** The favourites list with `name` added, or removed when already in it. */
+export function toggleFavoriteName(
+  favorites: string[],
+  name: string,
+): string[] {
+  return favorites.includes(name)
+    ? favorites.filter((favorite) => favorite !== name)
+    : [...favorites, name];
+}

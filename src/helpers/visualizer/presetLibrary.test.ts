@@ -49,4 +49,20 @@ describe("presetLibrary", () => {
       ),
     ).toEqual(["Alpha - one"]);
   });
+
+  it("sorts favourites first, then alphabetically", async () => {
+    const { sortFavoritesFirst } = await import("./presetLibrary");
+    expect(
+      sortFavoritesFirst(
+        ["beta", "Gamma", "Alpha", "delta"],
+        ["delta", "Gamma"],
+      ),
+    ).toEqual(["delta", "Gamma", "Alpha", "beta"]);
+  });
+
+  it("toggles a name in and out of the favourites", async () => {
+    const { toggleFavoriteName } = await import("./presetLibrary");
+    expect(toggleFavoriteName(["a"], "b")).toEqual(["a", "b"]);
+    expect(toggleFavoriteName(["a", "b"], "a")).toEqual(["b"]);
+  });
 });
