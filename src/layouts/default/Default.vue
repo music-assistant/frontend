@@ -40,21 +40,26 @@ const linkedPlayerId = computed(() => {
     );
   })?.player_id;
 });
-// the player the link selected last
-let linkSelectedPlayerId: string | undefined;
+// the user picked another player than the link's while the link's player was usable
+let userPickedPlayer = false;
 watch(
   [() => route.query.player, linkedPlayerId],
   ([linkedPlayer, playerId], [previousLinkedPlayer]) => {
-    if (linkedPlayer !== previousLinkedPlayer) linkSelectedPlayerId = undefined;
-    if (!playerId) return;
-    // the link follows its player (such as into a player it is merged into),
-    // but leaves a player the user picked after it
-    if (linkSelectedPlayerId && store.activePlayerId !== linkSelectedPlayerId)
-      return;
-    store.activePlayerId = playerId;
-    linkSelectedPlayerId = playerId;
+    if (linkedPlayer !== previousLinkedPlayer) userPickedPlayer = false;
+    if (playerId && !userPickedPlayer) store.activePlayerId = playerId;
   },
   { immediate: true },
+);
+watch(
+  () => store.activePlayerId,
+  (playerId) => {
+    // a player picked while the link's player is not usable is a fallback, so
+    // the link selects its player again once it is usable
+    if (linkedPlayerId.value && playerId !== linkedPlayerId.value)
+      userPickedPlayer = true;
+  },
+  // judged when the selection changes, not after the players changed further
+  { flush: "sync" },
 );
 watch(
   () => route.query.showFullscreenPlayer,
