@@ -1766,7 +1766,7 @@
     "remove_provider_mapping_confirm": "Are you sure you want to unlink this source from the item? It may come back if you search all music sources for matches again.",
     "map_provider_mapping": "Link this source entry to the current item",
     "player_tip": {
-        "selected_player": "Selected player",
+        "selected": "Selected",
         "currently_playing": "Currently playing on",
         "click_to_change": "Click below to change output device"
     },
@@ -2994,7 +2994,6 @@
     "grouped_volume": "Grouped volume",
     "player_select": {
         "active_player_volume_only": "Only show volume sliders for active players",
-        "and_more": "...and {0} more",
         "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
         "disable_player_title": "Disable {0}?",
         "display_options": "Display options",
