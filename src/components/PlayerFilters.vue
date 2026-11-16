@@ -12,6 +12,11 @@
         :title="$t('settings.player_type_label')"
         :options="playerTypeOptions"
       />
+      <FacetedFilter
+        v-model="selectedStatuses"
+        :title="$t('settings.player_status_label')"
+        :options="statusOptions"
+      />
     </div>
   </div>
 </template>
@@ -31,10 +36,12 @@ const route = useRoute();
 const searchQuery = ref<string>("");
 const selectedProviders = ref<string[]>([]);
 const selectedPlayerTypes = ref<string[]>([]);
+const selectedStatuses = ref<string[]>([]);
 
 let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let providersDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 let typesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+let statusesDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const providerOptions = computed(() =>
   Object.values(api.providers)
@@ -50,6 +57,14 @@ const playerTypeOptions = computed(() => [
   { label: $t("player_type.player"), value: PlayerType.PLAYER },
   { label: $t("player_type.group"), value: PlayerType.GROUP },
   { label: $t("player_type.stereo_pair"), value: PlayerType.STEREO_PAIR },
+  { label: $t("player_type.source"), value: PlayerType.SOURCE },
+]);
+
+const statusOptions = computed(() => [
+  { label: $t("settings.player_status.available"), value: "available" },
+  { label: $t("settings.player_status.needs_setup"), value: "needs_setup" },
+  { label: $t("settings.player_status.unavailable"), value: "unavailable" },
+  { label: $t("settings.player_status.disabled"), value: "disabled" },
 ]);
 
 // Emits
@@ -57,6 +72,7 @@ const emit = defineEmits<{
   (e: "update:search", value: string): void;
   (e: "update:providers", value: string[]): void;
   (e: "update:types", value: string[]): void;
+  (e: "update:statuses", value: string[]): void;
 }>();
 
 const initializeFromUrl = function () {
@@ -72,6 +88,11 @@ const initializeFromUrl = function () {
   if (route.query.types) {
     const types = route.query.types as string;
     selectedPlayerTypes.value = types.split(",");
+  }
+
+  if (route.query.status) {
+    const statuses = route.query.status as string;
+    selectedStatuses.value = statuses.split(",");
   }
 };
 
@@ -127,6 +148,27 @@ watch(
         query.types = newTypes.join(",");
       } else {
         delete query.types;
+      }
+      router.replace({ query });
+    }, 750);
+  },
+  { deep: true },
+);
+
+watch(
+  selectedStatuses,
+  (newStatuses) => {
+    emit("update:statuses", newStatuses);
+
+    if (statusesDebounceTimeout) {
+      clearTimeout(statusesDebounceTimeout);
+    }
+    statusesDebounceTimeout = setTimeout(() => {
+      const query = { ...route.query };
+      if (newStatuses.length > 0) {
+        query.status = newStatuses.join(",");
+      } else {
+        delete query.status;
       }
       router.replace({ query });
     }, 750);

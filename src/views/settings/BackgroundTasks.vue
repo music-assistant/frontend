@@ -4,7 +4,7 @@
       <BackgroundTaskFilters @update:search="searchQuery = $event" />
 
       <Button
-        v-if="isAdmin"
+        v-if="canManageTasks"
         class="clear-finished-btn"
         variant="outline"
         @click="clearFinishedTasks"
@@ -22,17 +22,17 @@
       }}
     </div>
 
-    <Container
-      :variant="viewMode === 'list' ? 'default' : 'panel'"
-      class="mt-4 px-5"
+    <div
+      class="mt-4 px-5 py-2.5"
+      :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
     >
-      <div v-if="showInitialLoading" class="empty-state">
-        <v-progress-circular indeterminate color="primary" size="48" />
+      <div v-if="showInitialLoading" class="flex justify-center py-16">
+        <Spinner class="size-12" />
       </div>
 
-      <v-list
+      <ItemGroup
         v-else-if="viewMode === 'list' && filteredTasks.length"
-        class="tasks-list"
+        class="gap-2"
       >
         <BackgroundTaskItem
           v-for="task in filteredTasks"
@@ -42,34 +42,30 @@
           @click="showTaskDetails"
           @menu="onMenu"
         />
-      </v-list>
+      </ItemGroup>
 
-      <v-row v-else-if="filteredTasks.length">
-        <v-col
+      <div
+        v-else-if="filteredTasks.length"
+        class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+      >
+        <BackgroundTaskItem
           v-for="task in filteredTasks"
           :key="task.id"
-          cols="12"
-          md="6"
-          lg="4"
-          class="d-flex"
-        >
-          <BackgroundTaskItem
-            :task="task"
-            variant="card"
-            @click="showTaskDetails"
-            @menu="onMenu"
-          />
-        </v-col>
-      </v-row>
-
-      <div v-else class="empty-state">
-        <v-icon icon="mdi-list-status" size="64" class="empty-icon" />
-        <div class="empty-title">{{ emptyTitle }}</div>
-        <div class="empty-message">
-          {{ emptyDescription }}
-        </div>
+          :task="task"
+          variant="card"
+          @click="showTaskDetails"
+          @menu="onMenu"
+        />
       </div>
-    </Container>
+
+      <Empty v-else class="border">
+        <EmptyMedia variant="icon">
+          <ListChecks />
+        </EmptyMedia>
+        <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
+        <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
+      </Empty>
+    </div>
 
     <BackgroundTaskDetailsDialog
       v-model:open="detailsDialogOpen"
@@ -91,12 +87,19 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import BackgroundTaskDetailsDialog from "@/components/settings/background-tasks/BackgroundTaskDetailsDialog.vue";
 import BackgroundTaskFilters from "@/components/settings/background-tasks/BackgroundTaskFilters.vue";
 import BackgroundTaskItem from "@/components/settings/background-tasks/BackgroundTaskItem.vue";
 import BackgroundTaskScheduleDialog from "@/components/settings/background-tasks/BackgroundTaskScheduleDialog.vue";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { ItemGroup } from "@/components/ui/item";
+import { Spinner } from "@/components/ui/spinner";
 import {
   canEditTaskSchedule,
   canRemoveTask,
@@ -113,12 +116,12 @@ import {
   type BackgroundTask,
   type TaskSchedule,
   type User,
+  Scope,
   TaskStatus,
-  UserRole,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
-import { Trash2 } from "@lucide/vue";
+import { ListChecks, Trash2 } from "@lucide/vue";
 import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -141,7 +144,9 @@ const usersLoaded = ref(false);
 
 const { t } = useI18n();
 const viewMode = computed(() => tasksViewMode.viewMode.value);
-const isAdmin = computed(() => store.currentUser?.role === UserRole.ADMIN);
+const canManageTasks = computed(() =>
+  authManager.hasScope(Scope.SYSTEM_MANAGE),
+);
 const {
   loading,
   refreshTasks: refreshTasksState,
@@ -377,11 +382,7 @@ const removeTask = async (task: BackgroundTask) => {
 };
 
 const ensureUserLabelsLoaded = async () => {
-  if (
-    usersLoaded.value ||
-    !store.currentUser ||
-    store.currentUser.role !== UserRole.ADMIN
-  ) {
+  if (usersLoaded.value || !authManager.hasScope(Scope.USERS_READ)) {
     return;
   }
   try {
@@ -494,7 +495,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         openScheduleDialog(task);
       },
       icon: "mdi-timer-edit-outline",
-      hide: !isAdmin.value || !canEditTaskSchedule(task),
+      hide: !canManageTasks.value || !canEditTaskSchedule(task),
     },
     {
       label: "background_tasks.run_now",
@@ -502,7 +503,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void runTask(task);
       },
       icon: "mdi-play",
-      hide: !isAdmin.value || !canRunTaskManually(task),
+      hide: !canManageTasks.value || !canRunTaskManually(task),
     },
     {
       label: task.schedule?.enabled
@@ -514,7 +515,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       icon: task.schedule?.enabled
         ? "mdi-calendar-remove"
         : "mdi-calendar-check",
-      hide: !isAdmin.value || !isScheduledTask(task),
+      hide: !canManageTasks.value || !isScheduledTask(task),
     },
     {
       label: "background_tasks.retry",
@@ -522,7 +523,8 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void retryTask(task);
       },
       icon: "mdi-refresh",
-      hide: !isAdmin.value || !(task.allow_retry && isRetryableTask(task)),
+      hide:
+        !canManageTasks.value || !(task.allow_retry && isRetryableTask(task)),
     },
     {
       label: "background_tasks.cancel",
@@ -530,7 +532,8 @@ const onMenu = (event: Event, task: BackgroundTask) => {
         void cancelTask(task);
       },
       icon: "mdi-cancel",
-      hide: !isAdmin.value || !(task.allow_cancel && isCancelableTask(task)),
+      hide:
+        !canManageTasks.value || !(task.allow_cancel && isCancelableTask(task)),
     },
     {
       label: "background_tasks.remove_history",
@@ -539,7 +542,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       },
       icon: "mdi-delete",
       color: "error",
-      hide: !isAdmin.value || !canRemoveTask(task),
+      hide: !canManageTasks.value || !canRemoveTask(task),
     },
   ];
 
@@ -574,38 +577,6 @@ const getPriority = (task: BackgroundTask) => {
 
 .tasks-header :deep(.filters-container) {
   align-items: flex-start;
-}
-
-.tasks-list {
-  background: transparent;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-  width: 100%;
-}
-
-.empty-icon {
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
 }
 
 @media (max-width: 960px) {

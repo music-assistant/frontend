@@ -1,0 +1,81 @@
+import { Scope } from "@/plugins/api/interfaces";
+import { describe, expect, it } from "vitest";
+import {
+  BUILTIN_ROLE_SCOPES,
+  MEMBER_WITHOUT_OWN_SCOPES,
+  OWN_SOURCES_ROLE_SCOPES,
+  scopeChecker,
+} from "../../tests/fixtures/scopes";
+import { availableSettingsSections } from "./settings_sections";
+
+const ALL_SECTIONS = [
+  "catalog",
+  "music_providers",
+  "player_providers",
+  "metadata_providers",
+  "plugin_providers",
+  "players",
+  "audio_analysis_providers",
+  "profile",
+  "frontend",
+  "users",
+  "remote_access",
+  "system",
+  "about",
+];
+
+function sectionNames(scopes: readonly Scope[]): string[] {
+  return availableSettingsSections(scopeChecker(scopes)).map(
+    (section) => section.name,
+  );
+}
+
+describe("availableSettingsSections", () => {
+  it("lists every section to an admin", () => {
+    expect(sectionNames(BUILTIN_ROLE_SCOPES.admin)).toEqual(ALL_SECTIONS);
+  });
+
+  it("lists a member the catalog, its own music sources and its personal settings", () => {
+    expect(sectionNames(BUILTIN_ROLE_SCOPES.user)).toEqual([
+      "catalog",
+      "music_providers",
+      "profile",
+      "frontend",
+      "about",
+    ]);
+  });
+
+  it("lists a guest its personal settings only", () => {
+    expect(sectionNames(BUILTIN_ROLE_SCOPES.guest)).toEqual([
+      "profile",
+      "frontend",
+      "about",
+    ]);
+  });
+
+  it("lists a role managing its own music sources nothing more to manage", () => {
+    expect(sectionNames(OWN_SOURCES_ROLE_SCOPES)).toEqual([
+      "catalog",
+      "music_providers",
+      "profile",
+      "frontend",
+      "about",
+    ]);
+  });
+
+  it("leaves the catalog out for a role that may not add music sources", () => {
+    expect(sectionNames(MEMBER_WITHOUT_OWN_SCOPES)).not.toContain("catalog");
+  });
+
+  it("lists the music sources to a role that may only read them", () => {
+    expect(
+      sectionNames([...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PROVIDERS_READ]),
+    ).toContain("music_providers");
+  });
+
+  it("lists the users to a role that may read them", () => {
+    expect(
+      sectionNames([...BUILTIN_ROLE_SCOPES.guest, Scope.USERS_READ]),
+    ).toContain("users");
+  });
+});

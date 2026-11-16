@@ -387,21 +387,6 @@ describe("MusicQuizSetupWizard", () => {
     );
   });
 
-  it("hides playback controls and omits fields for a legacy server", async () => {
-    const wrapper = mountWizard({ playbackOptionsLegacy: true });
-    await selectGame(wrapper, "game_type");
-
-    expect(
-      wrapper.find('[data-testid="music-quiz-playback-controls"]').exists(),
-    ).toBe(false);
-
-    await wrapper.get('[data-testid="create-guess_the_song"]').trigger("click");
-    const request = wrapper.emitted("create")?.[0]?.[0];
-
-    expect(request).not.toHaveProperty("playback_mode");
-    expect(request).not.toHaveProperty("venue_player_id");
-  });
-
   it("blocks create while playback discovery is loading", async () => {
     const wrapper = mountWizard({ playbackOptionsLoading: true });
     await selectGame(wrapper, "game_type");
@@ -421,7 +406,6 @@ describe("MusicQuizSetupWizard", () => {
 
   it("blocks create and offers retry after initial discovery failure", async () => {
     const wrapper = mountWizard({
-      playbackOptionsLegacy: false,
       playbackOptionsError: true,
     });
     await selectGame(wrapper, "game_type");
@@ -445,7 +429,6 @@ describe("MusicQuizSetupWizard", () => {
   it("retains explicit payloads when refreshing known options fails", async () => {
     const wrapper = mountWizard({
       playbackOptions: PLAYBACK_OPTIONS,
-      playbackOptionsLegacy: false,
       playbackOptionsError: true,
     });
     await selectGame(wrapper, "game_type");
@@ -553,7 +536,6 @@ function mountWizard(
     availableQuizTypes?: string[];
     playbackOptions?: MusicQuizPlaybackOptions | null;
     playbackOptionsLoading?: boolean;
-    playbackOptionsLegacy?: boolean;
     playbackOptionsError?: boolean;
   } = {},
   attachToDocument = false,

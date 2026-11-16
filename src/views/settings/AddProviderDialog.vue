@@ -1,72 +1,89 @@
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
+    <!-- a fixed height keeps the dialog still while the search narrows the list;
+         the sm: max width has to be restated or the 512px default of
+         DialogContent caps it -->
     <DialogContent
-      class="h-[85dvh] max-h-[85dvh] sm:h-[60vh] sm:max-h-[60vh] flex flex-col p-0"
+      class="flex h-[calc(100dvh-2rem)] flex-col gap-0 p-0 sm:h-[85dvh] sm:max-w-[calc(100%-2rem)] lg:max-w-[900px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
-      <DialogHeader class="px-6 pt-6 pb-4 flex-shrink-0">
+      <DialogHeader class="border-b px-5 py-4 pr-12">
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
       </DialogHeader>
 
-      <div class="px-6 pb-2 flex-shrink-0">
-        <InputGroup class="search-field">
-          <InputGroupInput v-model="searchQuery" :placeholder="$t('search')" />
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-        </InputGroup>
-      </div>
-
-      <div class="px-6 flex-shrink-0">
-        <div class="filter-buttons">
-          <FacetedFilter
-            v-model="selectedProviderStages"
-            :title="$t('settings.stage.label')"
-            :options="providerStageOptions"
-          />
-        </div>
+      <!-- the search and the filter stay put; only the list below scrolls -->
+      <div class="flex flex-wrap items-center gap-2 px-5 py-4">
+        <SearchInput
+          v-model="searchQuery"
+          :placeholder="$t('search')"
+          clearable
+          class="min-w-48 flex-1"
+        />
+        <!-- on a phone the filter only crowds the search row -->
+        <FacetedFilter
+          v-if="!isPhone"
+          v-model="selectedProviderStages"
+          :title="$t('settings.stage.label')"
+          :options="providerStageOptions"
+        />
       </div>
 
       <div
-        class="provider-list-container px-6 pt-2 pb-6 flex-1 min-h-0 overflow-y-auto"
+        class="min-h-0 flex-1 overflow-y-auto px-5 pb-4"
+        data-testid="provider-list"
       >
-        <div v-if="filteredProviders.length > 0" class="provider-list">
-          <div
+        <ItemGroup v-if="filteredProviders.length > 0" class="gap-2">
+          <Item
             v-for="provider in filteredProviders"
             :key="provider.domain"
-            class="provider-item"
+            variant="outline"
+            size="sm"
+            class="hover:bg-accent/50 cursor-pointer"
+            data-testid="provider-row"
             @click="addProvider(provider)"
           >
-            <provider-icon
-              :domain="provider.domain"
-              :size="40"
-              class="provider-icon"
-            />
-            <div class="provider-content">
-              <div class="provider-name">{{ provider.name }}</div>
-              <div class="provider-description">
-                {{ provider.description }}
-              </div>
-            </div>
-            <div class="provider-actions">
-              <Badge
-                :variant="getStageVariant(provider.stage)"
-                class="text-uppercase"
-              >
-                {{ $t(String(provider.stage || "").toLowerCase()) }}
-              </Badge>
-              <ChevronRight class="h-4 w-4" />
-            </div>
-          </div>
-        </div>
+            <ItemMedia>
+              <ProviderIcon :domain="provider.domain" :size="40" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle class="flex-wrap">
+                <!-- the name is the focusable control; the row itself only follows the pointer -->
+                <button
+                  type="button"
+                  class="cursor-pointer text-left"
+                  data-testid="provider-open"
+                  @click.stop="addProvider(provider)"
+                >
+                  {{ provider.name }}
+                </button>
+                <ProviderStageBadge :stage="provider.stage" />
+              </ItemTitle>
+              <ItemDescription>{{ provider.description }}</ItemDescription>
+              <ProviderMaintainerMarker
+                v-if="
+                  isCommunityProvider(provider) ||
+                  getProviderMaintainers(provider).length
+                "
+                variant="line"
+                :community="isCommunityProvider(provider)"
+                :maintainers="getProviderMaintainers(provider)"
+              />
+            </ItemContent>
+            <ItemActions>
+              <ChevronRight class="text-muted-foreground size-4" />
+            </ItemActions>
+          </Item>
+        </ItemGroup>
 
-        <div v-else class="empty-state">
-          <Search class="empty-icon" />
-          <div class="empty-title">{{ $t("no_content") }}</div>
-          <div class="empty-message">
-            {{ $t("no_content_filter") }}
-          </div>
-        </div>
+        <Empty v-else class="h-full">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Search />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t("no_content") }}</EmptyTitle>
+            <EmptyDescription>{{ $t("no_content_filter") }}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       </div>
     </DialogContent>
   </Dialog>
@@ -75,7 +92,8 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import { Badge } from "@/components/ui/badge";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
+import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
 import {
   Dialog,
   DialogContent,
@@ -83,19 +101,43 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { SearchInput } from "@/components/ui/search-input";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { startAddProvider } from "@/helpers/provider_add";
+import {
+  ADDABLE_PROVIDER_STAGES,
+  buildCatalogEntries,
+  filterCatalogEntries,
+  sortPopularFirst,
+} from "@/helpers/provider_catalog";
+import {
+  getProviderMaintainers,
+  getProviderStageTranslationKey,
+  isCommunityProvider,
+} from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import {
+  CatalogRecommendationReason,
   ProviderConfig,
   ProviderManifest,
-  ProviderStage,
   ProviderType,
 } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
+import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ChevronRight, Search } from "@lucide/vue";
@@ -105,18 +147,13 @@ import { useRoute } from "vue-router";
 
 const props = defineProps<{
   show?: boolean;
+  // the type to offer, for a caller whose route carries no types query
+  providerType?: ProviderType;
+  // only offer providers that allow more than one account
+  multiInstanceOnly?: boolean;
+  // only offer providers that members may set up themselves
+  selfServiceOnly?: boolean;
 }>();
-
-const POPULAR_PROVIDERS = [
-  "spotify",
-  "tidal",
-  "qobuz",
-  "filesystem_local",
-  "filesystem_smb",
-  "sonos",
-  "chromecast",
-  "airplay",
-];
 
 const emit = defineEmits<{
   (e: "update:show", value: boolean): void;
@@ -124,10 +161,15 @@ const emit = defineEmits<{
 
 const route = useRoute();
 const providerConfigs = ref<ProviderConfig[]>([]);
+const popularDomains = ref<string[]>([]);
 const searchQuery = ref("");
 const selectedProviderStages = ref<string[]>([]);
 
-const activeTypeFilter = computed(() => (route.query.types as string) || null);
+const isPhone = computed(() => isPhoneSizedScreen());
+
+const activeTypeFilter = computed(
+  () => props.providerType ?? ((route.query.types as string) || null),
+);
 
 const dialogTitle = computed(() =>
   match(activeTypeFilter.value)
@@ -138,137 +180,55 @@ const dialogTitle = computed(() =>
     .with(ProviderType.AUDIO_ANALYSIS, () =>
       $t("settings.add_audio_analysis_provider"),
     )
-    .otherwise(() => $t("settings.add_provider")),
+    .otherwise(() => $t("settings.add_new")),
 );
 
-const providerStageOptions = computed(() => [
-  { label: $t("settings.stage.options.stable"), value: ProviderStage.STABLE },
-  { label: $t("settings.stage.options.beta"), value: ProviderStage.BETA },
-  { label: $t("settings.stage.options.alpha"), value: ProviderStage.ALPHA },
-  {
-    label: $t("settings.stage.options.experimental"),
-    value: ProviderStage.EXPERIMENTAL,
-  },
-  {
-    label: $t("settings.stage.options.unmaintained"),
-    value: ProviderStage.UNMAINTAINED,
-  },
-  {
-    label: $t("settings.stage.options.deprecated"),
-    value: ProviderStage.DEPRECATED,
-  },
-]);
+const providerStageOptions = computed(() =>
+  ADDABLE_PROVIDER_STAGES.map((stage) => ({
+    label: $t(getProviderStageTranslationKey(stage)!),
+    value: stage,
+  })),
+);
 
-const availableProviders = computed(() => {
-  let providers = Object.values(api.providerManifests);
+// a configured provider that allows a single instance cannot be added again
+const availableProviders = computed(() =>
+  sortPopularFirst(
+    buildCatalogEntries(
+      Object.values(api.providerManifests),
+      providerConfigs.value,
+      {
+        multiInstanceOnly: props.multiInstanceOnly,
+        selfServiceOnly: props.selfServiceOnly,
+      },
+    ).filter((entry) => entry.canAdd),
+    popularDomains.value,
+  ),
+);
 
-  providers = providers.filter(
-    (x) => !x.builtin && x.type !== ("core" as ProviderType),
-  );
+const activeTypes = computed(() =>
+  (activeTypeFilter.value ?? "")
+    .split(",")
+    .map((type) => type.trim())
+    .filter((type) => type.length > 0),
+);
 
-  return providers
-    .filter(
-      (x) =>
-        x.multi_instance ||
-        !providerConfigs.value.find((y) => y.domain == x.domain),
-    )
-    .sort((a, b) => {
-      const aPopularIndex = POPULAR_PROVIDERS.indexOf(a.domain);
-      const bPopularIndex = POPULAR_PROVIDERS.indexOf(b.domain);
-      const aIsPopular = aPopularIndex !== -1;
-      const bIsPopular = bPopularIndex !== -1;
-
-      if (aIsPopular && !bIsPopular) return -1;
-      if (!aIsPopular && bIsPopular) return 1;
-      if (aIsPopular && bIsPopular) return aPopularIndex - bPopularIndex;
-
-      const nameA = (
-        a.name || api.providerManifests[a.domain].name
-      ).toUpperCase();
-      const nameB = (
-        b.name || api.providerManifests[b.domain].name
-      ).toUpperCase();
-      return nameA > nameB ? 1 : -1;
-    });
-});
-
-const filteredProviders = computed(() => {
-  let providers = availableProviders.value;
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    providers = providers.filter(
-      (provider) =>
-        provider.name.toLowerCase().includes(query) ||
-        provider.description.toLowerCase().includes(query),
-    );
-  }
-
-  if (activeTypeFilter.value) {
-    const activeTypes = Array.isArray(activeTypeFilter.value)
-      ? activeTypeFilter.value
-      : String(activeTypeFilter.value)
-          .split(",")
-          .map((type) => type.trim())
-          .filter((type) => type.length > 0);
-
-    if (activeTypes.length > 0) {
-      providers = providers.filter((x) => activeTypes.includes(x.type));
-    }
-  }
-
-  if (selectedProviderStages.value.length > 0) {
-    providers = providers.filter((x) =>
-      selectedProviderStages.value.includes(x.stage),
-    );
-  }
-
-  return providers;
-});
+const filteredProviders = computed(() =>
+  filterCatalogEntries(availableProviders.value, {
+    query: searchQuery.value,
+    types: activeTypes.value,
+    stages: selectedProviderStages.value,
+  }).map((entry) => entry.manifest),
+);
 
 const loadItems = async function () {
-  providerConfigs.value = await api.getProviderConfigs();
+  [providerConfigs.value, popularDomains.value] = await Promise.all([
+    api.getProviderConfigs(),
+    getPopularDomains(),
+  ]);
 };
 
 const addProvider = function (provider: ProviderManifest) {
-  if (provider.depends_on) {
-    if (!api.getProvider(provider.depends_on)) {
-      const depProvName = api.getProviderName(provider.depends_on);
-      if (
-        confirm(
-          $t("settings.provider_depends_on_confirm", [
-            provider.name,
-            depProvName,
-          ]),
-        )
-      ) {
-        close();
-        eventbus.emit("setupFlowDialog", {
-          kind: "provider",
-          domain: provider.depends_on,
-        });
-      }
-      return;
-    }
-  }
-  close();
-  eventbus.emit("setupFlowDialog", {
-    kind: "provider",
-    domain: provider.domain,
-  });
-};
-
-const getStageVariant = function (
-  stage?: string,
-): "default" | "secondary" | "outline" | "destructive" {
-  return match(stage)
-    .with("stable", () => "default" as const)
-    .with("beta", () => "secondary" as const)
-    .with("alpha", () => "outline" as const)
-    .with("experimental", () => "outline" as const)
-    .with("unmaintained", () => "secondary" as const)
-    .with("deprecated", () => "destructive" as const)
-    .otherwise(() => "default" as const);
+  startAddProvider(provider, close);
 };
 
 const handleOpenChange = (open: boolean) => {
@@ -280,14 +240,21 @@ const close = function () {
   emit("update:show", false);
 };
 
-// Load items initially and when providers change
+// keep the configs in step with the providers, but only while the dialog is
+// open; a hidden dialog must not fetch
 watch(
   () => api.providers,
   () => {
-    loadItems();
+    if (props.show) loadItems();
   },
   { immediate: true, deep: true },
 );
+
+// a stage picked before the screen turned phone-sized would keep filtering
+// the list without its control, so it goes along with the filter
+watch(isPhone, (phone) => {
+  if (phone) selectedProviderStages.value = [];
+});
 
 watch(
   () => props.show,
@@ -303,105 +270,16 @@ watch(
     }
   },
 );
+
+// the providers the server calls popular, in its order; none when it does not answer
+async function getPopularDomains(): Promise<string[]> {
+  try {
+    const recommendations = await api.getCatalogRecommendations();
+    return recommendations
+      .filter(({ reason }) => reason === CatalogRecommendationReason.POPULAR)
+      .map(({ domain }) => domain);
+  } catch {
+    return [];
+  }
+}
 </script>
-
-<style scoped>
-.search-field {
-  width: 100%;
-}
-
-.filter-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.provider-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.provider-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
-  cursor: pointer;
-}
-
-.provider-item:hover {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-  transform: translateY(-1px);
-}
-
-.provider-icon {
-  flex-shrink: 0;
-}
-
-.provider-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.provider-name {
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 1.2;
-  margin-bottom: 4px;
-}
-
-.provider-description {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-height: 2.6em;
-}
-
-.provider-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.empty-icon {
-  width: 48px;
-  height: 48px;
-  color: rgba(var(--v-theme-on-surface), 0.3);
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 8px;
-}
-
-.empty-message {
-  font-size: 14px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
-  line-height: 1.4;
-}
-</style>

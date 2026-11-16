@@ -1,5 +1,5 @@
 <template>
-  <Container variant="default">
+  <div class="p-2.5">
     <Toolbar
       :title="mappedAliasesTitle"
       :menu-items="aliasToolbarMenuItems"
@@ -26,7 +26,7 @@
             :disabled="operationInProgress"
             @click.stop="confirmPromoteAlias(alias)"
           >
-            <ArrowUpFromLine :size="20" />
+            <ArrowUpFromLine class="size-5" />
           </Button>
           <Button
             variant="ghost"
@@ -35,12 +35,12 @@
             :disabled="operationInProgress"
             @click.stop="confirmRemoveAlias(alias)"
           >
-            <Trash2 :size="20" />
+            <Trash2 class="size-5" />
           </Button>
         </template>
       </ListItem>
     </v-list>
-  </Container>
+  </div>
 
   <LinkAliasDialog
     v-model="showLinkDialog"
@@ -70,7 +70,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import CreateAliasDialog from "@/components/genre/CreateAliasDialog.vue";
 import LinkAliasDialog from "@/components/genre/LinkAliasDialog.vue";
 import PromoteAliasDialog from "@/components/genre/PromoteAliasDialog.vue";
@@ -78,6 +77,7 @@ import RemoveAliasDialog from "@/components/genre/RemoveAliasDialog.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
+import { mappedAliases } from "@/helpers/genre";
 import { formatAliasName } from "@/helpers/utils";
 import { Genre } from "@/plugins/api/interfaces";
 import {
@@ -115,12 +115,9 @@ const canPromoteAlias = (alias: string): boolean => {
   return !props.existingGenreNames.has(alias.toLowerCase());
 };
 
-const aliases = computed(() => {
-  const genreName = props.genre.name?.toLowerCase();
-  return (props.genre.genre_aliases || [])
-    .filter((alias) => alias.toLowerCase() !== genreName)
-    .sort((a, b) => a.localeCompare(b));
-});
+const aliases = computed(() =>
+  mappedAliases(props.genre).sort((a, b) => a.localeCompare(b)),
+);
 
 const mappedAliasesTitle = computed(
   () => `${t("mapped_aliases")} (${aliases.value.length})`,

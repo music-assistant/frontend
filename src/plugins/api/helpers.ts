@@ -5,12 +5,18 @@ import api, { ConnectionState } from ".";
 import {
   Audiobook,
   AudioSource,
+  CrossfadeMode,
   MediaItemType,
   ItemMapping,
   MediaType,
   Player,
   PlayerQueue,
+  Playlist,
   PodcastEpisode,
+  ProviderFeature,
+  ProviderInstance,
+  ProviderMapping,
+  ProviderType,
   QueueItem,
 } from "./interfaces";
 
@@ -49,6 +55,25 @@ export const isQueueInfiniteStream = function (
 };
 
 /**
+ * Returns the provider serving a queue's current item when that source is the one
+ * crossfading it, or undefined when Music Assistant applies the fade (or none is).
+ *
+ * The queue's crossfade settings say nothing about who acts on them: a source that
+ * fades its own playback is handed the setting and does the overlap itself, so none
+ * of our timing reaches the audio.
+ */
+export const queueSourceCrossfadeProvider = function (
+  queue: PlayerQueue | undefined,
+): string | undefined {
+  const streamDetails = queue?.current_item?.streamdetails;
+  const crossfadeMode =
+    streamDetails?.audio_processing?.queue_processing?.crossfade_mode;
+  return crossfadeMode === CrossfadeMode.SOURCE
+    ? streamDetails?.provider
+    : undefined;
+};
+
+/**
  * Type guard for AudioSource media items.
  * AudioSource is a first-class MediaItem representing a plugin source
  * (Spotify Connect, AirPlay receiver, Snapcast, etc.) — its capability
@@ -74,37 +99,6 @@ export const itemSupportsPlayLog = function (
 };
 
 /**
- * Check if the connected server meets a minimum version requirement.
- * Returns true if server version >= the required version, or if the server
- * reports version 0.0.0 (development builds).
- */
-export function requireServerVersion(minVersion: string): boolean {
-  const serverVersion = api.serverInfo.value?.server_version;
-  if (!serverVersion) return false;
-
-  const parseVersion = (v: string): number[] => {
-    // Strip any suffix like "beta1", "b2", "dev", etc.
-    return v
-      .replace(/[-].*/g, "")
-      .split(".")
-      .map((n) => parseInt(n, 10) || 0);
-  };
-
-  const server = parseVersion(serverVersion);
-  // Development builds (0.0.0) always pass
-  if (server[0] === 0 && server[1] === 0 && server[2] === 0) return true;
-
-  const required = parseVersion(minVersion);
-  for (let i = 0; i < Math.max(server.length, required.length); i++) {
-    const s = server[i] || 0;
-    const r = required[i] || 0;
-    if (s > r) return true;
-    if (s < r) return false;
-  }
-  return true; // equal
-}
-
-/**
  * Whether the item is a member of the user's library.
  *
  * Membership is derived from the per-provider-mapping in_library flag, NOT from
@@ -115,13 +109,14 @@ export function requireServerVersion(minVersion: string): boolean {
 export const isItemInLibrary = function (
   item: MediaItemType | ItemMapping | null | undefined,
 ): boolean {
-  if (!item) return false;
+  // an item mapping or a browse folder carries no membership of its own
+  if (!item || !("provider_mappings" in item)) return false;
   // favoriting forces an item into the library, so favorite implies membership
-  if ("favorite" in item && item.favorite === true) return true;
-  if ("provider_mappings" in item && Array.isArray(item.provider_mappings)) {
-    return item.provider_mappings.some((pm) => !!pm.in_library);
-  }
-  return false;
+  if (item.favorite === true) return true;
+  return (
+    Array.isArray(item.provider_mappings) &&
+    item.provider_mappings.some((pm) => !!pm.in_library)
+  );
 };
 
 /**
@@ -144,6 +139,40 @@ export const getProviderIconDomain = function (
   }
   return item.provider;
 };
+
+/**
+ * The music services an item is mapped to, named after the service itself.
+ *
+ * Several accounts of the same service share one entry: which account holds the
+ * item is a detail of the mapping, not of the item. A mapping nothing can
+ * name is left out rather than shown as its raw domain.
+ */
+export function mappedServices(item: {
+  provider_mappings: ProviderMapping[];
+}): Array<{ domain: string; name: string }> {
+  const seen = new Set<string>();
+  const services: Array<{ domain: string; name: string }> = [];
+  for (const mapping of item.provider_mappings) {
+    if (seen.has(mapping.provider_domain)) continue;
+    const name =
+      api.getProviderManifest(mapping.provider_domain)?.name ||
+      api.getProvider(mapping.provider_instance)?.name;
+    if (!name) continue;
+    seen.add(mapping.provider_domain);
+    services.push({ domain: mapping.provider_domain, name });
+  }
+  return services;
+}
+
+/**
+ * The name to show for a provider instance: the service's own name for a
+ * streaming provider, whose accounts all offer the same catalog, else the
+ * instance's name.
+ */
+export function providerServiceName(provider: ProviderInstance): string {
+  if (!provider.is_streaming_provider) return provider.name;
+  return api.providerManifests[provider.domain]?.name || provider.name;
+}
 
 /**
  * Provider icon domain for media listing tiles. Playlists always surface their
@@ -179,6 +208,23 @@ export const getProviderRootDomain = function (
   return "path" in item && item.path.endsWith("://")
     ? item.provider
     : undefined;
+};
+
+// the provider of an item the server knows only by an external id, such as a
+// MusicBrainz id or an ISRC
+export const EXTERNAL_PROVIDER = "external";
+
+/**
+ * Whether the item is known only by an external id, so not found yet in the
+ * library or on one of the user's music services.
+ *
+ * The server looks such an item up when it is opened, played or added to the
+ * library. Its is_playable flag tells whether it can be played as it is.
+ */
+export const isExternalItem = function (
+  item: MediaItemType | ItemMapping,
+): boolean {
+  return item.provider === EXTERNAL_PROVIDER;
 };
 
 export const itemIsAvailable = function (
@@ -248,11 +294,68 @@ export const getCollectionMediaTypeFromItemId = function (itemId: string) {
     : MediaType.UNKNOWN;
 };
 
+/** Whether a provider instance can store a new order for its playlists. */
+export const providerSupportsPlaylistMove = (providerInstance: string) =>
+  !!api.providers[providerInstance]?.supported_features.includes(
+    ProviderFeature.PLAYLIST_TRACKS_MOVE,
+  );
+
 /**
- * Generate a friendly device name from the user agent and browser APIs.
- * Uses User-Agent Client Hints API when available for more accurate detection.
+ * Providers that a static library playlist can be migrated to: the builtin
+ * provider and streaming providers that can create playlists and edit
+ * their tracks. Returns an empty list for dynamic, non-library, or
+ * non-track playlists (migration only moves tracks). A provider the
+ * playlist is already mapped to is still included, so same-provider-instance
+ * copies are allowed.
+ */
+export const getPlaylistMigrationProviders = function (
+  playlist: Playlist,
+): ProviderInstance[] {
+  if (
+    playlist.is_dynamic ||
+    playlist.provider !== "library" ||
+    !playlist.supported_mediatypes.includes(MediaType.TRACK)
+  )
+    return [];
+  return Object.values(api.providers)
+    .filter(
+      (provider) =>
+        provider.available &&
+        provider.type === ProviderType.MUSIC &&
+        (provider.domain === "builtin" || provider.is_streaming_provider) &&
+        (provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_CREATE,
+        ) ||
+          provider.supported_features.includes(
+            ProviderFeature.PLAYLIST_CREATE_TRACKS,
+          )) &&
+        provider.supported_features.includes(
+          ProviderFeature.PLAYLIST_TRACKS_EDIT,
+        ),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+
+/**
+ * Generate a friendly device name, such as "Web (Chrome on Mac)".
  */
 export function getDeviceName(): string {
+  const { browser, device, isPwa } = getDeviceInfo();
+  const appType = isPwa ? "PWA" : "Web";
+
+  return `${appType} (${browser} on ${device})`;
+}
+
+/**
+ * Detect the browser and device this app runs on, and whether it runs as an
+ * installed app (PWA).
+ * Uses User-Agent Client Hints API when available for more accurate detection.
+ */
+export function getDeviceInfo(): {
+  browser: string;
+  device: string;
+  isPwa: boolean;
+} {
   const ua = navigator.userAgent;
   let browser = "Browser";
   let device = "";
@@ -383,9 +486,7 @@ export function getDeviceName(): string {
     ("standalone" in navigator &&
       (navigator as Navigator & { standalone: boolean }).standalone);
 
-  const appType = isPwa ? "PWA" : "Web";
-
-  return `${appType} (${browser} on ${device})`;
+  return { browser, device, isPwa };
 }
 
 interface NavigatorUAData {

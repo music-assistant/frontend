@@ -4,6 +4,7 @@ import {
   PLAYER_ICON_IDS,
   PLAYER_ICON_OPTIONS,
 } from "@/helpers/icon";
+import { registry } from "@/components/ma-icons";
 import { describe, expect, it } from "vitest";
 
 describe("icon helpers", () => {
@@ -25,6 +26,10 @@ describe("icon helpers", () => {
           `manifest id "${id}" must resolve`,
         ).toBeDefined();
       }
+    });
+
+    it("keeps the generated registry aligned with the manifest", () => {
+      expect(Object.keys(registry).sort()).toEqual([...PLAYER_ICON_IDS].sort());
     });
 
     it("resolves custom MA icons", () => {

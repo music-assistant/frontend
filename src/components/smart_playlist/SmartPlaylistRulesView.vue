@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import { Badge } from "@/components/ui/badge";
+import { folderName } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Ban, Library, Sparkles } from "@lucide/vue";
@@ -138,6 +139,7 @@ const hasAnyInclude = computed(() => {
     !!r.genre_ids?.length ||
     !!r.artist_ids?.length ||
     !!r.album_ids?.length ||
+    !!r.folder_paths?.length ||
     !!r.album_types?.length ||
     !!r.favorites_only ||
     r.explicit !== undefined
@@ -214,6 +216,16 @@ const ruleRows = computed<RuleViewRow[]>(() => {
     });
   }
 
+  if (r.folder_paths?.length) {
+    rows.push({
+      key: "folder-is",
+      icon: fieldIcon("folder"),
+      label: $t("smart_playlist.field_folder_is"),
+      exclude: false,
+      tags: r.folder_paths.map(folderName),
+    });
+  }
+
   if (r.favorites_only) {
     rows.push({
       key: "favorite",
@@ -221,6 +233,15 @@ const ruleRows = computed<RuleViewRow[]>(() => {
       label: $t("smart_playlist.field_favorite"),
       exclude: false,
       value: $t("smart_playlist.favorites_yes"),
+    });
+  }
+  if (r.exclude_favorites) {
+    rows.push({
+      key: "favorite-not",
+      icon: Ban,
+      label: $t("smart_playlist.field_favorite"),
+      exclude: true,
+      value: $t("smart_playlist.favorites_exclude"),
     });
   }
 

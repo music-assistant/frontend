@@ -1,20 +1,25 @@
 <template>
   <Button
-    variant="ghost"
+    :variant="variant"
     size="icon-lg"
     :aria-label="$t('tooltip.toggle_queue')"
     v-bind="$attrs"
+    :title="$t('tooltip.toggle_queue')"
+    :aria-expanded="active ? 'true' : 'false'"
     :disabled="disabled"
     :class="{ 'text-primary': active }"
     @click="togglePlayerQueue"
   >
-    <ListVideo :size="size" />
+    <ListVideo
+      class="size-(--icon-size)"
+      :style="{ '--icon-size': `${size}px` }"
+    />
   </Button>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonVariants } from "@/components/ui/button";
 import {
   isPlayerQueueControlDisabled,
   togglePlayerQueue,
@@ -25,10 +30,13 @@ import { computed } from "vue";
 
 export interface Props {
   size?: number;
+  /** look of the button */
+  variant?: ButtonVariants["variant"];
 }
 
 withDefaults(defineProps<Props>(), {
   size: 20,
+  variant: "ghost",
 });
 
 const active = computed(

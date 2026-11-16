@@ -78,6 +78,34 @@ describe("stream quality presentation", () => {
     ).toBe(QualityTier.UNKNOWN);
   });
 
+  it("falls back to the input fidelity before any output has reported one", () => {
+    const quality = useStreamQuality(
+      ref(
+        audioProcessingChain({
+          input_fidelity: audioFidelity({ quality: AudioQuality.HI_RES }),
+          outputs: [],
+        }),
+      ),
+    );
+
+    expect(quality.minOutputQualityTier.value).toBe(QualityTier.HIRES);
+    expect(quality.maxOutputQualityTier.value).toBe(QualityTier.HIRES);
+  });
+
+  it("prefers a known output quality over the input fallback", () => {
+    const quality = useStreamQuality(
+      ref(
+        audioProcessingChain({
+          input_fidelity: audioFidelity({ quality: AudioQuality.HI_RES }),
+          outputs: [outputWithQuality(AudioQuality.STANDARD)],
+        }),
+      ),
+    );
+
+    expect(quality.minOutputQualityTier.value).toBe(QualityTier.GOOD);
+    expect(quality.maxOutputQualityTier.value).toBe(QualityTier.GOOD);
+  });
+
   it("returns unknown when all output qualities are unknown", () => {
     const quality = useStreamQuality(
       ref(

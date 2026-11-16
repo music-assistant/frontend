@@ -8,10 +8,20 @@ import {
   PlayerQueue,
   PlayerType,
   RepeatMode,
+  Scope,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
+import {
+  getPlayerDisplayName,
+  getPlayerIcon,
+  getPlayerName,
+  getSourceLabel,
+  isBuiltinPlayer,
+  isSelectablePlayer,
+} from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
-import { resolveLiveSource } from "@/composables/liveSource";
+import { resolveExternalSource } from "@/composables/externalSource";
+import { resolveActiveSourceId } from "@/composables/activeSource";
 import { useAnnouncement } from "@/composables/useAnnouncement";
 import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
@@ -20,7 +30,6 @@ import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuCon
 import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
 import { h, markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
-import { useShows } from "@/composables/ai-radio/useShows";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -28,6 +37,9 @@ import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { errorMessage } from "@/helpers/ai_radio";
+import { canUseQueueDj } from "@/helpers/ai_radio_access";
+import { $t } from "@/plugins/i18n";
+import { isPlaybackMode, webPlayer } from "@/plugins/web_player";
 import { toast } from "vue-sonner";
 
 export const getPlayerSetupMenuItem = (
@@ -53,6 +65,9 @@ export const getPlayerSetupMenuItem = (
 
 export const getPlayerMenuItems = (
   player: Player,
+  // the queue playing on this player, i.e. resolvePlayerQueue(player) — the
+  // shuffle and repeat state and the source those commands are aimed at are
+  // both derived from this pair
   playerQueue: PlayerQueue | undefined,
   options: {
     // which surface this menu is rendered on:
@@ -107,12 +122,18 @@ export const getPlayerMenuItems = (
   }
 
   const isDynamic = playerQueue?.is_dynamic === true;
-  // a live source orders its own session, so it takes these instead of the
+  // an external source orders its own session, so it takes these instead of the
   // queue — and it has no queue to read the state or the dynamic flag from
-  const liveSource = resolveLiveSource(player, playerQueue);
-  const shuffleSource = liveSource?.can_shuffle ? liveSource : undefined;
-  const repeatSource = liveSource?.can_repeat ? liveSource : undefined;
+  const externalSource = resolveExternalSource(player, playerQueue);
+  const shuffleSource = externalSource?.can_shuffle
+    ? externalSource
+    : undefined;
+  const repeatSource = externalSource?.can_repeat ? externalSource : undefined;
   const orderableQueue = playerQueue && !isDynamic ? playerQueue : undefined;
+  // the source the shuffle/repeat entries below are built for. Naming it on the
+  // command lets the server refuse one whose source stopped playing while the
+  // menu sat open, rather than let it land on whatever took the player since.
+  const commandSourceId = resolveActiveSourceId(player);
 
   // shuffle (queue menu only; hidden when the dedicated control is visible)
   if (isQueue && (shuffleSource || orderableQueue) && !hideShuffleRepeat) {
@@ -124,25 +145,12 @@ export const getPlayerMenuItems = (
       labelArgs: [],
       action: () => {
         // the menu can sit open while the state moves, and an update lands as
-        // an Object.assign onto these, so both the target and the value are
-        // settled at click time — the source list is a fresh array by then,
-        // hence the re-resolve
-        if (shuffleSource) {
-          const live = resolveLiveSource(player, playerQueue);
-          // the source can end while the menu sits open, and the queue that
-          // takes the player back would otherwise be shuffled by a command
-          // meant for the session — with the value the entry offered inverted
-          if (!live?.can_shuffle) return;
-          api.playerCommandShuffle(
-            player.player_id,
-            live.shuffle_enabled !== true,
-          );
-        } else {
-          api.queueCommandShuffle(
-            orderableQueue!.queue_id,
-            !orderableQueue!.shuffle_enabled,
-          );
-        }
+        // an Object.assign onto these, so the value is settled at click time —
+        // the source list is a fresh array by then, hence the re-resolve
+        const enabled = shuffleSource
+          ? resolveExternalSource(player, playerQueue)?.shuffle_enabled === true
+          : orderableQueue!.shuffle_enabled === true;
+        api.playerCommandShuffle(player.player_id, !enabled, commandSourceId);
       },
       icon: shuffleEnabled ? "mdi-shuffle-disabled" : "mdi-shuffle",
     });
@@ -154,18 +162,6 @@ export const getPlayerMenuItems = (
     const repeatMode = repeatSource
       ? (repeatSource.repeat_mode ?? RepeatMode.OFF)
       : orderableQueue!.repeat_mode;
-    // each entry sets an explicit mode, so only the target of the command has
-    // to be settled at click time rather than the mode itself
-    const setRepeatMode = (mode: RepeatMode) => {
-      if (repeatSource) {
-        // the source can end while the menu sits open; a mode meant for its
-        // session must not land on the queue that took the player back
-        if (!resolveLiveSource(player, playerQueue)?.can_repeat) return;
-        api.playerCommandRepeat(player.player_id, mode);
-      } else {
-        api.queueCommandRepeat(orderableQueue!.queue_id, mode);
-      }
-    };
     menuItems.push({
       label: "select_repeat_mode",
       labelArgs: [],
@@ -180,7 +176,7 @@ export const getPlayerMenuItems = (
         label,
         labelArgs: [],
         action: () => {
-          setRepeatMode(mode);
+          api.playerCommandRepeat(player.player_id, mode, commandSourceId);
         },
         selected: repeatMode == mode,
       })),
@@ -222,32 +218,57 @@ export const getPlayerMenuItems = (
 
   // transfer queue (both menus; only when the queue is the active source)
   if (playerQueue?.active && playerQueue.items > 0) {
+    const targets = Object.values(api.players)
+      .filter(
+        (p) =>
+          p.player_id != playerQueue!.queue_id &&
+          // this device may pull the queue of the group it is shown in
+          (p.player_id != player.player_id || isBuiltinPlayer(p)) &&
+          isSelectablePlayer(p) &&
+          // the server ungroups a synced target before it moves the queue, so
+          // this device may take the queue of the group it plays in
+          (!p.synced_to || isBuiltinPlayer(p)) &&
+          (!p.hide_in_ui || isBuiltinPlayer(p)),
+      )
+      .sort(
+        (a, b) =>
+          Number(isBuiltinPlayer(b)) - Number(isBuiltinPlayer(a)) ||
+          getPlayerDisplayName(a).localeCompare(
+            getPlayerDisplayName(b),
+            undefined,
+            { sensitivity: "base" },
+          ),
+      );
     menuItems.push({
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
-      subItems: Object.values(api.players)
-        .filter(
-          (p) =>
-            p.player_id != playerQueue!.queue_id &&
-            p.player_id != player.player_id &&
-            p.available &&
-            p.enabled &&
-            !p.synced_to &&
-            !p.hide_in_ui,
-        )
-        .map((p) => {
-          return {
-            label: p.name,
-            labelArgs: [],
-            action: () => {
+      subItems: targets.map((p, index) => {
+        const next = targets[index + 1];
+        return {
+          // "+N" marks a leader whose group plays the queue too
+          label: getPlayerName(p, Infinity),
+          labelArgs: [],
+          icon: getPlayerIcon(p),
+          separatorAfter:
+            isBuiltinPlayer(p) && next !== undefined && !isBuiltinPlayer(next),
+          action: async () => {
+            // Playback on this tab's web player starts after the transfer, so
+            // start unlocking its audio within this click (iOS keeps it silent
+            // otherwise) and only move the queue once that worked. The
+            // companion app and another tab's player play on their own.
+            if (playsInThisTab(p) && !(await webPlayer.unlockAudio())) {
+              toast.error($t("transfer_queue_no_audio"));
+              return;
+            }
+            try {
               api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
               store.activePlayerId = p.player_id;
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
+            } catch {
+              toast.error($t("error_generic"));
+            }
+          },
+        };
+      }),
     });
   }
 
@@ -264,7 +285,12 @@ export const getPlayerMenuItems = (
   }
 
   // save queue as playlist (queue menu only)
-  if (isQueue && playerQueue?.items && playerQueue.items > 0) {
+  if (
+    isQueue &&
+    playerQueue?.items &&
+    playerQueue.items > 0 &&
+    authManager.hasScope(Scope.LIBRARY_WRITE)
+  ) {
     menuItems.push({
       label: "save_queue_as_playlist",
       labelArgs: [],
@@ -287,7 +313,7 @@ export const getPlayerMenuItems = (
       subItems: selectableSources
         .map((s) => {
           return {
-            label: s.name,
+            label: getSourceLabel(player, s),
             labelArgs: [],
             disabled: s.id == player.active_source,
             selected: s.id == player.active_source,
@@ -307,24 +333,12 @@ export const getPlayerMenuItems = (
   // host is that host: render it as a single disabled row rather than the
   // hosts submenu, which would otherwise show the (now irrelevant) sticky
   // queue-DJ assignment.
-  const {
-    hosts,
-    queueDjStatus,
-    aiRadioAvailable,
-    loadHosts,
-    loadQueueDjStatus,
-  } = useHosts();
-  const { sessions, shows, loadStatus } = useShows();
-  if (isQueue && playerQueue && aiRadioAvailable.value) {
+  const { hosts, queueDjStatus, aiRadioAvailable } = useHosts();
+  if (isQueue && playerQueue && aiRadioAvailable.value && canUseQueueDj()) {
     const queueId = playerQueue.queue_id;
-    const runningSession = sessions.value.find(
-      (session) => session.status === "running" && session.queue_id === queueId,
-    );
-    if (runningSession) {
-      const show = shows.value.find((s) => s.id === runningSession.station_id);
-      const host = show
-        ? hosts.value.find((h) => h.id === show.host_id)
-        : undefined;
+    const queueDj = queueDjStatus.value[queueId];
+    if (queueDj?.station_id) {
+      const host = hosts.value.find((h) => h.id === queueDj.host_id);
       menuItems.push({
         label: host ? "ai_dj_show_on_air" : "ai_dj_show_on_air_unknown",
         labelArgs: host ? [host.name] : [],
@@ -332,7 +346,7 @@ export const getPlayerMenuItems = (
         disabled: true,
       });
     } else {
-      const activeHostId = queueDjStatus.value[queueId];
+      const activeHostId = queueDj?.host_id;
       menuItems.push({
         label: "ai_dj",
         labelArgs: [],
@@ -353,11 +367,6 @@ export const getPlayerMenuItems = (
         ],
       });
     }
-    // Best-effort staleness refresh; the menu above is already built from
-    // the prefetched caches, so a failure here has nothing to surface.
-    void loadHosts().catch(() => undefined);
-    void loadQueueDjStatus().catch(() => undefined);
-    void loadStatus().catch(() => undefined);
   }
 
   // select sound mode (player menu only; only when more than one is selectable)
@@ -405,8 +414,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // open the settings (both menus, admin only)
-  if (authManager.isAdmin()) {
+  // open the settings (both menus, for a role that changes player settings)
+  if (authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) {
     const openSettings = (path: string) => () => {
       store.showFullscreenPlayer = false;
       store.showPlayersMenu = false;
@@ -452,6 +461,18 @@ export const getPlayerMenuItems = (
 
   return menuItems;
 };
+
+/** Whether the player is (or streams to) the web player this tab plays audio on. */
+function playsInThisTab(
+  player: Pick<Player, "player_id" | "output_protocols">,
+): boolean {
+  const id = webPlayer.player_id;
+  if (!id || !isPlaybackMode(webPlayer.tabMode)) return false;
+  return (
+    player.player_id === id ||
+    player.output_protocols.some((x) => x.output_protocol_id === id)
+  );
+}
 
 /** Assigns (or clears) a queue's AI DJ host, reporting a failed command to the user. */
 async function assignQueueDj(

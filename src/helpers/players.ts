@@ -1,18 +1,60 @@
-// Shared predicates that decide which players this device owns and which of
-// them may be shown in the UI.
+// Shared helpers that decide which players this device owns, how players are
+// named and which of them may be shown in the UI.
+import {
+  DEVICE_TYPE_ICONS,
+  getLucideIcon,
+  PLAYER_ICON_FALLBACK,
+} from "@/helpers/icon";
+import { truncateString } from "@/helpers/utils";
+import { api } from "@/plugins/api";
+import { getDeviceInfo, getDeviceName } from "@/plugins/api/helpers";
 import {
   PlaybackState,
   Player,
   PlayerFeature,
+  PlayerSource,
   PlayerType,
+  ProtocolRole,
+  User,
 } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
+import type { Component } from "vue";
+
+export { isPlayerGrouped } from "@/helpers/player_grouping";
+
+// the active output of a player that plays through its own protocol
+const NATIVE_OUTPUT_PROTOCOL = "native";
+
+// the translation of every setup reason the server can give
+const SETUP_REASON_LABELS: Record<string, string> = {
+  pairing_required: "settings.setup_reason.pairing_required",
+  password_required: "settings.setup_reason.password_required",
+  // a player whose provider is not there is described like any other unavailable one
+  provider_not_installed: "settings.player_not_available",
+};
+
+/**
+ * Return the player that goes by the given id: the player with that id, or else
+ * the player that was known under it before, such as one another player was
+ * merged into.
+ */
+export const resolvePlayer = function (playerId: string): Player | undefined {
+  return (
+    api.players[playerId] ??
+    Object.values(api.players).find((player) =>
+      player.legacy_ids.includes(playerId),
+    )
+  );
+};
 
 /**
  * Check if the player is (or streams to) the built-in player of this device.
  */
-export const isBuiltinPlayer = function (player: Player): boolean {
+export const isBuiltinPlayer = function (
+  player: Pick<Player, "player_id" | "output_protocols">,
+): boolean {
   return (
     player.player_id === webPlayer.player_id ||
     player.player_id === store.companionPlayerId ||
@@ -22,6 +64,72 @@ export const isBuiltinPlayer = function (player: Player): boolean {
         x.output_protocol_id === store.companionPlayerId,
     )
   );
+};
+
+/**
+ * Return the name to show for the player during playback.
+ *
+ * The built-in player of this device is shown as "This device"; settings show
+ * the player's real name instead.
+ */
+export const getPlayerDisplayName = function (
+  player: Pick<Player, "player_id" | "name" | "output_protocols">,
+): string {
+  return isBuiltinPlayer(player) ? $t("this_device") : player.name;
+};
+
+/**
+ * Return the icon to show for the player in menus.
+ *
+ * The built-in player of this device keeps its form-factor icon until the user
+ * picks another one.
+ */
+export const getPlayerIcon = function (
+  player: Pick<Player, "player_id" | "icon" | "output_protocols">,
+): Component | undefined {
+  if (
+    isBuiltinPlayer(player) &&
+    (!player.icon || player.icon === PLAYER_ICON_FALLBACK)
+  ) {
+    return DEVICE_TYPE_ICONS[store.deviceType];
+  }
+  return getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK);
+};
+
+/**
+ * Return the display name of the player, truncated to the given length and
+ * suffixed with "+N" when N other players are synced to it.
+ */
+export const getPlayerName = function (player: Player, truncate = 26) {
+  if (!player) return "";
+  const availableChildPlayers = player.group_members.filter(
+    (x) => api.players[x]?.available && x != player.player_id,
+  );
+  const name = getPlayerDisplayName(player);
+  if (player.type != PlayerType.GROUP && availableChildPlayers.length) {
+    return `${truncateString(name, truncate - 3)} +${
+      availableChildPlayers.length
+    }`;
+  }
+  return truncateString(name, truncate);
+};
+
+/**
+ * Return the name the built-in web player registers with, such as
+ * "Marcel's Mac (Chrome)", or "Marcel's iPhone (App)" for an installed app.
+ * Falls back to getDeviceName() when the owner is unknown.
+ */
+export const getWebPlayerName = function (owner?: User): string {
+  if (!owner) return getDeviceName();
+  const { browser, device, isPwa } = getDeviceInfo();
+  const ownerName = (owner.display_name?.trim() || owner.username).split(
+    /\s+/,
+  )[0];
+  return $t("web_player_name", {
+    owner: ownerName,
+    device,
+    client: isPwa ? "App" : browser,
+  });
 };
 
 export const isPlayerActive = function (player: Player): boolean {
@@ -35,15 +143,20 @@ export const isPlayerActive = function (player: Player): boolean {
  * Check if the player may be shown to the user.
  *
  * Set allowGroupChilds to also include players that are synced to or part of a
- * group, and allowNeedsSetup to include players that still need to be set up.
+ * group, allowNeedsSetup to include players that still need to be set up, and
+ * allowSources to include capture-only audio input devices.
  */
 export const playerVisible = function (
   player: Player,
   allowGroupChilds = false,
   allowNeedsSetup = false,
+  allowSources = false,
 ): boolean {
   // perform some basic checks if we may use/show the player
   if (!player.enabled) return false;
+  // A capture-only device renders nothing: list it only where it is presented
+  // as an audio input (opt-in via allowSources), never among playback targets.
+  if (player.type === PlayerType.SOURCE && !allowSources) return false;
   if (player.synced_to && !allowGroupChilds) {
     return false;
   }
@@ -58,19 +171,113 @@ export const playerVisible = function (
   if (isBuiltinPlayer(player)) {
     return true;
   }
-  if (player.hide_in_ui) {
+  // Audio inputs are hidden by default, so keep one that needs setup listed
+  // where its setup can start.
+  if (
+    player.hide_in_ui &&
+    !(
+      player.type === PlayerType.SOURCE &&
+      player.needs_setup &&
+      allowNeedsSetup
+    )
+  ) {
     return false;
   }
   if (
     store.currentUser &&
     store.currentUser.player_filter.length > 0 &&
-    !store.currentUser.player_filter.includes(player.player_id)
+    // the filter of this session can still name an id the player had before a merge
+    !store.currentUser.player_filter.some(
+      (playerId) =>
+        playerId === player.player_id || player.legacy_ids.includes(playerId),
+    )
   ) {
     // for non-admin users, the playerfilter is applied in the backend
     // but for admin users we need to filter here as well
     return false;
   }
   return true;
+};
+
+/**
+ * Check if the player is unavailable.
+ *
+ * A needs_setup player is also serialized as unavailable, but it has its own
+ * "Start Setup" CTA, so it does not count as unavailable here - see the
+ * matching note on playerVisible function.
+ */
+export const isPlayerUnavailable = function (
+  player: Player | null | undefined,
+): boolean {
+  return !(player?.available ?? false) && !(player?.needs_setup ?? false);
+};
+
+/**
+ * Return why the player needs setup or can not play at all, such as "Pairing
+ * required", or undefined when it gave no reason this frontend knows.
+ */
+export const getPlayerSetupReason = function (
+  player: Pick<Player, "setup_reason"> | null | undefined,
+): string | undefined {
+  const label = player?.setup_reason
+    ? SETUP_REASON_LABELS[player.setup_reason]
+    : undefined;
+  return label ? $t(label) : undefined;
+};
+
+/**
+ * Check if the player may become the active playback target.
+ *
+ * Capture-only audio inputs are listed for discoverability but never render
+ * audio, so they can never be selected.
+ */
+export const isSelectablePlayer = function (
+  player: Player | null | undefined,
+): boolean {
+  return Boolean(
+    player?.enabled &&
+    player.available &&
+    !player.needs_setup &&
+    player.type !== PlayerType.SOURCE,
+  );
+};
+
+/**
+ * Return the name of the protocol an app Music Assistant did not start plays on
+ * the player, such as "Chromecast", or undefined when no such app plays or the
+ * name of its source already says so.
+ */
+export const getAppProtocolName = function (
+  player: Player,
+): string | undefined {
+  const source = player.source_list.find(
+    (x) => x.id === player.active_source && x.passive,
+  );
+  if (!source) return undefined;
+  if (
+    player.active_output_protocol &&
+    player.active_output_protocol !== NATIVE_OUTPUT_PROTOCOL
+  )
+    return undefined;
+  // native playback marks the own protocol active; an app always plays on an audio protocol
+  const protocol = player.protocols.find(
+    (x) => x.active && x.role === ProtocolRole.AUDIO,
+  );
+  const name = protocol && api.providerManifests[protocol.domain]?.name;
+  return name && name !== source.name ? name : undefined;
+};
+
+/**
+ * Return the name to show for a source of the player: its own name, followed by
+ * the protocol it plays on when an app Music Assistant did not start plays it.
+ */
+export const getSourceLabel = function (
+  player: Player,
+  source: PlayerSource,
+): string {
+  const protocolName =
+    source.id === player.active_source ? getAppProtocolName(player) : undefined;
+  return protocolName ? `${source.name} • ${protocolName}` : source.name;
 };
 
 /**
@@ -87,12 +294,13 @@ export const groupMemberPickerVisible = function (player: Player): boolean {
 /**
  * Check if the player can take part in grouping.
  *
- * Capture-only devices report an unknown type: they exist so the device still
- * has a settings page, but they render nothing, so they are never offered as
- * a group member.
+ * Capture-only devices (audio inputs, or a player of an unknown type) render
+ * nothing, so they are never offered as a group member.
  */
 export const canBeGroupMember = function (player: Player): boolean {
-  return player.type !== PlayerType.UNKNOWN;
+  return (
+    player.type !== PlayerType.UNKNOWN && player.type !== PlayerType.SOURCE
+  );
 };
 
 /**
@@ -124,10 +332,4 @@ export const getPlayerGroupMemberCount = function (player: Player): number {
     player.group_members.filter((playerId) => playerId !== player.player_id),
   ).size;
   return player.type === PlayerType.GROUP ? childCount : childCount + 1;
-};
-
-export const isPlayerGrouped = function (player: Player): boolean {
-  return player.type === PlayerType.GROUP
-    ? player.group_members.length > 0
-    : player.group_members.some((playerId) => playerId !== player.player_id);
 };

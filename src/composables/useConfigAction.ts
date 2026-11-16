@@ -6,8 +6,9 @@
 
 import type { Ref } from "vue";
 import { toast } from "vue-sonner";
+import { showActionResult } from "@/helpers/action_result";
 import { mergeActionEntries } from "@/helpers/config_entry_ui";
-import { openActionResultUrl, openActionUrlEntries } from "@/helpers/utils";
+import { openActionUrlEntries } from "@/helpers/utils";
 import type {
   Config,
   ConfigActionResult,
@@ -52,8 +53,7 @@ export function useConfigAction<T extends Config>({
       if (!Array.isArray(response)) {
         // A result only reports the outcome of the action: it never carries
         // values, so the form is left untouched.
-        openActionResultUrl(response.open_url);
-        toast.success(response.message || $t("settings.action_completed"));
+        showActionResult(response);
         return;
       }
       const entries = openActionUrlEntries(response);
@@ -76,10 +76,8 @@ export function useConfigAction<T extends Config>({
           config.value!.values[key] = entry;
         }
       }
-    } catch (err) {
-      // the api rejects with a plain string, but a dropped connection rejects
-      // with an Error whose name would otherwise be prefixed onto the toast
-      toast.error(err instanceof Error ? err.message : String(err));
+    } catch {
+      // the api reports the failure itself
     } finally {
       loading.value = false;
     }

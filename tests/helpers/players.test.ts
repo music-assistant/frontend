@@ -1,11 +1,20 @@
 import {
   canBeGroupMember,
   canEditPlayerGroup,
+  getAppProtocolName,
+  getPlayerDisplayName,
   getPlayerGroupMemberCount,
+  getPlayerIcon,
+  getPlayerName,
+  getPlayerSetupReason,
+  getSourceLabel,
+  getWebPlayerName,
   groupMemberPickerVisible,
   isBuiltinPlayer,
   isPlayerGrouped,
+  isSelectablePlayer,
   playerVisible,
+  resolvePlayer,
 } from "@/helpers/players";
 import {
   IdentifierType,
@@ -13,17 +22,31 @@ import {
   PlaybackState,
   type Player,
   PlayerFeature,
+  type PlayerProtocolInfo,
+  type PlayerSource,
   PlayerType,
+  ProtocolRole,
+  type ProviderManifest,
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
+import { DEVICE_TYPE_ICONS, getLucideIcon } from "@/helpers/icon";
+import { api } from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
 import { user } from "../fixtures/user";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/plugins/api", () => ({
+  api: { players: {}, providerManifests: {} },
+}));
 
 vi.mock("@/plugins/store", () => ({
-  store: { companionPlayerId: undefined, currentUser: undefined },
+  store: {
+    companionPlayerId: undefined,
+    currentUser: undefined,
+    deviceType: "phone",
+  },
 }));
 
 vi.mock("@/plugins/web_player", () => ({
@@ -70,6 +93,9 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     mute_control: "mute",
     needs_setup: false,
     has_setup_flow: false,
+    setup_reason: null,
+    legacy_ids: [],
+    protocols: [],
     playback_state: PlaybackState.IDLE,
     output_protocols: [],
     active_output_protocol: null,
@@ -84,6 +110,8 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    sleep_timer_mode: null,
+    active_source_audio: null,
     ...overrides,
   };
 }
@@ -113,6 +141,7 @@ function createAdminUser(playerFilter: string[]): User {
 }
 
 beforeEach(() => {
+  api.players = {};
   store.companionPlayerId = undefined;
   store.currentUser = undefined;
   webPlayer.player_id = null;
@@ -168,6 +197,131 @@ describe("isBuiltinPlayer", () => {
   });
 });
 
+describe("getPlayerDisplayName", () => {
+  it("names the built-in player after this device", () => {
+    const player = createPlayer({ name: "Marcel's Mac (Chrome)" });
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerDisplayName(player)).toBe("This device");
+  });
+
+  it("keeps the name of a player of another device", () => {
+    expect(getPlayerDisplayName(createPlayer({ name: "Kitchen" }))).toBe(
+      "Kitchen",
+    );
+  });
+});
+
+describe("getPlayerIcon", () => {
+  it("shows the device icon for this device with the default icon", () => {
+    const player = createPlayer();
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerIcon(player)).toBe(DEVICE_TYPE_ICONS.phone);
+  });
+
+  it("shows the icon the user picked for this device", () => {
+    const player = createPlayer({ icon: "headphones" });
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerIcon(player)).toBe(getLucideIcon("headphones"));
+  });
+
+  it("shows the player icon for a player of another device", () => {
+    expect(getPlayerIcon(createPlayer({ icon: "headphones" }))).toBe(
+      getLucideIcon("headphones"),
+    );
+  });
+});
+
+describe("getPlayerName", () => {
+  it("names the built-in player after this device", () => {
+    const player = createPlayer({ name: "Marcel's Mac (Chrome)" });
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerName(player)).toBe("This device");
+  });
+
+  it("counts the available players synced to the built-in player", () => {
+    const player = createPlayer({
+      group_members: ["player", "office", "patio"],
+    });
+    api.players = {
+      office: createPlayer({ player_id: "office" }),
+      patio: createPlayer({ player_id: "patio", available: false }),
+    };
+    webPlayer.player_id = player.player_id;
+
+    expect(getPlayerName(player)).toBe("This device +1");
+  });
+
+  it("truncates a long name", () => {
+    expect(getPlayerName(createPlayer({ name: "Living room" }), 6)).toBe(
+      "Living...",
+    );
+  });
+});
+
+describe("getWebPlayerName", () => {
+  const MAC_CHROME =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
+  const IPHONE_SAFARI =
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const originalUserAgent = Object.getOwnPropertyDescriptor(
+    navigator,
+    "userAgent",
+  );
+
+  function emulate(userAgent: string, installed = false) {
+    Object.defineProperty(navigator, "userAgent", {
+      configurable: true,
+      value: userAgent,
+    });
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: installed && query === "(display-mode: standalone)",
+    }));
+  }
+
+  afterEach(() => {
+    if (originalUserAgent) {
+      Object.defineProperty(navigator, "userAgent", originalUserAgent);
+    } else {
+      Reflect.deleteProperty(navigator, "userAgent");
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it("names the player after the first name of its owner", () => {
+    emulate(MAC_CHROME);
+
+    expect(
+      getWebPlayerName(user({ display_name: "Marcel van der Veldt" })),
+    ).toBe("Marcel's Mac (Chrome)");
+  });
+
+  it("falls back to the username without a display name", () => {
+    emulate(MAC_CHROME);
+
+    expect(
+      getWebPlayerName(user({ display_name: null, username: "marcel" })),
+    ).toBe("marcel's Mac (Chrome)");
+  });
+
+  it("names an installed app after the app instead of the browser", () => {
+    emulate(IPHONE_SAFARI, true);
+
+    expect(getWebPlayerName(user({ display_name: "Marcel" }))).toBe(
+      "Marcel's iPhone (App)",
+    );
+  });
+
+  it("keeps the device name without a known owner", () => {
+    emulate(MAC_CHROME);
+
+    expect(getWebPlayerName(undefined)).toBe("Web (Chrome on Mac)");
+  });
+});
+
 describe("playerVisible", () => {
   it("hides a disabled player", () => {
     expect(playerVisible(createPlayer({ enabled: false }))).toBe(false);
@@ -218,6 +372,42 @@ describe("playerVisible", () => {
     expect(playerVisible(createPlayer({ hide_in_ui: true }))).toBe(false);
   });
 
+  it("lists an audio input only where sources are opted in", () => {
+    const player = createPlayer({ type: PlayerType.SOURCE });
+
+    expect(playerVisible(player)).toBe(false);
+    expect(playerVisible(player, false, false, true)).toBe(true);
+  });
+
+  it("lists a hidden audio input only while it needs setup", () => {
+    const player = createPlayer({
+      type: PlayerType.SOURCE,
+      hide_in_ui: true,
+      available: false,
+      needs_setup: true,
+    });
+
+    expect(playerVisible(player, false, true, true)).toBe(true);
+    expect(
+      playerVisible(
+        { ...player, available: true, needs_setup: false },
+        false,
+        true,
+        true,
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps a hidden speaker that needs setup hidden", () => {
+    const player = createPlayer({
+      hide_in_ui: true,
+      available: false,
+      needs_setup: true,
+    });
+
+    expect(playerVisible(player, false, true)).toBe(false);
+  });
+
   it("shows the hidden player of this device", () => {
     const player = createPlayer({
       player_id: "local-web-player",
@@ -238,6 +428,18 @@ describe("playerVisible", () => {
     store.currentUser = createAdminUser(["player"]);
 
     expect(playerVisible(createPlayer({ player_id: "player" }))).toBe(true);
+  });
+
+  it("shows a player that the user filter names by an id it was known under before", () => {
+    // a connected session keeps the filter it signed in with, also after the
+    // server moved it to the player another one was merged into
+    store.currentUser = createAdminUser(["absorbed"]);
+
+    expect(
+      playerVisible(
+        createPlayer({ player_id: "player", legacy_ids: ["absorbed"] }),
+      ),
+    ).toBe(true);
   });
 
   it("shows all players when the user filter is empty", () => {
@@ -333,6 +535,82 @@ describe("canBeGroupMember", () => {
     expect(canBeGroupMember(createPlayer({ type: PlayerType.UNKNOWN }))).toBe(
       false,
     );
+    expect(canBeGroupMember(createPlayer({ type: PlayerType.SOURCE }))).toBe(
+      false,
+    );
+  });
+});
+
+describe("isSelectablePlayer", () => {
+  it("accepts a healthy regular player", () => {
+    expect(isSelectablePlayer(createPlayer())).toBe(true);
+  });
+
+  it("rejects an audio input, even a fully set up one", () => {
+    expect(isSelectablePlayer(createPlayer({ type: PlayerType.SOURCE }))).toBe(
+      false,
+    );
+  });
+
+  it("rejects a player that still needs setup", () => {
+    expect(
+      isSelectablePlayer(createPlayer({ available: false, needs_setup: true })),
+    ).toBe(false);
+  });
+
+  it("rejects a missing player", () => {
+    expect(isSelectablePlayer(undefined)).toBe(false);
+  });
+});
+
+describe("resolvePlayer", () => {
+  it("finds a player by its own id", () => {
+    const player = createPlayer({ player_id: "kitchen" });
+    api.players = { kitchen: player };
+
+    expect(resolvePlayer("kitchen")).toBe(player);
+  });
+
+  it("finds a player by an id it was known under before", () => {
+    const player = createPlayer({ player_id: "kitchen", legacy_ids: ["old"] });
+    api.players = { kitchen: player };
+
+    expect(resolvePlayer("old")).toBe(player);
+  });
+
+  it("prefers the player that has the id itself", () => {
+    const merged = createPlayer({ player_id: "merged", legacy_ids: ["attic"] });
+    const attic = createPlayer({ player_id: "attic" });
+    api.players = { merged, attic };
+
+    expect(resolvePlayer("attic")).toBe(attic);
+  });
+
+  it("finds nothing for an id no player goes by", () => {
+    api.players = { kitchen: createPlayer({ player_id: "kitchen" }) };
+
+    expect(resolvePlayer("attic")).toBeUndefined();
+  });
+});
+
+describe("getPlayerSetupReason", () => {
+  it.each([
+    ["pairing_required", "Pairing required"],
+    ["password_required", "Password required"],
+    // the same words as any other player that is not available
+    ["provider_not_installed", "This player is not (yet) available"],
+  ])("names the reason %s", (reason, text) => {
+    expect(getPlayerSetupReason(createPlayer({ setup_reason: reason }))).toBe(
+      text,
+    );
+  });
+
+  it("names nothing for a reason it does not know, or none", () => {
+    expect(
+      getPlayerSetupReason(createPlayer({ setup_reason: "something_new" })),
+    ).toBeUndefined();
+    expect(getPlayerSetupReason(createPlayer())).toBeUndefined();
+    expect(getPlayerSetupReason(undefined)).toBeUndefined();
   });
 });
 
@@ -397,5 +675,160 @@ describe("player group controls", () => {
     expect(isPlayerGrouped(createPlayer({ group_members: ["player"] }))).toBe(
       false,
     );
+  });
+});
+
+describe("getAppProtocolName", () => {
+  const ownQueue: PlayerSource = {
+    id: "player",
+    name: "Music Assistant Queue",
+    passive: false,
+    can_play_pause: true,
+    can_seek: true,
+    can_next_previous: true,
+    can_shuffle: true,
+    can_repeat: true,
+    shuffle_enabled: null,
+    repeat_mode: null,
+  };
+
+  function createSource(overrides: Partial<PlayerSource>): PlayerSource {
+    return { ...ownQueue, id: "app", name: "YouTube Music", ...overrides };
+  }
+
+  function createProtocol(
+    overrides: Partial<PlayerProtocolInfo>,
+  ): PlayerProtocolInfo {
+    return {
+      protocol_id: "own",
+      domain: "sonos",
+      provider: "sonos",
+      role: ProtocolRole.NATIVE,
+      available: true,
+      active: false,
+      ...overrides,
+    };
+  }
+
+  const chromecast = createProtocol({
+    protocol_id: "cast",
+    domain: "chromecast",
+    provider: "chromecast",
+    role: ProtocolRole.AUDIO,
+  });
+  const airplay = createProtocol({
+    protocol_id: "airplay",
+    domain: "airplay",
+    provider: "airplay",
+    role: ProtocolRole.AUDIO,
+  });
+
+  function createAppPlayer(overrides: Partial<Player> = {}): Player {
+    return createPlayer({
+      active_source: "app",
+      source_list: [ownQueue, createSource({ passive: true })],
+      protocols: [createProtocol({}), { ...chromecast, active: true }, airplay],
+      ...overrides,
+    });
+  }
+
+  beforeEach(() => {
+    api.providerManifests.chromecast = {
+      name: "Chromecast",
+    } as ProviderManifest;
+    api.providerManifests.airplay = { name: "AirPlay" } as ProviderManifest;
+  });
+
+  afterEach(() => {
+    delete api.providerManifests.chromecast;
+    delete api.providerManifests.airplay;
+  });
+
+  it("names the protocol an app from outside plays on", () => {
+    expect(getAppProtocolName(createAppPlayer())).toBe("Chromecast");
+    expect(
+      getAppProtocolName(createAppPlayer({ active_output_protocol: "native" })),
+    ).toBe("Chromecast");
+  });
+
+  it("names nothing while Music Assistant's own output is active", () => {
+    expect(
+      getAppProtocolName(
+        createAppPlayer({
+          active_output_protocol: "airplay",
+          protocols: [
+            createProtocol({}),
+            chromecast,
+            { ...airplay, active: true },
+          ],
+        }),
+      ),
+    ).toBeUndefined();
+    // the own protocol is marked active for native playback
+    expect(
+      getAppProtocolName(
+        createAppPlayer({
+          active_output_protocol: "native",
+          protocols: [createProtocol({ active: true }), chromecast, airplay],
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("names nothing while the player plays its own queue", () => {
+    expect(
+      getAppProtocolName(createAppPlayer({ active_source: "player" })),
+    ).toBeUndefined();
+    expect(
+      getAppProtocolName(createAppPlayer({ active_source: null })),
+    ).toBeUndefined();
+  });
+
+  it("names nothing without protocols", () => {
+    expect(getAppProtocolName(createAppPlayer({ protocols: [] }))).toBe(
+      undefined,
+    );
+    // a server that marks no protocol active
+    expect(
+      getAppProtocolName(
+        createAppPlayer({
+          protocols: [createProtocol({}), chromecast, airplay],
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("names nothing when the source already carries the protocol's name", () => {
+    expect(
+      getAppProtocolName(
+        createAppPlayer({
+          source_list: [
+            ownQueue,
+            createSource({ name: "AirPlay", passive: true }),
+          ],
+          protocols: [
+            createProtocol({}),
+            chromecast,
+            { ...airplay, active: true },
+          ],
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("never names a protocol by its domain", () => {
+    delete api.providerManifests.chromecast;
+    expect(getAppProtocolName(createAppPlayer())).toBeUndefined();
+  });
+
+  it("labels the active source with the protocol its app plays on", () => {
+    const player = createAppPlayer();
+    expect(getSourceLabel(player, player.source_list[1])).toBe(
+      "YouTube Music • Chromecast",
+    );
+    expect(getSourceLabel(player, ownQueue)).toBe("Music Assistant Queue");
+    expect(
+      getSourceLabel(createAppPlayer({ protocols: [] }), player.source_list[1]),
+    ).toBe("YouTube Music");
   });
 });

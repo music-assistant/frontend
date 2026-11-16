@@ -1,21 +1,46 @@
 import {
+  type BackgroundTask,
+  AlbumType,
+  ArtistType,
   type CommandMessage,
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  EventType,
+  type EventMessage,
+  ListingType,
+  MediaType,
+  type Player,
+  PlaylistMatchPolicy,
+  type ProviderInstance,
+  RepeatMode,
+  SortDirection,
+  SortField,
+  type Scope,
   type ServerInfoMessage,
   type SuccessResultMessage,
+  TaskStatus,
+  UserRole,
 } from "@/plugins/api/interfaces";
+import { getIngressClientKey } from "@/helpers/ingress";
+import { eventbus, type StreamHeldDialogEvent } from "@/plugins/eventbus";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { playerQueue } from "../../fixtures/playerQueue";
+import { playlist } from "../../fixtures/playlist";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
+import { userSummary } from "../../fixtures/user";
 
-const { mockToastError } = vi.hoisted(() => ({
+const { hasScope, mockToastError, mockToastInfo } = vi.hoisted(() => ({
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
   mockToastError: vi.fn(),
+  mockToastInfo: vi.fn(),
 }));
 
 vi.mock("vue-sonner", () => ({
   toast: {
     error: mockToastError,
+    info: mockToastInfo,
   },
 }));
 
@@ -32,10 +57,15 @@ vi.mock("@/plugins/store", () => ({
   store: {},
 }));
 
+vi.mock("@/plugins/auth", () => ({
+  authManager: { hasScope },
+}));
+
 import {
   ApiCommandError,
   ConnectionLostError,
   ConnectionState,
+  MIN_SERVER_SCHEMA_VERSION,
   MusicAssistantApi,
 } from "@/plugins/api";
 
@@ -49,6 +79,10 @@ const SERVER_INFO: ServerInfoMessage = {
   homeassistant_addon: false,
   onboard_done: true,
   status: CoreState.RUNNING,
+  internal_url: "http://test.local",
+  external_url: null,
+  has_remote_access: false,
+  unsupported_install: false,
 };
 
 class TestTransport extends BaseTransport {
@@ -77,7 +111,11 @@ class TestTransport extends BaseTransport {
   }
 
   receive(
-    message: ServerInfoMessage | SuccessResultMessage | ErrorResultMessage,
+    message:
+      | ServerInfoMessage
+      | SuccessResultMessage
+      | ErrorResultMessage
+      | EventMessage,
   ): void {
     this.emit("message", JSON.stringify(message));
   }
@@ -95,12 +133,21 @@ describe("MusicAssistantApi error handling", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     api = new MusicAssistantApi();
     transport = new TestTransport();
     const initialization = api.initialize(transport);
     transport.receive(SERVER_INFO);
     await initialization;
     expect(api.state.value).toBe(ConnectionState.CONNECTED);
+    // answer what the api sends on connect, so no command is left in flight
+    for (const command of transport.sentCommands) {
+      transport.receive({
+        message_id: command.message_id!,
+        result: null,
+        partial: false,
+      });
+    }
   });
 
   afterEach(() => {
@@ -156,6 +203,823 @@ describe("MusicAssistantApi error handling", () => {
     expect(consoleDebug).not.toHaveBeenCalled();
   });
 
+  it.each([
+    "top_items",
+    "plays_over_time",
+    "listening_activity",
+    "listening_time",
+    "genre_distribution",
+    "decade_distribution",
+  ])("sends the browser IANA timezone for statistics/%s", async (command) => {
+    const resolvedOptions = Intl.DateTimeFormat().resolvedOptions();
+    vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+      ...resolvedOptions,
+      timeZone: "Europe/Berlin",
+    });
+    const calls: Record<string, () => Promise<unknown>> = {
+      top_items: () => api.getTopItems(MediaType.TRACK),
+      plays_over_time: () => api.getPlaysOverTime(),
+      listening_activity: () => api.getListeningActivity(),
+      listening_time: () => api.getListeningTime(),
+      genre_distribution: () => api.getGenreDistribution(),
+      decade_distribution: () => api.getDecadeDistribution(),
+    };
+
+    const request = calls[command]();
+
+    expect(transport.lastCommand.command).toBe(`statistics/${command}`);
+    expect(transport.lastCommand.args).toEqual(
+      expect.objectContaining({ timezone: "Europe/Berlin" }),
+    );
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("caches sort options per listing until disconnect", async () => {
+    const firstRequest = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    const concurrentRequest = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    const sortOptionsRequests = () =>
+      transport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      );
+
+    expect(sortOptionsRequests()).toHaveLength(1);
+    expect(transport.lastCommand.command).toBe("music/sort_options");
+    expect(transport.lastCommand.args).toEqual({ listing: "library_genres" });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(
+      Promise.all([firstRequest, concurrentRequest]),
+    ).resolves.toEqual([[], []]);
+
+    await expect(
+      api.getSortOptions(ListingType.LIBRARY_GENRES),
+    ).resolves.toEqual([]);
+    expect(sortOptionsRequests()).toHaveLength(1);
+
+    api.disconnect();
+    const reconnectTransport = new TestTransport();
+    const initialization = api.initialize(reconnectTransport);
+    reconnectTransport.receive(SERVER_INFO);
+    await initialization;
+
+    const afterDisconnect = api.getSortOptions(ListingType.LIBRARY_GENRES);
+    expect(
+      reconnectTransport.sentCommands.filter(
+        (command) => command.command === "music/sort_options",
+      ),
+    ).toHaveLength(1);
+    reconnectTransport.receive({
+      message_id: reconnectTransport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(afterDisconnect).resolves.toEqual([]);
+  });
+
+  it.each([
+    [ListingType.LIBRARY_ARTISTS, "library_artists"],
+    [ListingType.LIBRARY_ALBUMS, "library_albums"],
+    [ListingType.LIBRARY_TRACKS, "library_tracks"],
+    [ListingType.LIBRARY_PLAYLISTS, "library_playlists"],
+    [ListingType.LIBRARY_RADIOS, "library_radios"],
+    [ListingType.LIBRARY_AUDIOBOOKS, "library_audiobooks"],
+    [ListingType.LIBRARY_PODCASTS, "library_podcasts"],
+    [ListingType.LIBRARY_GENRES, "library_genres"],
+  ] as const)(
+    "requests sort options for %s using listing %s",
+    async (listingType, listing) => {
+      const request = api.getSortOptions(listingType);
+
+      expect(transport.lastCommand.command).toBe("music/sort_options");
+      expect(transport.lastCommand.args).toEqual({ listing });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it("sends typed sort fields for library listings", async () => {
+    const sortedRequest = api.getLibraryTracks(
+      false,
+      undefined,
+      20,
+      10,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toMatchObject({
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.DESC,
+    });
+    expect(transport.lastCommand.args).not.toHaveProperty("order_by");
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(sortedRequest).resolves.toEqual([]);
+  });
+
+  it.each([true, false, undefined])(
+    "sends album track parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getAlbumTracks(
+        "album-1",
+        "spotify",
+        true,
+        "live",
+        20,
+        40,
+        SortField.DURATION,
+        SortDirection.DESC,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/albums/album_tracks");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "album-1",
+        provider_instance_id_or_domain: "spotify",
+        in_library_only: true,
+        search: "live",
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+        limit: 20,
+        offset: 40,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it("sends typed paging parameters for playlist tracks", async () => {
+    const request = api.getPlaylistTracks(
+      "playlist-1",
+      "spotify",
+      true,
+      true,
+      "live",
+      20,
+      40,
+      SortField.POSITION,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/playlists/playlist_tracks",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "playlist-1",
+      provider_instance_id_or_domain: "spotify",
+      force_refresh: true,
+      favorite: true,
+      search: "live",
+      sort_field: SortField.POSITION,
+      sort_direction: SortDirection.ASC,
+      limit: 20,
+      offset: 40,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for podcast episodes", async () => {
+    const request = api.getPodcastEpisodes(
+      "podcast-1",
+      "rss",
+      false,
+      "interview",
+      20,
+      40,
+      SortField.POSITION,
+      SortDirection.DESC,
+      "episode-current",
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/podcasts/podcast_episodes",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "podcast-1",
+      provider_instance_id_or_domain: "rss",
+      fully_played: false,
+      search: "interview",
+      sort_field: SortField.POSITION,
+      sort_direction: SortDirection.DESC,
+      limit: 20,
+      offset: 40,
+      exclude_item_id: "episode-current",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for similar tracks", async () => {
+    const request = api.getSimilarTracks(
+      "track-1",
+      "spotify",
+      20,
+      "live",
+      40,
+      SortField.NAME,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/similar_tracks");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "track-1",
+      provider_instance_id_or_domain: "spotify",
+      limit: 20,
+      search: "live",
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.ASC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for browse", async () => {
+    const request = api.browse(
+      "spotify://albums",
+      "player-1",
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.NAME,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/browse");
+    expect(transport.lastCommand.args).toEqual({
+      path: "spotify://albums",
+      player_id: "player-1",
+      search: "live",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.DESC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for artist appearances", async () => {
+    const request = api.getArtistAppearsOn(
+      "artist-1",
+      "library",
+      undefined,
+      "live",
+      20,
+      40,
+      SortField.ORIGINAL,
+      undefined,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_appears_on",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: undefined,
+      search: "live",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.ORIGINAL,
+      sort_direction: undefined,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends the artist listing count commands the server offers", () => {
+    const types = [AlbumType.SINGLE, AlbumType.EP];
+    const sent = () => [
+      transport.lastCommand.command,
+      transport.lastCommand.args,
+    ];
+
+    void api.getArtistTracksCount("artist-1", "library");
+    expect(sent()).toEqual([
+      "music/artists/artist_tracks_count",
+      expect.objectContaining({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+      }),
+    ]);
+    void api.getArtistAlbumsCount(
+      "artist-1",
+      "spotify--1",
+      undefined,
+      undefined,
+      types,
+    );
+    expect(sent()).toEqual([
+      "music/artists/artist_albums_count",
+      expect.objectContaining({
+        provider_instance_id_or_domain: "spotify--1",
+        album_types: types,
+      }),
+    ]);
+    void api.getArtistAppearsOnCount("artist-1", "library");
+    expect(sent()[0]).toBe("music/artists/artist_appears_on_count");
+    void api.getArtistDiscographyCount("artist-1", undefined, types);
+    expect(sent()).toEqual([
+      "music/artists/discography_count",
+      expect.objectContaining({
+        provider_instance_id_or_domain: "library",
+        album_types: types,
+      }),
+    ]);
+  });
+
+  it("sends a random seed with library track listings", async () => {
+    const request = api.getLibraryTracks(
+      undefined,
+      undefined,
+      20,
+      40,
+      SortField.RANDOM,
+      undefined,
+      undefined,
+      undefined,
+      1234,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/tracks/library_items");
+    expect(transport.lastCommand.args).toEqual({
+      favorite: undefined,
+      search: undefined,
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.RANDOM,
+      sort_direction: undefined,
+      provider: undefined,
+      genre: undefined,
+      random_seed: 1234,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends random seeds with every random-capable library listing", async () => {
+    const seed = 1234;
+    const requests: Array<{
+      command: string;
+      request: () => Promise<unknown>;
+    }> = [
+      {
+        command: "music/artists/library_items",
+        request: () =>
+          api.getLibraryArtists(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/albums/library_items",
+        request: () =>
+          api.getLibraryAlbums(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/playlists/library_items",
+        request: () =>
+          api.getLibraryPlaylists(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/radios/library_items",
+        request: () =>
+          api.getLibraryRadios(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/audiobooks/library_items",
+        request: () =>
+          api.getLibraryAudiobooks(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/podcasts/library_items",
+        request: () =>
+          api.getLibraryPodcasts(
+            undefined,
+            undefined,
+            20,
+            40,
+            SortField.RANDOM,
+            undefined,
+            undefined,
+            undefined,
+            seed,
+          ),
+      },
+      {
+        command: "music/genres/library_items",
+        request: () =>
+          api.getLibraryGenres({
+            limit: 20,
+            offset: 40,
+            sort_field: SortField.RANDOM,
+            random_seed: seed,
+          }),
+      },
+    ];
+
+    for (const testCase of requests) {
+      const request = testCase.request();
+      expect(transport.lastCommand.command).toBe(testCase.command);
+      expect(transport.lastCommand.args).toMatchObject({ random_seed: seed });
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    }
+  });
+
+  it.each([true, false, undefined])(
+    "sends artist track parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getArtistTracks(
+        "artist-1",
+        "library",
+        "spotify--1",
+        "live",
+        20,
+        40,
+        SortField.DURATION,
+        SortDirection.DESC,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/artists/artist_tracks");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+        provider_filter: "spotify--1",
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.DURATION,
+        sort_direction: SortDirection.DESC,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it.each([true, false, undefined])(
+    "sends artist album parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getArtistAlbums(
+        "artist-1",
+        "library",
+        undefined,
+        "live",
+        20,
+        40,
+        SortField.NAME,
+        SortDirection.ASC,
+        [AlbumType.SINGLE, AlbumType.EP],
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe("music/artists/artist_albums");
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+        provider_filter: undefined,
+        search: "live",
+        limit: 20,
+        offset: 40,
+        sort_field: SortField.NAME,
+        sort_direction: SortDirection.ASC,
+        album_types: [AlbumType.SINGLE, AlbumType.EP],
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: [],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual([]);
+    },
+  );
+
+  it.each([true, false, undefined])(
+    "sends collection parameters with favorite %s",
+    async (favorite) => {
+      const request = api.getAudiobookCollection(
+        "collection-1",
+        "chapter 2",
+        20,
+        40,
+        favorite,
+      );
+
+      expect(transport.lastCommand.command).toBe(
+        "music/audiobooks/get_collection",
+      );
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "collection-1",
+        search: "chapter 2",
+        limit: 20,
+        offset: 40,
+        favorite,
+      });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: {
+          item_id: "collection-1",
+          name: "Collection",
+          provider: "library",
+          items: [],
+        },
+        partial: false,
+      });
+      await expect(request).resolves.toMatchObject({ items: [] });
+    },
+  );
+
+  it("sends typed paging parameters for artist audiobooks", async () => {
+    const request = api.getArtistAudiobooks(
+      "artist-1",
+      "library",
+      ArtistType.AUTHOR,
+      true,
+      true,
+      "story",
+      20,
+      40,
+      SortField.NAME,
+      SortDirection.ASC,
+      "qobuz_1",
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_audiobooks",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      artist_type: ArtistType.AUTHOR,
+      in_library_only: true,
+      collapse_collections: true,
+      search: "story",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.NAME,
+      sort_direction: SortDirection.ASC,
+      provider_filter: "qobuz_1",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for radio versions", async () => {
+    const request = api.getRadioVersions(
+      "radio-1",
+      "library",
+      "jazz",
+      20,
+      40,
+      SortField.PROVIDER,
+      SortDirection.ASC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/radios/radio_versions");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "radio-1",
+      provider_instance_id_or_domain: "library",
+      search: "jazz",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.PROVIDER,
+      sort_direction: SortDirection.ASC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it("sends typed paging parameters for artist discography", async () => {
+    const request = api.getArtistDiscography(
+      "artist-1",
+      "jazz",
+      20,
+      40,
+      SortField.YEAR,
+      SortDirection.DESC,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/artists/discography");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      search: "jazz",
+      limit: 20,
+      offset: 40,
+      sort_field: SortField.YEAR,
+      sort_direction: SortDirection.DESC,
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [],
+      partial: false,
+    });
+    await expect(request).resolves.toEqual([]);
+  });
+
+  it.each([false, true])(
+    "lets getAudiobook opt out of global errors (suppressed: %s)",
+    async (suppressed) => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const result = suppressed
+        ? api.getAudiobook("book-1", "library", { suppressGlobalError: true })
+        : api.getAudiobook("book-1", "library");
+      expect(transport.lastCommand.command).toBe(
+        "music/audiobooks/get_audiobook",
+      );
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "book-1",
+        provider_instance_id_or_domain: "library",
+      });
+      const rejection = expect(result).rejects.toMatchObject({
+        message: "Cannot load audiobook",
+      });
+      transport.receive(
+        createErrorResult(transport.lastCommand, "Cannot load audiobook"),
+      );
+      await rejection;
+      expect(mockToastError).toHaveBeenCalledTimes(suppressed ? 0 : 1);
+    },
+  );
+
+  it("lets updateUser suppress the global error toast for the caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = api.updateUser(
+      "user-1",
+      { username: "renamed" },
+      { suppressGlobalError: true },
+    );
+
+    expect(transport.lastCommand.command).toBe("auth/user/update");
+    const rejection = expect(result).rejects.toMatchObject({
+      message: "Cannot rename user",
+    });
+
+    transport.receive(
+      createErrorResult(transport.lastCommand, "Cannot rename user"),
+    );
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("lets createUser suppress the global error toast for the caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = api.createUser(
+      "bob",
+      "hunter2",
+      UserRole.USER,
+      undefined,
+      undefined,
+      { suppressGlobalError: true },
+    );
+
+    expect(transport.lastCommand.command).toBe("auth/user/create");
+    const rejection = expect(result).rejects.toMatchObject({
+      message: "Cannot create user",
+    });
+
+    transport.receive(
+      createErrorResult(transport.lastCommand, "Cannot create user"),
+    );
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
   it("rejects with the server error code and renders as the plain message", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const command = api.sendCommand("test/coded");
@@ -167,6 +1031,7 @@ describe("MusicAssistantApi error handling", () => {
     expect((err as ApiCommandError).error_code).toBe(999);
     expect(String(err)).toBe("Boom");
     expect(`${err}`).toBe("Boom");
+    expect((err as ApiCommandError).details).toBe("Boom");
   });
 
   it("falls back to the error code when the server sends no details", async () => {
@@ -177,6 +1042,7 @@ describe("MusicAssistantApi error handling", () => {
       message_id: transport.lastCommand.message_id!,
       error_code: 1001,
       details: null,
+      data: null,
     });
 
     await expect(command).rejects.toMatchObject({
@@ -211,6 +1077,856 @@ describe("MusicAssistantApi error handling", () => {
     await expect(result).resolves.toEqual(config);
   });
 
+  // the server refuses a command whose source is no longer playing, so both
+  // carry the source they were aimed at
+  it("names the source a shuffle or repeat was aimed at", () => {
+    api.playerCommandShuffle("player-1", true, "spotify://audio_source/main");
+
+    expect(transport.lastCommand.command).toBe("players/cmd/shuffle");
+    expect(transport.lastCommand.args).toEqual({
+      player_id: "player-1",
+      shuffle_enabled: true,
+      source_id: "spotify://audio_source/main",
+    });
+
+    api.playerCommandRepeat("player-1", RepeatMode.ALL, "player-1");
+
+    expect(transport.lastCommand.command).toBe("players/cmd/repeat");
+    expect(transport.lastCommand.args).toEqual({
+      player_id: "player-1",
+      repeat_mode: RepeatMode.ALL,
+      source_id: "player-1",
+    });
+  });
+
+  it("lists the members a music source can be shared with", async () => {
+    const candidates = [userSummary({ user_id: "user-sam", username: "sam" })];
+    const result = api.getShareCandidates();
+
+    expect(transport.lastCommand.command).toBe(
+      "config/providers/share_candidates",
+    );
+    expect(transport.lastCommand.args).toBeUndefined();
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: candidates,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(candidates);
+  });
+
+  it("leaves a failing share candidates lookup to its caller", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.getShareCandidates();
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("leaves a failing provider removal to its caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.removeProviderConfig("spotify--1");
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    expect(transport.lastCommand.command).toBe("config/providers/remove");
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("asks for the provider configs whose provider is not available", () => {
+    void api.getProviderConfigs(undefined, undefined, true);
+
+    expect(transport.lastCommand).toMatchObject({
+      command: "config/providers",
+      args: { include_unavailable: true },
+    });
+  });
+
+  it.each([
+    ["for a player", "player-1", { player_id: "player-1" }],
+    ["without a player", undefined, {}],
+  ])("runs a menu action of a provider %s", (_case, playerId, extra) => {
+    void api.invokeProviderMenuAction(
+      "demo--1",
+      "show_item",
+      "library://track/1",
+      playerId,
+    );
+
+    expect(transport.lastCommand.command).toBe("providers/invoke_menu_action");
+    expect(transport.lastCommand.args).toEqual({
+      instance_id: "demo--1",
+      action_id: "show_item",
+      uri: "library://track/1",
+      ...extra,
+    });
+  });
+
+  it("tells a failing menu action as any failing command", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.invokeProviderMenuAction(
+      "demo--1",
+      "show_item",
+      "library://track/1",
+    );
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).toHaveBeenCalledWith("Boom");
+  });
+
+  it("updates one community provider by its domain", () => {
+    void api.updateCommunityProviders("radio");
+
+    expect(transport.lastCommand).toMatchObject({
+      command: "community_catalog/update",
+      args: { domain: "radio" },
+    });
+  });
+
+  it.each<[string, (api: MusicAssistantApi) => Promise<unknown>]>([
+    ["catalog/recommendations", (api) => api.getCatalogRecommendations()],
+    ["community_catalog/providers", (api) => api.getCommunityProviders()],
+    ["community_catalog/refresh", (api) => api.refreshCommunityProviders()],
+    [
+      "community_catalog/install",
+      (api) => api.installCommunityProvider("radio"),
+    ],
+    ["community_catalog/remove", (api) => api.removeCommunityProvider("radio")],
+    ["community_catalog/update", (api) => api.updateCommunityProviders()],
+    [
+      "community_catalog/dismiss_notice",
+      (api) => api.dismissCommunityNotice("radio"),
+    ],
+  ])("leaves a failing %s to its caller", async (command, call) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = call(api);
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    expect(transport.lastCommand.command).toBe(command);
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("fetches the manifests again when the community catalog changes, dropping what is gone", async () => {
+    api.providerManifests.radio = { domain: "radio" } as never;
+    api.providerManifests.spotify = { domain: "spotify" } as never;
+
+    transport.receive({
+      event: EventType.COMMUNITY_CATALOG_UPDATED,
+      object_id: null,
+      data: null,
+    } as EventMessage);
+
+    expect(transport.lastCommand.command).toBe("providers/manifests");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [{ domain: "spotify", name: "Spotify" }],
+      partial: false,
+    });
+    await vi.waitFor(() =>
+      expect(Object.keys(api.providerManifests)).toEqual(["spotify"]),
+    );
+    expect(api.providerManifests.spotify.name).toBe("Spotify");
+  });
+
+  it.each([
+    [true, true],
+    [undefined, false],
+  ])(
+    "asks the server to remove unavailable players (dry run %s)",
+    async (dryRun, sent) => {
+      const request = api.removeUnavailablePlayers(dryRun);
+
+      expect(transport.lastCommand.command).toBe("players/remove_unavailable");
+      expect(transport.lastCommand.args).toEqual({ dry_run: sent });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: ["kitchen"],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual(["kitchen"]);
+    },
+  );
+
+  it("flags a server below the minimum schema version as outdated", () => {
+    // before server_info arrives there is nothing to judge yet
+    api.serverInfo.value = undefined;
+    expect(api.serverOutdated).toBe(false);
+
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION - 1,
+    };
+    expect(api.serverOutdated).toBe(true);
+
+    api.serverInfo.value = {
+      ...SERVER_INFO,
+      schema_version: MIN_SERVER_SCHEMA_VERSION,
+    };
+    expect(api.serverOutdated).toBe(false);
+  });
+
+  it("asks a server from before the new player model to update", () => {
+    // the stored player configs the players settings rely on arrived with schema 113
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 112 };
+    expect(api.serverOutdated).toBe(true);
+  });
+
+  it("loads the roles the server lists", async () => {
+    const roles = [
+      {
+        role_id: UserRole.ADMIN,
+        name: "Administrator",
+        scopes: ["*"],
+        builtin: true,
+      },
+      { role_id: "kids-id", name: "Kids", scopes: [], builtin: false },
+    ];
+    const result = api.getRoles();
+
+    expect(transport.lastCommand.command).toBe("auth/roles");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: roles,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(roles);
+  });
+
+  it("sends the role commands and leaves their errors to the caller", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const kids = {
+      role_id: "kids-id",
+      name: "Teens",
+      scopes: [],
+      builtin: false,
+    };
+
+    const created = api.createRole("Kids", ["library.write"]);
+    expect(transport.lastCommand.command).toBe("auth/role/create");
+    expect(transport.lastCommand.args).toEqual({
+      name: "Kids",
+      scopes: ["library.write"],
+    });
+    const rejection = expect(created).rejects.toMatchObject({
+      message: "Taken",
+    });
+    transport.receive(createErrorResult(transport.lastCommand, "Taken"));
+    await rejection;
+
+    const updated = api.updateRole("kids-id", { name: "Teens" });
+    expect(transport.lastCommand.command).toBe("auth/role/update");
+    expect(transport.lastCommand.args).toEqual({
+      role_id: "kids-id",
+      name: "Teens",
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: kids,
+      partial: false,
+    });
+    await expect(updated).resolves.toEqual(kids);
+
+    const deleted = api.deleteRole("kids-id");
+    expect(transport.lastCommand.command).toBe("auth/role/delete");
+    expect(transport.lastCommand.args).toEqual({ role_id: "kids-id" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: null,
+      partial: false,
+    });
+    await deleted;
+
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("asks the library for an artist's discography", () => {
+    api.getArtistDiscography(
+      "artist-1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
+
+    expect(transport.lastCommand.command).toBe("music/artists/discography");
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+    });
+  });
+
+  it("asks for the discography releases of the given types", () => {
+    api.getArtistDiscography(
+      "artist-1",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [AlbumType.ALBUM, AlbumType.LIVE],
+    );
+
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      album_types: [AlbumType.ALBUM, AlbumType.LIVE],
+    });
+  });
+
+  it("asks the library for the albums an artist appears on", () => {
+    api.getArtistAppearsOn(
+      "artist-1",
+      "library",
+      "spotify--abc",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/artists/artist_appears_on",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      item_id: "artist-1",
+      provider_instance_id_or_domain: "library",
+      provider_filter: "spotify--abc",
+    });
+  });
+
+  describe("player events", () => {
+    const kitchen = (enabled: boolean) =>
+      ({ player_id: "kitchen", enabled, available: enabled }) as Player;
+
+    beforeEach(() => {
+      transport.receive({
+        event: EventType.PLAYER_ADDED,
+        object_id: "kitchen",
+        data: kitchen(true),
+      });
+      transport.receive({
+        event: EventType.QUEUE_ADDED,
+        object_id: "kitchen",
+        data: playerQueue({ queue_id: "kitchen" }),
+      });
+    });
+
+    it("drops a player once it is disabled, with its queue", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: kitchen(false),
+      });
+
+      expect(api.players).not.toHaveProperty("kitchen");
+      expect(api.queues).not.toHaveProperty("kitchen");
+      expect(api.queueElapsedTime).not.toHaveProperty("kitchen");
+    });
+
+    it("takes a player back in once it is enabled again", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: kitchen(false),
+      });
+      transport.receive({
+        event: EventType.PLAYER_ADDED,
+        object_id: "kitchen",
+        data: kitchen(true),
+      });
+
+      expect(api.players.kitchen).toEqual(kitchen(true));
+    });
+
+    it("keeps a player that only became unavailable", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: { ...kitchen(true), available: false },
+      });
+
+      expect(api.players.kitchen.available).toBe(false);
+      expect(api.queues).toHaveProperty("kitchen");
+    });
+  });
+
+  describe("a refused ordering command", () => {
+    // the server refuses every one of these with the same code and the same
+    // localized "the command failed", so the player's own state is what tells
+    // the guard doing its job apart from something that actually went wrong
+    const playerOn = (activeSource: string | null) => {
+      api.players["player-1"] = {
+        player_id: "player-1",
+        active_source: activeSource,
+      } as Player;
+    };
+
+    const refuse = () => {
+      const consoleDebug = vi
+        .spyOn(console, "debug")
+        .mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      transport.receive(
+        createErrorResult(transport.lastCommand, "The command failed."),
+      );
+      return { consoleDebug, consoleError };
+    };
+
+    // the control was aimed at something that stopped playing, so the refusal
+    // is expected; putting it in front of the user would only confuse
+    it.each([
+      ["shuffle", () => api.playerCommandShuffle("player-1", true, "gone")],
+      [
+        "repeat",
+        () => api.playerCommandRepeat("player-1", RepeatMode.ALL, "gone"),
+      ],
+    ])("stays quiet when the player moved on (%s)", async (_name, send) => {
+      playerOn("took-over");
+      const command = send();
+
+      const { consoleDebug, consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+      // the quiet branch ran, rather than the error never being handled at all
+      expect(consoleDebug).toHaveBeenCalled();
+    });
+
+    // still the source it was aimed at, so something genuinely went wrong
+    // (a device or provider error) and the user deserves to hear about it
+    it.each([
+      ["shuffle", () => api.playerCommandShuffle("player-1", true, "playing")],
+      [
+        "repeat",
+        () => api.playerCommandRepeat("player-1", RepeatMode.ALL, "playing"),
+      ],
+    ])("surfaces a real failure (%s)", async (_name, send) => {
+      playerOn("playing");
+      const command = send();
+
+      const { consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).toHaveBeenCalled();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
+
+    // the whole point: the source moves between the click and the reply, so a
+    // decision taken when the command was sent would get this backwards
+    it("decides when the refusal arrives, not when the command was sent", async () => {
+      playerOn("playing");
+      const command = api.playerCommandShuffle("player-1", true, "playing");
+
+      playerOn("took-over");
+      const { consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    // a player playing nothing but its own queue reports no active_source, and
+    // the server resolves that to the player's own id — so the id the control
+    // named still matches and the failure is real
+    it("surfaces a real failure on a player's own queue", async () => {
+      playerOn(null);
+      const command = api.playerCommandShuffle("player-1", true, "player-1");
+
+      refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
+
+    it("stays quiet when a player fell back to its own queue", async () => {
+      playerOn(null);
+      const command = api.playerCommandShuffle("player-1", true, "gone");
+
+      const { consoleError } = refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    // nothing to compare against, so fall back to telling the user
+    it("surfaces a failure for a player it does not know", async () => {
+      const command = api.playerCommandShuffle("player-1", true, "gone");
+
+      refuse();
+
+      await expect(command).resolves.toBeUndefined();
+      expect(mockToastError).toHaveBeenCalledWith("The command failed.");
+    });
+  });
+
+  // the predicate runs inside the message pump, so a throwing one must not take
+  // the reply (or the command waiting on it) with it
+  it("surfaces the failure when a suppression predicate throws", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const command = api.sendCommand("test/throwing", undefined, {
+      suppressGlobalError: () => {
+        throw new Error("predicate blew up");
+      },
+    });
+    const rejection = expect(command).rejects.toMatchObject({
+      message: "Visible failure",
+    });
+
+    transport.receive(
+      createErrorResult(transport.lastCommand, "Visible failure"),
+    );
+
+    await rejection;
+    expect(mockToastError).toHaveBeenCalledWith("Visible failure");
+    expect(consoleError).toHaveBeenCalledWith(
+      "[resultMessage] suppression check failed",
+      expect.any(Error),
+    );
+    expect(api["commands"].size).toBe(0);
+  });
+
+  it("stops a queue and resolves once the server answers", async () => {
+    const stop = api.queueCommandStop("living_room");
+
+    expect(transport.lastCommand.command).toBe("player_queues/stop");
+    expect(transport.lastCommand.args).toEqual({ queue_id: "living_room" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: null,
+      partial: false,
+    });
+    await expect(stop).resolves.toBeNull();
+  });
+
+  describe("a playback refused over a held stream", () => {
+    const HOLDER = {
+      queue_id: "living_room",
+      player_name: "Living room",
+      provider_instance: "spotify--abc",
+    };
+    const PLAY_ARGS = {
+      queue_id: "kitchen",
+      media: ["spotify--abc://track/1"],
+      option: "play",
+    };
+    let dialogEvents: StreamHeldDialogEvent[];
+    const onDialog = (evt: StreamHeldDialogEvent) => dialogEvents.push(evt);
+
+    beforeEach(() => {
+      dialogEvents = [];
+      eventbus.on("streamHeldDialog", onDialog);
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "debug").mockImplementation(() => {});
+      api.providers["spotify--abc"] = {
+        instance_id: "spotify--abc",
+        domain: "spotify",
+        name: "Spotify [marcel]",
+      } as ProviderInstance;
+    });
+
+    afterEach(() => {
+      eventbus.off("streamHeldDialog", onDialog);
+      delete api.providers["spotify--abc"];
+    });
+
+    function refuse(data: Record<string, unknown> | null = HOLDER) {
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        error_code: 29,
+        details:
+          "Spotify [marcel] is already playing on Living room. Stop playback there first.",
+        data,
+      });
+    }
+
+    it("offers the dialog instead of a toast and still rejects the caller", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+        data: HOLDER,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      expect(dialogEvents).toEqual([
+        {
+          holderQueueId: "living_room",
+          holderName: "Living room",
+          providerName: "Spotify [marcel]",
+          retry: expect.any(Function),
+        },
+      ]);
+    });
+
+    it("sends the refused command again on retry", async () => {
+      api.sendCommand("player_queues/play_media", PLAY_ARGS).catch(() => {});
+      const refused = transport.lastCommand;
+      refuse();
+
+      const retry = dialogEvents[0].retry();
+
+      expect(transport.lastCommand.command).toBe("player_queues/play_media");
+      expect(transport.lastCommand.args).toEqual(PLAY_ARGS);
+      expect(transport.lastCommand.message_id).not.toBe(refused.message_id);
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: null,
+        partial: false,
+      });
+      await expect(retry).resolves.toBeNull();
+    });
+
+    it("offers the dialog for a queue item started from the queue", async () => {
+      const command = api.queueCommandPlayIndex("kitchen", "item-1");
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(mockToastError).not.toHaveBeenCalled();
+      dialogEvents[0].retry().catch(() => {});
+      expect(transport.lastCommand.command).toBe("player_queues/play_index");
+      expect(transport.lastCommand.args).toEqual({
+        queue_id: "kitchen",
+        index: "item-1",
+      });
+    });
+
+    it("keeps the toast for a command that waits for no result", () => {
+      api.queueCommandTransfer("living_room", "kitchen", true);
+
+      refuse();
+
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the toast when no dialog is listening", async () => {
+      eventbus.off("streamHeldDialog", onDialog);
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledOnce();
+    });
+
+    it("leaves a suppressed refusal to its caller", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS, {
+        suppressGlobalError: true,
+      });
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse();
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+
+    it("keeps the toast when the refusal does not name the holder", async () => {
+      const command = api.sendCommand("player_queues/play_media", PLAY_ARGS);
+      const rejection = expect(command).rejects.toMatchObject({
+        error_code: 29,
+      });
+
+      refuse(null);
+
+      await rejection;
+      expect(dialogEvents).toEqual([]);
+      expect(mockToastError).toHaveBeenCalledWith(
+        "Spotify [marcel] is already playing on Living room. Stop playback there first.",
+      );
+    });
+  });
+
+  it("imports a playlist with the chosen match policy", async () => {
+    const result = api.importPlaylist(
+      "#EXTM3U",
+      true,
+      ["spotify--1"],
+      PlaylistMatchPolicy.EXACT,
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/playlists/import_playlist",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      m3u_data: "#EXTM3U",
+      library_matching: true,
+      match_providers: ["spotify--1"],
+      match_policy: PlaylistMatchPolicy.EXACT,
+    });
+
+    const importedPlaylist = playlist({ item_id: "1", name: "My playlist" });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: importedPlaylist,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(importedPlaylist);
+  });
+
+  it("omits match_policy when it isn't provided", () => {
+    api.importPlaylist("#EXTM3U", true, ["spotify--1"]);
+
+    expect(transport.lastCommand.args).toEqual({
+      m3u_data: "#EXTM3U",
+      library_matching: true,
+      match_providers: ["spotify--1"],
+    });
+  });
+
+  it("migrates a playlist and notifies the background task toast", async () => {
+    const task: BackgroundTask = {
+      id: "task-1",
+      name: "Migrate playlist",
+      status: TaskStatus.PENDING,
+      report: null,
+      logs: [],
+      schedule: null,
+      last_run: null,
+      next_run: null,
+      user_id: null,
+      last_run_user_id: null,
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
+      started_at: null,
+      finished_at: null,
+      last_error: null,
+      failure_count: 0,
+      failure_messages: [],
+      metadata: {},
+      progress: null,
+      progress_text: null,
+      allow_retry: false,
+      allow_cancel: true,
+    };
+    const result = api.migratePlaylist(
+      "1",
+      "spotify--1",
+      PlaylistMatchPolicy.SAME_RECORDING,
+      "My playlist",
+    );
+
+    expect(transport.lastCommand.command).toBe(
+      "music/playlists/migrate_playlist",
+    );
+    expect(transport.lastCommand.args).toEqual({
+      db_playlist_id: "1",
+      destination_provider: "spotify--1",
+      match_policy: PlaylistMatchPolicy.SAME_RECORDING,
+      name: "My playlist",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: task,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(task);
+    await vi.waitFor(() =>
+      expect(mockToastInfo).toHaveBeenCalledWith(
+        "background_tasks.toast.added",
+        expect.anything(),
+      ),
+    );
+  });
+
+  it.each([
+    { role: "an admin", scopes: BUILTIN_ROLE_SCOPES.admin },
+    { role: "a member", scopes: BUILTIN_ROLE_SCOPES.user },
+  ])("offers $role the task list with the task toast", async ({ scopes }) => {
+    hasScope.mockImplementation(scopeChecker(scopes));
+
+    const toast = await runTaskToast(api, transport);
+
+    expect(toast.action?.label).toBe("background_tasks.open");
+  });
+
+  it("leaves the task list out of the task toast for a guest", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+
+    const toast = await runTaskToast(api, transport);
+
+    expect(toast.action).toBeUndefined();
+  });
+
+  describe("with the auth module gone after a server update", () => {
+    beforeEach(() => {
+      vi.doMock("@/plugins/auth", () => {
+        throw new TypeError("Failed to fetch dynamically imported module");
+      });
+    });
+
+    afterEach(() => {
+      vi.doMock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+    });
+
+    it("still shows the task toast, without the task list", async () => {
+      const toast = await runTaskToast(api, transport);
+
+      expect(toast.action).toBeUndefined();
+    });
+  });
+
+  it("rejects a failed migration without the global error toast", async () => {
+    const result = api.migratePlaylist(
+      "1",
+      "spotify--1",
+      PlaylistMatchPolicy.SAME_RECORDING,
+      "My playlist",
+    );
+    const error = createErrorResult(transport.lastCommand, "Migration failed");
+    const rejection = expect(result).rejects.toMatchObject({
+      message: "Migration failed",
+    });
+
+    transport.receive(error);
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
   it("rejects in-flight commands when the connection closes", async () => {
     const command = api.sendCommand("test/pending");
     const rejection =
@@ -233,6 +1949,76 @@ describe("MusicAssistantApi error handling", () => {
   });
 });
 
+describe("MusicAssistantApi connection over Home Assistant Ingress", () => {
+  const INGRESS_ADDRESS = "http://ha.local:8123/api/hassio_ingress/abc";
+  let openedUrls: string[];
+  let originalUrl: string;
+
+  beforeEach(() => {
+    openedUrls = [];
+    originalUrl = window.location.href;
+    // a socket that never opens shows which URL the api connected to
+    vi.stubGlobal(
+      "WebSocket",
+      class {
+        constructor(url: string) {
+          openedUrls.push(url);
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    setUrl(originalUrl);
+    localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it("identifies this browser on the API connection", () => {
+    setUrl(`${INGRESS_ADDRESS}/`);
+
+    void new MusicAssistantApi().initialize(INGRESS_ADDRESS);
+
+    expect(openedUrls).toEqual([
+      `ws://ha.local:8123/api/hassio_ingress/abc/ws?ingress_client_key=${getIngressClientKey()}`,
+    ]);
+  });
+
+  it("does not identify this browser outside Ingress", () => {
+    void new MusicAssistantApi().initialize("http://ma.local:8095");
+
+    expect(openedUrls).toEqual(["ws://ma.local:8095/ws"]);
+  });
+});
+
+/**
+ * Point the test window at another URL.
+ */
+function setUrl(url: string) {
+  // setURL, as replaceState can not change the origin
+  (
+    window as unknown as { happyDOM: { setURL(url: string): void } }
+  ).happyDOM.setURL(url);
+}
+
+/**
+ * Run a task and hand back the options of the toast announcing it.
+ */
+async function runTaskToast(
+  api: MusicAssistantApi,
+  transport: TestTransport,
+): Promise<{ action?: { label: string } }> {
+  const result = api.runTask("task-1");
+  transport.receive({
+    message_id: transport.lastCommand.message_id!,
+    result: { id: "task-1" },
+    partial: false,
+  });
+  await result;
+  await vi.waitFor(() => expect(mockToastInfo).toHaveBeenCalled());
+  return mockToastInfo.mock.calls[0][1];
+}
+
 function createErrorResult(
   command: CommandMessage,
   details: string,
@@ -242,5 +2028,6 @@ function createErrorResult(
     message_id: command.message_id,
     error_code: 999,
     details,
+    data: null,
   };
 }

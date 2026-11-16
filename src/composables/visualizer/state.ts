@@ -8,13 +8,13 @@ import { ref } from "vue";
 
 export const currentVisualizerPreset = ref<string | null>(null);
 
-// A preset tapped in the fullscreen menu, to show on the running canvas right
-// away; the menu persists the preference separately (deferred). Wrapped in an
-// object so re-auditioning the same name still triggers the canvas watcher.
-export const visualizerAuditionRequest = ref<{ name: string } | null>(null);
-
 // Defaults for the blur/opacity preferences. Every reader goes through these
 // (settings page, fullscreen menu, useVisualizer, and the canvas prop
 // fallbacks) so the four cannot drift apart.
 export const VISUALIZER_BLUR_DEFAULT = 0;
 export const VISUALIZER_OPACITY_DEFAULT = 40;
+// The ramp only reads differently in large jumps, so it steps rather than
+// sliding freely; 0 is off and skips the shader work entirely.
+export const VISUALIZER_PALETTE_RAMP_STEP = 25;
+export const VISUALIZER_PALETTE_RAMP_DEFAULT = 75;
+export const VISUALIZER_PALETTE_COLORS_DEFAULT = true;

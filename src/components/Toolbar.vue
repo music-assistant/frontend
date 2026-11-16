@@ -5,6 +5,8 @@
         :icon="typeof icon === 'string' ? icon : undefined"
         size="small"
         :disabled="iconAction == null"
+        :aria-label="toolbarIconLabel"
+        :aria-hidden="toolbarIconLabel ? undefined : true"
         style="opacity: 0.8"
         @click="iconAction?.()"
       >
@@ -34,6 +36,8 @@
         variant="ghost"
         size="icon-lg"
         :title="menuItemLabel(menuItem)"
+        :aria-label="menuItemLabel(menuItem)"
+        :aria-haspopup="menuItem.subItems?.length ? 'menu' : undefined"
         :disabled="menuItem.disabled == true"
         @click="(e: MouseEvent) => onMenuItemClick(e, menuItem)"
       >
@@ -46,14 +50,20 @@
       <!-- overflow menu with (remaining) items if on mobile -->
       <DropdownMenu v-if="overflowItems.length" v-model:open="overflowMenuOpen">
         <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="icon-lg" :title="$t('menu')">
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            :title="$t('menu')"
+            :aria-label="$t('menu')"
+          >
             <span class="relative inline-flex">
               <EllipsisVertical class="size-[22px]" />
               <span v-if="menuActive" :class="ACTIVE_DOT_CLASS"></span>
             </span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="min-w-56">
+        <!-- capped as the menu of an item, so a long entry is cut off on a phone -->
+        <DropdownMenuContent align="end" class="min-w-56 max-w-[350px]">
           <template v-for="(menuItem, index) in overflowItems" :key="index">
             <DropdownMenuSub v-if="menuItem.subItems?.length">
               <DropdownMenuSubTrigger
@@ -72,21 +82,35 @@
                 align="start"
                 :align-offset="-5"
                 :side-offset="6"
-                class="max-h-[70vh] overflow-y-auto"
+                class="max-h-[70vh] min-w-56 max-w-[min(92vw,350px)] overflow-y-auto"
               >
-                <DropdownMenuItem
+                <template
                   v-for="subItem of menuItem.subItems.filter((x) => !x.hide)"
                   :key="subItem.label"
-                  :disabled="subItem.disabled === true"
-                  class="gap-3"
-                  @select="(e: Event) => onSubItemSelect(e, menuItem, subItem)"
                 >
-                  <MenuItemIcon :icon="subItem.icon" />
-                  <span class="min-w-0 flex-1 truncate">{{
-                    menuItemLabel(subItem)
-                  }}</span>
-                  <Check v-if="subItem.selected" class="ml-auto size-4" />
-                </DropdownMenuItem>
+                  <!-- custom inline control; renders its own row and manages
+                       its own interaction without closing the menu -->
+                  <component
+                    :is="subItem.component"
+                    v-if="subItem.component"
+                    v-bind="subItem.componentProps"
+                  />
+                  <DropdownMenuItem
+                    v-else
+                    :disabled="subItem.disabled === true"
+                    class="gap-3"
+                    @select="
+                      (e: Event) => onSubItemSelect(e, menuItem, subItem)
+                    "
+                  >
+                    <MenuItemIcon :icon="subItem.icon" />
+                    <span class="min-w-0 flex-1 truncate">{{
+                      menuItemLabel(subItem)
+                    }}</span>
+                    <Check v-if="subItem.selected" class="ml-auto size-4" />
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator v-if="subItem.separatorAfter" />
+                </template>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             <DropdownMenuItem
@@ -112,12 +136,15 @@
 </template>
 
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
+import { ACTIVE_DOT_CLASS } from "@/constants";
 import MenuItemIcon from "@/components/MenuItemIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -145,6 +172,7 @@ interface Props {
   menuActive?: boolean;
   isDiscoverPage?: boolean;
   iconAction?: () => void;
+  iconLabel?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   color: "transparent",
@@ -156,10 +184,8 @@ const props = withDefaults(defineProps<Props>(), {
   enforceOverflowMenu: false,
   menuActive: false,
   iconAction: undefined,
+  iconLabel: undefined,
 });
-
-const ACTIVE_DOT_CLASS =
-  "bg-primary absolute -top-0.5 -right-0.5 size-1.5 rounded-full";
 
 const overflowMenuOpen = ref(false);
 
@@ -224,6 +250,15 @@ const onMenuItemClick = (
     menuItem.action();
   }
 };
+
+const toolbarIconLabel = computed(() => {
+  if (props.iconAction == null && !props.iconLabel) return undefined;
+  if (props.iconLabel) return props.iconLabel;
+  // an actionable icon is a back button; name it after its action, never
+  // after the page title
+  if (props.iconAction != null) return $t("back");
+  return undefined;
+});
 
 // emitters
 const emit = defineEmits<{

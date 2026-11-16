@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { relativeTimeFromIso } from "@/helpers/ai_radio";
 import { formatNameList } from "@/helpers/music_quiz";
 import { i18n } from "@/plugins/i18n";
 
@@ -18,31 +17,10 @@ describe("Intl formatters with an underscored locale", () => {
     }
   };
 
-  it.each(["en_GB", "de_DE", "pt_BR"])(
-    "formats a relative time under %s",
-    (locale) => {
-      const now = Date.parse("2026-07-29T12:00:00Z");
-      const then = new Date(now - 2 * 3600 * 1000).toISOString();
-
-      const label = withLocale(locale, () => relativeTimeFromIso(then, now));
-
-      expect(label).not.toBe("");
-    },
-  );
-
   it("formats a name list under en_GB", () => {
     const label = withLocale("en_GB", () => formatNameList(["Ann", "Bo"]));
 
     expect(label).toContain("Ann");
     expect(label).toContain("Bo");
-  });
-
-  it("still formats a relative time under a hyphenated locale", () => {
-    const now = Date.parse("2026-07-29T12:00:00Z");
-    const then = new Date(now - 90 * 1000).toISOString();
-
-    expect(withLocale("en-GB", () => relativeTimeFromIso(then, now))).not.toBe(
-      "",
-    );
   });
 });

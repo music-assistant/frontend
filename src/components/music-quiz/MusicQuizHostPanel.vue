@@ -10,7 +10,7 @@
       <slot name="game"></slot>
 
       <div
-        v-if="state.phase === 'lobby' && state.playback"
+        v-if="state.phase === 'lobby'"
         class="bg-muted/40 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
         data-testid="music-quiz-playback-summary"
       >
@@ -176,7 +176,6 @@ const startLabel = computed(() => {
 });
 const playbackSummary = computed(() => {
   const playback = props.state.playback;
-  if (!playback) return "";
   if (playback.mode === "remote") {
     return $t("providers.music_quiz.playback_summary_remote");
   }

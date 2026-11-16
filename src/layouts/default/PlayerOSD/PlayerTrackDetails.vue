@@ -64,7 +64,7 @@
           v-else-if="store.activePlayer.powered == false"
           class="ma-line-clamp-1"
         >
-          {{ store.activePlayer.name }}
+          {{ getPlayerDisplayName(store.activePlayer) }}
         </div>
         <!-- track title -->
         <div
@@ -92,7 +92,7 @@
         </div>
         <!-- fallback: player name, so the title never renders blank -->
         <div v-else class="ma-line-clamp-1">
-          {{ store.activePlayer.name }}
+          {{ getPlayerDisplayName(store.activePlayer) }}
         </div>
       </div>
     </template>
@@ -101,7 +101,7 @@
       <!-- format -->
       <div
         v-if="
-          streamDetails?.audio_format.content_type &&
+          hasActiveAudioPath &&
           !getBreakpointValue({ breakpoint: 'phone' }) &&
           showQualityDetailsBtn
         "
@@ -114,8 +114,7 @@
     <template #subtitle>
       <div class="player-track-subtitle" :style="{ color: primaryColor }">
         <div class="player-track-subtitle-line">
-          <!-- the source the audio comes from; the compact bar only has room
-               for its icon beside the track metadata -->
+          <!-- the external source; the compact bar only has room for its icon -->
           <NowPlayingSourceBadge
             v-if="props.compact"
             icon-only
@@ -196,22 +195,24 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
+import { getPlayerDisplayName } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
-import { resolveCurrentChapter } from "@/helpers/chapters";
+import {
+  isChapteredMediaType,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
 import { MediaType, PlaybackState, PlayerType } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed, onUnmounted, ref, watch } from "vue";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import NowPlayingSourceBadge from "./NowPlayingSourceBadge.vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
 const marqueeSync = new MarqueeTextSync();
-const { getPreference } = useUserPreferences();
-const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 
 const nowTick = ref(0);
 let chapterTimer: ReturnType<typeof setInterval> | null = null;
@@ -220,8 +221,7 @@ const currentChapter = computed(() => {
   const media = store.activePlayer?.current_media;
   const queueItem = store.curQueueItem;
   if (
-    !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    !isChapteredMediaType(media?.media_type) ||
     (media.queue_item_id !== null &&
       media.queue_item_id !== queueItem?.queue_item_id)
   ) {
@@ -236,7 +236,6 @@ const currentChapter = computed(() => {
 
 const chapterTimerNeeded = computed(
   () =>
-    showChapterProgress.value &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
     !!currentChapter.value,
 );
@@ -259,6 +258,7 @@ onUnmounted(() => updateChapterTimer(false));
 const queueEnded = computed(() => isQueueEnded(store.activePlayerQueue));
 
 const { albumSubtitle } = useNowPlayingSource();
+const { hasActiveAudioPath } = useActiveAudioPath();
 
 // properties
 interface Props {
@@ -282,11 +282,6 @@ const props = withDefaults(defineProps<Props>(), {
   primaryColor: "",
   compact: false,
   titleOpensDetails: false,
-});
-
-// computed properties
-const streamDetails = computed(() => {
-  return store.activePlayerQueue?.current_item?.streamdetails;
 });
 
 // size of the clickable artwork area; cover art fills this via its

@@ -14,9 +14,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useTour } from "@/composables/useTour";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { LogOut, MoreVertical, Settings, SquarePen } from "@lucide/vue";
+import {
+  ChartColumn,
+  LogOut,
+  MoreVertical,
+  Route,
+  Settings,
+  SquarePen,
+} from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -24,6 +32,7 @@ const isMenuEditMode = computed(() => store.navMenuEditMode);
 
 const router = useRouter();
 const { isMobile, setOpenMobile } = useSidebar();
+const { active: tourActive, start: startTour } = useTour();
 
 const displayName =
   store.currentUser?.display_name || store.currentUser?.username || "";
@@ -35,9 +44,26 @@ const handleProfile = () => {
   router.push({ name: "profile" });
 };
 
+const handleStatistics = () => {
+  setOpenMobile(false);
+  router.push({ name: "statistics" });
+};
+
 const handleEditMenu = () => {
   // Keep the sidebar (sheet on mobile) open: the menu itself is being edited.
   store.navMenuEditMode = !store.navMenuEditMode;
+};
+
+const handleTour = () => {
+  // the tour points at the app itself, which the sheet would be covering
+  setOpenMobile(false);
+  startTour();
+};
+
+// the menu closes behind a tour that has taken focus by then, and handing it
+// back to the trigger would take it off the tour's card
+const onCloseAutoFocus = (event: Event) => {
+  if (tourActive.value) event.preventDefault();
 };
 
 const handleLogout = () => {
@@ -54,6 +80,7 @@ const handleLogout = () => {
           <SidebarMenuButton
             size="lg"
             class="w-full data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            data-tour="profile"
           >
             <Avatar class="h-8 w-8 shrink-0 rounded-lg">
               <AvatarImage
@@ -89,6 +116,7 @@ const handleLogout = () => {
           :side="isMobile ? 'bottom' : 'right'"
           :side-offset="isMobile ? 4 : 15"
           align="end"
+          @close-auto-focus="onCloseAutoFocus"
         >
           <DropdownMenuLabel class="p-0 font-normal">
             <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
@@ -117,9 +145,20 @@ const handleLogout = () => {
             <Settings class="size-4" />
             {{ $t("auth.profile") }}
           </DropdownMenuItem>
+          <DropdownMenuItem
+            data-testid="nav-user-statistics"
+            @click="handleStatistics"
+          >
+            <ChartColumn class="size-4" />
+            {{ $t("statistics") }}
+          </DropdownMenuItem>
           <DropdownMenuItem @click="handleEditMenu">
             <SquarePen class="size-4" />
             {{ $t(isMenuEditMode ? "menu_edit_disable" : "menu_edit_enable") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem data-testid="nav-user-tour" @click="handleTour">
+            <Route class="size-4" />
+            {{ $t("tour.start") }}
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="!store.isIngressSession"

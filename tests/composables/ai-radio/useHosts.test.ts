@@ -1,14 +1,13 @@
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import api from "@/plugins/api";
 import {
   PLAYER_CONTROL_NONE,
   PlayerType,
   type AIRadioHost,
   type Player,
   type PlayerQueue,
-  type ProviderInstance,
 } from "@/plugins/api/interfaces";
+import { store as storeModule } from "@/plugins/store";
 import { flushPromises } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -16,22 +15,26 @@ const { sendCommand } = vi.hoisted(() => ({
   sendCommand: vi.fn(),
 }));
 
-// api.providers must be reactive here: the prefetch hangs off a watch on the
-// provider list, which is exactly what this test exercises.
-vi.mock("@/plugins/api", async () => {
-  const { reactive } = await import("vue");
+vi.mock("@/plugins/api", () => ({
+  default: {
+    players: {},
+    sendCommand,
+    subscribe: vi.fn(() => () => {}),
+    state: { value: "initialized" },
+  },
+}));
+
+// signed in as a member
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../../fixtures/scopes");
   return {
-    default: {
-      players: {},
-      providers: reactive<Record<string, ProviderInstance>>({}),
-      sendCommand,
+    authManager: {
+      guestSessionKind: () => null,
+      hasScope: scopeChecker(BUILTIN_ROLE_SCOPES.user),
     },
   };
 });
-
-vi.mock("@/plugins/auth", () => ({
-  authManager: { isAdmin: () => false },
-}));
 
 vi.mock("@/plugins/router", () => ({
   default: { push: vi.fn() },
@@ -41,9 +44,12 @@ vi.mock("@/plugins/eventbus", () => ({
   eventbus: { emit: vi.fn() },
 }));
 
-vi.mock("@/plugins/store", () => ({
-  store: {},
-}));
+// the store must be reactive here: the prefetch hangs off a watch on the
+// enabled plugins, which is exactly what this test exercises.
+vi.mock("@/plugins/store", async () => {
+  const { reactive } = await import("vue");
+  return { store: reactive({ enabledPlugins: new Set<string>() }) };
+});
 
 vi.mock("@/helpers/sleep_timer", () => ({
   getSleepTimerMenuItem: vi.fn(),
@@ -61,6 +67,11 @@ vi.mock("vue-sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & {
+  enabledPlugins: ReadonlySet<string>;
+};
+
 const host: AIRadioHost = {
   id: "host-1",
   name: "Robo DJ",
@@ -75,7 +86,8 @@ const host: AIRadioHost = {
 
 sendCommand.mockImplementation(async (command: string) => {
   if (command === "ai_radio/hosts/list") return [host];
-  if (command === "ai_radio/queue_dj/status") return { kitchen: "host-1" };
+  if (command === "ai_radio/queue_dj/status")
+    return { kitchen: { host_id: "host-1", station_id: "" } };
   return undefined;
 });
 
@@ -102,14 +114,15 @@ describe("useHosts queue dj prefetch", () => {
     expect(useHosts().hosts.value).toEqual([]);
     expect(sendCommand).not.toHaveBeenCalled();
 
-    api.providers["ai_radio--1"] = {
-      domain: "ai_radio",
-      available: true,
-    } as ProviderInstance;
+    store.enabledPlugins = new Set(["ai_radio"]);
     await flushPromises();
 
     expect(sendCommand).toHaveBeenCalledWith("ai_radio/hosts/list");
-    expect(sendCommand).toHaveBeenCalledWith("ai_radio/queue_dj/status");
+    expect(sendCommand).toHaveBeenCalledWith(
+      "ai_radio/queue_dj/status",
+      undefined,
+      { suppressGlobalError: true },
+    );
 
     // First build of the menu after page load, i.e. the one that used to show
     // an empty host list with a wrongly checked "Off".
@@ -124,8 +137,5 @@ describe("useHosts queue dj prefetch", () => {
     expect(
       aiDj?.subItems?.find((item) => item.label === "ai_dj_off")?.selected,
     ).toBe(false);
-
-    // Let the menu's own refresh calls settle before the test ends.
-    await flushPromises();
   });
 });

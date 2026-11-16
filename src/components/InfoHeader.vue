@@ -18,7 +18,7 @@
         class="background-image"
         :src="fanartImage"
         :gradient="
-          $vuetify.theme.current.dark
+          isDark
             ? 'to bottom, rgba(0,0,0,.90), rgba(0,0,0,.75)'
             : 'to bottom, rgba(255,255,255,.90), rgba(255,255,255,.75)'
         "
@@ -121,11 +121,10 @@
               <!-- explicit icon -->
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
-                  <v-icon
+                  <ExplicitIcon
                     v-if="parseBool(item.metadata.explicit || false)"
                     v-bind="props"
-                    icon="mdi-alpha-e-box"
-                    width="35"
+                    class="inline-block size-6 shrink-0 scale-90 align-middle [&_text]:fill-background"
                   />
                 </template>
                 <span>{{ $t("tooltip.explicit") }}</span>
@@ -146,7 +145,7 @@
                 color="primary"
                 icon="mdi-calendar"
               />
-              {{ new Date(item.metadata.release_date).getFullYear() }}
+              {{ new Date(item.metadata.release_date).getUTCFullYear() }}
             </v-card-subtitle>
 
             <!-- item artists -->
@@ -263,7 +262,9 @@
                 icon="mdi-account-music"
               />
               <MarqueeText :sync="marqueeSync">
-                <a style="color: primary">{{ item.owner }}</a>
+                <slot name="owner"
+                  ><a style="color: primary">{{ item.owner }}</a></slot
+                >
               </MarqueeText>
             </v-card-subtitle>
 
@@ -355,6 +356,7 @@
             <MenuButton
               id="playbutton"
               :text="playButtonText"
+              :menu-button-label="`${$t('more_options')}: ${$t('play')}`"
               :disabled="!item"
               :loading="playActionInProgress"
               style="margin-right: 8px; margin-bottom: 4px"
@@ -366,56 +368,23 @@
               v-if="item.media_type != MediaType.COLLECTION"
               class="flex items-center gap-2"
             >
-              <!-- favorite (heart) icon -->
-              <IconHeartFilled
-                v-if="item.favorite"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
-                @click="api.toggleFavorite(item)"
-              />
-              <IconHeart
-                v-else
-                :stroke-width="2"
-                :size="24"
-                class="cursor-pointer"
-                :title="$t('tooltip.favorite')"
-                @click="api.toggleFavorite(item)"
+              <!-- favorite (heart) menu -->
+              <FavoriteMenu
+                :item="item"
+                variant="ghost-icon"
+                size="icon-xs"
+                icon-class="size-6"
               />
               <!-- details can be reached out of library context, so always show
               the membership badge (bookshelf when in library, else source) -->
-              <provider-icon :domain="getProviderIconDomain(item)" :size="25" />
+              <ItemSourceBadge :item="item" :size="25" />
               <!-- audio analysis details (full track details only) -->
               <AudioAnalysisMetadata
                 v-if="item.media_type == MediaType.TRACK"
                 :audio-metadata="(item as Track).audio_metadata"
               />
-              <!-- slot for extra action icons (e.g. smart playlist edit) -->
+              <!-- slot for extra action buttons (e.g. smart playlist edit) -->
               <slot name="append-actions"></slot>
-              <!-- merge genre button (admin only) -->
-              <Merge
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  isAdmin
-                "
-                :size="22"
-                class="cursor-pointer"
-                :title="$t('merge_into')"
-                @click="mergeGenre"
-              />
-              <!-- delete genre button (admin only) -->
-              <Trash2
-                v-if="
-                  item.media_type === MediaType.GENRE &&
-                  item.provider === 'library' &&
-                  isAdmin
-                "
-                :size="22"
-                class="cursor-pointer ml-2"
-                :title="$t('delete_genre')"
-                @click="deleteGenre"
-              />
             </div>
           </div>
           <div
@@ -492,6 +461,9 @@
 
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
+import FavoriteMenu from "@/components/FavoriteMenu.vue";
+import ItemSourceBadge from "@/components/ItemSourceBadge.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
@@ -506,6 +478,7 @@ import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -515,18 +488,18 @@ import {
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { parseBool } from "@/helpers/parse";
+import { getPlayerName } from "@/helpers/players";
 import {
   getAudiobookCollectionArtists,
   getAuthorsNarratorsArray,
   getImageThumbForItem,
-  getPlayerName,
 } from "@/helpers/utils";
-import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
-import { api } from "@/plugins/api";
 import {
-  getCollectionMediaTypeFromItemId,
-  getProviderIconDomain,
-} from "@/plugins/api/helpers";
+  getContextMenuItems,
+  getDeclaredContextMenuItems,
+} from "@/layouts/default/ItemContextMenu.vue";
+import { api } from "@/plugins/api";
+import { getCollectionMediaTypeFromItemId } from "@/plugins/api/helpers";
 import type {
   Album,
   Artist,
@@ -540,34 +513,49 @@ import {
   ImageType,
   MediaCollection,
   MediaType,
+  Scope,
   Track,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { ArrowLeft, Merge, Trash2 } from "@lucide/vue";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-vue";
-import { computed, ref, watch } from "vue";
+import { ArrowLeft } from "@lucide/vue";
+import { useEscapeBack } from "@/composables/useEscapeBack";
+import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
+import { computed, ref, shallowRef, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
 import MediaCollectionThumb from "./MediaCollectionThumb.vue";
 import MediaItemThumb from "./MediaItemThumb.vue";
 import MenuButton from "./MenuButton.vue";
-import ProviderIcon from "./ProviderIcon.vue";
 
 // properties
 export interface Props {
   // browse folders are listed, never opened in a details view
   item?: Exclude<MediaItemType, BrowseFolder>;
+  // the order the item's tracks are listed in on its page, which play follows
   sortBy?: string;
 }
 const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
 useDisplay();
-const menuItems = ref<ContextMenuItem[]>([]);
+// the item's own menu entries, with the item they were built for
+const builtMenu = shallowRef<{
+  item: MediaItemType;
+  items: ContextMenuItem[];
+}>();
+// the entries providers add follow the providers while the page is open
+const menuItems = computed<ContextMenuItem[]>(() =>
+  builtMenu.value
+    ? [
+        ...builtMenu.value.items,
+        ...getDeclaredContextMenuItems([builtMenu.value.item]),
+      ]
+    : [],
+);
 const mappedGenres = ref<Genre[]>([]);
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
@@ -591,7 +579,10 @@ watch(
         getImageThumbForItem(val, ImageType.LANDSCAPE) ||
         getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
-      menuItems.value = await getContextMenuItems([val], val);
+      builtMenu.value = {
+        item: val,
+        items: await getContextMenuItems([val], val),
+      };
       // Load mapped genres for non-genre media items
       if (val.media_type !== MediaType.GENRE) {
         api
@@ -607,7 +598,7 @@ watch(
       }
     } else {
       fanartImage.value = imgGradient;
-      menuItems.value = [];
+      builtMenu.value = undefined;
       mappedGenres.value = [];
     }
   },
@@ -617,18 +608,16 @@ watch(
 // Watch shortcuts preference to update overflow menu when shortcuts change
 const shortcutsPreference = getPreference<string[]>("sidebar.shortcuts", []);
 watch(shortcutsPreference, async () => {
-  if (compProps.item) {
-    menuItems.value = await getContextMenuItems(
-      [compProps.item],
-      compProps.item,
-    );
+  const item = compProps.item;
+  if (item) {
+    builtMenu.value = { item, items: await getContextMenuItems([item], item) };
   }
 });
 
 const showGenreChipContextMenu = (evt: Event, genre: Genre) => {
   if (
     !compProps.item ||
-    !isAdmin.value ||
+    !canManageLibrary.value ||
     compProps.item.provider !== "library"
   )
     return;
@@ -687,24 +676,14 @@ const backButtonClick = function () {
   backFromMediaDetails(router);
 };
 
-// Resolve the queue playMedia targets directly, since activePlayerQueue is
-// undefined while an external source is active.
-const playActionInProgress = computed(() => {
-  const player = store.activePlayer;
-  if (!player) return false;
-  const queueId =
-    player.active_source && player.active_source in api.queues
-      ? player.active_source
-      : player.player_id;
-  return (
-    api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const playActionInProgress = usePlayActionInProgress();
 
 const playButtonText = computed(() => {
   if (!store.activePlayer) return $t("play");
   return getPlayerName(store.activePlayer, 20);
 });
+
+useEscapeBack(backButtonClick);
 
 const playButtonClick = function (forceMenu = false) {
   const playButton = document.getElementById("playbutton") as HTMLElement;
@@ -716,6 +695,7 @@ const playButtonClick = function (forceMenu = false) {
     rect.bottom,
     undefined,
     forceMenu,
+    undefined,
     compProps.sortBy,
   );
 };
@@ -756,25 +736,9 @@ const artistLogo = computed(() => {
   return getImageThumbForItem(compProps.item, ImageType.LOGO);
 });
 
-const isAdmin = computed(() => authManager.isAdmin());
-
-const mergeGenre = () => {
-  if (!compProps.item) return;
-  eventbus.emit("mergeGenreDialog", {
-    genreIds: [compProps.item.item_id],
-    genreNames: [compProps.item.name],
-    genreContentTypes: [(compProps.item as Genre).content_type],
-  });
-};
-
-const deleteGenre = () => {
-  if (!compProps.item) return;
-  eventbus.emit("deleteGenreDialog", {
-    genreIds: [compProps.item.item_id],
-    navigateBack: true,
-  });
-};
-
+const canManageLibrary = computed(() =>
+  authManager.hasScope(Scope.LIBRARY_MANAGE),
+);
 const collectionMediaType = computed(() => {
   if (compProps.item?.media_type != MediaType.COLLECTION)
     return MediaType.UNKNOWN;
@@ -821,6 +785,7 @@ const collectionNarrators = computed(() => {
 .background-image .v-img__img--cover {
   object-position: 50% 20%;
 }
+
 .v-card--variant-elevated {
   box-shadow: none;
   border-width: 1px;

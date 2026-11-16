@@ -4,63 +4,79 @@
       <Button
         :variant="variant"
         :size="buttonSize"
+        :data-active="activeSession ? true : undefined"
         :class="activeSession ? activePillClass : ''"
         :aria-label="$t('tooltip.show_dashboard')"
         :title="$t('tooltip.show_dashboard')"
-        @click="loadDashboards"
+        @click="refreshDashboards"
       >
-        <TvMinimal :size="iconSize" />
+        <TvMinimal
+          class="size-(--icon-size)"
+          :style="{ '--icon-size': `${iconSize}px` }"
+        />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" :class="contentClass">
-      <div
-        v-if="loading"
-        class="text-muted-foreground px-2 py-1.5 text-sm"
-        data-testid="cast-dashboard-loading"
-      >
-        {{ $t("dashboard.loading") }}
-      </div>
-      <div
-        v-else-if="!dashboards.length"
-        class="text-muted-foreground px-2 py-1.5 text-sm"
-        data-testid="cast-dashboard-empty"
-      >
-        {{ $t("dashboard.no_devices") }}
-      </div>
-      <DropdownMenuItem
-        v-for="device in sortedDashboards"
-        :key="device.dashboard_id"
-        data-testid="cast-dashboard-device"
-        @click="selectDevice(device)"
-      >
-        <div class="flex min-w-0 items-center gap-1.5">
-          <DashboardDeviceIcon
-            :provider-domain-hint="device.provider_domain_hint"
-            :size="14"
-          />
-          <span class="truncate">{{ device.name }}</span>
+      <template v-if="canShowHere">
+        <DropdownMenuItem
+          data-testid="cast-dashboard-this-device"
+          @click="showHere"
+        >
+          <MonitorSmartphone />
+          <span>{{ $t("this_device") }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator v-if="canCast" />
+      </template>
+      <template v-if="canCast">
+        <div
+          v-if="loading"
+          class="text-muted-foreground px-2 py-1.5 text-sm"
+          data-testid="cast-dashboard-loading"
+        >
+          {{ $t("dashboard.loading") }}
         </div>
-        <Check v-if="isActiveDevice(device)" class="ml-auto size-4" />
-      </DropdownMenuItem>
-      <template v-if="activeSession">
+        <div
+          v-else-if="!dashboards.length"
+          class="text-muted-foreground px-2 py-1.5 text-sm"
+          data-testid="cast-dashboard-empty"
+        >
+          {{ $t("dashboard.no_devices") }}
+        </div>
+        <DropdownMenuItem
+          v-for="device in sortedDashboards"
+          :key="device.dashboard_id"
+          data-testid="cast-dashboard-device"
+          @click="selectDevice(device)"
+        >
+          <div class="flex min-w-0 items-center gap-1.5">
+            <DashboardDeviceIcon
+              :provider-domain-hint="device.provider_domain_hint"
+              :size="14"
+            />
+            <span class="truncate">{{ device.name }}</span>
+          </div>
+          <Check v-if="isActiveDevice(device)" class="ml-auto size-4" />
+        </DropdownMenuItem>
+        <template v-if="activeSession">
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            data-testid="cast-dashboard-disconnect"
+            @click="disconnect"
+          >
+            <Unplug />
+            <span>{{ $t("dashboard.disconnect", [activeSession.name]) }}</span>
+          </DropdownMenuItem>
+        </template>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          variant="destructive"
-          data-testid="cast-dashboard-disconnect"
-          @click="disconnect"
+          data-testid="cast-dashboard-get-url"
+          @click="copyDashboardUrlToClipboard"
         >
-          <Unplug />
-          <span>{{ $t("dashboard.disconnect", [activeSession.name]) }}</span>
+          <v-icon icon="mdi-link" size="16" />
+          <span>{{ $t("dashboard.get_url") }}</span>
         </DropdownMenuItem>
       </template>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        data-testid="cast-dashboard-get-url"
-        @click="copyDashboardUrlToClipboard"
-      >
-        <v-icon icon="mdi-link" size="16" />
-        <span>{{ $t("dashboard.get_url") }}</span>
-      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
@@ -76,6 +92,7 @@ import {
 import { Button, type ButtonVariants } from "@/components/ui/button";
 import DashboardDeviceIcon from "@/components/DashboardDeviceIcon.vue";
 import api from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import { waitForApiInitialization } from "@/plugins/api/helpers";
 import {
   type DashboardDevice,
@@ -83,10 +100,13 @@ import {
   type DashboardType,
   type EventMessage,
   EventType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { Check, TvMinimal, Unplug } from "@lucide/vue";
+import router from "@/plugins/router";
+import { store } from "@/plugins/store";
+import { Check, MonitorSmartphone, TvMinimal, Unplug } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 import { copyToClipboard } from "@/helpers/utils";
@@ -111,18 +131,55 @@ const props = withDefaults(
 );
 
 const open = ref(false);
+const apiReady = ref(false);
 const loading = ref(false);
 const dashboards = ref<DashboardDevice[]>([]);
 const sessions = ref<DashboardSession[]>([]);
 
-// A dashboard viewer can't cast a dashboard itself; only show once one is registered.
-const showButton = computed(
-  () => !authManager.isDashboardViewer?.() && dashboards.value.length > 0,
+// casting a dashboard lets a device join, which is what users.invite grants
+const canShowDashboards = computed(() =>
+  authManager.hasScope(Scope.USERS_INVITE),
 );
 
-// Solid primary pill for the active state, matching the fullscreen player header's autoplay/crossfade toggles.
-const activePillClass =
-  "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90";
+// Same requirement the server applies in dashboard/get_url.
+const canGetUrl = computed(() => {
+  const info = api.serverInfo.value;
+  return (
+    !!info &&
+    (info.has_remote_access ||
+      [info.base_url, info.external_url].some((url) =>
+        url?.startsWith("https://"),
+      ))
+  );
+});
+
+// The now playing dashboard can also show on the device in hand, which needs
+// no cast device and no URL; a guest session is kept to its own pages.
+const canShowHere = computed(
+  () =>
+    props.dashboard === "now_playing" && !authManager.isGuestAccessSession?.(),
+);
+
+const canCast = computed(
+  () =>
+    canShowDashboards.value && (dashboards.value.length > 0 || canGetUrl.value),
+);
+
+// A dashboard viewer can't cast a dashboard itself.
+const showButton = computed(
+  () =>
+    apiReady.value &&
+    !authManager.isDashboardViewer?.() &&
+    (canShowHere.value || canCast.value),
+);
+
+// The overlay variant styles its own active state; elsewhere an active session
+// shows as a solid primary pill.
+const activePillClass = computed(() =>
+  props.variant === "overlay"
+    ? ""
+    : "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground dark:bg-primary dark:hover:bg-primary/90",
+);
 
 const sortedDashboards = computed(() =>
   [...dashboards.value].sort(compareDashboards),
@@ -146,6 +203,8 @@ onMounted(async () => {
   await waitForApiInitialization();
   if (unmounted) return;
 
+  apiReady.value = true;
+  if (!canShowDashboards.value) return;
   fetchSessions();
   loadDashboards();
   unsubscribers.push(
@@ -169,6 +228,22 @@ async function fetchSessions() {
   } catch (error) {
     console.error("Failed to load dashboard sessions:", error);
   }
+}
+
+// Opening the menu refreshes the cast devices, for a role that may cast.
+function refreshDashboards() {
+  if (canShowDashboards.value) loadDashboards();
+}
+
+// The dashboard opens over the app; leaving it returns to the fullscreen
+// player this button sits in.
+function showHere() {
+  open.value = false;
+  store.showFullscreenPlayer = false;
+  void router.push({
+    name: "now-playing",
+    query: props.playerId ? { player: props.playerId } : {},
+  });
 }
 
 async function loadDashboards() {
@@ -234,17 +309,13 @@ async function disconnect() {
   }
 }
 
-async function getDashboardUrl(): Promise<string> {
-  try {
-    const url = await api.sendCommand<string>("dashboard/get_url", {
-      dashboard: props.dashboard,
-      player_id: props.playerId ?? null,
-    });
-    return url ?? "";
-  } catch (error) {
-    console.error("Failed to get dashboard URL:", error);
-    return "";
-  }
+async function getDashboardUrl(): Promise<string | null> {
+  // The caller reports a failure itself, with the server's reason.
+  return api.sendCommand<string | null>(
+    "dashboard/get_url",
+    { dashboard: props.dashboard, player_id: props.playerId ?? null },
+    { suppressGlobalError: true },
+  );
 }
 
 function compareDashboards(left: DashboardDevice, right: DashboardDevice) {
@@ -267,7 +338,19 @@ function isActiveDevice(device: DashboardDevice): boolean {
 }
 
 const copyDashboardUrlToClipboard = async function () {
-  const url = await getDashboardUrl();
+  let url: string | null;
+  try {
+    url = await getDashboardUrl();
+  } catch (error) {
+    // e.g. neither remote access nor an https base url is configured
+    console.error("Failed to get dashboard URL:", error);
+    toast.error(
+      error instanceof ApiCommandError && error.details
+        ? error.details
+        : $t("dashboard.uri_copy_failed"),
+    );
+    return;
+  }
   if (!url) {
     toast.error($t("dashboard.uri_copy_failed"));
     return;

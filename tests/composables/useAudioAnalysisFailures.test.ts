@@ -108,23 +108,6 @@ describe("useAudioAnalysisFailures", () => {
     expect(mockSendCommand).toHaveBeenCalledWith("audio_analysis/failures");
   });
 
-  it("degrades to an empty list without an error when the failures command is unsupported", async () => {
-    mockSendCommand.mockImplementation((cmd: string) => {
-      if (cmd === "audio_analysis/failures")
-        // The api client rejects with the server's details string verbatim.
-        return Promise.reject("Invalid command: audio_analysis/failures");
-      return Promise.resolve(undefined);
-    });
-
-    const f = useAudioAnalysisFailures();
-    await f.refresh();
-
-    expect(f.loading.value).toBe(false);
-    expect(f.total.value).toBe(0);
-    expect(f.pageRows.value).toEqual([]);
-    expect(f.error.value).toBeNull();
-  });
-
   it("surfaces an error when the failures fetch fails for a real reason", async () => {
     const consoleError = vi
       .spyOn(console, "error")

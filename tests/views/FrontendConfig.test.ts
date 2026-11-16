@@ -1,9 +1,11 @@
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FrontendConfig from "@/views/settings/FrontendConfig.vue";
+import { BrowserMediaControlsMode } from "@/helpers/device_settings";
+import { ConfigEntryType } from "@/plugins/api/interfaces";
 
 const { apiMock, routerMock, storeMock, setPreference } = vi.hoisted(() => ({
-  apiMock: { players: {}, providers: {} },
+  apiMock: { players: {}, providers: {}, serverInfo: { value: undefined } },
   routerMock: { push: vi.fn(() => Promise.resolve()) },
   storeMock: {
     isIngressSession: false,
@@ -101,12 +103,12 @@ describe("FrontendConfig save", () => {
     reload.mockRestore();
   });
 
-  it("does not reload the page when a save changes nothing", async () => {
+  it("writes nothing and does not reload when a save changes nothing", async () => {
     const wrapper = await mountPage();
     await submitAll(wrapper);
 
-    // every preference is still written; only the reload is conditional
-    expect(setPreference).toHaveBeenCalled();
+    // an entry left as it was stays as it was on the account
+    expect(setPreference).not.toHaveBeenCalled();
     expect(reload).not.toHaveBeenCalled();
   });
 
@@ -116,5 +118,55 @@ describe("FrontendConfig save", () => {
 
     expect(setPreference).toHaveBeenCalledWith("theme", "dark");
     expect(reload).toHaveBeenCalled();
+  });
+
+  it("leaves a derived default off the account when another setting is saved", async () => {
+    const wrapper = await mountPage();
+    await submitAll(wrapper, { theme: "dark" });
+
+    // the waveform setting follows the expert mode until it is set; saving
+    // the theme must not write it down as a choice
+    expect(setPreference).toHaveBeenCalledTimes(1);
+    expect(setPreference).not.toHaveBeenCalledWith(
+      "show_waveform",
+      expect.anything(),
+    );
+  });
+
+  it("defaults browser media controls to the built-in web player", async () => {
+    const wrapper = await mountPage();
+    const entries = (
+      wrapper.vm as unknown as {
+        config: {
+          key: string;
+          type: ConfigEntryType;
+          default_value: unknown;
+          value: unknown;
+          options: { value: unknown }[];
+        }[];
+      }
+    ).config;
+    const entry = entries.find(({ key }) => key === "enable_browser_controls");
+
+    expect(entry).toMatchObject({
+      type: ConfigEntryType.STRING,
+      default_value: BrowserMediaControlsMode.WEB_PLAYER,
+      value: BrowserMediaControlsMode.WEB_PLAYER,
+    });
+    expect(entry?.options.map(({ value }) => value)).toEqual([
+      BrowserMediaControlsMode.ACTIVE_PLAYER,
+      BrowserMediaControlsMode.WEB_PLAYER,
+      BrowserMediaControlsMode.DISABLED,
+    ]);
+  });
+
+  it("links the user interface documentation", async () => {
+    const wrapper = await mountPage();
+
+    expect(
+      wrapper
+        .findComponent({ name: "SettingsHeaderCard" })
+        .props("documentationUrl"),
+    ).toBe("https://music-assistant.io/settings/user-interface/");
   });
 });

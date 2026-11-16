@@ -16,7 +16,11 @@ import {
   AudioQuality,
   ContentType,
   CrossfadeMode,
+  type DSPFilter,
+  DSPFilterType,
   DSPState,
+  type ItemMapping,
+  MediaType,
   type StreamDetails,
   VolumeNormalizationMode,
 } from "@/plugins/api/interfaces";
@@ -29,6 +33,7 @@ import {
   audioQueueProcessing,
 } from "../fixtures/audioProcessing";
 import { audioFormat } from "../fixtures/audioFormat";
+import { itemMapping } from "../fixtures/itemMapping";
 import { outputProtocol } from "../fixtures/outputProtocol";
 import { streamDetails } from "../fixtures/streamDetails";
 
@@ -44,6 +49,7 @@ vi.mock("@/plugins/api", async () => {
     },
   };
 });
+
 vi.mock("@/composables/useDSPPresets", () => ({
   useDSPPresets: () => ({
     getPresetName: vi.fn(),
@@ -65,13 +71,19 @@ const dependencies: AudioProcessingDetailsDependencies = {
   getPresetName: (presetId) =>
     presetId ? presetNames.get(presetId) : undefined,
   getIRName: (irId) => (irId ? irNames.get(irId) : undefined),
+  getPlayerName: (player) => player.name,
   players: makePlayers(),
+  canOpenSettings: true,
+  loadDSPConfig: vi.fn(),
 };
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
   dependencies.locale = "en-US";
   dependencies.players = makePlayers();
+  dependencies.getPlayerName = (player) => player.name;
+  dependencies.canOpenSettings = true;
+  vi.mocked(dependencies.loadDSPConfig).mockReset();
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
   irNames.clear();
@@ -90,6 +102,66 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       title: "FLAC",
       icon: FileIcon,
     });
+    expect(display.inputStages[0].subtitleParts).toBeUndefined();
+    expect(display.inputStages[0].subtitleLink).toBeUndefined();
+  });
+
+  it.each([
+    [MediaType.ALBUM, "Album"],
+    [MediaType.PLAYLIST, "Playlist"],
+  ])(
+    "names the %s the track was played from under its source",
+    (mediaType, label) => {
+      const container = itemMapping({
+        item_id: "7",
+        provider: "tidal--1",
+        media_type: mediaType,
+        name: "Road Trip",
+      });
+
+      const display = buildDisplay(
+        {},
+        makeFormat(),
+        undefined,
+        undefined,
+        container,
+      );
+
+      expect(display.inputStages[0]).toMatchObject({
+        title: "Test provider",
+        subtitleParts: ["Playing from Road Trip", label],
+        subtitleLink: {
+          to: {
+            name: mediaType,
+            params: { provider: "tidal--1", itemId: "7" },
+          },
+          label: "Open Road Trip",
+        },
+      });
+    },
+  );
+
+  it("names a folder the track was played from without a link", () => {
+    const container = itemMapping({
+      item_id: "Late Night Mix",
+      provider: "filesystem_local--1",
+      media_type: MediaType.FOLDER,
+      name: "Late Night Mix",
+    });
+
+    const stage = buildDisplay(
+      {},
+      makeFormat(),
+      undefined,
+      undefined,
+      container,
+    ).inputStages[0];
+
+    expect(stage.subtitleParts).toEqual([
+      "Playing from Late Night Mix",
+      "Folder",
+    ]);
+    expect(stage.subtitleLink).toBeUndefined();
   });
 
   it.each([
@@ -231,6 +303,21 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       });
     },
   );
+
+  it("names the destination with the injected player name", () => {
+    dependencies.getPlayerName = (player) => `Shown ${player.name}`;
+
+    const destination = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["office"],
+          output_format: makeFormat(),
+        }),
+      ],
+    }).outputPaths[0].destination;
+
+    expect(destination.title).toBe("Shown Office");
+  });
 
   it("keeps a missing protocol ID generic without an exact parent mapping", () => {
     dependencies.players.kitchen.output_protocols = [];
@@ -396,6 +483,213 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     );
   });
 
+  it("links the DSP rows of a single-speaker output to its DSP settings", () => {
+    const display = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["airplay-kitchen"],
+          dsp: audioDSPDetails({
+            state: DSPState.ENABLED,
+            preset_id: "preset-1",
+          }),
+          output_format: makeFormat(),
+        }),
+      ],
+    });
+    const dspStages = display.outputPaths[0].stages.filter((stage) =>
+      stage.key.startsWith("dsp-"),
+    );
+
+    expect(dspStages).toHaveLength(2);
+    for (const stage of dspStages) {
+      expect(stage.link).toEqual({
+        to: { name: "editplayerdsp", params: { playerId: "kitchen" } },
+        label: "Open DSP settings",
+      });
+    }
+  });
+
+  it("links the gain rows to their own DSP stages", () => {
+    const display = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["airplay-kitchen"],
+          dsp: audioDSPDetails({
+            state: DSPState.ENABLED,
+            input_gain: -3,
+            output_gain: 2,
+          }),
+          output_format: makeFormat(),
+        }),
+      ],
+    });
+    const linkOf = (key: string) =>
+      display.outputPaths[0].stages.find((stage) => stage.key === key)?.link
+        ?.to;
+
+    expect(linkOf("dsp-input-gain-0")).toEqual({
+      name: "editplayerdsp",
+      params: { playerId: "kitchen" },
+      query: { stage: "input" },
+    });
+    expect(linkOf("dsp-output-gain-0")).toEqual({
+      name: "editplayerdsp",
+      params: { playerId: "kitchen" },
+      query: { stage: "output" },
+    });
+  });
+
+  describe("a filter row's link", () => {
+    const peq = (preamp: number): DSPFilter => ({
+      type: DSPFilterType.PARAMETRIC_EQ,
+      enabled: true,
+      preamp,
+      per_channel_preamp: {},
+      bands: [],
+    });
+    const hiddenFilters: DSPFilter[] = [
+      { type: DSPFilterType.BALANCE, enabled: true, balance: 0 },
+      { type: DSPFilterType.GAIN, enabled: false, gain: 3 },
+    ];
+    const dspPage = (stage?: string) => ({
+      name: "editplayerdsp",
+      params: { playerId: "kitchen" },
+      ...(stage === undefined ? {} : { query: { stage } }),
+    });
+
+    // the link of each shown filter, with the player's config holding `config`
+    function filterLinks(shown: DSPFilter[], config: DSPFilter[]) {
+      vi.mocked(dependencies.loadDSPConfig).mockResolvedValue({
+        enabled: true,
+        filters: config,
+        input_gain: 0,
+        output_gain: 0,
+      });
+      const display = buildDisplay({
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["airplay-kitchen"],
+            dsp: audioDSPDetails({ state: DSPState.ENABLED, filters: shown }),
+            output_format: makeFormat(),
+          }),
+        ],
+      });
+      return display.outputPaths[0].stages
+        .filter((stage) => stage.key.startsWith("dsp-filter-"))
+        .map((stage) => stage.link!);
+    }
+
+    it("opens the filter past the ones the signal path leaves out", async () => {
+      const [link] = filterLinks([peq(-2)], [...hiddenFilters, peq(-2)]);
+
+      expect(link.to).toEqual(dspPage());
+      expect(await link.resolve?.()).toEqual(dspPage("2"));
+      expect(dependencies.loadDSPConfig).toHaveBeenCalledWith("kitchen");
+    });
+
+    it("opens the same occurrence of identical filters", async () => {
+      const links = filterLinks(
+        [peq(-2), peq(-2)],
+        [peq(-2), ...hiddenFilters, peq(-2)],
+      );
+
+      expect(await links[0].resolve?.()).toEqual(dspPage("0"));
+      expect(await links[1].resolve?.()).toEqual(dspPage("3"));
+    });
+
+    it("opens the default stage when the filter has changed", async () => {
+      const [link] = filterLinks([peq(-2)], [peq(-5)]);
+
+      expect(await link.resolve?.()).toEqual(dspPage());
+    });
+
+    it("opens the default stage when the config fails to load", async () => {
+      const [link] = filterLinks([peq(-2)], [peq(-2)]);
+      vi.mocked(dependencies.loadDSPConfig).mockRejectedValue(new Error());
+
+      expect(await link.resolve?.()).toEqual(dspPage());
+    });
+  });
+
+  it("does not link the DSP rows of an output to several speakers", () => {
+    const display = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["airplay-kitchen", "office"],
+          dsp: audioDSPDetails({
+            state: DSPState.ENABLED,
+            preset_id: "preset-1",
+          }),
+          output_format: makeFormat(),
+        }),
+      ],
+    });
+
+    expect(
+      display.outputPaths[0].stages.some((stage) => stage.link !== undefined),
+    ).toBe(false);
+  });
+
+  it.each([
+    ["the queue", "queue-1", true],
+    ["a live source", undefined, false],
+  ])("links normalization and crossfade for %s", (_label, queueId, linked) => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.DYNAMIC,
+          }),
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.STANDARD_CROSSFADE,
+      queueId,
+    );
+    const expected = linked
+      ? {
+          to: { name: "editqueue", params: { queueId: "queue-1" } },
+          label: "Open queue settings",
+        }
+      : undefined;
+
+    for (const key of ["normalization", "crossfade"]) {
+      expect(
+        display.processingStages.find((stage) => stage.key === key)?.link,
+      ).toEqual(expected);
+    }
+  });
+
+  it("links nothing for a user who may not open settings", () => {
+    dependencies.canOpenSettings = false;
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.DYNAMIC,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["airplay-kitchen"],
+            dsp: audioDSPDetails({ state: DSPState.ENABLED }),
+            output_format: makeFormat(),
+          }),
+        ],
+      },
+      makeFormat(),
+      CrossfadeMode.STANDARD_CROSSFADE,
+      "queue-1",
+    );
+    const stages = [
+      ...display.processingStages,
+      ...display.outputPaths[0].stages,
+    ];
+
+    expect(stages.some((stage) => stage.link !== undefined)).toBe(false);
+    expect(display.outputPaths[0].destination.title).toBe("Kitchen");
+  });
+
   it("resolves presets and protocol-parent destinations", () => {
     const chain: Partial<AudioProcessingChain> = {
       input_fidelity: audioFidelity({ quality: AudioQuality.LOSSLESS }),
@@ -467,9 +761,12 @@ describe("buildAudioProcessingDetailsDisplay", () => {
         ],
       });
 
-      expect(display.processingStages.map((stage) => stage.title)).toContain(
-        "Crossfade: Unknown",
-      );
+      expect(
+        display.processingStages.find((stage) => stage.key === "crossfade"),
+      ).toMatchObject({
+        title: "Crossfade",
+        subtitleParts: ["Unknown"],
+      });
       expect(display.processingStages[0].details).toContain(
         "Floating-point headroom is available for: Crossfade.",
       );
@@ -498,6 +795,312 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     expect(display.processingStages).toHaveLength(1);
     expect(display.processingStages[0].details).not.toContain(
       "Floating-point headroom is available for: Crossfade.",
+    );
+  });
+
+  it.each([
+    [CrossfadeMode.SMART_CROSSFADE, "Smart"],
+    [CrossfadeMode.STANDARD_CROSSFADE, "Standard"],
+  ])(
+    "shows %s crossfade intent before a transition is reported",
+    (crossfadeIntent, label) => {
+      const display = buildDisplay(
+        {
+          queue_processing: audioQueueProcessing({
+            crossfade_mode: CrossfadeMode.DISABLED,
+          }),
+        },
+        makeFormat(),
+        crossfadeIntent,
+      );
+
+      expect(
+        display.processingStages.find((stage) => stage.key === "crossfade"),
+      ).toMatchObject({
+        title: "Crossfade",
+        subtitleParts: [label],
+      });
+    },
+  );
+
+  it("shows a reported voice-over whatever the crossfade intent", () => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          crossfade_mode: CrossfadeMode.VOICE_OVER,
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.DISABLED,
+    );
+
+    expect(
+      display.processingStages.find((stage) => stage.key === "crossfade"),
+    ).toMatchObject({
+      title: "Crossfade",
+      subtitleParts: ["Voice-over, music ducked under it"],
+    });
+  });
+
+  it("prefers crossfade intent over the reported fallback mode", () => {
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          crossfade_mode: CrossfadeMode.STANDARD_CROSSFADE,
+        }),
+      },
+      makeFormat(),
+      CrossfadeMode.SMART_CROSSFADE,
+    );
+
+    expect(
+      display.processingStages.find((stage) => stage.key === "crossfade"),
+    ).toMatchObject({
+      title: "Crossfade",
+      subtitleParts: ["Smart"],
+    });
+  });
+
+  it("keeps the path direct when the source handled the processing", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.SOURCE,
+          }),
+          crossfade_mode: CrossfadeMode.SOURCE,
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+      CrossfadeMode.SMART_CROSSFADE,
+    );
+
+    // both steps are reported, but neither is ours, so the shared path stays direct
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Direct signal path",
+      "Volume normalization",
+      "Crossfade",
+    ]);
+    const normalization = display.processingStages[1];
+    expect(normalization.subtitleParts).toEqual(["Applied by Test provider"]);
+    expect(display.processingStages[2].subtitleParts).toEqual([
+      "Applied by Test provider",
+    ]);
+    // our target and measurement describe neither, so there is nothing to list
+    expect(normalization.details).toEqual([]);
+  });
+
+  it("still reports a transform of ours alongside a source-handled one", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.SOURCE,
+          }),
+          playback_speed: 1.25,
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    // the speed change is ours, so the path is no longer direct
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Volume normalization",
+      "Playback speed: 1.25x",
+    ]);
+  });
+
+  it("lets a normalization of ours suppress the direct path", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.MEASUREMENT_ONLY,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    expect(display.processingStages.map((stage) => stage.title)).not.toContain(
+      "Direct signal path",
+    );
+  });
+
+  it("does not call a provider's own wider handoff an internal conversion", () => {
+    // a Spotify soloist stream: a 24-bit tier decoded upstream and handed over as
+    // 32-bit PCM, so Music Assistant received the wider container rather than made it
+    const sourceFormat = makeFormat({
+      content_type: ContentType.FLAC,
+      codec_type: ContentType.FLAC,
+      sample_rate: 44100,
+      bit_depth: 24,
+    });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S32LE,
+            codec_type: ContentType.PCM_S32LE,
+            sample_rate: 44100,
+            bit_depth: 32,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: true }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Direct signal path",
+    ]);
+  });
+
+  it("still reports an internal format that narrows the source", () => {
+    const sourceFormat = makeFormat({
+      content_type: ContentType.FLAC,
+      codec_type: ContentType.FLAC,
+      sample_rate: 44100,
+      bit_depth: 24,
+    });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            fidelity: audioFidelity({ bit_perfect: false }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    expect(display.processingStages.map((stage) => stage.title)).toEqual([
+      "Internal format conversion",
+    ]);
+  });
+
+  it("does not contradict itself when only the source processed the audio", () => {
+    const sourceFormat = makeFormat({ sample_rate: 44100, bit_depth: 16 });
+    const display = buildDisplay(
+      {
+        queue_processing: audioQueueProcessing({
+          pcm_format: makeFormat({
+            content_type: ContentType.PCM_S16LE,
+            codec_type: ContentType.PCM_S16LE,
+            sample_rate: 44100,
+            bit_depth: 16,
+          }),
+          normalization: audioNormalizationDetails({
+            mode: VolumeNormalizationMode.SOURCE,
+          }),
+          crossfade_mode: CrossfadeMode.SOURCE,
+        }),
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["kitchen"],
+            output_format: sourceFormat,
+            // an output that is not bit-perfect takes the other half of the fork
+            fidelity: audioFidelity({ bit_perfect: false }),
+          }),
+        ],
+      },
+      sourceFormat,
+    );
+
+    const context = display.processingStages[0];
+    expect(context.title).toBe("No shared transforms reported");
+    // the panel lists the source's two steps two rows below, so this line has to
+    // speak for us rather than for the processing model as a whole
+    expect(context.details).toContain(
+      "Music Assistant applies no normalization, crossfade, playback speed adjustment, or audio overlay.",
+    );
+  });
+
+  it("excludes source-handled processing from headroom reasons", () => {
+    const display = buildDisplay({
+      queue_processing: audioQueueProcessing({
+        pcm_format: makeFormat({
+          content_type: ContentType.PCM_F32LE,
+          codec_type: ContentType.PCM_F32LE,
+          bit_depth: 32,
+        }),
+        normalization: audioNormalizationDetails({
+          mode: VolumeNormalizationMode.SOURCE,
+        }),
+        crossfade_mode: CrossfadeMode.SOURCE,
+      }),
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["kitchen"],
+          output_format: makeFormat(),
+          fidelity: audioFidelity({ bit_perfect: false }),
+          dsp: audioDSPDetails({ state: DSPState.ENABLED, output_gain: -3 }),
+        }),
+      ],
+    });
+
+    const headroom = display.processingStages[0];
+    expect(headroom.title).toBe("Processing headroom");
+    expect(headroom.details).toContain(
+      "Floating-point headroom is available for: DSP.",
     );
   });
 
@@ -594,6 +1197,9 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 function buildDisplay(
   chain: Partial<AudioProcessingChain> = {},
   format = makeFormat(),
+  crossfadeIntent?: CrossfadeMode,
+  queueId?: string,
+  container?: ItemMapping,
 ) {
   return buildAudioProcessingDetailsDisplay(
     audioProcessingChain(chain),
@@ -603,6 +1209,9 @@ function buildDisplay(
       audio_format: format,
     }),
     dependencies,
+    crossfadeIntent,
+    queueId,
+    container,
   );
 }
 

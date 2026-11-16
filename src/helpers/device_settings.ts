@@ -7,6 +7,13 @@ const STORAGE_KEY_PREFIX = "frontend.settings.";
 export const MOBILE_SIDEBAR_SIDE = "mobile_sidebar_side";
 export const HA_KIOSK_MODE = "ha_kiosk_mode";
 export const FORCE_MOBILE_LAYOUT = "force_mobile_layout";
+export const BROWSER_MEDIA_CONTROLS = "enable_browser_controls";
+
+export enum BrowserMediaControlsMode {
+  ACTIVE_PLAYER = "active_player",
+  WEB_PLAYER = "web_player",
+  DISABLED = "disabled",
+}
 
 /**
  * Read a per-device setting, or null when it is unset.
@@ -18,6 +25,24 @@ export function readDeviceSetting(key: string): string | null {
     return localStorage.getItem(STORAGE_KEY_PREFIX + key);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Return which players may be exposed to browser media controls.
+ */
+export function getBrowserMediaControlsMode(): BrowserMediaControlsMode {
+  const storedValue = readDeviceSetting(BROWSER_MEDIA_CONTROLS);
+  switch (storedValue) {
+    case BrowserMediaControlsMode.ACTIVE_PLAYER:
+      return BrowserMediaControlsMode.ACTIVE_PLAYER;
+    case BrowserMediaControlsMode.DISABLED:
+    case "false":
+      return BrowserMediaControlsMode.DISABLED;
+    case BrowserMediaControlsMode.WEB_PLAYER:
+    case "true":
+    default:
+      return BrowserMediaControlsMode.WEB_PLAYER;
   }
 }
 

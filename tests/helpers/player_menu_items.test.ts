@@ -8,74 +8,79 @@ import {
   PLAYER_CONTROL_NONE,
   PlayerFeature,
   PlayerType,
+  ProtocolRole,
   type AIRadioHost,
-  type AIRadioSession,
-  type AIRadioStation,
+  type AIRadioQueueDJStatus,
   type Player,
   type PlayerOption,
   type PlayerQueue,
   type PlayerSource,
   RepeatMode,
+  Scope,
 } from "@/plugins/api/interfaces";
+import { getLucideIcon } from "@/helpers/icon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../fixtures/playerQueue";
 import { playerSource } from "../fixtures/playerSource";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
 const {
   aiRadioAvailableRef,
   announcementAvailableRef,
   emitEvent,
+  hasScope,
   hostsRef,
-  isAdmin,
-  loadHosts,
-  loadQueueDjStatus,
-  loadStatus,
   openAnnouncementDialog,
   queueDjStatusRef,
   togglePlayerPower,
   routerPush,
-  sessionsRef,
   setQueueDj,
-  showsRef,
   storeMock,
 } = vi.hoisted(() => ({
   aiRadioAvailableRef: { value: false },
   announcementAvailableRef: { value: false },
   emitEvent: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
   hostsRef: { value: [] as AIRadioHost[] },
-  isAdmin: vi.fn(),
-  loadHosts: vi.fn().mockResolvedValue(undefined),
-  loadQueueDjStatus: vi.fn().mockResolvedValue(undefined),
-  loadStatus: vi.fn().mockResolvedValue(undefined),
   openAnnouncementDialog: vi.fn(),
-  queueDjStatusRef: { value: {} as Record<string, string> },
+  queueDjStatusRef: { value: {} as AIRadioQueueDJStatus },
   togglePlayerPower: vi.fn(),
   routerPush: vi.fn(),
-  sessionsRef: { value: [] as AIRadioSession[] },
   setQueueDj: vi.fn(),
-  showsRef: { value: [] as AIRadioStation[] },
   storeMock: {
+    enabledPlugins: new Set(["milkdrop_visualizer"]),
     showFullscreenPlayer: true,
     showPlayersMenu: true,
   },
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     players: {},
-    providers: {
-      milkdrop_visualizer: { domain: "milkdrop_visualizer", available: true },
-    },
-    queueCommandShuffle: vi.fn(),
-    queueCommandRepeat: vi.fn(),
+    providerManifests: { chromecast: { name: "Chromecast" } },
     playerCommandShuffle: vi.fn(),
     playerCommandRepeat: vi.fn(),
+    queueCommandTransfer: vi.fn(),
+  };
+  return { api, default: api };
+});
+
+const { webPlayerMock } = vi.hoisted(() => ({
+  webPlayerMock: {
+    player_id: "this_browser",
+    tabMode: "sendspin",
+    unlockAudio: vi.fn(() => Promise.resolve(true)),
   },
+}));
+
+vi.mock("@/plugins/web_player", () => ({
+  webPlayer: webPlayerMock,
+  isPlaybackMode: (mode: string) => mode === "sendspin",
 }));
 
 vi.mock("@/plugins/auth", () => ({
   authManager: {
-    isAdmin,
+    hasScope,
   },
 }));
 
@@ -123,17 +128,7 @@ vi.mock("@/composables/ai-radio/useHosts", () => ({
     hosts: hostsRef,
     queueDjStatus: queueDjStatusRef,
     aiRadioAvailable: aiRadioAvailableRef,
-    loadHosts,
-    loadQueueDjStatus,
     setQueueDj,
-  }),
-}));
-
-vi.mock("@/composables/ai-radio/useShows", () => ({
-  useShows: () => ({
-    sessions: sessionsRef,
-    shows: showsRef,
-    loadStatus,
   }),
 }));
 
@@ -142,6 +137,11 @@ vi.mock("vue-sonner", () => ({
     error: vi.fn(),
   },
 }));
+
+// a member unless a test says otherwise
+beforeEach(() => {
+  hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+});
 
 function makePlayer(overrides: Partial<Player> = {}): Player {
   return {
@@ -182,30 +182,9 @@ function makeHost(overrides: Partial<AIRadioHost> = {}): AIRadioHost {
   };
 }
 
-function makeShow(overrides: Partial<AIRadioStation> = {}): AIRadioStation {
-  return {
-    id: "show-1",
-    name: "Morning Mix",
-    source_playlist_id: "42",
-    source_playlist_provider: "library",
-    host_id: "host-1",
-    ...overrides,
-  };
-}
-
-function makeSession(overrides: Partial<AIRadioSession> = {}): AIRadioSession {
-  return {
-    session_id: "session-1",
-    station_id: "show-1",
-    queue_id: "kitchen",
-    status: "running",
-    created_at: "2026-08-01T00:00:00Z",
-    started_at: "2026-08-01T00:00:00Z",
-    ended_at: null,
-    error: null,
-    last_render_error: null,
-    ...overrides,
-  };
+/** A queue's DJ entry: manually armed with no station, or auto-armed by the show it plays. */
+function djEntry(hostId: string, stationId = ""): AIRadioQueueDJStatus[string] {
+  return { host_id: hostId, station_id: stationId };
 }
 
 describe("getPlayerSetupMenuItem", () => {
@@ -283,7 +262,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    isAdmin.mockReturnValue(true);
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     storeMock.showFullscreenPlayer = true;
     storeMock.showPlayersMenu = true;
   });
@@ -369,14 +348,47 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     ).toEqual(["settings.player_settings", "settings.category.dsp"]);
   });
 
-  it("keeps the settings out of a non-admin's menu", () => {
-    isAdmin.mockReturnValue(false);
+  it("keeps the settings out of a member's menu", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "player",
     });
 
     expect(menuItems.map((item) => item.label)).not.toContain("open_settings");
+  });
+
+  it("offers the settings to any role that may change player settings", () => {
+    hasScope.mockImplementation(
+      scopeChecker([...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PLAYERS_WRITE]),
+    );
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "player",
+    });
+
+    expect(openSettingsItem(menuItems)).toBeDefined();
+  });
+});
+
+describe("getPlayerMenuItems save queue as playlist", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const labels = () =>
+    getPlayerMenuItems(makePlayer(), makeQueue({ items: 3 }), {
+      context: "queue",
+    }).map((item) => item.label);
+
+  it("offers saving the queue to a member", () => {
+    expect(labels()).toContain("save_queue_as_playlist");
+  });
+
+  it("keeps saving the queue from a role that may not change the library", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+
+    expect(labels()).not.toContain("save_queue_as_playlist");
   });
 });
 
@@ -447,11 +459,21 @@ describe("getPlayerMenuItems ai dj", () => {
     aiRadioAvailableRef.value = false;
     hostsRef.value = [];
     queueDjStatusRef.value = {};
-    sessionsRef.value = [];
-    showsRef.value = [];
   });
 
   it("omits the ai_dj entry without an available ai_radio provider", () => {
+    hostsRef.value = [makeHost()];
+
+    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+      context: "queue",
+    });
+
+    expect(menuItems.map((item) => item.label)).not.toContain("ai_dj");
+  });
+
+  it("omits the ai_dj entry for a role that may not load the hosts", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+    aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost()];
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
@@ -467,7 +489,7 @@ describe("getPlayerMenuItems ai dj", () => {
       makeHost({ id: "host-1", name: "Robo DJ" }),
       makeHost({ id: "host-2", name: "Chill Casey" }),
     ];
-    queueDjStatusRef.value = { kitchen: "host-1" };
+    queueDjStatusRef.value = { kitchen: djEntry("host-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -508,10 +530,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("shows a single disabled row naming the show's host while a show is on air on this queue", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
-    showsRef.value = [makeShow({ id: "show-1", host_id: "host-1" })];
-    sessionsRef.value = [
-      makeSession({ queue_id: "kitchen", station_id: "show-1" }),
-    ];
+    queueDjStatusRef.value = { kitchen: djEntry("host-1", "show-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -528,10 +547,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("renders the normal hosts submenu when the running show is on a different queue", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
-    showsRef.value = [makeShow({ id: "show-1", host_id: "host-1" })];
-    sessionsRef.value = [
-      makeSession({ queue_id: "other-queue", station_id: "show-1" }),
-    ];
+    queueDjStatusRef.value = { "other-queue": djEntry("host-1", "show-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -551,10 +567,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("falls back to a nameless label when the on-air show's host can't be resolved", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [];
-    showsRef.value = [makeShow({ id: "show-1", host_id: "deleted-host" })];
-    sessionsRef.value = [
-      makeSession({ queue_id: "kitchen", station_id: "show-1" }),
-    ];
+    queueDjStatusRef.value = { kitchen: djEntry("deleted-host", "show-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -588,7 +601,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("clears the queue's dj via the off entry", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost({ id: "host-1" })];
-    queueDjStatusRef.value = { kitchen: "host-1" };
+    queueDjStatusRef.value = { kitchen: djEntry("host-1") };
 
     const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
       context: "queue",
@@ -657,34 +670,37 @@ describe("getPlayerMenuItems ai dj", () => {
       labels.indexOf("select_source"),
     );
   });
+});
 
-  it("refreshes hosts, dj status and session status when the ai_dj entry is built", () => {
-    aiRadioAvailableRef.value = true;
-    hostsRef.value = [makeHost()];
-
-    getPlayerMenuItems(makePlayer(), makeQueue(), { context: "queue" });
-
-    expect(loadHosts).toHaveBeenCalled();
-    expect(loadQueueDjStatus).toHaveBeenCalled();
-    expect(loadStatus).toHaveBeenCalled();
-  });
-
-  it("swallows a failed background refresh instead of rejecting unhandled", async () => {
-    aiRadioAvailableRef.value = true;
-    hostsRef.value = [makeHost()];
-    loadHosts.mockRejectedValueOnce(new Error("Connection lost"));
-    loadQueueDjStatus.mockRejectedValueOnce(new Error("Connection lost"));
-    loadStatus.mockRejectedValueOnce(new Error("Connection lost"));
-
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "queue",
+describe("getPlayerMenuItems select source", () => {
+  it("names the protocol an app from outside plays on", () => {
+    const player = makePlayer({
+      source_list: [
+        playerSource({ id: "kitchen", name: "Queue", passive: false }),
+        playerSource({ id: "youtube", name: "YouTube" }),
+      ],
+      active_source: "youtube",
+      active_output_protocol: null,
+      protocols: [
+        {
+          protocol_id: "cast-1",
+          domain: "chromecast",
+          provider: "chromecast",
+          role: ProtocolRole.AUDIO,
+          available: true,
+          active: true,
+        },
+      ],
     });
 
-    // The rejections settle on a microtask; flushing here is what would
-    // surface them as unhandled if the call sites didn't catch.
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(menuItems.map((item) => item.label)).toContain("ai_dj");
+    const selectSource = getPlayerMenuItems(player, undefined, {
+      context: "player",
+    }).find((item) => item.label === "select_source");
+
+    expect(selectSource?.subItems?.map((item) => item.label)).toEqual([
+      "Queue",
+      "YouTube • Chromecast",
+    ]);
   });
 });
 
@@ -751,11 +767,17 @@ describe("shuffle and repeat", () => {
     );
   }
 
-  it("shuffles the queue when one is playing", () => {
+  // the queue is a source like any other, listed under the player's own id, so
+  // the command names it and the server refuses it once something else has
+  // taken the player
+  it("shuffles the queue through the player when one is playing", () => {
     entry(makePlayer(), "shuffle_enable", makeQueue())?.action?.();
 
-    expect(api.queueCommandShuffle).toHaveBeenCalledWith("kitchen", true);
-    expect(api.playerCommandShuffle).not.toHaveBeenCalled();
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      true,
+      "kitchen",
+    );
   });
 
   it("shuffles a live source's own session through the player", () => {
@@ -763,8 +785,11 @@ describe("shuffle and repeat", () => {
 
     entry(player, "shuffle_enable")?.action?.();
 
-    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", true);
-    expect(api.queueCommandShuffle).not.toHaveBeenCalled();
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      true,
+      SPOTIFY,
+    );
   });
 
   it("reads the shuffle state the source reports", () => {
@@ -772,7 +797,11 @@ describe("shuffle and repeat", () => {
 
     entry(player, "shuffle_disable")?.action?.();
 
-    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      false,
+      SPOTIFY,
+    );
   });
 
   // the menu can sit open while a websocket update lands; updates Object.assign
@@ -795,7 +824,11 @@ describe("shuffle and repeat", () => {
     ];
     item?.action?.();
 
-    expect(api.playerCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      false,
+      SPOTIFY,
+    );
   });
 
   it("shuffles the queue against the state at click time", () => {
@@ -805,12 +838,16 @@ describe("shuffle and repeat", () => {
     queue.shuffle_enabled = true;
     item?.action?.();
 
-    expect(api.queueCommandShuffle).toHaveBeenCalledWith("kitchen", false);
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      false,
+      "kitchen",
+    );
   });
 
   // the source can end while the menu sits open, and the player's own queue
   // takes it back — a command meant for the session must not land there
-  it("does nothing when the source ended while the menu was open", () => {
+  it("still names the shuffle source that ended while the menu was open", () => {
     const player = playerOnSource({ can_shuffle: true, shuffle_enabled: true });
     const item = entry(player, "shuffle_disable");
 
@@ -819,8 +856,35 @@ describe("shuffle and repeat", () => {
     player.source_list = [playerSource({ id: "kitchen", name: "Queue" })];
     item?.action?.();
 
-    expect(api.playerCommandShuffle).not.toHaveBeenCalled();
-    expect(api.queueCommandShuffle).not.toHaveBeenCalled();
+    // whatever value it carries is moot: the command is addressed to the
+    // session that ended, so the server refuses it rather than shuffle the
+    // queue that took the player back
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      expect.any(Boolean),
+      SPOTIFY,
+    );
+  });
+
+  // the other way around, and the reason the queue names its target too: a
+  // source takes the player while the menu sits open, and the setting would
+  // otherwise land on a queue that is no longer playing and surprise the user
+  // whenever it resumes
+  it("still names the queue a source took over while the menu was open", () => {
+    const player = makePlayer();
+    const item = entry(player, "shuffle_enable", makeQueue());
+
+    player.active_source = SPOTIFY;
+    player.source_list = [
+      playerSource({ id: SPOTIFY, name: "Spotify Connect", can_shuffle: true }),
+    ];
+    item?.action?.();
+
+    expect(api.playerCommandShuffle).toHaveBeenCalledWith(
+      "kitchen",
+      true,
+      "kitchen",
+    );
   });
 
   it("repeats within a live source's own session through the player", () => {
@@ -831,25 +895,25 @@ describe("shuffle and repeat", () => {
     expect(api.playerCommandRepeat).toHaveBeenCalledWith(
       "kitchen",
       RepeatMode.ALL,
+      SPOTIFY,
     );
-    expect(api.queueCommandRepeat).not.toHaveBeenCalled();
   });
 
-  it("repeats the queue when one is playing", () => {
+  it("repeats the queue through the player when one is playing", () => {
     entry(
       makePlayer(),
       "select_repeat_mode",
       makeQueue(),
     )?.subItems?.[1]?.action?.();
 
-    expect(api.queueCommandRepeat).toHaveBeenCalledWith(
+    expect(api.playerCommandRepeat).toHaveBeenCalledWith(
       "kitchen",
       RepeatMode.ALL,
+      "kitchen",
     );
-    expect(api.playerCommandRepeat).not.toHaveBeenCalled();
   });
 
-  it("sets no repeat mode when the source ended while the menu was open", () => {
+  it("still names the repeat source that ended while the menu was open", () => {
     const player = playerOnSource({ can_repeat: true });
     const item = entry(player, "select_repeat_mode");
 
@@ -857,8 +921,11 @@ describe("shuffle and repeat", () => {
     player.source_list = [playerSource({ id: "kitchen", name: "Queue" })];
     item?.subItems?.[1]?.action?.();
 
-    expect(api.playerCommandRepeat).not.toHaveBeenCalled();
-    expect(api.queueCommandRepeat).not.toHaveBeenCalled();
+    expect(api.playerCommandRepeat).toHaveBeenCalledWith(
+      "kitchen",
+      RepeatMode.ALL,
+      SPOTIFY,
+    );
   });
 
   it("marks the repeat mode the source reports", () => {
@@ -912,5 +979,177 @@ describe("shuffle and repeat", () => {
 
     expect(shown).not.toContain("shuffle_enable");
     expect(shown).not.toContain("select_repeat_mode");
+  });
+});
+
+describe("transfer queue", () => {
+  function transferItems(players: Player[]): ContextMenuItem[] {
+    api.players = Object.fromEntries(
+      players.map((p) => [p.player_id, p]),
+    ) as unknown as typeof api.players;
+    const menuItems = getPlayerMenuItems(
+      makePlayer(),
+      makeQueue({ active: true, items: 3 }),
+      { context: "queue" },
+    );
+    return (
+      menuItems.find((item) => item.label === "transfer_queue")?.subItems ?? []
+    );
+  }
+
+  async function targetOf(item: ContextMenuItem): Promise<string> {
+    await Promise.resolve(item.action?.());
+    return vi.mocked(api.queueCommandTransfer).mock.lastCall![1];
+  }
+
+  async function targetsOf(items: ContextMenuItem[]): Promise<string[]> {
+    const ids: string[] = [];
+    for (const item of items) ids.push(await targetOf(item));
+    return ids;
+  }
+
+  function target(overrides: Partial<Player>): Player {
+    return makePlayer({
+      enabled: true,
+      available: true,
+      output_protocols: [],
+      group_members: [],
+      ...overrides,
+    });
+  }
+
+  it("offers this device first even though it is hidden", async () => {
+    const items = transferItems([
+      target({ player_id: "kitchen" }),
+      target({ player_id: "attic", name: "Attic" }),
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+      target({ player_id: "garage", name: "Garage", hide_in_ui: true }),
+    ]);
+
+    expect(await targetsOf(items)).toEqual(["this_browser", "attic"]);
+    expect(items.map((item) => item.separatorAfter)).toEqual([true, false]);
+  });
+
+  it("shows the icon the user picked for this device", async () => {
+    const [device] = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        icon: "headphones",
+      }),
+    ]);
+
+    expect(device.icon).toBe(getLucideIcon("headphones"));
+  });
+
+  it("leaves out the separator when this device is the only target", async () => {
+    const items = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    expect(items[0].separatorAfter).toBe(false);
+  });
+
+  it("offers this device while it plays in the source group", async () => {
+    const items = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        synced_to: "kitchen",
+      }),
+      target({ player_id: "attic", synced_to: "kitchen" }),
+    ]);
+
+    expect(await targetsOf(items)).toEqual(["this_browser"]);
+  });
+
+  it("unlocks this tab's audio before moving the queue to it", async () => {
+    vi.mocked(api.queueCommandTransfer).mockClear();
+    webPlayerMock.unlockAudio.mockClear();
+    const [device] = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    await Promise.resolve(device.action?.());
+
+    expect(webPlayerMock.unlockAudio).toHaveBeenCalledOnce();
+    expect(api.queueCommandTransfer).toHaveBeenCalledWith(
+      expect.anything(),
+      "this_browser",
+    );
+  });
+
+  it("keeps the queue when this tab cannot play audio", async () => {
+    const { toast } = await import("vue-sonner");
+    vi.mocked(api.queueCommandTransfer).mockClear();
+    webPlayerMock.unlockAudio.mockResolvedValueOnce(false);
+    const [device] = transferItems([
+      target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+    ]);
+
+    await Promise.resolve(device.action?.());
+
+    expect(api.queueCommandTransfer).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it("does not unlock audio when another tab plays for this device", async () => {
+    webPlayerMock.tabMode = "controls_only";
+    webPlayerMock.unlockAudio.mockClear();
+    try {
+      const [device] = transferItems([
+        target({ player_id: "this_browser", hide_in_ui: true, private: true }),
+      ]);
+
+      expect(await targetOf(device)).toBe("this_browser");
+      expect(webPlayerMock.unlockAudio).not.toHaveBeenCalled();
+    } finally {
+      webPlayerMock.tabMode = "sendspin";
+    }
+  });
+
+  it("does not unlock audio for another player", async () => {
+    webPlayerMock.unlockAudio.mockClear();
+    const [attic] = transferItems([target({ player_id: "attic" })]);
+
+    expect(await targetOf(attic)).toBe("attic");
+    expect(webPlayerMock.unlockAudio).not.toHaveBeenCalled();
+  });
+  it("offers this device when it is the synced member the menu shows", async () => {
+    api.players = Object.fromEntries(
+      [
+        target({ player_id: "kitchen" }),
+        target({
+          player_id: "this_browser",
+          hide_in_ui: true,
+          private: true,
+          synced_to: "kitchen",
+        }),
+      ].map((p) => [p.player_id, p]),
+    ) as unknown as typeof api.players;
+    const items =
+      getPlayerMenuItems(
+        target({ player_id: "this_browser", synced_to: "kitchen" }),
+        makeQueue({ queue_id: "kitchen", active: true, items: 3 }),
+        { context: "queue" },
+      ).find((item) => item.label === "transfer_queue")?.subItems ?? [];
+
+    expect(await targetsOf(items)).toEqual(["this_browser"]);
+  });
+
+  it("marks a target that leads a group with its member count", async () => {
+    const [device] = transferItems([
+      target({
+        player_id: "this_browser",
+        hide_in_ui: true,
+        private: true,
+        group_members: ["this_browser", "attic"],
+      }),
+      target({ player_id: "attic", synced_to: "this_browser" }),
+    ]);
+
+    expect(device.label).toMatch(/\+1$/);
   });
 });

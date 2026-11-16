@@ -2,7 +2,9 @@ import { computed, reactive } from "vue";
 import {
   Player,
   PlayerQueue,
+  ProviderType,
   QueueItem,
+  Role,
   ServerInfoMessage,
   User,
 } from "./api/interfaces";
@@ -30,9 +32,9 @@ interface Store {
   apiInitialized: boolean;
   apiBaseUrl: string;
   dialogActive: boolean;
-  activePlayer?: Player;
-  activePlayerQueue?: PlayerQueue;
-  curQueueItem?: QueueItem;
+  readonly activePlayer?: Player;
+  readonly activePlayerQueue?: PlayerQueue;
+  readonly curQueueItem?: QueueItem;
   prevState?: StoredState;
   libraryArtistsCount?: number;
   libraryAlbumsCount?: number;
@@ -45,12 +47,15 @@ interface Store {
   isTouchscreen: boolean;
   deviceType: DeviceType;
   forceMobileLayout?: boolean;
-  mobileLayout: boolean;
+  readonly mobileLayout: boolean;
   currentUser?: User;
+  // the user roles, the builtin ones first (see loadRoles)
+  roles: Role[];
+  // the scopes granted to each user role, keyed by role id
+  roleScopes: Record<string, string[]>;
   serverInfo?: ServerInfoMessage;
-  isIngressSession: boolean;
-  isOnboarding: boolean;
-  enabledPlugins: Set<string>;
+  readonly isIngressSession: boolean;
+  readonly enabledPlugins: ReadonlySet<string>;
   isPartyGuest: boolean;
   companionPlayerId?: string;
   navMenuEditMode: boolean;
@@ -85,7 +90,6 @@ export const store: Store = reactive({
   libraryRadiosCount: undefined,
   libraryGenresCount: undefined,
   isTouchscreen: isTouchscreenDevice(),
-  playMenuShown: false,
   deviceType: DEVICE_TYPE,
   // a tablet has the screen for a desktop layout and is laid out for touch all
   // the same, so it is taken at its word rather than measured
@@ -96,12 +100,25 @@ export const store: Store = reactive({
       parseBool(store.forceMobileLayout),
   ),
   currentUser: undefined,
+  roles: [],
+  roleScopes: {},
   serverInfo: undefined,
   isIngressSession: computed(() =>
     isHomeAssistantIngressSession(api.serverInfo.value),
   ),
-  isOnboarding: false,
-  enabledPlugins: new Set(),
+  // the loaded plugins, which every role may list; their configs would take
+  // config.providers.read, and a plugin that isn't loaded can't serve its page
+  enabledPlugins: computed(
+    () =>
+      new Set(
+        Object.values(api.providers)
+          .filter(
+            (provider) =>
+              provider.type === ProviderType.PLUGIN && provider.available,
+          )
+          .map((provider) => provider.domain),
+      ),
+  ),
   isPartyGuest: false,
   navMenuEditMode: false,
 });

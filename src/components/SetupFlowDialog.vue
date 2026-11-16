@@ -14,27 +14,31 @@
           <ProviderIcon v-if="iconDomain" :domain="iconDomain" :size="32" />
           <Settings2 v-else :size="28" />
         </span>
-        <DialogTitle class="min-w-0 flex-1 truncate">
-          {{ dialogTitle }}
-        </DialogTitle>
+        <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+          <DialogTitle class="truncate">{{ flowTitle }}</DialogTitle>
+          <DialogDescription
+            v-if="stepTitle"
+            class="text-foreground line-clamp-2 font-medium"
+          >
+            {{ stepTitle }}
+          </DialogDescription>
+        </div>
       </DialogHeader>
 
       <!-- Body -->
       <div class="min-h-[120px] flex-1 overflow-y-auto px-5 py-5">
         <!-- Starting / loading state (no step yet) -->
         <div v-if="!step" class="flex items-center justify-center py-8">
-          <Spinner :size="44" class="text-primary" />
+          <Spinner class="text-primary size-11" />
         </div>
 
         <!-- FORM step -->
         <template v-else-if="step.type === FlowStepType.FORM">
-          <h3 v-if="step.title" class="mb-2 text-base font-semibold">
-            {{ step.title }}
-          </h3>
+          <!-- step text often carries a URL or key to copy; global.css disables selection -->
           <MarkdownText
             v-if="step.description"
             :text="step.description"
-            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed select-text [&_*]:select-text"
           />
 
           <!-- base (non-field) error -->
@@ -45,6 +49,26 @@
           >
             <AlertDescription>{{ step.errors.base }}</AlertDescription>
           </Alert>
+
+          <div
+            v-if="step.copy_text"
+            class="mb-4 flex w-full max-w-full items-center gap-2 rounded-md border px-3 py-2"
+          >
+            <code class="min-w-0 flex-1 break-all font-mono text-sm">{{
+              step.copy_text
+            }}</code>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="shrink-0"
+              :aria-label="$t('settings.setup_flow.copy')"
+              :title="$t('settings.setup_flow.copy')"
+              @click="copyExternalText"
+            >
+              <Copy :size="16" />
+            </Button>
+          </div>
 
           <form ref="formRef" @submit.prevent="submit">
             <div
@@ -58,7 +82,6 @@
                 :disabled="busy || isDisabled(entry)"
                 @update:value="onValueUpdate(entry, $event)"
                 @toggle-password="showPasswordValues = !showPasswordValues"
-                @help="onEntryHelp(entry)"
               />
               <div
                 v-if="step.errors && step.errors[entry.key]"
@@ -75,33 +98,40 @@
               aria-hidden="true"
             ></button>
           </form>
-
-          <div
-            v-if="countdownText"
-            class="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs"
-          >
-            <Clock :size="14" />
-            <span>{{ countdownText }}</span>
-          </div>
         </template>
 
         <!-- EXTERNAL step -->
         <template v-else-if="step.type === FlowStepType.EXTERNAL">
-          <h3 class="mb-2 text-base font-semibold">
-            {{ step.title ?? $t("settings.setup_flow.external_default_title") }}
-          </h3>
           <MarkdownText
             :text="
               step.description ??
               $t('settings.setup_flow.external_default_text')
             "
-            class="text-muted-foreground mb-4 text-sm leading-relaxed"
+            class="text-muted-foreground mb-4 text-sm leading-relaxed select-text [&_*]:select-text"
           />
           <div
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
+            <div
+              v-if="step.copy_text"
+              class="flex w-full max-w-full items-center gap-2 rounded-md border px-3 py-2"
+            >
+              <code class="min-w-0 flex-1 break-all font-mono text-sm">{{
+                step.copy_text
+              }}</code>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="shrink-0"
+                :aria-label="$t('settings.setup_flow.copy')"
+                :title="$t('settings.setup_flow.copy')"
+                @click="copyExternalText"
+              >
+                <Copy :size="16" />
+              </Button>
+            </div>
             <Button size="lg" @click="openExternal">
-              <ExternalLink :size="18" />
+              <ExternalLink class="size-4.5" />
               {{ $t("settings.setup_flow.open_external") }}
             </Button>
             <div
@@ -114,7 +144,7 @@
               }}</span>
             </div>
             <div class="text-muted-foreground flex items-center gap-2 text-sm">
-              <Spinner :size="18" />
+              <Spinner class="size-4.5" />
               <span>{{ $t("settings.setup_flow.external_waiting") }}</span>
             </div>
             <a
@@ -124,13 +154,6 @@
               rel="noopener"
               >{{ $t("settings.setup_flow.external_fallback") }}</a
             >
-          </div>
-          <div
-            v-if="countdownText"
-            class="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs"
-          >
-            <Clock :size="14" />
-            <span>{{ countdownText }}</span>
           </div>
         </template>
 
@@ -148,8 +171,7 @@
             />
             <Spinner
               v-if="step.progress === null || step.progress === undefined"
-              :size="52"
-              class="text-primary"
+              class="text-primary size-13"
             />
             <Progress
               v-else
@@ -159,15 +181,8 @@
             <MarkdownText
               v-if="step.progress_text"
               :text="step.progress_text"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
-            <div
-              v-if="countdownText"
-              class="text-muted-foreground flex items-center justify-center gap-1.5 text-xs"
-            >
-              <Clock :size="14" />
-              <span>{{ countdownText }}</span>
-            </div>
           </div>
         </template>
 
@@ -187,7 +202,7 @@
             <MarkdownText
               v-if="step.description"
               :text="step.description"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
           </div>
         </template>
@@ -219,26 +234,45 @@
             </h3>
             <MarkdownText
               :text="step.reason || $t('settings.setup_flow.aborted_text')"
-              class="text-muted-foreground w-full text-sm leading-relaxed"
+              class="text-muted-foreground w-full text-sm leading-relaxed select-text [&_*]:select-text"
             />
           </div>
         </template>
       </div>
 
       <!-- Actions -->
-      <DialogFooter v-if="step" class="border-t px-4 py-3">
+      <DialogFooter v-if="step" class="border-t px-4 py-3 sm:items-center">
+        <div
+          v-if="countdownText"
+          class="text-muted-foreground mr-auto flex items-center gap-1.5 text-xs"
+        >
+          <Clock :size="14" />
+          <span>{{ countdownText }}</span>
+        </div>
+
         <template v-if="step.type === FlowStepType.FORM">
           <Button variant="ghost" :disabled="busy" @click="close()">
             {{ $t("cancel") }}
           </Button>
-          <Button :disabled="!canSubmit" @click="submit">
-            <Spinner v-if="busy" class="size-4" />
+          <!-- a step that submits on pick has nothing left to confirm -->
+          <Button
+            v-if="!autoAdvanceEntry"
+            :disabled="!canSubmit"
+            :loading="busy"
+            @click="submit"
+          >
             {{
               step.last_step
                 ? $t("settings.setup_flow.finish")
                 : $t("settings.setup_flow.next")
             }}
           </Button>
+          <div
+            v-else-if="busy"
+            class="flex h-9 items-center justify-center px-4"
+          >
+            <Spinner class="size-4" />
+          </div>
         </template>
 
         <template
@@ -269,29 +303,6 @@
       </DialogFooter>
     </DialogContent>
   </Dialog>
-
-  <!-- Per-field help dialog -->
-  <Dialog :open="helpEntry !== undefined" @update:open="onHelpOpenChange">
-    <DialogContent class="sm:max-w-[480px]">
-      <DialogHeader>
-        <DialogTitle>{{ helpEntry?.label }}</DialogTitle>
-      </DialogHeader>
-      <MarkdownText
-        :text="helpEntry?.description"
-        class="text-muted-foreground text-sm"
-      />
-      <DialogFooter>
-        <Button
-          v-if="helpEntry?.help_link"
-          variant="outline"
-          @click="openLink(helpEntry!.help_link!)"
-        >
-          {{ $t("read_more") }}
-        </Button>
-        <Button @click="helpEntry = undefined">{{ $t("close") }}</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -302,6 +313,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -309,6 +321,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
+import { copyToClipboard } from "@/helpers/utils";
 import {
   allRequiredValuesPresent,
   isEntryDisabled,
@@ -322,6 +335,7 @@ import {
   type ConfigValueType,
   FlowStepType,
   SECURE_STRING_SUBSTITUTE,
+  SILENT_FINISH_STEP_ID,
   type SetupFlowStep,
 } from "@/plugins/api/interfaces";
 import { eventbus, type SetupFlowDialogEvent } from "@/plugins/eventbus";
@@ -330,6 +344,7 @@ import { store } from "@/plugins/store";
 import {
   CircleCheck,
   Clock,
+  Copy,
   ExternalLink,
   Info,
   Settings2,
@@ -344,7 +359,7 @@ import {
   ref,
   watch,
 } from "vue";
-import { useRouter } from "vue-router";
+import { START_LOCATION, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import ConfigEntryRow from "@/views/settings/ConfigEntryRow.vue";
 
@@ -356,7 +371,6 @@ const step = ref<SetupFlowStep | null>(null);
 const launch = ref<SetupFlowDialogEvent | null>(null);
 const formEntries = ref<ConfigEntry[]>([]);
 const showPasswordValues = ref(false);
-const helpEntry = ref<ConfigEntry | undefined>(undefined);
 // on the server's clock, since the step's `expires_at` is a server timestamp
 const now = ref(serverNow());
 
@@ -369,6 +383,8 @@ let launchSeq = 0;
 // never changes mid-flow, so it can't be used for that)
 let stepSeq = 0;
 let completionNotified = false;
+// values the launch asked for in the first form step, cleared once that step is built
+let initialValues: Record<string, ConfigValueType> | null = null;
 
 let unsubscribeFlow: (() => void) | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
@@ -410,17 +426,37 @@ const iconDomain = computed(() => {
   return undefined;
 });
 
-const dialogTitle = computed(() => {
+// names what the flow is setting up; heads the dialog for every step
+const flowTitle = computed(() => {
   if (!launch.value) return "";
   if (launch.value.kind === "provider") {
     const name =
       api.getProviderManifest(launch.value.domain)?.name || launch.value.domain;
-    return $t("settings.setup_provider", [name]);
+    return $t("settings.setup_flow.setup_title", [name]);
   }
+  // neither instance nor player is guaranteed to be in the store; both fall
+  // back to an unnamed title
   if (launch.value.kind === "reconfigure") {
-    return $t("settings.reconfigure");
+    const name =
+      launch.value.name || api.providers[launch.value.instanceId]?.name;
+    return name
+      ? $t("settings.setup_flow.reconfigure_title", [name])
+      : $t("settings.reconfigure");
   }
-  return $t("settings.setup_flow.setup_player_title");
+  const player = api.players[launch.value.playerId];
+  return player
+    ? $t("settings.setup_flow.setup_title", [player.name])
+    : $t("settings.setup_flow.setup_player_title");
+});
+
+// the step's own title, shown under the flow title. Only the steps the user acts on
+// hoist it; the finish and abort screens keep theirs next to their status icon
+const stepTitle = computed(() => {
+  if (step.value?.type === FlowStepType.FORM) return step.value.title || "";
+  if (step.value?.type === FlowStepType.EXTERNAL) {
+    return step.value.title ?? $t("settings.setup_flow.external_default_title");
+  }
+  return "";
 });
 
 const visibleFormEntries = computed(() =>
@@ -435,6 +471,19 @@ const visibleFormEntries = computed(() =>
 const canSubmit = computed(
   () => !busy.value && allRequiredValuesPresent(formEntries.value),
 );
+
+// A step whose only field is a required list of options has nothing else to
+// fill in, so picking one submits it.
+const autoAdvanceEntry = computed(() => {
+  const interactive = visibleFormEntries.value.filter(
+    (entry) => !NON_INTERACTIVE_ENTRY_TYPES.includes(entry.type),
+  );
+  if (interactive.length !== 1) return undefined;
+  const entry = interactive[0];
+  const isExpandedChoice =
+    entry.options.length > 0 && entry.expanded_options && !entry.multi_value;
+  return entry.required && isExpandedChoice ? entry : undefined;
+});
 
 const canOpenInstanceSettings = computed(
   () => launch.value?.kind === "provider" && !!step.value?.result?.instance_id,
@@ -458,8 +507,16 @@ onMounted(() => {
   eventbus.on("setupFlowDialog", onLaunch);
 });
 
+// a link inside a step that opens another page in the same tab has taken the
+// user away from the flow, so it ends instead of covering that page
+const removeRouteGuard = router.afterEach((to, from, failure) => {
+  if (failure || !open.value || from === START_LOCATION) return;
+  if (to.path !== from.path) close();
+});
+
 onBeforeUnmount(() => {
   eventbus.off("setupFlowDialog", onLaunch);
+  removeRouteGuard();
   cleanupFlow();
   stopCountdown();
 });
@@ -515,6 +572,7 @@ async function onLaunch(evt: SetupFlowDialogEvent) {
   // proxy-wraps the stored event, so it never equals the raw evt again
   const seq = ++launchSeq;
   completionNotified = false;
+  initialValues = evt.kind === "provider" ? (evt.initialValues ?? null) : null;
   launch.value = evt;
   step.value = null;
   busy.value = true;
@@ -562,13 +620,18 @@ function applyStep(newStep: SetupFlowStep) {
     unsubscribeFlow();
     unsubscribeFlow = null;
   }
-  if (
-    isTerminal.value &&
-    !completionNotified &&
-    launch.value?.kind === "reconfigure"
-  ) {
+  if (isTerminal.value && !completionNotified && launch.value) {
     completionNotified = true;
-    launch.value.onFlowEnded?.();
+    launch.value.onFlowEnded?.(newStep.type === FlowStepType.FINISH);
+  }
+
+  // a silent finish (e.g. a one-click device approval) needs no success screen
+  if (
+    newStep.type === FlowStepType.FINISH &&
+    newStep.step_id === SILENT_FINISH_STEP_ID
+  ) {
+    close(false);
+    return;
   }
 
   if (newStep.type === FlowStepType.FORM) {
@@ -594,10 +657,16 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
   if (preserveValues) {
     for (const entry of formEntries.value) previous[entry.key] = entry.value;
   }
+  // the first form step starts from the values the launch asked for; a key the step
+  // has no entry for is left out, and a later step starts from what the server sends
+  const launchValues = initialValues ?? {};
+  initialValues = null;
   formEntries.value = formStep.entries.map((entry) => {
     const copy: ConfigEntry = { ...entry };
     if (preserveValues && entry.key in previous) {
       copy.value = previous[entry.key];
+    } else if (entry.key in launchValues) {
+      copy.value = launchValues[entry.key];
     } else if (copy.value === undefined || copy.value === null) {
       copy.value = copy.default_value;
     }
@@ -607,6 +676,10 @@ function buildForm(formStep: SetupFlowStep, preserveValues: boolean) {
 
 function onValueUpdate(entry: ConfigEntry, value: ConfigValueType) {
   entry.value = value;
+  if (entry.key === autoAdvanceEntry.value?.key) {
+    // submit() re-checks canSubmit, so the fresh value needs no validation here
+    void submit();
+  }
 }
 
 async function submit() {
@@ -662,12 +735,14 @@ function openExternal() {
   a.click();
 }
 
-function openLink(url: string) {
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("target", "_blank");
-  a.setAttribute("rel", "noopener");
-  a.click();
+async function copyExternalText() {
+  const copyText = step.value?.copy_text;
+  if (!copyText) return;
+  if (await copyToClipboard(copyText)) {
+    toast.success($t("settings.setup_flow.copy_success"));
+  } else {
+    toast.error($t("settings.setup_flow.copy_failed"));
+  }
 }
 
 function openInstanceSettings() {
@@ -718,16 +793,11 @@ function onGuardedClose(event: Event) {
   // them as an outside click and dismiss the whole dialog. Keep it open when the
   // interaction lands inside a Vuetify overlay.
   const original = (event as CustomEvent).detail?.originalEvent as
-    | Event
-    | undefined;
+    Event | undefined;
   const target = (original?.target ?? event.target) as HTMLElement | null;
   if (target?.closest?.(".v-overlay-container, .v-overlay, .v-menu")) {
     event.preventDefault();
   }
-}
-
-function onHelpOpenChange(value: boolean) {
-  if (!value) helpEntry.value = undefined;
 }
 
 function close(sendAbort = true) {
@@ -742,10 +812,10 @@ function close(sendAbort = true) {
   stepSeq++;
   step.value = null;
   launch.value = null;
+  initialValues = null;
   formEntries.value = [];
   busy.value = false;
   showPasswordValues.value = false;
-  helpEntry.value = undefined;
 }
 
 function cleanupFlow() {
@@ -753,11 +823,6 @@ function cleanupFlow() {
     unsubscribeFlow();
     unsubscribeFlow = null;
   }
-}
-
-function onEntryHelp(entry: ConfigEntry) {
-  if (entry.description) helpEntry.value = entry;
-  else if (entry.help_link) openLink(entry.help_link);
 }
 
 function isDisabled(entry: ConfigEntry): boolean {

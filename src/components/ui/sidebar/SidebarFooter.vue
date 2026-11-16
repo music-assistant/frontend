@@ -24,8 +24,8 @@ const isCollapsed = computed(() => state.value === "collapsed");
           : isCollapsed
             ? // no side padding: collapsed rail items centre themselves, and
               // any asymmetry here would push them off the rail axis
-              'pt-2 pb-26'
-            : 'px-3 pt-2 pb-26',
+              'pt-2 pb-(--bottom-bars-height)'
+            : 'px-3 pt-2 pb-(--bottom-bars-height)',
         props.class,
       )
     "

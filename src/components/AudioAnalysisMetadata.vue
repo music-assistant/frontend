@@ -1,12 +1,17 @@
 <template>
-  <!-- audio analysis details (bpm / musical key), only present on full track details -->
-  <Popover v-if="bpm || musicalKey">
+  <!-- audio analysis details (bpm / musical key / energy), only present on full track details -->
+  <Popover v-if="bpm || musicalKey || energyLevel">
     <PopoverTrigger as-child>
-      <AudioWaveform
-        :size="26"
-        class="cursor-pointer"
+      <Button
+        type="button"
+        variant="ghost-icon"
+        size="icon-xs"
+        class="size-6.5"
+        :aria-label="$t('audio_analysis')"
         :title="$t('audio_analysis')"
-      />
+      >
+        <AudioWaveform class="size-6.5" />
+      </Button>
     </PopoverTrigger>
     <PopoverContent
       side="bottom"
@@ -42,6 +47,18 @@
               {{ $t("musical_key") }}
             </div>
           </div>
+          <div
+            v-if="energyLevel"
+            class="bg-accent/50 rounded-md px-3 py-2 text-center"
+            :title="$t('tooltip.energy_level')"
+          >
+            <div class="text-base font-semibold tabular-nums">
+              {{ energyLevel }}
+            </div>
+            <div class="text-muted-foreground text-xs">
+              {{ $t("energy_level") }}
+            </div>
+          </div>
         </div>
       </div>
     </PopoverContent>
@@ -49,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -65,7 +83,13 @@ const props = defineProps<{
 const bpm = computed(() =>
   props.audioMetadata?.bpm ? Math.round(props.audioMetadata.bpm) : undefined,
 );
-const musicalKey = computed(
-  () => props.audioMetadata?.musical_key || undefined,
+const musicalKey = computed(() => {
+  const key = props.audioMetadata?.musical_key;
+  if (!key) return undefined;
+  const camelotKey = props.audioMetadata?.camelot_key;
+  return camelotKey ? `${key} (${camelotKey})` : key;
+});
+const energyLevel = computed(
+  () => props.audioMetadata?.energy_level ?? undefined,
 );
 </script>

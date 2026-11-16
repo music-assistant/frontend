@@ -9,7 +9,8 @@ import { store } from "@/plugins/store";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
 interface OrderedPlayersOptions {
-  allowNeedsSetup?: boolean;
+  allowNeedsSetup?: MaybeRefOrGetter<boolean>;
+  allowSources?: boolean;
   selectedPlayerFirst?: MaybeRefOrGetter<boolean>;
   activePlayersFirst?: MaybeRefOrGetter<boolean>;
   includePausedAsActive?: boolean;
@@ -19,7 +20,12 @@ export function useOrderedPlayers(opts?: OrderedPlayersOptions) {
   return computed(() =>
     Object.values(api.players)
       .filter((player) =>
-        playerVisible(player, false, opts?.allowNeedsSetup ?? false),
+        playerVisible(
+          player,
+          false,
+          toValue(opts?.allowNeedsSetup ?? false),
+          opts?.allowSources ?? false,
+        ),
       )
       .sort((left, right) => comparePlayers(left, right, opts)),
   );

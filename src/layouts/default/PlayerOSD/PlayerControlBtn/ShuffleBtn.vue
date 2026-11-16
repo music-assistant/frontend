@@ -5,6 +5,8 @@
     :disabled="isDisabled"
     :color="getValueFromSources(icon?.color, [[shuffleActive, 'primary', '']])"
     :title="shuffleTitle"
+    :aria-label="$t('shuffle')"
+    :aria-pressed="shuffleActive ? 'true' : 'false'"
     :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="toggleShuffle"
@@ -14,7 +16,7 @@
       :size="size"
       :smart="smartShuffleActive"
     />
-    <IconArrowsRight v-else :size="size" />
+    <ShuffleOffIcon v-else :size="size" />
   </Icon>
 </template>
 
@@ -22,18 +24,22 @@
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import ShuffleIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleIcon.vue";
+import ShuffleOffIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleOffIcon.vue";
 import { getValueFromSources } from "@/helpers/utils";
-import { useLiveSource } from "@/composables/liveSource";
+import { useExternalSource } from "@/composables/externalSource";
+import { resolveActiveSourceId } from "@/composables/activeSource";
 import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { Player, PlayerQueue } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { IconArrowsRight } from "@tabler/icons-vue";
 import { computed, toRef } from "vue";
 
 // properties
 export interface Props {
   player: Player | undefined;
+  // the queue playing on this player, i.e. resolvePlayerQueue(player) — the
+  // state shown and the source the command is aimed at are both derived from
+  // this pair
   playerQueue: PlayerQueue | undefined;
   icon?: IconProps;
   size?: number;
@@ -43,15 +49,15 @@ const compProps = withDefaults(defineProps<Props>(), {
   size: 20,
 });
 
-const { liveSource } = useLiveSource(
+const { externalSource } = useExternalSource(
   toRef(compProps, "player"),
   toRef(compProps, "playerQueue"),
 );
 
-// A live source that orders its own session takes the command instead of the
-// queue; one that cannot leaves the button disabled rather than silently inert.
+// The state shown comes from an external source that orders its own session;
+// one that cannot leaves the button disabled rather than silently inert.
 const orderingSource = computed(() =>
-  liveSource.value?.can_shuffle ? liveSource.value : undefined,
+  externalSource.value?.can_shuffle ? externalSource.value : undefined,
 );
 
 const isLoading = computed(() => {
@@ -84,10 +90,12 @@ const shuffleActive = computed(() =>
     : compProps.playerQueue?.shuffle_enabled === true,
 );
 
-// A live source needs no queue to act on, so only the queue path carries the
-// queue's own reasons for being unavailable.
+// An external source needs no queue to act on, so only the queue path carries
+// the queue's own reasons for being unavailable.
 const isDisabled = computed(() => {
   if (isLoading.value) return true;
+  // the command is addressed to the player, so there is nothing to send without one
+  if (!compProps.player) return true;
   if (orderingSource.value) return false;
   return (
     !compProps.playerQueue ||
@@ -105,14 +113,15 @@ const shuffleTitle = computed(() => {
   return shuffleActive.value ? $t("shuffle_disable") : $t("shuffle_enable");
 });
 
+// The command names the source the state being inverted was read from, so it
+// applies to whatever is playing — the live session or the queue — and never to
+// something that took the player in between.
 function toggleShuffle() {
-  if (orderingSource.value && compProps.player) {
-    api.playerCommandShuffle(compProps.player.player_id, !shuffleActive.value);
-    return;
-  }
-  api.queueCommandShuffle(
-    compProps.playerQueue?.queue_id || "",
+  if (!compProps.player) return;
+  api.playerCommandShuffle(
+    compProps.player.player_id,
     !shuffleActive.value,
+    resolveActiveSourceId(compProps.player),
   );
 }
 </script>

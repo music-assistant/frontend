@@ -89,7 +89,7 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.get("[data-player-group-count]").text()).toBe("3");
   });
 
-  it("draws the speaker at the line weight of the bar it sits in", () => {
+  it("draws the grouping icon at the line weight of the bar it sits in", () => {
     expect(mountGroupButton().get("svg").attributes("stroke-width")).toBe(
       "1.4",
     );

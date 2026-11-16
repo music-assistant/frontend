@@ -9,88 +9,27 @@
           <FieldGroup>
             <form.Field name="username">
               <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.username") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="username"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.username')"
+                  :disabled="isSystemAccount"
+                  autocomplete="username"
+                  :description="
+                    isSystemAccount ? $t('auth.system_user_hint') : undefined
+                  "
+                />
               </template>
             </form.Field>
 
             <form.Field name="displayName">
               <template #default="{ field }">
-                <Field>
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.display_name") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    autocomplete="name"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldDescription>
-                    {{ $t("optional") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
-
-            <form.Field name="avatarUrl">
-              <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.avatar_url") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.avatar_url_hint") }}
-                  </FieldDescription>
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.display_name')"
+                  autocomplete="name"
+                  :description="$t('optional')"
+                  :show-validation="false"
+                />
               </template>
             </form.Field>
 
@@ -102,9 +41,9 @@
                   </FieldLabel>
                   <Select
                     :model-value="field.state.value"
-                    :disabled="isCurrentUser"
+                    :disabled="isCurrentUser || isSystemAccount"
                     @update:model-value="
-                      (value) => field.handleChange(value as UserRole)
+                      (value) => field.handleChange(value as string)
                     "
                   >
                     <SelectTrigger :id="field.name" class="w-full">
@@ -124,66 +63,39 @@
               </template>
             </form.Field>
 
-            <form.Field name="password">
+            <form.Field name="avatarUrl">
               <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.new_password") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    type="password"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="new-password"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.password_optional_hint") }}
-                  </FieldDescription>
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.avatar_url')"
+                  :description="$t('auth.avatar_url_hint')"
+                />
               </template>
             </form.Field>
 
-            <form.Field v-if="passwordValue" name="confirmPassword">
+            <form.Field v-if="!isSystemAccount" name="password">
               <template #default="{ field }">
-                <Field :data-invalid="isInvalid(field)">
-                  <FieldLabel :for="field.name">
-                    {{ $t("auth.confirm_password") }}
-                  </FieldLabel>
-                  <Input
-                    :id="field.name"
-                    :name="field.name"
-                    type="password"
-                    :model-value="field.state.value"
-                    :aria-invalid="isInvalid(field)"
-                    autocomplete="new-password"
-                    @blur="field.handleBlur"
-                    @input="
-                      (e: Event) => {
-                        field.handleChange(
-                          (e.target as HTMLInputElement).value,
-                        );
-                      }
-                    "
-                  />
-                  <FieldError
-                    v-if="isInvalid(field)"
-                    :errors="field.state.meta.errors"
-                  />
-                </Field>
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.new_password')"
+                  type="password"
+                  autocomplete="new-password"
+                  :description="$t('auth.password_optional_hint')"
+                />
+              </template>
+            </form.Field>
+
+            <form.Field
+              v-if="!isSystemAccount && passwordValue"
+              name="confirmPassword"
+            >
+              <template #default="{ field }">
+                <FormTextField
+                  :field="field"
+                  :label="$t('auth.confirm_password')"
+                  type="password"
+                  autocomplete="new-password"
+                />
               </template>
             </form.Field>
 
@@ -205,25 +117,6 @@
                 </Field>
               </template>
             </form.Field>
-
-            <form.Field name="providerFilter">
-              <template #default="{ field }">
-                <Field>
-                  <FieldLabel>
-                    {{ $t("auth.provider_filter") }}
-                  </FieldLabel>
-                  <MultiSelect
-                    :model-value="field.state.value"
-                    :options="providerOptions"
-                    :placeholder="$t('auth.select_providers')"
-                    @update:model-value="field.handleChange"
-                  />
-                  <FieldDescription>
-                    {{ $t("auth.provider_filter_hint") }}
-                  </FieldDescription>
-                </Field>
-              </template>
-            </form.Field>
           </FieldGroup>
         </form>
       </div>
@@ -231,12 +124,7 @@
         <Button variant="outline" @click="handleClose">
           {{ $t("cancel") }}
         </Button>
-        <Button
-          type="submit"
-          form="form-edit-user"
-          :disabled="loading"
-          :loading="loading"
-        >
+        <Button type="submit" form="form-edit-user" :loading="loading">
           {{ $t("settings.save") }}
         </Button>
       </DialogFooter>
@@ -245,13 +133,13 @@
 </template>
 
 <script setup lang="ts">
-import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { useVModel } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
+import FormTextField from "@/components/forms/FormTextField.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -263,11 +151,9 @@ import {
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -275,10 +161,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { assignableRoles, roleDisplayName } from "@/helpers/roles";
+import { isSystemUser } from "@/helpers/users";
 import { editUserSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import type { User } from "@/plugins/api/interfaces";
-import { ProviderType, UserRole } from "@/plugins/api/interfaces";
+import { UserRole } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import MultiSelect from "./MultiSelect.vue";
 
@@ -327,11 +215,12 @@ const handleFormSubmit = async () => {
   }
 };
 
-const roleOptions = computed(() => [
-  { label: t("auth.admin_role"), value: "admin" },
-  { label: t("auth.user_role"), value: "user" },
-  { label: t("auth.guest_role"), value: "guest" },
-]);
+const roleOptions = computed(() =>
+  assignableRoles(store.roles, props.user?.role).map((role) => ({
+    label: roleDisplayName(role.role_id, store.roles),
+    value: role.role_id,
+  })),
+);
 
 const playerOptions = computed(() => {
   return Object.values(api.players)
@@ -342,19 +231,14 @@ const playerOptions = computed(() => {
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 
-const providerOptions = computed(() => {
-  return Object.values(api.providers)
-    .filter((provider) => provider.type === ProviderType.MUSIC)
-    .map((provider) => ({
-      label: provider.name,
-      value: provider.instance_id,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
 const isCurrentUser = computed(() => {
   if (!props.user || !store.currentUser) return false;
   return props.user.user_id === store.currentUser.user_id;
+});
+
+const isSystemAccount = computed(() => {
+  if (!props.user) return false;
+  return isSystemUser(props.user);
 });
 
 const form = useForm({
@@ -362,11 +246,10 @@ const form = useForm({
     username: props.user?.username || "",
     displayName: props.user?.display_name || "",
     avatarUrl: props.user?.avatar_url || "",
-    role: props.user?.role || ("user" as UserRole),
+    role: props.user?.role || UserRole.USER,
     password: "",
     confirmPassword: "",
     playerFilter: props.user?.player_filter || [],
-    providerFilter: props.user?.provider_filter || [],
   },
   validators: {
     onSubmit: editUserSchema(t),
@@ -381,10 +264,9 @@ const form = useForm({
         username?: string;
         displayName?: string;
         avatarUrl?: string;
-        role?: UserRole;
+        role?: string;
         password?: string;
         player_filter?: string[];
-        provider_filter?: string[];
       } = {};
 
       if (value.username !== props.user.username) {
@@ -411,20 +293,18 @@ const form = useForm({
         updates.player_filter = value.playerFilter;
       }
 
-      const currentProviderFilter = props.user.provider_filter;
-      if (
-        JSON.stringify([...value.providerFilter].sort()) !==
-        JSON.stringify([...currentProviderFilter].sort())
-      ) {
-        updates.provider_filter = value.providerFilter;
-      }
-
-      await api.updateUser(props.user.user_id, updates);
+      await api.updateUser(props.user.user_id, updates, {
+        suppressGlobalError: true,
+      });
       toast.success(t("auth.user_updated"));
       emit("updated");
       emit("update:modelValue", false);
     } catch (error) {
-      toast.error(t("auth.user_update_failed"));
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("auth.user_update_failed"),
+      );
     } finally {
       loading.value = false;
     }
@@ -432,10 +312,6 @@ const form = useForm({
 });
 
 const passwordValue = form.useStore((state) => state.values.password);
-
-const isInvalid = (field: AnyFieldApi) => {
-  return field.state.meta.errors.length > 0;
-};
 
 const resetForm = () => {
   if (props.user) {
@@ -446,7 +322,6 @@ const resetForm = () => {
     form.setFieldValue("password", "");
     form.setFieldValue("confirmPassword", "");
     form.setFieldValue("playerFilter", props.user.player_filter);
-    form.setFieldValue("providerFilter", props.user.provider_filter);
   }
 };
 

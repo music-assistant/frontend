@@ -99,15 +99,18 @@
            grip (only up-next rows are reorderable). -->
       <div class="qitem__actions">
         <!-- drag handle to reorder. Active on up-next items; disabled/grayed on
-             every other row (now playing, buffered, played can't be reordered). -->
+             every other row (now playing, buffered, played can't be reordered).
+             Touch and contextmenu stay on the grip so holding it before a drag
+             doesn't trigger the row's long-press menu. -->
         <button
           type="button"
           class="qitem__grip"
           :disabled="state !== 'upcoming'"
           :aria-label="$t('queue_reorder')"
           @pointerdown.stop.prevent="emit('dragstart', $event)"
+          @touchstart.passive.stop
           @click.stop
-          @contextmenu.prevent
+          @contextmenu.stop.prevent
         >
           <GripVerticalIcon class="size-4" />
         </button>
@@ -253,20 +256,36 @@ const isMobile = computed(() => store.mobileLayout);
 }
 
 .qitem--playing {
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 10%,
+    transparent
+  );
 }
 
 .qitem--playing:hover {
-  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 14%,
+    transparent
+  );
 }
 
 /* Buffered: locked into the stream to play next — faint tint reads as cued. */
 .qitem--buffered {
-  background: color-mix(in srgb, var(--primary) 5%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 5%,
+    transparent
+  );
 }
 
 .qitem--buffered:hover {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--text-color, currentColor) 10%,
+    transparent
+  );
 }
 
 .qitem--unavailable {
@@ -288,7 +307,9 @@ const isMobile = computed(() => store.mobileLayout);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
+  /* blurs the artwork underneath so the equalizer reads clearly */
+  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .qitem__body {
@@ -304,7 +325,6 @@ const isMobile = computed(() => store.mobileLayout);
 }
 
 .qitem--playing .qitem__title {
-  color: var(--primary);
   font-weight: 600;
 }
 

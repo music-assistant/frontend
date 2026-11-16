@@ -1,4 +1,5 @@
 import PartyQR from "@/components/party/PartyQR.vue";
+import { EventType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -6,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   canShare: vi.fn(),
   copyToClipboard: vi.fn(),
   createInvitationFile: vi.fn(),
+  enabledPlugins: new Set<string>(),
   partyConfig: { value: null as Record<string, unknown> | null },
   sendCommand: vi.fn(),
   share: vi.fn(),
@@ -27,10 +29,16 @@ vi.mock("@/helpers/utils", () => ({
 
 vi.mock("@/plugins/api", () => ({
   default: {
+    // held on the mock so the tests can prove the component reads the loaded
+    // plugins rather than scanning the raw provider list again
     providers: { party: { domain: "party" } },
     sendCommand: mocks.sendCommand,
     subscribe: mocks.subscribe,
   },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: { enabledPlugins: mocks.enabledPlugins },
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -60,6 +68,7 @@ vi.mock("vue-sonner", () => ({
 }));
 
 const JOIN_LINK = "https://example.com/party?join=abc";
+const OTHER_JOIN_LINK = "https://example.com/party?join=xyz";
 
 const mountPartyQr = () =>
   mount(PartyQR, { global: { mocks: { $t: (key: string) => key } } });
@@ -94,6 +103,8 @@ describe("PartyQR", () => {
     mocks.share.mockReset().mockResolvedValue(undefined);
     mocks.subscribe.mockReset().mockReturnValue(vi.fn());
     mocks.toastError.mockReset();
+    mocks.enabledPlugins.clear();
+    mocks.enabledPlugins.add("party");
   });
 
   afterEach(() => {
@@ -255,7 +266,47 @@ describe("PartyQR", () => {
     );
     wrapper.unmount();
   });
+
+  it("regenerates the code when the provider list changes", async () => {
+    const wrapper = mountPartyQr();
+    await flushPromises();
+    const symbol = wrapper.get(".qr-code path").attributes("d");
+    mocks.sendCommand.mockClear().mockResolvedValue(OTHER_JOIN_LINK);
+
+    await providersUpdated();
+
+    expect(mocks.sendCommand).toHaveBeenCalledWith("party/url");
+    expect(wrapper.get(".qr-code path").attributes("d")).not.toBe(symbol);
+    expect(wrapper.emitted("available")?.at(-1)).toEqual([true]);
+    wrapper.unmount();
+  });
+
+  it("drops the code without a round-trip once the plugin is gone", async () => {
+    const wrapper = mountPartyQr();
+    await flushPromises();
+    mocks.sendCommand.mockClear();
+    mocks.enabledPlugins.clear();
+
+    await providersUpdated();
+
+    expect(mocks.sendCommand).not.toHaveBeenCalled();
+    expect(wrapper.emitted("available")?.at(-1)).toEqual([false]);
+    expect(wrapper.find(".qr-code").exists()).toBe(false);
+    wrapper.unmount();
+  });
 });
+
+/**
+ * Hand the component the provider update it subscribed for.
+ */
+async function providersUpdated() {
+  const call = mocks.subscribe.mock.calls.find(
+    ([event]) => event === EventType.PROVIDERS_UPDATED,
+  );
+  if (!call) throw new Error("No subscriber for providers_updated");
+  await call[1]();
+  await flushPromises();
+}
 
 function setNavigatorProperty(property: "share" | "canShare", value: unknown) {
   Object.defineProperty(navigator, property, {
