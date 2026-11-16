@@ -120,4 +120,62 @@ describe("Default layout", () => {
 
     expect(store.activePlayerId).toBe("kitchen");
   });
+
+  it("selects the linked player once it becomes available", async () => {
+    api.players.kitchen = { ...selectablePlayer("kitchen"), available: false };
+
+    await mountLayout({ player: "kitchen" });
+    expect(store.activePlayerId).toBeUndefined();
+
+    api.players.kitchen.available = true;
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("selects the linked player once it gets the old id the link names", async () => {
+    api.players.kitchen = selectablePlayer("kitchen");
+    api.players.absorbed = {
+      ...selectablePlayer("absorbed"),
+      available: false,
+    };
+
+    await mountLayout({ player: "absorbed" });
+    expect(store.activePlayerId).toBeUndefined();
+
+    // the server removes the absorbed player before it updates the one it merged into
+    delete api.players.absorbed;
+    await nextTick();
+    api.players.kitchen = selectablePlayer("kitchen", ["absorbed"]);
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("follows the linked player into the player it is merged into", async () => {
+    api.players.kitchen = selectablePlayer("kitchen");
+    api.players.absorbed = selectablePlayer("absorbed");
+
+    await mountLayout({ player: "absorbed" });
+    expect(store.activePlayerId).toBe("absorbed");
+
+    delete api.players.absorbed;
+    await nextTick();
+    api.players.kitchen = selectablePlayer("kitchen", ["absorbed"]);
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("selects the linked player again when the players change, as before", async () => {
+    api.players.kitchen = selectablePlayer("kitchen");
+    api.players.living = selectablePlayer("living");
+    await mountLayout({ player: "kitchen" });
+    store.activePlayerId = "living";
+
+    api.players.bath = selectablePlayer("bath");
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
 });

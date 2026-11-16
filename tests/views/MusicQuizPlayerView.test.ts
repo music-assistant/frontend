@@ -2,7 +2,7 @@ import MusicQuizPlayerView from "@/views/MusicQuizPlayerView.vue";
 import MusicQuizJoinForm from "@/components/music-quiz/MusicQuizJoinForm.vue";
 import MusicQuizPlayerHeader from "@/components/music-quiz/MusicQuizPlayerHeader.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { webPlayer } from "@/plugins/web_player";
+import { webPlayer, WebPlayerMode } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { h, nextTick, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -135,10 +135,18 @@ vi.mock("@/plugins/auth", () => ({
 vi.mock("@/plugins/web_player", async () => {
   const { reactive } = await import("vue");
   return {
+    isPlaybackMode: (mode: string) =>
+      mode === "sendspin_only" || mode === "sendspin_with_controls",
     webPlayer: reactive({
       player_generation: 0,
+      player_id: "web-player" as string | null,
+      tabMode: "sendspin_only",
       primeAudio: mockPrimeAudio,
     }),
+    WebPlayerMode: {
+      CONTROLS_ONLY: "controls_only",
+      SENDSPIN_ONLY: "sendspin_only",
+    },
   };
 });
 
@@ -266,6 +274,8 @@ describe("MusicQuizPlayerView routing", () => {
     listenInBusyRef = undefined;
     mockRouterPush.mockReset();
     webPlayer.player_generation = 0;
+    webPlayer.player_id = "web-player";
+    webPlayer.tabMode = WebPlayerMode.SENDSPIN_ONLY;
     isGuestSession.value = false;
     mockResolveMusicQuizDefinition.mockReset();
     mockToastError.mockReset();
@@ -420,6 +430,32 @@ describe("MusicQuizPlayerView routing", () => {
     expect(wrapper.find('[data-testid="listen-in"]').exists()).toBe(false);
     wrapper.unmount();
   });
+
+  it.each([
+    ["remote", WebPlayerMode.SENDSPIN_ONLY, "web-player", true],
+    ["venue", WebPlayerMode.SENDSPIN_ONLY, "web-player", false],
+    // another tab plays the audio
+    ["remote", WebPlayerMode.CONTROLS_ONLY, "web-player", false],
+    ["remote", WebPlayerMode.SENDSPIN_ONLY, null, false],
+  ])(
+    "shows the volume control in a %s game with tab mode %s and web player %s: %s",
+    (mode, tabMode, webPlayerId, expected) => {
+      mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+      mockUseMusicQuizPlayer.mockReturnValue({
+        ...mockUseMusicQuizPlayer(),
+        state: ref({ ...playerState, mode }),
+      });
+      webPlayer.tabMode = tabMode;
+      webPlayer.player_id = webPlayerId;
+
+      const wrapper = mountView();
+
+      expect(wrapper.find('[data-testid="music-quiz-volume"]').exists()).toBe(
+        expected,
+      );
+      wrapper.unmount();
+    },
+  );
 
   it("warns the player when the connection degrades mid-game", async () => {
     mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
@@ -1290,7 +1326,13 @@ function mountView() {
       stubs: {
         MusicQuizConnectionBanners: true,
         MusicQuizLeaderboard: true,
-        MusicQuizPlayerHeader: true,
+        MusicQuizPlayerHeader: {
+          props: ["playerName", "rank", "score", "scoreDelta", "roundResults"],
+          template: '<div><slot name="actions" /></div>',
+        },
+        MusicQuizVolumeControl: {
+          template: '<div data-testid="music-quiz-volume" />',
+        },
         MusicQuizSessionHeader: {
           props: ["listenInEnabled", "mode", "roundLabel"],
           template:
