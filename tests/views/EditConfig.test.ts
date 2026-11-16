@@ -355,6 +355,73 @@ describe("EditConfig", () => {
     });
   });
 
+  it("saves an entry reset to its default as null, so the server unsets it", async () => {
+    const wrapper = mountForSave([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "elsewhere",
+      }),
+      entry({
+        key: "token",
+        type: ConfigEntryType.STRING,
+        default_value: "",
+        value: "secret",
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    // an entry edited after the reset is a value the user chose
+    wrapper
+      .findAllComponents({ name: "ConfigEntryRow" })[1]
+      .vm.$emit("update:value", "other");
+    await wrapper.vm.submit();
+
+    expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      server: null,
+      token: "other",
+    });
+  });
+
+  it("keeps sending the value of a switch that turns an output on after a reset", async () => {
+    const wrapper = mountForSave([
+      entry({
+        key: "airplay_1||protocol||enabled",
+        type: ConfigEntryType.BOOLEAN,
+        default_value: true,
+        value: false,
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    await wrapper.vm.submit();
+
+    expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      "airplay_1||protocol||enabled": true,
+    });
+  });
+
+  it("offers saving a reset that leaves every value as it shows", async () => {
+    // the server may still store the default as a value the user chose
+    const wrapper = mountEntries([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "localhost",
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(false);
+
+    wrapper.vm.saveSucceeded({ server: null });
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(true);
+  });
+
   it("stops offering to save the values the server took", async () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
@@ -812,6 +879,22 @@ function mountEntries(
   return shallowMount(EditConfig, {
     props: { configEntries, disabled, inlineSave },
     global: { renderStubDefaultSlot: true },
+  });
+}
+
+// the real form validates through Vuetify, which this bare mount leaves out
+function mountForSave(configEntries: ConfigEntry[]) {
+  return shallowMount(EditConfig, {
+    props: { configEntries, disabled: false },
+    global: {
+      renderStubDefaultSlot: true,
+      stubs: {
+        VForm: {
+          template: "<form><slot /></form>",
+          methods: { validate: async () => ({ valid: true }) },
+        },
+      },
+    },
   });
 }
 
