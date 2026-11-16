@@ -147,7 +147,7 @@
         "enable": "Enable",
         "enable_player": "Enable this player",
         "invalid_input": "The input is invalid",
-        "metadataproviders": "Metadata",
+        "metadataproviders": "Metadata sources",
         "player_disabled": "This player is disabled",
         "player_name": "Custom player name",
         "player_not_available": "This player is not (yet) available",
@@ -664,7 +664,7 @@
         "player_needs_setup": "This player requires setup",
         "add_music_provider": "Add a music source",
         "add_player_provider": "Add player support",
-        "add_metadata_provider": "Add metadata",
+        "add_metadata_provider": "Add a metadata source",
         "add_plugin_provider": "Add a plugin",
         "music_sources": "Music sources",
         "plugins": "Plugins",
@@ -714,14 +714,14 @@
             "type": {
                 "music": "Music source",
                 "player": "Player support",
-                "metadata": "Metadata",
+                "metadata": "Metadata source",
                 "plugin": "Plugin",
                 "audio_analysis": "Audio analysis"
             },
             "manage_type": {
                 "music": "Manage your music sources",
                 "player": "Manage player support",
-                "metadata": "Manage metadata",
+                "metadata": "Manage your metadata sources",
                 "plugin": "Manage plugins",
                 "audio_analysis": "Manage audio analysis"
             },
@@ -908,8 +908,8 @@
             "description": "Adds a letter bar to the artists, albums and tracks lists so you can jump straight to a letter. Only shown when the list is sorted by name and you are not searching."
         },
         "audiobook_chapter_progress": {
-            "label": "Show audiobook chapter progress",
-            "description": "Show elapsed and remaining time for the current audiobook chapter instead of the full audiobook."
+            "label": "Show chapter progress",
+            "description": "Show elapsed and remaining time for the current chapter of an audiobook or podcast episode instead of the whole item."
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
@@ -996,7 +996,7 @@
         "hide_unavailable_players": "Hide unavailable players",
         "remove_unavailable_players": "Remove unavailable players",
         "remove_unavailable_players_title": "Remove unavailable players?",
-        "remove_unavailable_players_confirmation": "This removes one player whose device can no longer be found, along with its settings. | This removes {count} players whose devices can no longer be found, along with their settings.",
+        "remove_unavailable_players_confirmation": "This removes one player whose device can no longer be found, along with its settings: | This removes {count} players whose devices can no longer be found, along with their settings:",
         "no_unavailable_players": "There are no unavailable players to remove",
         "unavailable_players_removed": "No unavailable players were found | Removed one unavailable player | Removed {count} unavailable players",
         "queue_settings_description": "Playback settings for the queue this player plays from",
@@ -1331,6 +1331,7 @@
     "update_metadata": "Update metadata",
     "cancel": "Cancel",
     "transfer_queue": "Transfer queue",
+    "transfer_queue_no_audio": "Audio isn't available on this device yet.",
     "power_on_player": "Power on",
     "power_off_player": "Power off",
     "player_group_playback": {
@@ -1362,6 +1363,10 @@
     "audiobooks": "Audiobooks",
     "chapter": "Chapter",
     "chapters": "Chapters",
+    "chapter_of": "Chapter {current} of {total}",
+    "chapter_progress_show_audiobook": "Show the whole audiobook",
+    "chapter_progress_show_episode": "Show the whole episode",
+    "chapter_progress_show_chapter": "Show only this chapter",
     "chapters_and_bookmarks": "Chapters & Bookmarks",
     "chapters_and_bookmarks_tab": "All",
     "bookmarks": "Bookmarks",
@@ -1762,7 +1767,7 @@
     "remove_provider_mapping_confirm": "Are you sure you want to unlink this source from the item? It may come back if you search all music sources for matches again.",
     "map_provider_mapping": "Link this source entry to the current item",
     "player_tip": {
-        "selected_player": "Selected player",
+        "selected": "Selected",
         "currently_playing": "Currently playing on",
         "click_to_change": "Click below to change output device"
     },
@@ -2990,7 +2995,6 @@
     "grouped_volume": "Grouped volume",
     "player_select": {
         "active_player_volume_only": "Only show volume sliders for active players",
-        "and_more": "...and {0} more",
         "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
         "disable_player_title": "Disable {0}?",
         "display_options": "Display options",
