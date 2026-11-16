@@ -205,15 +205,12 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(author, authorindex) in item.authors"
-                  :key="authorindex"
+                  v-for="(author, authorindex) in getAuthorsNarratorsArray(
+                    item.authors,
+                  )"
+                  :key="author"
                 >
-                  <span v-if="typeof author === 'string'" style="color: accent">
-                    {{ author }}
-                  </span>
-                  <a v-else style="color: accent" @click="artistClick(author)">
-                    {{ author.name }}
-                  </a>
+                  <span style="color: accent">{{ author }}</span>
                   <span
                     v-if="authorindex + 1 < item.authors.length"
                     :key="authorindex"
@@ -237,22 +234,12 @@
               />
               <MarqueeText :sync="marqueeSync">
                 <span
-                  v-for="(narrator, narratorIndex) in item.narrators"
-                  :key="narratorIndex"
+                  v-for="(narrator, narratorIndex) in getAuthorsNarratorsArray(
+                    item.narrators,
+                  )"
+                  :key="narrator"
                 >
-                  <span
-                    v-if="typeof narrator === 'string'"
-                    style="color: accent"
-                  >
-                    {{ narrator }}
-                  </span>
-                  <a
-                    v-else
-                    style="color: accent"
-                    @click="artistClick(narrator)"
-                  >
-                    {{ narrator.name }}
-                  </a>
+                  <span style="color: accent">{{ narrator }}</span>
                   <span
                     v-if="narratorIndex + 1 < item.narrators.length"
                     :key="narratorIndex"
@@ -504,6 +491,7 @@ import { parseBool } from "@/helpers/parse";
 import { getPlayerName } from "@/helpers/players";
 import {
   getAudiobookCollectionArtists,
+  getAuthorsNarratorsArray,
   getImageThumbForItem,
 } from "@/helpers/utils";
 import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
