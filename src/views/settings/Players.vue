@@ -187,7 +187,8 @@ const toolbarMenuItems = computed<ToolBarMenuItem[]>(() => {
       label: "settings.remove_unavailable_players",
       icon: markRaw(Trash2),
       // the server decides which players it removes, whatever the list shows
-      action: () => removeUnavailablePlayers(dropPlayerConfigs),
+      action: () =>
+        removeUnavailablePlayers(playerConfigs.value, dropPlayerConfigs),
     });
   }
   return items;

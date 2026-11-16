@@ -573,14 +573,21 @@ export const playsRuleLabel = (rule: PlaysRule): string => {
 /**
  * The player a show starts on: its default playback device while that device is
  * known and available, otherwise the player the user has selected.
+ *
+ * @param findPlayer - Returns the player that goes by an id, also by one it had
+ * before a merge, such as resolvePlayer.
  */
 export const resolveShowPlayerId = (
   station: Pick<AIRadioStation, "default_player_id">,
   activePlayerId: string | undefined,
-  players: Record<string, Pick<Player, "available">>,
+  findPlayer: (
+    playerId: string,
+  ) => Pick<Player, "player_id" | "available"> | undefined,
 ): string => {
-  const preferred = station.default_player_id;
-  if (preferred && players[preferred]?.available) return preferred;
+  const preferred = station.default_player_id
+    ? findPlayer(station.default_player_id)
+    : undefined;
+  if (preferred?.available) return preferred.player_id;
   return activePlayerId || "";
 };
 

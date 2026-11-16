@@ -34,7 +34,6 @@
       <MediaCollectionThumb
         v-else-if="props.item.media_type == MediaType.COLLECTION"
         :item="props.item as MediaCollection<MediaItemType>"
-        :thumb-offset="22"
       />
       <span
         v-else-if="art.placeholderIcon"
