@@ -41,7 +41,6 @@ import {
   type StatisticsPeriod,
   type StatisticsTimeSeriesPoint,
   type Genre,
-  type ItemShareInfo,
   type MassEvent,
   type MediaItemType,
   type Player,
@@ -1268,14 +1267,6 @@ export class MusicAssistantApi {
   public generateShareLink(uri: string): Promise<string> {
     return this.sendCommand(
       "share/generate",
-      { uri },
-      { suppressGlobalError: true },
-    );
-  }
-
-  public getItemShareInfo(uri: string): Promise<ItemShareInfo> {
-    return this.sendCommand(
-      "share/item",
       { uri },
       { suppressGlobalError: true },
     );
