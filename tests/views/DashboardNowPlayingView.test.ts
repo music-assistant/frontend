@@ -101,7 +101,6 @@ describe("DashboardNowPlayingView", () => {
   });
 
   it("pins the active player from the player query param on mount", () => {
-    api.players = { "player-1": listedPlayer("player-1") };
     routeMock.query = { player: "player-1" };
     mountView();
     expect(storeMock.activePlayerId).toBe("player-1");
@@ -110,14 +109,6 @@ describe("DashboardNowPlayingView", () => {
   it("pins the player an old id in the player query param was merged into", () => {
     api.players = { kitchen: listedPlayer("kitchen", ["absorbed"]) };
     routeMock.query = { player: "absorbed" };
-    mountView();
-    expect(storeMock.activePlayerId).toBe("kitchen");
-  });
-
-  it("leaves a player query param that names no listed player alone", () => {
-    api.players = { kitchen: listedPlayer("kitchen") };
-    storeMock.activePlayerId = "kitchen";
-    routeMock.query = { player: "Kitchen" };
     mountView();
     expect(storeMock.activePlayerId).toBe("kitchen");
   });

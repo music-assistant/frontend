@@ -106,9 +106,8 @@ const route = useRoute();
 onMounted(() => {
   const playerId = route.query.player;
   if (typeof playerId === "string" && playerId) {
-    // a name or a player that is not there is left to the layout's link
-    const player = resolvePlayer(playerId);
-    if (player) store.activePlayerId = player.player_id;
+    // an id the player had before a merge pins the player it was merged into
+    store.activePlayerId = resolvePlayer(playerId)?.player_id ?? playerId;
   }
 });
 

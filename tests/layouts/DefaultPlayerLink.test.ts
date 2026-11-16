@@ -7,6 +7,7 @@ import {
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import { webPlayer } from "@/plugins/web_player";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { h, nextTick } from "vue";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
@@ -36,6 +37,7 @@ vi.mock("@/plugins/store", async () => {
   return {
     store: reactive({
       activePlayerId: undefined as string | undefined,
+      companionPlayerId: undefined as string | undefined,
       frameless: false,
       showFullscreenPlayer: false,
       showPlayersMenu: false,
@@ -50,7 +52,10 @@ vi.mock("@/plugins/store", async () => {
   };
 });
 
-vi.mock("@/plugins/web_player", () => ({ webPlayer: { player_id: null } }));
+vi.mock("@/plugins/web_player", async () => {
+  const { reactive } = await import("vue");
+  return { webPlayer: reactive({ player_id: null as string | null }) };
+});
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/plugins/auth", () => ({
   authManager: { hasScope: () => true, isDashboardViewer: () => false },
@@ -120,7 +125,9 @@ describe("Default layout link with the automatic player pick", () => {
     for (const key of Object.keys(preferenceState.values!))
       delete preferenceState.values![key];
     store.activePlayerId = undefined;
+    store.companionPlayerId = undefined;
     store.frameless = false;
+    webPlayer.player_id = null;
     router = createRouter({
       history: createMemoryHistory(),
       routes: [{ path: "/", component: { template: "<div />" } }],
@@ -172,56 +179,33 @@ describe("Default layout link with the automatic player pick", () => {
     },
   );
 
-  it("keeps a player the user picked while the linked player was usable", async () => {
-    api.players.kitchen = player("kitchen");
-    api.players.living = player("living");
-    api.players.bath = player("bath");
-    await mountLayout({ player: "kitchen" });
-    expect(store.activePlayerId).toBe("kitchen");
+  it.each(["web", "companion"])(
+    "selects the merge survivor again after the %s player took over from the fallback",
+    async (builtin) => {
+      api.players.absorbed = player("absorbed");
+      api.players.kitchen = player("kitchen");
+      await mountLayout({ player: "absorbed" });
+      expect(store.activePlayerId).toBe("absorbed");
 
-    store.activePlayerId = "living";
-    await nextTick();
-    api.players.attic = player("attic");
-    await nextTick();
-    api.players.kitchen.available = false;
-    await nextTick();
-    api.players.kitchen.available = true;
-    await nextTick();
-    delete api.players.kitchen;
-    await nextTick();
-    api.players.bath = player("bath", { legacy_ids: ["kitchen"] });
-    await nextTick();
+      // the picker falls back to the player the absorbed one is merged into next
+      delete api.players.absorbed;
+      await nextTick();
+      expect(store.activePlayerId).toBe("kitchen");
+      api.players.kitchen = player("kitchen", { legacy_ids: ["absorbed"] });
+      await nextTick();
 
-    expect(store.activePlayerId).toBe("living");
-  });
+      // the picker hands its own pick over to the built-in player once it registers
+      api.players.builtin = player("builtin");
+      if (builtin === "web") webPlayer.player_id = "builtin";
+      else store.companionPlayerId = "builtin";
+      await nextTick();
+      expect(store.activePlayerId).toBe("builtin");
+      api.players.attic = player("attic");
+      await nextTick();
 
-  it("keeps a player the user picked just before the linked player went away", async () => {
-    api.players.kitchen = player("kitchen");
-    api.players.living = player("living");
-    await mountLayout({ player: "kitchen" });
-
-    store.activePlayerId = "living";
-    delete api.players.kitchen;
-    await nextTick();
-    api.players.kitchen = player("kitchen");
-    await nextTick();
-
-    expect(store.activePlayerId).toBe("living");
-  });
-
-  it("selects the player of a new link after the user picked another one", async () => {
-    api.players.kitchen = player("kitchen");
-    api.players.living = player("living");
-    api.players.bath = player("bath");
-    await mountLayout({ player: "kitchen" });
-    store.activePlayerId = "living";
-    await nextTick();
-
-    await router.push({ path: "/", query: { player: "bath" } });
-    await nextTick();
-
-    expect(store.activePlayerId).toBe("bath");
-  });
+      expect(store.activePlayerId).toBe("kitchen");
+    },
+  );
 
   it("selects a linked player that is not usable yet once it is", async () => {
     api.players.kitchen = player("kitchen", { available: false });

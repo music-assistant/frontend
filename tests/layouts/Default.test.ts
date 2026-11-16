@@ -167,34 +167,15 @@ describe("Default layout", () => {
     expect(store.activePlayerId).toBe("kitchen");
   });
 
-  it("keeps a player the user picked after the link selected its own", async () => {
+  it("selects the linked player again when the players change, as before", async () => {
     api.players.kitchen = selectablePlayer("kitchen");
     api.players.living = selectablePlayer("living");
-
     await mountLayout({ player: "kitchen" });
+    store.activePlayerId = "living";
+
+    api.players.bath = selectablePlayer("bath");
+    await nextTick();
+
     expect(store.activePlayerId).toBe("kitchen");
-
-    store.activePlayerId = "living";
-    api.players.bath = selectablePlayer("bath");
-    await nextTick();
-    api.players.kitchen.available = false;
-    await nextTick();
-    api.players.kitchen.available = true;
-    await nextTick();
-
-    expect(store.activePlayerId).toBe("living");
-  });
-
-  it("selects the player of a new link after the user picked another one", async () => {
-    api.players.kitchen = selectablePlayer("kitchen");
-    api.players.living = selectablePlayer("living");
-    await mountLayout({ player: "kitchen" });
-    store.activePlayerId = "living";
-
-    await router.push({ path: "/", query: { player: "bath" } });
-    api.players.bath = selectablePlayer("bath");
-    await nextTick();
-
-    expect(store.activePlayerId).toBe("bath");
   });
 });

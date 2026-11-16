@@ -40,26 +40,18 @@ const linkedPlayerId = computed(() => {
     );
   })?.player_id;
 });
-// the user picked another player than the link's while the link's player was usable
-let userPickedPlayer = false;
 watch(
-  [() => route.query.player, linkedPlayerId],
-  ([linkedPlayer, playerId], [previousLinkedPlayer]) => {
-    if (linkedPlayer !== previousLinkedPlayer) userPickedPlayer = false;
-    if (playerId && !userPickedPlayer) store.activePlayerId = playerId;
+  // make sure it's retriggered when players array is populated, and when the
+  // linked player becomes usable or another player takes over the linked id
+  [
+    () => route.query.player,
+    linkedPlayerId,
+    () => Object.keys(api.players).length,
+  ],
+  ([, playerId]) => {
+    if (playerId) store.activePlayerId = playerId;
   },
   { immediate: true },
-);
-watch(
-  () => store.activePlayerId,
-  (playerId) => {
-    // a player picked while the link's player is not usable is a fallback, so
-    // the link selects its player again once it is usable
-    if (linkedPlayerId.value && playerId !== linkedPlayerId.value)
-      userPickedPlayer = true;
-  },
-  // judged when the selection changes, not after the players changed further
-  { flush: "sync" },
 );
 watch(
   () => route.query.showFullscreenPlayer,

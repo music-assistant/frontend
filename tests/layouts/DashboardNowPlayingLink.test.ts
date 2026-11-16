@@ -16,7 +16,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // The now-playing dashboard in the layout, with the layout's link and the real
 // PlayerSelect, which picks a player by itself when the selected one is not there.
 
-const { preferenceState } = vi.hoisted(() => ({
+const { authState, preferenceState } = vi.hoisted(() => ({
+  authState: { dashboardViewer: false },
   preferenceState: {
     values: undefined as Record<string, unknown> | undefined,
   },
@@ -54,7 +55,10 @@ vi.mock("@/plugins/store", async () => {
 vi.mock("@/plugins/web_player", () => ({ webPlayer: { player_id: null } }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/plugins/auth", () => ({
-  authManager: { hasScope: () => true, isDashboardViewer: () => false },
+  authManager: {
+    hasScope: () => true,
+    isDashboardViewer: () => authState.dashboardViewer,
+  },
 }));
 vi.mock("@/composables/usePlayPauseShortcut", () => ({
   usePlayPauseShortcut: () => undefined,
@@ -125,6 +129,7 @@ describe("Now-playing dashboard opened for a player", () => {
       delete preferenceState.values![key];
     store.activePlayerId = undefined;
     store.frameless = false;
+    authState.dashboardViewer = false;
     router = createRouter({
       history: createMemoryHistory(),
       routes: [{ path: "/now-playing", component: { template: "<div />" } }],
@@ -168,15 +173,6 @@ describe("Now-playing dashboard opened for a player", () => {
     expect(store.activePlayerId).toBe("kitchen");
   });
 
-  it("shows the player a name names", async () => {
-    api.players.bath = player("bath");
-    api.players.kitchen = player("kitchen", { name: "Kitchen" });
-    await mountDashboard({ player: "Kitchen" });
-    await nextTick();
-
-    expect(store.activePlayerId).toBe("kitchen");
-  });
-
   it("pins a listed, unavailable player by its current id", async () => {
     api.players.bath = player("bath");
     api.players.kitchen = player("kitchen", { available: false });
@@ -196,5 +192,18 @@ describe("Now-playing dashboard opened for a player", () => {
     await nextTick();
 
     expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("shows a player a display was cast for once it is listed, also unavailable", async () => {
+    authState.dashboardViewer = true;
+    api.players.bath = player("bath");
+    await mountDashboard({ player: "kitchen" });
+    await nextTick();
+    expect(store.activePlayer).toBeUndefined();
+
+    api.players.kitchen = player("kitchen", { available: false });
+    await nextTick();
+
+    expect(store.activePlayer).toBe(api.players.kitchen);
   });
 });
