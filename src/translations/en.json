@@ -680,6 +680,7 @@
             "discovered_title": "Found on your network",
             "complements_title": "Goes well with what you have",
             "goes_well_with": "Goes well with {name}",
+            "fits_your_setup": "Fits your setup",
             "new_in_version": "New in {version}",
             "dont_suggest": "Don't suggest this",
             "dont_suggest_named": "Don't suggest {name}",
@@ -785,6 +786,7 @@
                 "moved_message_not_running": "Its own maintainers look after it now, not the Music Assistant team. Music Assistant installed it from the community catalog.",
                 "dismiss": "Dismiss",
                 "new_title": "New in the community catalog",
+                "new_badge": "New",
                 "updated_title": "Recently updated",
                 "state": {
                     "blocked": "Blocked",
