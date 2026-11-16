@@ -2994,7 +2994,6 @@
     "grouped_volume": "Grouped volume",
     "player_select": {
         "active_player_volume_only": "Only show volume sliders for active players",
-        "and_more": "...and {0} more",
         "disable_player_confirmation": "This player will be hidden until it is enabled again in player settings.",
         "disable_player_title": "Disable {0}?",
         "display_options": "Display options",

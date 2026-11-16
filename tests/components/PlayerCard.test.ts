@@ -223,7 +223,6 @@ function mountPlayerCard(
     showMemberControls?: boolean;
     showSelectedIndicator?: boolean;
     showGroupMemberNames?: boolean;
-    groupMemberLayout?: "subtitle" | "subtitle-list" | "title-list";
     showVolumeControl?: boolean;
     stackMediaDetails?: boolean;
   } = {},
@@ -294,9 +293,7 @@ describe("PlayerCard", () => {
     expect(indicator.text()).toBe("player_tip.selected");
     expect(indicator.attributes("variant")).toBe("default");
     expect(
-      wrapper
-        .find(".player-playback-indicator + .selected-player-indicator")
-        .exists(),
+      wrapper.find(".player-card-name + .selected-player-indicator").exists(),
     ).toBe(true);
   });
 
@@ -392,57 +389,66 @@ describe("PlayerCard", () => {
     expect(emitContextMenu).not.toHaveBeenCalled();
   });
 
-  it("lists every player name in a manual group", () => {
-    const office = createPlayer({
-      player_id: "office",
-      name: "Office",
-    });
-    const patio = createPlayer({
-      player_id: "patio",
-      name: "Patio",
-    });
+  it("names the synced players on one line under the plus count", () => {
+    const playerB = createPlayer({ player_id: "player-b", name: "Player B" });
+    const playerC = createPlayer({ player_id: "player-c", name: "Player C" });
     const offline = createPlayer({
       player_id: "offline",
-      name: "Offline",
+      name: "Player D",
       available: false,
     });
     const parent = createPlayer({
-      group_members: ["office", "player", "patio", "offline"],
+      name: "Player A",
+      group_members: ["player-b", "player", "player-c", "offline"],
+      current_media: createPlayerMedia({ title: "Song", artist: "Artist" }),
     });
     apiMock.players = {
       [parent.player_id]: parent,
-      [office.player_id]: office,
-      [patio.player_id]: patio,
+      [playerB.player_id]: playerB,
+      [playerC.player_id]: playerC,
       [offline.player_id]: offline,
     };
 
-    const mainCard = mountPlayerCard(parent);
-    expect(mainCard.find(".player-card-name").text()).toBe("Kitchen +2");
-    expect(mainCard.find(".player-card-group-members").exists()).toBe(false);
-    mainCard.unmount();
-
     const wrapper = mountPlayerCard(parent, {
       showGroupMemberNames: true,
+      stackMediaDetails: true,
     });
-    const members = wrapper.find(".player-card-group-members");
+    const members = wrapper.get(".player-card-group-members");
 
-    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen +2");
-    expect(members.text()).toBe("Kitchen • Office • Patio");
-    expect(members.classes()).toContain("text-[11px]");
-    expect(
-      wrapper
-        .find(".player-select-action")
-        .text()
-        .match(/Kitchen/g),
-    ).toHaveLength(1);
+    expect(wrapper.get(".player-card-name").text()).toBe("Player A +2");
+    expect(members.text()).toBe("Player B • Player C");
+    expect(members.classes()).toEqual(
+      expect.arrayContaining(["truncate", "text-xs", "text-muted-foreground"]),
+    );
+    expect(wrapper.get(".player-select-action").text()).toContain(
+      "Player A. Player B. Player C. Song. Artist",
+    );
+  });
+
+  it("keeps the plus count in the name without the member line", () => {
+    const playerB = createPlayer({ player_id: "player-b", name: "Player B" });
+    const parent = createPlayer({
+      name: "Player A",
+      group_members: ["player", "player-b"],
+    });
+    apiMock.players = {
+      [parent.player_id]: parent,
+      [playerB.player_id]: playerB,
+    };
+
+    const wrapper = mountPlayerCard(parent, { stackMediaDetails: true });
+
+    expect(wrapper.get(".player-card-name").text()).toBe("Player A +1");
+    expect(wrapper.find(".player-card-group-members").exists()).toBe(false);
   });
 
   it("names a built-in group member after this device", () => {
     const builtin = createPlayer({
       player_id: "builtin",
-      name: "Marcel's Mac (Chrome)",
+      name: "Web player (Chrome)",
     });
     const parent = createPlayer({
+      name: "Player A",
       group_members: ["player", "builtin"],
     });
     apiMock.players = {
@@ -450,116 +456,12 @@ describe("PlayerCard", () => {
       [builtin.player_id]: builtin,
     };
 
-    const wrapper = mountPlayerCard(parent, {
-      showGroupMemberNames: true,
-      groupMemberLayout: "subtitle-list",
-    });
+    const wrapper = mountPlayerCard(parent, { showGroupMemberNames: true });
 
-    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen");
+    expect(wrapper.find(".player-card-name").text()).toBe("Player A +1");
     expect(wrapper.find(".player-card-group-members").text()).toBe(
       "this_device",
     );
-  });
-
-  it("can render grouped players as separate title lines", () => {
-    const office = createPlayer({
-      player_id: "office",
-      name: "Office",
-    });
-    const patio = createPlayer({
-      player_id: "patio",
-      name: "Patio",
-    });
-    const parent = createPlayer({
-      group_members: ["office", "player", "patio"],
-    });
-    apiMock.players = {
-      [parent.player_id]: parent,
-      [office.player_id]: office,
-      [patio.player_id]: patio,
-    };
-
-    const wrapper = mountPlayerCard(parent, {
-      groupMemberLayout: "title-list",
-      showGroupMemberNames: true,
-    });
-
-    expect(
-      wrapper.findAll(".player-card-name").map((name) => name.text()),
-    ).toEqual(["Kitchen", "Office", "Patio"]);
-    expect(wrapper.find(".player-card-group-members").exists()).toBe(false);
-  });
-
-  it("can render each grouped child on a larger subtitle line", () => {
-    const office = createPlayer({
-      player_id: "office",
-      name: "Office",
-    });
-    const patio = createPlayer({
-      player_id: "patio",
-      name: "Patio",
-    });
-    const parent = createPlayer({
-      group_members: ["office", "player", "patio"],
-    });
-    apiMock.players = {
-      [parent.player_id]: parent,
-      [office.player_id]: office,
-      [patio.player_id]: patio,
-    };
-
-    const wrapper = mountPlayerCard(parent, {
-      groupMemberLayout: "subtitle-list",
-      showGroupMemberNames: true,
-    });
-
-    expect(wrapper.find(".player-card-name").text()).toBe("Kitchen");
-    expect(
-      wrapper.findAll(".player-card-group-member").map((name) => name.text()),
-    ).toEqual(["Office", "Patio"]);
-    expect(wrapper.find(".player-card-group-member").classes()).toContain(
-      "text-xs",
-    );
-  });
-
-  it("expands grouped child names beyond the first two", async () => {
-    const children = Array.from({ length: 5 }, (_, index) =>
-      createPlayer({
-        player_id: `child-${index}`,
-        name: `Child ${index + 1}`,
-      }),
-    );
-    const parent = createPlayer({
-      group_members: ["player", ...children.map((child) => child.player_id)],
-    });
-    apiMock.players = {
-      [parent.player_id]: parent,
-      ...Object.fromEntries(children.map((child) => [child.player_id, child])),
-    };
-    const wrapper = mountPlayerCard(parent, {
-      groupMemberLayout: "subtitle-list",
-      showGroupMemberNames: true,
-    });
-    const visibleNames = () =>
-      wrapper.findAll(".player-card-group-member").map((name) => name.text());
-    const toggle = wrapper.get(".player-card-group-toggle");
-
-    expect(visibleNames()).toEqual(["Child 1", "Child 2"]);
-    expect(toggle.attributes("data-remaining-count")).toBe("3");
-
-    await toggle.trigger("click");
-    expect(visibleNames()).toEqual([
-      "Child 1",
-      "Child 2",
-      "Child 3",
-      "Child 4",
-      "Child 5",
-    ]);
-    expect(toggle.attributes("aria-expanded")).toBe("true");
-    expect(wrapper.emitted("click")).toBeUndefined();
-
-    await toggle.trigger("click");
-    expect(visibleNames()).toEqual(["Child 1", "Child 2"]);
   });
 
   it("names the built-in player after this device, with an icon-only badge", () => {
@@ -608,35 +510,36 @@ describe("PlayerCard", () => {
     expect(badge.classes()).toContain("shadow-none");
   });
 
-  it("shows member names beneath a dedicated group title", () => {
-    const livingRoom = createPlayer({
-      player_id: "living-room",
-      name: "Living room",
-    });
-    const kitchen = createPlayer({
-      player_id: "kitchen",
-      name: "Kitchen",
+  it("lists every member of a group player on one line", () => {
+    const playerB = createPlayer({ player_id: "player-b", name: "Player B" });
+    const playerC = createPlayer({
+      player_id: "player-c",
+      name: "Player C",
+      available: false,
     });
     const group = createPlayer({
-      player_id: "downstairs",
-      name: "Downstairs",
+      player_id: "group-a",
+      name: "Group A",
       type: PlayerType.GROUP,
-      group_members: [livingRoom.player_id, kitchen.player_id],
+      group_members: [playerB.player_id, playerC.player_id, playerB.player_id],
     });
     apiMock.players = {
       [group.player_id]: group,
-      [livingRoom.player_id]: livingRoom,
-      [kitchen.player_id]: kitchen,
+      [playerB.player_id]: playerB,
+      [playerC.player_id]: playerC,
     };
 
     const wrapper = mountPlayerCard(group, {
       showGroupMemberNames: true,
+      stackMediaDetails: true,
     });
-    const members = wrapper.find(".player-card-group-members");
+    const members = wrapper.get(".player-card-group-members");
 
-    expect(wrapper.find(".player-card-name").text()).toBe("Downstairs");
-    expect(members.text()).toBe("Living room • Kitchen");
-    expect(members.classes()).toContain("text-[11px]");
+    expect(wrapper.get(".player-card-name").text()).toBe("Group A");
+    expect(members.text()).toBe("Player B • Player C");
+    expect(members.classes()).toEqual(
+      expect.arrayContaining(["truncate", "text-xs"]),
+    );
   });
 
   it("keeps panel cards to one row with a single media line", () => {
@@ -656,12 +559,10 @@ describe("PlayerCard", () => {
     expect(wrapper.find(".player-card-main").classes()).not.toContain(
       "flex-col",
     );
-    expect(wrapper.get(".player-card-media-summary").text()).toBe(
-      "Hate Me Now • Nas • I Am...",
-    );
-    expect(wrapper.get(".player-card-media-summary").classes()).toEqual(
-      expect.arrayContaining(["text-muted-foreground", "truncate"]),
-    );
+    const summary = wrapper.get(".player-card-media-summary");
+    expect(summary.text()).toBe("Hate Me Now • Nas • I Am...");
+    expect(summary.element.tagName).toBe("DIV");
+    expect(summary.get("span").classes()).toContain("truncate");
     expect(wrapper.find(".player-card-actions").classes()).not.toContain(
       "self-end",
     );
@@ -737,49 +638,94 @@ describe("PlayerCard", () => {
     },
   );
 
-  it("reserves a title slot for the playing-state indicator", () => {
-    const idleCard = mountPlayerCard(createPlayer(), {
-      stackMediaDetails: true,
-    });
-    const idleIndicator = idleCard.get(".player-playback-indicator");
-
-    expect(idleIndicator.classes()).toContain("hidden");
-    expect(idleIndicator.attributes("aria-hidden")).toBe("true");
-    idleCard.unmount();
-
-    const playingCard = mountPlayerCard(
-      createPlayer({ playback_state: PlaybackState.PLAYING }),
+  it("leads the media line of a playing panel card with the equalizer", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        playback_state: PlaybackState.PLAYING,
+        current_media: createPlayerMedia({ title: "Song" }),
+      }),
       { stackMediaDetails: true },
     );
-    const playingIndicator = playingCard.get(".player-playback-indicator");
+    const summary = wrapper.get(".player-card-media-summary");
+    const indicator = summary.get(".player-playing-indicator");
 
-    expect(playingIndicator.classes()).not.toContain("hidden");
-    expect(playingIndicator.classes()).toContain("text-primary");
-    expect(playingIndicator.attributes("aria-label")).toBe("state.playing");
-    expect(playingIndicator.attributes("aria-hidden")).toBe("false");
-    playingCard.unmount();
-
-    const pausedCard = mountPlayerCard(
-      createPlayer({ playback_state: PlaybackState.PAUSED }),
-      { stackMediaDetails: true },
-    );
-    const pausedIndicator = pausedCard.get(".player-playback-indicator");
-
-    expect(pausedIndicator.classes()).toContain("hidden");
-    expect(pausedIndicator.attributes("aria-hidden")).toBe("true");
+    expect(summary.element.firstElementChild).toBe(indicator.element);
+    expect(indicator.attributes("role")).toBe("img");
+    expect(indicator.attributes("aria-label")).toBe("state.playing");
+    expect(indicator.find(".now-playing-icon").exists()).toBe(true);
+    expect(summary.classes()).toContain("text-foreground");
+    expect(summary.classes()).not.toContain("text-muted-foreground");
+    expect(
+      wrapper.find(".player-card-title .player-playing-indicator").exists(),
+    ).toBe(false);
   });
 
-  it("shows the playing-state indicator beside names in unstacked cards", () => {
+  it.each([PlaybackState.PAUSED, PlaybackState.IDLE])(
+    "greys out the media line of a panel card that is %s",
+    (playbackState) => {
+      const wrapper = mountPlayerCard(
+        createPlayer({
+          playback_state: playbackState,
+          current_media: createPlayerMedia({ title: "Song" }),
+        }),
+        { stackMediaDetails: true },
+      );
+      const summary = wrapper.get(".player-card-media-summary");
+
+      expect(summary.text()).toBe("Song");
+      expect(summary.find(".player-playing-indicator").exists()).toBe(false);
+      expect(summary.classes()).toContain("text-muted-foreground");
+    },
+  );
+
+  it("shows the equalizer on its own while playing without media", () => {
     const wrapper = mountPlayerCard(
       createPlayer({ playback_state: PlaybackState.PLAYING }),
+      { stackMediaDetails: true },
     );
-    const title = wrapper.get(".player-card-main .player-card-title");
-    const indicator = title.get(".player-playback-indicator");
+    const summary = wrapper.get(".player-card-media-summary");
 
-    expect(indicator.classes()).not.toContain("hidden");
-    expect(indicator.classes()).toContain("text-primary");
-    expect(indicator.attributes("aria-label")).toBe("state.playing");
+    expect(summary.text()).toBe("");
+    expect(summary.find(".player-playing-indicator").exists()).toBe(true);
+    expect(summary.find("span").exists()).toBe(false);
   });
+
+  it("shows neither equalizer nor media line for a powered-off player", () => {
+    const wrapper = mountPlayerCard(
+      createPlayer({
+        powered: false,
+        playback_state: PlaybackState.PLAYING,
+        current_media: createPlayerMedia({ title: "Song" }),
+      }),
+      { stackMediaDetails: true },
+    );
+
+    expect(wrapper.find(".player-card-media-summary").exists()).toBe(false);
+    expect(wrapper.find(".player-playing-indicator").exists()).toBe(false);
+  });
+
+  it.each([
+    [PlaybackState.PLAYING, true],
+    [PlaybackState.PAUSED, false],
+  ])(
+    "leads the media title of an unstacked card with the equalizer only while playing (%s)",
+    (playbackState, hasIndicator) => {
+      const wrapper = mountPlayerCard(
+        createPlayer({
+          playback_state: playbackState,
+          current_media: createPlayerMedia({ title: "Song", artist: "Artist" }),
+        }),
+      );
+      const title = wrapper.get(".player-card-media-summary");
+
+      expect(title.text()).toBe("Song");
+      expect(title.classes()).toContain("font-medium");
+      expect(title.find(".player-playing-indicator").exists()).toBe(
+        hasIndicator,
+      );
+      expect(wrapper.text()).toContain("Artist");
+    },
+  );
 
   it.each([PlaybackState.PLAYING, PlaybackState.PAUSED])(
     "shows artwork while %s",

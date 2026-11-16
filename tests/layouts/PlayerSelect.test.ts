@@ -158,7 +158,6 @@ const PlayerCardStub = {
     "showGroupControls",
     "showDisabledGroupControl",
     "showGroupMemberNames",
-    "groupMemberLayout",
     "stackMediaDetails",
     "groupControlExpanded",
     "groupControlsId",
@@ -174,7 +173,6 @@ const PlayerCardStub = {
       :data-member-controls="showMemberControls ? 'true' : 'false'"
       :data-disabled-group-control="showDisabledGroupControl ? 'true' : 'false'"
       :data-group-member-names="showGroupMemberNames ? 'true' : 'false'"
-      :data-group-member-layout="groupMemberLayout"
       :data-stack-media-details="stackMediaDetails ? 'true' : 'false'"
       :data-group-control-expanded="groupControlExpanded ? 'true' : 'false'"
       :data-selected-indicator="showSelectedIndicator ? 'true' : 'false'"
@@ -924,9 +922,6 @@ describe("PlayerSelect", () => {
     expect(
       wrapper.find(".player-card").attributes("data-group-member-names"),
     ).toBe("true");
-    expect(
-      wrapper.find(".player-card").attributes("data-group-member-layout"),
-    ).toBe("subtitle-list");
     expect(
       wrapper.find(".player-card").attributes("data-stack-media-details"),
     ).toBe("true");

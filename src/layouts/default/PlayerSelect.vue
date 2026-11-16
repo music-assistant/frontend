@@ -164,7 +164,6 @@
             :show-group-controls="true"
             :show-disabled-group-control="true"
             :show-group-member-names="showGroupMemberNames"
-            group-member-layout="subtitle-list"
             :stack-media-details="true"
             :allow-power-control="true"
             :group-control-expanded="
