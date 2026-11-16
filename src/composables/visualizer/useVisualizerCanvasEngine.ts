@@ -248,7 +248,7 @@ export function useVisualizerCanvasEngine(
   watch(
     () => options.playerId(),
     () => {
-      if (initialized) connectRelay();
+      if (initialized && !options.covered()) connectRelay();
     },
   );
 
