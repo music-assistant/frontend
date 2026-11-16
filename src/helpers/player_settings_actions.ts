@@ -202,12 +202,15 @@ export const getSetupRequiredPlayerMenuItems = (
 };
 
 /**
- * Remove every player whose device is gone, after asking: the confirmation says
- * how many players the server would remove, or that there are none.
+ * Remove every player whose device is gone, after asking: the confirmation names
+ * the players the server would remove, or says that there are none.
  *
+ * @param playerConfigs The players as the settings list shows them, in its order;
+ * the confirmation names the players and orders them the same way.
  * @param onRemoved Called with the ids of the players the server removed.
  */
 export const removeUnavailablePlayers = async (
+  playerConfigs: PlayerConfig[],
   onRemoved?: (playerIds: string[]) => void,
 ): Promise<void> => {
   let candidates: string[];
@@ -228,6 +231,7 @@ export const removeUnavailablePlayers = async (
     message: $t("settings.remove_unavailable_players_confirmation", count, {
       named: { count },
     }),
+    items: getListedPlayerNames(candidates, playerConfigs),
     confirmLabel: $t("remove"),
     onConfirm: () => removeUnavailablePlayersConfirmed(onRemoved),
   });
@@ -316,6 +320,23 @@ async function removeUnavailablePlayersConfirmed(
       named: { count: removed.length },
     }),
   );
+}
+
+/**
+ * The names of the given players in the order of the configs, followed by the id
+ * of any player the configs do not hold.
+ */
+function getListedPlayerNames(
+  playerIds: string[],
+  playerConfigs: PlayerConfig[],
+): string[] {
+  const listed = playerConfigs.filter((config) =>
+    playerIds.includes(config.player_id),
+  );
+  const unlisted = playerIds.filter(
+    (playerId) => !listed.some((config) => config.player_id === playerId),
+  );
+  return [...listed.map(getPlayerName), ...unlisted];
 }
 
 /** Hands the player bar to another player, so it does not point at one that just left. */

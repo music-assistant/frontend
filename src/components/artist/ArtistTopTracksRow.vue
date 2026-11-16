@@ -309,7 +309,10 @@ function releaseYear(album?: Album | ItemMapping | null): number | undefined {
 }
 .artist-top-tracks__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(max(260px, calc((100% - 32px) / 3)), 1fr)
+  );
   grid-auto-rows: 56px;
   column-gap: 16px;
   min-height: 184px;
