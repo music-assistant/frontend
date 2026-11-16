@@ -346,7 +346,7 @@ describe("Players", () => {
     toolbarMenuItem(REMOVE_UNAVAILABLE)!.action!();
     expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
 
-    removeUnavailablePlayers.mock.calls[0][0]!(["kitchen"]);
+    removeUnavailablePlayers.mock.calls[0][1]!(["kitchen"]);
     await flushPromises();
     expect(wrapper.find(".player-row").exists()).toBe(false);
   });
@@ -392,9 +392,13 @@ describe("Players", () => {
     expect(toolbarMenuItem(HIDE_UNAVAILABLE)!.active).toBe(true);
     expect(listed()).toEqual(["attic", "garden", "office"]);
 
-    // the server decides what goes, so the hidden players are not left out
+    // the server decides what goes, so the hidden players are not left out,
+    // and the confirmation names them as the list does, in its order
     toolbarMenuItem(REMOVE_UNAVAILABLE)!.action!();
     expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
+    expect(
+      removeUnavailablePlayers.mock.calls[0][0].map((config) => config.name),
+    ).toEqual(["attic", "garden", "kitchen", "office"]);
   });
 
   it("hides unavailable players when that was chosen before", async () => {
