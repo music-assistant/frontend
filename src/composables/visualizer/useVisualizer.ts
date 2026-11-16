@@ -127,12 +127,19 @@ function startViewerPreferencesSync(): void {
     // connection is often still coming up when the hosting view mounts. A plain
     // call here would be rejected and the viewer would sit on fallbacks until
     // some unrelated session event happened along.
+    // The key is part of the source: a re-cast swaps it while connected, and
+    // the server has already dropped the previous one.
     watch(
-      () =>
-        api.state.value === ConnectionState.AUTHENTICATED ||
-        api.state.value === ConnectionState.INITIALIZED,
-      (ready) => {
-        if (ready) void fetchViewerPreferences();
+      () => {
+        const ready =
+          api.state.value === ConnectionState.AUTHENTICATED ||
+          api.state.value === ConnectionState.INITIALIZED;
+        const { dashboard_id: dashboardId, viewer_key: viewerKey } =
+          router.currentRoute.value.query;
+        return ready ? `${dashboardId}:${viewerKey}` : undefined;
+      },
+      (readyKey) => {
+        if (readyKey) void fetchViewerPreferences();
       },
       { immediate: true },
     );

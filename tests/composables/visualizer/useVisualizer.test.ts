@@ -246,6 +246,8 @@ describe("viewer preferences", () => {
     relayMocks.visualizerShownOnDashboards.mockResolvedValue(false);
     apiMocks.sendCommand.mockResolvedValue({});
     apiMocks.state.value = "authenticated";
+    // A fresh ref, so watchers left over from earlier tests stop seeing changes
+    routerMock.currentRoute = ref({ path: "/party", query: {} });
     viewerQuery({ dashboard_id: "chromecast_abc", viewer_key: "secret-key" });
   });
 
@@ -349,6 +351,22 @@ describe("viewer preferences", () => {
     expect(visualizerEnabledForPlayer("p1")).toBe(true);
     // an explicit per-player choice for the shown player still wins
     expect(visualizerEnabledForPlayer("p2")).toBe(false);
+  });
+
+  it("refetches with the new key when a re-cast replaces the route query", async () => {
+    const { useVisualizer } = await importComposable();
+    useVisualizer();
+    await flushPromises();
+    expect(apiMocks.sendCommand).toHaveBeenCalledTimes(1);
+
+    viewerQuery({ dashboard_id: "chromecast_abc", viewer_key: "new-key" });
+    await flushPromises();
+    expect(apiMocks.sendCommand).toHaveBeenCalledTimes(2);
+    expect(apiMocks.sendCommand).toHaveBeenLastCalledWith(
+      "dashboard/viewer_preferences",
+      { dashboard_id: "chromecast_abc", viewer_key: "new-key" },
+      expect.anything(),
+    );
   });
 
   it("refreshes when the dashboard sessions update", async () => {
