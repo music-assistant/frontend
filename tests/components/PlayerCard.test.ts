@@ -723,7 +723,9 @@ describe("PlayerCard", () => {
       expect(title.find(".player-playing-indicator").exists()).toBe(
         hasIndicator,
       );
-      expect(wrapper.text()).toContain("Artist");
+      expect(wrapper.get(".player-card-media-summary + p").text()).toBe(
+        "Artist",
+      );
     },
   );
 
