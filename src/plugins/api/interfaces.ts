@@ -1024,6 +1024,18 @@ export interface ProviderMapping {
   url: string | null;
 }
 
+export interface ItemShareLink {
+  provider_domain: string;
+  provider_instance: string;
+  url: string;
+}
+
+export interface ItemShareInfo {
+  title: string;
+  text: string | null;
+  links: ItemShareLink[];
+}
+
 export interface MediaItemLink {
   type: LinkType;
   url: string;
