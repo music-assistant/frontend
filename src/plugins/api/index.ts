@@ -595,6 +595,20 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Find a track by its name in the library and the music providers.
+   *
+   * :param track_name: The title of the track.
+   * :param artist_name: The name of one of its artists.
+   * :return: The best matching track, or null when none matches.
+   */
+  public getTrackByName(
+    track_name: string,
+    artist_name?: string,
+  ): Promise<Track | null> {
+    return this.sendCommand("music/track_by_name", { track_name, artist_name });
+  }
+
   public getTrackVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
