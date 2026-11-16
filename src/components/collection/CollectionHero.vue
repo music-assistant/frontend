@@ -12,11 +12,7 @@
         class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
       >
         <div class="detail-hero-cover flex-none">
-          <MediaCollectionThumb
-            :item="item"
-            :size="`${coverSize}px`"
-            :thumb-offset="coverSize * STACK_OFFSET_RATIO"
-          />
+          <MediaCollectionThumb :item="item" :size="`${coverSize}px`" />
         </div>
 
         <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
@@ -84,9 +80,6 @@ export interface Props {
   item?: MediaCollection<Audiobook>;
 }
 const props = defineProps<Props>();
-
-// keeps the stacked covers inside the cover's square at any size
-const STACK_OFFSET_RATIO = 0.095;
 
 // no button follows the badge, so an unplayed collection leaves the play button its room
 const playedState = computed(() =>
