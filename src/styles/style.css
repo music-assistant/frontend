@@ -157,10 +157,6 @@
   border-right: 1px solid var(--sidebar-border);
 }
 
-.dark.black .v-toolbar.header {
-  border-bottom: 1px solid var(--sidebar-border);
-}
-
 .dark.black .v-footer.mediacontrols-player-default {
   border-top: 1px solid var(--sidebar-border);
 }
