@@ -41,6 +41,7 @@ function setup(
   ids: string[],
   selectedIndices: number[],
   playlistId = ref("1"),
+  selecting = true,
 ) {
   const items = ref<MediaItemType[]>(listing(...ids));
   const listEl = document.createElement("div");
@@ -60,7 +61,7 @@ function setup(
           playlistId: () => playlistId.value,
           inOwnOrder: () => true,
           selected: selection,
-          selecting: () => true,
+          selecting: () => selecting,
           rowHeight: 56,
           reload,
         });
@@ -75,6 +76,25 @@ function setup(
     },
   });
   return { items, selection, reload, reorder };
+}
+
+/** The drag class of every row while the first row is dragged. */
+async function dragClasses(selectedIndices: number[], selecting = true) {
+  apiMock.movePlaylistTrack.mockResolvedValue();
+  apiMock.movePlaylistTracks.mockResolvedValue();
+  const { items, reorder } = setup(
+    ["A", "B", "C", "D"],
+    selectedIndices,
+    ref("1"),
+    selecting,
+  );
+  dragFirstRowToThird(reorder);
+  const classes = items.value.map((row, index) =>
+    reorder.rowDragClass(row, index),
+  );
+  window.dispatchEvent(pointer("pointerup", 140));
+  await flushPromises();
+  return classes;
 }
 
 const ids = (items: MediaItemType[]) => items.map((item) => item.item_id);
@@ -272,5 +292,32 @@ describe("usePlaylistTrackReorder", () => {
     expect(ids(items.value)).toEqual(["A", "B", "C"]);
     expect(apiMock.movePlaylistTrack).not.toHaveBeenCalled();
     expect(apiMock.movePlaylistTracks).not.toHaveBeenCalled();
+  });
+
+  it("hides every selected row while one of them is dragged", async () => {
+    expect(await dragClasses([0, 2])).toEqual([
+      "invisible",
+      undefined,
+      "invisible",
+      undefined,
+    ]);
+  });
+
+  it("hides only the dragged row when it is not part of the selection", async () => {
+    expect(await dragClasses([1, 2])).toEqual([
+      "invisible",
+      undefined,
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it("hides only the dragged row when the rows cannot be selected", async () => {
+    expect(await dragClasses([0, 2], false)).toEqual([
+      "invisible",
+      undefined,
+      undefined,
+      undefined,
+    ]);
   });
 });
