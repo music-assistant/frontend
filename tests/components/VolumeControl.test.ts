@@ -260,6 +260,61 @@ describe("VolumeControl", () => {
     );
   });
 
+  it("lists an offline member for removal, without a volume of its own", async () => {
+    vi.useFakeTimers();
+    const offlineMember = createPlayer({
+      player_id: "office",
+      name: "Office",
+      available: false,
+    });
+    const offlinePlayer = createPlayer({
+      player_id: "bedroom",
+      name: "Bedroom",
+      available: false,
+    });
+    const parent = createPlayer({
+      can_group_with: [offlineMember.player_id, offlinePlayer.player_id],
+      group_members: ["parent", offlineMember.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [offlineMember.player_id]: offlineMember,
+      [offlinePlayer.player_id]: offlinePlayer,
+    };
+
+    const wrapper = mountVolumeControl(parent, {
+      showChildVolumes: true,
+      showMemberControls: true,
+    });
+
+    // the offline player that is not a member is not offered to add
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen", "Office"]);
+    expect(
+      wrapper
+        .findAll(".player-group-member")[1]
+        .get("[title]")
+        .attributes("title"),
+    ).toBe("This player is not (yet) available");
+    expect(
+      wrapper
+        .findAll(".player-volume")
+        .map((volume) => volume.attributes("data-player-id")),
+    ).toEqual(["parent", "parent"]);
+
+    await wrapper.get('[aria-label="Office"]').trigger("click");
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(api.playerCommandSetMembers).toHaveBeenCalledWith(
+      parent.player_id,
+      undefined,
+      [offlineMember.player_id],
+    );
+  });
+
   it("forwards group slider taps as child-volume toggles", async () => {
     const child = createPlayer({
       player_id: "child",
