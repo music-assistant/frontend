@@ -9,9 +9,6 @@ import { store } from "@/plugins/store";
 import { toast } from "vue-sonner";
 import { computed, effectScope, ref, watch } from "vue";
 
-// the first server schema that tells which track a player plays
-const CURRENTLY_PLAYING_TRACK_SCHEMA_VERSION = 116;
-
 /**
  * The signed-in user's like of the song a radio station plays on the active
  * player, with the actions on it.
@@ -29,19 +26,11 @@ export function useRadioSongFavorite() {
 let shared: ReturnType<typeof createRadioSongFavorite> | undefined;
 
 function createRadioSongFavorite() {
-  // an older server can not tell which track a station plays
-  const supported = computed(
-    () =>
-      (api.serverInfo.value?.schema_version ?? 0) >=
-      CURRENTLY_PLAYING_TRACK_SCHEMA_VERSION,
-  );
   const song = computed(() =>
-    supported.value
-      ? radioSong(
-          store.curQueueItem?.media_item,
-          store.activePlayer?.current_media,
-        )
-      : undefined,
+    radioSong(
+      store.curQueueItem?.media_item,
+      store.activePlayer?.current_media,
+    ),
   );
   const songLabel = computed(() => song.value && radioSongLabel(song.value));
 
@@ -72,7 +61,11 @@ function createRadioSongFavorite() {
     const playerId = store.activePlayer?.player_id;
     if (!song.value || !playerId) return;
     const label = songLabel.value;
-    const found = await api.getCurrentlyPlayingTrack(playerId, true);
+    // it runs in the background on every song change, so a failure only leaves
+    // the heart without a state
+    const found = await api
+      .getCurrentlyPlayingTrack(playerId, true, { suppressGlobalError: true })
+      .catch(() => null);
     // the song may have changed while the server answered
     if (songLabel.value === label) track.value = found ?? undefined;
   }

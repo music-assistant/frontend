@@ -36,8 +36,7 @@ const { favoriteHandlers } = vi.hoisted(() => ({
   favoriteHandlers: [] as Array<(evt: EventMessage) => void>,
 }));
 
-vi.mock("@/plugins/api", async () => {
-  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+vi.mock("@/plugins/api", () => {
   const api = {
     addItemToFavorites: vi.fn(),
     removeItemFromFavorites: vi.fn(),
@@ -50,7 +49,6 @@ vi.mock("@/plugins/api", async () => {
     }),
     providers: {},
     players: {},
-    serverInfo: ref({ schema_version: 116 }),
   };
   return { api, default: api };
 });
@@ -195,7 +193,6 @@ beforeEach(async () => {
     scopeChecker(BUILTIN_ROLE_SCOPES.user),
   );
   getCurrentlyPlayingTrack.mockResolvedValue(null);
-  api.serverInfo.value = { schema_version: 116 } as typeof api.serverInfo.value;
   mockStore.currentUser = user();
   mockStore.activePlayer = undefined;
   await setPlaying(track());
@@ -412,23 +409,6 @@ describe("FavoriteMenuBtn for a station that names its song", () => {
     ]);
   });
 
-  // a server that can not tell which track plays
-  it("offers the menu of the station on an older server", async () => {
-    api.serverInfo.value = {
-      schema_version: 115,
-    } as typeof api.serverInfo.value;
-    const wrapper = mountButton();
-    await setStationSong("Title", "Artist");
-
-    expect(wrapper.get(".dropdown-content").text()).not.toContain("–");
-    expect(entryLabels(wrapper)).toEqual([
-      "favorites_add",
-      "favorites_dislike",
-      "add_playlist",
-    ]);
-    expect(getCurrentlyPlayingTrack).not.toHaveBeenCalled();
-  });
-
   it("asks the server for the song and adds it to the favourites", async () => {
     resolveSong(null, song);
     await setStationSong("Title", "Artist");
@@ -520,7 +500,18 @@ describe("FavoriteMenuBtn for a station that names its song", () => {
 
     expect(getCurrentlyPlayingTrack).toHaveBeenCalledTimes(2);
     for (const call of getCurrentlyPlayingTrack.mock.calls) {
-      expect(call).toEqual(["player-1", true]);
+      expect(call).toEqual(["player-1", true, { suppressGlobalError: true }]);
     }
+  });
+
+  // the lookup runs in the background on every song change
+  it("shows no state when the library lookup fails, without an error", async () => {
+    getCurrentlyPlayingTrack.mockRejectedValue(new Error("lookup failed"));
+    const wrapper = mountButton();
+    await setStationSong("Title", "Artist");
+
+    expect(triggerFill(wrapper)).toBe("none");
+    expect(entryLabels(wrapper)[0]).toBe("favorites_song_add");
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

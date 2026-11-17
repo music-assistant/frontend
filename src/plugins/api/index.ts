@@ -2481,17 +2481,21 @@ export class MusicAssistantApi {
    * :param player_id: The player to ask about.
    * :param library_only: Look in the library only, without asking any music
    *   provider.
+   * :param options: Options for the command, such as keeping the global error
+   *   toast quiet.
    * :return: The track with the signed-in user's favorite state, or null when
    *   it can not be told which track plays.
    */
   public getCurrentlyPlayingTrack(
     player_id: string,
     library_only = false,
+    options?: CommandOptions,
   ): Promise<Track | null> {
-    return this.sendCommand("players/currently_playing_track", {
-      player_id,
-      library_only,
-    });
+    return this.sendCommand(
+      "players/currently_playing_track",
+      { player_id, library_only },
+      options,
+    );
   }
 
   public playerCommandPlay(playerId: string): Promise<void> {
