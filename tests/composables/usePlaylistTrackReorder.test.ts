@@ -78,7 +78,7 @@ function setup(
       listEl.remove();
     },
   });
-  return { items, selection, reload, reorder };
+  return { items, selection, reload, reorder, listEl };
 }
 
 /** The drag class of every row while the first row is dragged. */
@@ -170,6 +170,31 @@ describe("usePlaylistTrackReorder", () => {
     await flushPromises();
     expect(reload).toHaveBeenCalledOnce();
     expect(ids(items.value)).toEqual(["A", "B", "C", "D"]);
+  });
+
+  it("lets go of the focus when a keyboard move lost the connection", async () => {
+    apiMock.movePlaylistTrack.mockImplementation(async () => {
+      apiMock.state.value = "connecting";
+      throw new Error("connection lost");
+    });
+    const { items, reload, reorder, listEl } = setup(["A", "B", "C"], []);
+    reload.mockImplementation(async () => {
+      items.value = listing("A", "B", "C");
+    });
+    listEl.innerHTML = [0, 1, 2]
+      .map((index) => `<button data-reorder-index="${index}"></button>`)
+      .join("");
+    listEl.querySelector<HTMLElement>('[data-reorder-index="0"]')!.focus();
+
+    expect(reorder.moveBy(0, 1)).toBe(1);
+    await flushPromises();
+
+    // the focused row would hold another track once the order is read back
+    expect(listEl.contains(document.activeElement)).toBe(false);
+    apiMock.state.value = "initialized";
+    await flushPromises();
+    expect(reload).toHaveBeenCalledOnce();
+    expect(listEl.contains(document.activeElement)).toBe(false);
   });
 
   it("lets the selection go when the move fails", async () => {

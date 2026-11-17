@@ -137,7 +137,18 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
         // the rows can't be read while the server is out of reach; they are
         // read back once it reconnects
         if (!canSavePlaylistMoves()) {
-          if (failed) onReloaded(true);
+          // the listed order is unknown until then, so the focus lets go of
+          // the moved row rather than follow a track that may not be there
+          if (failed) {
+            selected.value = [];
+            followed = undefined;
+            // let a queued keyboard focus run first, so it can't refocus
+            await nextTick();
+            if (focusFrame !== undefined) cancelAnimationFrame(focusFrame);
+            focusFrame = undefined;
+            if (listEl.value?.contains(document.activeElement))
+              (document.activeElement as HTMLElement).blur();
+          }
           return;
         }
         await reload();
