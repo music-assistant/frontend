@@ -3149,7 +3149,11 @@
                 "discovering_hint": "Finding players can take a moment. Make sure your speakers are switched on and on the same network as Music Assistant.",
                 "add_more": "Add more players",
                 "discovered_by": "Discovered by",
-                "rename": "Rename {name}"
+                "rename": "Rename {name}",
+                "found_description": "Music Assistant found these speakers on your network. The ticked ones are added when you continue.",
+                "add_selected": "Add selected",
+                "provider_added": "{name} added",
+                "provider_add_failed": "Could not add {name}"
             },
             "plugins": {
                 "title": "Add plugins",

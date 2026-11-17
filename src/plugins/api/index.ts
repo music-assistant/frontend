@@ -3122,10 +3122,17 @@ export class MusicAssistantApi {
 
   // Setup flow related functions
 
-  public setupProvider(provider_domain: string): Promise<SetupFlowStep> {
+  public setupProvider(
+    provider_domain: string,
+    options?: CommandOptions,
+  ): Promise<SetupFlowStep> {
     // Start the setup flow to add a new instance of the given provider.
     // Returns the flow's first step (may already be a FINISH/ABORT step).
-    return this.sendCommand("config/providers/setup", { provider_domain });
+    return this.sendCommand(
+      "config/providers/setup",
+      { provider_domain },
+      options,
+    );
   }
 
   public reconfigureProvider(instance_id: string): Promise<SetupFlowStep> {

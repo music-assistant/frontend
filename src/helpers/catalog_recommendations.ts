@@ -6,6 +6,8 @@ import { isCommunityProvider } from "@/helpers/provider_config";
 import {
   type CatalogRecommendation,
   CatalogRecommendationReason,
+  type ProviderManifest,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 
 /** How many suggestions a row shows at most. */
@@ -152,6 +154,35 @@ export const getCatalogSuggestions = (
         : null;
     return [{ entry, reason, pairedWith }];
   });
+};
+
+/**
+ * The player providers found on the network that are added in one click, with
+ * no account or other input, in the server's order: what the setup wizard
+ * offers to add.
+ *
+ * @param recommendations - What the server suggests, as it sent it.
+ * @param entries - The Catalog entries.
+ */
+export const getFoundPlayerProviders = (
+  recommendations: readonly CatalogRecommendation[],
+  entries: readonly CatalogEntry[],
+): ProviderManifest[] => {
+  const byDomain = new Map(
+    entries.map((entry) => [entry.manifest.domain, entry]),
+  );
+  const found = new Map<string, ProviderManifest>();
+  for (const { domain, reason } of recommendations) {
+    const entry = byDomain.get(domain);
+    if (
+      reason === CatalogRecommendationReason.DISCOVERED &&
+      entry?.canAdd &&
+      entry.manifest.type === ProviderType.PLAYER &&
+      !entry.manifest.has_setup_flow
+    )
+      found.set(domain, entry.manifest);
+  }
+  return [...found.values()];
 };
 
 /**

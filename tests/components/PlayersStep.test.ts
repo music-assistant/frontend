@@ -6,22 +6,50 @@ import type {
   ConfiguredProvider,
   DiscoveredPlayer,
 } from "@/composables/useOnboarding";
-import { ProviderType, Scope } from "@/plugins/api/interfaces";
+import {
+  type CatalogRecommendation,
+  CatalogRecommendationReason,
+  FlowStepType,
+  type ProviderConfig,
+  type ProviderManifest,
+  ProviderType,
+  Scope,
+  type SetupFlowStep,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { authMock, onboardingState, renamePlayer, setPlayerEnabled } =
-  vi.hoisted(() => ({
-    authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
-    // what the composable found, which the step only ever reads
-    onboardingState: {
-      providers: [] as ConfiguredProvider[],
-      players: [] as DiscoveredPlayer[],
-    },
-    renamePlayer: vi.fn(),
-    setPlayerEnabled: vi.fn(),
-  }));
+const {
+  apiMock,
+  authMock,
+  onboardingState,
+  renamePlayer,
+  setPlayerEnabled,
+  toastMock,
+} = vi.hoisted(() => ({
+  // what the server found and suggests, and the setup that adds a provider
+  apiMock: {
+    providerManifests: {} as Record<string, ProviderManifest>,
+    getCatalogRecommendations: vi.fn<() => Promise<CatalogRecommendation[]>>(),
+    getProviderConfigs: vi.fn<() => Promise<ProviderConfig[]>>(),
+    setupProvider: vi.fn<(domain: string) => Promise<SetupFlowStep>>(),
+  },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
+  // what the composable found, which the step only ever reads
+  onboardingState: {
+    providers: [] as ConfiguredProvider[],
+    players: [] as DiscoveredPlayer[],
+  },
+  renamePlayer: vi.fn(),
+  setPlayerEnabled: vi.fn(),
+  toastMock: { success: vi.fn(), error: vi.fn() },
+}));
+
+vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+
+vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
 vi.mock("@/composables/useOnboarding", () => ({
   configuredProviders: () => onboardingState.providers,
@@ -30,7 +58,10 @@ vi.mock("@/composables/useOnboarding", () => ({
 
 vi.mock("@/plugins/auth", () => ({ authManager: authMock, default: authMock }));
 
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, params?: Record<string, string>) =>
+    params?.name ? `${key}:${params.name}` : key,
+}));
 
 // the saves are covered where they live; here they only have to be called
 vi.mock("@/helpers/player_settings_actions", () => ({
@@ -83,6 +114,33 @@ function addPlayer(overrides: Partial<DiscoveredPlayer> = {}) {
   });
 }
 
+// the domains the server reports as found on the network, in its order
+const found: string[] = [];
+
+// a player provider found on the network, which the server suggests adding
+function findProvider(
+  domain: string,
+  overrides: Partial<ProviderManifest> = {},
+) {
+  apiMock.providerManifests[domain] = providerManifest({
+    domain,
+    name: domain.toUpperCase(),
+    type: ProviderType.PLAYER,
+    ...overrides,
+  });
+  found.push(domain);
+}
+
+function finishStep(): SetupFlowStep {
+  return {
+    flow_id: "flow",
+    step_id: "finish",
+    type: FlowStepType.FINISH,
+    entries: [],
+    errors: {},
+  };
+}
+
 function mountStep() {
   return mount(PlayersStep, {
     global: { mocks: { $t: (key: string) => key } },
@@ -117,6 +175,22 @@ describe("PlayersStep", () => {
     renamePlayer.mockResolvedValue(true);
     setPlayerEnabled.mockReset();
     setPlayerEnabled.mockResolvedValue(true);
+    found.length = 0;
+    apiMock.providerManifests = {};
+    apiMock.getCatalogRecommendations.mockReset();
+    apiMock.getCatalogRecommendations.mockImplementation(async () =>
+      found.map((domain) => ({
+        domain,
+        reason: CatalogRecommendationReason.DISCOVERED,
+        detail: null,
+      })),
+    );
+    apiMock.getProviderConfigs.mockReset();
+    apiMock.getProviderConfigs.mockResolvedValue([]);
+    apiMock.setupProvider.mockReset();
+    apiMock.setupProvider.mockResolvedValue(finishStep());
+    toastMock.success.mockReset();
+    toastMock.error.mockReset();
   });
 
   it("explains what finds players when nothing is set up", () => {
@@ -496,6 +570,140 @@ describe("PlayersStep", () => {
       expect(
         wrapper.find("[aria-label=settings\\.player_needs_setup]").exists(),
       ).toBe(false);
+
+      wrapper.unmount();
+    });
+  });
+
+  describe("offering the providers found on the network", () => {
+    function foundRows(wrapper: Step) {
+      return wrapper.findAll("[data-testid=onboarding-found-provider]");
+    }
+
+    function checkbox(wrapper: Step, index: number) {
+      return foundRows(wrapper)[index].find(
+        "[data-testid=onboarding-found-provider-select]",
+      );
+    }
+
+    it("lists what was found, ticked", async () => {
+      findProvider("sonos", { description: "Sonos speakers" });
+      findProvider("wiim");
+
+      const wrapper = mountStep();
+      await flushPromises();
+
+      expect(wrapper.text()).toContain("settings.catalog.discovered_title");
+      expect(wrapper.text()).toContain(
+        "onboarding.steps.players.found_description",
+      );
+      expect(foundRows(wrapper).map((row) => row.text())).toEqual([
+        expect.stringContaining("Sonos speakers"),
+        expect.stringContaining("WIIM"),
+      ]);
+      expect(checkbox(wrapper, 0).attributes("aria-checked")).toBe("true");
+      expect(checkbox(wrapper, 0).attributes("aria-label")).toBe(
+        "settings.catalog.add_named:SONOS",
+      );
+      expect(checkbox(wrapper, 1).attributes("aria-checked")).toBe("true");
+
+      wrapper.unmount();
+    });
+
+    it("shows nothing extra when nothing that can be added in one click was found", async () => {
+      // one that asks for input is left to the Marketplace
+      findProvider("bose_soundtouch", { has_setup_flow: true });
+
+      const wrapper = mountStep();
+      await flushPromises();
+
+      // the step asked what was found, once, and there is nothing to offer
+      expect(apiMock.getCatalogRecommendations).toHaveBeenCalledTimes(1);
+      expect(
+        wrapper.find("[data-testid=onboarding-found-providers]").exists(),
+      ).toBe(false);
+      expect(rows(wrapper)).toHaveLength(0);
+
+      wrapper.unmount();
+    });
+
+    it("adds only the ticked ones on the way out", async () => {
+      findProvider("sonos");
+      findProvider("wiim");
+
+      const wrapper = mountStep();
+      await flushPromises();
+      await checkbox(wrapper, 1).trigger("click");
+
+      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+
+      expect(apiMock.setupProvider).toHaveBeenCalledTimes(1);
+      expect(apiMock.setupProvider).toHaveBeenCalledWith("sonos", {
+        suppressGlobalError: true,
+      });
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "onboarding.steps.players.provider_added:SONOS",
+      );
+      // what was added leaves the list; what was not stays on offer
+      expect(foundRows(wrapper).map((row) => row.text())).toEqual([
+        expect.stringContaining("WIIM"),
+      ]);
+
+      wrapper.unmount();
+    });
+
+    it("adds the ticked ones right away from its own button", async () => {
+      findProvider("sonos");
+
+      const wrapper = mountStep();
+      await flushPromises();
+      await wrapper
+        .find("[data-testid=onboarding-found-providers-add]")
+        .trigger("click");
+      await flushPromises();
+
+      expect(apiMock.setupProvider).toHaveBeenCalledWith("sonos", {
+        suppressGlobalError: true,
+      });
+      expect(
+        wrapper.find("[data-testid=onboarding-found-providers]").exists(),
+      ).toBe(false);
+      // nothing is left to add on the way out
+      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+      expect(apiMock.setupProvider).toHaveBeenCalledTimes(1);
+
+      wrapper.unmount();
+    });
+
+    it("keeps the wizard on the step when one could not be added", async () => {
+      findProvider("sonos");
+      apiMock.setupProvider.mockRejectedValue(new Error("failed"));
+
+      const wrapper = mountStep();
+      await flushPromises();
+
+      await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
+
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "onboarding.steps.players.provider_add_failed:SONOS",
+      );
+      expect(toastMock.success).not.toHaveBeenCalled();
+      // still listed and ticked, to try again
+      expect(checkbox(wrapper, 0).attributes("aria-checked")).toBe("true");
+
+      wrapper.unmount();
+    });
+
+    it("adds nothing when the setup is only paused", async () => {
+      findProvider("sonos");
+
+      const wrapper = mountStep();
+      await flushPromises();
+
+      await expect(wrapper.vm.beforeLeave({ pausing: true })).resolves.toBe(
+        true,
+      );
+      expect(apiMock.setupProvider).not.toHaveBeenCalled();
 
       wrapper.unmount();
     });

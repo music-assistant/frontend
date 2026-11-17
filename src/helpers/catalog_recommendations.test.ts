@@ -4,6 +4,7 @@ import {
   type CatalogSuggestion,
   getCatalogBadges,
   getCatalogSuggestions,
+  getFoundPlayerProviders,
   getReleaseLine,
   getSuggestionRows,
   getTopPicks,
@@ -12,11 +13,16 @@ import {
   sortSuggestedFirst,
   TOP_PICK_COUNT,
 } from "@/helpers/catalog_recommendations";
-import type { CatalogEntry } from "@/helpers/provider_catalog";
+import {
+  buildCatalogEntries,
+  type CatalogEntry,
+} from "@/helpers/provider_catalog";
 import {
   type CatalogRecommendation,
   CatalogRecommendationReason,
+  type ProviderManifest,
   ProviderTier,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { communityProvider } from "../../tests/fixtures/communityProvider";
@@ -104,6 +110,69 @@ describe("getCatalogSuggestions", () => {
       null,
       null,
     ]);
+  });
+});
+
+describe("getFoundPlayerProviders", () => {
+  const manifests = [
+    playerManifest("sonos"),
+    playerManifest("wiim"),
+    playerManifest("heos"),
+    playerManifest("bose_soundtouch", { has_setup_flow: true }),
+    providerManifest({
+      domain: "hue_entertainment",
+      type: ProviderType.PLUGIN,
+    }),
+  ];
+
+  const found = (
+    recommendations: CatalogRecommendation[],
+    configured: string[] = [],
+  ) =>
+    getFoundPlayerProviders(
+      recommendations,
+      buildCatalogEntries(
+        manifests,
+        configured.map((domain) =>
+          providerConfig({ domain, type: ProviderType.PLAYER }),
+        ),
+      ),
+    ).map((manifest) => manifest.domain);
+
+  it("offers only what was found on the network", () => {
+    expect(
+      found([
+        recommend("sonos", POPULAR),
+        recommend("wiim", DISCOVERED),
+        recommend("heos", COMPLEMENTS, "sonos"),
+      ]),
+    ).toEqual(["wiim"]);
+  });
+
+  it("leaves out what needs input, is no player or is set up already", () => {
+    expect(
+      found(
+        [
+          recommend("bose_soundtouch", DISCOVERED),
+          recommend("hue_entertainment", DISCOVERED),
+          recommend("sonos", DISCOVERED),
+          recommend("unknown", DISCOVERED),
+          recommend("wiim", DISCOVERED),
+        ],
+        ["sonos"],
+      ),
+    ).toEqual(["wiim"]);
+  });
+
+  it("keeps the server's order and lists each provider once", () => {
+    expect(
+      found([
+        recommend("wiim", DISCOVERED),
+        recommend("sonos", DISCOVERED),
+        recommend("wiim", DISCOVERED),
+        recommend("heos", DISCOVERED),
+      ]),
+    ).toEqual(["wiim", "sonos", "heos"]);
   });
 });
 
@@ -416,6 +485,18 @@ function entry(domain: string, canAdd = true): CatalogEntry {
     instances: [],
     canAdd,
   };
+}
+
+function playerManifest(
+  domain: string,
+  overrides: Partial<ProviderManifest> = {},
+): ProviderManifest {
+  return providerManifest({
+    domain,
+    name: domain,
+    type: ProviderType.PLAYER,
+    ...overrides,
+  });
 }
 
 function recommend(

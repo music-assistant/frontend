@@ -45,6 +45,10 @@
          as the first players turn up, and a live region so a player that was
          just found is announced -->
     <ScrollFade class="min-h-40" aria-live="polite">
+      <!-- what was found on the network and is not added yet, above the
+           players it brings -->
+      <FoundProvidersBlock ref="foundProviders" class="mb-4" />
+
       <ItemGroup v-if="players.length > 0" class="gap-2">
         <DiscoveredPlayerItem
           v-for="player in players"
@@ -106,6 +110,7 @@
 
 <script setup lang="ts">
 import DiscoveredPlayerItem from "@/components/onboarding/DiscoveredPlayerItem.vue";
+import FoundProvidersBlock from "@/components/onboarding/FoundProvidersBlock.vue";
 import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
@@ -122,12 +127,16 @@ import {
   configuredProviders,
   discoveredPlayers,
 } from "@/composables/useOnboarding";
-import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
+import {
+  attentionLabelKey,
+  type OnboardingStepId,
+  type StepLeaveOptions,
+} from "@/helpers/onboarding";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
 import { Plus, Speaker, TriangleAlert } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
@@ -137,8 +146,7 @@ defineEmits<{
   (e: "finish"): void;
 }>();
 
-// the wizard keeps both lists up to date while it is open, so the step has
-// nothing to save on the way out and needs no beforeLeave
+// the wizard keeps both lists up to date while it is open
 const providers = computed(() => configuredProviders(ProviderType.PLAYER));
 const players = computed(() => discoveredPlayers());
 // whether anything is looking for players: a provider that is switched off
@@ -153,4 +161,23 @@ const canEdit = computed(() =>
 );
 
 const showAddProviderDialog = ref(false);
+
+const foundProviders = useTemplateRef("foundProviders");
+// the wizard reads `busy` to keep its Next from advancing while providers are
+// being added
+const busy = computed(() => foundProviders.value?.busy ?? false);
+
+/**
+ * The wizard asking whether it may move on. The found providers that are still
+ * ticked are added first, and one that could not be added keeps the wizard
+ * here. Pausing adds nothing.
+ */
+const beforeLeave = async function (
+  options?: StepLeaveOptions,
+): Promise<boolean> {
+  if (options?.pausing || !foundProviders.value) return true;
+  return await foundProviders.value.addSelected();
+};
+
+defineExpose({ beforeLeave, busy });
 </script>
