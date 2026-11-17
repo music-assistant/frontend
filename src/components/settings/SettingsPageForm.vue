@@ -35,12 +35,13 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { useSettingsPage } from "@/composables/settings/useSettingsPage";
+import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
 import type { SettingsPageId } from "@/helpers/settings_pages";
 import type { ConfigValueType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import EditConfig from "@/views/settings/EditConfig.vue";
-import { SlidersHorizontal } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { RotateCcw, SlidersHorizontal } from "@lucide/vue";
+import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
 /**
@@ -59,6 +60,27 @@ const { entries, loaded, loadFailed, busy, canEdit, save, onAction } =
 const showForm = computed(
   () => canEdit && !(loaded.value && entries.value.length === 0),
 );
+
+// the toolbar's menu resets the form while it is on screen
+const toolbarMenu = useSettingsToolbarMenu();
+watch(
+  () => showForm.value && loaded.value,
+  (resettable) => {
+    toolbarMenu.value = resettable
+      ? [
+          {
+            label: "settings.reset_to_defaults",
+            icon: markRaw(RotateCcw),
+            action: () => editConfig.value?.resetToDefaults(),
+          },
+        ]
+      : [];
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => {
+  toolbarMenu.value = [];
+});
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   if (!(await save(values))) {

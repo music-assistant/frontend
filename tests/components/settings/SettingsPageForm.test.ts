@@ -1,4 +1,5 @@
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
+import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -24,12 +25,19 @@ vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
+// one menu for the test to read what the form publishes into it
+vi.mock("@/composables/useSettingsToolbarMenu", async () => {
+  const { ref } = await import("vue");
+  const menu = ref([]);
+  return { useSettingsToolbarMenu: () => menu };
+});
 
 enableAutoUnmount(afterEach);
 
 // the form takes the saved values as its baseline, or guards them again
 const saveSucceeded = vi.fn();
 const saveFailed = vi.fn();
+const resetToDefaults = vi.fn();
 
 /**
  * The form is covered where it lives; here it only has to be reachable, and to
@@ -45,7 +53,7 @@ const editConfigStub = {
   },
   emits: ["submit", "action", "immediateApply"],
   setup() {
-    return { saveFailed, saveSucceeded };
+    return { saveFailed, saveSucceeded, resetToDefaults };
   },
   template: "<div data-testid='edit-config' />",
 };
@@ -161,6 +169,32 @@ describe("SettingsPageForm", () => {
       background_scan_concurrency: 4,
     });
     expect(toastMock.success).not.toHaveBeenCalled();
+  });
+
+  it("offers a reset of the form in the toolbar menu", async () => {
+    await mountForm();
+
+    const [reset] = useSettingsToolbarMenu().value;
+    expect(reset.label).toBe("settings.reset_to_defaults");
+    reset.action?.();
+
+    expect(resetToDefaults).toHaveBeenCalledOnce();
+  });
+
+  it("offers no reset to a user who may not change the settings", async () => {
+    hasScope.mockImplementation((scope) => scope !== Scope.CONFIG_CORE_WRITE);
+
+    await mountForm();
+
+    expect(useSettingsToolbarMenu().value).toEqual([]);
+  });
+
+  it("takes the reset out of the toolbar menu when it closes", async () => {
+    const wrapper = await mountForm();
+
+    wrapper.unmount();
+
+    expect(useSettingsToolbarMenu().value).toEqual([]);
   });
 });
 
