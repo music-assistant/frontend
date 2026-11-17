@@ -67,7 +67,7 @@
               </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
                 <v-icon size="14" class="mr-1">mdi-tag</v-icon>
-                {{ $t(`player_type.${api.players[config.player_id].type}`) }}
+                {{ getPlayerTypeLabel(api.players[config.player_id]) }}
               </span>
             </div>
             <div
@@ -239,7 +239,7 @@ import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
 import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
-import { getPlayerSetupReason } from "@/helpers/players";
+import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { eventbus } from "@/plugins/eventbus";

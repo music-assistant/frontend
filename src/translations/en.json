@@ -100,12 +100,16 @@
     "player_type": {
         "group": "Group",
         "player": "Player",
+        "multi_channel": "Multi-channel",
         "stereo_pair": "Stereo Pair",
         "display": "Screen",
         "visualizer": "Visualizer",
         "light": "Light",
         "source": "Audio input",
         "unknown": "Unknown"
+    },
+    "channel_layout": {
+        "stereo": "Stereo pair"
     },
     "players": "Players",
     "players_need_setup": "A new device was discovered that needs to be set up | {count} new devices were discovered that need to be set up",

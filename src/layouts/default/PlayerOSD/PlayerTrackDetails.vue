@@ -36,7 +36,7 @@
           <PlayerIcon
             :icon="store.activePlayer?.icon"
             :grouped="
-              store.activePlayer?.type == PlayerType.PLAYER &&
+              isSpeakerPlayer(store.activePlayer) &&
               !!store.activePlayer?.group_members.length
             "
             :size="props.compact ? 22 : 32"
@@ -195,7 +195,7 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
-import { getPlayerDisplayName } from "@/helpers/players";
+import { getPlayerDisplayName, isSpeakerPlayer } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
 import {
@@ -203,7 +203,7 @@ import {
   resolveCurrentChapter,
 } from "@/helpers/chapters";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
-import { MediaType, PlaybackState, PlayerType } from "@/plugins/api/interfaces";
+import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed, onUnmounted, ref, watch } from "vue";
