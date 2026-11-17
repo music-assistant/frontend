@@ -10,9 +10,9 @@ import webfontDownload from "vite-plugin-webfont-dl";
 
 // Vitest's module runner gets each module's AST from Rust as one string, and
 // every locale compiled into one messages module passes V8's string length
-// limit, so tests load English plus German, which a locale switch test uses.
+// limit, so tests load only the locales they switch to.
 const TRANSLATIONS = process.env.VITEST
-  ? "./src/translations/{en,de}.json"
+  ? "./src/translations/{en,de,sk_SK,sr_Latn}.json"
   : "./src/translations/**";
 
 // https://vitejs.dev/config/
