@@ -18,8 +18,8 @@ importers:
         specifier: 11.2.8
         version: 11.2.8(@vue/compiler-dom@3.5.45)(rollup@4.62.2)(typescript@6.0.3)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.107.1)(terser@5.48.0)(yaml@2.9.1))(vue-i18n@11.4.18(vue@3.5.45(typescript@6.0.3)))(vue@3.5.45(typescript@6.0.3))
       '@lucide/vue':
-        specifier: ^1.66.0
-        version: 1.66.0(vue@3.5.45(typescript@6.0.3))
+        specifier: ^1.73.0
+        version: 1.73.0(vue@3.5.45(typescript@6.0.3))
       '@mdi/font':
         specifier: 7.4.47
         version: 7.4.47
@@ -1382,8 +1382,8 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@lucide/vue@1.66.0':
-    resolution: {integrity: sha512-cyALYgAzCD2uZ557pM5I/dmFAyTKqtwY7PrdU67gzITkTH+V635u7Uv7VBpQ5hqvmlGqRtbqSDx08LCJHU+GAw==}
+  '@lucide/vue@1.73.0':
+    resolution: {integrity: sha512-QVVRSgu2rqRX3NAUktT9venW0Bvtr03aCZjhFRLwnV3uqLyR7KCTOx5mMlukhw0aiyjC3D6w2b+fmy4MeM5R3Q==}
     peerDependencies:
       vue: '>=3.0.1'
 
@@ -6265,7 +6265,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@lucide/vue@1.66.0(vue@3.5.45(typescript@6.0.3))':
+  '@lucide/vue@1.73.0(vue@3.5.45(typescript@6.0.3))':
     dependencies:
       vue: 3.5.45(typescript@6.0.3)
 
