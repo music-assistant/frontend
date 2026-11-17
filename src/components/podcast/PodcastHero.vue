@@ -15,7 +15,7 @@
     <template v-if="item" #main>
       <div class="podcast-hero__main">
         <div class="podcast-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
 
         <div class="podcast-hero__text">
@@ -63,9 +63,7 @@ import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import type { Podcast } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { Mic, PodcastIcon } from "@lucide/vue";
-import { computed } from "vue";
 
 export interface Props {
   item?: Podcast;
@@ -81,10 +79,6 @@ defineProps<Props>();
 const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
-
-const isPhone = computed(() => isPhoneSizedScreen());
-
-const coverSize = computed(() => (isPhone.value ? 132 : 200));
 </script>
 
 <style scoped>
@@ -157,7 +151,7 @@ const coverSize = computed(() => (isPhone.value ? 132 : 200));
   min-width: 0;
 }
 
-@media (max-width: 768px) {
+@container detail-hero (width < 48rem) {
   .podcast-hero__main {
     flex-direction: column;
     align-items: stretch;

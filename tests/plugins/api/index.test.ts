@@ -1892,14 +1892,18 @@ describe("MusicAssistantApi error handling", () => {
   });
 
   describe("with the auth module gone after a server update", () => {
-    beforeEach(() => {
+    // Importing settles each mock in the hook: that takes a round trip to the
+    // Vitest main process, which must not eat into the toast's wait.
+    beforeEach(async () => {
       vi.doMock("@/plugins/auth", () => {
         throw new TypeError("Failed to fetch dynamically imported module");
       });
+      await expect(import("@/plugins/auth")).rejects.toThrow();
     });
 
-    afterEach(() => {
+    afterEach(async () => {
       vi.doMock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+      await import("@/plugins/auth");
     });
 
     it("still shows the task toast, without the task list", async () => {

@@ -39,23 +39,23 @@
 
     <template v-if="item" #main>
       <div
-        class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
+        class="flex w-full min-w-0 items-end gap-6 @max-3xl/detail-hero:flex-col @max-3xl/detail-hero:items-stretch @max-3xl/detail-hero:gap-3"
       >
         <div
-          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
+          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:size-[132px]"
         >
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
 
         <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
           <h1
-            class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px] max-md:tracking-[-0.7px]"
+            class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-[30px] @max-3xl/detail-hero:tracking-[-0.7px]"
           >
             {{ item.name }}
           </h1>
 
           <div
-            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] max-md:text-sm"
+            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
           >
             <div
               v-if="isMusicAssistantPlaylist(item) || item.owner"
@@ -73,9 +73,9 @@
             <DetailHeroFacts :icon="ListMusic" :facts="facts" />
           </div>
 
-          <!-- a phone has no room for every button beside play, so the row wraps there -->
+          <!-- a narrow hero has no room for every button beside play, so the row wraps there -->
           <div
-            class="flex min-w-0 flex-nowrap items-center gap-2 max-md:flex-wrap max-md:gap-2.5"
+            class="flex min-w-0 flex-nowrap items-center gap-2 @max-3xl/detail-hero:flex-wrap @max-3xl/detail-hero:gap-2.5"
           >
             <DetailHeroPlayButton
               :item="item"
@@ -134,7 +134,6 @@ import type {
   SortDirection,
   SortField,
 } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import {
@@ -173,10 +172,6 @@ const emit = defineEmits<{
   (e: "edit-rules"): void;
   (e: "share"): void;
 }>();
-
-const isPhone = computed(() => isPhoneSizedScreen());
-
-const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 // "Playlist · 32 tracks · 2 h 1 min", without whatever is not known yet
 const facts = computed(() => {
