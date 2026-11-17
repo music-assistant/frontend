@@ -14,6 +14,9 @@ import type {
   MusicQuizGuessTheSongRound,
   MusicQuizTimelineHostState,
   MusicQuizTimelinePersonalizedState,
+  MusicQuizTitleRevealHostState,
+  MusicQuizTitleRevealPersonalizedState,
+  MusicQuizTitleRevealRound,
   MusicQuizTimelineRound,
   MusicQuizSupportedHostState,
   MusicQuizSupportedPersonalizedState,
@@ -216,6 +219,54 @@ const triviaHostState = {
   playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
 } satisfies MusicQuizTriviaHostState;
 
+const titleRevealRound = {
+  question: null,
+  round_index: 0,
+  started_at: 1,
+  deadline: Date.now() / 1000 + 30,
+  auto_advance_at: null,
+  mask: ["H", null, null, " ", null, null, null, null],
+  revealed_count: 1,
+  hint_count: 4,
+  allowed_typos: 1,
+  artist_bonus: false,
+} satisfies MusicQuizTitleRevealRound;
+
+const titleRevealPlayerState = {
+  quiz_type: "title_reveal",
+  answer_type: "hint_text",
+  hint_speed: "normal",
+  typo_tolerance: "normal",
+  artist_bonus_mode: "off",
+  phase: "answering",
+  name: "Title Reveal",
+  include_similar_music: false,
+  auto_start_at: null,
+  round_count: 5,
+  answer_duration: 30,
+  mode: "venue",
+  players: [],
+  current_round: titleRevealRound,
+  you: {
+    name: "Player",
+    score: 0,
+    ready: false,
+    active_from_round: 0,
+    guesses: [],
+    attempts_left: 30,
+    solved: false,
+  },
+} satisfies MusicQuizTitleRevealPersonalizedState;
+
+const titleRevealHostState = {
+  ...titleRevealPlayerState,
+  created_at: 1,
+  sources: [],
+  join_url: "https://example.test/join",
+  rounds: [],
+  playback: { mode: "venue", venue_player_id: null, venue_player_name: null },
+} satisfies MusicQuizTitleRevealHostState;
+
 interface GameMountFixture {
   playerState: MusicQuizSupportedPersonalizedState;
   hostState: MusicQuizSupportedHostState;
@@ -238,6 +289,11 @@ const GAME_MOUNT_FIXTURES = {
     hostState: triviaHostState,
     currentRound: triviaRound,
   },
+  title_reveal: {
+    playerState: titleRevealPlayerState,
+    hostState: titleRevealHostState,
+    currentRound: titleRevealRound,
+  },
 } satisfies Record<MusicQuizType, GameMountFixture>;
 
 const ANSWER_MOUNT_FIXTURES = {
@@ -251,6 +307,11 @@ const ANSWER_MOUNT_FIXTURES = {
     hostState: musicTimelineHostState,
     currentRound: musicTimelineRound,
   },
+  hint_text: {
+    playerState: titleRevealPlayerState,
+    hostState: titleRevealHostState,
+    currentRound: titleRevealRound,
+  },
 } satisfies Record<MusicQuizAnswerType, GameMountFixture>;
 
 describe("Music Quiz registries", () => {
@@ -259,10 +320,12 @@ describe("Music Quiz registries", () => {
       "guess_the_song",
       "music_timeline",
       "trivia",
+      "title_reveal",
     ]);
     expect(MUSIC_QUIZ_ANSWER_TYPES.map((answer) => answer.id)).toEqual([
       "multiple_choice",
       "timeline",
+      "hint_text",
     ]);
     expect(new Set(MUSIC_QUIZ_GAME_TYPES.map((game) => game.id)).size).toBe(
       MUSIC_QUIZ_GAME_TYPES.length,
@@ -301,6 +364,7 @@ describe("Music Quiz registries", () => {
       guess_the_song: "multiple_choice",
       music_timeline: "timeline",
       trivia: "multiple_choice",
+      title_reveal: "hint_text",
     } satisfies MusicQuizGameAnswerTypeMap;
 
     expect(mapping).toEqual(expected);
