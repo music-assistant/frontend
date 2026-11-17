@@ -733,7 +733,6 @@
     "remove_provider_mapping_confirm": "Opravdu chcete odstranit toto mapování poskytovatele? Tímto se položka odpojí od aktuálních podrobností o položce. Může se znovu zobrazit, pokud provedete opětovné prohledání všech shodných poskytovatelů.",
     "map_provider_mapping": "Namapovat tento záznam poskytovatele na právě vybranou položku",
     "player_tip": {
-        "selected_player": "Vybraný přehrávač",
         "currently_playing": "Aktuálně hraje na",
         "click_to_change": "Kliknutím níže změníte výstupní zařízení"
     },

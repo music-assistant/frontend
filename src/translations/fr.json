@@ -759,7 +759,6 @@
     "remove_provider_mapping_confirm": "Êtes-vous sûr de vouloir supprimer ce mappage de fournisseur ? Cette action dissociera l'article de ses détails actuels. Il pourra réapparaître si vous effectuez une nouvelle analyse de tous les fournisseurs correspondants.",
     "map_provider_mapping": "Associez cette entrée de fournisseur à l'élément actuel",
     "player_tip": {
-        "selected_player": "Lecteur sélectionné",
         "currently_playing": "Actuellement en cours de lecture sur",
         "click_to_change": "Cliquez ci-dessous pour modifier le périphérique de sortie"
     },
