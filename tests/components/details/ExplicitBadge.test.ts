@@ -24,6 +24,7 @@ vi.mock("vue-router", async (importOriginal) => ({
 }));
 vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
   getContextMenuItems: vi.fn(() => Promise.resolve([])),
+  getDeclaredContextMenuItems: vi.fn(() => []),
 }));
 
 describe("ExplicitBadge", () => {

@@ -23,6 +23,7 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
     addItemToFavorites: vi.fn(),
     removeItemFromFavorites: vi.fn(),
     setFavorite: vi.fn(),
+    providerManifests: {},
     players: {},
   },
   storeMock: {

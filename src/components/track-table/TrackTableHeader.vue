@@ -37,6 +37,13 @@
         {{ $t("musical_key") }}
       </span>
       <span
+        v-else-if="column === 'energy'"
+        class="truncate"
+        :title="$t('tooltip.energy_level')"
+      >
+        {{ $t("energy_level") }}
+      </span>
+      <span
         v-else-if="column === 'duration'"
         class="flex justify-end"
         :title="$t('track_table.duration')"
@@ -127,6 +134,7 @@ const OPTION_LABEL_KEYS: Record<OptionalTrackColumn, string> = {
   year: "track_table.year",
   bpm: "bpm",
   key: "musical_key",
+  energy: "energy_level",
 };
 
 const options = computed(() =>

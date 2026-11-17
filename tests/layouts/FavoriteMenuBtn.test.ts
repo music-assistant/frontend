@@ -1,17 +1,26 @@
 import FavoriteMenuBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/FavoriteMenuBtn.vue";
 import api from "@/plugins/api";
 import {
+  EventType,
   MediaType,
+  type EventMessage,
+  type FavoriteUpdate,
   type PlayableMediaItemType,
+  type Player,
   type QueueItem,
+  type Track,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { dropdownMenuStubs } from "../fixtures/dropdownMenu";
+import { artist } from "../fixtures/artist";
 import { queueItem } from "../fixtures/queueItem";
+import { radio } from "../fixtures/radio";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
+import { user } from "../fixtures/user";
+import { toast } from "vue-sonner";
 import {
   enableAutoUnmount,
   flushPromises,
@@ -21,18 +30,37 @@ import {
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// the shared state subscribes once for the whole file, before any test can
+// look at the mock's calls
+const { favoriteHandlers } = vi.hoisted(() => ({
+  favoriteHandlers: [] as Array<(evt: EventMessage) => void>,
+}));
+
 vi.mock("@/plugins/api", () => {
   const api = {
     addItemToFavorites: vi.fn(),
     removeItemFromFavorites: vi.fn(),
     setFavorite: vi.fn(),
     getLibraryItem: vi.fn(),
-    subscribe: vi.fn(() => () => {}),
+    getCurrentlyPlayingTrack: vi.fn(),
+    subscribe: vi.fn((type: string, handler: (evt: EventMessage) => void) => {
+      if (type === "favorite_updated") favoriteHandlers.push(handler);
+      return () => {};
+    }),
     providers: {},
     players: {},
   };
   return { api, default: api };
 });
+
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, args?: { name: string }) =>
+    args ? `${key}: ${args.name}` : key,
+}));
+
+vi.mock("vue-sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}));
 
 vi.mock("@/plugins/eventbus", () => ({ eventbus: { emit: vi.fn() } }));
 
@@ -48,6 +76,7 @@ vi.mock("@/plugins/auth", async () => {
 const addItemToFavorites = vi.mocked(api.addItemToFavorites);
 const removeItemFromFavorites = vi.mocked(api.removeItemFromFavorites);
 const setFavorite = vi.mocked(api.setFavorite);
+const getCurrentlyPlayingTrack = vi.mocked(api.getCurrentlyPlayingTrack);
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -55,11 +84,16 @@ vi.mock("@/plugins/store", async () => {
     store: reactive({
       activePlayer: undefined,
       curQueueItem: undefined,
+      currentUser: undefined,
     }),
   };
 });
 
-const mockStore = store as unknown as { curQueueItem?: QueueItem };
+const mockStore = store as unknown as {
+  activePlayer?: Pick<Player, "player_id" | "current_media">;
+  curQueueItem?: QueueItem;
+  currentUser?: ReturnType<typeof user>;
+};
 
 const TRIGGER = "button[type='button']";
 
@@ -73,6 +107,54 @@ async function setPlaying(mediaItem: PlayableMediaItemType) {
   });
   // the shared state re-seeds from a watcher, which vue flushes before render
   await nextTick();
+}
+
+// what a station reports it plays; leaving out the artist stands for talk or
+// an ad
+async function setStationSong(title: string | null, artistName?: string) {
+  mockStore.activePlayer = {
+    player_id: "player-1",
+    current_media: {
+      uri: "radio-stream",
+      media_type: MediaType.RADIO,
+      title,
+      artist: artistName ?? null,
+      album: null,
+      image_url: null,
+      palette: null,
+      duration: null,
+      source_id: null,
+      elapsed_time: null,
+      elapsed_time_last_updated: null,
+      queue_item_id: null,
+    },
+  };
+  await flushPromises();
+}
+
+function emitFavoriteUpdate(update: Partial<FavoriteUpdate>) {
+  const data: FavoriteUpdate = {
+    uri: "library://track/1",
+    media_type: MediaType.TRACK,
+    item_id: "1",
+    favorite: true,
+    user_id: "user-id",
+    ...update,
+  };
+  for (const handler of favoriteHandlers) {
+    handler({ event: EventType.FAVORITE_UPDATED, data } as EventMessage);
+  }
+}
+
+function entryLabels(wrapper: VueWrapper): string[] {
+  return wrapper.findAll(".dropdown-item").map((entry) => entry.text());
+}
+
+// the song has no dislike, so the trigger always shows a heart for it
+function triggerFill(wrapper: VueWrapper) {
+  const glyph = wrapper.get(TRIGGER).get("svg");
+  expect(glyph.classes()).toContain("lucide-heart");
+  return glyph.attributes("fill");
 }
 
 // the stubs keep the entries reachable without reka-ui; the trigger's own
@@ -110,6 +192,9 @@ beforeEach(async () => {
   vi.mocked(authManager.hasScope).mockImplementation(
     scopeChecker(BUILTIN_ROLE_SCOPES.user),
   );
+  getCurrentlyPlayingTrack.mockResolvedValue(null);
+  mockStore.currentUser = user();
+  mockStore.activePlayer = undefined;
   await setPlaying(track());
 });
 
@@ -206,6 +291,23 @@ describe("FavoriteMenuBtn", () => {
     });
   });
 
+  // a queued track the server looks up only when it is loaded holds no state
+  // and goes into no playlist until then
+  it("is not offered for a track known only by an external id", async () => {
+    await setPlaying(
+      track({
+        item_id: "musicbrainz_recordingid:rec-1",
+        provider: "external",
+        provider_mappings: [],
+      }),
+    );
+
+    const wrapper = mountButton();
+
+    expect(wrapper.find(TRIGGER).exists()).toBe(false);
+    expect(wrapper.findAll(".dropdown-item")).toHaveLength(0);
+  });
+
   // a line-in or other live source is not a library item
   it("disables itself for an audio source", async () => {
     await setPlaying(track({ media_type: MediaType.AUDIO_SOURCE }));
@@ -246,5 +348,170 @@ describe("FavoriteMenuBtn", () => {
 
     expect(trigger.attributes("data-state")).toBe("closed");
     expect(trigger.attributes("data-suppress-hover")).toBe("true");
+  });
+});
+
+describe("FavoriteMenuBtn for a station that names its song", () => {
+  const station = radio({ name: "Station" });
+  const song = track({
+    item_id: "song-1",
+    provider: "spotify",
+    name: "Title",
+    artists: [artist({ name: "Artist" })],
+  });
+  const librarySong = track({
+    item_id: "7",
+    name: "Title",
+    artists: [artist({ name: "Artist" })],
+    favorite: true,
+  });
+
+  // what the server answers: the library lookup, and the search in the music
+  // providers
+  function resolveSong(library: Track | null, providers: Track | null) {
+    getCurrentlyPlayingTrack.mockImplementation(async (_, libraryOnly) =>
+      libraryOnly ? library && { ...library } : providers && { ...providers },
+    );
+  }
+
+  beforeEach(async () => {
+    await setPlaying(station);
+  });
+
+  it("shows the song's entries apart from the station's", async () => {
+    await setStationSong("Title", "Artist");
+
+    const wrapper = mountButton();
+
+    expect(wrapper.get(".dropdown-content").text()).toContain("Artist – Title");
+    expect(entryLabels(wrapper)).toEqual([
+      "favorites_song_add",
+      "add_song_playlist",
+      "favorites_station_add",
+      "favorites_station_dislike",
+      "add_station_playlist",
+    ]);
+  });
+
+  it.each([
+    { name: "talk or an ad", title: "Morning show", artistName: undefined },
+    { name: "no song info", title: null, artistName: undefined },
+  ])("offers the menu of the station for $name", async (song) => {
+    await setStationSong(song.title, song.artistName);
+
+    const wrapper = mountButton();
+
+    expect(wrapper.get(".dropdown-content").text()).not.toContain("–");
+    expect(entryLabels(wrapper)).toEqual([
+      "favorites_add",
+      "favorites_dislike",
+      "add_playlist",
+    ]);
+  });
+
+  it("asks the server for the song and adds it to the favourites", async () => {
+    resolveSong(null, song);
+    await setStationSong("Title", "Artist");
+    const wrapper = mountButton();
+
+    await pickEntry(wrapper, "favorites_song_add");
+
+    expect(getCurrentlyPlayingTrack).toHaveBeenLastCalledWith("player-1");
+    expect(addItemToFavorites).toHaveBeenCalledWith(
+      expect.objectContaining({ item_id: "song-1" }),
+    );
+    expect(toast.success).toHaveBeenCalledWith(
+      "favorites_song_added: Artist – Title",
+    );
+    expect(triggerFill(wrapper)).toBe("currentColor");
+    expect(entryLabels(wrapper)[0]).toBe("favorites_song_remove");
+  });
+
+  it("asks the server for the song and hands it to the playlist dialog", async () => {
+    resolveSong(null, song);
+    await setStationSong("Title", "Artist");
+
+    await pickEntry(mountButton(), "add_song_playlist");
+
+    expect(getCurrentlyPlayingTrack).toHaveBeenLastCalledWith("player-1");
+    expect(eventbus.emit).toHaveBeenCalledWith("playlistdialog", {
+      items: [song],
+    });
+  });
+
+  it.each(["favorites_song_add", "add_song_playlist"])(
+    "tells the user when %s finds no song",
+    async (entry) => {
+      await setStationSong("Title", "Artist");
+
+      await pickEntry(mountButton(), entry);
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "radio_song_not_found: Artist – Title",
+      );
+      expect(addItemToFavorites).not.toHaveBeenCalled();
+      expect(eventbus.emit).not.toHaveBeenCalled();
+    },
+  );
+
+  it("acts on the station from the station's entries", async () => {
+    await setStationSong("Title", "Artist");
+
+    await pickEntry(mountButton(), "favorites_station_add");
+
+    expect(addItemToFavorites).toHaveBeenCalledWith(station);
+  });
+
+  it("shows the song as liked when it is a favourite in the library", async () => {
+    resolveSong(librarySong, null);
+    const wrapper = mountButton();
+    await setStationSong("Title", "Artist");
+
+    expect(triggerFill(wrapper)).toBe("currentColor");
+
+    await pickEntry(wrapper, "favorites_song_remove");
+
+    expect(removeItemFromFavorites).toHaveBeenCalledWith(MediaType.TRACK, "7");
+    expect(triggerFill(wrapper)).toBe("none");
+  });
+
+  it("follows a like and an unlike of the song made elsewhere", async () => {
+    resolveSong({ ...librarySong, favorite: null }, null);
+    const wrapper = mountButton();
+    await setStationSong("Title", "Artist");
+    expect(triggerFill(wrapper)).toBe("none");
+
+    resolveSong(librarySong, null);
+    emitFavoriteUpdate({ uri: librarySong.uri, favorite: true });
+    await flushPromises();
+    expect(triggerFill(wrapper)).toBe("currentColor");
+
+    resolveSong({ ...librarySong, favorite: null }, null);
+    emitFavoriteUpdate({ uri: librarySong.uri, favorite: null });
+    await flushPromises();
+    expect(triggerFill(wrapper)).toBe("none");
+  });
+
+  // the usage policy: only a click may search the user's music services
+  it("looks a new song up in the library only", async () => {
+    mountButton();
+    await setStationSong("Title", "Artist");
+    await setStationSong("Other title", "Other artist");
+
+    expect(getCurrentlyPlayingTrack).toHaveBeenCalledTimes(2);
+    for (const call of getCurrentlyPlayingTrack.mock.calls) {
+      expect(call).toEqual(["player-1", true, { suppressGlobalError: true }]);
+    }
+  });
+
+  // the lookup runs in the background on every song change
+  it("shows no state when the library lookup fails, without an error", async () => {
+    getCurrentlyPlayingTrack.mockRejectedValue(new Error("lookup failed"));
+    const wrapper = mountButton();
+    await setStationSong("Title", "Artist");
+
+    expect(triggerFill(wrapper)).toBe("none");
+    expect(entryLabels(wrapper)[0]).toBe("favorites_song_add");
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

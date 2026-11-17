@@ -6,6 +6,8 @@
     :items="shelfItems"
     :view-all-to="viewAllTo"
     :view-all-name="typeNames"
+    :item-count="itemCount"
+    :empty-message="$t('discography_types_empty')"
     :parent-item="artist"
     @edit-rows="emit('edit-rows')"
   >
@@ -15,12 +17,6 @@
           :model-value="types"
           @toggle="(type) => toggleDiscographyType(rowId, type)"
         />
-        <span
-          v-if="items?.length"
-          class="text-[13px] whitespace-nowrap text-muted-foreground"
-        >
-          {{ items.length }}
-        </span>
       </div>
     </template>
   </ReleaseShelf>
@@ -47,11 +43,13 @@ export interface Props {
   artist: Artist;
   // undefined while the row is still loading
   items?: Album[];
+  itemCount?: number;
   // off for a row right below another discography row, which already has it
   showHeading?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
   items: undefined,
+  itemCount: undefined,
   showHeading: true,
 });
 

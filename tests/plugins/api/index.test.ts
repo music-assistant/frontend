@@ -6,6 +6,8 @@ import {
   CoreState,
   type DSPConfig,
   type ErrorResultMessage,
+  EventType,
+  type EventMessage,
   ListingType,
   MediaType,
   type Player,
@@ -24,6 +26,7 @@ import { getIngressClientKey } from "@/helpers/ingress";
 import { eventbus, type StreamHeldDialogEvent } from "@/plugins/eventbus";
 import { BaseTransport, TransportState } from "@/plugins/remote/transport";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { playerQueue } from "../../fixtures/playerQueue";
 import { playlist } from "../../fixtures/playlist";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
 import { userSummary } from "../../fixtures/user";
@@ -108,7 +111,11 @@ class TestTransport extends BaseTransport {
   }
 
   receive(
-    message: ServerInfoMessage | SuccessResultMessage | ErrorResultMessage,
+    message:
+      | ServerInfoMessage
+      | SuccessResultMessage
+      | ErrorResultMessage
+      | EventMessage,
   ): void {
     this.emit("message", JSON.stringify(message));
   }
@@ -533,6 +540,47 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it("sends the artist listing count commands the server offers", () => {
+    const types = [AlbumType.SINGLE, AlbumType.EP];
+    const sent = () => [
+      transport.lastCommand.command,
+      transport.lastCommand.args,
+    ];
+
+    void api.getArtistTracksCount("artist-1", "library");
+    expect(sent()).toEqual([
+      "music/artists/artist_tracks_count",
+      expect.objectContaining({
+        item_id: "artist-1",
+        provider_instance_id_or_domain: "library",
+      }),
+    ]);
+    void api.getArtistAlbumsCount(
+      "artist-1",
+      "spotify--1",
+      undefined,
+      undefined,
+      types,
+    );
+    expect(sent()).toEqual([
+      "music/artists/artist_albums_count",
+      expect.objectContaining({
+        provider_instance_id_or_domain: "spotify--1",
+        album_types: types,
+      }),
+    ]);
+    void api.getArtistAppearsOnCount("artist-1", "library");
+    expect(sent()[0]).toBe("music/artists/artist_appears_on_count");
+    void api.getArtistDiscographyCount("artist-1", undefined, types);
+    expect(sent()).toEqual([
+      "music/artists/discography_count",
+      expect.objectContaining({
+        provider_instance_id_or_domain: "library",
+        album_types: types,
+      }),
+    ]);
+  });
+
   it("sends a random seed with library track listings", async () => {
     const request = api.getLibraryTracks(
       undefined,
@@ -902,6 +950,31 @@ describe("MusicAssistantApi error handling", () => {
     await expect(request).resolves.toEqual([]);
   });
 
+  it.each([false, true])(
+    "lets getAudiobook opt out of global errors (suppressed: %s)",
+    async (suppressed) => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const result = suppressed
+        ? api.getAudiobook("book-1", "library", { suppressGlobalError: true })
+        : api.getAudiobook("book-1", "library");
+      expect(transport.lastCommand.command).toBe(
+        "music/audiobooks/get_audiobook",
+      );
+      expect(transport.lastCommand.args).toEqual({
+        item_id: "book-1",
+        provider_instance_id_or_domain: "library",
+      });
+      const rejection = expect(result).rejects.toMatchObject({
+        message: "Cannot load audiobook",
+      });
+      transport.receive(
+        createErrorResult(transport.lastCommand, "Cannot load audiobook"),
+      );
+      await rejection;
+      expect(mockToastError).toHaveBeenCalledTimes(suppressed ? 0 : 1);
+    },
+  );
+
   it("lets updateUser suppress the global error toast for the caller", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const result = api.updateUser(
@@ -1071,6 +1144,129 @@ describe("MusicAssistantApi error handling", () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
+  it("asks for the provider configs whose provider is not available", () => {
+    void api.getProviderConfigs(undefined, undefined, true);
+
+    expect(transport.lastCommand).toMatchObject({
+      command: "config/providers",
+      args: { include_unavailable: true },
+    });
+  });
+
+  it.each([
+    ["for a player", "player-1", { player_id: "player-1" }],
+    ["without a player", undefined, {}],
+  ])("runs a menu action of a provider %s", (_case, playerId, extra) => {
+    void api.invokeProviderMenuAction(
+      "demo--1",
+      "show_item",
+      "library://track/1",
+      playerId,
+    );
+
+    expect(transport.lastCommand.command).toBe("providers/invoke_menu_action");
+    expect(transport.lastCommand.args).toEqual({
+      instance_id: "demo--1",
+      action_id: "show_item",
+      uri: "library://track/1",
+      ...extra,
+    });
+  });
+
+  it("tells a failing menu action as any failing command", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = api.invokeProviderMenuAction(
+      "demo--1",
+      "show_item",
+      "library://track/1",
+    );
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).toHaveBeenCalledWith("Boom");
+  });
+
+  it("updates one community provider by its domain", () => {
+    void api.updateCommunityProviders("radio");
+
+    expect(transport.lastCommand).toMatchObject({
+      command: "community_catalog/update",
+      args: { domain: "radio" },
+    });
+  });
+
+  it.each<[string, (api: MusicAssistantApi) => Promise<unknown>]>([
+    ["catalog/recommendations", (api) => api.getCatalogRecommendations()],
+    ["community_catalog/providers", (api) => api.getCommunityProviders()],
+    ["community_catalog/refresh", (api) => api.refreshCommunityProviders()],
+    [
+      "community_catalog/install",
+      (api) => api.installCommunityProvider("radio"),
+    ],
+    ["community_catalog/remove", (api) => api.removeCommunityProvider("radio")],
+    ["community_catalog/update", (api) => api.updateCommunityProviders()],
+    [
+      "community_catalog/dismiss_notice",
+      (api) => api.dismissCommunityNotice("radio"),
+    ],
+  ])("leaves a failing %s to its caller", async (command, call) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const result = call(api);
+    const rejection = expect(result).rejects.toMatchObject({ message: "Boom" });
+
+    expect(transport.lastCommand.command).toBe(command);
+    transport.receive(createErrorResult(transport.lastCommand, "Boom"));
+
+    await rejection;
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it("fetches the manifests again when the community catalog changes, dropping what is gone", async () => {
+    api.providerManifests.radio = { domain: "radio" } as never;
+    api.providerManifests.spotify = { domain: "spotify" } as never;
+
+    transport.receive({
+      event: EventType.COMMUNITY_CATALOG_UPDATED,
+      object_id: null,
+      data: null,
+    } as EventMessage);
+
+    expect(transport.lastCommand.command).toBe("providers/manifests");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: [{ domain: "spotify", name: "Spotify" }],
+      partial: false,
+    });
+    await vi.waitFor(() =>
+      expect(Object.keys(api.providerManifests)).toEqual(["spotify"]),
+    );
+    expect(api.providerManifests.spotify.name).toBe("Spotify");
+  });
+
+  it.each([
+    [true, true],
+    [undefined, false],
+  ])(
+    "asks the server to remove unavailable players (dry run %s)",
+    async (dryRun, sent) => {
+      const request = api.removeUnavailablePlayers(dryRun);
+
+      expect(transport.lastCommand.command).toBe("players/remove_unavailable");
+      expect(transport.lastCommand.args).toEqual({ dry_run: sent });
+
+      transport.receive({
+        message_id: transport.lastCommand.message_id!,
+        result: ["kitchen"],
+        partial: false,
+      });
+      await expect(request).resolves.toEqual(["kitchen"]);
+    },
+  );
+
   it("flags a server below the minimum schema version as outdated", () => {
     // before server_info arrives there is nothing to judge yet
     api.serverInfo.value = undefined;
@@ -1087,6 +1283,12 @@ describe("MusicAssistantApi error handling", () => {
       schema_version: MIN_SERVER_SCHEMA_VERSION,
     };
     expect(api.serverOutdated).toBe(false);
+  });
+
+  it("asks a server from before the new player model to update", () => {
+    // the stored player configs the players settings rely on arrived with schema 113
+    api.serverInfo.value = { ...SERVER_INFO, schema_version: 112 };
+    expect(api.serverOutdated).toBe(true);
   });
 
   it("loads the roles the server lists", async () => {
@@ -1212,6 +1414,62 @@ describe("MusicAssistantApi error handling", () => {
       item_id: "artist-1",
       provider_instance_id_or_domain: "library",
       provider_filter: "spotify--abc",
+    });
+  });
+
+  describe("player events", () => {
+    const kitchen = (enabled: boolean) =>
+      ({ player_id: "kitchen", enabled, available: enabled }) as Player;
+
+    beforeEach(() => {
+      transport.receive({
+        event: EventType.PLAYER_ADDED,
+        object_id: "kitchen",
+        data: kitchen(true),
+      });
+      transport.receive({
+        event: EventType.QUEUE_ADDED,
+        object_id: "kitchen",
+        data: playerQueue({ queue_id: "kitchen" }),
+      });
+    });
+
+    it("drops a player once it is disabled, with its queue", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: kitchen(false),
+      });
+
+      expect(api.players).not.toHaveProperty("kitchen");
+      expect(api.queues).not.toHaveProperty("kitchen");
+      expect(api.queueElapsedTime).not.toHaveProperty("kitchen");
+    });
+
+    it("takes a player back in once it is enabled again", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: kitchen(false),
+      });
+      transport.receive({
+        event: EventType.PLAYER_ADDED,
+        object_id: "kitchen",
+        data: kitchen(true),
+      });
+
+      expect(api.players.kitchen).toEqual(kitchen(true));
+    });
+
+    it("keeps a player that only became unavailable", () => {
+      transport.receive({
+        event: EventType.PLAYER_UPDATED,
+        object_id: "kitchen",
+        data: { ...kitchen(true), available: false },
+      });
+
+      expect(api.players.kitchen.available).toBe(false);
+      expect(api.queues).toHaveProperty("kitchen");
     });
   });
 

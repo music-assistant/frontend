@@ -171,6 +171,50 @@ describe("rowRegistry", () => {
     expect(own.effectiveSource("with_picker", ITEM)).toBe("spotify--abc");
   });
 
+  describe("resolveSource", () => {
+    const AUTO_ITEM: Item = {
+      candidates: ["auto", "library", "spotify--abc", "tidal--def"],
+    };
+
+    it("passes a source other than auto through as it is", () => {
+      expect(registry.resolveSource("with_picker", ITEM)).toBe("all");
+      expect(registry.resolveSource("with_picker", ITEM, false)).toBe("all");
+    });
+
+    it("works auto out from whether the library holds items for the row", () => {
+      expect(
+        registry.resolveSource("with_picker", AUTO_ITEM, undefined),
+      ).toBeUndefined();
+      expect(registry.resolveSource("with_picker", AUTO_ITEM, true)).toBe(
+        "library",
+      );
+      expect(registry.resolveSource("with_picker", AUTO_ITEM, false)).toBe(
+        "spotify--abc",
+      );
+    });
+
+    it("stays on the library when auto has no provider to turn to", () => {
+      expect(
+        registry.resolveSource(
+          "with_picker",
+          { candidates: ["auto", "library", "all"] },
+          false,
+        ),
+      ).toBe("library");
+    });
+
+    it("keeps a saved source over auto", () => {
+      setPreferences({ [SOURCES_KEY]: { with_picker: "tidal--def" } });
+      expect(registry.resolveSource("with_picker", AUTO_ITEM, true)).toBe(
+        "tidal--def",
+      );
+      setPreferences({ [SOURCES_KEY]: { with_picker: "library" } });
+      expect(registry.resolveSource("with_picker", AUTO_ITEM, false)).toBe(
+        "library",
+      );
+    });
+  });
+
   it("resolves the saved order and visibility against the available rows", () => {
     setPreferences({
       [ROWS_KEY]: { hidden: ["plain"], order: ["plain", "with_picker"] },
@@ -211,6 +255,16 @@ describe("rowRegistry", () => {
     await registry.setSource("with_picker", "spotify--abc");
     expect(mockSetUserPreference).toHaveBeenLastCalledWith(SOURCES_KEY, {
       with_picker: "spotify--abc",
+    });
+  });
+
+  it("saves auto as no source, so the row follows its default again", async () => {
+    setPreferences({
+      [SOURCES_KEY]: { with_picker: "spotify--abc", plain: "library" },
+    });
+    await registry.setSource("with_picker", "auto");
+    expect(mockSetUserPreference).toHaveBeenLastCalledWith(SOURCES_KEY, {
+      plain: "library",
     });
   });
 
@@ -269,15 +323,27 @@ describe("rowRegistry", () => {
       ]);
     });
 
+    it("labels the automatic source", () => {
+      expect(
+        rowSourceOptions(registry, "with_picker", {
+          candidates: ["auto", "library"],
+        }),
+      ).toEqual([
+        { value: "auto", label: "Automatic", domain: undefined },
+        { value: "library", label: "Your library", domain: undefined },
+      ]);
+    });
+
     it("is empty for a row without a source picker", () => {
       expect(rowSourceOptions(registry, "plain", ITEM)).toEqual([]);
     });
   });
 
   describe("rowSourceDisplay", () => {
-    it("reads the library and every-provider sources", () => {
+    it("reads the library, every-provider and automatic sources", () => {
       expect(rowSourceDisplay("library")).toEqual({ label: "In your library" });
       expect(rowSourceDisplay("all")).toEqual({ label: "All sources" });
+      expect(rowSourceDisplay("auto")).toEqual({ label: "Automatic" });
     });
 
     it("names a provider and carries its domain for the icon", () => {

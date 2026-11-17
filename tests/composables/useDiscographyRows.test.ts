@@ -25,6 +25,15 @@ function setup(
 }
 
 describe("useDiscographyRows", () => {
+  it("uses full filtered totals rather than the capped shelf length in the editor", () => {
+    const rows = useDiscographyRows(
+      ref<ArtistRowId[]>(["discography"]),
+      { discography: ref([album()]), discography_second: ref(undefined) },
+      { discography: ref(123), discography_second: ref(undefined) },
+    );
+    expect(rows.meta("discography")).toBe("album_type_plural.album · 123");
+    expect(rows.meta("discography_second")).toBe("album_type_plural.live");
+  });
   beforeEach(() => {
     store.currentUser = undefined;
   });
@@ -54,20 +63,11 @@ describe("useDiscographyRows", () => {
     expect(rows.continuesBelow("discography")).toBe(false);
   });
 
-  it("hands the heading to the second row when the first comes up empty", () => {
+  it("keeps a row that comes up empty heading the section", () => {
     const rows = setup(["discography", "discography_second"], [], [album()]);
 
-    expect(rows.isShown("discography")).toBe(false);
-    expect(rows.showsHeading("discography_second")).toBe(true);
-  });
-
-  it("keeps a row shown while it loads", () => {
-    const rows = setup(["discography", "discography_second"], undefined, [
-      album(),
-    ]);
-
-    expect(rows.isShown("discography")).toBe(true);
-    expect(rows.rowItems.value.discography).toBeUndefined();
+    expect(rows.showsHeading("discography")).toBe(true);
+    expect(rows.continuesBelow("discography")).toBe(true);
     expect(rows.showsHeading("discography_second")).toBe(false);
   });
 

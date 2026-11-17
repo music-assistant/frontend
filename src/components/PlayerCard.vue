@@ -6,10 +6,10 @@
       'border-primary bg-primary/15': player.player_id === store.activePlayerId,
       'ring-primary/50 ring-1':
         showSelectedIndicator && player.player_id === store.activePlayerId,
-      'pt-4':
-        showSelectedIndicator && player.player_id === store.activePlayerId,
       'opacity-80':
-        !player.needs_setup && player.playback_state === PlaybackState.IDLE,
+        !stackMediaDetails &&
+        !player.needs_setup &&
+        player.playback_state === PlaybackState.IDLE,
       'opacity-60': !player.needs_setup && player.powered === false,
       'opacity-40': !player.available && !player.needs_setup,
     }"
@@ -17,13 +17,6 @@
     @contextmenu.prevent.stop="openPlayerMenu"
     @touchstart.passive="onTouchStart"
   >
-    <Badge
-      v-if="showSelectedIndicator && player.player_id === store.activePlayerId"
-      as="span"
-      class="selected-player-badge absolute -top-2 left-3 z-10 h-5 rounded-full px-2.5 py-0 text-[11px] leading-none shadow-xs"
-    >
-      {{ $t("player_tip.selected_player") }}
-    </Badge>
     <div class="flex min-w-0 items-center gap-1">
       <div class="relative flex min-w-0 flex-1">
         <button
@@ -44,7 +37,7 @@
             }}:
             {{ accessiblePlayerLabel }}
             <template v-if="player.needs_setup">
-              . {{ $t("settings.setup_required") }}
+              . {{ setupReason ?? $t("settings.setup_required") }}
             </template>
             <template v-else-if="playerStatus">
               . {{ $t(playerStatus) }}
@@ -52,97 +45,91 @@
           </span>
         </button>
         <div
-          class="player-card-main pointer-events-none relative z-[1] flex min-w-0 flex-1"
-          :class="
-            useStackedMediaLayout ? 'flex-col gap-1.5' : 'items-center gap-3'
-          "
+          class="player-card-main pointer-events-none relative z-[1] flex min-w-0 flex-1 items-center gap-3"
         >
-          <PlayerCardTitle
-            v-if="useStackedMediaLayout"
-            :player-name="cardPlayerName"
-            :member-names="displayedGroupMemberNames"
-            :member-layout="groupMemberLayout"
-          >
-            <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
-          </PlayerCardTitle>
           <div
-            class="player-card-media-row"
-            :class="
-              useStackedMediaLayout
-                ? 'flex min-w-0 items-center gap-3'
-                : 'contents'
-            "
+            class="bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
           >
-            <div
-              class="bg-muted flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md"
-            >
-              <img
-                v-if="artworkUrl"
-                :src="artworkUrl"
-                alt=""
-                class="size-full object-cover"
-                loading="lazy"
-                @error="artworkFailed = true"
-              />
-              <PlayerIcon
-                v-else
-                :icon="player.icon"
-                :grouped="
-                  player.type === PlayerType.PLAYER &&
-                  player.group_members.some(
-                    (playerId) => playerId !== player.player_id,
-                  )
-                "
-                :size="24"
-                class="opacity-80"
-              />
-            </div>
+            <img
+              v-if="artworkUrl"
+              :src="artworkUrl"
+              alt=""
+              class="size-full object-cover"
+              loading="lazy"
+              @error="artworkFailed = true"
+            />
+            <PlayerIcon
+              v-else
+              :icon="player.icon"
+              :grouped="
+                player.type === PlayerType.PLAYER &&
+                player.group_members.some(
+                  (playerId) => playerId !== player.player_id,
+                )
+              "
+              :size="24"
+              class="opacity-80"
+            />
+          </div>
 
-            <div class="min-w-0 flex-1 py-0.5">
-              <PlayerCardTitle
-                v-if="!useStackedMediaLayout"
-                :player-name="cardPlayerName"
-                :member-names="displayedGroupMemberNames"
-                :member-layout="groupMemberLayout"
+          <div class="min-w-0 flex-1 py-0.5">
+            <PlayerCardTitle
+              :player-name="cardPlayerName"
+              :selected="isSelectedPlayer"
+            >
+              <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
+            </PlayerCardTitle>
+            <Badge
+              v-if="player.needs_setup"
+              variant="secondary"
+              class="mt-0.5 gap-1 text-[10px]"
+              :style="{ color: 'rgb(var(--v-theme-warning))' }"
+            >
+              <TriangleAlert class="size-3" />
+              {{ setupReason ?? $t("settings.setup_required") }}
+            </Badge>
+            <p
+              v-if="player.type === PlayerType.SOURCE"
+              class="text-muted-foreground truncate text-xs"
+            >
+              {{ $t("player_type.source") }}
+            </p>
+            <p
+              v-if="memberSummary"
+              class="player-card-group-members text-muted-foreground truncate text-xs"
+            >
+              {{ memberSummary }}
+            </p>
+            <div
+              v-if="mediaSummary || (stackMediaDetails && isPlaying)"
+              class="player-card-media-summary flex min-w-0 items-center gap-1.5 text-xs"
+              :class="mediaSummaryClass"
+            >
+              <div
+                v-if="isPlaying"
+                class="player-playing-indicator shrink-0 [&_.bar]:h-3 [&_.bar]:w-0.5 [&_.now-playing-icon]:m-0 [&_.now-playing-icon]:h-3 [&_.now-playing-icon]:gap-0.5"
+                role="img"
+                :aria-label="$t('state.playing')"
               >
-                <PlayerDeviceBadge v-if="isBuiltinPlayer(player)" />
-              </PlayerCardTitle>
-              <Badge
-                v-if="player.needs_setup"
-                variant="secondary"
-                class="mt-0.5 gap-1 text-[10px]"
-                :style="{ color: 'rgb(var(--v-theme-warning))' }"
-              >
-                <TriangleAlert class="size-3" />
-                {{ $t("settings.setup_required") }}
-              </Badge>
-              <p
-                v-if="player.type === PlayerType.SOURCE"
-                class="text-muted-foreground truncate text-xs"
-              >
-                {{ $t("player_type.source") }}
-              </p>
-              <p
-                v-if="player.powered !== false && player.current_media?.title"
-                class="truncate text-xs font-medium"
-              >
-                {{ player.current_media.title }}
-              </p>
-              <p
-                v-if="player.powered !== false && mediaByline"
-                class="text-muted-foreground truncate text-xs"
-              >
-                {{ mediaByline }}
-              </p>
+                <NowPlayingBadge :show-badge="false" />
+              </div>
+              <span v-if="mediaSummary" class="truncate">
+                {{ mediaSummary }}
+              </span>
             </div>
+            <p
+              v-if="
+                !stackMediaDetails && player.powered !== false && mediaByline
+              "
+              class="text-muted-foreground truncate text-xs"
+            >
+              {{ mediaByline }}
+            </p>
           </div>
         </div>
       </div>
 
-      <div
-        class="player-card-actions flex shrink-0 items-center"
-        :class="{ 'self-end mb-1.5': useStackedMediaLayout }"
-      >
+      <div class="player-card-actions flex shrink-0 items-center">
         <Button
           v-if="
             player.power_control !== PLAYER_CONTROL_NONE &&
@@ -224,6 +211,7 @@
 </template>
 
 <script setup lang="ts">
+import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import PlayerCardTitle from "@/components/PlayerCardTitle.vue";
 import PlayerDeviceBadge from "@/components/PlayerDeviceBadge.vue";
 import PlayerGroupIcon from "@/components/PlayerGroupIcon.vue";
@@ -245,6 +233,7 @@ import {
   getPlayerDisplayName,
   getPlayerGroupMemberCount,
   getPlayerName,
+  getPlayerSetupReason,
   isBuiltinPlayer,
 } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
@@ -278,7 +267,6 @@ export interface Props {
   showMemberControls?: boolean;
   showGroupControls?: boolean;
   showGroupMemberNames?: boolean;
-  groupMemberLayout?: "subtitle" | "subtitle-list" | "title-list";
   stackMediaDetails?: boolean;
   allowPowerControl?: boolean;
   showDisabledGroupControl?: boolean;
@@ -287,7 +275,6 @@ export interface Props {
   showSelectedIndicator?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  groupMemberLayout: "subtitle",
   groupControlsId: undefined,
 });
 const emit = defineEmits<{
@@ -302,6 +289,8 @@ const { activeSource, canRestartSource } = useActiveSource(
 );
 
 const playerQueue = computed(() => resolvePlayerQueue(props.player));
+
+const setupReason = computed(() => getPlayerSetupReason(props.player));
 
 // a set-up audio input can't be selected for playback; its row only informs
 const isInformationalSource = computed(
@@ -318,6 +307,7 @@ const menuDisabled = computed(() =>
 
 const artworkUrl = computed(() => {
   if (
+    props.stackMediaDetails ||
     artworkFailed.value ||
     props.player.powered === false ||
     !props.player.current_media?.image_url ||
@@ -335,14 +325,30 @@ const mediaByline = computed(() =>
     .join(" • "),
 );
 
-const hasMediaDetails = computed(
+// panel cards show what is playing on one line under the player name,
+// other cards show the title here and the byline below it
+const mediaSummary = computed(() => {
+  if (props.player.powered === false) return "";
+  const title = props.player.current_media?.title;
+  if (!props.stackMediaDetails) return title ?? "";
+  return [title, mediaByline.value].filter(Boolean).join(" • ");
+});
+
+const isPlaying = computed(
   () =>
     props.player.powered !== false &&
-    Boolean(props.player.current_media?.title || mediaByline.value),
+    props.player.playback_state === PlaybackState.PLAYING,
 );
 
-const useStackedMediaLayout = computed(
-  () => props.stackMediaDetails === true && hasMediaDetails.value,
+const mediaSummaryClass = computed(() => {
+  if (!props.stackMediaDetails) return "font-medium";
+  return isPlaying.value ? "text-foreground" : "text-muted-foreground";
+});
+
+const isSelectedPlayer = computed(
+  () =>
+    props.showSelectedIndicator === true &&
+    props.player.player_id === store.activePlayerId,
 );
 
 const canPlayPause = computed(
@@ -374,7 +380,7 @@ const groupMemberCount = computed(() =>
 const groupMemberNames = computed(() => {
   if (!props.showGroupMemberNames) return [];
 
-  const childNames = [...new Set(props.player.group_members)]
+  return [...new Set(props.player.group_members)]
     .filter((playerId) => playerId !== props.player.player_id)
     .map((playerId) => api.players[playerId])
     .filter(
@@ -383,41 +389,16 @@ const groupMemberNames = computed(() => {
         (props.player.type === PlayerType.GROUP || member.available),
     )
     .map(getPlayerDisplayName);
-
-  if (childNames.length === 0 || props.player.type === PlayerType.GROUP) {
-    return childNames;
-  }
-  return [getPlayerDisplayName(props.player), ...childNames];
 });
 
-const cardPlayerName = computed(() =>
-  props.groupMemberLayout === "subtitle-list" &&
-  groupMemberNames.value.length > 0
-    ? getPlayerDisplayName(props.player)
-    : getPlayerName(props.player, 27),
-);
+const memberSummary = computed(() => groupMemberNames.value.join(" • "));
 
-const displayedGroupMemberNames = computed(() => {
-  if (
-    props.groupMemberLayout === "subtitle-list" &&
-    props.player.type !== PlayerType.GROUP
-  ) {
-    return groupMemberNames.value.slice(1);
-  }
-  return groupMemberNames.value;
-});
-
-const accessibleGroupMemberNames = computed(() =>
-  props.player.type !== PlayerType.GROUP &&
-  props.groupMemberLayout !== "subtitle-list"
-    ? displayedGroupMemberNames.value.slice(1)
-    : displayedGroupMemberNames.value,
-);
+const cardPlayerName = computed(() => getPlayerName(props.player, 27));
 
 const accessiblePlayerLabel = computed(() =>
   [
     getPlayerDisplayName(props.player),
-    ...accessibleGroupMemberNames.value,
+    ...groupMemberNames.value,
     props.player.current_media?.title,
     mediaByline.value,
   ]

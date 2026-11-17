@@ -13,12 +13,12 @@ import { computed, type Ref } from "vue";
  *
  * Discography rows next to each other read as one section: the heading sits
  * above the first only, and the gap between them is tighter than between other
- * rows. A row that comes up empty is left out, so the row after it takes its
- * place.
+ * rows.
  */
 export function useDiscographyRows(
   visibleRows: Ref<ArtistRowId[]>,
   items: Record<DiscographyRowId, Ref<Album[] | undefined>>,
+  counts?: Record<DiscographyRowId, Ref<number | undefined>>,
 ) {
   const rowItems = computed<Record<DiscographyRowId, Album[] | undefined>>(
     () => ({
@@ -27,31 +27,18 @@ export function useDiscographyRows(
     }),
   );
 
-  // the visible rows, less the discography rows that came up empty
-  const shownRows = computed(() =>
-    visibleRows.value.filter(
-      (rowId) => !isDiscographyRow(rowId) || isShown(rowId),
-    ),
-  );
-
   // the discography rows right below another discography row
   const continuingRows = computed(
     () =>
       new Set(
-        shownRows.value.filter(
+        visibleRows.value.filter(
           (rowId, index) =>
             isDiscographyRow(rowId) &&
             index > 0 &&
-            isDiscographyRow(shownRows.value[index - 1]),
+            isDiscographyRow(visibleRows.value[index - 1]),
         ),
       ),
   );
-
-  /** A row is rendered while it loads and once it has something to show. */
-  function isShown(rowId: DiscographyRowId): boolean {
-    const rowList = rowItems.value[rowId];
-    return rowList === undefined || rowList.length > 0;
-  }
 
   /** Whether the row heads its section, with the discography heading. */
   function showsHeading(rowId: DiscographyRowId): boolean {
@@ -60,16 +47,16 @@ export function useDiscographyRows(
 
   /** Whether another discography row continues right below this one. */
   function continuesBelow(rowId: DiscographyRowId): boolean {
-    const next = shownRows.value[shownRows.value.indexOf(rowId) + 1];
+    const next = visibleRows.value[visibleRows.value.indexOf(rowId) + 1];
     return next !== undefined && continuingRows.value.has(next);
   }
 
   /** The row's release types for the rows editor, with its count once loaded. */
   function meta(rowId: DiscographyRowId): string {
     const summary = discographyTypesLabel(discographyTypes(rowId));
-    const count = rowItems.value[rowId]?.length;
+    const count = counts ? counts[rowId].value : rowItems.value[rowId]?.length;
     return count ? `${summary} · ${count}` : summary;
   }
 
-  return { rowItems, isShown, showsHeading, continuesBelow, meta };
+  return { rowItems, showsHeading, continuesBelow, meta };
 }

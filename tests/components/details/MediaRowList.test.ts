@@ -41,6 +41,8 @@ vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: mockItemIsAvailable,
+  // what the real helper does, which this module-wide mock would otherwise hide
+  isExternalItem: (item: { provider: string }) => item.provider === "external",
 }));
 
 vi.mock("@/helpers/media_item_actions", () => ({

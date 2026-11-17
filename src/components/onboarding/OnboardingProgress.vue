@@ -7,6 +7,7 @@ import { Check } from "@lucide/vue";
 interface ProgressStep {
   id: OnboardingStepId;
   done: boolean;
+  titleKey?: string;
 }
 
 const props = defineProps<{
@@ -28,7 +29,7 @@ const onClick = function (index: number, id: OnboardingStepId): void {
 // a completed step reads its title plus "completed" for a screen reader, since
 // the tick that says so to sighted users carries no text of its own
 const stepLabel = function (step: ProgressStep, index: number): string {
-  const title = $t(`onboarding.steps.${step.id}.title`);
+  const title = $t(step.titleKey ?? `onboarding.steps.${step.id}.title`);
   return step.done && index !== props.current
     ? $t("onboarding.step_completed", { step: title })
     : title;
@@ -43,7 +44,7 @@ const stepLabel = function (step: ProgressStep, index: number): string {
         :disabled="!canRevisit(index)"
         :aria-current="index === current ? 'step' : undefined"
         :aria-label="stepLabel(step, index)"
-        :title="$t(`onboarding.steps.${step.id}.title`)"
+        :title="$t(step.titleKey ?? `onboarding.steps.${step.id}.title`)"
         class="focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-default"
         :class="[
           index === current
