@@ -85,7 +85,7 @@
         <!-- discography (every release MusicBrainz lists, in the library or
              not), in two rows each showing the release types the user picked -->
         <ArtistDiscographyRow
-          v-else-if="isDiscographyRow(rowId) && isDiscographyRowShown(rowId)"
+          v-else-if="isDiscographyRow(rowId)"
           :row-id="rowId"
           :artist="itemDetails"
           :items="discographyRowItems[rowId]"
@@ -318,7 +318,6 @@ function selectRowSource(rowId: ArtistRowId, source: RowSource) {
 
 const {
   rowItems: discographyRowItems,
-  isShown: isDiscographyRowShown,
   showsHeading: showsDiscographyHeading,
   continuesBelow: discographyContinuesBelow,
   meta: discographyMeta,
