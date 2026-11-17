@@ -78,8 +78,6 @@ export interface DiscoveredPlayer {
   available: boolean;
   needsSetup: boolean;
   icon: string | null;
-  // switching it on or off takes its provider, which has to be running
-  canToggle: boolean;
 }
 
 /** A household member the wizard lists, built from their user account. */
@@ -402,7 +400,6 @@ export function discoveredPlayers(): DiscoveredPlayer[] {
         available: player?.available ?? false,
         needsSetup: player?.needs_setup ?? false,
         icon: player?.icon ?? null,
-        canToggle: config.provider in api.providers,
       };
     })
     .sort((one, other) => one.name.localeCompare(other.name));

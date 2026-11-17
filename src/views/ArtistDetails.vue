@@ -1,5 +1,5 @@
 <template>
-  <section class="artist-details">
+  <section ref="pageRoot" class="artist-details">
     <ArtistHero :item="itemDetails" @edit-rows="rowsEditorOpen = true" />
 
     <template v-if="itemDetails">
@@ -85,7 +85,7 @@
         <!-- discography (every release MusicBrainz lists, in the library or
              not), in two rows each showing the release types the user picked -->
         <ArtistDiscographyRow
-          v-else-if="isDiscographyRow(rowId) && isDiscographyRowShown(rowId)"
+          v-else-if="isDiscographyRow(rowId)"
           :row-id="rowId"
           :artist="itemDetails"
           :items="discographyRowItems[rowId]"
@@ -231,6 +231,7 @@ import { isAuthorOrNarrator } from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import { useDiscographyRows } from "@/composables/useDiscographyRows";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
+import { useHistoryScrollRestore } from "@/composables/useHistoryScrollRestore";
 import { api } from "@/plugins/api";
 import {
   ArtistType,
@@ -255,6 +256,8 @@ const props = defineProps<Props>();
 const itemDetails = ref<Artist>();
 const loading = ref(false);
 const rowsEditorOpen = ref(false);
+const pageRoot = ref<HTMLElement>();
+const scrollRestore = useHistoryScrollRestore(pageRoot);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
@@ -318,7 +321,6 @@ function selectRowSource(rowId: ArtistRowId, source: RowSource) {
 
 const {
   rowItems: discographyRowItems,
-  isShown: isDiscographyRowShown,
   showsHeading: showsDiscographyHeading,
   continuesBelow: discographyContinuesBelow,
   meta: discographyMeta,
@@ -438,6 +440,7 @@ watch(
 watch(
   () => itemDetails.value?.uri,
   () => {
+    if (scrollRestore.returning()) return;
     document.querySelector(".content-section")?.scrollTo({ top: 0 });
   },
 );

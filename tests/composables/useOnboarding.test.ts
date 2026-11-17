@@ -1,3 +1,4 @@
+import DiscoveredPlayerItem from "@/components/onboarding/DiscoveredPlayerItem.vue";
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
   EventType,
@@ -11,7 +12,7 @@ import {
   type PlayerConfig,
   type User,
 } from "@/plugins/api/interfaces";
-import { flushPromises } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { outputProtocol } from "../fixtures/outputProtocol";
 import { playerConfig } from "../fixtures/playerConfig";
@@ -31,6 +32,7 @@ const {
   preferenceState,
   providerConfigs,
   routerMock,
+  setPlayerEnabledMock,
   setUserPreferenceMock,
   setUserPreferencesMock,
   storeState,
@@ -74,6 +76,7 @@ const {
   // what the server hands back as the provider configurations
   providerConfigs: { list: [] as Record<string, unknown>[] },
   routerMock: { replace: vi.fn(), push: vi.fn() },
+  setPlayerEnabledMock: vi.fn(),
   setUserPreferenceMock: vi.fn(),
   setUserPreferencesMock: vi.fn(),
   // replaced with a reactive store by the store mock factory below: who is
@@ -96,6 +99,12 @@ vi.mock("@/plugins/router", () => ({ default: routerMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
+
+// the save is covered where it lives; here it only has to be called
+vi.mock("@/helpers/player_settings_actions", () => ({
+  renamePlayer: vi.fn(),
+  setPlayerEnabled: setPlayerEnabledMock,
+}));
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -1095,7 +1104,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
           available: false,
           needsSetup: false,
           icon: null,
-          canToggle: true,
         },
         {
           player_id: "kitchen",
@@ -1106,7 +1114,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
           available: true,
           needsSetup: true,
           icon: "speaker",
-          canToggle: true,
         },
       ]);
     });
@@ -1126,12 +1133,33 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       ).toEqual(["kitchen"]);
     });
 
-    it("cannot switch a player whose provider is not running", async () => {
-      addPlayerConfig({ player_id: "living", provider: "sonos--1" });
-
+    it("lets an admin switch on a player whose provider is not running", async () => {
+      addPlayerConfig({
+        player_id: "living",
+        provider: "sonos--1",
+        enabled: false,
+      });
       const module = await loadOnboardingModule();
+      const mountSwitch = () =>
+        mount(DiscoveredPlayerItem, {
+          props: {
+            player: module.discoveredPlayers()[0],
+            // as the players step decides it
+            canEdit: authMock.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+          },
+          global: { mocks: { $t: (key: string) => key } },
+        }).find("[data-testid=onboarding-player-enabled]");
 
-      expect(module.discoveredPlayers()[0].canToggle).toBe(false);
+      const toggle = mountSwitch();
+      expect(toggle.attributes("disabled")).toBeUndefined();
+      await toggle.trigger("click");
+      expect(setPlayerEnabledMock).toHaveBeenCalledWith("living", true);
+
+      // whoever may not change players can not switch it either
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+      expect(mountSwitch().attributes("disabled")).toBeDefined();
     });
 
     it("labels a player with the provider it came from", async () => {
