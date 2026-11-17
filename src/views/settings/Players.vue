@@ -240,6 +240,9 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
         (x) => x.player_id !== playerConfig.player_id,
       );
     },
+    // one player went, or a new one came
+    onMerged: () => void loadItems(),
+    onSplitOff: () => void loadItems(),
   });
   const position = getEventPosition(evt);
   eventbus.emit("contextmenu", {

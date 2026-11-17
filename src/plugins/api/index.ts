@@ -2755,6 +2755,31 @@ export class MusicAssistantApi {
     return this.sendCommand("players/remove_unavailable", { dry_run });
   }
 
+  /**
+   * Merge a player into another one, when the two turn out to be one device.
+   *
+   * @param playerId The player that goes; its outputs move to the target player.
+   * @param targetPlayer The player that stays.
+   */
+  public mergePlayers(playerId: string, targetPlayer: string): Promise<void> {
+    return this.sendCommand("players/merge", {
+      player_id: playerId,
+      target_player: targetPlayer,
+    });
+  }
+
+  /**
+   * Take an output off its player and give it a player of its own, and return
+   * the id of that new player.
+   *
+   * @param protocolId The protocol_id of the output.
+   */
+  public unlinkProtocol(protocolId: string): Promise<string> {
+    return this.sendCommand("players/unlink_protocol", {
+      protocol_id: protocolId,
+    });
+  }
+
   // Sleep timer related functions/commands
 
   public getSleepTimer(playerId: string): Promise<number | null> {

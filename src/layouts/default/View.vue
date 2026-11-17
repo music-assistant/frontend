@@ -35,6 +35,7 @@
           <player-group-playback-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
+          <player-merge-dialog />
           <item-context-menu />
           <command-center />
           <!-- kept last so they portal after the other dialogs, which share
@@ -63,6 +64,7 @@ import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import AppSidebar from "@/components/navigation/AppSidebar.vue";
+import PlayerMergeDialog from "@/components/PlayerMergeDialog.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";
 import PlayerGroupPlaybackDialog from "@/components/PlayerGroupPlaybackDialog.vue";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
