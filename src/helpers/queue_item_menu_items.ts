@@ -7,6 +7,7 @@ import {
 import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { openExternalItem } from "@/helpers/open_external_item";
+import { lastLockedIndex } from "@/helpers/queue_locked_index";
 import api from "@/plugins/api";
 import { isExternalItem } from "@/plugins/api/helpers";
 import { MediaType, QueueItem } from "@/plugins/api/interfaces";
@@ -15,8 +16,8 @@ import { store } from "@/plugins/store";
 import { Orbit } from "@lucide/vue";
 
 // Builds the context-menu entries for a single queue item. Items up to and
-// including the buffered region are locked (already cued in the stream), so
-// they can't be moved or removed.
+// including the last item the player holds are locked (already cued in the
+// stream), so they can't be moved or removed.
 export const getQueueItemMenuItems = (
   item: QueueItem,
   index: number,
@@ -24,7 +25,11 @@ export const getQueueItemMenuItems = (
   const queue = store.activePlayerQueue;
   if (!queue) return [];
   const queueId = queue.queue_id;
-  const locked = index <= (queue.index_in_buffer ?? 0);
+  const lockedIndex = lastLockedIndex(queue);
+  const locked = index <= (lockedIndex ?? 0);
+  // a player can only replace the buffered item with an item that follows it
+  const lastBuffered =
+    index === queue.index_in_buffer && index === queue.items - 1;
 
   const menuItems: ContextMenuItem[] = [
     {
@@ -32,8 +37,7 @@ export const getQueueItemMenuItems = (
       labelArgs: [],
       action: () => api.queueCommandPlayIndex(queueId, item.queue_item_id),
       icon: "mdi-play-circle-outline",
-      disabled:
-        index === queue.current_index || index === queue.index_in_buffer,
+      disabled: index === queue.current_index || index === lockedIndex,
     },
     {
       label: "play_next",
@@ -74,7 +78,7 @@ export const getQueueItemMenuItems = (
       labelArgs: [],
       action: () => api.queueCommandDelete(queueId, item.queue_item_id),
       icon: "mdi-delete",
-      disabled: locked,
+      disabled: locked || lastBuffered,
     },
   );
 
