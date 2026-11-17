@@ -627,6 +627,39 @@ describe("PlayersStep", () => {
       wrapper.unmount();
     });
 
+    it("leaves out what is set up already", async () => {
+      addProvider({ instance_id: "sonos--1", domain: "sonos" });
+      findProvider("sonos");
+      findProvider("wiim");
+
+      const wrapper = mountStep();
+      await flushPromises();
+
+      expect(foundRows(wrapper).map((row) => row.text())).toEqual([
+        expect.stringContaining("WIIM"),
+      ]);
+
+      wrapper.unmount();
+    });
+
+    it("offers what was found to a role that may not read the provider configs", async () => {
+      authMock.hasScope.mockImplementation(
+        (scope) =>
+          scope !== Scope.CONFIG_PROVIDERS_READ &&
+          scopeChecker(BUILTIN_ROLE_SCOPES.admin)(scope),
+      );
+      findProvider("sonos");
+
+      const wrapper = mountStep();
+      await flushPromises();
+
+      // the step asks nothing it may not read, and still offers what was found
+      expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+      expect(foundRows(wrapper)).toHaveLength(1);
+
+      wrapper.unmount();
+    });
+
     it("adds only the ticked ones on the way out", async () => {
       findProvider("sonos");
       findProvider("wiim");

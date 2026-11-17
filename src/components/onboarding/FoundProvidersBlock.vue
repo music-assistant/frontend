@@ -97,7 +97,9 @@ import { toast } from "vue-sonner";
 // the ones of them that are ticked
 const found = ref<ProviderManifest[]>([]);
 const selected = ref(new Set<string>());
-// what is set up meanwhile, such as through "Add more players", is no longer offered
+// what is set up is left out here rather than in the load, from the configs the
+// wizard keeps current, so one added meanwhile (such as through "Add more
+// players") is no longer offered
 const offered = computed(() => {
   const configured = new Set(
     configuredProviders(ProviderType.PLAYER).map((provider) => provider.domain),
@@ -125,13 +127,10 @@ onMounted(load);
 
 async function load(): Promise<void> {
   try {
-    const [recommendations, configs] = await Promise.all([
-      api.getCatalogRecommendations(),
-      api.getProviderConfigs(),
-    ]);
+    const recommendations = await api.getCatalogRecommendations();
     found.value = getFoundPlayerProviders(
       recommendations,
-      buildCatalogEntries(Object.values(api.providerManifests), configs),
+      buildCatalogEntries(Object.values(api.providerManifests), []),
     );
     selected.value = new Set(found.value.map((manifest) => manifest.domain));
   } catch {
