@@ -109,6 +109,8 @@ const availableLocales = Object.keys(messages ?? {});
 
 // Slovak and Serbian messages carry one|few|other forms; the default rule
 // reads three forms as zero|one|other, so pick the form via CLDR instead.
+// TODO: vue-i18n v12 does this itself via Intl.PluralRules, but only for BCP-47
+// locale keys (sk-SK, not sk_SK). Drop these rules once we upgrade and map the keys.
 function oneFewOtherRule(locale: string): PluralizationRule {
   const rules = new Intl.PluralRules(locale);
   return (choice, choicesLength, orgRule) => {
