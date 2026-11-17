@@ -1,4 +1,4 @@
-import { Scope } from "@/plugins/api/interfaces";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import {
   AudioWaveform,
   Blocks,
@@ -150,6 +150,15 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
 ];
 
+// the settings section listing the providers of each type
+const PROVIDER_TYPE_SECTIONS: Readonly<Record<ProviderType, string>> = {
+  [ProviderType.MUSIC]: "music_providers",
+  [ProviderType.PLAYER]: "player_providers",
+  [ProviderType.METADATA]: "metadata_providers",
+  [ProviderType.PLUGIN]: "plugin_providers",
+  [ProviderType.AUDIO_ANALYSIS]: "audio_analysis_providers",
+};
+
 /**
  * The settings sections the current user may open.
  *
@@ -161,4 +170,16 @@ export function availableSettingsSections(
   return SETTINGS_SECTIONS.filter(
     (section) => !section.requiresScope || hasScope(section.requiresScope),
   );
+}
+
+/**
+ * The name of the settings section listing the providers of a type, if it is a
+ * known provider type.
+ */
+export function providerSettingsSectionName(
+  type: string | undefined,
+): string | undefined {
+  return Object.entries(PROVIDER_TYPE_SECTIONS).find(
+    ([providerType]) => providerType === type,
+  )?.[1];
 }

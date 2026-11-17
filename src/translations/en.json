@@ -615,6 +615,7 @@
             }
         },
         "settings_saved": "Settings saved successfully",
+        "settings_load_failed": "Couldn't load these settings",
         "protocol_no_settings": "This output protocol does not have any additional configuration",
         "protocol_no_settings_with_advanced": "No settings visible. Enable advanced settings to see more configuration options.",
         "show_advanced_settings": "Show advanced settings",
@@ -844,21 +845,16 @@
         "add_audio_analysis_provider": "Add audio analysis",
         "audio_analysis_providers": "Audio analysis",
         "audio_analysis_providers_description": "Manage providers that analyze your audio",
-        "audio_analysis": "Audio analysis",
-        "audio_analysis_status_hint": "See how the analysis is progressing per provider, and any failures, on the status page.",
-        "audio_analysis_status_link": "Open audio analysis status",
+        "audio_analysis_status": {
+            "title": "Analysis status",
+            "description": "Progress per provider, failed tracks and analysis settings"
+        },
         "audio_analysis_coverage": {
             "title": "Audio Analysis Coverage",
             "col_pending": "Pending",
             "col_stale": "Stale",
             "unavailable": "unavailable",
             "none": "—"
-        },
-        "audio_analysis_description": "Track audio analysis coverage across your providers",
-        "audio_analysis_concurrency": {
-            "title": "Background analysis concurrency",
-            "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
-            "open_settings": "Open Streams settings"
         },
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
@@ -2376,6 +2372,10 @@
     "background_tasks": {
         "title": "Background tasks",
         "description": "Monitor scheduled jobs and recent long-running actions.",
+        "settings": {
+            "title": "Task settings",
+            "description": "How many tasks run at once, and the log level"
+        },
         "total": "{count} total background task | {count} total background tasks",
         "clear_finished": "Clear finished",
         "empty_title": "No background tasks",

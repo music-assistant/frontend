@@ -43,6 +43,12 @@
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
+import {
+  claimedEntries,
+  coreOwner,
+  pageOfWholeOwner,
+  SETTINGS_PAGES,
+} from "@/helpers/settings_pages";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
@@ -90,6 +96,21 @@ const urlCardEntries = computed(() => {
   return [base_url, external_url];
 });
 
+// the settings page showing all settings of this controller, if any: this page
+// then holds the settings of that one
+const wholePage = computed(() =>
+  config.value ? pageOfWholeOwner(coreOwner(config.value.domain)) : undefined,
+);
+
+// the entries another settings page shows in place of this one
+const claimedConfigEntries = computed(() => {
+  if (!config.value || wholePage.value) return [];
+  return claimedEntries(
+    coreOwner(config.value.domain),
+    Object.values(config.value.values),
+  );
+});
+
 // watchers
 watch(
   () => props.domain,
@@ -101,11 +122,12 @@ watch(
   { immediate: true },
 );
 
-// hidden from the form, while EditConfig still saves and guards their values
+// hidden from the form, while EditConfig still saves and guards their values;
+// hidden rather than left out, so the entries depending on them still resolve
 watch(
-  urlCardEntries,
-  (entries) => {
-    for (const entry of entries) entry.hidden = true;
+  [urlCardEntries, claimedConfigEntries],
+  (groups) => {
+    for (const entry of groups.flat()) entry.hidden = true;
   },
   { immediate: true },
 );
@@ -157,7 +179,11 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveCoreConfig(config.value!.domain, values)
     .then(() => {
-      router.push({ name: "systemsettings" });
+      router.push(
+        wholePage.value
+          ? SETTINGS_PAGES[wholePage.value].route
+          : { name: "systemsettings" },
+      );
     })
     .catch(() => {
       // the api reports the failure itself

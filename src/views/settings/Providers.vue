@@ -1,4 +1,8 @@
 <template>
+  <SettingsPageLinks
+    class="mx-5 mt-5"
+    :section="providerSettingsSectionName(currentType)"
+  />
   <div class="providers-header w-full">
     <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
     <!-- the empty state below carries the add button while there is nothing to list -->
@@ -109,22 +113,6 @@
       data-testid="providers-empty"
     />
   </div>
-
-  <!-- Audio analysis status hint -->
-  <div
-    v-if="showAudioAnalysisStatusHint"
-    class="border-primary/20 bg-primary/5 mx-5 mt-4 flex flex-wrap items-center gap-4 rounded-xl border px-4 py-3"
-  >
-    <Info class="text-primary size-5 shrink-0" />
-    <p class="text-muted-foreground m-0 flex-1 text-sm">
-      {{ $t("settings.audio_analysis_status_hint") }}
-    </p>
-    <Button as-child variant="outline" size="sm">
-      <RouterLink to="/settings/audio-analysis" class="no-underline">
-        {{ $t("settings.audio_analysis_status_link") }}
-      </RouterLink>
-    </Button>
-  </div>
   <ProviderAccessDialog
     v-model:open="showAccessDialog"
     :config="accessDialogConfig"
@@ -141,6 +129,7 @@ import ProviderFilters from "@/components/ProviderFilters.vue";
 import CommunityMovedTypeNotice from "@/components/settings/catalog/CommunityMovedTypeNotice.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
+import SettingsPageLinks from "@/components/settings/SettingsPageLinks.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -170,6 +159,7 @@ import {
   maySetUpSource,
 } from "@/helpers/provider_permissions";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
+import { providerSettingsSectionName } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import {
   type ProviderConfig,
@@ -178,10 +168,10 @@ import {
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Info, Music, Plus, Puzzle } from "@lucide/vue";
+import { Music, Plus, Puzzle } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { computed, inject } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
@@ -197,10 +187,6 @@ const currentType = computed(() =>
   managesAllSources()
     ? (route.query.types as string | undefined)
     : ProviderType.MUSIC,
-);
-
-const showAudioAnalysisStatusHint = computed(
-  () => currentType.value === ProviderType.AUDIO_ANALYSIS,
 );
 
 const addProviderLabel = computed(() => {
