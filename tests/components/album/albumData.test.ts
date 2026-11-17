@@ -58,6 +58,12 @@ describe("albumData", () => {
         "1",
         "library",
         false,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
 
       await loadAlbumTracks(ALBUM, true);
@@ -65,8 +71,42 @@ describe("albumData", () => {
         "1",
         "library",
         true,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
+
+    it.each([true, false])(
+      "maps the favorite-only toggle %s to the server filter",
+      async (favoriteOnly) => {
+        await loadAlbumTracks(
+          ALBUM,
+          false,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          favoriteOnly,
+        );
+
+        expect(apiMock.getAlbumTracks).toHaveBeenLastCalledWith(
+          "1",
+          "library",
+          false,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          favoriteOnly || undefined,
+        );
+      },
+    );
   });
 
   describe("loadAlbumVersions", () => {
@@ -88,7 +128,13 @@ describe("albumData", () => {
         "library",
       );
 
-      expect(apiMock.getArtistAlbums).toHaveBeenCalledWith("a1", "library");
+      expect(apiMock.getArtistAlbums).toHaveBeenCalledWith(
+        "a1",
+        "library",
+        undefined,
+        undefined,
+        0,
+      );
       expect(releases.map((release) => release.name)).toEqual(["30", "19"]);
     });
 
@@ -114,6 +160,9 @@ describe("albumData", () => {
       expect(apiMock.getArtistAlbums).toHaveBeenCalledWith(
         "sp-a1",
         "spotify--abc",
+        undefined,
+        undefined,
+        0,
       );
     });
 

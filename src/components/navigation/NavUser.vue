@@ -17,7 +17,14 @@ import {
 import { useTour } from "@/composables/useTour";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { LogOut, MoreVertical, Route, Settings, SquarePen } from "@lucide/vue";
+import {
+  ChartColumn,
+  LogOut,
+  MoreVertical,
+  Route,
+  Settings,
+  SquarePen,
+} from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -35,6 +42,11 @@ const initial = displayName ? displayName[0].toUpperCase() : "U";
 const handleProfile = () => {
   setOpenMobile(false);
   router.push({ name: "profile" });
+};
+
+const handleStatistics = () => {
+  setOpenMobile(false);
+  router.push({ name: "statistics" });
 };
 
 const handleEditMenu = () => {
@@ -132,6 +144,13 @@ const handleLogout = () => {
           <DropdownMenuItem @click="handleProfile">
             <Settings class="size-4" />
             {{ $t("auth.profile") }}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            data-testid="nav-user-statistics"
+            @click="handleStatistics"
+          >
+            <ChartColumn class="size-4" />
+            {{ $t("statistics") }}
           </DropdownMenuItem>
           <DropdownMenuItem @click="handleEditMenu">
             <SquarePen class="size-4" />

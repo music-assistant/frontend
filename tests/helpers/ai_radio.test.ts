@@ -14,6 +14,7 @@ import type {
   AIRadioHost,
   AIRadioSection,
   AIRadioStation,
+  Player,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it, vi } from "vitest";
 
@@ -389,29 +390,45 @@ describe("allowPost", () => {
 });
 
 describe("resolveShowPlayerId", () => {
-  const players = { kitchen: { available: true }, bath: { available: false } };
+  const players: Record<string, Pick<Player, "player_id" | "available">> = {
+    kitchen: { player_id: "kitchen", available: true },
+    bath: { player_id: "bath", available: false },
+  };
+  // the kitchen player also goes by the id of the attic player merged into it
+  const findPlayer = (playerId: string) =>
+    players[playerId === "attic" ? "kitchen" : playerId];
 
   it("prefers the show's default device while it is available", () => {
     expect(
-      resolveShowPlayerId({ default_player_id: "kitchen" }, "living", players),
+      resolveShowPlayerId(
+        { default_player_id: "kitchen" },
+        "living",
+        findPlayer,
+      ),
+    ).toBe("kitchen");
+  });
+
+  it("starts on the player the default device was merged into", () => {
+    expect(
+      resolveShowPlayerId({ default_player_id: "attic" }, "living", findPlayer),
     ).toBe("kitchen");
   });
 
   it("falls back to the selected player when the default device is unavailable or unknown", () => {
     expect(
-      resolveShowPlayerId({ default_player_id: "bath" }, "living", players),
+      resolveShowPlayerId({ default_player_id: "bath" }, "living", findPlayer),
     ).toBe("living");
     expect(
-      resolveShowPlayerId({ default_player_id: "gone" }, "living", players),
+      resolveShowPlayerId({ default_player_id: "gone" }, "living", findPlayer),
     ).toBe("living");
   });
 
   it("uses the selected player when no default device is set", () => {
     expect(
-      resolveShowPlayerId({ default_player_id: "" }, "living", players),
+      resolveShowPlayerId({ default_player_id: "" }, "living", findPlayer),
     ).toBe("living");
     expect(
-      resolveShowPlayerId({ default_player_id: "" }, undefined, players),
+      resolveShowPlayerId({ default_player_id: "" }, undefined, findPlayer),
     ).toBe("");
   });
 });

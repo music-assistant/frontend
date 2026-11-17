@@ -1,6 +1,7 @@
 import {
   type ProviderManifest,
   ProviderStage,
+  ProviderTier,
   ProviderType,
 } from "@/plugins/api/interfaces";
 
@@ -28,6 +29,8 @@ export function providerManifest(
     icon: null,
     depends_on: null,
     stage: ProviderStage.STABLE,
+    tier: ProviderTier.CORE,
+    support_url: null,
     icon_images: [],
     ...overrides,
   };

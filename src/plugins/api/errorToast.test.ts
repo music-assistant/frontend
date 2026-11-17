@@ -11,7 +11,12 @@ const failCommand = (error_code: number, details: string) => {
   api.transport = { send: vi.fn(), disconnect: vi.fn() };
   api.sendCommand("players/all").catch(() => undefined);
   const messageId = [...api["commands"].keys()][0];
-  api["handleResultMessage"]({ message_id: messageId, error_code, details });
+  api["handleResultMessage"]({
+    message_id: messageId,
+    error_code,
+    details,
+    data: null,
+  });
 };
 
 describe("error result toast", () => {

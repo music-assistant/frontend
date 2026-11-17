@@ -26,14 +26,10 @@
             <span v-if="item.version" class="album-hero__version">
               ({{ item.version }})
             </span>
-            <span
+            <ExplicitBadge
               v-if="item.metadata?.explicit"
-              class="album-hero__explicit"
-              role="img"
-              :title="$t('tooltip.explicit')"
-              :aria-label="$t('tooltip.explicit')"
-              >E</span
-            >
+              class="album-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
+            />
           </h1>
 
           <div class="album-hero__meta">
@@ -60,10 +56,9 @@
 
           <div class="album-hero__actions">
             <DetailHeroPlayButton
-              class="album-hero__play"
-              shrink-label
               :item="item"
-              :tracks-sort-by="tracksSortBy"
+              :tracks-sort-field="tracksSortField"
+              :tracks-sort-direction="tracksSortDirection"
             />
             <DetailHeroButton
               :icon="Shuffle"
@@ -78,6 +73,8 @@
               :disabled="!radioSupported(item)"
               @click="gotoRadio(item)"
             />
+            <!-- outside the library the services listed beside already say where it is from -->
+            <DetailHeroSourceBadge :item="item" library-only />
           </div>
         </div>
       </div>
@@ -98,6 +95,8 @@ import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
+import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatTotalDuration } from "@/helpers/duration";
@@ -107,6 +106,8 @@ import {
   type Album,
   type Artist,
   type ItemMapping,
+  type SortDirection,
+  type SortField,
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
@@ -126,7 +127,8 @@ export interface Props {
   // their total playing time in seconds, once they are known
   duration?: number;
   // the order the tracks are listed in below, which the play button follows
-  tracksSortBy?: string;
+  tracksSortField?: SortField;
+  tracksSortDirection?: SortDirection;
 }
 const props = defineProps<Props>();
 
@@ -216,19 +218,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   color: rgba(255, 255, 255, 0.7);
 }
 .album-hero__explicit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
   margin-left: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1;
-  text-shadow: none;
   vertical-align: middle;
 }
 
@@ -282,10 +272,6 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   gap: 8px;
   min-width: 0;
 }
-/* the play button gives way so Shuffle and Endless keep their place on the row */
-.album-hero__play {
-  min-width: 0;
-}
 
 @media (max-width: 768px) {
   .album-hero__main {
@@ -306,9 +292,6 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   }
   .album-hero__actions {
     gap: 10px;
-  }
-  .album-hero__actions .album-hero__play {
-    flex: 1;
   }
 }
 </style>

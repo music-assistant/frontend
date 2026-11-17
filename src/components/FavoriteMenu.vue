@@ -79,6 +79,7 @@ import {
 } from "@/helpers/favorites";
 import { canAddToPlaylist } from "@/helpers/playlist_access";
 import api from "@/plugins/api";
+import { isExternalItem } from "@/plugins/api/helpers";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -133,8 +134,10 @@ const canEditLibrary = computed(() =>
 const offersFavorite = computed(
   () => !!props.item && canHoldFavorite(props.item),
 );
+// an item known only by an external id goes into a playlist once it is found
 const offersPlaylist = computed(
-  () => !!props.item && canAddToPlaylist(props.item),
+  () =>
+    !!props.item && canAddToPlaylist(props.item) && !isExternalItem(props.item),
 );
 // without an item the trigger stays visible but disabled, e.g. while the
 // player bar has nothing loaded yet

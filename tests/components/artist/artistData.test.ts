@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getArtistAlbums: vi.fn().mockResolvedValue([]),
+    getArtistAlbumsCount: vi.fn().mockResolvedValue(0),
     getArtistAppearsOn: vi.fn().mockResolvedValue([]),
+    getArtistDiscography: vi.fn().mockResolvedValue([]),
     getArtistTracks: vi.fn().mockResolvedValue([]),
     getArtistTopTracks: vi.fn().mockResolvedValue([]),
     getSimilarArtists: vi.fn().mockResolvedValue([]),
@@ -18,9 +20,12 @@ vi.mock("@/plugins/api", () => ({
 }));
 
 import {
+  artistAlbumsBySource,
+  artistAlbumsCountBySource,
   artistProvidersForFeature,
   isSingleOrEp,
   loadArtistAppearsOn,
+  loadArtistDiscography,
   loadArtistReleases,
   loadArtistTopTracks,
   loadArtistTracks,
@@ -76,9 +81,38 @@ describe("artistData", () => {
   });
 
   describe("loadArtistReleases", () => {
+    it.each([true, false, undefined])(
+      "maps the album favorite-only toggle %s to the server filter",
+      async (favoritesOnly) => {
+        await artistAlbumsBySource(LIBRARY_ARTIST, "library", {
+          limit: 20,
+          favoritesOnly,
+        });
+
+        expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
+          "1",
+          "library",
+          undefined,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          favoritesOnly || undefined,
+        );
+      },
+    );
+
     it("asks the library for the library source", async () => {
       await loadArtistReleases(LIBRARY_ARTIST, "library");
-      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith("1", "library");
+      expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+        undefined,
+        undefined,
+        0,
+      );
     });
 
     it("asks a provider source for its own catalog, by the artist's id there", async () => {
@@ -86,6 +120,9 @@ describe("artistData", () => {
       expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
         "sp1",
         "spotify--abc",
+        undefined,
+        undefined,
+        0,
       );
     });
 
@@ -101,6 +138,77 @@ describe("artistData", () => {
       expect(apiMock.getArtistAlbums).toHaveBeenLastCalledWith(
         "sp1",
         "spotify--abc",
+        undefined,
+        undefined,
+        0,
+      );
+    });
+  });
+
+  describe("artistAlbumsCountBySource", () => {
+    it("uses the same provider artist and album types as the shelf", async () => {
+      apiMock.getArtistAlbumsCount.mockClear();
+      await artistAlbumsCountBySource(LIBRARY_ARTIST, "spotify--abc", [
+        AlbumType.SINGLE,
+      ]);
+      expect(apiMock.getArtistAlbumsCount).toHaveBeenCalledWith(
+        "sp1",
+        "spotify--abc",
+        undefined,
+        undefined,
+        [AlbumType.SINGLE],
+      );
+    });
+
+    it("does not fetch an unmapped source", async () => {
+      apiMock.getArtistAlbumsCount.mockClear();
+      expect(
+        await artistAlbumsCountBySource(LIBRARY_ARTIST, "tidal--def", [
+          AlbumType.ALBUM,
+        ]),
+      ).toBe(0);
+      expect(apiMock.getArtistAlbumsCount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("loadArtistDiscography", () => {
+    it("asks for the whole discography unless a page is asked for", async () => {
+      await loadArtistDiscography(LIBRARY_ARTIST);
+      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
+        "1",
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      await loadArtistDiscography(LIBRARY_ARTIST, undefined, "live", 20, 40);
+      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
+        "1",
+        "live",
+        20,
+        40,
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
+    it("asks for the given release types only", async () => {
+      await loadArtistDiscography(LIBRARY_ARTIST, [
+        AlbumType.ALBUM,
+        AlbumType.LIVE,
+      ]);
+      expect(apiMock.getArtistDiscography).toHaveBeenLastCalledWith(
+        "1",
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
+        [AlbumType.ALBUM, AlbumType.LIVE],
       );
     });
   });
@@ -114,6 +222,12 @@ describe("artistData", () => {
       expect(apiMock.getArtistAppearsOn).toHaveBeenLastCalledWith(
         "1",
         "library",
+        undefined,
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
       );
     });
   });
@@ -131,6 +245,7 @@ describe("artistData", () => {
       expect(apiMock.getSimilarArtists).toHaveBeenLastCalledWith(
         "1",
         "library",
+        25,
         undefined,
       );
     });
@@ -146,12 +261,61 @@ describe("artistData", () => {
   });
 
   describe("loadArtistTracks", () => {
+    it.each([true, false])(
+      "maps the track favorite-only toggle %s to the server filter",
+      async (favoriteOnly) => {
+        await loadArtistTracks(
+          LIBRARY_ARTIST,
+          undefined,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          favoriteOnly,
+        );
+
+        expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(
+          "1",
+          "library",
+          undefined,
+          undefined,
+          20,
+          undefined,
+          undefined,
+          undefined,
+          favoriteOnly || undefined,
+        );
+      },
+    );
+
+    it("requests all tracks when no page parameters are given", async () => {
+      await loadArtistTracks(LIBRARY_ARTIST);
+      expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(
+        "1",
+        "library",
+        undefined,
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
     it("passes the provider filter through", async () => {
       await loadArtistTracks(LIBRARY_ARTIST, "spotify--abc");
       expect(apiMock.getArtistTracks).toHaveBeenLastCalledWith(
         "1",
         "library",
         "spotify--abc",
+        undefined,
+        0,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
   });

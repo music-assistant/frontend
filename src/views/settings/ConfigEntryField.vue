@@ -118,7 +118,7 @@
                 confEntry.type == ConfigEntryType.FLOAT ? 1 : 0,
             }"
             class="w-[100px]"
-            @update:model-value="$emit('update:value', $event)"
+            @update:model-value="$emit('update:value', $event ?? null)"
           >
             <NumberFieldContent>
               <NumberFieldInput />

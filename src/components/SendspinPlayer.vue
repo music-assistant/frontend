@@ -27,6 +27,7 @@ import { PlaybackState } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import {
   webPlayer,
+  webPlayerOutput,
   isPlaybackMode,
   registerWebPlayerAudioUnlock,
   clearWebPlayerAudioUnlock,
@@ -36,7 +37,7 @@ import {
   prepareSendspinSession,
   isDirectConnection,
 } from "@/plugins/sendspin-connection";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 
 // Properties
@@ -70,32 +71,33 @@ let unmounted = false;
 // iOS only lets audio start inside a user gesture, but listen-in audio starts
 // asynchronously (after the server groups this player), so the library would
 // otherwise unlock its audio outside the gesture and stay silent.
-const primeAudio = () => {
-  if (!isIOS) return true;
+const primeAudio = (): Promise<boolean> | false => {
   if (!player) return false;
-  void player.unlock().catch((error) => {
-    console.debug("Sendspin: failed to prime audio for listen-in", error);
-  });
-  return true;
+  if (!isIOS) return Promise.resolve(true);
+  return player.unlock().then(
+    () => true,
+    (error) => {
+      console.debug("Sendspin: failed to prime audio for listen-in", error);
+      return false;
+    },
+  );
 };
 
 // Reactive state
 const isPlaying = ref(false);
 // this browser's last volume, so a new session doesn't start at full volume
-const volume = ref(loadSavedVolume());
-const muted = ref(false);
+const volume = toRef(webPlayerOutput, "volume");
+volume.value = loadSavedVolume();
+const muted = toRef(webPlayerOutput, "muted");
 const playerState = ref<"synchronized" | "error">("synchronized");
 
 // Watch for volume/mute changes from UI
-watch(volume, (newVolume) => {
+// One watcher for both: each SDK setter reports the full player state back
+// through onStateChange, which would overwrite a pending change of the other.
+watch([volume, muted], ([newVolume, newMuted]) => {
   localStorage.setItem(VOLUME_STORAGE_KEY, String(newVolume));
   if (player) {
     player.setVolume(newVolume);
-  }
-});
-
-watch(muted, (newMuted) => {
-  if (player) {
     player.setMuted(newMuted);
   }
 });
@@ -323,7 +325,7 @@ onMounted(() => {
         // Use a placeholder URL - the WebSocket interceptor will route through WebRTC
         // The URL just needs to be valid and contain "/sendspin" for the interceptor
         player = new SendspinPlayer({
-          baseUrl: "http://sendspin.local",
+          url: "ws://sendspin.local/sendspin",
           audioElement,
           // Shared guest accounts have no person to name the device after
           clientName: getWebPlayerName(
@@ -332,6 +334,8 @@ onMounted(() => {
               ? undefined
               : store.currentUser,
           ),
+          manufacturer: navigator.vendor || "Unknown",
+          softwareVersion: navigator.userAgent || "Unknown",
           // How the server recognizes us as its built-in player rather than a
           // third-party client that has to be paired by hand.
           productName: "Web Player",
@@ -379,7 +383,10 @@ onMounted(() => {
           },
         });
         // set before connecting so the server is told the saved volume, not the default
+        const mutedBeforeStart = muted.value;
         player.setVolume(volume.value);
+        // setVolume reports the SDK's restored mute back; keep a mute set before the player existed
+        if (mutedBeforeStart) player.setMuted(true);
 
         return player.connect().then(registerPairing);
       })
@@ -420,9 +427,7 @@ onBeforeUnmount(() => {
     // goodbye, which is what a hand-over to another tab needs. Once this
     // browser wants no player at all, say so instead, or it stays targetable
     // while nothing is listening.
-    player.disconnect(
-      isPlaybackMode(webPlayer.mode) ? "restart" : "user_request",
-    );
+    player.destroy(isPlaybackMode(webPlayer.mode) ? "restart" : "user_request");
     player = null;
   }
   if (unsubMetadata) unsubMetadata();

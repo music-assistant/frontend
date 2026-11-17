@@ -1,7 +1,16 @@
 import * as MaIcons from "@/components/ma-icons";
 import manifest from "@/vendor/shared-icons/manifest.json";
 import meta from "@/vendor/shared-icons/meta.json";
-import { BookOpen, Disc3, PartyPopper, Sunrise } from "@lucide/vue";
+import type { DeviceType } from "@/helpers/device";
+import {
+  BookOpen,
+  Disc3,
+  Monitor,
+  PartyPopper,
+  Smartphone,
+  Sunrise,
+  Tablet,
+} from "@lucide/vue";
 import type { Component } from "vue";
 
 export const PLAYER_ICON_IDS: readonly string[] = manifest.icons;
@@ -36,6 +45,13 @@ const APP_ICON_COMPONENTS: Record<string, Component> = {
   "disc-3": Disc3,
   "book-open": BookOpen,
   "party-popper": PartyPopper,
+};
+
+// The form-factor icon that marks the player of this device.
+export const DEVICE_TYPE_ICONS: Record<DeviceType, Component> = {
+  desktop: Monitor,
+  phone: Smartphone,
+  tablet: Tablet,
 };
 
 export function getLucideIcon(

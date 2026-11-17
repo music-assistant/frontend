@@ -3,7 +3,7 @@
     class="detail-hero"
     :class="{
       'detail-hero--phone': isPhone,
-      'min-h-[calc(100vw+8rem)]': artworkLayout,
+      'min-h-[calc(100vw+8rem)] bg-black': artworkLayout,
     }"
     :style="{
       '--detail-hero-height': `${height}px`,
@@ -17,7 +17,7 @@
         class="detail-hero__backdrop"
         :class="
           artworkLayout
-            ? 'bottom-auto aspect-square bg-top [mask-image:linear-gradient(to_bottom,black_55%,transparent)]'
+            ? 'bottom-auto aspect-square bg-top [mask-image:linear-gradient(to_bottom,black_70%,transparent)]'
             : [
                 { 'detail-hero__backdrop--blurred': blurBackdrop },
                 { 'scale-[1.04] blur-[6px]': softenBackdrop && !blurBackdrop },
@@ -92,13 +92,20 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
-import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
+import {
+  getContextMenuItems,
+  getDeclaredContextMenuItems,
+} from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
-import { ImageType, type MediaItemType } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
-import { computed, ref, watch } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import { useRouter } from "vue-router";
 
 export interface Props {
@@ -134,7 +141,23 @@ const emit = defineEmits<{
 const STICKY_BAR_HEIGHT = 56;
 
 const router = useRouter();
-const menuItems = ref<ContextMenuItem[]>([]);
+// the item's own menu entries, with the item they were built for
+const builtMenu = shallowRef<{
+  item: MediaItemType;
+  items: ContextMenuItem[];
+}>();
+// the entries providers add follow the providers while the page is open
+const menuItems = computed<ContextMenuItem[]>(() => {
+  if (!builtMenu.value) return [];
+  const { item, items } = builtMenu.value;
+  return [
+    ...items,
+    ...getDeclaredContextMenuItems([item]),
+    ...(props.editableRows
+      ? [{ label: "edit_rows", icon: Rows3, action: () => emit("edit-rows") }]
+      : []),
+  ];
+});
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
@@ -163,9 +186,13 @@ useIntersectionObserver(
   { root: pageScroller, rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
 );
 
-// a phone shows the item's own artwork across the top, faded into the page
+// a phone shows the item's own artwork across the top, fading into black just
+// above the title in both themes; a collection's images are the covers of its
+// stack, which it shows instead
 const phoneArtwork = computed(() =>
-  isPhone.value ? getImageThumbForItem(props.item, ImageType.THUMB) : undefined,
+  isPhone.value && props.item?.media_type !== MediaType.COLLECTION
+    ? getImageThumbForItem(props.item, ImageType.THUMB)
+    : undefined,
 );
 const artworkLayout = computed(() => !!phoneArtwork.value);
 
@@ -190,21 +217,16 @@ const backButtonClick = function () {
 
 useEscapeBack(backButtonClick);
 
-/** The item's overflow menu, plus "Edit rows" last on an editable page. */
+/** Build the item's own menu entries. */
 async function buildMenu(item?: MediaItemType) {
   if (!item) {
-    menuItems.value = [];
+    builtMenu.value = undefined;
     return;
   }
   const items = await getContextMenuItems([item], item);
   // a slower response for a previous item must not replace the current one
   if (props.item?.uri !== item.uri) return;
-  menuItems.value = props.editableRows
-    ? [
-        ...items,
-        { label: "edit_rows", icon: Rows3, action: () => emit("edit-rows") },
-      ]
-    : items;
+  builtMenu.value = { item, items };
 }
 </script>
 
@@ -330,8 +352,9 @@ async function buildMenu(item?: MediaItemType) {
   display: none;
 }
 
+/* the bottom margin clears the strip where the hero fades into the page */
 .detail-hero--phone .detail-hero__body {
-  margin: auto 16px 16px;
+  margin: auto 16px 28px;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;

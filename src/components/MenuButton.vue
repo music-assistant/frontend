@@ -2,7 +2,7 @@
   <ButtonGroup>
     <Button
       :disabled="disabled || loading"
-      :class="[truncate ? 'min-w-0 shrink' : 'min-w-40', 'grow justify-start']"
+      :class="[truncate ? 'min-w-0 shrink' : 'min-w-40', 'justify-start']"
       :aria-label="label"
       :title="label"
       @click="emit('click')"

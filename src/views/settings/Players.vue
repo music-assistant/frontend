@@ -26,9 +26,9 @@
         })
       }}
     </div>
-    <Container
-      :variant="viewMode === 'list' ? 'default' : 'panel'"
-      class="mt-4 px-5"
+    <div
+      class="mt-4 px-5 py-2.5"
+      :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
     >
       <ItemGroup v-if="viewMode === 'list'" class="gap-2">
         <SettingsPlayerRow
@@ -57,7 +57,7 @@
         :icon="VolumeOff"
         data-testid="players-empty"
       />
-    </Container>
+    </div>
     <div
       v-if="canAddPlayerProviders"
       class="missing-players-hint flex items-center justify-center gap-1.5 px-5 py-4 text-[13px] text-muted-foreground"
@@ -77,7 +77,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import SettingsPlayerRow from "@/components/settings/players/SettingsPlayerRow.vue";
@@ -85,13 +84,20 @@ import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
 import { Button } from "@/components/ui/button";
 import { ItemGroup } from "@/components/ui/item";
 
+import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { useUserPreferences } from "@/composables/userPreferences";
 import {
   getListedPlayerConfigs,
   getPlayerName,
   playerBelongsToProviders,
 } from "@/helpers/player_config";
-import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { isPlayerUnavailable } from "@/helpers/players";
+import {
+  getPlayerSettingsMenuItems,
+  removeUnavailablePlayers,
+} from "@/helpers/player_settings_actions";
 
 import { api } from "@/plugins/api";
 import {
@@ -103,8 +109,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { Info, Plus, VolumeOff } from "@lucide/vue";
-import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
+import { EyeOff, Info, Plus, Trash2, VolumeOff } from "@lucide/vue";
+import { computed, inject, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
 
@@ -117,6 +123,12 @@ const playersViewMode = inject<{
 }>("playersViewMode")!;
 
 const viewMode = computed(() => playersViewMode.viewMode.value);
+
+const { getPreference, setPreference } = useUserPreferences();
+const hideUnavailable = getPreference<boolean>(
+  "settings.players.hideUnavailable",
+  false,
+);
 
 // local refs
 const playerConfigs = ref<PlayerConfig[]>([]);
@@ -152,6 +164,45 @@ const providersWithCreateGroupSupport = computed(() => {
 const canAddPlayerProviders = computed(() =>
   authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
 );
+const canRemovePlayers = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+);
+
+const toolbarMenu = useSettingsToolbarMenu();
+const toolbarMenuItems = computed<ToolBarMenuItem[]>(() => {
+  const items: ToolBarMenuItem[] = [
+    {
+      label: "settings.hide_unavailable_players",
+      icon: markRaw(EyeOff),
+      action: () =>
+        setPreference(
+          "settings.players.hideUnavailable",
+          !hideUnavailable.value,
+        ),
+      active: hideUnavailable.value,
+    },
+  ];
+  if (canRemovePlayers.value) {
+    items.push({
+      label: "settings.remove_unavailable_players",
+      icon: markRaw(Trash2),
+      // the server decides which players it removes, whatever the list shows
+      action: () =>
+        removeUnavailablePlayers(playerConfigs.value, dropPlayerConfigs),
+    });
+  }
+  return items;
+});
+watch(
+  toolbarMenuItems,
+  (items) => {
+    toolbarMenu.value = items;
+  },
+  { immediate: true },
+);
+onBeforeUnmount(() => {
+  toolbarMenu.value = [];
+});
 
 // methods
 const loadItems = async function () {
@@ -160,11 +211,8 @@ const loadItems = async function () {
   );
 };
 
-const editPlayer = function (playerId: string, provider: string) {
-  if (api.getProvider(provider)) {
-    // only allow edit if provider is available
-    router.push(`/settings/editplayer/${playerId}`);
-  }
+const editPlayer = function (playerId: string) {
+  router.push(`/settings/editplayer/${playerId}`);
 };
 
 const startPlayerSetup = function (playerId: string) {
@@ -179,7 +227,7 @@ const handlePlayerClick = function (playerConfig: PlayerConfig) {
     startPlayerSetup(playerConfig.player_id);
     return;
   }
-  editPlayer(playerConfig.player_id, playerConfig.provider);
+  editPlayer(playerConfig.player_id);
 };
 
 const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
@@ -201,8 +249,22 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   });
 };
 
+const dropPlayerConfigs = function (playerIds: string[]) {
+  playerConfigs.value = playerConfigs.value.filter(
+    (x) => !playerIds.includes(x.player_id),
+  );
+};
+
 const filteredPlayers = computed(() => {
   let filtered = [...playerConfigs.value];
+
+  // a disabled player has no player object, but it is disabled rather than unavailable
+  if (hideUnavailable.value) {
+    filtered = filtered.filter(
+      (item) =>
+        !item.enabled || !isPlayerUnavailable(api.players[item.player_id]),
+    );
+  }
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
@@ -275,6 +337,7 @@ watch(
 
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;

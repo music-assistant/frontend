@@ -41,15 +41,7 @@
           <div class="podcast-hero__actions">
             <DetailHeroPlayButton :item="item" />
             <!-- outside the library the services listed beside already say where it is from -->
-            <span
-              v-if="isItemInLibrary(item) && !isPhone"
-              class="podcast-hero__badge"
-              role="img"
-              :title="$t('in_library')"
-              :aria-label="$t('in_library')"
-            >
-              <ProviderIcon domain="library" :size="20" />
-            </span>
+            <DetailHeroSourceBadge :item="item" library-only />
           </div>
         </div>
       </div>
@@ -68,9 +60,8 @@ import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
+import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import { isItemInLibrary } from "@/plugins/api/helpers";
 import type { Podcast } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { Mic, PodcastIcon } from "@lucide/vue";
@@ -165,17 +156,6 @@ const coverSize = computed(() => (isPhone.value ? 132 : 200));
   gap: 8px;
   min-width: 0;
 }
-/* the same chrome as the hero buttons, for the facts that are not actions */
-.podcast-hero__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.4);
-}
 
 @media (max-width: 768px) {
   .podcast-hero__main {
@@ -196,11 +176,6 @@ const coverSize = computed(() => (isPhone.value ? 132 : 200));
   }
   .podcast-hero__actions {
     gap: 10px;
-  }
-  .podcast-hero__badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
   }
 }
 </style>

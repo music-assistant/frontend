@@ -1,16 +1,20 @@
 // Shared handlers for the click/play/menu interactions on a media item,
 // dispatching to the details views and the item context menu.
+import { openExternalItem } from "@/helpers/open_external_item";
 import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
-import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
+import { ApiCommandError } from "@/plugins/api/errors";
+import { isExternalItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  SortDirection,
+  SortField,
   Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -52,12 +56,19 @@ export const handlePlayBtnClick = async function (
   forceMenu?: boolean,
   sortBy?: string,
   tracksSortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
+  tracksSortField?: SortField,
+  tracksSortDirection?: SortDirection,
 ) {
   // a failed play action must never be silent: without feedback the play
   // button appears dead (e.g. while the connection is re-establishing)
   const onPlayError = (err: Error) => {
     console.error("Play action failed:", err);
-    toast.error($t("play_failed"));
+    // a server error with a reason already got its own toast from the api
+    if (!(err instanceof ApiCommandError && err.details)) {
+      toast.error($t("play_failed"));
+    }
   };
   // we show the play menu for the item once (if playerTip has not been dismissed)
   if (!forceMenu && store.activePlayer?.available) {
@@ -78,22 +89,40 @@ export const handlePlayBtnClick = async function (
         api
           .playMedia(parentItem.uri, undefined, {
             start_item: item.item_id,
-            sort_by: sortBy,
+            ...(sortField
+              ? { sort_field: sortField, sort_direction: sortDirection }
+              : sortBy
+                ? { sort_by: sortBy }
+                : {}),
           })
           .catch(onPlayError);
         return;
       }
     }
     // else: play the item directly
-    const playAction = tracksSortBy
-      ? api.playMedia(item, undefined, { sort_by: tracksSortBy })
+    const playOptions = tracksSortField
+      ? {
+          sort_field: tracksSortField,
+          sort_direction: tracksSortDirection,
+        }
+      : tracksSortBy
+        ? { sort_by: tracksSortBy }
+        : undefined;
+    const playAction = playOptions
+      ? api.playMedia(item, undefined, playOptions)
       : api.playMedia(item);
     playAction.catch(onPlayError);
     return;
   }
-  showPlayMenuForMediaItem(item, parentItem, posX, posY, tracksSortBy).catch(
-    onPlayError,
-  );
+  showPlayMenuForMediaItem(
+    item,
+    parentItem,
+    posX,
+    posY,
+    tracksSortBy,
+    tracksSortField,
+    tracksSortDirection,
+  ).catch(onPlayError);
 };
 
 /**
@@ -107,21 +136,9 @@ export const handleMediaItemClick = async function (
   posY: number,
   parentItem?: MediaItemType,
 ) {
-  // a MusicBrainz release has nothing to play: the server resolves it to the
-  // same album on one of the user's music services when its page opens
-  if (isMusicBrainzItem(item)) {
-    router.push({
-      name: item.media_type,
-      params: {
-        itemId: item.item_id,
-        provider: item.provider,
-      },
-    });
-    return;
-  }
-
   // open menu when item is unavailable so the user has a way to remove/refresh the item
-  if (!itemIsAvailable(item)) {
+  // (an external item is looked up when it is opened or played)
+  if (!itemIsAvailable(item) && !isExternalItem(item)) {
     handleMenuBtnClick(item, posX, posY, undefined, false);
     return;
   }
@@ -165,6 +182,7 @@ export const handleMediaItemClick = async function (
   }
 
   // all other: go to details view
+  if (isExternalItem(item)) return openExternalItem(item);
   router.push({
     name: item.media_type,
     params: {
@@ -187,6 +205,8 @@ export const handleMenuBtnClick = function (
   parentItem?: MediaItemType,
   includePlayMenuItems = true,
   sortBy?: string,
+  sortField?: SortField,
+  sortDirection?: SortDirection,
 ) {
   const mediaItems: MediaItemTypeOrItemMapping[] = Array.isArray(item)
     ? item
@@ -199,6 +219,9 @@ export const handleMenuBtnClick = function (
     includePlayMenuItems,
     includePlayMenuItems,
     sortBy,
+    undefined,
+    sortField,
+    sortDirection,
   );
 };
 

@@ -1,8 +1,18 @@
 import ShowCard from "@/components/ai-radio/ShowCard.vue";
+import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { showUri, useShows } from "@/composables/ai-radio/useShows";
 import api, { type MusicAssistantApi } from "@/plugins/api";
-import type { AIRadioStation, Scope, Player } from "@/plugins/api/interfaces";
+import {
+  ImageType,
+  MediaType,
+  type AIRadioStation,
+  type MediaItemImage,
+  type Player,
+  type Playlist,
+  type Scope,
+} from "@/plugins/api/interfaces";
+import { Sparkles } from "@lucide/vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
@@ -22,8 +32,8 @@ const { playMedia, sendCommand } = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock("@/plugins/api", () => ({
-  default: {
+vi.mock("@/plugins/api", () => {
+  const api = {
     players: {},
     queues: {},
     providers: {},
@@ -32,8 +42,9 @@ vi.mock("@/plugins/api", () => ({
       async () => [],
     ),
     playMedia,
-  },
-}));
+  };
+  return { default: api, api };
+});
 
 vi.mock("@/plugins/store", () => ({
   store: { activePlayerId: "kitchen", enabledPlugins: new Set<string>() },
@@ -129,6 +140,24 @@ describe("ShowCard play/stop", () => {
     delete api.players.bedroom;
   });
 
+  it("plays on the player a default device was merged into", async () => {
+    api.players.bedroom = {
+      player_id: "bedroom",
+      available: true,
+      legacy_ids: ["attic"],
+    } as unknown as Player;
+    const wrapper = renderCard({ default_player_id: "attic" });
+
+    await wrapper.find('[aria-label="Play"]').trigger("click");
+    await flushPromises();
+
+    expect(playMedia).toHaveBeenCalledWith(showUri(show.id), undefined, {
+      queue_id: "bedroom",
+      suppressGlobalError: true,
+    });
+    delete api.players.bedroom;
+  });
+
   it("falls back to the active player when the default device is unavailable", async () => {
     api.players.bedroom = { player_id: "bedroom", available: false } as Player;
     const wrapper = renderCard({ default_player_id: "bedroom" });
@@ -199,3 +228,54 @@ describe("ShowCard editing rights", () => {
     expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
   });
 });
+
+describe("ShowCard artwork", () => {
+  afterEach(() => {
+    useShows().playlists.value = [];
+  });
+
+  it("shows the AI Radio icon while the show's playlist is unknown", () => {
+    const wrapper = renderCard();
+
+    expect(
+      wrapper.get(".show-card__fallback").findComponent(Sparkles).exists(),
+    ).toBe(true);
+  });
+
+  it("shows the AI Radio icon when the show's playlist has no artwork", () => {
+    useShows().playlists.value = [playlist([])];
+    const wrapper = renderCard();
+
+    expect(
+      wrapper.get(".show-card__fallback").findComponent(Sparkles).exists(),
+    ).toBe(true);
+    expect(wrapper.findComponent(MediaItemThumb).exists()).toBe(false);
+  });
+
+  it("shows the playlist's artwork when it has some", () => {
+    useShows().playlists.value = [
+      playlist([
+        {
+          type: ImageType.THUMB,
+          path: "https://example.com/cover.jpg",
+          provider: "library",
+          remotely_accessible: true,
+        },
+      ]),
+    ];
+    const wrapper = renderCard();
+
+    expect(wrapper.findComponent(MediaItemThumb).exists()).toBe(true);
+    expect(wrapper.find(".show-card__fallback").exists()).toBe(false);
+  });
+});
+
+function playlist(images: MediaItemImage[]): Playlist {
+  return {
+    item_id: show.source_playlist_id,
+    provider: show.source_playlist_provider,
+    name: "Pirate songs",
+    media_type: MediaType.PLAYLIST,
+    metadata: { images },
+  } as unknown as Playlist;
+}

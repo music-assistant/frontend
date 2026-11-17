@@ -5,7 +5,7 @@
     v-bind="$attrs"
     v-model:favorite="favorite"
     :item="currentItem"
-    variant="ghost"
+    :variant="variant"
     size="icon-lg"
     :icon-class="iconClass"
     side="top"
@@ -15,14 +15,18 @@
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
+import type { ButtonVariants } from "@/components/ui/button";
 import { useCurrentItemFavorite } from "@/composables/useCurrentItemFavorite";
 
 export interface Props {
+  /** look of the button */
+  variant?: ButtonVariants["variant"];
   /** size class of the glyph; the button box comes from the call site */
   iconClass?: string;
 }
 
 withDefaults(defineProps<Props>(), {
+  variant: "ghost",
   iconClass: "size-5",
 });
 

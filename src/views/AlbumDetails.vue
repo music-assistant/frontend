@@ -6,7 +6,8 @@
       :blur-backdrop="backdrop.blurred"
       :track-count="albumTracks?.length"
       :duration="runningTime"
-      :tracks-sort-by="tracksListing?.[0]?.sortBy"
+      :tracks-sort-field="tracksListing?.[0]?.sortField"
+      :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       @edit-rows="rowsEditorOpen = true"
     />
 
@@ -26,14 +27,10 @@
           "
           :show-refresh-button="false"
           :allow-key-hooks="true"
-          :load-items="loadTracks"
-          :sort-keys="[
-            'track_number',
-            'name',
-            'sort_name',
-            'duration',
-            'duration_desc',
-          ]"
+          :load-paged-data="loadTracks"
+          :sort-listing="ListingType.ALBUM_TRACKS"
+          library-toolbar
+          :show-count="false"
           :title="$t('tracks')"
           :refresh-on-parent-update="true"
         />
@@ -67,7 +64,7 @@
           :source-label="moreFromArtistSourceDisplay?.label"
           :source-domain="moreFromArtistSourceDisplay?.domain"
           :source-options="moreFromArtistOptions"
-          :source-value="moreFromArtistSource"
+          :source-value="moreFromArtistSelectedSource"
           :items="artistReleaseItems"
           :view-all-to="artistAlbumsRoute"
           :empty-message="$t('artist_row_empty')"
@@ -139,9 +136,10 @@ import { useAlbumRowData } from "@/composables/useAlbumRowData";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { api } from "@/plugins/api";
-import { MUSICBRAINZ_PROVIDER } from "@/plugins/api/helpers";
+import { EXTERNAL_PROVIDER } from "@/plugins/api/helpers";
 import {
   AlbumType,
+  ListingType,
   MediaItemType,
   MediaType,
   Scope,
@@ -166,9 +164,11 @@ const router = useRouter();
 const itemDetails = ref<Album>();
 const rowsEditorOpen = ref(false);
 
-// the album's own tracks, as the listing below last loaded them unfiltered:
-// what the hero counts and times
+// all of the album's own tracks, whatever the listing below shows: what the
+// hero counts and times
 const albumTracks = ref<Track[]>();
+// counts the loads of those tracks, so only the latest one sets them
+let heroTracksRequest = 0;
 // the tracks listing (inside the rows loop, so held as an array), whose sort
 // order the play button follows
 const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
@@ -204,8 +204,13 @@ const {
   versionItems,
   artistReleaseItems,
   moreFromArtistSource,
+  moreFromArtistSelectedSource,
   moreFromArtistSourceDisplay,
-} = useAlbumRowData(albumForRows, visibleRows);
+} = useAlbumRowData(
+  albumForRows,
+  visibleRows,
+  computed(() => fullArtist.value !== undefined),
+);
 
 // the cover at first; the artist's fanart takes over once that lookup is done
 const backdrop = computed(() =>
@@ -289,12 +294,13 @@ const loadItemDetails = async function () {
   itemDetails.value = undefined;
   albumTracks.value = undefined;
   const album =
-    provider === MUSICBRAINZ_PROVIDER
-      ? await resolveMusicBrainzAlbum(itemId)
+    provider === EXTERNAL_PROVIDER
+      ? await resolveExternalAlbum(itemId, provider)
       : await api.getAlbum(itemId, provider);
   // a slower response for a previous album must not replace the current one
   if (itemId !== props.itemId || provider !== props.provider) return;
   itemDetails.value = album;
+  if (album) loadHeroTracks(album);
 };
 
 watch(
@@ -333,13 +339,30 @@ watch(
   },
 );
 
-useDetailItemUpdates(itemDetails, { providerItem: props });
+useDetailItemUpdates(itemDetails, {
+  get providerItem() {
+    return { ...props, mediaType: MediaType.ALBUM };
+  },
+  // an update can change the tracks the hero counts and times
+  onUpdate: () => {
+    if (itemDetails.value) loadHeroTracks(itemDetails.value);
+  },
+});
 
 const loadTracks = async function (params: LoadDataParams) {
-  if (!itemDetails.value) return [];
-  const tracks = await loadAlbumTracks(itemDetails.value, params.libraryOnly);
-  // the hero counts the whole album, not the library half of it
-  if (!params.libraryOnly) albumTracks.value = tracks;
+  const album = itemDetails.value;
+  if (!album) return [];
+  const tracks = await loadAlbumTracks(
+    album,
+    !!params.libraryOnly,
+    params.search,
+    params.limit,
+    params.offset,
+    params.sortField,
+    params.sortDirection,
+    params.favoritesOnly,
+  );
+  if (itemDetails.value?.uri !== album.uri) return [];
   return tracks;
 };
 
@@ -355,6 +378,23 @@ const UpdateItemInDb = async function () {
 /** Switch the artist source from the shelf badge; the shelf reloads that source. */
 function selectMoreFromArtistSource(source: RowSource) {
   albumRows.setSource("more_from_artist", source);
+}
+
+/** Loads every track of the album for the hero; a failure is reported by the api. */
+function loadHeroTracks(album: Album) {
+  const request = ++heroTracksRequest;
+  loadAlbumTracks(album, false, undefined, 0).then(
+    (tracks) => {
+      // a slower response, of an older load or a previous album, must not count
+      if (
+        request === heroTracksRequest &&
+        itemDetails.value?.uri === album.uri
+      ) {
+        albumTracks.value = tracks;
+      }
+    },
+    () => undefined,
+  );
 }
 
 /**
@@ -379,23 +419,20 @@ async function loadFullArtist() {
 }
 
 /**
- * Resolves a MusicBrainz release to the same album on one of the user's music
- * services, which is what the page shows. Returns undefined when none of them
- * has it, leaving the page for where the user came from.
+ * Looks up an external album in the library or on one of the user's music
+ * services, which is what the page shows. Returns undefined when it is not
+ * found, leaving the page for where the user came from.
  */
-async function resolveMusicBrainzAlbum(
+async function resolveExternalAlbum(
   itemId: string,
+  provider: string,
 ): Promise<Album | undefined> {
   try {
-    return (await api.getItem(
-      MediaType.ALBUM,
-      itemId,
-      MUSICBRAINZ_PROVIDER,
-    )) as Album;
+    return (await api.getItem(MediaType.ALBUM, itemId, provider)) as Album;
   } catch {
     // the server's own message is already on screen as a toast; a lookup that
     // outlived a move to another album must not pull the user off that one
-    if (itemId === props.itemId && props.provider === MUSICBRAINZ_PROVIDER) {
+    if (itemId === props.itemId && provider === props.provider) {
       backFromMediaDetails(router);
     }
     return undefined;

@@ -1,8 +1,11 @@
 import MusicQuizPlaybackControls from "@/components/music-quiz/MusicQuizPlaybackControls.vue";
 import type { MusicQuizPlaybackOptions } from "@/composables/music-quiz/useMusicQuiz";
+import api from "@/plugins/api";
+import type { Player } from "@/plugins/api/interfaces";
+import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, nextTick, ref } from "vue";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
@@ -19,7 +22,14 @@ const PLAYBACK_OPTIONS = {
   ],
 } satisfies MusicQuizPlaybackOptions;
 
+const LAPTOP = { player_id: "laptop", name: "Marcel's Mac (Chrome)" };
+
 describe("MusicQuizPlaybackControls", () => {
+  afterEach(() => {
+    webPlayer.player_id = null;
+    delete api.players[LAPTOP.player_id];
+  });
+
   it("provides responsive, labelled radio and player controls", () => {
     const wrapper = mountControls();
     const fieldSet = wrapper.get('[data-slot="field-set"]');
@@ -81,18 +91,64 @@ describe("MusicQuizPlaybackControls", () => {
     expect(wrapper.get("#music-quiz-venue-player").text()).toBe("Living Room");
     wrapper.unmount();
   });
+
+  it("marks the selected player of this device", () => {
+    webPlayer.player_id = LAPTOP.player_id;
+    api.players[LAPTOP.player_id] = {
+      player_id: LAPTOP.player_id,
+      output_protocols: [],
+    } as unknown as Player;
+    const wrapper = mountControls(
+      {
+        ...PLAYBACK_OPTIONS,
+        venue_players: [...PLAYBACK_OPTIONS.venue_players, LAPTOP],
+      },
+      LAPTOP.player_id,
+    );
+
+    const trigger = wrapper.get("#music-quiz-venue-player");
+    expect(trigger.text()).toContain(LAPTOP.name);
+    expect(trigger.get(".player-device-badge-label").text()).toBe(
+      "this_device",
+    );
+    expect(
+      wrapper.find('[data-testid="music-quiz-play-on-this-device"]').exists(),
+    ).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("stops switching to this device when the host picks a mode", async () => {
+    const wrapper = mountControls();
+    const playHere = wrapper.get<HTMLButtonElement>(
+      '[data-testid="music-quiz-play-on-this-device"]',
+    );
+
+    await playHere.trigger("click");
+    expect(playHere.element.disabled).toBe(true);
+
+    await wrapper.get("#music-quiz-playback-remote").trigger("click");
+    await flushPromises();
+    expect(
+      wrapper.get("#music-quiz-playback-remote").attributes("aria-checked"),
+    ).toBe("true");
+    expect(playHere.element.disabled).toBe(false);
+    wrapper.unmount();
+  });
 });
 
-function mountControls() {
+function mountControls(
+  options: MusicQuizPlaybackOptions = PLAYBACK_OPTIONS,
+  venuePlayerId = "living-room",
+) {
   return mount(
     defineComponent({
       components: { MusicQuizPlaybackControls },
       setup() {
         const selection = ref({
           mode: "venue" as const,
-          venuePlayerId: "living-room",
+          venuePlayerId,
         });
-        return { options: PLAYBACK_OPTIONS, selection };
+        return { options, selection };
       },
       template: `
         <MusicQuizPlaybackControls
@@ -104,7 +160,11 @@ function mountControls() {
         />
       `,
     }),
-    { attachTo: document.body },
+    {
+      attachTo: document.body,
+      // PlayerDeviceBadge uses the global $t
+      global: { mocks: { $t: (key: string) => key } },
+    },
   );
 }
 

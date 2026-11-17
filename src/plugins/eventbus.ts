@@ -54,6 +54,8 @@ export type DeleteConfirmationDialogEvent = {
   // when set, a checkbox with this label has to be ticked before the confirm
   // button is enabled
   acknowledgement?: string;
+  // shown as a list below the message, such as the names of what is removed
+  items?: string[];
   onConfirm: () => void | Promise<void>;
 };
 
@@ -66,6 +68,16 @@ export type PlayerGroupPlaybackDialogEvent = {
   isThisDevice: boolean;
   onKeepPlaying: () => void | Promise<void>;
   onStopAndUngroup: () => void | Promise<void>;
+};
+
+// Playback was refused because another player is playing from the only stream of a
+// provider, such as a Spotify account
+export type StreamHeldDialogEvent = {
+  holderQueueId: string;
+  holderName: string;
+  providerName: string;
+  // sends the refused command again
+  retry: () => Promise<unknown>;
 };
 
 export type ImportPlaylistEvent = {
@@ -132,6 +144,7 @@ export type Events = {
   deleteGenreDialog: DeleteGenreDialogEvent;
   deleteConfirmationDialog: DeleteConfirmationDialogEvent;
   playerGroupPlaybackDialog: PlayerGroupPlaybackDialogEvent;
+  streamHeldDialog: StreamHeldDialogEvent;
   linkGenreDialog: LinkGenreDialogEvent;
   importPlaylistDialog: ImportPlaylistEvent;
   migratePlaylistDialog: MigratePlaylistDialogEvent;

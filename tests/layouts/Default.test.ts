@@ -1,6 +1,8 @@
 import Default from "@/layouts/default/Default.vue";
 import View from "@/layouts/default/View.vue";
 import Footer from "@/layouts/default/Footer.vue";
+import api from "@/plugins/api";
+import { type Player, PlayerType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { type VueWrapper, mount } from "@vue/test-utils";
 import { nextTick } from "vue";
@@ -31,8 +33,8 @@ const router = createRouter({
 
 let wrapper: VueWrapper | undefined;
 
-async function mountLayout() {
-  await router.push("/");
+async function mountLayout(query: Record<string, string> = {}) {
+  await router.push({ path: "/", query });
   await router.isReady();
   wrapper = mount(Default, {
     shallow: true,
@@ -45,9 +47,25 @@ async function mountLayout() {
   return wrapper;
 }
 
+/** A player that can become the active one. */
+function selectablePlayer(playerId: string, legacyIds: string[] = []): Player {
+  return {
+    player_id: playerId,
+    name: playerId,
+    type: PlayerType.PLAYER,
+    enabled: true,
+    available: true,
+    needs_setup: false,
+    legacy_ids: legacyIds,
+  } as Player;
+}
+
 describe("Default layout", () => {
   beforeEach(() => {
     store.frameless = false;
+    store.activePlayerId = undefined;
+    for (const playerId of Object.keys(api.players))
+      delete api.players[playerId];
   });
 
   afterEach(() => {
@@ -75,5 +93,89 @@ describe("Default layout", () => {
     await nextTick();
 
     expect(layout.findComponent(View).element).toBe(view);
+  });
+
+  it("selects the player a link names", async () => {
+    api.players.kitchen = selectablePlayer("kitchen");
+
+    await mountLayout({ player: "kitchen" });
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("selects the player a link names by an id it had before a merge", async () => {
+    api.players.kitchen = selectablePlayer("kitchen", ["absorbed"]);
+
+    await mountLayout({ player: "absorbed" });
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("selects the linked player once the server lists it", async () => {
+    await mountLayout({ player: "absorbed" });
+    expect(store.activePlayerId).toBeUndefined();
+
+    api.players.kitchen = selectablePlayer("kitchen", ["absorbed"]);
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("selects the linked player once it becomes available", async () => {
+    api.players.kitchen = { ...selectablePlayer("kitchen"), available: false };
+
+    await mountLayout({ player: "kitchen" });
+    expect(store.activePlayerId).toBeUndefined();
+
+    api.players.kitchen.available = true;
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("selects the linked player once it gets the old id the link names", async () => {
+    api.players.kitchen = selectablePlayer("kitchen");
+    api.players.absorbed = {
+      ...selectablePlayer("absorbed"),
+      available: false,
+    };
+
+    await mountLayout({ player: "absorbed" });
+    expect(store.activePlayerId).toBeUndefined();
+
+    // the server removes the absorbed player before it updates the one it merged into
+    delete api.players.absorbed;
+    await nextTick();
+    api.players.kitchen = selectablePlayer("kitchen", ["absorbed"]);
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("follows the linked player into the player it is merged into", async () => {
+    api.players.kitchen = selectablePlayer("kitchen");
+    api.players.absorbed = selectablePlayer("absorbed");
+
+    await mountLayout({ player: "absorbed" });
+    expect(store.activePlayerId).toBe("absorbed");
+
+    delete api.players.absorbed;
+    await nextTick();
+    api.players.kitchen = selectablePlayer("kitchen", ["absorbed"]);
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
+  });
+
+  it("selects the linked player again when the players change, as before", async () => {
+    api.players.kitchen = selectablePlayer("kitchen");
+    api.players.living = selectablePlayer("living");
+    await mountLayout({ player: "kitchen" });
+    store.activePlayerId = "living";
+
+    api.players.bath = selectablePlayer("bath");
+    await nextTick();
+
+    expect(store.activePlayerId).toBe("kitchen");
   });
 });

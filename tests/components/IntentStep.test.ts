@@ -112,7 +112,7 @@ describe("IntentStep", () => {
     landAnswer(true);
 
     await expect(leaving).resolves.toBe(true);
-    expect(wrapper.emitted("advance")).toHaveLength(1);
+    expect(wrapper.emitted("advance")).toBeUndefined();
 
     wrapper.unmount();
   });
@@ -142,6 +142,20 @@ describe("IntentStep", () => {
       "music_hub",
     );
 
+    wrapper.unmount();
+  });
+
+  it("previews the next steps for the selected answer without advancing", async () => {
+    const wrapper = await mountStep();
+    const preview = wrapper.find("[data-testid=onboarding-intent-preview]");
+    expect(preview.text()).toBe("onboarding.steps.intent.music_hub.preview");
+
+    await card(wrapper, "phone_apps").trigger("click");
+    await flushPromises();
+
+    expect(preview.text()).toBe("onboarding.steps.intent.phone_apps.preview");
+    expect(card(wrapper, "phone_apps").attributes("aria-pressed")).toBe("true");
+    expect(wrapper.emitted("advance")).toBeUndefined();
     wrapper.unmount();
   });
 
