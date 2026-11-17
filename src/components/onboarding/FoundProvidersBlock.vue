@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="found.length > 0"
+    v-if="offered.length > 0"
     class="flex flex-col gap-3"
     data-testid="onboarding-found-providers"
   >
@@ -15,7 +15,7 @@
 
     <ItemGroup class="gap-2">
       <Item
-        v-for="manifest in found"
+        v-for="manifest in offered"
         :key="manifest.domain"
         as="label"
         variant="outline"
@@ -79,19 +79,31 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
+import { configuredProviders } from "@/composables/useOnboarding";
 import { getFoundPlayerProviders } from "@/helpers/catalog_recommendations";
 import { buildCatalogEntries } from "@/helpers/provider_catalog";
 import { api } from "@/plugins/api";
-import { FlowStepType, type ProviderManifest } from "@/plugins/api/interfaces";
+import {
+  FlowStepType,
+  type ProviderManifest,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Plus } from "@lucide/vue";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 
 // the player providers found on the network that the user may add here, and
 // the ones of them that are ticked
 const found = ref<ProviderManifest[]>([]);
 const selected = ref(new Set<string>());
+// what is set up meanwhile, such as through "Add more players", is no longer offered
+const offered = computed(() => {
+  const configured = new Set(
+    configuredProviders(ProviderType.PLAYER).map((provider) => provider.domain),
+  );
+  return found.value.filter((manifest) => !configured.has(manifest.domain));
+});
 const busy = ref(false);
 // the adding in flight, which a second call waits for instead of adding again
 let pending: Promise<boolean> | null = null;
@@ -135,7 +147,7 @@ function select(domain: string, ticked: boolean): void {
 }
 
 async function addTicked(): Promise<boolean> {
-  const ticked = found.value.filter((manifest) =>
+  const ticked = offered.value.filter((manifest) =>
     selected.value.has(manifest.domain),
   );
   if (ticked.length === 0) return true;

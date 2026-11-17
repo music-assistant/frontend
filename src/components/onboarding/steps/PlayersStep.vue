@@ -168,14 +168,14 @@ const foundProviders = useTemplateRef("foundProviders");
 const busy = computed(() => foundProviders.value?.busy ?? false);
 
 /**
- * The wizard asking whether it may move on. The found providers that are still
- * ticked are added first, and one that could not be added keeps the wizard
- * here. Pausing adds nothing.
+ * The wizard asking whether it may leave the step. Moving forward adds the
+ * found providers that are still ticked first, and one that could not be added
+ * keeps the wizard here. Going back, jumping elsewhere or pausing adds nothing.
  */
 const beforeLeave = async function (
   options?: StepLeaveOptions,
 ): Promise<boolean> {
-  if (options?.pausing || !foundProviders.value) return true;
+  if (!options?.forward || !foundProviders.value) return true;
   return await foundProviders.value.addSelected();
 };
 

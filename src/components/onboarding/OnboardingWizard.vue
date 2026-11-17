@@ -341,7 +341,7 @@ const next = async function () {
   if (moving.value || stepBusy.value) return;
   moving.value = true;
   try {
-    if (!(await leaveStep())) return;
+    if (!(await leaveStep({ forward: true }))) return;
     const following = steps.value[currentIndex.value + 1];
     if (following) goTo(following.id);
   } finally {

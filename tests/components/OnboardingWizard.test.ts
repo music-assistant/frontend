@@ -1,6 +1,8 @@
 import {
+  CatalogRecommendationReason,
   ConfigEntryType,
   EventType,
+  FlowStepType,
   ProviderType,
   UserRole,
   type EventMessage,
@@ -11,6 +13,7 @@ import type { OnboardingStepId } from "@/helpers/onboarding";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playerConfig } from "../fixtures/playerConfig";
+import { providerManifest } from "../fixtures/providerManifest";
 import {
   BUILTIN_ROLE_SCOPES,
   MEMBER_WITHOUT_OWN_SCOPES,
@@ -39,6 +42,8 @@ const {
       { builtin: boolean; name?: string }
     >,
     getAllUsers: vi.fn(),
+    getCatalogRecommendations: vi.fn(),
+    setupProvider: vi.fn(),
     configureRemoteAccess: vi.fn(),
     getCoreConfig: vi.fn(),
     getPlayerConfig: vi.fn(),
@@ -373,6 +378,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     apiMock.getPlayerConfigs.mockReset();
     apiMock.getPlayerConfigs.mockResolvedValue([]);
     apiMock.getPlayerConfig.mockReset();
+    apiMock.getCatalogRecommendations.mockReset();
+    apiMock.getCatalogRecommendations.mockResolvedValue([]);
+    apiMock.setupProvider.mockReset();
     apiMock.getAllUsers.mockReset();
     apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
     apiMock.getCoreConfig.mockReset();
@@ -1326,6 +1334,105 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     ).toHaveLength(1);
 
     wrapper.unmount();
+  });
+
+  describe("the speakers found on the network", () => {
+    beforeEach(() => {
+      // a music source, so the progress list can jump back to its step
+      addMusicProvider();
+      apiMock.providerManifests["sonos"] = providerManifest({
+        domain: "sonos",
+        name: "Sonos",
+        type: ProviderType.PLAYER,
+      });
+      apiMock.getCatalogRecommendations.mockResolvedValue([
+        {
+          domain: "sonos",
+          reason: CatalogRecommendationReason.DISCOVERED,
+          detail: null,
+        },
+      ]);
+      apiMock.setupProvider.mockResolvedValue({
+        flow_id: "flow",
+        step_id: "finish",
+        type: FlowStepType.FINISH,
+        entries: [],
+        errors: {},
+      });
+    });
+
+    const offered = (wrapper: Awaited<ReturnType<typeof mountWizard>>) =>
+      wrapper.findAll("[data-testid=onboarding-found-provider]");
+
+    it("adds the ticked ones when moving on", async () => {
+      const wrapper = await mountWizard({ step: "players" });
+      await flushPromises();
+      expect(offered(wrapper)).toHaveLength(1);
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+
+      expect(apiMock.setupProvider).toHaveBeenCalledWith("sonos", {
+        suppressGlobalError: true,
+      });
+      expect(heading(wrapper)).not.toBe("onboarding.steps.players.title");
+
+      wrapper.unmount();
+    });
+
+    it("adds nothing on the way back, and never holds the way back up", async () => {
+      // an add that would fail, and so keep the wizard on the step
+      apiMock.setupProvider.mockRejectedValue(new Error("failed"));
+
+      const wrapper = await mountWizard({ step: "players" });
+      await flushPromises();
+      expect(offered(wrapper)).toHaveLength(1);
+
+      await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+
+      // the same for a jump from the progress list
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.players.title");
+      await wrapper
+        .findAll("[data-testid=onboarding-progress-step]")[0]
+        .trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+
+      expect(apiMock.setupProvider).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    });
+
+    it("neither offers nor adds again what got set up meanwhile", async () => {
+      const wrapper = await mountWizard({ step: "players" });
+      await flushPromises();
+      expect(offered(wrapper)).toHaveLength(1);
+
+      // set up through "Add more players" while the step is open
+      providerConfigs.list.push({
+        instance_id: "sonos--1",
+        domain: "sonos",
+        type: ProviderType.PLAYER,
+        name: null,
+        enabled: true,
+        last_error: null,
+      });
+      await reportProvidersUpdated();
+
+      expect(offered(wrapper)).toHaveLength(0);
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+
+      expect(apiMock.setupProvider).not.toHaveBeenCalled();
+      expect(heading(wrapper)).not.toBe("onboarding.steps.players.title");
+
+      wrapper.unmount();
+    });
   });
 
   it("lists the players the server already found", async () => {

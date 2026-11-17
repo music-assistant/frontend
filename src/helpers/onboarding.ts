@@ -37,9 +37,11 @@ export const APP_RECEIVER_INSTRUCTIONS: Readonly<Record<string, string>> = {
   airplay_receiver: "onboarding.airplay_receiver_hint",
 };
 
-/** How the wizard leaves a step: moving on, or pausing the setup. */
+/** How the wizard leaves a step: moving on, going back, or pausing the setup. */
 export interface StepLeaveOptions {
   pausing?: boolean;
+  // Next, the only way forward; Back and the progress list leave without it
+  forward?: boolean;
 }
 
 /** How much of the app a member wants to see, as the welcome asks it. */

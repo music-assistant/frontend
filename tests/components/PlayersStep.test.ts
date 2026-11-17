@@ -635,7 +635,9 @@ describe("PlayersStep", () => {
       await flushPromises();
       await checkbox(wrapper, 1).trigger("click");
 
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+      await expect(wrapper.vm.beforeLeave({ forward: true })).resolves.toBe(
+        true,
+      );
 
       expect(apiMock.setupProvider).toHaveBeenCalledTimes(1);
       expect(apiMock.setupProvider).toHaveBeenCalledWith("sonos", {
@@ -669,7 +671,9 @@ describe("PlayersStep", () => {
         wrapper.find("[data-testid=onboarding-found-providers]").exists(),
       ).toBe(false);
       // nothing is left to add on the way out
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+      await expect(wrapper.vm.beforeLeave({ forward: true })).resolves.toBe(
+        true,
+      );
       expect(apiMock.setupProvider).toHaveBeenCalledTimes(1);
 
       wrapper.unmount();
@@ -682,7 +686,9 @@ describe("PlayersStep", () => {
       const wrapper = mountStep();
       await flushPromises();
 
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
+      await expect(wrapper.vm.beforeLeave({ forward: true })).resolves.toBe(
+        false,
+      );
 
       expect(toastMock.error).toHaveBeenCalledWith(
         "onboarding.steps.players.provider_add_failed:SONOS",
@@ -694,12 +700,15 @@ describe("PlayersStep", () => {
       wrapper.unmount();
     });
 
-    it("adds nothing when the setup is only paused", async () => {
+    it("adds nothing when going back, jumping elsewhere or pausing", async () => {
       findProvider("sonos");
+      // an add that would fail, and so keep the wizard on the step
+      apiMock.setupProvider.mockRejectedValue(new Error("failed"));
 
       const wrapper = mountStep();
       await flushPromises();
 
+      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
       await expect(wrapper.vm.beforeLeave({ pausing: true })).resolves.toBe(
         true,
       );
