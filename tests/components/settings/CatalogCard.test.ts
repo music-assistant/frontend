@@ -133,6 +133,20 @@ describe("CatalogCard", () => {
     );
   });
 
+  it("says why it is suggested on a badge, with its name and only when given", () => {
+    expect(
+      mountCard(entry()).find("[data-testid='catalog-card-badge']").exists(),
+    ).toBe(false);
+
+    const wrapper = mountCard(entry(), { badge: "Popular" });
+
+    expect(wrapper.get("[data-testid='catalog-card-badge']").text()).toBe(
+      "Popular",
+    );
+    // as text in the card, read right after its name
+    expect(wrapper.text()).toMatch(/^Spotify\s*Popular/);
+  });
+
   it("offers to stop suggesting it only when dismissible", async () => {
     expect(
       mountCard(entry()).find("[data-testid='catalog-card-dismiss']").exists(),
