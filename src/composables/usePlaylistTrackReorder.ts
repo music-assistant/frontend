@@ -15,7 +15,15 @@ import type {
   MediaItemType,
   MediaItemTypeOrItemMapping,
 } from "@/plugins/api/interfaces";
-import { Ref, computed, nextTick, onBeforeUnmount, ref, toRaw } from "vue";
+import {
+  Ref,
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  ref,
+  toRaw,
+  watch,
+} from "vue";
 
 // frames to wait for the virtual scroller to render a row scrolled into view
 const FOCUS_RENDER_FRAMES = 10;
@@ -126,6 +134,12 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
       }
       do {
         changedMeanwhile = false;
+        // the rows can't be read while the server is out of reach; they are
+        // read back once it reconnects
+        if (!canSavePlaylistMoves()) {
+          if (failed) onReloaded(true);
+          return;
+        }
         await reload();
         onReloaded(failed);
         failed = false;
@@ -138,6 +152,16 @@ export function usePlaylistTrackReorder(options: PlaylistTrackReorderOptions) {
 
   // Reads the rows back after the playlist changed.
   const refresh = () => settle();
+
+  // The playlist may have changed while the server was out of reach: read the
+  // rows back before the listed positions are used again.
+  watch(
+    () => api.state.value === ConnectionState.INITIALIZED,
+    (connected, wasConnected) => {
+      if (connected && !wasConnected && playlistId() !== undefined)
+        void settle();
+    },
+  );
 
   const moveRows = async function (indices: number[], toIndex: number) {
     const id = playlistId();

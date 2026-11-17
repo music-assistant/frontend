@@ -5,13 +5,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, ref, toRaw } from "vue";
 import { track } from "../fixtures/track";
 
-const { apiMock } = vi.hoisted(() => ({
-  apiMock: {
-    movePlaylistTrack: vi.fn<() => Promise<void>>(),
-    movePlaylistTracks: vi.fn<() => Promise<void>>(),
-    state: { value: "initialized" },
-  },
-}));
+const { apiMock } = await vi.hoisted(async () => {
+  const { ref } = await import("vue");
+  return {
+    apiMock: {
+      movePlaylistTrack: vi.fn<() => Promise<void>>(),
+      movePlaylistTracks: vi.fn<() => Promise<void>>(),
+      state: ref("initialized"),
+    },
+  };
+});
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -106,6 +109,7 @@ describe("usePlaylistTrackReorder", () => {
   afterEach(() => {
     mounted.splice(0).forEach((wrapper) => wrapper.unmount());
     vi.clearAllMocks();
+    apiMock.state.value = "initialized";
   });
 
   it("keeps the moved tracks selected, with their new positions", async () => {
@@ -141,6 +145,31 @@ describe("usePlaylistTrackReorder", () => {
     expect(reload).toHaveBeenCalledOnce();
     expect(ids(items.value)).toEqual(["A", "B", "C", "D"]);
     expect(reorder.saving.value).toBe(false);
+  });
+
+  it("reads the order back once the server is back after a move lost the connection", async () => {
+    apiMock.movePlaylistTracks.mockImplementation(async () => {
+      apiMock.state.value = "connecting";
+      throw new Error("connection lost");
+    });
+    const { items, selection, reload, reorder } = setup(
+      ["A", "B", "C", "D"],
+      [1, 3],
+    );
+    reload.mockImplementation(async () => {
+      items.value = listing("A", "B", "C", "D");
+    });
+
+    await reorder.moveRows([1, 3], 0);
+    // the rows aren't read while the server is out of reach
+    expect(reload).not.toHaveBeenCalled();
+    expect(selection.value).toEqual([]);
+    expect(reorder.saving.value).toBe(false);
+
+    apiMock.state.value = "initialized";
+    await flushPromises();
+    expect(reload).toHaveBeenCalledOnce();
+    expect(ids(items.value)).toEqual(["A", "B", "C", "D"]);
   });
 
   it("lets the selection go when the move fails", async () => {
