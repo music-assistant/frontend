@@ -233,6 +233,8 @@ async function buildMenu(item?: MediaItemType) {
 <style scoped>
 .detail-hero {
   position: relative;
+  /* its heroes lay out by the room it has, which the sidebar narrows */
+  container: detail-hero / inline-size;
   display: flex;
   flex-direction: column;
   /* the design height; taller content grows the hero */
@@ -316,8 +318,7 @@ async function buildMenu(item?: MediaItemType) {
   opacity: 1;
 }
 
-/* sits at the bottom of the hero, above the artwork layers. A container so its
-   controls collapse to the room the hero actually has, which the sidebar narrows */
+/* sits at the bottom of the hero, above the artwork layers */
 .detail-hero__body {
   position: relative;
   margin: auto 28px 24px;
@@ -325,7 +326,6 @@ async function buildMenu(item?: MediaItemType) {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  container: detail-hero / inline-size;
 }
 .detail-hero__main {
   display: flex;
@@ -352,6 +352,18 @@ async function buildMenu(item?: MediaItemType) {
   display: none;
 }
 
+/* a narrow hero stacks the facts under the rest, as on a phone */
+@container detail-hero (width < 48rem) {
+  .detail-hero__body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .detail-hero__aside {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
 /* the bottom margin clears the strip where the hero fades into the page */
 .detail-hero--phone .detail-hero__body {
   margin: auto 16px 28px;
