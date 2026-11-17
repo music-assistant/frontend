@@ -33,22 +33,32 @@
             class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
           >
             <div
-              v-if="authors.length"
+              v-for="credit in credits"
+              :key="credit.label"
               class="flex min-w-0 items-center gap-2"
-              :title="$t('authors')"
+              :title="$t(credit.label)"
             >
-              <PenLine :size="16" class="flex-none" aria-hidden="true" />
-              <span class="sr-only">{{ $t("authors") }}:</span>
-              <span class="min-w-0 truncate">{{ authors.join(" / ") }}</span>
-            </div>
-            <div
-              v-if="narrators.length"
-              class="flex min-w-0 items-center gap-2"
-              :title="$t('narrators')"
-            >
-              <Mic :size="16" class="flex-none" aria-hidden="true" />
-              <span class="sr-only">{{ $t("narrators") }}:</span>
-              <span class="min-w-0 truncate">{{ narrators.join(" / ") }}</span>
+              <component
+                :is="credit.icon"
+                :size="16"
+                class="flex-none"
+                aria-hidden="true"
+              />
+              <span class="sr-only">{{ $t(credit.label) }}:</span>
+              <span class="min-w-0 truncate">
+                <template v-for="(person, index) in credit.people" :key="index">
+                  <span v-if="index > 0"> / </span>
+                  <span v-if="typeof person === 'string'">{{ person }}</span>
+                  <button
+                    v-else
+                    type="button"
+                    class="inline cursor-pointer border-0 bg-transparent p-0 align-baseline text-inherit [font:inherit] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    @click="gotoArtist(person)"
+                  >
+                    {{ person.name }}
+                  </button>
+                </template>
+              </span>
             </div>
             <div v-if="item.duration > 0" class="flex items-center gap-2">
               <Timer :size="16" class="flex-none" aria-hidden="true" />
@@ -95,14 +105,15 @@ import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Progress } from "@/components/ui/progress";
 import { getPlayedState } from "@/helpers/played_state";
+import { formatDuration, getImageThumbForItem } from "@/helpers/utils";
 import {
-  formatDuration,
-  getAuthorsNarratorsArray,
-  getImageThumbForItem,
-} from "@/helpers/utils";
-import { ImageType, type Audiobook } from "@/plugins/api/interfaces";
+  ImageType,
+  type Artist,
+  type Audiobook,
+} from "@/plugins/api/interfaces";
 import { Mic, PenLine, Timer } from "@lucide/vue";
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 
 export interface Props {
   item?: Audiobook;
@@ -110,11 +121,14 @@ export interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{ (e: "edit-rows"): void }>();
 
-const authors = computed(() =>
-  getAuthorsNarratorsArray(props.item?.authors ?? []),
-);
-const narrators = computed(() =>
-  getAuthorsNarratorsArray(props.item?.narrators ?? []),
+const router = useRouter();
+
+// a provider's artist is a link, a plain name stays text
+const credits = computed(() =>
+  [
+    { label: "authors", icon: PenLine, people: props.item?.authors ?? [] },
+    { label: "narrators", icon: Mic, people: props.item?.narrators ?? [] },
+  ].filter((credit) => credit.people.length),
 );
 const wideArt = computed(
   () =>
@@ -130,6 +144,12 @@ const playedState = computed(() =>
 const position = computed(() =>
   Math.max(0, (props.item?.resume_position_ms ?? 0) / 1000),
 );
+const gotoArtist = function (artist: Artist) {
+  router.push({
+    name: "artist",
+    params: { itemId: artist.item_id, provider: artist.provider },
+  });
+};
 const progress = computed(() => {
   const item = props.item;
   if (!item || !(item.duration > 0)) return undefined;

@@ -17,6 +17,7 @@ const provider = (
     name: instance_id,
     instance_id,
     supported_features: [],
+    supported_artist_types: [],
     available: true,
     is_streaming_provider: null,
   }) as ProviderInstance;
