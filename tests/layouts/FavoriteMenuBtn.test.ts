@@ -8,6 +8,7 @@ import {
   type PlayableMediaItemType,
   type Player,
   type QueueItem,
+  type Track,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
@@ -35,20 +36,21 @@ const { favoriteHandlers } = vi.hoisted(() => ({
   favoriteHandlers: [] as Array<(evt: EventMessage) => void>,
 }));
 
-vi.mock("@/plugins/api", () => {
+vi.mock("@/plugins/api", async () => {
+  const { ref } = await vi.importActual<typeof import("vue")>("vue");
   const api = {
     addItemToFavorites: vi.fn(),
     removeItemFromFavorites: vi.fn(),
     setFavorite: vi.fn(),
     getLibraryItem: vi.fn(),
-    getLibraryTracks: vi.fn(),
-    getTrackByName: vi.fn(),
+    getCurrentlyPlayingTrack: vi.fn(),
     subscribe: vi.fn((type: string, handler: (evt: EventMessage) => void) => {
       if (type === "favorite_updated") favoriteHandlers.push(handler);
       return () => {};
     }),
     providers: {},
     players: {},
+    serverInfo: ref({ schema_version: 116 }),
   };
   return { api, default: api };
 });
@@ -76,8 +78,7 @@ vi.mock("@/plugins/auth", async () => {
 const addItemToFavorites = vi.mocked(api.addItemToFavorites);
 const removeItemFromFavorites = vi.mocked(api.removeItemFromFavorites);
 const setFavorite = vi.mocked(api.setFavorite);
-const getLibraryTracks = vi.mocked(api.getLibraryTracks);
-const getTrackByName = vi.mocked(api.getTrackByName);
+const getCurrentlyPlayingTrack = vi.mocked(api.getCurrentlyPlayingTrack);
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -91,7 +92,7 @@ vi.mock("@/plugins/store", async () => {
 });
 
 const mockStore = store as unknown as {
-  activePlayer?: Pick<Player, "current_media">;
+  activePlayer?: Pick<Player, "player_id" | "current_media">;
   curQueueItem?: QueueItem;
   currentUser?: ReturnType<typeof user>;
 };
@@ -114,6 +115,7 @@ async function setPlaying(mediaItem: PlayableMediaItemType) {
 // an ad
 async function setStationSong(title: string | null, artistName?: string) {
   mockStore.activePlayer = {
+    player_id: "player-1",
     current_media: {
       uri: "radio-stream",
       media_type: MediaType.RADIO,
@@ -192,8 +194,8 @@ beforeEach(async () => {
   vi.mocked(authManager.hasScope).mockImplementation(
     scopeChecker(BUILTIN_ROLE_SCOPES.user),
   );
-  getLibraryTracks.mockResolvedValue([]);
-  getTrackByName.mockResolvedValue(null);
+  getCurrentlyPlayingTrack.mockResolvedValue(null);
+  api.serverInfo.value = { schema_version: 116 } as typeof api.serverInfo.value;
   mockStore.currentUser = user();
   mockStore.activePlayer = undefined;
   await setPlaying(track());
@@ -362,10 +364,18 @@ describe("FavoriteMenuBtn for a station that names its song", () => {
   });
   const librarySong = track({
     item_id: "7",
-    name: "title",
-    artists: [artist({ name: "ARTIST" })],
+    name: "Title",
+    artists: [artist({ name: "Artist" })],
     favorite: true,
   });
+
+  // what the server answers: the library lookup, and the search in the music
+  // providers
+  function resolveSong(library: Track | null, providers: Track | null) {
+    getCurrentlyPlayingTrack.mockImplementation(async (_, libraryOnly) =>
+      libraryOnly ? library && { ...library } : providers && { ...providers },
+    );
+  }
 
   beforeEach(async () => {
     await setPlaying(station);
@@ -402,14 +412,31 @@ describe("FavoriteMenuBtn for a station that names its song", () => {
     ]);
   });
 
-  it("looks the song up and adds it to the favourites", async () => {
+  // a server that can not tell which track plays
+  it("offers the menu of the station on an older server", async () => {
+    api.serverInfo.value = {
+      schema_version: 115,
+    } as typeof api.serverInfo.value;
+    const wrapper = mountButton();
     await setStationSong("Title", "Artist");
-    getTrackByName.mockResolvedValue({ ...song });
+
+    expect(wrapper.get(".dropdown-content").text()).not.toContain("–");
+    expect(entryLabels(wrapper)).toEqual([
+      "favorites_add",
+      "favorites_dislike",
+      "add_playlist",
+    ]);
+    expect(getCurrentlyPlayingTrack).not.toHaveBeenCalled();
+  });
+
+  it("asks the server for the song and adds it to the favourites", async () => {
+    resolveSong(null, song);
+    await setStationSong("Title", "Artist");
     const wrapper = mountButton();
 
     await pickEntry(wrapper, "favorites_song_add");
 
-    expect(getTrackByName).toHaveBeenCalledWith("Title", "Artist");
+    expect(getCurrentlyPlayingTrack).toHaveBeenLastCalledWith("player-1");
     expect(addItemToFavorites).toHaveBeenCalledWith(
       expect.objectContaining({ item_id: "song-1" }),
     );
@@ -420,13 +447,13 @@ describe("FavoriteMenuBtn for a station that names its song", () => {
     expect(entryLabels(wrapper)[0]).toBe("favorites_song_remove");
   });
 
-  it("looks the song up and hands it to the playlist dialog", async () => {
+  it("asks the server for the song and hands it to the playlist dialog", async () => {
+    resolveSong(null, song);
     await setStationSong("Title", "Artist");
-    getTrackByName.mockResolvedValue(song);
 
     await pickEntry(mountButton(), "add_song_playlist");
 
-    expect(getTrackByName).toHaveBeenCalledWith("Title", "Artist");
+    expect(getCurrentlyPlayingTrack).toHaveBeenLastCalledWith("player-1");
     expect(eventbus.emit).toHaveBeenCalledWith("playlistdialog", {
       items: [song],
     });
@@ -453,11 +480,10 @@ describe("FavoriteMenuBtn for a station that names its song", () => {
     await pickEntry(mountButton(), "favorites_station_add");
 
     expect(addItemToFavorites).toHaveBeenCalledWith(station);
-    expect(getTrackByName).not.toHaveBeenCalled();
   });
 
   it("shows the song as liked when it is a favourite in the library", async () => {
-    getLibraryTracks.mockResolvedValue([{ ...librarySong }]);
+    resolveSong(librarySong, null);
     const wrapper = mountButton();
     await setStationSong("Title", "Artist");
 
@@ -470,15 +496,17 @@ describe("FavoriteMenuBtn for a station that names its song", () => {
   });
 
   it("follows a like and an unlike of the song made elsewhere", async () => {
-    await setStationSong("Title", "Artist");
+    resolveSong({ ...librarySong, favorite: null }, null);
     const wrapper = mountButton();
+    await setStationSong("Title", "Artist");
     expect(triggerFill(wrapper)).toBe("none");
 
-    getLibraryTracks.mockResolvedValue([{ ...librarySong }]);
+    resolveSong(librarySong, null);
     emitFavoriteUpdate({ uri: librarySong.uri, favorite: true });
     await flushPromises();
     expect(triggerFill(wrapper)).toBe("currentColor");
 
+    resolveSong({ ...librarySong, favorite: null }, null);
     emitFavoriteUpdate({ uri: librarySong.uri, favorite: null });
     await flushPromises();
     expect(triggerFill(wrapper)).toBe("none");
@@ -490,11 +518,9 @@ describe("FavoriteMenuBtn for a station that names its song", () => {
     await setStationSong("Title", "Artist");
     await setStationSong("Other title", "Other artist");
 
-    expect(getLibraryTracks).toHaveBeenLastCalledWith(
-      true,
-      "Other artist - Other title",
-      5,
-    );
-    expect(getTrackByName).not.toHaveBeenCalled();
+    expect(getCurrentlyPlayingTrack).toHaveBeenCalledTimes(2);
+    for (const call of getCurrentlyPlayingTrack.mock.calls) {
+      expect(call).toEqual(["player-1", true]);
+    }
   });
 });

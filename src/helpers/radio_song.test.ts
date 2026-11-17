@@ -1,11 +1,6 @@
-import {
-  matchesRadioSong,
-  radioSong,
-  radioSongLabel,
-} from "@/helpers/radio_song";
+import { radioSong, radioSongLabel } from "@/helpers/radio_song";
 import type { PlayerMedia } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
-import { artist } from "../../tests/fixtures/artist";
 import { radio } from "../../tests/fixtures/radio";
 import { track } from "../../tests/fixtures/track";
 
@@ -40,30 +35,5 @@ describe("radioSongLabel", () => {
     expect(radioSongLabel({ artist: "Artist", title: "Title" })).toBe(
       "Artist – Title",
     );
-  });
-});
-
-describe("matchesRadioSong", () => {
-  const song = { artist: "The Artist", title: "The Title" };
-
-  it("matches the title and one of the artists, ignoring case", () => {
-    const candidate = track({
-      name: "the title",
-      artists: [artist({ name: "Other" }), artist({ name: "THE ARTIST" })],
-    });
-
-    expect(matchesRadioSong(candidate, song)).toBe(true);
-  });
-
-  it.each([
-    { name: "another title", artistName: "The Artist", title: "Title" },
-    { name: "another artist", artistName: "Other", title: "The Title" },
-  ])("does not match $name", ({ artistName, title }) => {
-    const candidate = track({
-      name: title,
-      artists: [artist({ name: artistName })],
-    });
-
-    expect(matchesRadioSong(candidate, song)).toBe(false);
   });
 });

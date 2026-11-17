@@ -2,7 +2,6 @@ import {
   MediaType,
   type MediaItemType,
   type PlayerMedia,
-  type Track,
 } from "@/plugins/api/interfaces";
 
 /** The song a radio station reports it is playing. */
@@ -36,22 +35,4 @@ export function radioSong(
  */
 export function radioSongLabel(song: RadioSong): string {
   return `${song.artist} – ${song.title}`;
-}
-
-/**
- * Whether a track is the song, by its exact title and one of its artists,
- * ignoring case.
- *
- * :param track: The track to compare.
- * :param song: The song to compare it with.
- */
-export function matchesRadioSong(track: Track, song: RadioSong): boolean {
-  const title = song.title.toLowerCase();
-  const artist = song.artist.toLowerCase();
-  return (
-    track.name.toLowerCase() === title &&
-    track.artists.some(
-      (trackArtist) => trackArtist.name.toLowerCase() === artist,
-    )
-  );
 }

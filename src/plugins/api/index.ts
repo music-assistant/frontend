@@ -595,20 +595,6 @@ export class MusicAssistantApi {
     });
   }
 
-  /**
-   * Find a track by its name in the library and the music providers.
-   *
-   * :param track_name: The title of the track.
-   * :param artist_name: The name of one of its artists.
-   * :return: The best matching track, or null when none matches.
-   */
-  public getTrackByName(
-    track_name: string,
-    artist_name?: string,
-  ): Promise<Track | null> {
-    return this.sendCommand("music/track_by_name", { track_name, artist_name });
-  }
-
   public getTrackVersions(
     item_id: string,
     provider_instance_id_or_domain: string,
@@ -2485,6 +2471,26 @@ export class MusicAssistantApi {
     return this.sendCommand("players/get", {
       player_id,
       raise_unavailable: true,
+    });
+  }
+
+  /**
+   * Get the track that plays on a player; for a radio station, the song it
+   * names.
+   *
+   * :param player_id: The player to ask about.
+   * :param library_only: Look in the library only, without asking any music
+   *   provider.
+   * :return: The track with the signed-in user's favorite state, or null when
+   *   it can not be told which track plays.
+   */
+  public getCurrentlyPlayingTrack(
+    player_id: string,
+    library_only = false,
+  ): Promise<Track | null> {
+    return this.sendCommand("players/currently_playing_track", {
+      player_id,
+      library_only,
     });
   }
 

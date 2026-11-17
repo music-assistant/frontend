@@ -1,9 +1,5 @@
 import { clearFavorite, subscribeOwnFavorites } from "@/helpers/favorites";
-import {
-  matchesRadioSong,
-  radioSong,
-  radioSongLabel,
-} from "@/helpers/radio_song";
+import { radioSong, radioSongLabel } from "@/helpers/radio_song";
 import { getArtistsString } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { MediaType, type Track } from "@/plugins/api/interfaces";
@@ -13,8 +9,8 @@ import { store } from "@/plugins/store";
 import { toast } from "vue-sonner";
 import { computed, effectScope, ref, watch } from "vue";
 
-// a few library hits to find the exact title and artist among
-const LIBRARY_MATCH_LIMIT = 5;
+// the first server schema that tells which track a player plays
+const CURRENTLY_PLAYING_TRACK_SCHEMA_VERSION = 116;
 
 /**
  * The signed-in user's like of the song a radio station plays on the active
@@ -33,51 +29,52 @@ export function useRadioSongFavorite() {
 let shared: ReturnType<typeof createRadioSongFavorite> | undefined;
 
 function createRadioSongFavorite() {
+  // an older server can not tell which track a station plays
+  const supported = computed(
+    () =>
+      (api.serverInfo.value?.schema_version ?? 0) >=
+      CURRENTLY_PLAYING_TRACK_SCHEMA_VERSION,
+  );
   const song = computed(() =>
-    radioSong(
-      store.curQueueItem?.media_item,
-      store.activePlayer?.current_media,
-    ),
+    supported.value
+      ? radioSong(
+          store.curQueueItem?.media_item,
+          store.activePlayer?.current_media,
+        )
+      : undefined,
   );
   const songLabel = computed(() => song.value && radioSongLabel(song.value));
 
-  // the song's track once it is a favorite: what the heart shows and what a
+  // the song's track as the library holds it: what the heart shows and what a
   // removal acts on
   const track = ref<Track>();
   // a like or nothing: the song has no dislike to show
   const favorite = computed(() => (track.value?.favorite ? true : null));
 
   watch(
-    songLabel,
+    () => [songLabel.value, store.activePlayer?.player_id],
     () => {
       track.value = undefined;
-      void findLibraryFavorite();
+      void findLibraryTrack();
     },
     { immediate: true },
   );
 
+  // a like or unlike of the song here or elsewhere
   subscribeOwnFavorites((update) => {
-    if (update.media_type !== MediaType.TRACK || !song.value) return;
-    if (track.value?.uri === update.uri) track.value.favorite = update.favorite;
-    // a like made elsewhere, or the library track behind a like made here
-    else if (update.favorite) void findLibraryFavorite();
+    if (update.media_type === MediaType.TRACK && song.value) {
+      void findLibraryTrack();
+    }
   });
 
   // the library only: a change of song must never search the music providers
-  async function findLibraryFavorite() {
-    const current = song.value;
-    if (!current) return;
+  async function findLibraryTrack() {
+    const playerId = store.activePlayer?.player_id;
+    if (!song.value || !playerId) return;
     const label = songLabel.value;
-    const tracks = await api.getLibraryTracks(
-      true,
-      `${current.artist} - ${current.title}`,
-      LIBRARY_MATCH_LIMIT,
-    );
-    const found = tracks.find((candidate) =>
-      matchesRadioSong(candidate, current),
-    );
-    // the song may have changed while the library answered
-    if (found && songLabel.value === label) track.value = found;
+    const found = await api.getCurrentlyPlayingTrack(playerId, true);
+    // the song may have changed while the server answered
+    if (songLabel.value === label) track.value = found ?? undefined;
   }
 
   const like = async () => {
@@ -110,8 +107,9 @@ function createRadioSongFavorite() {
   // searches the music providers, so it runs only on the user's request
   async function findSong(): Promise<Track | undefined> {
     const current = song.value;
-    if (!current) return undefined;
-    const found = await api.getTrackByName(current.title, current.artist);
+    const playerId = store.activePlayer?.player_id;
+    if (!current || !playerId) return undefined;
+    const found = await api.getCurrentlyPlayingTrack(playerId);
     if (!found) {
       toast.error(
         $t("radio_song_not_found", { name: radioSongLabel(current) }),
