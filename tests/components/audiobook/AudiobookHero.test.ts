@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { audiobook } from "../../fixtures/audiobook";
 import { artist } from "../../fixtures/artist";
 
+const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
+vi.mock("vue-router", () => ({ useRouter: () => ({ push: routerPush }) }));
 vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => false }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/components/details/DetailHero.vue", () => ({
@@ -62,6 +64,34 @@ describe("AudiobookHero", () => {
     expect(wrapper.text()).toContain("Writer");
     expect(wrapper.text()).toContain("Narrator");
     expect(wrapper.text()).toContain("1:00:00");
+  });
+
+  it("links artist authors and keeps plain narrator names as text", async () => {
+    const wrapper = mountHero(
+      audiobook({
+        authors: [
+          artist({ item_id: "author_1", provider: "deezer", name: "Writer" }),
+          artist({
+            item_id: "author_2",
+            provider: "deezer",
+            name: "Co Writer",
+          }),
+        ],
+        narrators: ["Plain Reader"],
+      }),
+    );
+    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+      "Writer",
+      "Co Writer",
+    ]);
+    expect(wrapper.text()).toContain("Writer / Co Writer");
+    expect(wrapper.text()).toContain("Plain Reader");
+
+    await wrapper.get("button").trigger("click");
+    expect(routerPush).toHaveBeenCalledWith({
+      name: "artist",
+      params: { itemId: "author_1", provider: "deezer" },
+    });
   });
 
   it("delegates playback, favorites, genres and providers to shared components", () => {
