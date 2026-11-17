@@ -403,6 +403,20 @@ const openPlayerMenu = function (evt: MouseEvent) {
       editConfig.value?.discardChanges();
       router.replace({ name: "playersettings" });
     },
+    // the player went into the one that stays, which now holds its settings
+    onMerged: (targetPlayerId) => {
+      editConfig.value?.discardChanges();
+      router.replace(`/settings/editplayer/${targetPlayerId}`);
+    },
+    // the server reset the choices that named the output that went, so the
+    // form starts over from what is stored
+    onSplitOff: () => {
+      if (!config.value) return;
+      const playerId = config.value.player_id;
+      editConfig.value?.discardChanges();
+      config.value = undefined;
+      void loadConfig(playerId);
+    },
   });
   // resetting acts on the form rather than on the player, so it is not part of
   // the menu the other player surfaces share

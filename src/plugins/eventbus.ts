@@ -113,6 +113,14 @@ export type PlayerRenameDialogEvent = {
   defaultName?: string | null;
 };
 
+export type PlayerMergeDialogEvent = {
+  // the player that goes into the one the user picks
+  playerId: string;
+  playerName: string;
+  // called with the id of the player that stays
+  onMerged?: (targetPlayerId: string) => void;
+};
+
 // finished: the flow ended on a FINISH step rather than an ABORT
 export type SetupFlowEndedCallback = (finished: boolean) => void;
 
@@ -153,6 +161,7 @@ export type Events = {
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;
   playerRenameDialog: PlayerRenameDialogEvent;
+  playerMergeDialog: PlayerMergeDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;
