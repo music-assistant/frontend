@@ -78,8 +78,6 @@ export interface DiscoveredPlayer {
   available: boolean;
   needsSetup: boolean;
   icon: string | null;
-  // switching it on or off takes its provider, which has to be running
-  canToggle: boolean;
 }
 
 /** A household member the wizard lists, built from their user account. */
@@ -207,8 +205,7 @@ async function fetchPlayerConfigs(): Promise<void> {
   try {
     // every player that registered, and the switched-off ones on top: those
     // are unregistered, and this is where they are switched back on. One that
-    // is switched on but not around is left out, as on the players settings
-    // page.
+    // is switched on but not around is left out.
     const configs = await api.getPlayerConfigs(undefined, false, false, true);
     for (const config of configs) upsertPlayerConfig(config);
   } catch (error) {
@@ -403,7 +400,6 @@ export function discoveredPlayers(): DiscoveredPlayer[] {
         available: player?.available ?? false,
         needsSetup: player?.needs_setup ?? false,
         icon: player?.icon ?? null,
-        canToggle: config.provider in api.providers,
       };
     })
     .sort((one, other) => one.name.localeCompare(other.name));
@@ -568,7 +564,7 @@ async function pause(options?: { force?: boolean }): Promise<void> {
   }
 }
 
-/** Stop offering to resume a paused setup; the settings still resume it. */
+/** Hide the banner offering to resume a paused setup. */
 function dismissPaused(): void {
   pausedBannerDismissed.value = true;
 }

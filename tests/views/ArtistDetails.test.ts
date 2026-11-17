@@ -77,6 +77,7 @@ vi.mock("@/components/artist/artistRows", () => ({
     resolve: mockResolveArtistRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "all",
+    resolveSource: () => "all",
     sources: mockArtistRowSources,
   },
 }));
@@ -117,7 +118,7 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
-    props: ["title", "items", "itemCount"],
+    props: ["title", "items", "itemCount", "viewAllTo", "emptyMessage"],
     template: '<div :data-row="title" />',
   },
 }));
@@ -340,6 +341,26 @@ describe("ArtistDetails", () => {
     expect(shelf?.props("itemCount")).toBe(1);
   });
 
+  // the listing opens on what the shelf shows, an automatic row's provider included
+  it("opens a release shelf's listing on the shelf's source", async () => {
+    const wrapper = await mountDetails(artist({ item_id: "7" }));
+
+    const viewAll = (title: string) =>
+      wrapper
+        .findAllComponents({ name: "ReleaseShelf" })
+        .find((component) => component.props("title") === title)
+        ?.props("viewAllTo");
+    expect(viewAll("albums")).toEqual({
+      name: "artistlisting",
+      params: { provider: "library", itemId: "7", listing: "albums" },
+      query: { source: "all" },
+    });
+    expect(viewAll("singles_eps")).toMatchObject({
+      params: { listing: "singles" },
+      query: { source: "all" },
+    });
+  });
+
   describe("discography heading", () => {
     // which discography rows render, and whether each shows the heading
     function discographyHeadings(wrapper: VueWrapper) {
@@ -386,7 +407,7 @@ describe("ArtistDetails", () => {
       ]);
     });
 
-    it("moves to the second row when the first comes up empty", async () => {
+    it("stays above the first row when it comes up empty", async () => {
       showRows(["discography", "discography_second"]);
       mockLoadArtistDiscography.mockImplementation(
         async (_artist: Artist, types: AlbumType[]) =>
@@ -396,18 +417,23 @@ describe("ArtistDetails", () => {
       const wrapper = await mountDetails(artist());
 
       expect(discographyHeadings(wrapper)).toEqual([
-        ["discography_second", true],
+        ["discography", true],
+        ["discography_second", false],
       ]);
     });
   });
 
-  // MusicBrainz is not loaded, or does not know the artist
-  it("hides the discography once it comes up empty", async () => {
+  // its type picker stays, so other release types can still be picked
+  it("keeps a discography row that comes up empty, with an empty message", async () => {
     mockLoadArtistDiscography.mockResolvedValue([]);
 
     const wrapper = await mountDetails(artist());
 
-    expect(renderedRows(wrapper)).not.toContain("discography");
+    const shelf = wrapper
+      .findAllComponents({ name: "ReleaseShelf" })
+      .find((component) => component.props("title") === "discography");
+    expect(shelf?.props("items")).toEqual([]);
+    expect(shelf?.props("emptyMessage")).toBe("discography_types_empty");
   });
 
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {

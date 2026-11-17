@@ -6,6 +6,8 @@ import { computed, type MaybeRefOrGetter, toValue, watchEffect } from "vue";
 
 interface ProviderIconOptions {
   monochrome?: MaybeRefOrGetter<boolean | undefined>;
+  // the icon sits on a light background whatever the theme
+  light?: MaybeRefOrGetter<boolean | undefined>;
 }
 
 /**
@@ -41,7 +43,11 @@ export function useProviderIcon(
       available.includes(ProviderIconVariant.MONOCHROME)
     )
       return ProviderIconVariant.MONOCHROME;
-    if (isDark.value && available.includes(ProviderIconVariant.DARK))
+    if (
+      isDark.value &&
+      !toValue(options?.light) &&
+      available.includes(ProviderIconVariant.DARK)
+    )
       return ProviderIconVariant.DARK;
     if (available.includes(ProviderIconVariant.DEFAULT))
       return ProviderIconVariant.DEFAULT;

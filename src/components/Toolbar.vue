@@ -62,7 +62,8 @@
             </span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="min-w-56">
+        <!-- capped as the menu of an item, so a long entry is cut off on a phone -->
+        <DropdownMenuContent align="end" class="min-w-56 max-w-[350px]">
           <template v-for="(menuItem, index) in overflowItems" :key="index">
             <DropdownMenuSub v-if="menuItem.subItems?.length">
               <DropdownMenuSubTrigger
@@ -81,7 +82,7 @@
                 align="start"
                 :align-offset="-5"
                 :side-offset="6"
-                class="max-h-[70vh] min-w-56 overflow-y-auto"
+                class="max-h-[70vh] min-w-56 max-w-[min(92vw,350px)] overflow-y-auto"
               >
                 <template
                   v-for="subItem of menuItem.subItems.filter((x) => !x.hide)"
@@ -108,6 +109,7 @@
                     }}</span>
                     <Check v-if="subItem.selected" class="ml-auto size-4" />
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator v-if="subItem.separatorAfter" />
                 </template>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
@@ -142,6 +144,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,

@@ -121,7 +121,9 @@ vi.mock("@/composables/userPreferences", async () => {
   };
 });
 
-vi.mock("@/helpers/players", () => ({
+vi.mock("@/helpers/players", async (importOriginal) => ({
+  resolvePlayer: (await importOriginal<typeof import("@/helpers/players")>())
+    .resolvePlayer,
   canEditPlayerGroup: (player: Player) => player.can_group_with.length > 0,
   getPlayerDisplayName: (player: Player) =>
     player.player_id === "builtin" ? "This device" : player.name,
@@ -156,7 +158,6 @@ const PlayerCardStub = {
     "showGroupControls",
     "showDisabledGroupControl",
     "showGroupMemberNames",
-    "groupMemberLayout",
     "stackMediaDetails",
     "groupControlExpanded",
     "groupControlsId",
@@ -172,7 +173,6 @@ const PlayerCardStub = {
       :data-member-controls="showMemberControls ? 'true' : 'false'"
       :data-disabled-group-control="showDisabledGroupControl ? 'true' : 'false'"
       :data-group-member-names="showGroupMemberNames ? 'true' : 'false'"
-      :data-group-member-layout="groupMemberLayout"
       :data-stack-media-details="stackMediaDetails ? 'true' : 'false'"
       :data-group-control-expanded="groupControlExpanded ? 'true' : 'false'"
       :data-selected-indicator="showSelectedIndicator ? 'true' : 'false'"
@@ -278,6 +278,9 @@ function createPlayer(
     mute_control: "mute",
     needs_setup: false,
     has_setup_flow: false,
+    setup_reason: null,
+    legacy_ids: [],
+    protocols: [],
     output_protocols: [],
     active_output_protocol: null,
     elapsed_time: null,
@@ -477,6 +480,21 @@ describe("PlayerSelect", () => {
     expect(store.activePlayerId).toBe(remembered.player_id);
   });
 
+  it("selects the player a remembered player was merged into", () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    kitchen.legacy_ids = ["absorbed"];
+    const attic = createPlayer("attic", "Attic", PlaybackState.PLAYING);
+    setActivePlayerPreference("absorbed");
+    api.players = {
+      [attic.player_id]: attic,
+      [kitchen.player_id]: kitchen,
+    };
+
+    mountPlayerSelect();
+
+    expect(store.activePlayerId).toBe(kitchen.player_id);
+  });
+
   it("waits for the built-in player when it is the remembered one", async () => {
     const builtin = createPlayer("builtin", "This device");
     const kitchen = createPlayer("kitchen", "Kitchen", PlaybackState.PLAYING);
@@ -658,7 +676,7 @@ describe("PlayerSelect", () => {
     expect(setPreference).not.toHaveBeenCalled();
   });
 
-  it("moves a newly active player to the front", async () => {
+  it("moves a newly active player to the front the next time the panel opens", async () => {
     const kitchen = createPlayer("kitchen", "Kitchen");
     const office = createPlayer("office", "Office");
     api.players = {
@@ -666,15 +684,65 @@ describe("PlayerSelect", () => {
       [office.player_id]: office,
     };
     const wrapper = mountPlayerSelect();
+    const order = () =>
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id"));
 
     store.activePlayerId = office.player_id;
+    await nextTick();
+    expect(order()).toEqual(["kitchen", "office"]);
+
+    store.showPlayersMenu = false;
+    await nextTick();
+    store.showPlayersMenu = true;
+    await nextTick();
+    expect(order()).toEqual(["office", "kitchen"]);
+  });
+
+  it("keeps the order while the panel is open", async () => {
+    const kitchen = createPlayer("kitchen", "Kitchen");
+    api.players = {
+      kitchen,
+      office: createPlayer("office", "Office"),
+      attic: createPlayer("attic", "Attic"),
+    };
+    store.activePlayerId = kitchen.player_id;
+    store.showPlayersMenu = false;
+    const wrapper = mountPlayerSelect();
+    const order = () =>
+      wrapper
+        .findAll(".player-card")
+        .map((card) => card.attributes("data-player-id"));
+
+    store.showPlayersMenu = true;
+    await nextTick();
+    expect(order()).toEqual(["kitchen", "attic", "office"]);
+
+    store.activePlayerId = "office";
+    api.players.attic.playback_state = PlaybackState.PLAYING;
+    api.players.bedroom = createPlayer("bedroom", "Bedroom");
+    await nextTick();
+    expect(order()).toEqual(["kitchen", "attic", "office", "bedroom"]);
+  });
+
+  it("applies a changed sort option right away while the panel is open", async () => {
+    const office = createPlayer("office", "Office");
+    api.players = {
+      office,
+      attic: createPlayer("attic", "Attic"),
+    };
+    store.activePlayerId = office.player_id;
+    const wrapper = mountPlayerSelect();
+
+    setPlayerSelectPreference("playerSelect.showSelectedPlayerFirst", false);
     await nextTick();
 
     expect(
       wrapper
         .findAll(".player-card")
         .map((card) => card.attributes("data-player-id")),
-    ).toEqual(["office", "kitchen"]);
+    ).toEqual(["attic", "office"]);
   });
 
   it("shows search only when more than ten players are visible", () => {
@@ -854,9 +922,6 @@ describe("PlayerSelect", () => {
     expect(
       wrapper.find(".player-card").attributes("data-group-member-names"),
     ).toBe("true");
-    expect(
-      wrapper.find(".player-card").attributes("data-group-member-layout"),
-    ).toBe("subtitle-list");
     expect(
       wrapper.find(".player-card").attributes("data-stack-media-details"),
     ).toBe("true");

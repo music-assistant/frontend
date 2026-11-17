@@ -79,7 +79,6 @@ function addPlayer(overrides: Partial<DiscoveredPlayer> = {}) {
     available: true,
     needsSetup: false,
     icon: null,
-    canToggle: true,
     ...overrides,
   });
 }
@@ -321,21 +320,6 @@ describe("PlayersStep", () => {
       expect(
         wrapper.find("[data-testid=onboarding-player-rename]").exists(),
       ).toBe(false);
-
-      wrapper.unmount();
-    });
-
-    it("is out of reach while the player's provider is not running", () => {
-      addPlayer({ canToggle: false });
-
-      const wrapper = mountStep();
-
-      // switching it takes its provider, which has to be there to do it
-      expect(
-        wrapper
-          .find("[data-testid=onboarding-player-enabled]")
-          .attributes("disabled"),
-      ).toBeDefined();
 
       wrapper.unmount();
     });

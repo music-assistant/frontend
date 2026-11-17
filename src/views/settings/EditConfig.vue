@@ -228,6 +228,8 @@ const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const showPasswordValues = ref(false);
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
+// entries reset to their default and not edited since: a save unsets their stored value
+const resetKeys = ref(new Set<string>());
 
 // props
 const props = withDefaults(defineProps<Props>(), {
@@ -332,6 +334,8 @@ const requiredValuesPresent = computed(() =>
 
 const hasUnsavedChanges = computed(() => {
   if (!entries.value) return false;
+  // a reset can leave every value as it shows, while the server still stores some
+  if (resetKeys.value.size > 0) return true;
   for (const entry of entries.value) {
     // Skip non-value entry types
     if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
@@ -411,7 +415,7 @@ const submit = async function () {
   // submit button is pressed
   if (await validate()) {
     allowNavigation.value = true;
-    emit("submit", getCurrentValues());
+    emit("submit", getSaveValues());
   }
 };
 const action = async function (action: string, immediateApply: boolean) {
@@ -421,6 +425,7 @@ const action = async function (action: string, immediateApply: boolean) {
 
 const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
   entry.value = value;
+  resetKeys.value.delete(entry.key);
   // If immediate_apply is set, emit the value change immediately
   // and update oldValues so the form doesn't show as "unsaved"
   if (entry.immediate_apply) {
@@ -461,6 +466,7 @@ const resetToDefaults = function () {
     // server keeps in the config, so a reset leaves it as it is
     if (entry.hidden) continue;
     entry.value = entry.default_value;
+    if (unsetsOnReset(entry)) resetKeys.value.add(entry.key);
   }
 };
 
@@ -482,7 +488,10 @@ const saveFailed = function () {
  */
 const saveSucceeded = function (values: Record<string, ConfigValueType>) {
   for (const [key, value] of Object.entries(values)) {
-    oldValues.value[key] = snapshot(value);
+    // a reset entry went out as null, while the form shows its default
+    oldValues.value[key] = resetKeys.value.delete(key)
+      ? snapshot(entries.value?.find((e) => e.key === key)?.value ?? null)
+      : snapshot(value);
   }
   allowNavigation.value = false;
 };
@@ -626,6 +635,31 @@ const getCurrentValues = function () {
     values[entry.key] = value;
   }
   return values;
+};
+
+/**
+ * The values a save sends: null for an entry reset to its default, so the server
+ * stops storing a value for it and it follows its default from then on.
+ */
+const getSaveValues = function () {
+  const values = getCurrentValues();
+  for (const key of resetKeys.value) {
+    if (key in values) values[key] = null;
+  }
+  return values;
+};
+
+/**
+ * Whether a save unsets an entry that was reset, rather than send its default. The
+ * name and the switches that turn a provider, an output or a plugin on keep sending
+ * their value, as does an entry that is not saved as a value at all.
+ */
+const unsetsOnReset = function (entry: ConfigEntryUI) {
+  if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
+    return false;
+  }
+  const { key } = entry;
+  return key !== "enabled" && key !== "name" && !key.endsWith("||enabled");
 };
 </script>
 
