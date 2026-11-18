@@ -1,5 +1,6 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
+  getOutputMenuItems,
   getPlayerSettingsMenuItems,
   getSetupRequiredPlayerMenuItems,
   mergePlayer,
@@ -13,6 +14,7 @@ import {
   ProviderFeature,
   ProviderType,
   Scope,
+  type OutputProtocol,
   type Player,
   type PlayerOption,
   type PlayerProtocolInfo,
@@ -20,6 +22,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { outputProtocol } from "../fixtures/outputProtocol";
 import { playerConfig } from "../fixtures/playerConfig";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
@@ -704,14 +707,12 @@ describe("renamePlayer", () => {
   });
 });
 
-describe("getPlayerSettingsMenuItems merging and splitting", () => {
+describe("getPlayerSettingsMenuItems merging", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     registerPlayer();
     apiMock.getProvider.mockReturnValue(providerInstance());
-    apiMock.getProviderManifest.mockImplementation((domain: string) =>
-      providerManifest({ domain, name: domain.toUpperCase() }),
-    );
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
   });
 
   it("opens the merge dialog for the player", () => {
@@ -740,41 +741,73 @@ describe("getPlayerSettingsMenuItems merging and splitting", () => {
     ).not.toContain("settings.merge_player");
   });
 
-  it("does not offer to split off the only output", () => {
-    registerPlayer({ protocols: [protocol("chromecast")] });
+  it("leaves splitting an output off to the menu of that output", () => {
+    registerPlayer({
+      protocols: [protocol("chromecast"), protocol("airplay")],
+    });
 
     expect(
       visibleLabels(getPlayerSettingsMenuItems(playerConfig())),
     ).not.toContain("settings.split_off_output");
   });
+});
 
-  it("offers each output to split off by its name, in order of name", () => {
+describe("getOutputMenuItems", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
     registerPlayer({
       protocols: [protocol("chromecast"), protocol("airplay")],
     });
-
-    const subItems = menuItem(
-      getPlayerSettingsMenuItems(playerConfig()),
-      "settings.split_off_output",
-    ).subItems;
-
-    expect(subItems?.map((item) => item.text)).toEqual([
-      "AIRPLAY",
-      "CHROMECAST",
-    ]);
+    apiMock.getProviderManifest.mockImplementation((domain: string) =>
+      providerManifest({ domain, name: domain.toUpperCase() }),
+    );
   });
 
-  it("splits an output off after asking and reports the new player", async () => {
-    const onSplitOff = vi.fn();
-    apiMock.unlinkProtocol.mockResolvedValue("new-player");
+  it("offers to split off an output of a player with more than one", () => {
+    expect(
+      visibleLabels(getOutputMenuItems(playerConfig(), output("airplay"))),
+    ).toEqual(["settings.split_off_output"]);
+  });
+
+  it("offers nothing for the only output of a player", () => {
+    registerPlayer({ protocols: [protocol("chromecast")] });
+
+    expect(getOutputMenuItems(playerConfig(), output("chromecast"))).toEqual(
+      [],
+    );
+  });
+
+  it("offers nothing for an output that rides on another one", () => {
+    const sendspin = output("sendspin", { derived_from: "airplay" });
     registerPlayer({
-      protocols: [protocol("chromecast"), protocol("airplay")],
+      protocols: [
+        protocol("chromecast"),
+        protocol("airplay"),
+        protocol("sendspin"),
+      ],
+      output_protocols: [output("chromecast"), output("airplay"), sendspin],
     });
 
+    expect(getOutputMenuItems(playerConfig(), sendspin)).toEqual([]);
+    expect(
+      visibleLabels(getOutputMenuItems(playerConfig(), output("airplay"))),
+    ).toEqual(["settings.split_off_output"]);
+  });
+
+  it("offers nothing for a player that has no live state", () => {
+    apiMock.players = {};
+
+    expect(getOutputMenuItems(playerConfig(), output("airplay"))).toEqual([]);
+  });
+
+  it("splits the output off after asking and reports the new player", async () => {
+    const onSplitOff = vi.fn();
+    apiMock.unlinkProtocol.mockResolvedValue("new-player");
+
     menuItem(
-      getPlayerSettingsMenuItems(playerConfig(), { onSplitOff }),
+      getOutputMenuItems(playerConfig(), output("airplay"), { onSplitOff }),
       "settings.split_off_output",
-    ).subItems?.[0].action?.();
+    ).action?.();
 
     expect(apiMock.unlinkProtocol).not.toHaveBeenCalled();
     await confirmation().onConfirm();
@@ -783,17 +816,39 @@ describe("getPlayerSettingsMenuItems merging and splitting", () => {
     expect(toastMock.success).toHaveBeenCalledOnce();
   });
 
-  it("leaves the player as it is when the server refuses the split", async () => {
-    const onSplitOff = vi.fn();
-    apiMock.unlinkProtocol.mockRejectedValueOnce(new Error("Refused"));
+  it("splits off the protocol behind the native output", async () => {
+    apiMock.unlinkProtocol.mockResolvedValue("new-player");
     registerPlayer({
-      protocols: [protocol("chromecast"), protocol("airplay")],
+      protocols: [
+        {
+          ...protocol("sonos"),
+          protocol_id: "RINCON_1",
+          role: ProtocolRole.NATIVE,
+        },
+        protocol("airplay"),
+      ],
     });
 
     menuItem(
-      getPlayerSettingsMenuItems(playerConfig(), { onSplitOff }),
+      getOutputMenuItems(
+        playerConfig(),
+        output("sonos", { output_protocol_id: "native", is_native: true }),
+      ),
       "settings.split_off_output",
-    ).subItems?.[1].action?.();
+    ).action?.();
+    await confirmation().onConfirm();
+
+    expect(apiMock.unlinkProtocol).toHaveBeenCalledWith("RINCON_1");
+  });
+
+  it("leaves the player as it is when the server refuses the split", async () => {
+    const onSplitOff = vi.fn();
+    apiMock.unlinkProtocol.mockRejectedValueOnce(new Error("Refused"));
+
+    menuItem(
+      getOutputMenuItems(playerConfig(), output("chromecast"), { onSplitOff }),
+      "settings.split_off_output",
+    ).action?.();
     await confirmation().onConfirm();
 
     expect(onSplitOff).not.toHaveBeenCalled();
@@ -905,6 +960,21 @@ function protocol(domain: string): PlayerProtocolInfo {
     available: true,
     active: false,
   };
+}
+
+/**
+ * The output a protocol of the given domain gives a player.
+ */
+function output(
+  domain: string,
+  overrides: Partial<OutputProtocol> = {},
+): OutputProtocol {
+  return outputProtocol({
+    output_protocol_id: domain,
+    name: domain,
+    protocol_domain: domain,
+    ...overrides,
+  });
 }
 
 function providerInstance(
