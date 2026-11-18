@@ -358,7 +358,7 @@
         "playerprovider": "Poskytovateľ prehrávača",
         "providers_total": "{count} celkom | {count} celkom",
         "stage": {
-            "label": "Fáza",
+            "label": "Verzia",
             "options": {
                 "stable": "Stabilné",
                 "beta": "Beta",
@@ -644,10 +644,13 @@
             "session_ended_title": "Relácia nastavenia sa skončila",
             "session_ended_text": "Relácia nastavenia sa skončila – možno bola dokončená. Overte to u svojich poskytovateľov alebo prehrávačov.",
             "setup_title": "Nastaviť {0}",
-            "reconfigure_title": "Zmeniť nastavenie {0}"
+            "reconfigure_title": "Zmeniť nastavenie {0}",
+            "copy": "Kopírovať",
+            "copy_success": "Skopírované do schránky",
+            "copy_failed": "Kopírovanie do schránky sa nepodarilo"
         },
         "options": "Možnosti",
-        "server_clock_offset": "Posun hodín (server oproti tomuto zariadeniu)",
+        "server_clock_offset": "Časový posun (medzi serverom a týmto zariadením)",
         "action_completed": "Akcia bola dokončená",
         "hass_controls": {
             "add_hass_entity": "Pridať entitu Home Assistant...",
@@ -752,7 +755,7 @@
                 "private": "Iba ja",
                 "selected": "Vybraní používatelia",
                 "members": "Všetci používatelia okrem hostí",
-                "everyone": "Všetci vrátane hostí",
+                "everyone": "Všetci, vrátane hostí",
                 "not_shared": "Nezdieľané"
             },
             "hints": {
@@ -903,9 +906,156 @@
             "copy_failed": "Nepodarilo sa skopírovať URL adresu"
         },
         "unsupported_install_title": "Nepodporovaná inštalácia",
-        "unsupported_install_description": "Tento server nie je nainštalovaný prostredníctvom jednej z nasledujúcich možností{0}. Niektoré funkcie nemusia fungovať podľa očakávaní a problémy nahlásené z tohto servera môžu byť uzavreté bez poskytnutia podpory.",
+        "unsupported_install_description": "Tento server nie je nainštalovaný prostredníctvom jednej z nasledujúcich možností {0}. Niektoré funkcie nemusia fungovať podľa očakávaní a problémy nahlásené z tohto servera môžu byť uzavreté bez poskytnutia podpory.",
         "unsupported_install_link": "podporované spôsoby inštalácie",
-        "error_loading_sort_options": "Pri načítaní možností triedenia došlo k chybe"
+        "error_loading_sort_options": "Pri načítaní možností triedenia došlo k chybe",
+        "provider_community": "Komunita",
+        "provider_community_maintained": "Spravované komunitou",
+        "provider_maintained_by": "spravujú {maintainers}",
+        "provider_get_help": "Získať pomoc",
+        "show_letter_index": {
+            "label": "Zobraziť index od A po Z",
+            "description": "Pridá lištu s písmenami do zoznamov interpretov, albumov a skladieb, vďaka čomu môžete prejsť priamo na konkrétne písmeno. Zobrazuje sa len vtedy, keď je zoznam zoradený podľa názvu a práve nevyhľadávate."
+        },
+        "setup_reason": {
+            "pairing_required": "Vyžaduje sa párovanie",
+            "password_required": "Vyžaduje sa heslo"
+        },
+        "hide_unavailable_players": "Skryť nedostupné prehrávače",
+        "remove_unavailable_players": "Odstrániť nedostupné prehrávače",
+        "remove_unavailable_players_title": "Odstrániť nedostupné prehrávače?",
+        "remove_unavailable_players_confirmation": "Týmto sa odstráni jeden prehrávač, ktorého zariadenie sa už nedá nájsť, spolu s jeho nastaveniami: | Týmto sa odstráni {count} prehrávačov, ktorých zariadenia sa už nedajú nájsť, spolu s ich nastaveniami:",
+        "no_unavailable_players": "Nie sú žiadne nedostupné prehrávače na odstránenie",
+        "unavailable_players_removed": "Nenašli sa žiadne nedostupné prehrávače | Odstránený jeden nedostupný prehrávač | Odstránených {count} nedostupných prehrávačov",
+        "catalog": {
+            "title": "Trhovisko",
+            "description": "Rozšírte aplikáciu Music Assistant o ďalšie zdroje hudby, podporu ďalších prehrávačov a výkonné doplnky.",
+            "installed": "Nainštalované",
+            "popular": "Populárne",
+            "previous": "Predchádzajúce",
+            "next": "Ďalšie",
+            "add": "Pridať",
+            "add_named": "Pridať {name}",
+            "added": "Pridané",
+            "manage": "Spravovať",
+            "manage_named": "Spravovať {name}",
+            "by_maintainers": "od {maintainers}",
+            "by_team": "od tímu Music Assistant",
+            "created_by": "Vytvorili a spravujú {maintainers}",
+            "created_by_team": "Vytvorené a spravované tímom Music Assistant",
+            "request_change": "Požiadať o zmenu",
+            "missing": "Chýba vám niečo? {link}",
+            "request_it": "Vyžiadajte si to",
+            "installed_empty_title": "Zatiaľ nič nebolo pridané",
+            "installed_empty": "Tu sa zobrazujú položky, ktoré pridáte z Marketplace.",
+            "load_failed": "Nepodarilo sa načítať Marketplace",
+            "try_again": "Skúste znova",
+            "no_match": "Nič nezodpovedá vášmu vyhľadávaniu alebo filtru",
+            "type": {
+                "music": "Zdroj hudby",
+                "player": "Podpora prehrávača",
+                "metadata": "Metadáta",
+                "plugin": "Doplnok",
+                "audio_analysis": "Analýza zvuku"
+            },
+            "manage_type": {
+                "music": "Spravujte svoje zdroje hudby",
+                "player": "Spravovať podporu prehrávača",
+                "metadata": "Spravovať metadáta",
+                "plugin": "Spravovať doplnky",
+                "audio_analysis": "Spravovať anylýzu zvuku"
+            },
+            "community": {
+                "title": "Komunitný katalóg",
+                "enable": "Povoliť komunitný katalóg",
+                "disable": "Zakázať komunitný katalóg",
+                "banner_title": "Povoliť komunitný katalóg",
+                "banner_description": "Získajte viac zdrojov hudby, podporu pre prehrávače a doplnky, ktoré vytvárajú a udržiavajú členovia komunity, namiesto tímu Music Assistant.",
+                "banner_enable": "Povoliť",
+                "banner_dismiss": "Nezobrazovať znova",
+                "unavailable": "Komunitný katalóg nie je dostupný",
+                "unavailable_title": "Komunitný katalóg nie je momentálne dostupný.",
+                "unavailable_message": "To, čo ste z neho nainštalovali, sa tu nezobrazí, kým nebude znova k dispozícii.",
+                "confirm_title": "Povoliť komunitný katalóg?",
+                "confirm": "Povoliť",
+                "enabled_toast": "Komunitný katalóg je zapnutý",
+                "disabled_toast": "Komunitný katalóg je vypnutý",
+                "note_title": "{name} pochádza od komunity",
+                "note_maintainers": "{name} vytvorili a spravujú {maintainers} v rámci komunity, nie tím Music Assistant. Doplnok beží ako súčasť vášho servera.",
+                "note_no_maintainers": "{name} je vytvorený a spravovaný komunitou, nie tímom Music Assistant. Doplnok beží ako súčasť vášho servera.",
+                "note_help": "V prípade otázok alebo problémov sa obráťte na {link}.",
+                "note_help_link": "jeho správcu | jeho správcov",
+                "continue": "Pokračovať",
+                "installing": "Inštaluje sa…",
+                "installed_toast": "{name} je nainštalované",
+                "installed_restored_toast": "Doplnok {name} je nainštalovaný a všetko, čo ste v ňom predtým nastavili, je späť",
+                "source_code": "Zdrojový kód",
+                "version": "Verzia {version}",
+                "version_released": "Verzia {version}, vydaná {date}",
+                "refresh": "Skontrolovať zmeny",
+                "installed_empty": "Z komunitného katalógu nie je nič nainštalované.",
+                "remove": "Odstrániť",
+                "remove_named": "Odstrániť {name}",
+                "remove_title": "Odstrániť {name}?",
+                "remove_message": "{name} bol odstránený z vášho servera. To, čo ste v ňom nastavili, zostáva na stránke {page}, kde to tiež môžete odstrániť.",
+                "removed_toast": "{name} je odstránený",
+                "reason_link": "Čítať viac",
+                "withdrawn_hint": "Komunitný katalóg túto funkciu už neponúka. Bude fungovať dovtedy, kým ju neodstránite.",
+                "state": {
+                    "blocked": "Blokované",
+                    "unavailable": "Nebeží",
+                    "withdrawn": "Stiahnuté",
+                    "restart_required": "Vyžaduje sa reštart"
+                },
+                "update": "Aktualizovať",
+                "update_named": "Aktualizovať {name}",
+                "update_all": "Aktualizovať všetko",
+                "updating": "Aktualizuje sa…",
+                "update_available": "Je dostupná verzia {version}.",
+                "update_released": "Verzia {verzia} je dostupná, bola vydaná {date}.",
+                "updated_toast": "{name} je aktualizovaný",
+                "update_failed_toast": "Verzia {version} aplikácie {name} sa na vašom serveri nepodarilo načítať, preto Music Assistant obnovil predchádzajúcu verziu.",
+                "updated_all_toast": "Všetko je aktuálne",
+                "updated_all_restart": "Aktualizácie sú pripravené. Na ich dokončenie reštartujte aplikáciu Music Assistant.",
+                "update_all_failed": "Nie každú aktualizáciu sa podarilo nainštalovať. Aktualizujte ich po jednej a zistite dôvod.",
+                "updates_waiting": "{count} aktualizácia čaká na spracovanie | {count} aktualizácie čakajú na spracovanie | {count} aktualizácií čaká na spracovanie",
+                "no_updates": "Žiadne čakajúce aktualizácie",
+                "restart_hint": "Verzia {version} je pripravená. Reštartujte Music Assistant na dokončenie aktualizácie.",
+                "failed_version": "Verzia {version} sa na vašom serveri nenačítala, preto Music Assistant obnovil predchádzajúcu verziu.",
+                "retry_version_named": "Skúsiť {name} znova",
+                "auto_update": "Aktualizovať automaticky",
+                "auto_update_on_toast": "Aktualizácie sa teraz inštalujú automaticky. Počas prehrávania sa neaktualizuje nič.",
+                "auto_update_off_toast": "Aktualizácie sa už neinštalujú automaticky",
+                "moved_title": "{name} bol presunutý do komunitného katalógu",
+                "moved_message": "Teraz sa oň starajú jeho vlastní správcovia, nie tím Music Assistant. Music Assistant ho nainštaloval z komunitného katalógu, takže naďalej funguje.",
+                "moved_message_not_running": "Teraz sa oň starajú jeho vlastní správcovia, nie tím Music Assistant. Music Assistant ho nainštaloval z komunitného katalógu.",
+                "dismiss": "Zamietnuť",
+                "new_title": "Novinky v komunitnom katalógu",
+                "updated_title": "Nedávno aktualizované",
+                "new_badge": "Nový"
+            },
+            "search": "Vyhľadávať na Marketplace",
+            "search_results": "Výsledky vyhľadávania",
+            "discover": "Objaviť",
+            "top_pick": "Najlepší výber pre vás",
+            "show_pick": "Zobraziť {name}",
+            "browse_everything": "Prehliadať všetko",
+            "to_choose_from": "{count} na výber",
+            "shown_of": "{shown} z {total}",
+            "discovered_title": "Nájdené vo vašej sieti",
+            "complements_title": "Hodí sa k tomu, čo už máte",
+            "goes_well_with": "Hodí sa k {name}",
+            "new_in_version": "Nové vo verzii {version}",
+            "dont_suggest": "Toto neodporúčať",
+            "dont_suggest_named": "Neodporúčať {name}",
+            "not_suggested_toast": "{name} sa už viac neodporúča",
+            "dont_suggest_failed": "Nepodarilo sa prestať navrhovať {name}",
+            "suggested_again_toast": "{name} sa znova odporúča",
+            "suggest_again_failed": "Nepodarilo sa znova odporúčať {name}",
+            "undo": "Späť",
+            "fits_your_setup": "Hodí sa k vašej zostave"
+        },
+        "provider_status_unavailable": "Nedostupné"
     },
     "show_info": "Zobraziť info",
     "show_select_boxes": "Zobraziť políčka výberu",
@@ -947,7 +1097,10 @@
         "artist_name": "Interpret",
         "random": "Náhodné",
         "random_play_count": "Náhodne (najskôr najmenej prehrávané)",
-        "album_name": "Album"
+        "album_name": "Album",
+        "sort_by": "Zoradiť podľa",
+        "sort_by_current": "Zoradiť podľa: {0}",
+        "release_date": "Dátum vydania"
     },
     "state": {
         "idle": "nečinné",
@@ -1036,7 +1189,10 @@
         "view_mode_current": "Aktuálne zobrazenie: {0}. Zmeniť režim zobrazenia",
         "view_mode_switch": "Aktuálne zobrazenie: {0}. Prepnúť na {1}",
         "mute": "Stlmiť",
-        "unmute": "Zrušiť stlmenie"
+        "unmute": "Zrušiť stlmenie",
+        "view_mode": "Režim zobrazenia",
+        "view_all_count": "Zobraziť všetky {name} ({count})",
+        "energy_level": "Úroveň energie, od 1 (najpokojnejšie) po 10 (najenergickejšie)"
     },
     "topresult": "Najlepší výsledok",
     "track": "Skladba",
@@ -1068,7 +1224,10 @@
         "list": "Zobrazenie zoznamu",
         "panel": "Zobrazenie miniatúr",
         "discovery": "Preskúmanie",
-        "card": "Zobrazenie kariet"
+        "card": "Zobrazenie kariet",
+        "view_as": "Zobraziť ako",
+        "panel_short": "Miniatúry",
+        "list_short": "Zoznam"
     },
     "play_replace": "Hrať teraz (vymazať frontu)",
     "played": "Prehrané",
@@ -1185,7 +1344,8 @@
                 "smart": "Inteligentné",
                 "standard": "Štandardné",
                 "disabled": "Vypnuté",
-                "source": "Použil {0}"
+                "source": "Použil {0}",
+                "voice_over": "Hlasový komentár, hudba je stíšená pod ním"
             },
             "dsp_state": {
                 "enabled": "DSP je aktívne",
@@ -1227,8 +1387,8 @@
     "select_source": "Vybrať zdroj",
     "play_replace_next": "Prehrať ďalšie (vymazať frontu)",
     "all_enqueue_options": "Všetky možnosti zaradenia do frontu",
-    "music_assistant_source": "Poradie hudobného asistenta",
-    "music_assistant_library": "Knižnica hudobného asistenta",
+    "music_assistant_source": "Poradie Music Assistant",
+    "music_assistant_library": "Knižnica Music Assistant",
     "select_all_confirmation": "Vybrať všetky položky? Načítanie všetkých údajov pri tejto operácii môže chvíľu trvať.",
     "this_device": "Toto zariadenie",
     "homescreen_edit_enable": "Úprava domovskej obrazovky",
@@ -1474,9 +1634,9 @@
     "remove_provider_mapping_confirm": "Naozaj chcete odpojiť tento zdroj od položky? Môže sa vrátiť, ak znova prehľadáte všetky zdroje hudby a budete hľadať zhody.",
     "map_provider_mapping": "Prepojiť tento záznam zdroja s aktuálnou položkou",
     "player_tip": {
-        "selected_player": "Vybraný prehrávač",
         "currently_playing": "Práve sa prehráva na",
-        "click_to_change": "Kliknutím nižšie zmeníte výstupné zariadenie"
+        "click_to_change": "Kliknutím nižšie zmeníte výstupné zariadenie",
+        "selected": "Vybraté"
     },
     "more_options": "Ďalšie možnosti",
     "edit": "Upraviť",
@@ -1606,7 +1766,10 @@
                 "listen_in_error_no_web_player": "Zvuk nie je na tomto zariadení dostupný.",
                 "listen_in_error_start": "Počúvanie sa nepodarilo spustiť. Skúste to, prosím, znova.",
                 "listen_in_error_stop": "Počúvanie sa nepodarilo zastaviť. Skúste to, prosím, znova.",
-                "listen_in_powered_by": "Poháňa Sendspin"
+                "listen_in_powered_by": "Poháňa Sendspin",
+                "skip_vote_counted": "Hlas zaznamenaný! {0} z {1} hlasov potrebných na preskočenie.",
+                "skip_already_voted": "Za preskočenie tejto skladby ste už hlasovali.",
+                "skip_song_changed": "Táto pieseň sa už zmenila, takže váš hlas nebol započítaný."
             },
             "add": "Pridať",
             "boost": "Posunúť dopredu",
@@ -1635,7 +1798,8 @@
             "share_failed": "Pozvánku sa nepodarilo zdieľať",
             "share_invitation": "Zdieľať pozvánku",
             "share_named_title": "Pripojte sa k {0}",
-            "share_title": "Pripojte sa k párty Music Assistant"
+            "share_title": "Pripojte sa k párty Music Assistant",
+            "skip_votes": "Preskočiť {0}\/{1}"
         },
         "music_quiz": {
             "title": "Hudobný kvíz",
@@ -1893,12 +2057,14 @@
                 "shuffle_playlist_tracks": "Náhodné poradie skladieb zoznamu",
                 "voice": "Hlas",
                 "host": "Moderátor",
-                "language": "Jazyk"
+                "language": "Jazyk",
+                "allow_post": "Rozprávať počas intra"
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximálny celkový čas prehrávania zdrojovej hudby v minútach. Skladby sa berú v poradí, v akom ich relácia prehráva, až kým sa nedosiahne limit. Hodnota 0 znamená bez obmedzenia.",
                 "instructions": "Opisuje osobnosť moderátora a spôsob, akým sa majú písať segmenty. Posiela sa AI s každým segmentom.",
-                "shuffle_playlist_tracks": "Prehrávať zdrojový zoznam skladieb v náhodnom poradí. Vypnite, ak chcete dodržať vlastné poradie zoznamu skladieb."
+                "shuffle_playlist_tracks": "Prehrávať zdrojový zoznam skladieb v náhodnom poradí. Vypnite, ak chcete dodržať vlastné poradie zoznamu skladieb.",
+                "allow_post": "Koniec tohto segmentu prebieha súbežne so začiatkom nasledujúcej skladby, pričom hlasitosť hudby je stlmená pod úroveň hlasu a končí tesne predtým, ako začne spev. K tomu dochádza len vtedy, ak aplikácia Music Assistant vie, kde spev začína, a úvod je dostatočne dlhý. Ak sa viacero segmentov prehráva ako jedna časť, musí byť táto funkcia zapnutá vo všetkých z nich."
             },
             "web_search": {
                 "disabled": "vypnuté (bez webového nástroja)",
@@ -2283,7 +2449,10 @@
         "picker_search": "Hľadať {label}",
         "field_folder": "Priečinok",
         "field_folder_is": "Priečinok je",
-        "picker_empty_folder_sources": "Nie je nastavený žiadny hudobný zdroj s priečinkami."
+        "picker_empty_folder_sources": "Nie je nastavený žiadny hudobný zdroj s priečinkami.",
+        "favorites_only": "Iba obľúbené",
+        "favorites_exclude": "Vynechať obľúbené",
+        "favorites_exclude_hint": "Vaše obľúbené skladby sú vždy vynechané, aj keď spĺňajú iné pravidlo."
     },
     "explore": "Preskúmať",
     "shortcuts": "Skratky",
@@ -2424,7 +2593,6 @@
     "grouped_volume": "Zoskupená hlasitosť",
     "player_select": {
         "active_player_volume_only": "Zobrazovať posuvníky hlasitosti iba pre aktívne prehrávače",
-        "and_more": "...a ďalších {0}",
         "disable_player_confirmation": "Tento prehrávač bude skrytý, kým ho znova nepovolíte v nastaveniach prehrávača.",
         "disable_player_title": "Vypnúť {0}?",
         "display_options": "Možnosti zobrazenia",
@@ -2470,7 +2638,11 @@
         "credits": "Poďakovanie",
         "credits_butterchurn": "Vykresľovanie zabezpečuje Butterchurn od Jordana Berga (licencia MIT), implementácia MilkDrop 2 vo WebGL.",
         "credits_milkdrop": "MilkDrop pôvodne vytvoril Ryan Geiss ako vizualizér pre Winamp. Predvoľby sú dielom komunity predvolieb MilkDrop a sú pribalené prostredníctvom butterchurn-presets.",
-        "enabled": "Povolené"
+        "enabled": "Povolené",
+        "palette_ramp": "Prefarbite všetko podľa kresby",
+        "palette_ramp_description": "Preveďte celý obrázok do farieb grafiky a zachovajte vlastný jas predvoľby, aby sa zachoval pohyb aj detaily. Pri plnej intenzite každá predvoľba prevezme paletu albumu.",
+        "palette_colors": "Farebné prvky z grafického návrhu",
+        "palette_colors_description": "Zafarbite priebeh a okraje predvoľby pomocou palety obrázka. Ovplyvnené sú iba predvoľby, ktoré tieto prvky vykresľujú."
     },
     "ai_dj": "Zapnúť AI rozhlasového DJ-a",
     "ai_dj_off": "Vypnuté",
@@ -2650,13 +2822,15 @@
                 "description": "Týmto sa určí, čo Music Assistant robí ako prvé. Všetko zostane dostupné bez ohľadu na to, čo si vyberiete.",
                 "phone_apps": {
                     "label": "Z aplikácií v mojom telefóne",
-                    "description": "Streamujte zo Spotify, AirPlay a ďalších aplikácií do reproduktorov vo vašej domácnosti."
+                    "description": "Streamujte zo Spotify, AirPlay a ďalších aplikácií do reproduktorov vo vašej domácnosti.",
+                    "preview": "Ďalej pridáme vaše reproduktory, prepojíme vaše hudobné aplikácie a ukážeme vám, ako začať počúvať."
                 },
                 "music_hub": {
                     "label": "Ako moje hudobné centrum",
-                    "description": "Spojte svoje streamovacie služby a lokálnu hudbu do jednej knižnice."
+                    "description": "Spojte svoje streamovacie služby a lokálnu hudbu do jednej knižnice.",
+                    "preview": "Ďalej pripojíme vaše hudobné služby a pridáme reproduktory, potom si preberieme ďalšie funkcie."
                 },
-                "settings_note": "Neskôr to môžete zmeniť v nastaveniach."
+                "summary_title": "Váš výber nastavenia"
             },
             "music_sources": {
                 "title": "Pridajte svoje zdroje hudby",
@@ -2670,15 +2844,20 @@
                 "no_provider_hint": "Pridajte poskytovateľa prehrávačov a jeho prehrávače sa zobrazia tu.",
                 "discovering_hint": "Vyhľadanie prehrávačov môže chvíľu trvať. Uistite sa, že sú vaše reproduktory zapnuté a v rovnakej sieti ako Music Assistant.",
                 "add_more": "Pridať ďalšie prehrávače",
-                "rename": "Premenovať {name}"
+                "rename": "Premenovať {name}",
+                "discovered_by": "Objavil"
             },
             "plugins": {
                 "title": "Pridajte doplnky",
-                "description": "Doplnky rozširujú funkcie aplikácie Music Assistant o ďalšie možnosti, ako sú Párty, Spotify Connect a prijímač AirPlay. Kedykoľvek ich môžete pridať neskôr."
+                "description": "Doplnky rozširujú funkcie aplikácie Music Assistant o ďalšie možnosti, ako sú Párty, Spotify Connect a prijímač AirPlay. Kedykoľvek ich môžete pridať neskôr.",
+                "phone_apps_title": "Pripojte svoje hudobné aplikácie",
+                "phone_apps_description": "Pridajte Spotify Connect alebo prijímač AirPlay, potom otvorte jeho nastavenia a vyberte si reproduktory. K dispozícii sú tu aj ďalšie doplnky.",
+                "connect": "Pripojiť hudobnú aplikáciu"
             },
             "finish": {
                 "title": "Dokončiť nastavenie",
-                "description": "Nastavenie sa vám podarilo. Tu je rýchle zhrnutie – čokoľvek z toho môžete neskôr zmeniť v nastaveniach."
+                "description": "Nastavenie sa vám podarilo. Tu je rýchle zhrnutie – čokoľvek z toho môžete neskôr zmeniť v nastaveniach.",
+                "phone_apps_description": "Tu je prehľad vašich reproduktorov a pripojení aplikácií. Hudobnú knižnicu a ďalšie funkcie môžete pridať neskôr v nastaveniach."
             },
             "core_settings": {
                 "title": "Skontrolujte nastavenia servera",
@@ -2714,7 +2893,10 @@
                         "description": "Spustite pred serverom reverzný proxy server a ako externú adresu zadajte adresu, na ktorej je dostupný zvonka.",
                         "set_external": "Nastaviť externú adresu"
                     }
-                }
+                },
+                "network_details": "Údaje o sieti",
+                "external_address": "Externá adresa",
+                "external_address_hint": "Ak sa pripájate k službe Music Assistant mimo domova prostredníctvom reverzného proxy servera."
             },
             "invite_members": {
                 "title": "Pridajte používateľov",
@@ -2786,7 +2968,12 @@
         "pause": "Pozastaviť nastavenie",
         "dismiss": "Zamietnuť",
         "music_sources_count": "{count} hudobný zdroj  | {count} hudobné zdroje | {count} hudobných zdrojov",
-        "plugins_count": "{count} doplnok | {count} doplnky | {count} doplnkov"
+        "plugins_count": "{count} doplnok | {count} doplnky | {count} doplnkov",
+        "continue": "Pokračovať",
+        "explore_more": "Preskúmať viac",
+        "listen_from_apps": "Skúste prehrávať z hudobných aplikácií",
+        "spotify_connect_hint": "V nastaveniach služby Spotify Connect vyberte reproduktory, ktoré chcete použiť. Potom otvorte výber zariadení v aplikácii Spotify a vyberte jeden z týchto reproduktorov.",
+        "airplay_receiver_hint": "V nastaveniach prijímača AirPlay vyberte reproduktory, ktoré chcete použiť. Potom otvorte výber zvuku AirPlay na vašom zariadení Apple a vyberte prijímač pre daný reproduktor."
     },
     "share_playlist": "Zdieľať zoznam skladieb",
     "playlist_access": {
@@ -2825,18 +3012,14 @@
         "end": "Ukončiť prehliadku",
         "next": "Ďalšia",
         "step_counter": "{current} z {total}",
-        "offer": {
-            "title": "Chcete sa tu rýchlo porozhliadnuť?",
-            "description": "Krátka prehliadka vám ukáže hlavné časti aplikácie. Kedykoľvek si ju môžete zopakovať z ponuky profilu."
-        },
         "stops": {
             "menu": {
                 "title": "Ponuka",
-                "description": "Všetko začína tu: V sekciách „Objavovať“ a „Prehliadať“ si môžete vyhľadať niečo na prehrávanie, svoju knižnicu interpretov, albumov, skladieb a zoznamov skladieb, a v spodnej časti nájdete nastavenia a svoj profil."
+                "description": "Všetko začína tu: V sekciách „Objaviť“ a „Prehľadávať“ si môžete vyhľadať niečo na prehrávanie, svoju knižnicu interpretov, albumov, skladieb a zoznamov skladieb, a v spodnej časti nájdete nastavenia a svoj profil."
             },
             "search": {
                 "title": "Hľadať",
-                "description": "Nájdite interpreta, album, skladbu alebo zoznam skladieb vo všetkom, čo môžete počúvať."
+                "description": "Nájdite interpreta, album, skladbu alebo zoznam skladieb vo všetkých dostupných zdrojoch hudby."
             },
             "settings": {
                 "title": "Nastavenia",
@@ -2848,7 +3031,7 @@
             },
             "player_bar": {
                 "title": "Panel prehrávača",
-                "description": "Čo sa práve prehráva a ovládacie prvky k tomu. Otvorte ho, ak chcete zobraziť celý prehrávač a to, čo nasleduje."
+                "description": "Čo sa práve prehráva a ovládacie prvky k tomu. Otvorte ho, ak chcete zobraziť celý prehrávač a zistíte, čo bude nasledovať."
             },
             "player_select": {
                 "title": "Vyberte si prehrávač",
@@ -2921,7 +3104,8 @@
         "duration": "Dĺžka",
         "columns": "Stĺpce",
         "choose_columns": "Vybrať stĺpce",
-        "hidden_at_width": "Pri tejto šírke je to skryté"
+        "hidden_at_width": "Pri tejto šírke je to skryté",
+        "reorder_track": "Presuňte alebo stlačte klávesy so šípkami na presun {0}"
     },
     "selection_actions": "Akcie výberu",
     "n_selected": "{count} vybrané | {count} vybraných",
@@ -2930,13 +3114,175 @@
     "no_content_filter_hint": "Skúste iné vyhľadávanie alebo upravte filtre.",
     "items_load_failed": "Nepodarilo sa načítať položky.",
     "featured_artists": "Vybraní interpreti",
+    "review_setup": "Recenzia",
     "n_audiobooks": "{count} audiokniha | {count} audioknihy | {count} audiokníh",
+    "radio_live": "Naživo",
+    "listing_filters": {
+        "title": "Filtre",
+        "title_active": "Filtere, {count} aktívnych",
+        "controls": "Ovládacie prvky zoznamu",
+        "clear_all": "Vyčistiť všetko",
+        "favorites_only": "Iba obľúbené",
+        "album_artists_only": "Iba interpreti albumov",
+        "library_only": "Iba v knižnici",
+        "hide_fully_played": "Skryť úplne prehraté",
+        "collapse_collections": "Zbaliť kolekcie",
+        "genres_shown": "Zobraziť",
+        "genre": "Žáner",
+        "any_genre": "Akýkoľvek žáner",
+        "album_type": "Typ albumu",
+        "any_album_type": "Akýkoľvek typ albumu",
+        "source": "Zdroj",
+        "any_source": "Akýkoľvek zdroj"
+    },
+    "statistics": "Štatistiky",
+    "statistics_subtitle": "Čo ste prehrávali v aplikácii Music Assistant",
+    "statistics_period": "Obdobie",
+    "statistics_all": "Všetky štatistiky",
+    "statistics_plays": "{count} prehratie | {count} prehratia | {count} prehratí",
+    "statistics_plays_label": "Počet prehratí",
+    "statistics_plays_over_time": "Počet prehrávaní v priebehu času",
+    "statistics_chart_accessible_summary": "{title}. {values}",
+    "statistics_average_hour": "Priemerne {average} za hodinu.",
+    "statistics_average_day": "Priemerne {average} za deň.",
+    "statistics_average_month": "Priemerne {average} za mesiac.",
+    "statistics_average_year": "Priemerne {average} za rok.",
+    "statistics_busiest_sentence_hour": "{label} bola vaša najrušnejšia hodina.",
+    "statistics_busiest_sentence_day": "{label} bol váš najrušnejší deň.",
+    "statistics_busiest_sentence_month": "{label} bol váš najrušnejší mesiac.",
+    "statistics_busiest_sentence_year": "{label} bol váš najrušnejší rok.",
+    "statistics_per_hour": "Za hodinu",
+    "statistics_per_day": "Za deň",
+    "statistics_per_month": "Za mesiac",
+    "statistics_per_year": "Za rok",
+    "statistics_busiest_hour": "Najrušnejšia hodina",
+    "statistics_busiest_day": "Najrušnejší deň",
+    "statistics_busiest_month": "Najrušnejší mesiac",
+    "statistics_busiest_year": "Najrušnejší rok",
+    "statistics_peak_hour": "Najrušnejšia hodina",
+    "statistics_top_artist": "Váš najobľúbenejší interpret",
+    "statistics_of_plays": "prehratí",
+    "statistics_top_artist_accessible": "{name}: {share}% vašich prehratí",
+    "statistics_play_item": "Prehrať {name}",
+    "statistics_when_you_listen": "Kedy počúvate",
+    "statistics_profile_early_bird": "Ranné vtáča",
+    "statistics_profile_afternoon": "Poobedný poslucháč",
+    "statistics_profile_evening": "Večerný poslucháč",
+    "statistics_profile_night_owl": "Nočná sova",
+    "statistics_window_share": "{share}% vašich skladieb začalo medzi {start} a {end}",
+    "statistics_hourly_accessible": "Počet prehrávaní za hodinu, najvyšší počet medzi {start} a {end}",
+    "statistics_top_genre": "Najpopulárnejší žáner",
+    "statistics_genre_other": "Ostatné",
+    "statistics_genres_accessible": "Žánre: {values}",
+    "statistics_genre_empty": "V tomto období neboli zaznamenané žiadne prehrávania skladieb z knižnice so žánrom.",
+    "statistics_release_years": "Roky vydania",
+    "statistics_mostly_decade": "Prevažne {decade}",
+    "statistics_decades_accessible": "Prehratia podľa dekády: {values}",
+    "statistics_decade_empty": "V tomto období neboli nájdené žiadne prehrávania skladieb z knižnice, ktoré by boli spojené s albumami so známym rokom vydania.",
+    "statistics_artist_time": "Najpopulárnejší interpreti podľa dĺžky prehrávania",
+    "statistics_artist_time_subtitle": "Počet minút dokončených prehratí",
+    "statistics_minutes": "{count} min | {count} min",
+    "statistics_listening_time_empty": "V tomto období neboli nájdené žiadne dokončené prehratia so známou dĺžkou skladby z knižnice.",
+    "statistics_heatmap": "Váš týždeň hodinu po hodine",
+    "statistics_heatmap_subtitle": "Prehrávanie podľa dňa v týždni a hodiny",
+    "statistics_heatmap_less": "Menej",
+    "statistics_heatmap_more": "Viac",
+    "statistics_activity_cell": "{weekday} o {hour}: {count} prehratie | {weekday} o {hour}: {count} prehratia  | {weekday} o {hour}: {count} prehratí",
+    "statistics_most_played": "Najhranejšie skladby",
+    "statistics_top_items": "Najpopulárnejšie položky",
+    "statistics_top_tracks": "Najpopulárnejšie skladby",
+    "statistics_top_albums": "Najpopulárnejšie albumy",
+    "statistics_top_artists": "Najpopulárnejší interpreti",
+    "statistics_top_playlists": "Najpopulárnejšie zoznamy",
+    "statistics_column_rank": "č. ",
+    "statistics_column_title": "Názov",
+    "statistics_column_share": "Podiel",
+    "statistics_share_accessible": "{share} % prehraní čísla jeden",
+    "statistics_section_empty": "V tomto období sa nič neprehrávalo",
+    "statistics_section_failed": "Tieto štatistiky sa nepodarilo načítať.",
+    "statistics_load_failed": "Niektoré štatistiky sa nepodarilo načítať.",
+    "no_statistics_data": "Zatiaľ žiadna história prehrávania",
     "period_today": "Dnes",
+    "period_week": "Posledných 7 dní",
+    "period_month": "Posledných 30 dní",
+    "period_year": "Posledných 365 dní",
+    "period_all_time": "Za celú dobu",
+    "show_action_buttons": "Zobraziť tlačidlá akcie",
+    "action_buttons_too_small": "Obrázky obalov sú príliš malé na tlačidlá akcií",
+    "open_item_failed": "Túto položku sa nepodarilo otvoriť.",
+    "edit_rows_subtitle_genre": "Platí pre každú stránku žánru",
+    "chapters_and_bookmarks": "Kapitoly a záložky",
+    "chapters_and_bookmarks_tab": "Všetko",
     "bookmarks": "Záložky",
     "add_bookmark": "Pridať záložku",
+    "add_bookmark_at": "Pridať záložku v čase{time}",
+    "rename_bookmark": "Premenovať záložku",
+    "delete_bookmark": "Vymazať záložku",
+    "delete_bookmark_confirm": "Chcete vymazať záložku „{name}“?",
+    "bookmark_name": "Názov",
+    "bookmark_saved_in": "Uložené v {name}",
+    "play_from_position": "Prehrať od {time}",
+    "bookmark_added": "Záložka bola pridaná",
+    "bookmark_renamed": "Záložka bola premenovaná",
+    "bookmark_deleted": "Záložka bola vymazaná",
+    "bookmark_add_failed": "Záložku sa nepodarilo pridať",
+    "bookmark_rename_failed": "Záložku sa nepodarilo premenovať",
+    "bookmark_delete_failed": "Záložku sa nepodarilo odstrániť",
+    "playlist_move_to_top": "Presunúť na začiatok",
+    "playlist_move_to_bottom": "Presunúť na koniec",
+    "playlist_moved_to_top": "Presunuté na začiatok zoznamu skladieb",
+    "playlist_moved_to_bottom": "Presunuté na koniec zoznamu skladieb",
+    "statistics_highlight_track": "Najpopulárnejšia skladba",
+    "statistics_highlight_artist": "Najpopulárnejší interpret",
+    "statistics_highlight_album": "Najpopulárnejší album",
+    "edit_rows_subtitle_radio": "Platí pre každú stránku rádia",
+    "statistics_subtitle_other_users": "Čo sa prehrávalo v aplikácii Music Assistant",
+    "statistics_users": "Používatelia",
+    "statistics_users_me": "Iba ja",
+    "statistics_users_all": "Všetci používatelia",
+    "statistics_users_count": "{count} používateľov",
+    "statistics_users_removed": "Niektorí vybraní používatelia už neexistujú a boli odstránení.",
+    "statistics_busiest_sentence_hour_other_users": "{label} bola najrušnejšia hodina.",
+    "statistics_busiest_sentence_day_other_users": "{label} bol najrušnejší deň.",
+    "statistics_busiest_sentence_month_other_users": "{label} bol najrušnejší mesiac.",
+    "statistics_busiest_sentence_year_other_users": "{label} bol najrušnejší rok.",
+    "statistics_top_artist_other_users": "Najobľúbenejší interpret",
+    "statistics_top_artist_accessible_other_users": "{name}: {share}% prehratí",
+    "statistics_when_you_listen_other_users": "Časy počúvania",
+    "statistics_window_share_other_users": "{share}% prehratí začalo medzi {start} a {end}",
+    "statistics_heatmap_other_users": "Týždeň po jednotlivých hodinách",
+    "stream_held": {
+        "title": "Prehrať radšej tu?",
+        "message": "{0} sa už prehráva na {1}. Dokáže prehrávať vždy len na jednom prehrávači.",
+        "stop_and_play_here": "Zastaviť tam a prehrať tu"
+    },
+    "discography_first_row": "Diskografia (prvý riadok)",
+    "discography_second_row": "Diskografia (druhý riadok)",
     "discography_types_summary": "{first} +{count}",
     "album_type_plural": {
         "album": "Albumy",
-        "single": "Single"
-    }
+        "single": "Single",
+        "ep": "EPčka",
+        "compilation": "Kompilácie",
+        "live": "Naživo",
+        "soundtrack": "Soundtracky"
+    },
+    "sleep_timer_end_of_chapter": "Koniec kapitoly",
+    "sleep_timer_end_of_item": {
+        "track": "Koniec skladby",
+        "podcast_episode": "Koniec epizódy",
+        "audiobook": "Koniec audioknihy",
+        "other": "Koniec aktuálnej položky"
+    },
+    "collection_refresh_failed": "Stav prehratia kolekcie sa nepodarilo aktualizovať",
+    "alphabet_jump": "Prejsť na písmeno",
+    "view_all_count": "Zobraziť všetky ({count})",
+    "energy_level": "Energia",
+    "source_auto": "Automaticky",
+    "edit_rows_subtitle_audiobook": "Platí pre každú stránku audioknihy",
+    "chapter_of": "Kapitola {current} z {total}",
+    "chapter_progress_show_audiobook": "Zobraziť celú audioknihu",
+    "chapter_progress_show_episode": "Zobraziť celú epizódu",
+    "chapter_progress_show_chapter": "Zobraziť iba túto kapitolu",
+    "transfer_queue_no_audio": "Zvuk na tomto zariadení zatiaľ nie je k dispozícii."
 }
