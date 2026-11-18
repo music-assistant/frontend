@@ -43,29 +43,51 @@
           :value="hasMultipleProtocols ? panel : undefined"
           class="rounded-[6px] border bg-card px-4 shadow-sm"
         >
-          <component
-            :is="hasMultipleProtocols ? AccordionTrigger : 'div'"
-            :class="
-              hasMultipleProtocols
-                ? 'hover:no-underline'
-                : 'flex items-start py-4 text-left text-sm font-medium'
-            "
-          >
-            <span class="flex items-center gap-2">
-              <ProviderIcon
-                v-if="getProtocolDomain(panel)"
-                :domain="getProtocolDomain(panel)!"
-                :size="22"
-              />
-              <span>{{ getProtocolConfigureTitle(panel) }}</span>
-              <Badge
-                v-if="getOutputProtocol(panel)?.is_native"
-                variant="secondary"
-              >
-                {{ $t("settings.protocol_native_badge") }}
-              </Badge>
-            </span>
-          </component>
+          <!-- The menu button sits beside the trigger, as a button can not hold another one -->
+          <div class="flex items-center gap-2 [&>*:first-child]:flex-1">
+            <component
+              :is="hasMultipleProtocols ? AccordionTrigger : 'div'"
+              :class="
+                hasMultipleProtocols
+                  ? 'hover:no-underline'
+                  : 'flex items-start py-4 text-left text-sm font-medium'
+              "
+            >
+              <span class="flex items-center gap-2">
+                <ProviderIcon
+                  v-if="getProtocolDomain(panel)"
+                  :domain="getProtocolDomain(panel)!"
+                  :size="22"
+                />
+                <span>{{ getProtocolConfigureTitle(panel) }}</span>
+                <Badge
+                  v-if="getOutputProtocol(panel)?.is_native"
+                  variant="secondary"
+                >
+                  {{ $t("settings.protocol_native_badge") }}
+                </Badge>
+              </span>
+            </component>
+            <Button
+              v-if="getOutputMenuItems(panel).length"
+              data-testid="output-menu"
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-haspopup="menu"
+              :aria-label="`${$t('more_options')}: ${getProtocolName(panel)}`"
+              @click="openOutputMenu($event, panel)"
+            >
+              <MoreVertical class="size-4" />
+            </Button>
+            <!-- keeps the place of the menu button, so the chevrons line up -->
+            <span
+              v-else-if="hasOutputMenus"
+              data-testid="output-menu-placeholder"
+              class="size-8 shrink-0"
+              aria-hidden="true"
+            ></span>
+          </div>
           <component
             :is="hasMultipleProtocols ? AccordionContent : 'div'"
             :class="['border-t pt-4', { 'pb-4': !hasMultipleProtocols }]"
@@ -111,10 +133,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { ConfigEntryUI } from "@/helpers/config_entry_ui";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
 import { ConfigValueType, OutputProtocol } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
+import { MoreVertical } from "@lucide/vue";
 import { computed } from "vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
 
@@ -127,6 +153,8 @@ const props = defineProps<{
   // The player's output protocols, used to resolve derived-transport relationships.
   // Empty for non-player configs (providers/core), which have no output protocols.
   outputProtocols?: OutputProtocol[];
+  // The menu entries of an output of the player; an output without any gets no menu button.
+  outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
 }>();
 
 const emit = defineEmits<{
@@ -238,6 +266,27 @@ const getProtocolConfigureTitle = function (category: string): string {
   return base
     ? $t("settings.protocol_configure_title_via", { name, base })
     : $t("settings.protocol_configure_title", { name });
+};
+
+// The menu entries of the output a panel configures.
+const getOutputMenuItems = function (category: string): ContextMenuItem[] {
+  const output = getOutputProtocol(category);
+  return output && props.outputMenuItems ? props.outputMenuItems(output) : [];
+};
+
+const hasOutputMenus = computed(() =>
+  props.protocolPanels.some((panel) => getOutputMenuItems(panel).length > 0),
+);
+
+// The menu opens under its button, so it never covers the output it acts on, whether
+// it was tapped, clicked or opened from the keyboard.
+const openOutputMenu = function (evt: MouseEvent, category: string) {
+  const trigger = (evt.currentTarget as HTMLElement).getBoundingClientRect();
+  eventbus.emit("contextmenu", {
+    items: getOutputMenuItems(category),
+    posX: trigger.left,
+    posY: trigger.bottom,
+  });
 };
 
 const hasHiddenAdvancedSettings = function (category: string): boolean {

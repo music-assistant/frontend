@@ -1,7 +1,8 @@
 // Everything that can be done to a player from the settings surfaces: the menu on the
 // players list and the menu on the player settings page itself. Both build their menu
 // from here so the two never drift apart. The menu of a player that still needs setup
-// lives here too, as managing it is all such a player has to offer.
+// lives here too, as managing it is all such a player has to offer. So does the menu of
+// each output on the player settings page.
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getPlayerName } from "@/helpers/player_config";
 import { getSplittableProtocols } from "@/helpers/player_merge";
@@ -11,6 +12,7 @@ import { openLinkInNewTab } from "@/helpers/utils";
 import { setUserPreference } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import {
+  OutputProtocol,
   Player,
   PlayerConfig,
   PlayerProtocolInfo,
@@ -47,7 +49,10 @@ export interface PlayerSettingsMenuOptions {
   onDeleted?: () => void;
   // called with the id of the player it was merged into
   onMerged?: (targetPlayerId: string) => void;
-  // called once an output is split off as a player of its own
+}
+
+export interface OutputMenuOptions {
+  // called once the output is split off as a player of its own
   onSplitOff?: () => void;
 }
 
@@ -64,7 +69,7 @@ export const getPlayerSettingsSections = (playerId: string) => {
 
 /**
  * Menu entries acting on a player: its settings sections, renaming, (re)configuring,
- * merging it into another player, splitting an output off, enabling and removing it.
+ * merging it into another player, enabling and removing it.
  */
 export const getPlayerSettingsMenuItems = (
   config: PlayerConfig,
@@ -74,7 +79,6 @@ export const getPlayerSettingsMenuItems = (
   const player = api.players[playerId];
   const provider = api.getProvider(config.provider);
   const manifest = api.getProviderManifest(config.provider);
-  const splittable = player ? getSplittableProtocols(player) : [];
   const menuItems: ContextMenuItem[] = [];
 
   if (options.includeSections) {
@@ -146,24 +150,6 @@ export const getPlayerSettingsMenuItems = (
       hide: config.player_type === PlayerType.GROUP,
     },
     {
-      label: "settings.split_off_output",
-      icon: markRaw(Split),
-      subItems: splittable
-        .map((protocol) => ({
-          // the id keeps two outputs of the same name apart
-          label: protocol.protocol_id,
-          text: getOutputName(protocol),
-          action: () =>
-            confirmSplitOff(
-              protocol,
-              getPlayerName(config),
-              options.onSplitOff,
-            ),
-        }))
-        .sort((left, right) => left.text.localeCompare(right.text)),
-      hide: !splittable.length,
-    },
-    {
       label: config.enabled ? "settings.disable" : "settings.enable",
       action: () => {
         if (!config.enabled) {
@@ -187,6 +173,37 @@ export const getPlayerSettingsMenuItems = (
       color: "error",
     },
   );
+
+  return menuItems;
+};
+
+/**
+ * Menu entries acting on one output of a player: splitting it off as a player of its
+ * own. Empty when there is nothing to do with the output.
+ */
+export const getOutputMenuItems = (
+  config: PlayerConfig,
+  output: OutputProtocol,
+  options: OutputMenuOptions = {},
+): ContextMenuItem[] => {
+  const player = api.players[config.player_id];
+  // a player holds one protocol of each domain; the domain also finds the protocol of
+  // the native output, whose id is "native" rather than that of its protocol
+  const protocol = player
+    ? getSplittableProtocols(player).find(
+        (candidate) => candidate.domain === output.protocol_domain,
+      )
+    : undefined;
+  const menuItems: ContextMenuItem[] = [];
+
+  if (protocol) {
+    menuItems.push({
+      label: "settings.split_off_output",
+      action: () =>
+        confirmSplitOff(protocol, getPlayerName(config), options.onSplitOff),
+      icon: markRaw(Split),
+    });
+  }
 
   return menuItems;
 };

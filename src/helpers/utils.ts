@@ -17,7 +17,7 @@ import {
   QueueItem,
 } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
-import DOMPurify from "dompurify";
+import DOMPurify, { type Config as PurifyConfig } from "dompurify";
 import { marked } from "marked";
 
 import { Volume, Volume1, Volume2, VolumeX } from "@lucide/vue";
@@ -215,16 +215,18 @@ export const getAuthorsNarratorsArray = function (
 export const getAudiobookCollectionArtists = function (
   collection: MediaCollection<Audiobook>,
   selector: (book: Audiobook) => (string | Artist)[],
-): string[] {
-  const artists = new Set<string>();
+): (string | Artist)[] {
+  // one entry per name, where a linkable artist wins over a plain name
+  const people = new Map<string, string | Artist>();
 
   collection.items.forEach((book) => {
-    getAuthorsNarratorsArray(selector(book)).forEach((name) =>
-      artists.add(name),
-    );
+    selector(book).forEach((person) => {
+      const name = typeof person === "string" ? person : person.name;
+      if (typeof people.get(name) !== "object") people.set(name, person);
+    });
   });
 
-  return [...artists];
+  return [...people.values()];
 };
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
@@ -658,18 +660,63 @@ markdownPurifier.addHook("afterSanitizeAttributes", (node) => {
  * Render markdown as sanitized HTML, safe to pass to `v-html`.
  *
  * Supports the full block syntax (lists, paragraphs, ...) and turns single
- * newlines into line breaks. Links always open in a new tab.
+ * newlines into line breaks. Links always open in a new tab. The result
+ * carries no forms or style blocks.
  *
  * @param text - Markdown source. May use escaped `\n` sequences as newlines.
  */
 export const markdownToHtml = function (text: string): string {
+  return renderMarkdown(text, {});
+};
+
+/**
+ * Render markdown a provider wrote as sanitized HTML, safe to pass to `v-html`.
+ *
+ * The same as `markdownToHtml`, but without images or other media, so the
+ * text cannot load anything from a remote address.
+ *
+ * @param text - Markdown source. May use escaped `\n` sequences as newlines.
+ */
+export const providerMarkdownToHtml = function (text: string): string {
+  // svg and math are left out entirely: both can load an image themselves
+  return renderMarkdown(text, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["img", "picture", "source", "video", "audio", "track"],
+    FORBID_ATTR: ["src", "srcset", "poster", "background", "style"],
+  });
+};
+
+// rendered markdown is text and links, never a form or a style block
+const NON_TEXT_TAGS = [
+  "form",
+  "input",
+  "button",
+  "select",
+  "option",
+  "optgroup",
+  "textarea",
+  "style",
+];
+
+const renderMarkdown = function (text: string, config: PurifyConfig): string {
   // some sources encode their line breaks literally; block syntax only parses on real ones
   const source = text.replaceAll("\\n", "\n").replaceAll(" \\", "\n");
   // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
   return markdownPurifier.sanitize(marked(source, { breaks: true }) as string, {
+    ...config,
+    FORBID_TAGS: [...NON_TEXT_TAGS, ...(config.FORBID_TAGS ?? [])],
     SANITIZE_NAMED_PROPS: true,
   });
 };
+
+/**
+ * Whether an image source is embedded in the value itself (a `data:image/`
+ * URI), so drawing it loads nothing from a remote address.
+ *
+ * @param src - The image source to check.
+ */
+export const isEmbeddedImage = (src?: string | null): src is string =>
+  !!src && src.trimStart().toLowerCase().startsWith("data:image/");
 
 /**
  * Copy text to the clipboard.
