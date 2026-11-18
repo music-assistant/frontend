@@ -15,7 +15,7 @@ import {
   stopServerTimeSync,
 } from "@/composables/useServerTime";
 import { $t, i18n } from "../i18n";
-import type { ITransport } from "../remote/transport";
+import { MessageTooLargeError, type ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
 import { AccountApi } from "./account";
 import type { CommandOptions } from "./commandOptions";
@@ -2969,6 +2969,12 @@ export class MusicAssistantApi {
     });
   }
 
+  public async openProviderPage(instance_id: string): Promise<string> {
+    // Open the page a provider instance declares in its manifest. Returns a
+    // short-lived address of it, relative to the server's address.
+    return this.sendCommand("providers/open_page", { instance_id });
+  }
+
   public async saveProviderConfig(
     provider_domain: string,
     values: Record<string, ConfigValueType>,
@@ -4225,7 +4231,9 @@ export class MusicAssistantApi {
 
     try {
       this.transport.send(msgStr);
-    } catch {
+    } catch (error) {
+      // an oversized message is not a dropped connection, so let the caller see why
+      if (error instanceof MessageTooLargeError) throw error;
       // transport throws untyped errors; callers filter on ConnectionLostError
       throw new ConnectionLostError();
     }

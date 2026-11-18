@@ -1,19 +1,29 @@
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useConfigAction } from "@/composables/useConfigAction";
 import {
   ConfigEntryType,
   type ConfigActionResult,
   type ConfigEntry,
   type ConfigValueType,
+  ProviderTier,
 } from "@/plugins/api/interfaces";
 
-const { toastMock } = vi.hoisted(() => ({
+const { apiMock, showActionResultMock, toastMock } = vi.hoisted(() => ({
+  apiMock: {
+    baseUrl: "",
+    serverInfo: { value: null },
+    getProviderManifest: vi.fn(),
+  },
+  showActionResultMock: vi.fn(),
   toastMock: {
     error: vi.fn(),
     success: vi.fn(),
+    warning: vi.fn(),
   },
 }));
+
+vi.mock("@/plugins/api", () => ({ api: apiMock }));
 
 vi.mock("vue-sonner", () => ({
   toast: toastMock,
@@ -22,6 +32,13 @@ vi.mock("vue-sonner", () => ({
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
+
+vi.mock("@/helpers/action_result", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/helpers/action_result")>();
+  showActionResultMock.mockImplementation(actual.showActionResult);
+  return { ...actual, showActionResult: showActionResultMock };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -123,6 +140,99 @@ describe("useConfigAction", () => {
     openSpy.mockRestore();
   });
 
+  it("tells the result handling which provider answered the action", async () => {
+    const answeredBy = vi.fn((action: string) => `domain_of_${action}`);
+    const { invokeAction, onAction } = setup(answeredBy);
+    const answer = { message: "Done", open_url: null };
+    invokeAction.mockResolvedValueOnce(answer);
+
+    await onAction("do_thing", {}, false);
+
+    expect(showActionResultMock).toHaveBeenCalledExactlyOnceWith(
+      answer,
+      "domain_of_do_thing",
+    );
+  });
+
+  describe("a url entry of a community provider", () => {
+    const ownUrl = () => `${window.location.origin}/raw_route`;
+    let click: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      apiMock.getProviderManifest.mockReturnValue({
+        tier: ProviderTier.COMMUNITY,
+      });
+      click = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      click.mockRestore();
+    });
+
+    it("is not opened when it leads to the app's own address", async () => {
+      const { config, invokeAction, onAction } = setup(() => "community_demo");
+      invokeAction.mockResolvedValueOnce([
+        entry({ key: "page", type: ConfigEntryType.URL, value: ownUrl() }),
+      ]);
+
+      await onAction("do_thing", {}, false);
+
+      expect(apiMock.getProviderManifest).toHaveBeenCalledWith(
+        "community_demo",
+      );
+      expect(click).not.toHaveBeenCalled();
+      expect(toastMock.warning).toHaveBeenCalledExactlyOnceWith(
+        "settings.action_completed",
+        { description: "settings.action_link_refused" },
+      );
+      expect(toastMock.success).not.toHaveBeenCalled();
+      expect(config.value!.values).toEqual({ existing: entry() });
+    });
+
+    it("still re-renders the rest of the answer", async () => {
+      const { config, invokeAction, onAction } = setup(() => "community_demo");
+      invokeAction.mockResolvedValueOnce([
+        entry({ key: "page", type: ConfigEntryType.URL, value: ownUrl() }),
+        entry({ key: "fresh", value: "new" }),
+      ]);
+
+      await onAction("do_thing", {}, false);
+
+      expect(click).not.toHaveBeenCalled();
+      expect(Object.keys(config.value!.values)).toEqual(["fresh"]);
+    });
+
+    it("is opened when it leads elsewhere", async () => {
+      const { invokeAction, onAction } = setup(() => "community_demo");
+      invokeAction.mockResolvedValueOnce([
+        entry({
+          key: "auth_url",
+          type: ConfigEntryType.URL,
+          value: "https://example.com/auth",
+        }),
+      ]);
+
+      await onAction("do_thing", {}, false);
+
+      expect(click).toHaveBeenCalledOnce();
+      expect(toastMock.warning).not.toHaveBeenCalled();
+    });
+
+    it("is opened from a built-in provider", async () => {
+      apiMock.getProviderManifest.mockReturnValue({ tier: ProviderTier.CORE });
+      const { invokeAction, onAction } = setup(() => "fastmcp_server");
+      invokeAction.mockResolvedValueOnce([
+        entry({ key: "page", type: ConfigEntryType.URL, value: ownUrl() }),
+      ]);
+
+      await onAction("do_thing", {}, false);
+
+      expect(click).toHaveBeenCalledOnce();
+    });
+  });
+
   it("leaves reporting a failed action to the api and clears loading", async () => {
     const { loading, invokeAction, onAction } = setup();
     invokeAction.mockRejectedValueOnce(new Error("action failed"));
@@ -162,7 +272,7 @@ describe("useConfigAction", () => {
   });
 });
 
-function setup() {
+function setup(answeredBy?: (action: string) => string | undefined) {
   const config = ref<{ values: Record<string, ConfigEntry> }>({
     values: { existing: entry() },
   });
@@ -181,6 +291,7 @@ function setup() {
     loading,
     invokeAction,
     saveValues,
+    answeredBy,
   });
 
   return { config, loading, invokeAction, saveValues, onAction };

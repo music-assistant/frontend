@@ -129,19 +129,23 @@
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
             </CardDescription>
-            <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
+            <!-- eslint-disable vue/no-v-html -- providerMarkdownToHtml sanitizes with DOMPurify -->
             <div
               v-if="showCodeowners"
               data-testid="provider-codeowners"
               class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
-              v-html="markdownToHtml(getAuthorsMarkdown(providerMaintainers))"
+              v-html="
+                providerMarkdownToHtml(getAuthorsMarkdown(providerMaintainers))
+              "
             ></div>
             <div
               v-if="providerManifest.credits.length"
               class="text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
               :class="showCodeowners ? 'mt-1' : 'mt-3'"
               v-html="
-                markdownToHtml(getCreditsMarkdown(providerManifest.credits))
+                providerMarkdownToHtml(
+                  getCreditsMarkdown(providerManifest.credits),
+                )
               "
             ></div>
             <!-- eslint-enable vue/no-v-html -->
@@ -331,7 +335,7 @@ import {
 } from "@/helpers/provider_permissions";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
-import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
+import { getExternalLinkUrl, providerMarkdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
@@ -677,6 +681,7 @@ const { onAction } = useConfigAction({
       values,
       config.value!.instance_id,
     ),
+  answeredBy: () => config.value!.domain,
 });
 
 const getAuthorsMarkdown = function (authors: string[]) {

@@ -407,6 +407,40 @@ describe("EditCoreConfig", () => {
     // the card's switches follow the reset values rather than earlier choices
     expect(reset).toHaveBeenCalledOnce();
   });
+
+  it("leaves out the settings the audio analysis page shows, while saving them as they are", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(streamsConfig());
+    apiMock.saveCoreConfig.mockResolvedValueOnce(streamsConfig());
+
+    const wrapper = mountWithForm("streams");
+    await flushPromises();
+
+    expect(renderedKeys(wrapper)).toEqual(["publish_ip"]);
+
+    await wrapper.find('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
+      publish_ip: "publish_ip value",
+      background_scan_concurrency: "background_scan_concurrency value",
+    });
+    expect(routerMock.push).toHaveBeenCalledWith({ name: "systemsettings" });
+  });
+
+  it("shows every setting of a controller a page shows as a whole, and returns to that page", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(tasksConfig());
+    apiMock.saveCoreConfig.mockResolvedValueOnce(tasksConfig());
+
+    const wrapper = mountWithForm("tasks");
+    await flushPromises();
+
+    expect(renderedKeys(wrapper)).toEqual(["max_concurrent_tasks"]);
+
+    await wrapper.find('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+
+    expect(routerMock.push).toHaveBeenCalledWith({ name: "backgroundtasks" });
+  });
 });
 
 // with the real form, so what it saves and guards can be read
@@ -466,6 +500,43 @@ function webserverConfig(
       server_name: entry("server_name", "My server", ""),
       base_url: entry("base_url", values.base_url ?? "auto", "auto"),
       external_url: entry("external_url", values.external_url ?? null, null),
+    },
+  };
+}
+
+function stringEntry(key: string, category: string): ConfigEntry {
+  return {
+    category,
+    default_value: null,
+    key,
+    label: key,
+    options: [],
+    required: false,
+    type: ConfigEntryType.STRING,
+    value: `${key} value`,
+  };
+}
+
+function streamsConfig(): CoreConfig {
+  return {
+    domain: "streams",
+    last_error: null,
+    values: {
+      publish_ip: stringEntry("publish_ip", "generic"),
+      background_scan_concurrency: stringEntry(
+        "background_scan_concurrency",
+        "audio_analysis",
+      ),
+    },
+  };
+}
+
+function tasksConfig(): CoreConfig {
+  return {
+    domain: "tasks",
+    last_error: null,
+    values: {
+      max_concurrent_tasks: stringEntry("max_concurrent_tasks", "generic"),
     },
   };
 }

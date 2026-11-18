@@ -133,6 +133,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { coreOwner, isOwnerFullyClaimed } from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
 import { CoreConfig } from "@/plugins/api/interfaces";
 import { HardDrive } from "@lucide/vue";
@@ -190,13 +191,6 @@ const extraSystemEntries: SystemConfigExtraEntry[] = [
     route: "/settings/genremanagement",
   },
   {
-    domain: "audio_analysis",
-    name: "settings.audio_analysis",
-    description: "settings.audio_analysis_description",
-    icon: "mdi-waveform",
-    route: "/settings/audio-analysis",
-  },
-  {
     domain: "storage",
     name: "settings.storage.title",
     description: "settings.storage.description",
@@ -205,12 +199,15 @@ const extraSystemEntries: SystemConfigExtraEntry[] = [
   },
 ];
 
+// a controller whose settings all show on a settings page is reached through that page
 const sortedCoreConfigs = computed(() => {
-  return [...coreConfigs.value].sort((a, b) =>
-    api.providerManifests[a.domain].name!.localeCompare(
-      api.providerManifests[b.domain].name!,
-    ),
-  );
+  return coreConfigs.value
+    .filter((config) => !isOwnerFullyClaimed(coreOwner(config.domain)))
+    .sort((a, b) =>
+      api.providerManifests[a.domain].name!.localeCompare(
+        api.providerManifests[b.domain].name!,
+      ),
+    );
 });
 
 const getItemTitle = (item: CoreConfig) => {
