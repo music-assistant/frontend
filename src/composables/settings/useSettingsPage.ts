@@ -3,6 +3,8 @@ import {
   buildSettingsForm,
   changedValuesByOwner,
   storedValues,
+  type SettingsField,
+  type SettingsForm,
 } from "@/helpers/settings_form";
 import {
   canEditSettingsPage,
@@ -20,6 +22,7 @@ import type {
   ConfigValueType,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { $t } from "@/plugins/i18n";
 import { ref, toRef } from "vue";
 
 // how the settings of one kind of owner are read, saved and acted on
@@ -51,6 +54,9 @@ const OWNER_ADAPTERS: Readonly<
  * saved back to each owner separately. Nothing loads for a user who may not
  * change them.
  *
+ * The entries are keyed the way the form of the page holds them, which on a
+ * page with several sources qualifies them by their owner.
+ *
  * @param pageId - The settings page.
  */
 export function useSettingsPage(pageId: SettingsPageId) {
@@ -65,7 +71,7 @@ export function useSettingsPage(pageId: SettingsPageId) {
   const loaded = ref(false);
   const loadFailed = ref(false);
   const busy = ref(false);
-  let owners = new Map<string, SettingsOwner>();
+  let fields = new Map<string, SettingsField>();
   // the values the server has, so a save only sends what changed
   let saved: Record<string, ConfigValueType> = {};
 
@@ -76,7 +82,7 @@ export function useSettingsPage(pageId: SettingsPageId) {
   const save = async function (
     values: Record<string, ConfigValueType>,
   ): Promise<boolean> {
-    const changes = changedValuesByOwner(values, saved, owners);
+    const changes = changedValuesByOwner(values, saved, fields);
     if (changes.length === 0) return true;
     busy.value = true;
     try {
@@ -105,11 +111,13 @@ export function useSettingsPage(pageId: SettingsPageId) {
     immediateApply: boolean,
   ): Promise<void> {
     const entry = entries.value.find((e) => (e.action || e.key) === action);
-    const owner = entry && owners.get(entry.key);
-    if (!owner) return;
-    const index = sources.findIndex((source) =>
-      isSameOwner(source.owner, owner),
-    );
+    const field = entry && fields.get(entry.key);
+    if (!field) return;
+    const { owner } = field;
+    const index = sourceIndexOf(owner);
+    const ownerEntry = configs.value[index].values[field.key];
+    // the form is rebuilt from the configs afterwards, so they take what was typed
+    keepFormValues(values);
     const adapter = OWNER_ADAPTERS[owner.kind];
     const { onAction: invoke } = useConfigAction({
       config: toRef(configs.value, index),
@@ -117,7 +125,7 @@ export function useSettingsPage(pageId: SettingsPageId) {
       invokeAction: (name) => adapter.invokeAction(owner.id, name),
       saveValues: (raw) => adapter.save(owner.id, raw),
     });
-    await invoke(action, values, immediateApply);
+    await invoke(ownerEntry.action || ownerEntry.key, values, immediateApply);
     rebuildForm();
     if (immediateApply) {
       saved = {
@@ -125,6 +133,19 @@ export function useSettingsPage(pageId: SettingsPageId) {
         ...storedValues(formEntriesOf(owner, configs.value[index])),
       };
     }
+  };
+
+  /**
+   * The entry of the form holding a setting of an owner, if the page shows it.
+   */
+  const entryOf = function (
+    owner: SettingsOwner,
+    key: string,
+  ): ConfigEntry | undefined {
+    return entries.value.find((entry) => {
+      const field = fields.get(entry.key);
+      return field?.key === key && isSameOwner(field.owner, owner);
+    });
   };
 
   const load = async function (): Promise<void> {
@@ -142,28 +163,63 @@ export function useSettingsPage(pageId: SettingsPageId) {
   };
 
   const rebuildForm = function (): void {
-    const form = buildSettingsForm(
-      sources.map((source, index) => ({
-        source,
-        entries: Object.values(configs.value[index].values),
-      })),
-    );
+    const form = buildForm(configs.value);
     entries.value = form.entries;
-    owners = form.owners;
+    fields = form.fields;
   };
 
-  // the entries of a config of an owner that the form shows
+  // the form of the page from the given config of each source; a source
+  // without one adds nothing
+  const buildForm = function (
+    pageConfigs: readonly (Config | undefined)[],
+  ): SettingsForm {
+    return buildSettingsForm(
+      sources.map((source, index) => ({
+        source,
+        entries: Object.values(pageConfigs[index]?.values ?? {}),
+      })),
+      (key) => $t(key),
+    );
+  };
+
+  // the entries of a config of an owner as the form shows them
   const formEntriesOf = function (
     owner: SettingsOwner,
     config: Config,
   ): ConfigEntry[] {
-    return Object.values(config.values).filter((entry) => {
-      const entryOwner = owners.get(entry.key);
-      return entryOwner !== undefined && isSameOwner(entryOwner, owner);
-    });
+    return buildForm(
+      sources.map((source) =>
+        isSameOwner(source.owner, owner) ? config : undefined,
+      ),
+    ).entries;
+  };
+
+  // copies the values of the form into the configs it is built from
+  const keepFormValues = function (
+    values: Record<string, ConfigValueType>,
+  ): void {
+    for (const [formKey, value] of Object.entries(values)) {
+      const field = fields.get(formKey);
+      if (!field) continue;
+      const entry = configs.value[sourceIndexOf(field.owner)].values[field.key];
+      if (entry) entry.value = value;
+    }
+  };
+
+  const sourceIndexOf = function (owner: SettingsOwner): number {
+    return sources.findIndex((source) => isSameOwner(source.owner, owner));
   };
 
   if (canEdit) void load();
 
-  return { entries, loaded, loadFailed, busy, canEdit, save, onAction };
+  return {
+    entries,
+    loaded,
+    loadFailed,
+    busy,
+    canEdit,
+    save,
+    onAction,
+    entryOf,
+  };
 }

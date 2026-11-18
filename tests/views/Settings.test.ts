@@ -344,6 +344,22 @@ describe("Settings breadcrumbs on the settings of a controller", () => {
     ]);
   });
 
+  it("hang the settings of the webserver under the network page", () => {
+    expect(pageTrail("editcore", { domain: "webserver" })).toEqual([
+      {
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
+      },
+      {
+        title: "settings.network.title",
+        disabled: false,
+        to: { name: "networksettings" },
+      },
+      { title: "settings.settings", disabled: true },
+    ]);
+  });
+
   it("name any other controller below the System settings", () => {
     expect(pageTrail("editcore", { domain: "streams" })).toEqual([
       {
@@ -352,6 +368,44 @@ describe("Settings breadcrumbs on the settings of a controller", () => {
         to: { name: "systemsettings" },
       },
       { title: "streams", disabled: true },
+    ]);
+  });
+});
+
+describe("Settings breadcrumbs on the network pages", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("hang the network page under the System settings", () => {
+    expect(pageTrail("networksettings")).toEqual([
+      {
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
+      },
+      { title: "settings.network.title", disabled: true },
+    ]);
+  });
+
+  it("hang remote access under the network page", () => {
+    expect(pageTrail("remoteaccesssettings")).toEqual([
+      {
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
+      },
+      {
+        title: "settings.network.title",
+        disabled: false,
+        to: { name: "networksettings" },
+      },
+      { title: "settings.remote_access", disabled: true },
     ]);
   });
 });

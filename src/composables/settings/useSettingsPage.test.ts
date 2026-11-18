@@ -1,4 +1,5 @@
 import type { MusicAssistantApi } from "@/plugins/api";
+import { coreOwner } from "@/helpers/settings_pages";
 import {
   ConfigEntryType,
   Scope,
@@ -131,6 +132,9 @@ describe("useSettingsPage", () => {
   });
 
   it("runs an action on the owner of its entry and shows what it returns", async () => {
+    const config = streamsConfig();
+    config.values.background_scan_concurrency.action = "suggest_concurrency";
+    apiMock.getCoreConfig.mockResolvedValueOnce(config);
     apiMock.invokeCoreConfigAction.mockResolvedValueOnce(
       Object.values(
         streamsConfig({ background_scan_concurrency: 8 }).values,
@@ -142,7 +146,6 @@ describe("useSettingsPage", () => {
     );
     const page = useSettingsPage("audio_analysis");
     await flushPromises();
-    page.entries.value[0].action = "suggest_concurrency";
 
     await page.onAction("suggest_concurrency", {}, false);
 
@@ -158,6 +161,125 @@ describe("useSettingsPage", () => {
     expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
   });
 });
+
+describe("useSettingsPage on a page with several owners", () => {
+  beforeEach(() => {
+    apiMock.getCoreConfig.mockImplementation(async (domain) =>
+      networkConfig(domain),
+    );
+    apiMock.saveCoreConfig.mockImplementation(async (domain, values) =>
+      networkConfig(domain, values),
+    );
+  });
+
+  it("shows the settings of each owner, keyed by their owner", async () => {
+    const page = useSettingsPage("network");
+    await flushPromises();
+
+    expect(page.entries.value.map((entry) => entry.key)).toEqual([
+      "core/webserver/bind_port",
+      "core/webserver/enable_ssl",
+      "core/webserver/verify_ssl",
+      "core/webserver/log_level",
+      "core/streams/bind_port",
+      "core/discovery/upnp_network_scan",
+      "core/discovery/log_level",
+    ]);
+  });
+
+  it("saves each owner its own changes, keyed the way it knows them", async () => {
+    const page = useSettingsPage("network");
+    await flushPromises();
+
+    await expect(
+      page.save({
+        "core/webserver/bind_port": 8096,
+        "core/streams/bind_port": 8098,
+        "core/discovery/log_level": "GLOBAL",
+      }),
+    ).resolves.toBe(true);
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("webserver", {
+      bind_port: 8096,
+    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
+      bind_port: 8098,
+    });
+  });
+
+  it("sends a change again only to the owner that did not store it", async () => {
+    apiMock.saveCoreConfig.mockImplementation(async (domain, values) => {
+      if (domain === "streams") throw new Error("refused");
+      return networkConfig(domain, values);
+    });
+    const page = useSettingsPage("network");
+    await flushPromises();
+    const values = {
+      "core/webserver/bind_port": 8096,
+      "core/streams/bind_port": 8098,
+    };
+
+    await expect(page.save(values)).resolves.toBe(false);
+    apiMock.saveCoreConfig.mockClear();
+    await page.save(values);
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledExactlyOnceWith("streams", {
+      bind_port: 8098,
+    });
+  });
+
+  it("runs an action on the owner of its entry, by the name it knows", async () => {
+    apiMock.invokeCoreConfigAction.mockResolvedValueOnce({
+      message: "Certificate is valid",
+      open_url: null,
+    });
+    const page = useSettingsPage("network");
+    await flushPromises();
+
+    await page.onAction("core/webserver/verify_ssl", {}, false);
+
+    expect(apiMock.invokeCoreConfigAction).toHaveBeenCalledExactlyOnceWith(
+      "webserver",
+      "verify_ssl",
+    );
+  });
+
+  it("keeps what was typed when an action shows new entries", async () => {
+    apiMock.invokeCoreConfigAction.mockResolvedValueOnce(
+      Object.values(networkConfig("webserver").values).map((entry) => ({
+        ...entry,
+        value: entry.key === "enable_ssl" ? true : undefined,
+      })),
+    );
+    const page = useSettingsPage("network");
+    await flushPromises();
+
+    await page.onAction(
+      "core/webserver/verify_ssl",
+      { "core/webserver/bind_port": 9000, "core/streams/bind_port": 9001 },
+      false,
+    );
+
+    expect(valueOf(page, "core/webserver/bind_port")).toBe(9000);
+    expect(valueOf(page, "core/webserver/enable_ssl")).toBe(true);
+    expect(valueOf(page, "core/streams/bind_port")).toBe(9001);
+  });
+
+  it("finds the entry of a setting of an owner", async () => {
+    const page = useSettingsPage("network");
+    await flushPromises();
+
+    expect(page.entryOf(coreOwner("streams"), "bind_port")?.key).toBe(
+      "core/streams/bind_port",
+    );
+    expect(page.entryOf(coreOwner("streams"), "fade_in")).toBeUndefined();
+  });
+});
+
+function valueOf(page: ReturnType<typeof useSettingsPage>, key: string) {
+  return page.entries.value.find((entry) => entry.key === key)?.value;
+}
 
 function entry(
   key: string,
@@ -201,5 +323,44 @@ function streamsConfig(
         values.smart_fades_log_level,
       ),
     },
+  };
+}
+
+// the network settings of each controller, with more in them than the page shows
+function networkConfig(
+  domain: string,
+  overrides: Record<string, ConfigEntry["value"]> = {},
+): CoreConfig {
+  const entries: Record<string, ConfigEntry[]> = {
+    webserver: [
+      entry("bind_port", "generic", 8095),
+      entry("enable_ssl", "generic", false),
+      {
+        ...entry("verify_ssl", "generic", null),
+        type: ConfigEntryType.ACTION,
+        action: "verify_ssl",
+        depends_on: "enable_ssl",
+      },
+      entry("log_level", "generic", "GLOBAL"),
+    ],
+    streams: [
+      entry("bind_port", "generic", 8097),
+      entry("fade_in", "playback", 1),
+      entry("log_level", "generic", "GLOBAL"),
+    ],
+    discovery: [
+      entry("upnp_network_scan", "generic", false),
+      entry("log_level", "generic", "GLOBAL"),
+    ],
+  };
+  return {
+    domain,
+    last_error: null,
+    values: Object.fromEntries(
+      entries[domain].map((e) => [
+        e.key,
+        e.key in overrides ? { ...e, value: overrides[e.key] } : e,
+      ]),
+    ),
   };
 }

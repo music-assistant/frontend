@@ -2,7 +2,6 @@ import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import {
   AudioWaveform,
   Blocks,
-  CloudCog,
   FileCode,
   Info,
   Music,
@@ -121,15 +120,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     color: "teal",
     route: { name: "usersettings" },
     requiresScope: Scope.USERS_READ,
-  },
-  {
-    name: "remote_access",
-    label: "settings.remote_access",
-    description: "settings.remote_access_description",
-    icon: CloudCog,
-    color: "deep-purple",
-    route: { name: "remoteaccesssettings" },
-    requiresScope: Scope.SYSTEM_MANAGE,
   },
   {
     name: "system",

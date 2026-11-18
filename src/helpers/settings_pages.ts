@@ -15,6 +15,8 @@ export interface SettingsSource {
   owner: SettingsOwner;
   // the categories of the owner's entries the page shows; left out: all of them
   categories?: readonly string[];
+  // the heading of the source's entries on a page with several sources
+  title?: string;
 }
 
 // the row a settings section shows above its list, leading to the page
@@ -34,7 +36,7 @@ export interface SettingsPage {
   sources: readonly SettingsSource[];
 }
 
-export type SettingsPageId = "audio_analysis" | "background_tasks";
+export type SettingsPageId = "audio_analysis" | "background_tasks" | "network";
 
 // a settings page with the row leading to it
 export interface LinkedSettingsPage {
@@ -45,9 +47,13 @@ export interface LinkedSettingsPage {
 
 export const STREAMS_DOMAIN = "streams";
 export const TASKS_DOMAIN = "tasks";
+export const WEBSERVER_DOMAIN = "webserver";
+export const DISCOVERY_DOMAIN = "discovery";
 export const AUDIO_ANALYSIS_CATEGORY = "audio_analysis";
 // the category of an entry that names none
 const GENERIC_CATEGORY = "generic";
+// the log level every owner has, which follows the owner as a whole
+const LOG_LEVEL_KEY = "log_level";
 
 // the scope needed to change the settings of each kind of owner
 const OWNER_WRITE_SCOPES: Readonly<Record<SettingsOwnerKind, Scope>> = {
@@ -78,6 +84,25 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     route: { name: "backgroundtasks" },
     sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
   },
+  network: {
+    title: "settings.network.title",
+    route: { name: "networksettings" },
+    sources: [
+      {
+        owner: coreOwner(WEBSERVER_DOMAIN),
+        title: "settings.network.web",
+      },
+      {
+        owner: coreOwner(STREAMS_DOMAIN),
+        categories: [GENERIC_CATEGORY],
+        title: "settings.network.streaming",
+      },
+      {
+        owner: coreOwner(DISCOVERY_DOMAIN),
+        title: "settings.network.discovery",
+      },
+    ],
+  },
 };
 
 export function coreOwner(domain: string): SettingsOwner {
@@ -85,14 +110,16 @@ export function coreOwner(domain: string): SettingsOwner {
 }
 
 /**
- * Whether a source shows the given entry of its owner.
+ * Whether a source shows the given entry of its owner. A source showing some
+ * categories of its owner leaves out the log level of the owner.
  */
 export function sourceIncludesEntry(
   source: SettingsSource,
   entry: ConfigEntry,
 ): boolean {
+  if (!source.categories) return true;
   return (
-    !source.categories ||
+    entry.key !== LOG_LEVEL_KEY &&
     source.categories.includes(entry.category || GENERIC_CATEGORY)
   );
 }

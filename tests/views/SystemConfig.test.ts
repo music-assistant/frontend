@@ -8,8 +8,10 @@ const { apiMock, routerPush } = vi.hoisted(() => ({
   apiMock: {
     getCoreConfigs: vi.fn(),
     providerManifests: {
+      discovery: { name: "Discovery" },
       streams: { name: "Streams" },
       tasks: { name: "Background tasks" },
+      webserver: { name: "Webserver" },
     } as Record<string, { name: string }>,
   },
   routerPush: vi.fn(),
@@ -64,6 +66,30 @@ describe("SystemConfig", () => {
       await tasks[0].trigger("click");
 
       expect(routerPush).toHaveBeenCalledWith("/settings/tasks");
+    },
+  );
+
+  it.each(["card", "list"] as const)(
+    "lists the Network page in place of the modules it shows, in the %s view",
+    async (viewMode) => {
+      apiMock.getCoreConfigs.mockResolvedValue([
+        coreConfig("discovery"),
+        coreConfig("streams"),
+        coreConfig("webserver"),
+      ]);
+      const wrapper = await mountPage(viewMode);
+
+      const text = entryTitles(wrapper).join("\n");
+      // the streams keep their other settings here
+      expect(text).toContain("Streams");
+      expect(text).not.toContain("Webserver");
+      expect(text).not.toContain("Discovery");
+      const network = entries(wrapper).find((entry) =>
+        entry.text().includes("settings.network.title"),
+      );
+      await network!.trigger("click");
+
+      expect(routerPush).toHaveBeenCalledWith("/settings/network");
     },
   );
 

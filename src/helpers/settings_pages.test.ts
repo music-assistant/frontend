@@ -10,6 +10,7 @@ import {
   canEditSettingsPage,
   claimedEntries,
   coreOwner,
+  DISCOVERY_DOMAIN,
   isEntryClaimed,
   isOwnerFullyClaimed,
   pageOfWholeOwner,
@@ -18,11 +19,14 @@ import {
   sourceIncludesEntry,
   STREAMS_DOMAIN,
   TASKS_DOMAIN,
+  WEBSERVER_DOMAIN,
 } from "./settings_pages";
 import { SETTINGS_SECTIONS } from "./settings_sections";
 
 const STREAMS = coreOwner(STREAMS_DOMAIN);
 const TASKS = coreOwner(TASKS_DOMAIN);
+// a controller no settings page shows
+const CACHE = coreOwner("cache");
 
 function entry(key: string, category: string): ConfigEntry {
   return {
@@ -61,6 +65,22 @@ describe("SETTINGS_PAGES", () => {
     }
   });
 
+  it("shows each owner of a page from one source", () => {
+    for (const page of Object.values(SETTINGS_PAGES)) {
+      const owners = page.sources.map(
+        ({ owner }) => `${owner.kind}:${owner.id}`,
+      );
+      expect(new Set(owners).size).toBe(owners.length);
+    }
+  });
+
+  it("titles each source of a page with several sources", () => {
+    for (const page of Object.values(SETTINGS_PAGES)) {
+      if (page.sources.length < 2) continue;
+      for (const source of page.sources) expect(source.title).toBeTruthy();
+    }
+  });
+
   it("links each page from an existing settings section", () => {
     const sectionNames = SETTINGS_SECTIONS.map((section) => section.name);
     for (const page of Object.values(SETTINGS_PAGES)) {
@@ -81,6 +101,15 @@ describe("sourceIncludesEntry", () => {
     expect(sourceIncludesEntry(source, entry("a", "playback"))).toBe(true);
     expect(sourceIncludesEntry(source, entry("b", "generic"))).toBe(false);
   });
+
+  it("leaves the log level of the owner out of listed categories", () => {
+    expect(
+      sourceIncludesEntry(
+        { owner: STREAMS, categories: ["generic"] },
+        entry("log_level", "generic"),
+      ),
+    ).toBe(false);
+  });
 });
 
 describe("isEntryClaimed", () => {
@@ -97,9 +126,16 @@ describe("isEntryClaimed", () => {
     expect(isEntryClaimed(STREAMS, entry("fade_in", "playback"))).toBe(false);
   });
 
+  it("claims the network entries of the streams controller", () => {
+    expect(isEntryClaimed(STREAMS, entry("bind_port", "generic"))).toBe(true);
+  });
+
+  it("leaves the log level of the streams controller alone", () => {
+    expect(isEntryClaimed(STREAMS, entry("log_level", "generic"))).toBe(false);
+  });
+
   it("counts an entry without a category as generic", () => {
-    expect(isEntryClaimed(STREAMS, entry("bind_port", ""))).toBe(false);
-    expect(isEntryClaimed(TASKS, entry("max_concurrent_tasks", ""))).toBe(true);
+    expect(isEntryClaimed(STREAMS, entry("publish_ip", ""))).toBe(true);
   });
 
   it("claims every entry of the tasks controller", () => {
@@ -107,9 +143,7 @@ describe("isEntryClaimed", () => {
   });
 
   it("claims nothing of an owner no page shows", () => {
-    expect(
-      isEntryClaimed(coreOwner("webserver"), entry("bind_port", "generic")),
-    ).toBe(false);
+    expect(isEntryClaimed(CACHE, entry("bind_port", "generic"))).toBe(false);
   });
 });
 
@@ -136,13 +170,15 @@ describe("isOwnerFullyClaimed", () => {
   });
 
   it("is false for an owner no page shows", () => {
-    expect(isOwnerFullyClaimed(coreOwner("webserver"))).toBe(false);
+    expect(isOwnerFullyClaimed(CACHE)).toBe(false);
   });
 });
 
 describe("pageOfWholeOwner", () => {
   it("names the page showing an owner as a whole", () => {
     expect(pageOfWholeOwner(TASKS)).toBe("background_tasks");
+    expect(pageOfWholeOwner(coreOwner(WEBSERVER_DOMAIN))).toBe("network");
+    expect(pageOfWholeOwner(coreOwner(DISCOVERY_DOMAIN))).toBe("network");
     expect(pageOfWholeOwner(STREAMS)).toBeUndefined();
   });
 });

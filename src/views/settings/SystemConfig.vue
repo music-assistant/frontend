@@ -136,7 +136,7 @@ import {
 import { coreOwner, isOwnerFullyClaimed } from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
 import { CoreConfig } from "@/plugins/api/interfaces";
-import { HardDrive } from "@lucide/vue";
+import { HardDrive, Network } from "@lucide/vue";
 import {
   computed,
   inject,
@@ -169,6 +169,13 @@ interface SystemConfigExtraEntry {
 type SystemConfigItem = CoreConfig | SystemConfigExtraEntry;
 
 const extraSystemEntries: SystemConfigExtraEntry[] = [
+  {
+    domain: "network",
+    name: "settings.network.title",
+    description: "settings.network.description",
+    icon: Network,
+    route: "/settings/network",
+  },
   {
     domain: "diagnostics",
     name: "settings.diagnostics",
