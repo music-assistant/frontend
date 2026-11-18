@@ -172,7 +172,7 @@ describe("useSettingsPage on a page with several owners", () => {
     );
   });
 
-  it("shows the settings of each owner, keyed by their owner", async () => {
+  it("shows the settings of each owner, keyed by their owner, without their log levels", async () => {
     const page = useSettingsPage("network");
     await flushPromises();
 
@@ -180,10 +180,8 @@ describe("useSettingsPage on a page with several owners", () => {
       "core/webserver/bind_port",
       "core/webserver/enable_ssl",
       "core/webserver/verify_ssl",
-      "core/webserver/log_level",
       "core/streams/bind_port",
       "core/discovery/upnp_network_scan",
-      "core/discovery/log_level",
     ]);
   });
 
@@ -195,7 +193,7 @@ describe("useSettingsPage on a page with several owners", () => {
       page.save({
         "core/webserver/bind_port": 8096,
         "core/streams/bind_port": 8098,
-        "core/discovery/log_level": "GLOBAL",
+        "core/discovery/upnp_network_scan": false,
       }),
     ).resolves.toBe(true);
 

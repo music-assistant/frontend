@@ -39,11 +39,13 @@ export interface SettingsPage {
 
 export type SettingsPageId =
   | "audio_analysis"
-  | "background_tasks"
+  | "diagnostics"
   | "library"
   | "metadata"
   | "network"
-  | "playback";
+  | "playback"
+  | "task_settings"
+  | "user_management";
 
 // a settings page with the row leading to it
 export interface LinkedSettingsPage {
@@ -60,11 +62,14 @@ export const PLAYER_QUEUES_DOMAIN = "player_queues";
 export const PLAYERS_DOMAIN = "players";
 export const MUSIC_DOMAIN = "music";
 export const METADATA_DOMAIN = "metadata";
+export const CACHE_DOMAIN = "cache";
+export const STATISTICS_DOMAIN = "statistics";
 export const AUDIO_ANALYSIS_CATEGORY = "audio_analysis";
+export const ACCOUNT_ACCESS_CATEGORY = "account_access";
+// the log level every core module has, which Diagnostics sets for every module
+export const LOG_LEVEL_KEY = "log_level";
 // the category of an entry that names none
 const GENERIC_CATEGORY = "generic";
-// the log level every owner has, which follows the owner as a whole
-const LOG_LEVEL_KEY = "log_level";
 
 // the scope needed to change the settings of each kind of owner
 const OWNER_WRITE_SCOPES: Readonly<Record<SettingsOwnerKind, Scope>> = {
@@ -90,10 +95,20 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
       },
     ],
   },
-  background_tasks: {
-    title: "background_tasks.title",
-    route: { name: "backgroundtasks" },
-    sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
+  diagnostics: {
+    title: "settings.diagnostics",
+    route: { name: "diagnostics" },
+    sources: [
+      {
+        owner: coreOwner(CACHE_DOMAIN),
+        title: "settings.core_module.cache.name",
+      },
+      // the statistics module has no settings besides its log level
+      {
+        owner: coreOwner(STATISTICS_DOMAIN),
+        title: "settings.core_module.statistics.name",
+      },
+    ],
   },
   library: {
     title: "settings.library.title",
@@ -136,6 +151,7 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     sources: [
       {
         owner: coreOwner(WEBSERVER_DOMAIN),
+        categories: [GENERIC_CATEGORY],
         title: "settings.network.web",
       },
       {
@@ -169,6 +185,21 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
       { owner: coreOwner(PLAYERS_DOMAIN) },
     ],
   },
+  task_settings: {
+    title: "background_tasks.settings.title",
+    route: { name: "tasksettings" },
+    sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
+  },
+  user_management: {
+    title: "auth.user_management",
+    route: { name: "usersettings" },
+    sources: [
+      {
+        owner: coreOwner(WEBSERVER_DOMAIN),
+        categories: [ACCOUNT_ACCESS_CATEGORY],
+      },
+    ],
+  },
 };
 
 export function coreOwner(domain: string): SettingsOwner {
@@ -176,58 +207,29 @@ export function coreOwner(domain: string): SettingsOwner {
 }
 
 /**
- * Whether a source shows the given entry of its owner. A source showing some
- * categories of its owner leaves out the log level of the owner.
+ * Whether a source shows the given entry of its owner. No source shows the log
+ * level of its owner: Diagnostics sets the log level of every module.
  */
 export function sourceIncludesEntry(
   source: SettingsSource,
   entry: ConfigEntry,
 ): boolean {
-  if (!source.categories) return true;
+  if (entry.key === LOG_LEVEL_KEY) return false;
   return (
-    entry.key !== LOG_LEVEL_KEY &&
+    !source.categories ||
     source.categories.includes(entry.category || GENERIC_CATEGORY)
   );
 }
 
 /**
- * Whether a settings page shows the given entry of an owner.
+ * Whether a settings page shows settings of an owner, all of them or some.
  */
-export function isEntryClaimed(
-  owner: SettingsOwner,
-  entry: ConfigEntry,
-): boolean {
-  return sourcesOf(owner).some((source) => sourceIncludesEntry(source, entry));
-}
-
-/**
- * The entries of an owner that a settings page shows, in their given order.
- */
-export function claimedEntries<T extends ConfigEntry>(
-  owner: SettingsOwner,
-  entries: readonly T[],
-): T[] {
-  return entries.filter((entry) => isEntryClaimed(owner, entry));
-}
-
-/**
- * The settings page showing every entry of an owner, if any.
- */
-export function pageOfWholeOwner(
-  owner: SettingsOwner,
-): SettingsPageId | undefined {
-  return pageIds().find((id) =>
-    SETTINGS_PAGES[id].sources.some(
-      (source) => isSameOwner(source.owner, owner) && !source.categories,
+export function isKnownOwner(owner: SettingsOwner): boolean {
+  return pageIds().some((id) =>
+    SETTINGS_PAGES[id].sources.some((source) =>
+      isSameOwner(source.owner, owner),
     ),
   );
-}
-
-/**
- * Whether a settings page shows every entry of an owner.
- */
-export function isOwnerFullyClaimed(owner: SettingsOwner): boolean {
-  return pageOfWholeOwner(owner) !== undefined;
 }
 
 /**
@@ -274,12 +276,4 @@ export function isSameOwner(a: SettingsOwner, b: SettingsOwner): boolean {
 
 function pageIds(): SettingsPageId[] {
   return Object.keys(SETTINGS_PAGES) as SettingsPageId[];
-}
-
-function sourcesOf(owner: SettingsOwner): SettingsSource[] {
-  return pageIds().flatMap((id) =>
-    SETTINGS_PAGES[id].sources.filter((source) =>
-      isSameOwner(source.owner, owner),
-    ),
-  );
 }

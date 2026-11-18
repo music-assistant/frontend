@@ -92,7 +92,7 @@ describe("NetworkSettings", () => {
     expect(wrapper.find('[data-testid="edit-config"]').exists()).toBe(true);
   });
 
-  it("shows the network settings of each module in one form", async () => {
+  it("shows the network settings of each module in one form, without their log levels", async () => {
     const wrapper = await mountPage();
 
     const entries = wrapper
@@ -106,6 +106,34 @@ describe("NetworkSettings", () => {
       "core/streams/bind_port",
       "core/discovery/upnp_network_scan",
     ]);
+  });
+
+  it.each([
+    [
+      "shows the self-registration with the web settings while it has no category of its own",
+      "generic",
+      true,
+    ],
+    [
+      "leaves the self-registration to the user management once it has a category of its own",
+      "account_access",
+      false,
+    ],
+  ])("%s", async (_name, category, shown) => {
+    apiMock.getCoreConfig.mockImplementation(async (domain) =>
+      networkConfig(domain, category),
+    );
+
+    const wrapper = await mountPage();
+
+    const keys = (
+      wrapper
+        .getComponent(editConfigStub)
+        .props("configEntries") as ConfigEntry[]
+    ).map((entry) => entry.key);
+    expect(keys.includes("core/webserver/auth_allow_self_registration")).toBe(
+      shown,
+    );
   });
 
   it("edits the server URLs in a card of their own", async () => {
@@ -161,7 +189,10 @@ async function mountPage() {
   return wrapper;
 }
 
-function networkConfig(domain: string): CoreConfig {
+function networkConfig(
+  domain: string,
+  selfRegistrationCategory?: string,
+): CoreConfig {
   const entry = (key: string, value: ConfigEntry["value"]): ConfigEntry => ({
     key,
     category: "generic",
@@ -178,12 +209,24 @@ function networkConfig(domain: string): CoreConfig {
       entry("base_url", "auto"),
       entry("external_url", ""),
       entry("bind_port", 8095),
+      ...(selfRegistrationCategory
+        ? [
+            {
+              ...entry("auth_allow_self_registration", true),
+              category: selfRegistrationCategory,
+            },
+          ]
+        : []),
+      entry("log_level", "GLOBAL"),
     ],
     streams: [
       entry("bind_port", 8097),
       { ...entry("fade_in", 1), category: "playback" },
     ],
-    discovery: [entry("upnp_network_scan", false)],
+    discovery: [
+      entry("upnp_network_scan", false),
+      entry("log_level", "GLOBAL"),
+    ],
   };
   return {
     domain,

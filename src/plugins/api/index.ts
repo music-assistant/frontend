@@ -3357,9 +3357,10 @@ export class MusicAssistantApi {
 
   // Core Config related functions
 
-  public async getCoreConfigs(): Promise<CoreConfig[]> {
-    // Return all known core configurations
-    return this.sendCommand("config/core");
+  public async getCoreConfigs(includeValues = false): Promise<CoreConfig[]> {
+    // Return all known core configurations; without includeValues, the configs
+    // carry no entries.
+    return this.sendCommand("config/core", { include_values: includeValues });
   }
 
   public async getCoreConfig(domain: string): Promise<CoreConfig> {

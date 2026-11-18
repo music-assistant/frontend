@@ -6,31 +6,40 @@ import {
 import { describe, expect, it } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../tests/fixtures/scopes";
 import {
+  ACCOUNT_ACCESS_CATEGORY,
   AUDIO_ANALYSIS_CATEGORY,
+  CACHE_DOMAIN,
   canEditSettingsPage,
-  claimedEntries,
   coreOwner,
-  DISCOVERY_DOMAIN,
-  isEntryClaimed,
-  isOwnerFullyClaimed,
-  METADATA_DOMAIN,
-  MUSIC_DOMAIN,
-  pageOfWholeOwner,
-  PLAYER_QUEUES_DOMAIN,
-  PLAYERS_DOMAIN,
+  isKnownOwner,
+  LOG_LEVEL_KEY,
   SETTINGS_PAGES,
   settingsSectionLinks,
   sourceIncludesEntry,
   STREAMS_DOMAIN,
   TASKS_DOMAIN,
   WEBSERVER_DOMAIN,
+  type SettingsOwner,
+  type SettingsPageId,
 } from "./settings_pages";
 import { SETTINGS_SECTIONS } from "./settings_sections";
 
 const STREAMS = coreOwner(STREAMS_DOMAIN);
 const TASKS = coreOwner(TASKS_DOMAIN);
-// a controller no settings page shows
-const CACHE = coreOwner("cache");
+const WEBSERVER = coreOwner(WEBSERVER_DOMAIN);
+// the core modules the server offers settings of
+const CONFIGURABLE_CORE_MODULES = [
+  "cache",
+  "discovery",
+  "metadata",
+  "music",
+  "player_queues",
+  "players",
+  "statistics",
+  "streams",
+  "tasks",
+  "webserver",
+];
 
 function entry(key: string, category: string): ConfigEntry {
   return {
@@ -47,6 +56,18 @@ function entry(key: string, category: string): ConfigEntry {
 const ALL_SOURCES = Object.values(SETTINGS_PAGES).flatMap(
   (page) => page.sources,
 );
+
+// the pages showing an entry of an owner
+function pagesShowing(owner: SettingsOwner, configEntry: ConfigEntry) {
+  return (Object.keys(SETTINGS_PAGES) as SettingsPageId[]).filter((id) =>
+    SETTINGS_PAGES[id].sources.some(
+      (source) =>
+        source.owner.kind === owner.kind &&
+        source.owner.id === owner.id &&
+        sourceIncludesEntry(source, configEntry),
+    ),
+  );
+}
 
 describe("SETTINGS_PAGES", () => {
   it("shows no category of an owner on two pages", () => {
@@ -101,9 +122,12 @@ describe("SETTINGS_PAGES", () => {
 });
 
 describe("sourceIncludesEntry", () => {
-  it("includes every entry for a source without categories", () => {
+  it("includes every other entry for a source without categories", () => {
     expect(
-      sourceIncludesEntry({ owner: TASKS }, entry("log_level", "advanced")),
+      sourceIncludesEntry(
+        { owner: TASKS },
+        entry("max_concurrent_tasks", "generic"),
+      ),
     ).toBe(true);
   });
 
@@ -113,99 +137,102 @@ describe("sourceIncludesEntry", () => {
     expect(sourceIncludesEntry(source, entry("b", "generic"))).toBe(false);
   });
 
-  it("leaves the log level of the owner out of listed categories", () => {
-    expect(
-      sourceIncludesEntry(
-        { owner: STREAMS, categories: ["generic"] },
-        entry("log_level", "generic"),
-      ),
-    ).toBe(false);
+  it.each([
+    ["a source without categories", { owner: TASKS }],
+    ["listed categories", { owner: STREAMS, categories: ["generic"] }],
+  ])("leaves the log level of the owner out of %s", (_name, source) => {
+    expect(sourceIncludesEntry(source, entry(LOG_LEVEL_KEY, "generic"))).toBe(
+      false,
+    );
   });
 });
 
-describe("isEntryClaimed", () => {
-  it("claims the audio analysis entries of the streams controller", () => {
+describe("the page of each setting", () => {
+  it("shows the audio analysis entries of the streams module on its page", () => {
     expect(
-      isEntryClaimed(
+      pagesShowing(
         STREAMS,
         entry("background_scan_concurrency", AUDIO_ANALYSIS_CATEGORY),
       ),
-    ).toBe(true);
+    ).toEqual(["audio_analysis"]);
   });
 
-  it("claims the source selection entries of the streams controller", () => {
+  it("shows the source selection of the streams module with the library", () => {
     expect(
-      isEntryClaimed(STREAMS, entry("stream_source_mode", "source_selection")),
-    ).toBe(true);
+      pagesShowing(STREAMS, entry("stream_source_mode", "source_selection")),
+    ).toEqual(["library"]);
   });
 
   it.each(["playback", "crossfade", "volume_normalization"])(
-    "claims the %s entries of the streams controller",
+    "shows the %s entries of the streams module with the playback defaults",
     (category) => {
-      expect(isEntryClaimed(STREAMS, entry("buffer_size", category))).toBe(
-        true,
-      );
+      expect(pagesShowing(STREAMS, entry("buffer_size", category))).toEqual([
+        "playback",
+      ]);
     },
   );
 
-  it("claims the network entries of the streams controller", () => {
-    expect(isEntryClaimed(STREAMS, entry("bind_port", "generic"))).toBe(true);
-  });
-
-  it("leaves the log level of the streams controller alone", () => {
-    expect(isEntryClaimed(STREAMS, entry("log_level", "generic"))).toBe(false);
+  it("shows the network entries of the streams module on the network page", () => {
+    expect(pagesShowing(STREAMS, entry("bind_port", "generic"))).toEqual([
+      "network",
+    ]);
   });
 
   it("counts an entry without a category as generic", () => {
-    expect(isEntryClaimed(STREAMS, entry("publish_ip", ""))).toBe(true);
+    expect(pagesShowing(STREAMS, entry("publish_ip", ""))).toEqual(["network"]);
   });
 
-  it("claims every entry of the tasks controller", () => {
-    expect(isEntryClaimed(TASKS, entry("log_level", "advanced"))).toBe(true);
-  });
-
-  it("claims nothing of an owner no page shows", () => {
-    expect(isEntryClaimed(CACHE, entry("bind_port", "generic"))).toBe(false);
-  });
-});
-
-describe("claimedEntries", () => {
-  it("keeps the claimed entries in their order", () => {
-    const first = entry("smart_fades_log_level", AUDIO_ANALYSIS_CATEGORY);
-    const second = entry(
-      "background_scan_concurrency",
-      AUDIO_ANALYSIS_CATEGORY,
-    );
+  it("shows the self-registration with the user management once it has a category of its own", () => {
     expect(
-      claimedEntries(STREAMS, [first, entry("log_level", "generic"), second]),
-    ).toEqual([first, second]);
+      pagesShowing(
+        WEBSERVER,
+        entry("auth_allow_self_registration", ACCOUNT_ACCESS_CATEGORY),
+      ),
+    ).toEqual(["user_management"]);
+    expect(
+      pagesShowing(WEBSERVER, entry("auth_allow_self_registration", "generic")),
+    ).toEqual(["network"]);
+  });
+
+  it("shows the task settings on a page of their own", () => {
+    expect(
+      pagesShowing(TASKS, entry("max_concurrent_tasks", "generic")),
+    ).toEqual(["task_settings"]);
+  });
+
+  it("shows the cache actions with the diagnostics", () => {
+    expect(
+      pagesShowing(coreOwner(CACHE_DOMAIN), entry("clear_cache", "generic")),
+    ).toEqual(["diagnostics"]);
+  });
+
+  it("shows no log level on any page", () => {
+    for (const source of ALL_SOURCES) {
+      expect(
+        pagesShowing(source.owner, entry(LOG_LEVEL_KEY, "generic")),
+      ).toEqual([]);
+    }
   });
 });
 
-describe("isOwnerFullyClaimed", () => {
-  it("is true for an owner a page shows as a whole", () => {
-    expect(isOwnerFullyClaimed(TASKS)).toBe(true);
+describe("isKnownOwner", () => {
+  it("knows an owner a page shows as a whole", () => {
+    expect(isKnownOwner(TASKS)).toBe(true);
   });
 
-  it("is false for an owner a page shows some categories of", () => {
-    expect(isOwnerFullyClaimed(STREAMS)).toBe(false);
+  it("knows an owner a page shows some categories of", () => {
+    expect(isKnownOwner(STREAMS)).toBe(true);
   });
 
-  it("is false for an owner no page shows", () => {
-    expect(isOwnerFullyClaimed(CACHE)).toBe(false);
-  });
-});
+  it.each(CONFIGURABLE_CORE_MODULES)(
+    "knows the %s module of the server",
+    (domain) => {
+      expect(isKnownOwner(coreOwner(domain))).toBe(true);
+    },
+  );
 
-describe("pageOfWholeOwner", () => {
-  it("names the page showing an owner as a whole", () => {
-    expect(pageOfWholeOwner(TASKS)).toBe("background_tasks");
-    expect(pageOfWholeOwner(coreOwner(WEBSERVER_DOMAIN))).toBe("network");
-    expect(pageOfWholeOwner(coreOwner(DISCOVERY_DOMAIN))).toBe("network");
-    expect(pageOfWholeOwner(coreOwner(PLAYER_QUEUES_DOMAIN))).toBe("playback");
-    expect(pageOfWholeOwner(coreOwner(PLAYERS_DOMAIN))).toBe("playback");
-    expect(pageOfWholeOwner(coreOwner(MUSIC_DOMAIN))).toBe("library");
-    expect(pageOfWholeOwner(coreOwner(METADATA_DOMAIN))).toBe("metadata");
-    expect(pageOfWholeOwner(STREAMS)).toBeUndefined();
+  it("does not know a module no page shows", () => {
+    expect(isKnownOwner(coreOwner("radio_tuner"))).toBe(false);
   });
 });
 

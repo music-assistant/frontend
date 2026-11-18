@@ -3,6 +3,7 @@ import {
   buildSettingsForm,
   changedValuesByOwner,
   storedValues,
+  type OwnerChanges,
   type SettingsField,
   type SettingsForm,
 } from "@/helpers/settings_form";
@@ -86,17 +87,9 @@ export function useSettingsPage(pageId: SettingsPageId) {
     if (changes.length === 0) return true;
     busy.value = true;
     try {
-      const outcomes = await Promise.allSettled(
-        changes.map(async ({ owner, values: ownerValues }) => {
-          const config = await OWNER_ADAPTERS[owner.kind].save(
-            owner.id,
-            ownerValues,
-          );
-          saved = { ...saved, ...storedValues(formEntriesOf(owner, config)) };
-        }),
-      );
-      // the api reports a failed save itself
-      return outcomes.every((outcome) => outcome.status === "fulfilled");
+      return await saveOwnerChanges(changes, (owner, config) => {
+        saved = { ...saved, ...storedValues(formEntriesOf(owner, config)) };
+      });
     } finally {
       busy.value = false;
     }
@@ -222,4 +215,23 @@ export function useSettingsPage(pageId: SettingsPageId) {
     onAction,
     entryOf,
   };
+}
+
+/**
+ * Save the changes of each owner to that owner. Resolves whether every owner
+ * stored its changes; the api reports a failed save itself.
+ *
+ * @param changes - The changed values of each owner.
+ * @param onSaved - Takes the config an owner stored.
+ */
+export async function saveOwnerChanges(
+  changes: readonly OwnerChanges[],
+  onSaved: (owner: SettingsOwner, config: Config) => void,
+): Promise<boolean> {
+  const outcomes = await Promise.allSettled(
+    changes.map(async ({ owner, values }) => {
+      onSaved(owner, await OWNER_ADAPTERS[owner.kind].save(owner.id, values));
+    }),
+  );
+  return outcomes.every((outcome) => outcome.status === "fulfilled");
 }

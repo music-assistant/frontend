@@ -12,13 +12,14 @@ import {
   SETTINGS_SECTIONS,
 } from "./settings_sections";
 
+// the menu, in display order
 const ALL_SECTIONS = [
   "catalog",
   "music_providers",
-  "metadata_providers",
-  "plugin_providers",
   "players",
+  "metadata_providers",
   "audio_analysis_providers",
+  "plugin_providers",
   "profile",
   "frontend",
   "users",

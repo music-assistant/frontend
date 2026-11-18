@@ -1,162 +1,136 @@
-import type { CoreConfig } from "@/plugins/api/interfaces";
+import { Scope, type CoreConfig } from "@/plugins/api/interfaces";
 import SystemConfig from "@/views/settings/SystemConfig.vue";
-import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, routerPush } = vi.hoisted(() => ({
+const { apiMock, hasScope } = vi.hoisted(() => ({
   apiMock: {
     getCoreConfigs: vi.fn(),
     providerManifests: {
-      discovery: { name: "Discovery" },
-      metadata: { name: "Metadata" },
-      music: { name: "Music" },
-      player_queues: { name: "Player queues" },
-      players: { name: "Players" },
-      streams: { name: "Streams" },
-      tasks: { name: "Background tasks" },
-      webserver: { name: "Webserver" },
-    } as Record<string, { name: string }>,
+      radio_tuner: { name: "Radio tuner", description: "Tunes the radio" },
+      metrics: { name: "Metrics", description: "Counts things" },
+    } as Record<string, { name: string; description: string }>,
   },
-  routerPush: vi.fn(),
+  hasScope: vi.fn<(scope: Scope) => boolean>(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
-vi.mock("vue-router", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("vue-router")>()),
-  useRouter: () => ({ push: routerPush }),
-}));
-vi.mock("vue-i18n", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("vue-i18n")>()),
-  useI18n: () => ({ t: (key: string) => key }),
-}));
+vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
+enableAutoUnmount(afterEach);
+
+// the core modules the server offers settings of, which settings pages show
+const KNOWN_MODULES = [
+  "cache",
+  "discovery",
+  "metadata",
+  "music",
+  "player_queues",
+  "players",
+  "statistics",
+  "streams",
+  "tasks",
+  "webserver",
+];
+
+const RouterLinkStub = {
+  props: ["to"],
+  template: '<a :href="JSON.stringify(to)"><slot /></a>',
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
-  apiMock.getCoreConfigs.mockResolvedValue([]);
+  hasScope.mockReturnValue(true);
+  apiMock.getCoreConfigs.mockResolvedValue(KNOWN_MODULES.map(coreConfig));
 });
 
 describe("SystemConfig", () => {
-  it("leaves the music locations and the genres to the library options", async () => {
-    const wrapper = await mountPage("list");
+  it("leads to the network, the background tasks and the diagnostics", async () => {
+    const wrapper = await mountPage();
 
-    const text = entryTitles(wrapper).join("\n");
-    expect(text).not.toContain("storage");
-    expect(text).not.toContain("genre");
-  });
-
-  it("leaves the music and metadata modules to their settings pages", async () => {
-    apiMock.getCoreConfigs.mockResolvedValue([
-      coreConfig("metadata"),
-      coreConfig("music"),
-      coreConfig("streams"),
+    expect(rowKeys(wrapper)).toEqual([
+      "network",
+      "background_tasks",
+      "diagnostics",
     ]);
-    const wrapper = await mountPage("list");
-
-    const text = entryTitles(wrapper).join("\n");
-    // the streams keep their log level here
-    expect(text).toContain("Streams");
-    expect(text).not.toContain("Music");
-    expect(text).not.toContain("Metadata");
+    expect(linkOf(wrapper, "network")).toEqual({ name: "networksettings" });
+    expect(linkOf(wrapper, "background_tasks")).toEqual({
+      name: "backgroundtasks",
+    });
+    expect(linkOf(wrapper, "diagnostics")).toEqual({ name: "diagnostics" });
   });
 
-  it.each(["card", "list"] as const)(
-    "lists Background tasks once, as its page, in the %s view",
-    async (viewMode) => {
-      apiMock.getCoreConfigs.mockResolvedValue([
-        coreConfig("streams"),
-        coreConfig("tasks"),
-      ]);
-      const wrapper = await mountPage(viewMode);
+  it("lists no module a settings page shows", async () => {
+    const wrapper = await mountPage();
 
-      const text = entryTitles(wrapper).join("\n");
-      expect(text).toContain("Streams");
-      // the controller itself, by the name of its manifest
-      expect(text).not.toContain("Background tasks");
-      const tasks = entries(wrapper).filter((entry) =>
-        entry.text().includes("background_tasks.title"),
-      );
-      expect(tasks).toHaveLength(1);
-      await tasks[0].trigger("click");
+    expect(rowKeys(wrapper).filter((key) => key.startsWith("core_"))).toEqual(
+      [],
+    );
+  });
 
-      expect(routerPush).toHaveBeenCalledWith("/settings/tasks");
-    },
-  );
-
-  it.each(["card", "list"] as const)(
-    "lists the Network page in place of the modules it shows, in the %s view",
-    async (viewMode) => {
-      apiMock.getCoreConfigs.mockResolvedValue([
-        coreConfig("discovery"),
-        coreConfig("streams"),
-        coreConfig("webserver"),
-      ]);
-      const wrapper = await mountPage(viewMode);
-
-      const text = entryTitles(wrapper).join("\n");
-      // the streams keep their other settings here
-      expect(text).toContain("Streams");
-      expect(text).not.toContain("Webserver");
-      expect(text).not.toContain("Discovery");
-      const network = entries(wrapper).find((entry) =>
-        entry.text().includes("settings.network.title"),
-      );
-      await network!.trigger("click");
-
-      expect(routerPush).toHaveBeenCalledWith("/settings/network");
-    },
-  );
-
-  it("leaves the modules of the playback defaults to the Playback page", async () => {
+  it("leads to the plain page of a module no settings page shows, by name", async () => {
     apiMock.getCoreConfigs.mockResolvedValue([
-      coreConfig("player_queues"),
-      coreConfig("players"),
-      coreConfig("streams"),
+      ...KNOWN_MODULES.map(coreConfig),
+      coreConfig("radio_tuner"),
+      coreConfig("metrics"),
     ]);
-    const wrapper = await mountPage("list");
 
-    const text = entryTitles(wrapper).join("\n");
-    // the streams keep their other settings here
-    expect(text).toContain("Streams");
-    expect(text).not.toContain("Player queues");
-    expect(text).not.toContain("Players");
+    const wrapper = await mountPage();
+
+    expect(rowKeys(wrapper)).toEqual([
+      "network",
+      "background_tasks",
+      "diagnostics",
+      "core_metrics",
+      "core_radio_tuner",
+    ]);
+    const row = wrapper.get('[data-testid="system-link-core_radio_tuner"]');
+    expect(row.text()).toContain("Radio tuner");
+    expect(row.text()).toContain("Tunes the radio");
+    expect(linkOf(wrapper, "core_radio_tuner")).toEqual({
+      name: "editcore",
+      params: { domain: "radio_tuner" },
+    });
   });
 
-  it("no longer lists the audio analysis status", async () => {
-    const wrapper = await mountPage("list");
+  it.each([
+    [Scope.CONFIG_CORE_WRITE, "network"],
+    [Scope.SYSTEM_READ, "background_tasks"],
+    [Scope.SYSTEM_MANAGE, "diagnostics"],
+  ])("leaves a page out without %s, which it needs", async (scope, key) => {
+    hasScope.mockImplementation((granted) => granted !== scope);
 
-    expect(entryTitles(wrapper).join(" ")).not.toContain("audio_analysis");
+    const wrapper = await mountPage();
+
+    expect(rowKeys(wrapper)).not.toContain(key);
+    expect(rowKeys(wrapper)).toHaveLength(2);
   });
 });
 
-async function mountPage(viewMode: "card" | "list") {
+async function mountPage() {
   const wrapper = mount(SystemConfig, {
     global: {
-      provide: { systemViewMode: { viewMode: ref(viewMode) } },
-      stubs: {
-        Container: { template: "<div><slot /></div>" },
-        VIcon: true,
-        VList: { template: "<div><slot /></div>" },
-        ListItem: {
-          emits: ["click"],
-          template:
-            '<div class="list-item" @click="$emit(\'click\')"><slot name="title" /></div>',
-        },
-        ProviderIcon: true,
-        UnsupportedInstallBanner: true,
-      },
+      stubs: { RouterLink: RouterLinkStub, UnsupportedInstallBanner: true },
     },
   });
   await flushPromises();
   return wrapper;
 }
 
-function entries(wrapper: Awaited<ReturnType<typeof mountPage>>) {
-  return wrapper.findAll(".setting-card, .list-item");
+const ROW_PREFIX = "system-link-";
+
+function rowKeys(wrapper: Awaited<ReturnType<typeof mountPage>>) {
+  return wrapper
+    .findAll(`[data-testid^="${ROW_PREFIX}"]`)
+    .map((row) => row.attributes("data-testid")!.slice(ROW_PREFIX.length));
 }
 
-function entryTitles(wrapper: Awaited<ReturnType<typeof mountPage>>) {
-  return entries(wrapper).map((entry) => entry.text());
+function linkOf(wrapper: Awaited<ReturnType<typeof mountPage>>, key: string) {
+  const href = wrapper
+    .get(`[data-testid="${ROW_PREFIX}${key}"]`)
+    .attributes("href");
+  return JSON.parse(href!);
 }
 
 function coreConfig(domain: string): CoreConfig {

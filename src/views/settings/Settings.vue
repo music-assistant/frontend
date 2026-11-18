@@ -55,7 +55,7 @@
       <nav v-else :aria-label="t('settings.settings')">
         <ItemGroup>
           <SettingsSectionLink
-            v-for="section in listSections"
+            v-for="section in settingsSections"
             :key="section.name"
             :section="section"
             variant="list"
@@ -96,11 +96,8 @@ import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
-import {
-  coreOwner,
-  pageOfWholeOwner,
-  SETTINGS_PAGES,
-} from "@/helpers/settings_pages";
+import { coreModuleName } from "@/helpers/core_modules";
+import { SETTINGS_PAGES } from "@/helpers/settings_pages";
 import {
   availableSettingsSections,
   providerSettingsSectionName,
@@ -266,36 +263,6 @@ provide("tasksViewMode", {
   toggleViewMode: toggleTasksViewMode,
 });
 
-const isSystemPage = computed(
-  () => router.currentRoute.value.name?.toString() === "systemsettings",
-);
-
-const systemViewMode = ref<"list" | "card">("list");
-const savedSystemViewMode = getPreference<"list" | "card">(
-  "settings.system.viewMode",
-  "list",
-);
-
-watch(
-  () => savedSystemViewMode.value,
-  (savedViewMode) => {
-    if (savedViewMode === "list" || savedViewMode === "card") {
-      systemViewMode.value = savedViewMode;
-    }
-  },
-  { immediate: true },
-);
-
-const toggleSystemViewMode = function () {
-  systemViewMode.value = systemViewMode.value === "list" ? "card" : "list";
-  setPreference("settings.system.viewMode", systemViewMode.value);
-};
-
-provide("systemViewMode", {
-  viewMode: systemViewMode,
-  toggleViewMode: toggleSystemViewMode,
-});
-
 // the page on screen owns the toolbar's view mode toggle, if it has one
 const viewModeToggle = computed(() => {
   if (isOverview.value)
@@ -306,8 +273,6 @@ const viewModeToggle = computed(() => {
     return { mode: providersViewMode.value, toggle: toggleProvidersViewMode };
   if (isTasksPage.value)
     return { mode: tasksViewMode.value, toggle: toggleTasksViewMode };
-  if (isSystemPage.value)
-    return { mode: systemViewMode.value, toggle: toggleSystemViewMode };
   return undefined;
 });
 
@@ -328,14 +293,6 @@ const settingsSections = computed(() =>
   availableSettingsSections((scope) => authManager.hasScope(scope)),
 );
 
-const providerSectionNames = [
-  "catalog",
-  "music_providers",
-  "metadata_providers",
-  "plugin_providers",
-  "audio_analysis_providers",
-];
-
 const featuredSectionNames = ["music_providers", "players"];
 
 const featuredSections = computed(() =>
@@ -349,22 +306,6 @@ const regularSections = computed(() =>
     (section) => !featuredSectionNames.includes(section.name),
   ),
 );
-
-// the list groups the providers first, then the players, then the rest
-const listSections = computed(() => {
-  const sections = settingsSections.value;
-  return [
-    ...sections.filter((section) =>
-      providerSectionNames.includes(section.name),
-    ),
-    ...sections.filter((section) => section.name === "players"),
-    ...sections.filter(
-      (section) =>
-        !providerSectionNames.includes(section.name) &&
-        section.name !== "players",
-    ),
-  ];
-});
 
 // computed properties
 const isOverview = computed(() => {
@@ -410,6 +351,7 @@ const activeTab = computed(() => {
     name.includes("core") ||
     name.includes("serverlog") ||
     name === "backgroundtasks" ||
+    name === "tasksettings" ||
     name === "diagnostics" ||
     name === "networksettings" ||
     name === "remoteaccesssettings"
@@ -605,22 +547,12 @@ const breadcrumbItems = computed(() => {
     )
     .with("editcore", () => {
       const domain = route.params.domain as string;
-      // the settings of a controller a settings page shows as a whole sit
-      // under that page
-      const wholePage = pageOfWholeOwner(coreOwner(domain));
-      if (wholePage) {
-        const { title, route: pageRoute } = SETTINGS_PAGES[wholePage];
-        items.push({ title: t(title), disabled: false, to: pageRoute });
-        items.push({ title: t("settings.settings"), disabled: true });
-        return;
-      }
-      const translated = t(`settings.core_module.${domain}.name`);
-      const moduleName =
-        translated !== `settings.core_module.${domain}.name`
-          ? translated
-          : api.providerManifests[domain]?.name || domain;
       items.push({
-        title: moduleName,
+        title: coreModuleName(
+          domain,
+          (key) => t(key),
+          api.providerManifests[domain]?.name,
+        ),
         disabled: true,
       });
     })
@@ -635,6 +567,16 @@ const breadcrumbItems = computed(() => {
         title: t("background_tasks.title"),
         disabled: true,
       });
+    })
+    .with("tasksettings", () => {
+      items.push(
+        {
+          title: t("background_tasks.title"),
+          disabled: false,
+          to: { name: "backgroundtasks" },
+        },
+        { title: t(SETTINGS_PAGES.task_settings.title), disabled: true },
+      );
     })
     .with("librarysettings", () => {
       items.push({ title: t(SETTINGS_PAGES.library.title), disabled: true });

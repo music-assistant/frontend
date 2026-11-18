@@ -190,6 +190,13 @@ describe("SettingsPageForm", () => {
     expect(useSettingsToolbarMenu().value).toEqual([]);
   });
 
+  it("leaves the toolbar menu to a page the form is a part of", async () => {
+    const wrapper = await mountForm({ embedded: true });
+
+    expect(wrapper.find('[data-testid="edit-config"]').exists()).toBe(true);
+    expect(useSettingsToolbarMenu().value).toEqual([]);
+  });
+
   it("takes the reset out of the toolbar menu when it closes", async () => {
     const wrapper = await mountForm();
 
@@ -285,9 +292,9 @@ describe("SettingsPageForm with settings the page edits itself", () => {
   }
 });
 
-async function mountForm() {
+async function mountForm(props: { embedded?: boolean } = {}) {
   const wrapper = mount(SettingsPageForm, {
-    props: { page: "audio_analysis" },
+    props: { page: "audio_analysis", ...props },
     global: { stubs: { EditConfig: editConfigStub } },
   });
   await flushPromises();

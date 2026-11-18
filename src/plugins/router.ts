@@ -708,6 +708,16 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.SYSTEM_READ },
           },
           {
+            path: "tasks/settings",
+            name: "tasksettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
+              ),
+            props: { page: "task_settings" satisfies SettingsPageId },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
             path: "genremanagement",
             name: "genremanagement",
             component: () =>

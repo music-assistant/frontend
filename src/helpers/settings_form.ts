@@ -1,10 +1,19 @@
 import {
+  coreOwner,
   isSameOwner,
+  LOG_LEVEL_KEY,
   sourceIncludesEntry,
   type SettingsOwner,
   type SettingsSource,
 } from "@/helpers/settings_pages";
-import type { ConfigEntry, ConfigValueType } from "@/plugins/api/interfaces";
+import type {
+  ConfigEntry,
+  ConfigValueType,
+  CoreConfig,
+} from "@/plugins/api/interfaces";
+
+// the section of the form of the log levels
+const LOG_LEVELS_CATEGORY = "log_levels";
 
 // the entries of an owner as loaded for one source of a settings page
 export interface LoadedSettingsSource {
@@ -69,6 +78,41 @@ export function buildSettingsForm(
       entries.push(formEntry);
     }
   }
+  return { entries, fields };
+}
+
+/**
+ * The form of the log levels of the core modules: the log level of each
+ * module, labelled with the name of the module, in one section, by name.
+ *
+ * @param configs - The config of each core module.
+ * @param moduleName - Gives the name of a core module, by its domain.
+ * @param sectionLabel - The heading of the section.
+ */
+export function buildLogLevelForm(
+  configs: readonly Pick<CoreConfig, "domain" | "values">[],
+  moduleName: (domain: string) => string,
+  sectionLabel: string,
+): SettingsForm {
+  const entries: ConfigEntry[] = [];
+  const fields = new Map<string, SettingsField>();
+  for (const config of configs) {
+    const entry = config.values[LOG_LEVEL_KEY];
+    if (!entry) continue;
+    const owner = coreOwner(config.domain);
+    const key = `${ownerQualifier(owner)}/${LOG_LEVEL_KEY}`;
+    entries.push({
+      ...entry,
+      key,
+      label: moduleName(config.domain),
+      // the description speaks of a single module, which the section does not
+      description: null,
+      category: LOG_LEVELS_CATEGORY,
+      category_label: sectionLabel,
+    });
+    fields.set(key, { owner, key: LOG_LEVEL_KEY });
+  }
+  entries.sort((a, b) => (a.label ?? "").localeCompare(b.label ?? ""));
   return { entries, fields };
 }
 

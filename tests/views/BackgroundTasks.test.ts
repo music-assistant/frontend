@@ -47,8 +47,7 @@ describe("BackgroundTasks", () => {
 
     const row = wrapper.get(SETTINGS_ROW);
     expect(JSON.parse(row.attributes("href")!)).toEqual({
-      name: "editcore",
-      params: { domain: "tasks" },
+      name: "tasksettings",
     });
     expect(row.text()).toContain("background_tasks.settings.title");
   });

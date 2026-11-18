@@ -361,7 +361,7 @@ describe("settings pages", () => {
     },
   );
 
-  it.each(["playback", "metadata"] as const)(
+  it.each(["playback", "metadata", "task_settings"] as const)(
     "hands the %s page to the view showing its form",
     (id) => {
       if (!mocks.router) {
@@ -623,13 +623,14 @@ describe("scope-gated routes", () => {
     ["/settings/library", ["admin"]],
     ["/settings/storage", ["admin"]],
     ["/settings/metadata", ["admin"]],
-    ["/settings/editcore/webserver", ["admin"]],
+    ["/settings/editcore/radio_tuner", ["admin"]],
     ["/settings/audio-analysis", ["admin"]],
     ["/settings/remote-access", ["admin"]],
     ["/settings/diagnostics", ["admin"]],
     ["/settings/genremanagement", ["admin"]],
     ["/settings/users", ["admin"]],
     ["/settings/tasks", ["admin", "user", "reads_sources"]],
+    ["/settings/tasks/settings", ["admin"]],
     ["/music-quiz", ["admin", "user", "reads_sources"]],
     [
       "/settings/frontend",
