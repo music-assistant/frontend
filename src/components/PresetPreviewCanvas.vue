@@ -3,7 +3,7 @@
   WebGL contexts risk Chrome evicting the running fullscreen visualizer), fed
   by a synthetic waveform and recoloured from a synthetic blue palette through
   the user's own palette settings. The render loop is paused while the
-  fullscreen player covers the page.
+  fullscreen player covers the page or the preview is scrolled out of view.
 -->
 <template>
   <div class="relative size-full bg-black">
@@ -18,6 +18,7 @@
 </template>
 
 <script setup lang="ts">
+import { useIntersectionObserver } from "@vueuse/core";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import {
   createVisualizerEngine,
@@ -39,10 +40,17 @@ const frameSource = createSyntheticFrameSource();
 let engine: VisualizerEngine | null = null;
 let engineCreating: Promise<VisualizerEngine | null> | null = null;
 let unmounted = false;
+let loadedPreset: string | null = null;
+const inView = ref(true);
 
-// The running fullscreen visualizer needs the GPU to itself; the engine keeps
-// its GL context, so this pauses it rather than recreating it.
-const covered = computed(() => store.showFullscreenPlayer);
+useIntersectionObserver(canvasEl, ([entry]) => {
+  inView.value = entry?.isIntersecting ?? true;
+});
+
+// The running fullscreen visualizer needs the GPU to itself, and an offscreen
+// preview is wasted work; the engine keeps its GL context, so this pauses it
+// rather than recreating it.
+const hidden = computed(() => store.showFullscreenPlayer || !inView.value);
 
 // The preview sits on black whatever the app theme.
 const { paletteColors, paletteRamp, paletteRampStrength } =
@@ -82,9 +90,9 @@ const ensureEngine = async (): Promise<VisualizerEngine | null> => {
 };
 
 watch(
-  [() => props.preset, covered],
-  async ([name, isCovered]) => {
-    if (isCovered || !name) {
+  [() => props.preset, hidden],
+  async ([name, isHidden]) => {
+    if (isHidden || !name) {
       engine?.setPaused(true, false);
       return;
     }
@@ -92,15 +100,19 @@ watch(
     await nextTick();
     const eng = await ensureEngine();
     if (!eng) return;
-    // Covered or cleared while the engine was starting: it renders from
+    // Hidden or cleared while the engine was starting: it renders from
     // creation, so halt it; the next change resumes it.
-    if (covered.value || !props.preset) {
+    if (hidden.value || !props.preset) {
       eng.setPaused(true, false);
       return;
     }
     if (props.preset !== name) return;
     eng.setPaused(false, false);
+    // Resuming must not reload: that recompiles the shaders and restarts the preset.
+    if (name === loadedPreset) return;
+    loadedPreset = null;
     await eng.loadPresetByName(name, 0);
+    if (props.preset === name) loadedPreset = name;
   },
   { immediate: true },
 );

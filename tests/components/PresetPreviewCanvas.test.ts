@@ -6,7 +6,7 @@ import PresetPreviewCanvas from "@/components/PresetPreviewCanvas.vue";
 import { SYNTHETIC_PALETTE } from "@/helpers/visualizer/syntheticPalette";
 import { store } from "@/plugins/store";
 import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const engineMock = vi.hoisted(() => ({
   loadPresetByName: vi.fn(async () => "preset"),
@@ -46,10 +46,36 @@ vi.mock("@/composables/useThemePreference", () => ({
   isDark: { value: false },
 }));
 
+/** Stands in for the browser's observer, so a test can say what is in view. */
+class FakeIntersectionObserver {
+  static instances: FakeIntersectionObserver[] = [];
+  targets: Element[] = [];
+  constructor(public callback: IntersectionObserverCallback) {
+    FakeIntersectionObserver.instances.push(this);
+  }
+  observe(target: Element) {
+    this.targets.push(target);
+  }
+  unobserve() {}
+  disconnect() {}
+  report(isIntersecting: boolean) {
+    const entries = this.targets.map(
+      (target) => ({ target, isIntersecting }) as IntersectionObserverEntry,
+    );
+    this.callback(entries, this as unknown as IntersectionObserver);
+  }
+}
+
 describe("PresetPreviewCanvas", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     store.showFullscreenPlayer = false;
+    FakeIntersectionObserver.instances = [];
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("loads the preset instantly and applies the user's palette settings to the synthetic palette", async () => {
@@ -116,6 +142,7 @@ describe("PresetPreviewCanvas", () => {
     await flushPromises();
     expect(engineMock.setPaused).toHaveBeenLastCalledWith(false, false);
     expect(createVisualizerEngine).toHaveBeenCalledTimes(1);
+    expect(engineMock.loadPresetByName).toHaveBeenCalledTimes(1);
     wrapper.unmount();
   });
 
@@ -173,6 +200,40 @@ describe("PresetPreviewCanvas", () => {
 
     expect(wrapper.text()).toContain("Preview unavailable");
     consoleError.mockRestore();
+    wrapper.unmount();
+  });
+
+  it("pauses while scrolled out of view and resumes when back, keeping the engine", async () => {
+    const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });
+    await flushPromises();
+    const observer = FakeIntersectionObserver.instances.at(-1)!;
+
+    observer.report(false);
+    await flushPromises();
+    expect(engineMock.setPaused).toHaveBeenLastCalledWith(true, false);
+
+    observer.report(true);
+    await flushPromises();
+    expect(engineMock.setPaused).toHaveBeenLastCalledWith(false, false);
+    expect(createVisualizerEngine).toHaveBeenCalledTimes(1);
+    expect(engineMock.loadPresetByName).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+
+  it("reloads the previous preset when switched back before the new one finished loading", async () => {
+    const wrapper = mount(PresetPreviewCanvas, { props: { preset: "A" } });
+    await flushPromises();
+    let resolveLoad: (name: string) => void = () => {};
+    engineMock.loadPresetByName.mockReturnValueOnce(
+      new Promise((resolve) => (resolveLoad = resolve)),
+    );
+    await wrapper.setProps({ preset: "B" });
+    await flushPromises();
+    await wrapper.setProps({ preset: "A" });
+    resolveLoad("B");
+    await flushPromises();
+
+    expect(engineMock.loadPresetByName).toHaveBeenLastCalledWith("A", 0);
     wrapper.unmount();
   });
 });
