@@ -542,16 +542,17 @@ const providerFilterParamForRow = (rowId: string): string[] | undefined =>
 
 // Persists the row's hidden-provider choice and re-fetches just that row so
 // its items reflect the new filter. Clears the row's cached items first: the
-// preference (read by rowHasActiveFilter) updates synchronously, but the
-// refetch is async, so leaving the stale, now-mismatched items in place could
-// drop the row (and its filter control) from view for that gap.
-const onRowHiddenProvidersChange = (
+// stale, now-mismatched items could otherwise drop the row (and its filter
+// control) from view while the preference saves and the row reloads. The
+// refetch waits for the save, since the preference only changes once the
+// write gets its turn.
+const onRowHiddenProvidersChange = async (
   rowId: string,
   hiddenProviderIds: string[],
-): void => {
-  setRowHiddenProviders(rowId, hiddenProviderIds);
+): Promise<void> => {
   rowItemsMap.value.delete(rowId);
-  fetchRowItems([rowId]);
+  await setRowHiddenProviders(rowId, hiddenProviderIds);
+  await fetchRowItems([rowId]);
 };
 
 // Whether a row currently has eligible provider(s) hidden -- used to keep the
