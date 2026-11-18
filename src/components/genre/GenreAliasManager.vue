@@ -1,5 +1,5 @@
 <template>
-  <Container variant="default">
+  <div class="p-2.5">
     <Toolbar
       :title="mappedAliasesTitle"
       :menu-items="aliasToolbarMenuItems"
@@ -26,7 +26,7 @@
             :disabled="operationInProgress"
             @click.stop="confirmPromoteAlias(alias)"
           >
-            <ArrowUpFromLine :size="20" />
+            <ArrowUpFromLine class="size-5" />
           </Button>
           <Button
             variant="ghost"
@@ -35,12 +35,12 @@
             :disabled="operationInProgress"
             @click.stop="confirmRemoveAlias(alias)"
           >
-            <Trash2 :size="20" />
+            <Trash2 class="size-5" />
           </Button>
         </template>
       </ListItem>
     </v-list>
-  </Container>
+  </div>
 
   <LinkAliasDialog
     v-model="showLinkDialog"
@@ -70,7 +70,6 @@
 </template>
 
 <script setup lang="ts">
-import Container from "@/components/Container.vue";
 import CreateAliasDialog from "@/components/genre/CreateAliasDialog.vue";
 import LinkAliasDialog from "@/components/genre/LinkAliasDialog.vue";
 import PromoteAliasDialog from "@/components/genre/PromoteAliasDialog.vue";

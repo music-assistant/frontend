@@ -40,6 +40,8 @@ export const baseState = {
   answer_type: "timeline",
   phase: "answering",
   name: "Music Timeline",
+  include_similar_music: false,
+  auto_start_at: null,
   round_count: 1,
   answer_duration: 30,
   artist_bonus_mode: "off",

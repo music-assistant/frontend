@@ -8,9 +8,17 @@ import {
   PlayerQueue,
   PlayerType,
   RepeatMode,
+  Scope,
   PLAYER_CONTROL_NONE,
 } from "@/plugins/api/interfaces";
-import { isSelectablePlayer } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  getPlayerIcon,
+  getPlayerName,
+  getSourceLabel,
+  isBuiltinPlayer,
+  isSelectablePlayer,
+} from "@/helpers/players";
 import { getSleepTimerMenuItem, sleepTimerActive } from "@/helpers/sleep_timer";
 import { resolveExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -22,7 +30,6 @@ import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuCon
 import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
 import { h, markRaw } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
-import { useShows } from "@/composables/ai-radio/useShows";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
 import { eventbus } from "@/plugins/eventbus";
@@ -30,6 +37,9 @@ import { store } from "@/plugins/store";
 import { getPlayerSetupLabel } from "@/helpers/player_config";
 import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { errorMessage } from "@/helpers/ai_radio";
+import { canUseQueueDj } from "@/helpers/ai_radio_access";
+import { $t } from "@/plugins/i18n";
+import { isPlaybackMode, webPlayer } from "@/plugins/web_player";
 import { toast } from "vue-sonner";
 
 export const getPlayerSetupMenuItem = (
@@ -208,31 +218,57 @@ export const getPlayerMenuItems = (
 
   // transfer queue (both menus; only when the queue is the active source)
   if (playerQueue?.active && playerQueue.items > 0) {
+    const targets = Object.values(api.players)
+      .filter(
+        (p) =>
+          p.player_id != playerQueue!.queue_id &&
+          // this device may pull the queue of the group it is shown in
+          (p.player_id != player.player_id || isBuiltinPlayer(p)) &&
+          isSelectablePlayer(p) &&
+          // the server ungroups a synced target before it moves the queue, so
+          // this device may take the queue of the group it plays in
+          (!p.synced_to || isBuiltinPlayer(p)) &&
+          (!p.hide_in_ui || isBuiltinPlayer(p)),
+      )
+      .sort(
+        (a, b) =>
+          Number(isBuiltinPlayer(b)) - Number(isBuiltinPlayer(a)) ||
+          getPlayerDisplayName(a).localeCompare(
+            getPlayerDisplayName(b),
+            undefined,
+            { sensitivity: "base" },
+          ),
+      );
     menuItems.push({
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
-      subItems: Object.values(api.players)
-        .filter(
-          (p) =>
-            p.player_id != playerQueue!.queue_id &&
-            p.player_id != player.player_id &&
-            isSelectablePlayer(p) &&
-            !p.synced_to &&
-            !p.hide_in_ui,
-        )
-        .map((p) => {
-          return {
-            label: p.name,
-            labelArgs: [],
-            action: () => {
+      subItems: targets.map((p, index) => {
+        const next = targets[index + 1];
+        return {
+          // "+N" marks a leader whose group plays the queue too
+          label: getPlayerName(p, Infinity),
+          labelArgs: [],
+          icon: getPlayerIcon(p),
+          separatorAfter:
+            isBuiltinPlayer(p) && next !== undefined && !isBuiltinPlayer(next),
+          action: async () => {
+            // Playback on this tab's web player starts after the transfer, so
+            // start unlocking its audio within this click (iOS keeps it silent
+            // otherwise) and only move the queue once that worked. The
+            // companion app and another tab's player play on their own.
+            if (playsInThisTab(p) && !(await webPlayer.unlockAudio())) {
+              toast.error($t("transfer_queue_no_audio"));
+              return;
+            }
+            try {
               api.queueCommandTransfer(playerQueue!.queue_id, p.player_id);
               store.activePlayerId = p.player_id;
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
+            } catch {
+              toast.error($t("error_generic"));
+            }
+          },
+        };
+      }),
     });
   }
 
@@ -248,13 +284,21 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // save queue as playlist (queue menu only)
-  if (isQueue && playerQueue?.items && playerQueue.items > 0) {
+  // add queue to a new or existing playlist (queue menu only)
+  if (
+    isQueue &&
+    playerQueue?.items &&
+    playerQueue.items > 0 &&
+    authManager.hasScope(Scope.LIBRARY_WRITE)
+  ) {
     menuItems.push({
-      label: "save_queue_as_playlist",
+      label: "add_queue_to_playlist",
       labelArgs: [],
       action: () => {
-        eventbus.emit("createPlaylist", { queueId: playerQueue!.queue_id });
+        eventbus.emit("playlistdialog", {
+          items: [],
+          queueId: playerQueue!.queue_id,
+        });
       },
       icon: "mdi-playlist-plus",
     });
@@ -272,7 +316,7 @@ export const getPlayerMenuItems = (
       subItems: selectableSources
         .map((s) => {
           return {
-            label: s.name,
+            label: getSourceLabel(player, s),
             labelArgs: [],
             disabled: s.id == player.active_source,
             selected: s.id == player.active_source,
@@ -292,24 +336,12 @@ export const getPlayerMenuItems = (
   // host is that host: render it as a single disabled row rather than the
   // hosts submenu, which would otherwise show the (now irrelevant) sticky
   // queue-DJ assignment.
-  const {
-    hosts,
-    queueDjStatus,
-    aiRadioAvailable,
-    loadHosts,
-    loadQueueDjStatus,
-  } = useHosts();
-  const { sessions, shows, loadStatus } = useShows();
-  if (isQueue && playerQueue && aiRadioAvailable.value) {
+  const { hosts, queueDjStatus, aiRadioAvailable } = useHosts();
+  if (isQueue && playerQueue && aiRadioAvailable.value && canUseQueueDj()) {
     const queueId = playerQueue.queue_id;
-    const runningSession = sessions.value.find(
-      (session) => session.status === "running" && session.queue_id === queueId,
-    );
-    if (runningSession) {
-      const show = shows.value.find((s) => s.id === runningSession.station_id);
-      const host = show
-        ? hosts.value.find((h) => h.id === show.host_id)
-        : undefined;
+    const queueDj = queueDjStatus.value[queueId];
+    if (queueDj?.station_id) {
+      const host = hosts.value.find((h) => h.id === queueDj.host_id);
       menuItems.push({
         label: host ? "ai_dj_show_on_air" : "ai_dj_show_on_air_unknown",
         labelArgs: host ? [host.name] : [],
@@ -317,7 +349,7 @@ export const getPlayerMenuItems = (
         disabled: true,
       });
     } else {
-      const activeHostId = queueDjStatus.value[queueId];
+      const activeHostId = queueDj?.host_id;
       menuItems.push({
         label: "ai_dj",
         labelArgs: [],
@@ -338,11 +370,6 @@ export const getPlayerMenuItems = (
         ],
       });
     }
-    // Best-effort staleness refresh; the menu above is already built from
-    // the prefetched caches, so a failure here has nothing to surface.
-    void loadHosts().catch(() => undefined);
-    void loadQueueDjStatus().catch(() => undefined);
-    void loadStatus().catch(() => undefined);
   }
 
   // select sound mode (player menu only; only when more than one is selectable)
@@ -390,8 +417,8 @@ export const getPlayerMenuItems = (
     });
   }
 
-  // open the settings (both menus, admin only)
-  if (authManager.isAdmin()) {
+  // open the settings (both menus, for a role that changes player settings)
+  if (authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) {
     const openSettings = (path: string) => () => {
       store.showFullscreenPlayer = false;
       store.showPlayersMenu = false;
@@ -437,6 +464,18 @@ export const getPlayerMenuItems = (
 
   return menuItems;
 };
+
+/** Whether the player is (or streams to) the web player this tab plays audio on. */
+function playsInThisTab(
+  player: Pick<Player, "player_id" | "output_protocols">,
+): boolean {
+  const id = webPlayer.player_id;
+  if (!id || !isPlaybackMode(webPlayer.tabMode)) return false;
+  return (
+    player.player_id === id ||
+    player.output_protocols.some((x) => x.output_protocol_id === id)
+  );
+}
 
 /** Assigns (or clears) a queue's AI DJ host, reporting a failed command to the user. */
 async function assignQueueDj(

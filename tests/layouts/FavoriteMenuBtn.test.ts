@@ -1,43 +1,82 @@
 import FavoriteMenuBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/FavoriteMenuBtn.vue";
 import api from "@/plugins/api";
 import {
+  EventType,
   MediaType,
+  type EventMessage,
+  type FavoriteUpdate,
   type PlayableMediaItemType,
+  type Player,
   type QueueItem,
+  type Track,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
+import { dropdownMenuStubs } from "../fixtures/dropdownMenu";
+import { artist } from "../fixtures/artist";
 import { queueItem } from "../fixtures/queueItem";
+import { radio } from "../fixtures/radio";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
-import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { user } from "../fixtures/user";
+import { toast } from "vue-sonner";
 import {
-  h,
-  inject,
-  provide,
-  nextTick,
-  ref,
-  type InjectionKey,
-  type SetupContext,
-} from "vue";
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from "@vue/test-utils";
+import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// the shared state subscribes once for the whole file, before any test can
+// look at the mock's calls
+const { favoriteHandlers } = vi.hoisted(() => ({
+  favoriteHandlers: [] as Array<(evt: EventMessage) => void>,
+}));
 
 vi.mock("@/plugins/api", () => {
   const api = {
     addItemToFavorites: vi.fn(),
     removeItemFromFavorites: vi.fn(),
+    setFavorite: vi.fn(),
     getLibraryItem: vi.fn(),
-    subscribe: vi.fn(() => () => {}),
+    getCurrentlyPlayingTrack: vi.fn(),
+    subscribe: vi.fn((type: string, handler: (evt: EventMessage) => void) => {
+      if (type === "favorite_updated") favoriteHandlers.push(handler);
+      return () => {};
+    }),
     providers: {},
     players: {},
   };
   return { api, default: api };
 });
 
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, args?: { name: string }) =>
+    args ? `${key}: ${args.name}` : key,
+}));
+
+vi.mock("vue-sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}));
+
 vi.mock("@/plugins/eventbus", () => ({ eventbus: { emit: vi.fn() } }));
+
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
 
 const addItemToFavorites = vi.mocked(api.addItemToFavorites);
 const removeItemFromFavorites = vi.mocked(api.removeItemFromFavorites);
-const getLibraryItem = vi.mocked(api.getLibraryItem);
+const setFavorite = vi.mocked(api.setFavorite);
+const getCurrentlyPlayingTrack = vi.mocked(api.getCurrentlyPlayingTrack);
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -45,11 +84,18 @@ vi.mock("@/plugins/store", async () => {
     store: reactive({
       activePlayer: undefined,
       curQueueItem: undefined,
+      currentUser: undefined,
     }),
   };
 });
 
-const mockStore = store as unknown as { curQueueItem?: QueueItem };
+const mockStore = store as unknown as {
+  activePlayer?: Pick<Player, "player_id" | "current_media">;
+  curQueueItem?: QueueItem;
+  currentUser?: ReturnType<typeof user>;
+};
+
+const TRIGGER = "button[type='button']";
 
 // the favourite state is shared app-wide and only re-seeds when the playing
 // item changes, so every fixture stands for a different one
@@ -63,69 +109,65 @@ async function setPlaying(mediaItem: PlayableMediaItemType) {
   await nextTick();
 }
 
-// reka-ui owns the open state, so the stub owns it too and reports every change
-// the way the real menu does. Its dismiss button stands in for everything that
-// closes the menu without touching the trigger: an outside tap, escape, or
-// picking an entry.
-const dropdownToggleKey: InjectionKey<() => void> = Symbol();
-const DropdownMenuStub = {
-  emits: ["update:open"],
-  setup(_: unknown, { emit, slots }: SetupContext<["update:open"]>) {
-    const open = ref(false);
-    const setOpen = (value: boolean) => {
-      open.value = value;
-      emit("update:open", value);
-    };
-    provide(dropdownToggleKey, () => setOpen(!open.value));
-    return () =>
-      h("div", { class: "dropdown", "data-open": String(open.value) }, [
-        h("button", {
-          class: "dropdown-dismiss",
-          onClick: () => setOpen(false),
-        }),
-        slots.default?.(),
-      ]);
-  },
-};
-const DropdownMenuTriggerStub = {
-  setup(_: unknown, { slots }: SetupContext) {
-    const toggle = inject(dropdownToggleKey);
-    if (!toggle)
-      throw new Error("DropdownMenuTrigger must be inside DropdownMenu");
-    return () => h("div", { onClick: toggle }, slots.default?.());
-  },
-};
+// what a station reports it plays; leaving out the artist stands for talk or
+// an ad
+async function setStationSong(title: string | null, artistName?: string) {
+  mockStore.activePlayer = {
+    player_id: "player-1",
+    current_media: {
+      uri: "radio-stream",
+      media_type: MediaType.RADIO,
+      title,
+      artist: artistName ?? null,
+      album: null,
+      image_url: null,
+      palette: null,
+      duration: null,
+      source_id: null,
+      elapsed_time: null,
+      elapsed_time_last_updated: null,
+      queue_item_id: null,
+    },
+  };
+  await flushPromises();
+}
 
-// reka only renders its content while the menu holds it open, which its own
-// context decides - these keep the entries reachable without it
-const DropdownMenuContentStub = {
-  setup(_: unknown, { slots }: SetupContext) {
-    return () => h("div", { class: "dropdown-content" }, slots.default?.());
-  },
-};
-const DropdownMenuItemStub = {
-  setup(_: unknown, { attrs, slots }: SetupContext) {
-    return () =>
-      h("button", { ...attrs, class: "dropdown-item" }, slots.default?.());
-  },
-};
+function emitFavoriteUpdate(update: Partial<FavoriteUpdate>) {
+  const data: FavoriteUpdate = {
+    uri: "library://track/1",
+    media_type: MediaType.TRACK,
+    item_id: "1",
+    favorite: true,
+    user_id: "user-id",
+    ...update,
+  };
+  for (const handler of favoriteHandlers) {
+    handler({ event: EventType.FAVORITE_UPDATED, data } as EventMessage);
+  }
+}
 
+function entryLabels(wrapper: VueWrapper): string[] {
+  return wrapper.findAll(".dropdown-item").map((entry) => entry.text());
+}
+
+// the song has no dislike, so the trigger always shows a heart for it
+function triggerFill(wrapper: VueWrapper) {
+  const glyph = wrapper.get(TRIGGER).get("svg");
+  expect(glyph.classes()).toContain("lucide-heart");
+  return glyph.attributes("fill");
+}
+
+// the stubs keep the entries reachable without reka-ui; the trigger's own
+// attributes only show up with the real component
 function mountButton() {
   return mount(FavoriteMenuBtn, {
     global: {
       mocks: { $t: (key: string) => key },
-      stubs: {
-        DropdownMenu: DropdownMenuStub,
-        DropdownMenuTrigger: DropdownMenuTriggerStub,
-        DropdownMenuContent: DropdownMenuContentStub,
-        DropdownMenuItem: DropdownMenuItemStub,
-      },
+      stubs: dropdownMenuStubs,
     },
   });
 }
 
-// the stubs above keep the interaction tests independent of reka-ui; the
-// trigger's own attributes only show up with the real component
 function mountWithDropdown() {
   return mount(FavoriteMenuBtn, {
     // the class the player bar passes, which the open-state colour keys off
@@ -134,161 +176,160 @@ function mountWithDropdown() {
   });
 }
 
+async function pickEntry(wrapper: VueWrapper, label: string) {
+  const entry = wrapper
+    .findAll(".dropdown-item")
+    .find((candidate) => candidate.text() === label);
+  if (!entry) throw new Error(`the menu offers no "${label}" entry`);
+  await entry.trigger("click");
+  await flushPromises();
+}
+
 enableAutoUnmount(afterEach);
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  vi.mocked(authManager.hasScope).mockImplementation(
+    scopeChecker(BUILTIN_ROLE_SCOPES.user),
+  );
+  getCurrentlyPlayingTrack.mockResolvedValue(null);
+  mockStore.currentUser = user();
+  mockStore.activePlayer = undefined;
   await setPlaying(track());
 });
 
 describe("FavoriteMenuBtn", () => {
-  // the menu is the whole point of the button: adding to a playlist has to be
-  // there whichever way the favourite entry reads
+  // one slot, three looks: the trigger carries the state of the playing item
   it.each([
-    { favorite: false, entry: "favorites_add" },
-    { favorite: true, entry: "favorites_remove" },
+    { favorite: true, icon: "lucide-heart", fill: "currentColor" },
+    { favorite: null, icon: "lucide-heart", fill: "none" },
+    { favorite: false, icon: "lucide-thumbs-down", fill: "none" },
   ])(
-    "offers both entries for favorite $favorite",
-    async ({ favorite, entry }) => {
+    "shows $icon on the trigger for favorite $favorite",
+    async ({ favorite, icon, fill }) => {
       await setPlaying(track({ favorite }));
 
-      const text = mountButton().text();
+      const trigger = mountButton().get(TRIGGER);
 
-      expect(text).toContain(entry);
-      expect(text).toContain("add_playlist");
+      expect(trigger.findAll("svg")).toHaveLength(1);
+      expect(trigger.get("svg").classes()).toContain(icon);
+      expect(trigger.get("svg").attributes("fill")).toBe(fill);
+    },
+  );
+
+  it.each([
+    { favorite: null, entries: ["favorites_add", "favorites_dislike"] },
+    { favorite: true, entries: ["favorites_remove", "favorites_dislike"] },
+    { favorite: false, entries: ["favorites_add", "favorites_dislike_remove"] },
+  ])(
+    "offers $entries for the playing item's favorite $favorite",
+    async ({ favorite, entries }) => {
+      await setPlaying(track({ favorite }));
+
+      expect(
+        mountButton()
+          .findAll(".dropdown-item")
+          .map((e) => e.text()),
+      ).toEqual([...entries, "add_playlist"]);
     },
   );
 
   it("adds the playing item to the favourites", async () => {
-    const item = track();
+    const item = track({ favorite: null });
     await setPlaying(item);
-    const wrapper = mountButton();
 
-    await wrapper.get(".dropdown-item").trigger("click");
+    await pickEntry(mountButton(), "favorites_add");
 
     expect(addItemToFavorites).toHaveBeenCalledWith(item);
     expect(removeItemFromFavorites).not.toHaveBeenCalled();
   });
 
-  // the queue can hold the provider's copy of the item, whose id the library
-  // does not know
-  it("removes the library item behind a provider item", async () => {
-    await setPlaying(
-      track({ provider: "spotify", item_id: "sp1", favorite: true }),
-    );
-    getLibraryItem.mockResolvedValue(track({ item_id: "42", favorite: true }));
-    const wrapper = mountButton();
+  it("dislikes the playing item", async () => {
+    const item = track({ favorite: null });
+    await setPlaying(item);
 
-    await wrapper.get(".dropdown-item").trigger("click");
-    await flushPromises();
+    await pickEntry(mountButton(), "favorites_dislike");
 
-    expect(getLibraryItem).toHaveBeenCalledWith(
-      MediaType.TRACK,
-      "sp1",
-      "spotify",
-    );
-    expect(removeItemFromFavorites).toHaveBeenCalledWith(MediaType.TRACK, "42");
+    expect(setFavorite).toHaveBeenCalledWith(item, false);
   });
 
-  // the library already holds it under the id the queue carries
-  it("removes a library item without looking it up", async () => {
-    await setPlaying(track({ favorite: true }));
-    const wrapper = mountButton();
+  it("clears the state of the playing item", async () => {
+    await setPlaying(track({ favorite: false }));
 
-    await wrapper.get(".dropdown-item").trigger("click");
-    await flushPromises();
+    await pickEntry(mountButton(), "favorites_dislike_remove");
 
-    expect(getLibraryItem).not.toHaveBeenCalled();
     expect(removeItemFromFavorites).toHaveBeenCalledWith(MediaType.TRACK, "1");
+    expect(setFavorite).not.toHaveBeenCalled();
   });
 
-  // the favourite is still on the server, so the heart must not claim otherwise
-  it("keeps the favourite when the library cannot resolve the item", async () => {
-    await setPlaying(
-      track({ provider: "spotify", item_id: "sp1", favorite: true }),
-    );
-    getLibraryItem.mockResolvedValue(null);
+  // the state is held apart from the queue item, which the server replaces
+  // whole on every refresh
+  it("keeps a state of its own when the queue item is re-sent", async () => {
+    await setPlaying(track({ favorite: null }));
     const wrapper = mountButton();
 
-    await wrapper.get(".dropdown-item").trigger("click");
-    await flushPromises();
+    await pickEntry(wrapper, "favorites_add");
+    mockStore.curQueueItem = queueItem({
+      queue_item_id: mockStore.curQueueItem!.queue_item_id,
+      media_item: track({ favorite: null }),
+    });
+    await nextTick();
 
-    expect(removeItemFromFavorites).not.toHaveBeenCalled();
-    expect(wrapper.text()).toContain("favorites_remove");
+    expect(wrapper.get(TRIGGER).get("svg").attributes("fill")).toBe(
+      "currentColor",
+    );
   });
 
   it("hands the playing item to the playlist dialog", async () => {
     const item = track();
     await setPlaying(item);
-    const wrapper = mountButton();
 
-    await wrapper.findAll(".dropdown-item")[1].trigger("click");
+    await pickEntry(mountButton(), "add_playlist");
 
     expect(eventbus.emit).toHaveBeenCalledWith("playlistdialog", {
       items: [item],
     });
   });
 
+  // a queued track the server looks up only when it is loaded holds no state
+  // and goes into no playlist until then
+  it("is not offered for a track known only by an external id", async () => {
+    await setPlaying(
+      track({
+        item_id: "musicbrainz_recordingid:rec-1",
+        provider: "external",
+        provider_mappings: [],
+      }),
+    );
+
+    const wrapper = mountButton();
+
+    expect(wrapper.find(TRIGGER).exists()).toBe(false);
+    expect(wrapper.findAll(".dropdown-item")).toHaveLength(0);
+  });
+
   // a line-in or other live source is not a library item
   it("disables itself for an audio source", async () => {
     await setPlaying(track({ media_type: MediaType.AUDIO_SOURCE }));
 
-    expect(
-      mountButton().get("button[aria-label]").attributes("disabled"),
-    ).toBeDefined();
+    expect(mountButton().get(TRIGGER).attributes("disabled")).toBeDefined();
   });
 
-  it("suppresses hover color after tapping the menu closed", async () => {
+  it("is not offered to a role that may not change the library", () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+
     const wrapper = mountButton();
-    const trigger = wrapper.get("button[aria-label]");
 
-    expect(trigger.attributes("data-suppress-hover")).toBe("false");
-
-    await trigger.trigger("pointerenter", { pointerType: "touch" });
-    await trigger.trigger("click");
-    expect(wrapper.get(".dropdown").attributes("data-open")).toBe("true");
-    expect(trigger.attributes("data-suppress-hover")).toBe("false");
-
-    await trigger.trigger("click");
-    expect(wrapper.get(".dropdown").attributes("data-open")).toBe("false");
-    expect(trigger.attributes("data-suppress-hover")).toBe("true");
-
-    await trigger.trigger("pointerenter", { pointerType: "touch" });
-    expect(trigger.attributes("data-suppress-hover")).toBe("false");
-  });
-
-  // the mouse that clicked the menu shut is still on the button, and no second
-  // pointerenter is coming to say so
-  it("keeps the hover color when a mouse clicks the menu closed", async () => {
-    const wrapper = mountButton();
-    const trigger = wrapper.get("button[aria-label]");
-
-    await trigger.trigger("pointerenter", { pointerType: "mouse" });
-    await trigger.trigger("click");
-    await trigger.trigger("click");
-
-    expect(wrapper.get(".dropdown").attributes("data-open")).toBe("false");
-    expect(trigger.attributes("data-suppress-hover")).toBe("false");
-  });
-
-  // touch leaves the button hovered from the tap that opened the menu, so
-  // dismissing it anywhere but on the button would leave it reading as active
-  it("suppresses it just the same when the menu closes on its own", async () => {
-    const wrapper = mountButton();
-    const trigger = wrapper.get("button[aria-label]");
-
-    await trigger.trigger("pointerenter", { pointerType: "touch" });
-    await trigger.trigger("click");
-    await wrapper.get(".dropdown-dismiss").trigger("click");
-
-    expect(wrapper.get(".dropdown").attributes("data-open")).toBe("false");
-    expect(trigger.attributes("data-suppress-hover")).toBe("true");
+    expect(wrapper.find("button").exists()).toBe(false);
+    expect(wrapper.text()).not.toContain("favorites_add");
   });
 
   // the stubs cannot show the attribute surviving reka-ui's as-child merge onto
   // the same button the player control colour keys off
   it("suppresses hover color through the real menu too", async () => {
-    const trigger = mountWithDropdown().get("button[aria-label]");
+    const trigger = mountWithDropdown().get(TRIGGER);
 
     expect(trigger.attributes("data-suppress-hover")).toBe("false");
     expect(trigger.attributes("data-state")).toBe("closed");
@@ -307,5 +348,170 @@ describe("FavoriteMenuBtn", () => {
 
     expect(trigger.attributes("data-state")).toBe("closed");
     expect(trigger.attributes("data-suppress-hover")).toBe("true");
+  });
+});
+
+describe("FavoriteMenuBtn for a station that names its song", () => {
+  const station = radio({ name: "Station" });
+  const song = track({
+    item_id: "song-1",
+    provider: "spotify",
+    name: "Title",
+    artists: [artist({ name: "Artist" })],
+  });
+  const librarySong = track({
+    item_id: "7",
+    name: "Title",
+    artists: [artist({ name: "Artist" })],
+    favorite: true,
+  });
+
+  // what the server answers: the library lookup, and the search in the music
+  // providers
+  function resolveSong(library: Track | null, providers: Track | null) {
+    getCurrentlyPlayingTrack.mockImplementation(async (_, libraryOnly) =>
+      libraryOnly ? library && { ...library } : providers && { ...providers },
+    );
+  }
+
+  beforeEach(async () => {
+    await setPlaying(station);
+  });
+
+  it("shows the song's entries apart from the station's", async () => {
+    await setStationSong("Title", "Artist");
+
+    const wrapper = mountButton();
+
+    expect(wrapper.get(".dropdown-content").text()).toContain("Artist – Title");
+    expect(entryLabels(wrapper)).toEqual([
+      "favorites_song_add",
+      "add_song_playlist",
+      "favorites_station_add",
+      "favorites_station_dislike",
+      "add_station_playlist",
+    ]);
+  });
+
+  it.each([
+    { name: "talk or an ad", title: "Morning show", artistName: undefined },
+    { name: "no song info", title: null, artistName: undefined },
+  ])("offers the menu of the station for $name", async (song) => {
+    await setStationSong(song.title, song.artistName);
+
+    const wrapper = mountButton();
+
+    expect(wrapper.get(".dropdown-content").text()).not.toContain("–");
+    expect(entryLabels(wrapper)).toEqual([
+      "favorites_add",
+      "favorites_dislike",
+      "add_playlist",
+    ]);
+  });
+
+  it("asks the server for the song and adds it to the favourites", async () => {
+    resolveSong(null, song);
+    await setStationSong("Title", "Artist");
+    const wrapper = mountButton();
+
+    await pickEntry(wrapper, "favorites_song_add");
+
+    expect(getCurrentlyPlayingTrack).toHaveBeenLastCalledWith("player-1");
+    expect(addItemToFavorites).toHaveBeenCalledWith(
+      expect.objectContaining({ item_id: "song-1" }),
+    );
+    expect(toast.success).toHaveBeenCalledWith(
+      "favorites_song_added: Artist – Title",
+    );
+    expect(triggerFill(wrapper)).toBe("currentColor");
+    expect(entryLabels(wrapper)[0]).toBe("favorites_song_remove");
+  });
+
+  it("asks the server for the song and hands it to the playlist dialog", async () => {
+    resolveSong(null, song);
+    await setStationSong("Title", "Artist");
+
+    await pickEntry(mountButton(), "add_song_playlist");
+
+    expect(getCurrentlyPlayingTrack).toHaveBeenLastCalledWith("player-1");
+    expect(eventbus.emit).toHaveBeenCalledWith("playlistdialog", {
+      items: [song],
+    });
+  });
+
+  it.each(["favorites_song_add", "add_song_playlist"])(
+    "tells the user when %s finds no song",
+    async (entry) => {
+      await setStationSong("Title", "Artist");
+
+      await pickEntry(mountButton(), entry);
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "radio_song_not_found: Artist – Title",
+      );
+      expect(addItemToFavorites).not.toHaveBeenCalled();
+      expect(eventbus.emit).not.toHaveBeenCalled();
+    },
+  );
+
+  it("acts on the station from the station's entries", async () => {
+    await setStationSong("Title", "Artist");
+
+    await pickEntry(mountButton(), "favorites_station_add");
+
+    expect(addItemToFavorites).toHaveBeenCalledWith(station);
+  });
+
+  it("shows the song as liked when it is a favourite in the library", async () => {
+    resolveSong(librarySong, null);
+    const wrapper = mountButton();
+    await setStationSong("Title", "Artist");
+
+    expect(triggerFill(wrapper)).toBe("currentColor");
+
+    await pickEntry(wrapper, "favorites_song_remove");
+
+    expect(removeItemFromFavorites).toHaveBeenCalledWith(MediaType.TRACK, "7");
+    expect(triggerFill(wrapper)).toBe("none");
+  });
+
+  it("follows a like and an unlike of the song made elsewhere", async () => {
+    resolveSong({ ...librarySong, favorite: null }, null);
+    const wrapper = mountButton();
+    await setStationSong("Title", "Artist");
+    expect(triggerFill(wrapper)).toBe("none");
+
+    resolveSong(librarySong, null);
+    emitFavoriteUpdate({ uri: librarySong.uri, favorite: true });
+    await flushPromises();
+    expect(triggerFill(wrapper)).toBe("currentColor");
+
+    resolveSong({ ...librarySong, favorite: null }, null);
+    emitFavoriteUpdate({ uri: librarySong.uri, favorite: null });
+    await flushPromises();
+    expect(triggerFill(wrapper)).toBe("none");
+  });
+
+  // the usage policy: only a click may search the user's music services
+  it("looks a new song up in the library only", async () => {
+    mountButton();
+    await setStationSong("Title", "Artist");
+    await setStationSong("Other title", "Other artist");
+
+    expect(getCurrentlyPlayingTrack).toHaveBeenCalledTimes(2);
+    for (const call of getCurrentlyPlayingTrack.mock.calls) {
+      expect(call).toEqual(["player-1", true, { suppressGlobalError: true }]);
+    }
+  });
+
+  // the lookup runs in the background on every song change
+  it("shows no state when the library lookup fails, without an error", async () => {
+    getCurrentlyPlayingTrack.mockRejectedValue(new Error("lookup failed"));
+    const wrapper = mountButton();
+    await setStationSong("Title", "Artist");
+
+    expect(triggerFill(wrapper)).toBe("none");
+    expect(entryLabels(wrapper)[0]).toBe("favorites_song_add");
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

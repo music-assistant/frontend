@@ -122,6 +122,7 @@ describe("useRateLimiting", () => {
       boost_refill_minutes: 10,
       skip_song_limit: 2,
       skip_song_refill_minutes: 30,
+      skip_votes_required: 1,
       karaoke_mode: false,
       highlight_ahead: true,
       request_badge_color: "#000000",
@@ -131,6 +132,7 @@ describe("useRateLimiting", () => {
       qr_text: "Test QR",
       hide_back_button: false,
       show_progress_bar: false,
+      prevent_duplicate_tracks: false,
     };
 
     rateLimiting.configure(config);

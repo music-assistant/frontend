@@ -12,13 +12,14 @@
         <div class="disabled-banner">
           <span>{{ $t("settings.provider_disabled") }}</span>
           <v-btn
+            v-if="canToggleSource(config)"
             size="small"
             color="warning"
             variant="flat"
             :loading="toggleLoading"
             @click="toggleEnabled"
           >
-            {{ $t("settings.enable_provider") }}
+            {{ $t("settings.enable") }}
           </v-btn>
         </div>
       </v-alert>
@@ -70,7 +71,7 @@
                 variant="destructive"
                 @click="onReconfigure"
               >
-                <RefreshCw class="size-4" />
+                <Wrench class="size-4" />
                 {{ $t("settings.reconfigure") }}
               </Button>
               <!-- error: also offer a plain reload -->
@@ -80,8 +81,8 @@
                 variant="outline"
                 @click="onReload"
               >
-                <RefreshCw class="size-4" />
-                {{ $t("settings.reload_provider") }}
+                <RotateCw class="size-4" />
+                {{ $t("settings.reload") }}
               </Button>
             </template>
           </div>
@@ -100,11 +101,14 @@
               <Button
                 variant="ghost"
                 size="icon-sm"
-                :title="$t('settings.provider_name')"
+                :aria-label="$t('settings.set_custom_name')"
+                :title="$t('settings.set_custom_name')"
                 @click="showRenameDialog = true"
               >
                 <Pencil class="size-4" />
-                <span class="sr-only">{{ $t("settings.provider_name") }}</span>
+                <span class="sr-only">{{
+                  $t("settings.set_custom_name")
+                }}</span>
               </Button>
               <Badge
                 data-testid="provider-status"
@@ -117,63 +121,42 @@
                 ></span>
                 {{ providerStatusLabel }}
               </Badge>
+              <ProviderMaintainerMarker
+                v-if="isCommunityProvider(providerManifest)"
+                variant="icon"
+              />
             </div>
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
             </CardDescription>
+            <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
             <div
-              v-if="providerManifest.codeowners.length"
+              v-if="showCodeowners"
+              data-testid="provider-codeowners"
               class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
-              v-html="
-                markdownToHtml(getAuthorsMarkdown(providerManifest.codeowners))
-              "
+              v-html="markdownToHtml(getAuthorsMarkdown(providerMaintainers))"
             ></div>
             <div
               v-if="providerManifest.credits.length"
-              class="mt-1 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              class="text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              :class="showCodeowners ? 'mt-1' : 'mt-3'"
               v-html="
                 markdownToHtml(getCreditsMarkdown(providerManifest.credits))
               "
             ></div>
+            <!-- eslint-enable vue/no-v-html -->
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button
-                data-testid="provider-menu"
-                variant="ghost"
-                size="icon-sm"
-                class="absolute top-4 right-4"
-                :aria-label="$t('more_options')"
-              >
-                <MoreVertical class="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                data-testid="provider-reset-defaults"
-                :disabled="!config.enabled"
-                @click="resetToDefaults"
-              >
-                <RotateCcw class="size-4" />
-                {{ $t("settings.reset_to_defaults") }}
-              </DropdownMenuItem>
-              <template v-if="canToggleEnabled">
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  data-testid="provider-toggle-enabled"
-                  :disabled="toggleLoading"
-                  @click="toggleEnabled"
-                >
-                  <Power class="size-4" />
-                  {{
-                    config.enabled
-                      ? $t("settings.disable")
-                      : $t("settings.enable")
-                  }}
-                </DropdownMenuItem>
-              </template>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            data-testid="provider-menu"
+            variant="ghost"
+            size="icon-sm"
+            class="absolute top-4 right-4"
+            aria-haspopup="menu"
+            :aria-label="$t('more_options')"
+            @click="openProviderMenu"
+          >
+            <MoreVertical class="size-4" />
+          </Button>
         </CardHeader>
         <CardContent
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
@@ -183,7 +166,7 @@
             data-testid="provider-reconfigure"
             @click="onReconfigure"
           >
-            <RefreshCw class="size-4" />
+            <Wrench class="size-4" />
             {{ $t("settings.reconfigure") }}
           </Button>
           <Button
@@ -218,13 +201,26 @@
             <CircleAlert class="size-4" />
             {{ $t("settings.known_issues") }}
           </Button>
-          <AdvancedSettingsToggle
-            v-if="config.enabled && hasAdvancedEntries(allConfigEntries)"
-            v-model:show-advanced-settings="showAdvancedSettings"
-            test-id="provider-advanced-settings"
-          />
+          <Button
+            as="a"
+            data-testid="provider-get-help"
+            variant="outline"
+            :href="helpUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <LifeBuoy class="size-4" />
+            {{ $t("settings.provider_get_help") }}
+          </Button>
         </CardContent>
       </Card>
+
+      <ProviderSettingsLinks
+        :config="config"
+        :access-summary="accessSummary(config)"
+        class="mb-4"
+        @access="openAccessDialog(config)"
+      />
 
       <!-- ambient sounds: manage user-added custom sounds -->
       <AmbientSoundsCustomSounds
@@ -235,7 +231,6 @@
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="!config.enabled"
       :provider-domain="config.domain"
@@ -267,7 +262,14 @@
           <v-btn variant="text" @click="showRenameDialog = false">
             {{ $t("close") }}
           </v-btn>
-          <v-btn color="primary" variant="flat" @click="saveRename">
+          <v-btn
+            data-testid="provider-rename-save"
+            color="primary"
+            variant="flat"
+            :loading="renameLoading"
+            :disabled="renameLoading"
+            @click="saveRename"
+          >
             {{ $t("settings.save") }}
           </v-btn>
         </v-card-actions>
@@ -282,6 +284,15 @@
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-overlay>
 
+    <ProviderAccessDialog
+      v-model:open="showAccessDialog"
+      :config="accessDialogConfig"
+      :users="managesAllSources() ? users : null"
+      :share-candidates="accessShareCandidates"
+      :can-change-owner="managesAllSources()"
+      @saved="onAccessSaved"
+    />
+
     <provider-save-error-dialog
       v-model:open="saveErrorOpen"
       :message="saveErrorMessage"
@@ -295,6 +306,9 @@
 import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
+import ProviderSettingsLinks from "@/components/settings/providers/ProviderSettingsLinks.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -303,23 +317,29 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { useEditedProviderName } from "@/composables/useEditedProviderName";
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
-  hasAdvancedEntries,
-  mergeConfigEntries,
-} from "@/helpers/config_entry_ui";
-import {
-  canReconfigureProvider,
+  getProviderHelpUrl,
+  getProviderMaintainers,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isCommunityProvider,
+  providerDisplayName,
 } from "@/helpers/provider_config";
+import {
+  canConfigureSourceAccess,
+  canManageSource,
+  canOwnSources,
+  canReconfigureSource,
+  canToggleSource,
+  managesAllSources,
+} from "@/helpers/provider_permissions";
+import { confirmProviderRemoval } from "@/helpers/provider_removal";
+import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -327,6 +347,7 @@ import {
   EventType,
   ProviderConfig,
   ProviderStatus,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
@@ -334,15 +355,16 @@ import {
   AudioLines,
   BookOpen,
   CircleAlert,
+  LifeBuoy,
   MoreVertical,
   Pencil,
-  Power,
-  RefreshCw,
+  RotateCw,
   RotateCcw,
   Trash2,
   TriangleAlert,
+  Wrench,
 } from "@lucide/vue";
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -359,13 +381,27 @@ const { t } = useI18n();
 const config = ref<ProviderConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 const toggleLoading = ref(false);
 const showRenameDialog = ref(false);
+const renameLoading = ref(false);
 const editName = ref<string | null>(null);
 const saveErrorOpen = ref(false);
 const saveErrorMessage = ref("");
 const lastSubmitValues = ref<Record<string, ConfigValueType>>();
+const editedProviderName = useEditedProviderName();
+const {
+  users,
+  accessShareCandidates,
+  accessDialogConfig,
+  showAccessDialog,
+  accessSummary,
+  openAccessDialog,
+} = useProviderAccess({
+  managesAllSources,
+  canOwnSources,
+  // the users only name the owner and fill the dialog of the access row
+  needsUsers: () => !!config.value && canConfigureSourceAccess(config.value),
+});
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
 let toggleRequestId = 0;
@@ -387,25 +423,18 @@ const providerManifest = computed(() => {
   return api.providerManifests[config.value.domain];
 });
 
-const providerName = computed(
-  () =>
-    config.value?.name ||
-    api.providers[config.value?.instance_id ?? ""]?.name ||
-    providerManifest.value?.name,
+const providerName = computed(() =>
+  config.value
+    ? providerDisplayName(
+        config.value,
+        api.providers[config.value.instance_id],
+        providerManifest.value,
+      )
+    : "",
 );
 
-const canReconfigure = computed(() =>
-  canReconfigureProvider(
-    config.value?.status,
-    providerManifest.value?.has_setup_flow,
-    config.value?.enabled,
-  ),
-);
-
-const canToggleEnabled = computed(
-  () =>
-    !!config.value &&
-    (!config.value.enabled || providerManifest.value?.allow_disable === true),
+const canReconfigure = computed(
+  () => !!config.value && canReconfigureSource(config.value),
 );
 
 const providerStatusLabel = computed(() =>
@@ -425,6 +454,17 @@ const knownIssuesUrl = computed(() =>
   getProviderSupportIssuesUrl(config.value?.domain ?? ""),
 );
 
+const helpUrl = computed(() =>
+  providerManifest.value ? getProviderHelpUrl(providerManifest.value) : "",
+);
+
+const providerMaintainers = computed(() =>
+  providerManifest.value ? getProviderMaintainers(providerManifest.value) : [],
+);
+
+// a provider owned only by the project names no maintainers
+const showCodeowners = computed(() => providerMaintainers.value.length > 0);
+
 const documentationUrl = computed(() => {
   return getExternalLinkUrl(providerManifest.value?.documentation);
 });
@@ -437,7 +477,7 @@ const canCalibrateSendspinSync = computed(
   () =>
     config.value?.domain === SENDSPIN_SYNC_DOMAIN &&
     store.enabledPlugins.has(SENDSPIN_SYNC_DOMAIN) &&
-    authManager.isAdmin(),
+    authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
 );
 
 // watchers
@@ -445,6 +485,17 @@ watch(
   () => props.instanceId,
   (val) => {
     if (val) void loadConfig(val);
+  },
+  { immediate: true },
+);
+
+// the breadcrumb above this page shows whatever name this heading shows, so
+// the two cannot disagree for a provider that is not loaded but has a custom
+// name of its own
+watch(
+  providerName,
+  (name) => {
+    editedProviderName.value = name;
   },
   { immediate: true },
 );
@@ -463,6 +514,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   unsubProvidersUpdated?.();
+  // a later visit to another provider should fall back to the manifest name
+  // rather than linger on this one
+  editedProviderName.value = "";
 });
 
 // methods
@@ -481,12 +535,42 @@ const resetToDefaults = function () {
   editConfig.value?.resetToDefaults();
 };
 
+const openProviderMenu = function (evt: MouseEvent) {
+  if (!config.value) return;
+  const menuItems = getProviderSettingsMenuItems(config.value, {
+    onToggleEnabled: toggleEnabled,
+    onReload,
+    onRemove,
+  });
+  // resetting acts on the form rather than on the provider, so it is not part
+  // of the menu the sources list shares
+  menuItems.push({
+    label: "settings.reset_to_defaults",
+    action: resetToDefaults,
+    icon: markRaw(RotateCcw),
+    disabled: !config.value.enabled,
+  });
+  // a click from the keyboard carries no coordinates, so fall back to the
+  // button itself and the menu opens against it rather than in the corner
+  const { x, y } = getEventPosition(evt);
+  const trigger =
+    x || y
+      ? undefined
+      : (evt.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+  eventbus.emit("contextmenu", {
+    items: menuItems,
+    posX: trigger ? trigger.left : x,
+    posY: trigger ? trigger.bottom : y,
+  });
+};
+
 const onReload = function () {
   if (!config.value) return;
   api
     .reloadProvider(config.value.instance_id)
     .then(() => toast.success(t("settings.provider_reloading")))
-    .catch((err) => toast.error(String(err)));
+    // the api reports a failing reload itself
+    .catch(() => {});
   backToProviders();
 };
 
@@ -513,10 +597,9 @@ const toggleEnabled = async function () {
     config.value.status = updatedConfig.status;
     config.value.last_error = updatedConfig.last_error;
     toast.success(t("settings.provider_saved"));
-  } catch (err) {
+  } catch {
+    // the api reports the failure itself; the page shows what the server kept
     if (!isCurrentProvider(instanceId)) return;
-
-    toast.error(String(err));
     await refreshProviderConfig(instanceId);
   } finally {
     if (requestId === toggleRequestId) {
@@ -531,6 +614,7 @@ const onReconfigure = function () {
   eventbus.emit("setupFlowDialog", {
     kind: "reconfigure",
     instanceId,
+    name: providerName.value,
     onFlowEnded: () => {
       void refreshProviderConfig(instanceId);
     },
@@ -540,20 +624,27 @@ const onReconfigure = function () {
 const onRemove = function () {
   if (!config.value) return;
   const instanceId = config.value.instance_id;
-  eventbus.emit("deleteConfirmationDialog", {
-    title: t("settings.remove_provider"),
-    message: t("settings.remove_provider_confirm"),
-    confirmLabel: t("settings.remove_provider"),
-    onConfirm: async () => {
-      try {
-        await api.removeProviderConfig(instanceId);
-        toast.success(t("settings.provider_removed"));
-        backToProviders();
-      } catch (err) {
-        toast.error(String(err));
-      }
-    },
+  const name = providerName.value;
+  confirmProviderRemoval(config.value, name, async () => {
+    try {
+      await api.removeProviderConfig(instanceId);
+      toast.success(t("settings.provider_removed", [name]));
+      // another source opened meanwhile keeps its page and its edits
+      if (!isCurrentProvider(instanceId)) return;
+      // the source is gone, and with it the page showing its settings; unsaved
+      // edits have nothing left to save to, so they must not hold the way out
+      editConfig.value?.discardChanges();
+      backToProviders();
+    } catch (err) {
+      toast.error(String(err));
+    }
   });
+};
+
+const onAccessSaved = function (savedConfig: ProviderConfig) {
+  if (config.value?.instance_id === savedConfig.instance_id) {
+    config.value.access = savedConfig.access;
+  }
 };
 
 const retrySave = function () {
@@ -566,8 +657,14 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   loading.value = true;
   lastSubmitValues.value = values;
   values["enabled"] = config.value!.enabled;
+  // the save error dialog shows the server's reason, so skip the global toast
   api
-    .saveProviderConfig(config.value!.domain, values, config.value!.instance_id)
+    .saveProviderConfig(
+      config.value!.domain,
+      values,
+      config.value!.instance_id,
+      { suppressGlobalError: true },
+    )
     .then(() => {
       toast.success(t("settings.provider_saved"));
       router.push({
@@ -617,10 +714,7 @@ const getAuthorsMarkdown = function (authors: string[]) {
   const allAuthors: string[] = [];
   for (const author of authors) {
     if (author.includes("@")) {
-      let authorName = author.replace("@", "");
-      if (authorName == "music-assistant") {
-        authorName = "the Music Assistant team";
-      }
+      const authorName = author.replace("@", "");
       allAuthors.push(
         `[${authorName}](https://github.com/${author.replace("@", "")})`,
       );
@@ -635,23 +729,33 @@ const getCreditsMarkdown = function (credits: string[]) {
   return `**${t("settings.provider_credits")}**: ` + credits.join(" / ");
 };
 
-const saveRename = function () {
-  if (config.value) {
-    config.value.name = editName.value || "";
+const saveRename = async function () {
+  // both the save button and the enter key submit, so a rename already on its
+  // way is left to finish rather than racing a second one
+  if (!config.value || renameLoading.value) return;
+  // the name is applied right away so the page shows it at once, which means a
+  // rejected save has to put the previous one back
+  const renamedConfig = config.value;
+  const previousName = renamedConfig.name;
+  renamedConfig.name = editName.value || "";
+  renameLoading.value = true;
+  try {
+    const savedConfig = await api.saveProviderConfig(
+      renamedConfig.domain,
+      { name: renamedConfig.name || null },
+      renamedConfig.instance_id,
+    );
+    // the stored name is the server's to decide, so its answer replaces what
+    // was typed
+    renamedConfig.name = savedConfig.name;
+    toast.success(t("settings.provider_saved"));
+  } catch {
+    // the api reports the failure itself
+    renamedConfig.name = previousName;
+  } finally {
+    renameLoading.value = false;
+    showRenameDialog.value = false;
   }
-  api
-    .saveProviderConfig(
-      config.value!.domain,
-      { name: config.value!.name || null },
-      config.value!.instance_id,
-    )
-    .then(() => {
-      loading.value = true;
-    })
-    .finally(() => {
-      loading.value = false;
-      showRenameDialog.value = false;
-    });
 };
 
 async function loadConfig(instanceId: string) {
@@ -659,6 +763,14 @@ async function loadConfig(instanceId: string) {
   try {
     const updatedConfig = await api.getProviderConfig(instanceId);
     if (requestId === configLoadRequestId && props.instanceId === instanceId) {
+      // a member only manages the music sources it owns, the rest is admin-only
+      if (!canManageSource(updatedConfig)) {
+        router.replace({
+          name: "providersettings",
+          query: { types: updatedConfig.type },
+        });
+        return;
+      }
       config.value = updatedConfig;
     }
   } catch (err) {

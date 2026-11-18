@@ -1,6 +1,8 @@
-import { createGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
+import { Scope, UserRole } from "@/plugins/api/interfaces";
 import { AuthManager } from "@/plugins/auth";
+import { store } from "@/plugins/store";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { user } from "../fixtures/user";
 
 const { localStorageMock, sessionStorageMock } = vi.hoisted(() => {
   const createStorage = () => {
@@ -104,19 +106,6 @@ describe("AuthManager guest sessions", () => {
     );
   });
 
-  it("preserves affinity only while the same participant token remains active", () => {
-    const firstToken = createToken("guest-token-1", "party_guest");
-    sessionStorage.setItem("ma_guest_access_token", firstToken);
-    createGuestQuizAffinity(createQuizContext("guest-token-1")).record();
-    const authManager = new AuthManager();
-
-    authManager.setToken(firstToken);
-    expect(sessionStorage.getItem("music_quiz_guest_affinity")).not.toBeNull();
-
-    authManager.setToken(createToken("guest-token-2", "party_guest"));
-    expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
-  });
-
   it("stores a dashboard viewer token like a guest token", () => {
     const regularToken = createToken("regular-token", "admin");
     const dashboardToken = createToken("dashboard-token", "dashboard_viewer");
@@ -147,7 +136,6 @@ describe("AuthManager guest sessions", () => {
   it("clears persistent and guest credentials on full logout", () => {
     const authManager = new AuthManager();
     authManager.setToken(createToken("regular-token", "admin"));
-    createGuestQuizAffinity(createQuizContext("guest-token-1")).record();
 
     authManager.clearAuth();
 
@@ -155,7 +143,6 @@ describe("AuthManager guest sessions", () => {
     expect(localStorage.getItem("ma_access_token")).toBeNull();
     expect(localStorage.getItem("ma_access_token_connection")).toBeNull();
     expect(sessionStorage.getItem("ma_guest_access_token")).toBeNull();
-    expect(sessionStorage.getItem("music_quiz_guest_affinity")).toBeNull();
   });
 
   it("restores the saved regular token when a dashboard viewer session is cleared", () => {
@@ -235,6 +222,67 @@ describe("AuthManager guest sessions", () => {
 
     reloadSpy.mockRestore();
   });
+
+  it("resets the route on logout so the next user starts at discover", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/?remote_id=REMOTE#/artists/library/1",
+    );
+    const authManager = new AuthManager();
+    const reloadSpy = vi
+      .spyOn(window.location, "reload")
+      .mockImplementation(() => {});
+
+    await authManager.logout();
+
+    expect(window.location.hash).toBe("#/discover");
+    expect(window.location.search).toContain("remote_id=REMOTE");
+    expect(reloadSpy).toHaveBeenCalledOnce();
+
+    reloadSpy.mockRestore();
+  });
+});
+
+describe("AuthManager scopes", () => {
+  beforeEach(() => {
+    store.currentUser = undefined;
+    store.roleScopes = {};
+  });
+
+  it("grants a scope its role holds", () => {
+    store.currentUser = user({ role: UserRole.USER });
+    store.roleScopes = { user: [Scope.CONFIG_PROVIDERS_OWN] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(true);
+  });
+
+  it("grants every scope to a role holding the wildcard", () => {
+    store.currentUser = user({ role: UserRole.ADMIN });
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(true);
+  });
+
+  it("denies a scope its role does not hold", () => {
+    store.currentUser = user({ role: UserRole.USER });
+    store.roleScopes = { user: [Scope.LIBRARY_READ] };
+
+    expect(new AuthManager().hasScope(Scope.CONFIG_PROVIDERS_OWN)).toBe(false);
+  });
+
+  it("denies every scope to a role the server did not list", () => {
+    store.currentUser = user({ role: "power_user" });
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.LIBRARY_READ)).toBe(false);
+  });
+
+  it("denies every scope when nobody is signed in", () => {
+    store.roleScopes = { admin: [Scope.ALL] };
+
+    expect(new AuthManager().hasScope(Scope.LIBRARY_READ)).toBe(false);
+  });
 });
 
 function createToken(jti: string, username: string): string {
@@ -250,11 +298,4 @@ function createToken(jti: string, username: string): string {
     .replace(/\//g, "_")
     .replace(/=+$/, "");
   return `header.${payload}.signature`;
-}
-
-function createQuizContext(participantIdentity: string) {
-  return {
-    connectionIdentity: "local:http://music-assistant:8095" as const,
-    participantIdentity,
-  };
 }

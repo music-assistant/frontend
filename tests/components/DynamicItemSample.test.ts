@@ -1,10 +1,12 @@
 import DynamicItemSample from "@/components/DynamicItemSample.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { Playlist, Radio } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
 import { radio } from "../fixtures/radio";
+import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { track } from "../fixtures/track";
 
 const { mockGetPlaylistTracks, mockGetRadioTracks, apiMock } = vi.hoisted(
@@ -33,6 +35,15 @@ vi.mock("@/plugins/store", () => ({
   store: { activePlayer: undefined, curQueueItem: undefined },
 }));
 
+// signed in as a member unless a test says otherwise
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: vi.fn(scopeChecker(BUILTIN_ROLE_SCOPES.user)) },
+  };
+});
+
 // the real component pulls in router/toast/breakpoint machinery this suite
 // doesn't need; a minimal stand-in keeps the sample's own tracks assertable
 vi.mock("@/components/ListviewItem.vue", () => ({
@@ -58,6 +69,9 @@ function mountSample(itemDetails: Playlist | Radio) {
 describe("DynamicItemSample", () => {
   beforeEach(() => {
     mockGetPlaylistTracks.mockReset();
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
     mockGetRadioTracks.mockReset();
   });
 
@@ -108,6 +122,18 @@ describe("DynamicItemSample", () => {
     expect(wrapper.emitted("edit-rules")).toHaveLength(1);
   });
 
+  it("offers no rule editing to a role that may not change the library", async () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+    mockGetPlaylistTracks.mockResolvedValue([]);
+    const wrapper = mountSample(playlist({ is_dynamic: true }));
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("smart_playlist.empty_desc");
+    expect(wrapper.find('[data-slot="button"]').exists()).toBe(false);
+  });
+
   it("has no rules to edit for an empty dynamic radio", async () => {
     mockGetRadioTracks.mockResolvedValue([]);
     const wrapper = mountSample(radio({ is_dynamic: true }));
@@ -115,5 +141,50 @@ describe("DynamicItemSample", () => {
 
     expect(wrapper.text()).toContain("dynamic_radio_empty_desc");
     expect(wrapper.find('[data-slot="button"]').exists()).toBe(false);
+  });
+
+  it("lists a finite station in full under a neutral heading", async () => {
+    mockGetRadioTracks.mockResolvedValue(
+      Array.from({ length: 30 }, (_, i) =>
+        track({ item_id: String(i), name: `Track ${i}` }),
+      ),
+    );
+    const wrapper = mountSample(
+      radio({ is_dynamic: false, is_endless: false }),
+    );
+    await flushPromises();
+
+    expect(wrapper.findAll(".listview-item-stub")).toHaveLength(30);
+    expect(wrapper.text()).toContain("tracklist_heading");
+    expect(wrapper.text()).not.toContain("dynamic_radio_heading");
+    expect(wrapper.text()).not.toContain("smart_playlist.dynamic_sample_note");
+  });
+
+  it("keeps the sample presentation for a finite but dynamic radio", async () => {
+    mockGetRadioTracks.mockResolvedValue(
+      Array.from({ length: 30 }, (_, i) =>
+        track({ item_id: String(i), name: `Track ${i}` }),
+      ),
+    );
+    const wrapper = mountSample(radio({ is_dynamic: true, is_endless: false }));
+    await flushPromises();
+
+    expect(wrapper.findAll(".listview-item-stub")).toHaveLength(25);
+    expect(wrapper.text()).toContain("dynamic_radio_heading");
+    expect(wrapper.text()).toContain("smart_playlist.dynamic_sample_note");
+    expect(wrapper.text()).not.toContain("tracklist_heading");
+  });
+
+  it("caps a dynamic radio sample at 25 tracks and keeps its note", async () => {
+    mockGetRadioTracks.mockResolvedValue(
+      Array.from({ length: 30 }, (_, i) =>
+        track({ item_id: String(i), name: `Track ${i}` }),
+      ),
+    );
+    const wrapper = mountSample(radio({ is_dynamic: true }));
+    await flushPromises();
+
+    expect(wrapper.findAll(".listview-item-stub")).toHaveLength(25);
+    expect(wrapper.text()).toContain("smart_playlist.dynamic_sample_note");
   });
 });

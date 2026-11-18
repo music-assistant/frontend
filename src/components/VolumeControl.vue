@@ -48,6 +48,7 @@
 import PlayerChildVolumes from "@/components/PlayerChildVolumes.vue";
 import PlayerGroupMembers from "@/components/PlayerGroupMembers.vue";
 import { Button } from "@/components/ui/button";
+import { getPlayerDisplayName } from "@/helpers/players";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import { api } from "@/plugins/api";
 import {
@@ -71,7 +72,7 @@ const emit = defineEmits<{
   (event: "toggle-child-volumes", player: Player): void;
 }>();
 
-const volumePlayers = computed(() => {
+const groupMembers = computed(() => {
   const playerIds = new Set(props.player.group_members);
   const hasGroupMembers =
     props.player.type === PlayerType.GROUP
@@ -84,21 +85,25 @@ const volumePlayers = computed(() => {
       playerIds.delete(props.player.player_id);
     }
   }
+  // a member that is offline stays listed, so it can still be removed
   const players = [...playerIds]
     .map((playerId) => api.players[playerId])
-    .filter((player): player is Player => player?.available === true);
+    .filter((player): player is Player => player !== undefined);
   return players.sort((left, right) =>
-    left.name.localeCompare(right.name, undefined, {
-      sensitivity: "base",
-    }),
+    getPlayerDisplayName(left).localeCompare(
+      getPlayerDisplayName(right),
+      undefined,
+      {
+        sensitivity: "base",
+      },
+    ),
   );
 });
 
-const groupMembers = computed(() => volumePlayers.value);
-
 const childVolumePlayers = computed(() =>
-  volumePlayers.value.filter(
-    (player) => player.volume_control !== PLAYER_CONTROL_NONE,
+  groupMembers.value.filter(
+    (player) =>
+      player.available && player.volume_control !== PLAYER_CONTROL_NONE,
   ),
 );
 

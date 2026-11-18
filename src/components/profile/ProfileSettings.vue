@@ -46,7 +46,7 @@
                   :aria-label="$t('tooltip.change_avatar')"
                   @click="showAvatarDialog = true"
                 >
-                  <Camera :size="14" />
+                  <Camera class="size-3.5" />
                 </Button>
               </div>
             </div>
@@ -54,52 +54,26 @@
             <div class="flex-1 space-y-4">
               <form.Field name="username">
                 <template #default="{ field }">
-                  <Field :data-invalid="isInvalid(field)">
-                    <FieldLabel :for="field.name">
-                      {{ $t("auth.username") }}
-                    </FieldLabel>
-                    <Input
-                      :id="field.name"
-                      :name="field.name"
-                      :model-value="field.state.value"
-                      :aria-invalid="isInvalid(field)"
-                      :disabled="isIngressSession"
-                      autocomplete="username"
-                      @blur="field.handleBlur"
-                      @input="handleUsernameInput($event, field)"
-                    />
-                    <FieldError
-                      v-if="isInvalid(field)"
-                      :errors="field.state.meta.errors"
-                    />
-                  </Field>
+                  <FormTextField
+                    :field="field"
+                    :label="$t('auth.username')"
+                    :disabled="isIngressSession"
+                    autocomplete="username"
+                    @change="currentUsername = $event"
+                  />
                 </template>
               </form.Field>
 
               <form.Field name="displayName">
                 <template #default="{ field }">
-                  <Field :data-invalid="isInvalid(field)">
-                    <FieldLabel :for="field.name">
-                      {{ $t("auth.display_name") }}
-                    </FieldLabel>
-                    <Input
-                      :id="field.name"
-                      :name="field.name"
-                      :model-value="field.state.value"
-                      :aria-invalid="isInvalid(field)"
-                      :disabled="isIngressSession"
-                      autocomplete="name"
-                      @blur="field.handleBlur"
-                      @input="handleDisplayNameInput($event, field)"
-                    />
-                    <FieldDescription>
-                      {{ $t("optional") }}
-                    </FieldDescription>
-                    <FieldError
-                      v-if="isInvalid(field)"
-                      :errors="field.state.meta.errors"
-                    />
-                  </Field>
+                  <FormTextField
+                    :field="field"
+                    :label="$t('auth.display_name')"
+                    :disabled="isIngressSession"
+                    autocomplete="name"
+                    :description="$t('optional')"
+                    @change="currentDisplayName = $event"
+                  />
                 </template>
               </form.Field>
 
@@ -138,7 +112,7 @@
         <Button
           type="submit"
           form="form-profile-settings"
-          :disabled="!hasChanges || updating"
+          :disabled="!hasChanges"
           :loading="updating"
         >
           {{ $t("auth.save_changes") || "Save changes" }}
@@ -193,12 +167,12 @@
 
 <script setup lang="ts">
 import { Camera, User } from "@lucide/vue";
-import type { AnyFieldApi } from "@tanstack/form-core";
 import { useForm } from "@tanstack/vue-form";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
+import FormTextField from "@/components/forms/FormTextField.vue";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -220,13 +194,14 @@ import {
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { runAfterPreferenceWrites } from "@/composables/userPreferences";
+import { roleDisplayName } from "@/helpers/roles";
 import { profileSettingsSchema } from "@/lib/forms/profile";
-import { api } from "@/plugins/api";
+import { api, ApiCommandError } from "@/plugins/api";
 import { store } from "@/plugins/store";
 
 const { t } = useI18n();
@@ -249,7 +224,7 @@ const form = useForm({
     username: user.value?.username || "",
     displayName: user.value?.display_name || "",
     avatarUrl: user.value?.avatar_url || "",
-    role: user.value ? t(`auth.${user.value.role}_role`) : "",
+    role: user.value ? roleDisplayName(user.value.role, store.roles) : "",
   },
   validators: {
     onSubmit: profileSettingsSchema(t),
@@ -280,11 +255,25 @@ const form = useForm({
         return;
       }
 
-      const updatedUser = await api.updateUser(user.value.user_id, updates);
+      // The reply carries the whole account, preferences and all, and it is
+      // what the store is handed: a save that overtook a preference write on
+      // its way out would put the set back as it was before it, and one that
+      // handed the store its reply after the next write had started would take
+      // that write off again. So both the request and the replacement happen
+      // in the one turn — and on the account that asked for them, which is not
+      // always the one signed in by the time the reply is in.
+      const userId = user.value.user_id;
+      const updatedUser = await runAfterPreferenceWrites(async () => {
+        const saved = await api.updateUser(userId, updates, {
+          suppressGlobalError: true,
+        });
+        if (saved && store.currentUser?.user_id === userId) {
+          store.currentUser = saved;
+        }
+        return saved;
+      });
 
       if (updatedUser) {
-        store.currentUser = updatedUser;
-
         if (updates.username) {
           currentUsername.value = updatedUser.username || "";
         }
@@ -298,8 +287,12 @@ const form = useForm({
         }
         toast.success(t("auth.profile_updated"));
       }
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : t("error_generic"));
+    } catch (error) {
+      toast.error(
+        error instanceof ApiCommandError && error.details
+          ? error.details
+          : t("error_generic"),
+      );
     } finally {
       updating.value = false;
     }
@@ -322,22 +315,6 @@ const hasChanges = computed(() => {
   );
 });
 
-function isInvalid(field: AnyFieldApi) {
-  return field.state.meta.isTouched && !field.state.meta.isValid;
-}
-
-const handleUsernameInput = (e: Event, field: AnyFieldApi) => {
-  const value = (e.target as HTMLInputElement).value;
-  currentUsername.value = value;
-  field.handleChange(value);
-};
-
-const handleDisplayNameInput = (e: Event, field: AnyFieldApi) => {
-  const value = (e.target as HTMLInputElement).value;
-  currentDisplayName.value = value;
-  field.handleChange(value);
-};
-
 const handleReset = () => {
   if (user.value) {
     const originalAvatar = user.value.avatar_url || "";
@@ -348,7 +325,7 @@ const handleReset = () => {
     form.setFieldValue("username", user.value.username);
     form.setFieldValue("displayName", user.value.display_name || "");
     form.setFieldValue("avatarUrl", originalAvatar);
-    form.setFieldValue("role", t(`auth.${user.value.role}_role`));
+    form.setFieldValue("role", roleDisplayName(user.value.role, store.roles));
   }
 };
 
@@ -412,7 +389,7 @@ watch(
 
       form.setFieldValue("username", username);
       form.setFieldValue("displayName", displayName);
-      form.setFieldValue("role", t(`auth.${newUser.role}_role`));
+      form.setFieldValue("role", roleDisplayName(newUser.role, store.roles));
     }
   },
   { immediate: true },

@@ -6,7 +6,11 @@ import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getQueueItemMenuItems } from "@/helpers/queue_item_menu_items";
-import { currentQueueIndex, isQueueEnded } from "@/helpers/queue_position";
+import {
+  currentQueueIndex,
+  isQueueEnded,
+  moveSparseItem,
+} from "@/helpers/queue_position";
 import { useQueueDragReorder } from "@/layouts/default/PlayerOSD/useQueueDragReorder";
 import api from "@/plugins/api";
 import {
@@ -285,7 +289,11 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     });
   };
 
-  const chapterClicked = (_item: MediaItemType, chapter: MediaItemChapter) => {
+  // a bookmark seeks the same way, to its start
+  const chapterClicked = (
+    _item: MediaItemType,
+    chapter: Pick<MediaItemChapter, "start">,
+  ) => {
     const player = store.activePlayer;
     if (!player) return;
     api.playerCommandSeek(player.player_id, chapter.start);
@@ -306,9 +314,25 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
     scrollEl: queueScrollRef,
     getVirtualItems: () => virtualizer.value.getVirtualItems(),
     itemAt,
+    itemBoxInRow: (index) => {
+      const el = queueScrollRef.value?.querySelector<HTMLElement>(
+        `[data-index="${index}"] .queue-virt-item`,
+      );
+      return el ? { top: el.offsetTop, height: el.offsetHeight } : undefined;
+    },
     onDragStart: () => {
       followCurrent.value = false;
     },
+    // show the dropped item in its new place at once, ahead of the server's
+    // update that confirms it
+    onMove: (from, to) => {
+      // a page still on its way holds the old order and must not undo the move
+      loadGeneration += 1;
+      pendingPages.clear();
+      moveSparseItem(loadedItems.value, from, to);
+    },
+    // a refused move left the list showing an order the server does not have
+    onMoveFailed: () => invalidate(),
   });
 
   // ---- party badge colors --------------------------------------------------
@@ -326,7 +350,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
 
   onMounted(async () => {
     // Only fetch badge colors if party provider is loaded.
-    if (Object.values(api.providers).some((p) => p.domain === "party")) {
+    if (store.enabledPlugins.has("party")) {
       await fetchPartyConfig();
     }
   });

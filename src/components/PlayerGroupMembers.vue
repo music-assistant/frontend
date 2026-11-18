@@ -28,17 +28,29 @@
               :icon="candidate.icon"
               :size="18"
               class="text-muted-foreground"
-              :class="{ 'opacity-50': candidate.powered === false }"
+              :class="{
+                'opacity-50':
+                  candidate.powered === false || !candidate.available,
+              }"
             />
           </span>
-          <span class="min-w-0 flex-1 truncate text-xs font-medium">
-            {{ candidate.name }}
+          <span
+            class="min-w-0 flex-1 truncate text-xs font-medium"
+            :class="{ 'text-muted-foreground': !candidate.available }"
+          >
+            {{ getPlayerDisplayName(candidate) }}
           </span>
+          <PlayerStatusIcon
+            :enabled="true"
+            :unavailable="!candidate.available"
+            :reason="getPlayerSetupReason(candidate)"
+            class="size-4"
+          />
           <Checkbox
             :id="getCheckboxId(candidate)"
             :model-value="isGroupMember(candidate)"
             :disabled="isRequiredMember(candidate)"
-            :aria-label="candidate.name"
+            :aria-label="getPlayerDisplayName(candidate)"
             class="border-muted-foreground/70 bg-background/70 size-5 border-2 shadow-sm"
             @update:model-value="
               updateGroupMember(candidate.player_id, $event === true)
@@ -52,12 +64,15 @@
 
 <script setup lang="ts">
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerStatusIcon from "@/components/settings/players/PlayerStatusIcon.vue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { requestGroupPlaybackConfirmation } from "@/helpers/player_group_playback";
 import {
   canBeGroupMember,
+  getPlayerDisplayName,
+  getPlayerSetupReason,
   groupMemberPickerVisible,
   isScreenPlayer,
 } from "@/helpers/players";
@@ -152,7 +167,7 @@ const candidateSections = computed(() => {
   if (groupedPlayers.length > 0) {
     sections.unshift({
       type: "group",
-      label: props.groupHeading ?? props.player.name,
+      label: props.groupHeading ?? getPlayerDisplayName(props.player),
       translateLabel: false,
       players: groupedPlayers,
     });
@@ -185,11 +200,7 @@ function isRequiredMember(player: Player) {
 }
 
 function canGroupWithPlayer(player: Player) {
-  return (
-    props.player.can_group_with.includes(player.player_id) ||
-    // Providers remain supported until the server always supplies player IDs.
-    props.player.can_group_with.includes(player.provider)
-  );
+  return props.player.can_group_with.includes(player.player_id);
 }
 
 function matchesFilter(player: Player) {
@@ -201,9 +212,13 @@ function matchesFilter(player: Player) {
 
 function sortPlayers(players: Player[]) {
   return players.sort((left, right) =>
-    left.name.localeCompare(right.name, undefined, {
-      sensitivity: "base",
-    }),
+    getPlayerDisplayName(left).localeCompare(
+      getPlayerDisplayName(right),
+      undefined,
+      {
+        sensitivity: "base",
+      },
+    ),
   );
 }
 

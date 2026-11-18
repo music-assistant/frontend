@@ -76,17 +76,17 @@ describe("pluralized settings messages", () => {
     i18n.global.locale.value = originalLocale;
   });
 
-  it("pluralizes provider totals in the en locale", () => {
+  it("interpolates the provider total in the en locale", () => {
     expect(
       i18n.global.t("settings.providers_total", 1, {
         named: { count: 1 },
       }),
-    ).toBe("1 total provider");
+    ).toBe("1 total");
     expect(
       i18n.global.t("settings.providers_total", 2, {
         named: { count: 2 },
       }),
-    ).toBe("2 total providers");
+    ).toBe("2 total");
   });
 
   it("pluralizes player totals in the en locale", () => {
@@ -100,6 +100,65 @@ describe("pluralized settings messages", () => {
         named: { count: 2 },
       }),
     ).toBe("2 total players");
+  });
+
+  // The genre table's selection count carries two numbers, so the plural form
+  // is chosen by the selected count rather than by a single `count` argument.
+  it("pluralizes the genre table selection on the selected count", () => {
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 1, {
+        named: { selected: 1, total: 57 },
+      }),
+    ).toBe("1 of 57 row selected.");
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 3, {
+        named: { selected: 3, total: 57 },
+      }),
+    ).toBe("3 of 57 rows selected.");
+    // A single row out of a single row: still singular, so the form cannot be
+    // coming from the total.
+    expect(
+      i18n.global.t("settings.genre_table_rows_selected", 1, {
+        named: { selected: 1, total: 1 },
+      }),
+    ).toBe("1 of 1 row selected.");
+  });
+});
+
+describe("one|few|other plural forms", () => {
+  let originalLocale: string;
+
+  beforeEach(() => {
+    originalLocale = i18n.global.locale.value;
+  });
+
+  afterEach(() => {
+    i18n.global.locale.value = originalLocale;
+  });
+
+  const nTracks = (n: number) =>
+    i18n.global.t("n_tracks", n, { named: { count: n } });
+
+  it("picks the Slovak form for 1, few and many", () => {
+    i18n.global.locale.value = "sk_SK";
+    expect(nTracks(1)).toBe("1 skladba");
+    expect(nTracks(3)).toBe("3 skladby");
+    expect(nTracks(5)).toBe("5 skladieb");
+    expect(
+      i18n.global.t("settings.players_total", 0, { named: { count: 0 } }),
+    ).toBe("Celkom 0 prehrávačov");
+  });
+
+  it("picks the Serbian form for 1, few and many", () => {
+    i18n.global.locale.value = "sr_Latn";
+    expect(nTracks(1)).toBe("1 numera");
+    expect(nTracks(3)).toBe("3 numere");
+    expect(nTracks(5)).toBe("5 numera");
+    expect(
+      i18n.global.t("artist_view_tracks", 21, { named: { count: 21 } }),
+    ).toBe("Prikaži 21 numeru");
+    expect(nTracks(22)).toBe("22 numere");
+    expect(nTracks(12)).toBe("12 numera");
   });
 });
 

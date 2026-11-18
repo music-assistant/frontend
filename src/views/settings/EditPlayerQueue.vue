@@ -1,11 +1,10 @@
 <template>
   <section class="p-4">
     <SettingsHeaderCard
-      v-model:show-advanced-settings="showAdvancedSettings"
       :icon="SlidersHorizontal"
       :title="$t('settings.queue_settings')"
       :description="queueName"
-      :show-advanced-toggle="hasAdvancedEntries(allConfigEntries)"
+      :documentation-url="documentationUrl"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -27,7 +26,6 @@
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :config-entries="allConfigEntries"
       :disabled="false"
       @submit="onSubmit"
@@ -50,21 +48,22 @@ import { api } from "@/plugins/api";
 import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { hasAdvancedEntries } from "@/helpers/config_entry_ui";
 import { goBack } from "@/helpers/navigation";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { Info, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
-import { toast } from "vue-sonner";
 import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
+
+const QUEUE_DOCS_URL =
+  "https://music-assistant.io/settings/individual-player/#queue-settings";
 
 // global refs
 const router = useRouter();
 const config = ref<PlayerQueueConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 
 // props
 const props = defineProps<{
@@ -80,6 +79,9 @@ const allConfigEntries = computed(() => {
 const queueName = computed(
   () => api.queues[props.queueId || ""]?.display_name || props.queueId,
 );
+
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(QUEUE_DOCS_URL));
 
 // watchers
 watch(
@@ -104,8 +106,8 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     .then(() => {
       goBack(router, { name: "playersettings" });
     })
-    .catch((err) => {
-      toast.error(err.message || err);
+    .catch(() => {
+      // the api reports the failure itself
       editConfig.value?.saveFailed();
     })
     .finally(() => {
@@ -124,8 +126,7 @@ const onImmediateApply = async function (
         config.value!.values[key] = entry;
       }
     })
-    .catch((err) => {
-      toast.error(err.message || err);
-    });
+    // the api reports the failure itself
+    .catch(() => {});
 };
 </script>

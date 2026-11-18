@@ -8,7 +8,8 @@
     tabindex="-1"
     data-testid="music-quiz-preparing"
   >
-    <LoaderCircle class="text-primary size-8 animate-spin" aria-hidden="true" />
+    <!-- decorative: the surrounding region already carries the status role -->
+    <Spinner class="text-primary size-8" aria-hidden="true" />
     <div class="flex flex-col gap-1">
       <h2 class="text-lg font-semibold">
         {{ $t("providers.music_quiz.preparing_game") }}
@@ -21,8 +22,8 @@
 </template>
 
 <script setup lang="ts">
+import { Spinner } from "@/components/ui/spinner";
 import { $t } from "@/plugins/i18n";
-import { LoaderCircle } from "@lucide/vue";
 import { onMounted, ref } from "vue";
 
 // The status region announces itself through aria-live, so moving focus is only

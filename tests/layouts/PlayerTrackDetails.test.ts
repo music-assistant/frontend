@@ -1,7 +1,8 @@
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import PlayerTrackDetails from "@/layouts/default/PlayerOSD/PlayerTrackDetails.vue";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
-import { store } from "@/plugins/store";
+import type { Player, PlayerQueue, QueueItem } from "@/plugins/api/interfaces";
+import { store as storeModule } from "@/plugins/store";
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { playerSource } from "../fixtures/playerSource";
@@ -23,6 +24,7 @@ vi.mock("@/layouts/default/PlayerOSD/PlayerFullscreen.vue", () => ({
   default: { template: "<div />" },
 }));
 
+vi.mock("@/plugins/router", () => ({ default: { push: vi.fn() } }));
 // QualityDetailsBtn's audio-processing chain imports ProviderIcon, which
 // needs the real api singleton; stub it since it is never shown here
 // (showQualityDetailsBtn is false in every test below).
@@ -73,6 +75,13 @@ vi.mock("@/plugins/store", async () => {
     }),
   };
 });
+
+// the real store computes these; on the mock they are plain writable state
+const store = storeModule as typeof storeModule & {
+  activePlayer?: Player;
+  activePlayerQueue?: PlayerQueue;
+  curQueueItem?: QueueItem;
+};
 
 const vuetify = createVuetify({ components, directives });
 
@@ -134,7 +143,7 @@ describe("PlayerTrackDetails chapters", () => {
     ).active_source = undefined;
   });
 
-  it("updates the chapter subtitle when the preference is enabled after mount", async () => {
+  it("names the playing chapter with chapter progress off", async () => {
     const details = mountDetails(false);
     const testStore = store as typeof store & {
       currentUser?: { preferences?: Record<string, unknown> };
@@ -158,7 +167,7 @@ describe("PlayerTrackDetails chapters", () => {
       username: "test-user",
       role: "user",
       enabled: true,
-      preferences: { audiobook_chapter_progress: true },
+      preferences: { audiobook_chapter_progress: false },
     } as never;
     testStore.activePlayerQueue = {
       queue_id: "q1",
@@ -310,6 +319,8 @@ describe("PlayerTrackDetails source badge", () => {
       player_id: "player-1",
       active_source: "player-1",
       source_list: [],
+      active_output_protocol: null,
+      protocols: [],
     });
   });
 

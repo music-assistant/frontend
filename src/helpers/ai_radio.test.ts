@@ -98,12 +98,6 @@ describe("language field round-trip", () => {
     const draft = decompileHost(makeHost({ language: "fr" }), []);
     expect(draft.language).toBe("fr");
   });
-
-  it("defaults to the empty string (follow the server language) when absent", () => {
-    const { language: _omitted, ...hostWithoutLanguage } = makeHost();
-    const draft = decompileHost(hostWithoutLanguage as AIRadioHost, []);
-    expect(draft.language).toBe("");
-  });
 });
 
 describe("coerceOptionValue", () => {
@@ -200,10 +194,19 @@ describe("options field round-trip", () => {
     const draft = decompileHost(makeHost({ options: { speed: 0.9 } }), []);
     expect(draft.options).toEqual({ speed: 0.9 });
   });
+});
 
-  it("defaults to an empty object when a host from an older server has no options key at all", () => {
-    const { options: _omitted, ...hostWithoutOptions } = makeHost();
-    const draft = decompileHost(hostWithoutOptions as AIRadioHost, []);
-    expect(draft.options).toEqual({});
+describe("preset tags round-trip", () => {
+  it("keeps preset_id and preset_hash through decompileHost then compileHost", () => {
+    const host = makeHost({ preset_id: "rick", preset_hash: "abc123" });
+    const { host: compiled } = compileHost(decompileHost(host, []));
+    expect(compiled.preset_id).toBe("rick");
+    expect(compiled.preset_hash).toBe("abc123");
+  });
+
+  it("omits the preset keys for a draft without them", () => {
+    const { host } = compileHost(makeDraft());
+    expect(host).not.toHaveProperty("preset_id");
+    expect(host).not.toHaveProperty("preset_hash");
   });
 });

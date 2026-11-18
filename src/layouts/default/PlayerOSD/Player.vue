@@ -7,6 +7,7 @@
       id="player-bar"
       class="mediacontrols"
       :data-compact="!getBreakpointValue('bp6')"
+      data-tour="player_bar"
     >
       <div class="mediacontrols-left">
         <PlayerTrackDetails
@@ -14,7 +15,7 @@
           :show-only-artist="getBreakpointValue('bp7') ? false : true"
           title-opens-details
           :color-palette="coverImageColorPalette"
-          :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+          :primary-color="isDark ? '#fff' : '#000'"
         />
       </div>
       <div class="mediacontrols-bottom-center">
@@ -75,7 +76,7 @@
   <!-- Mobile: floating player with volume slider inside container -->
   <div v-else class="mediacontrols-mobile-container">
     <div class="mediacontrols-bg" :data-floating="useFloatingPlayer"></div>
-    <div class="mediacontrols" :data-mobile="true">
+    <div class="mediacontrols" :data-mobile="true" data-tour="player_bar">
       <!-- the whole card opens the player, so the empty space around the
            track details is clickable too; the controls stop their own clicks -->
       <div class="mediacontrols-left" @click="openActivePlayer">
@@ -84,7 +85,7 @@
           :show-only-artist="true"
           :compact="true"
           :color-palette="coverImageColorPalette"
-          :primary-color="$vuetify.theme.current.dark ? '#fff' : '#000'"
+          :primary-color="isDark ? '#fff' : '#000'"
         />
       </div>
       <div class="mediacontrols-bottom-right">
@@ -131,10 +132,10 @@
 </template>
 
 <script setup lang="ts">
+import { isDark } from "@/composables/useThemePreference";
 import { ImageColorPalette, paletteFromServer } from "@/helpers/utils";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
-import vuetify from "@/plugins/vuetify";
 import { computed, ref, watch } from "vue";
 import PlayerBarGroupControl from "./PlayerBarGroupControl.vue";
 import PlayerBarMobileVolumeSheet from "./PlayerBarMobileVolumeSheet.vue";
@@ -175,7 +176,7 @@ const coverImageColorPalette = computed<ImageColorPalette>(() =>
 );
 
 const backgroundColor = computed(() => {
-  if (vuetify.theme.current.value.dark) {
+  if (isDark.value) {
     if (coverImageColorPalette.value && coverImageColorPalette.value.darkColor)
       return coverImageColorPalette.value.darkColor;
     return "#CCCCCC26";
@@ -189,17 +190,13 @@ const backgroundColor = computed(() => {
 // controls key off the theme contrast colour instead of the flat grey the
 // other player bars use
 const floatingControlColor = computed(() =>
-  vuetify.theme.current.value.dark
-    ? "rgba(255, 255, 255, 0.82)"
-    : "rgba(0, 0, 0, 0.72)",
+  isDark.value ? "rgba(255, 255, 255, 0.82)" : "rgba(0, 0, 0, 0.72)",
 );
 
-const themeColor = computed(() =>
-  vuetify.theme.current.value.dark ? "#fff" : "#000",
-);
+const themeColor = computed(() => (isDark.value ? "#fff" : "#000"));
 
 const playIconStyle = computed(() => ({
-  "--play-icon-color": vuetify.theme.current.value.dark ? "#212121" : "#fff",
+  "--play-icon-color": isDark.value ? "#212121" : "#fff",
 }));
 
 watch(

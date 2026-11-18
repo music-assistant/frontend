@@ -69,6 +69,12 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
   ],
 ];
 
+// the fields that render their own header above the control and expose a labelled group
+const HEADED_FIELDS: [string, ConfigEntryUI][] = [
+  ["pairing code", pairingCodeEntry()],
+  ["expanded options", expandedOptionsEntry()],
+];
+
 describe("ConfigEntryField", () => {
   it.each([ConfigEntryType.INTEGER, ConfigEntryType.FLOAT])(
     "disables the slider and the number input of a ranged %s entry together",
@@ -164,6 +170,14 @@ describe("ConfigEntryField", () => {
     expect(wrapper.text()).toContain("Not supported by this player.");
   });
 
+  it("marks the option the entry holds", () => {
+    const wrapper = mountField({ ...expandedOptionsEntry(), value: "flac" });
+
+    expect(
+      optionButtons(wrapper).map((el) => el.attributes("aria-pressed")),
+    ).toEqual(["true", "false"]);
+  });
+
   it("emits the value of the option behind the pressed button", async () => {
     const wrapper = mountField(expandedOptionsEntry());
 
@@ -228,6 +242,33 @@ describe("ConfigEntryField", () => {
     expect(states(true)).toEqual(Array.from({ length: 6 }, () => true));
   });
 
+  // an empty label is how a step drops the header above a special field; a missing
+  // one still needs the key as a fallback
+  it.each(HEADED_FIELDS)(
+    "renders no header above a %s field with an empty label",
+    (_name, confEntry) => {
+      const wrapper = mountField({ ...confEntry, label: "" });
+
+      expect(
+        wrapper.get('[role="group"]').attributes("aria-labelledby"),
+      ).toBeUndefined();
+      expect(wrapper.text()).not.toContain(confEntry.key);
+    },
+  );
+
+  it.each(HEADED_FIELDS)(
+    "heads a %s field without a label with its key",
+    (_name, confEntry) => {
+      const wrapper = mountField({ ...confEntry, label: null });
+
+      const labelId = wrapper
+        .get('[role="group"]')
+        .attributes("aria-labelledby");
+      expect(labelId).toBeDefined();
+      expect(wrapper.get(`#${labelId}`).text()).toBe(confEntry.key);
+    },
+  );
+
   it("keeps a pairing code entry without a format usable as a text input", () => {
     const wrapper = mountField(pairingCodeEntry(null));
 
@@ -247,6 +288,41 @@ describe("ConfigEntryField", () => {
       decrement: true,
       increment: true,
     });
+  });
+
+  // the server falls back to the default for a missing value, but rejects an empty string
+  // it cannot read as a number
+  it.each([ConfigEntryType.INTEGER, ConfigEntryType.FLOAT])(
+    "leaves an emptied optional %s field without a value",
+    async (type) => {
+      const wrapper = mountField(numberEntry(type));
+
+      await wrapper.get("input").setValue("");
+
+      expect(wrapper.emitted("update:value")).toEqual([[null]]);
+    },
+  );
+
+  it("puts the default back into an emptied required number field", async () => {
+    const wrapper = mountField({
+      ...numberEntry(ConfigEntryType.INTEGER),
+      required: true,
+      value: 9000,
+    });
+
+    await wrapper.get("input").setValue("");
+
+    expect(wrapper.emitted("update:value")).toEqual([[8095]]);
+  });
+
+  it("keeps an emptied optional text field as an empty string", async () => {
+    const wrapper = mountField(
+      entry({ key: "name", type: ConfigEntryType.STRING, value: "Kitchen" }),
+    );
+
+    await wrapper.get("input").setValue("");
+
+    expect(wrapper.emitted("update:value")).toEqual([[""]]);
   });
 });
 
@@ -271,6 +347,10 @@ function entry(
 
 function rangedEntry(type: ConfigEntryType): ConfigEntryUI {
   return entry({ key: "crossfade_duration", type, range: [0, 10], value: 5 });
+}
+
+function numberEntry(type: ConfigEntryType): ConfigEntryUI {
+  return entry({ key: "port", type, default_value: 8095, value: 8095 });
 }
 
 function expandedOptionsEntry(): ConfigEntryUI {

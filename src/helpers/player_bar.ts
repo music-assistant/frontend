@@ -14,18 +14,21 @@ export const PLAYER_BAR_POPOUT_INSET_X = 12;
 
 /**
  * Room a tall popout leaves at the top of the screen, so it keeps reading as a
- * card floating above the player bar instead of a full-height panel. Mirrors
- * --player-bar-popout-top-gap.
+ * card floating above the player bar instead of a full-height panel. Measured
+ * below the status bar: each consumer adds the top device inset itself.
+ * Mirrors --player-bar-popout-top-gap.
  */
-const PLAYER_BAR_POPOUT_TOP_GAP = 24;
+export const PLAYER_BAR_POPOUT_TOP_GAP = 24;
 
 /** Room the popouts leave around themselves as they grow with their contents. */
 export const PLAYER_BAR_POPOUT_COLLISION_PADDING = {
-  top: PLAYER_BAR_POPOUT_TOP_GAP,
-  // the boundary this is measured against spans the cutout, so the side gaps
-  // only stay clear of it by carrying the inset. Reading them through getters
-  // hands each popout the inset it opens under without handing floating-ui a
-  // new object to rebuild its middleware around
+  // the boundary this is measured against spans the status bar and the cutout,
+  // so the top and side gaps only stay clear of them by carrying the inset.
+  // Reading them through getters hands each popout the insets it opens under
+  // without handing floating-ui a new object to rebuild its middleware around
+  get top() {
+    return PLAYER_BAR_POPOUT_TOP_GAP + deviceInset("top");
+  },
   get right() {
     return PLAYER_BAR_POPOUT_INSET_X + deviceInset("right");
   },

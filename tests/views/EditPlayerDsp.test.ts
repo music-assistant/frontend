@@ -1,5 +1,5 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
-import { nextTick, type Ref } from "vue";
+import { nextTick, reactive, type Ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   DSPConfig,
@@ -9,13 +9,16 @@ import type {
 import { DSPFilterType, EventType } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import EditPlayerDsp from "@/views/settings/EditPlayerDsp.vue";
+import {
+  eventbus,
+  type DeleteConfirmationDialogEvent,
+} from "@/plugins/eventbus";
 
 const apiMock = vi.hoisted(() => ({
   applyDSPPreset: vi.fn<MusicAssistantApi["applyDSPPreset"]>(),
   getDSPConfig: vi.fn<MusicAssistantApi["getDSPConfig"]>(),
   playerDSPCallback: undefined as
-    | ((event: { data: DSPConfig }) => void)
-    | undefined,
+    ((event: { data: DSPConfig }) => void) | undefined,
   players: { "player-1": {} },
   removeDSPPreset: vi.fn<MusicAssistantApi["removeDSPPreset"]>(),
   saveDSPConfig: vi.fn<MusicAssistantApi["saveDSPConfig"]>(),
@@ -23,15 +26,15 @@ const apiMock = vi.hoisted(() => ({
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),
 }));
+const routeMock = vi.hoisted(() => ({
+  route: undefined as
+    | { params: Record<string, string>; query: Record<string, string> }
+    | undefined,
+  replace: vi.fn(),
+}));
 const registryMock = vi.hoisted(() => ({
   presets: undefined as Ref<DSPConfigPreset[]> | undefined,
 }));
-// The view reads only mobileLayout, and the real store calls into
-// @/helpers/utils at import time, which is mocked down to getPlayerName here.
-const storeMock = vi.hoisted(() => ({ mobileLayout: false }));
-
-vi.mock("@/plugins/store", () => ({ store: storeMock }));
-
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
@@ -48,8 +51,13 @@ vi.mock("@/composables/useDSPPresets", async () => {
     }),
   };
 });
+vi.mock("vue-router", () => ({
+  useRoute: () => routeMock.route,
+  useRouter: () => ({ replace: routeMock.replace }),
+}));
+// The view uses only truncateString from @/helpers/utils.
 vi.mock("@/helpers/utils", () => ({
-  getPlayerName: () => "Test player",
+  truncateString: (str: string) => str,
 }));
 vi.mock("vue-i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-i18n")>();
@@ -85,6 +93,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   apiMock.playerDSPCallback = undefined;
   apiMock.players = { "player-1": {} };
+  routeMock.route = reactive({ params: { playerId: "player-1" }, query: {} });
+  routeMock.replace.mockImplementation(
+    ({ query }: { query: Record<string, string> }) => {
+      routeMock.route!.query = query;
+    },
+  );
   apiMock.getDSPConfig.mockResolvedValue(makeConfig());
   apiMock.applyDSPPreset.mockResolvedValue(
     makeConfig({ preset_id: "preset-1" }),
@@ -199,7 +213,7 @@ describe("EditPlayerDsp preset identity", () => {
     );
   });
 
-  it("clears preset identity immediately on a top-level manual edit", async () => {
+  it("keeps preset identity when DSP is switched off and on", async () => {
     apiMock.getDSPConfig.mockResolvedValue(
       makeConfig({ preset_id: "preset-1" }),
     );
@@ -209,12 +223,48 @@ describe("EditPlayerDsp preset identity", () => {
     await wrapper.get(".dsp-switch").trigger("click");
     await nextTick();
 
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        enabled: false,
+        preset_id: "preset-1",
+      }),
+    );
+
+    await wrapper.get(".dsp-switch").trigger("click");
+    await nextTick();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        enabled: true,
+        preset_id: "preset-1",
+      }),
+    );
+  });
+
+  it("clears preset identity immediately on a top-level manual edit", async () => {
+    apiMock.getDSPConfig.mockResolvedValue(
+      makeConfig({ preset_id: "preset-1" }),
+    );
+    const wrapper = await mountEditor();
+
+    expect(selectedPresetBadge(wrapper)).toBe("Preset: Living room");
+    wrapper
+      .findAllComponents({ name: "DSPSlider" })[0]
+      .vm.$emit("update:modelValue", -3);
+    await nextTick();
+
     expect(selectedPresetBadge(wrapper)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(2100);
     expect(apiMock.saveDSPConfig).toHaveBeenCalledWith(
       "player-1",
       expect.objectContaining({
-        enabled: false,
+        input_gain: -3,
         preset_id: null,
       }),
     );
@@ -639,6 +689,72 @@ describe("EditPlayerDsp preset identity", () => {
   });
 });
 
+describe("EditPlayerDsp preset removal", () => {
+  const nativeConfirm = vi.fn();
+
+  beforeEach(() => {
+    nativeConfirm.mockReset();
+    // the test environment has no window.confirm, so a native popup would throw
+    // here; the stub turns that into a readable assertion instead
+    vi.stubGlobal("confirm", nativeConfirm);
+    vi.spyOn(eventbus, "emit");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(eventbus.emit).mockRestore();
+  });
+
+  it("asks through the app's own dialog before removing a preset", async () => {
+    const wrapper = await mountEditor();
+
+    await wrapper.get(".preset-item button").trigger("click");
+    const request = confirmationRequest();
+
+    expect(nativeConfirm).not.toHaveBeenCalled();
+    expect(request?.message).toBe("settings.dsp.presets.remove_confirm");
+    expect(apiMock.removeDSPPreset).not.toHaveBeenCalled();
+
+    await request?.onConfirm();
+
+    expect(apiMock.removeDSPPreset).toHaveBeenCalledWith("preset-1");
+    // the trash button must not also load the preset it removes
+    expect(apiMock.applyDSPPreset).not.toHaveBeenCalled();
+  });
+});
+
+describe("EditPlayerDsp stage link", () => {
+  it("opens the stage the link asks for and drops it from the address", async () => {
+    routeMock.route!.query = { stage: "output" };
+    const wrapper = await mountEditor();
+
+    expect(stageHeading(wrapper)).toBe("settings.dsp.output");
+    expect(routeMock.route!.query).toEqual({});
+  });
+
+  it("opens the stage once a newly linked player has loaded", async () => {
+    const wrapper = await mountEditor();
+
+    routeMock.route!.params = { playerId: "player-2" };
+    routeMock.route!.query = { stage: "output" };
+    await nextTick();
+    await wrapper.setProps({ playerId: "player-2" });
+    await flushPromises();
+
+    expect(stageHeading(wrapper)).toBe("settings.dsp.output");
+    expect(routeMock.route!.query).toEqual({});
+  });
+});
+
+function confirmationRequest() {
+  // the emitter types its payload per event, which a call list cannot express
+  const calls = vi.mocked(eventbus.emit).mock.calls as unknown as [
+    string,
+    DeleteConfirmationDialogEvent,
+  ][];
+  return calls.find(([event]) => event === "deleteConfirmationDialog")?.[1];
+}
+
 async function mountEditor() {
   const wrapper = shallowMount(EditPlayerDsp, {
     props: { playerId: "player-1" },
@@ -673,6 +789,12 @@ function selectedPresetBadge(
 ): string | undefined {
   const badge = wrapper.find('[data-testid="selected-dsp-preset"]');
   return badge.exists() ? badge.text() : undefined;
+}
+
+function stageHeading(
+  wrapper: Awaited<ReturnType<typeof mountEditor>>,
+): string {
+  return wrapper.get("h3").text();
 }
 
 function emitPlayerDSPUpdate(config: DSPConfig): void {

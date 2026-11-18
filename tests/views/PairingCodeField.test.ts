@@ -160,6 +160,22 @@ describe("PairingCodeField", () => {
     expect(boxValues(wrapper)).toEqual(["6", "5", "4", "3", "2", "1"]);
   });
 
+  it.each([
+    ["12345", 5],
+    ["9", 1],
+  ])(
+    "focuses the first box left empty by an external value of '%s'",
+    async (value, expected) => {
+      const wrapper = mountField();
+      await typeCode(wrapper, "123456");
+
+      await wrapper.setProps({ entry: pairingEntry({ value }) });
+      await nextTick();
+
+      expect(document.activeElement).toBe(boxes(wrapper)[expected].element);
+    },
+  );
+
   it("keeps typed boxes when the parent echoes the null emission back", async () => {
     const wrapper = mountField();
     await typeCode(wrapper, "123456");

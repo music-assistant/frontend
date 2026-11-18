@@ -5,6 +5,8 @@
     :disabled="isDisabled"
     :color="getValueFromSources(icon?.color, [[shuffleActive, 'primary', '']])"
     :title="shuffleTitle"
+    :aria-label="$t('shuffle')"
+    :aria-pressed="shuffleActive ? 'true' : 'false'"
     :data-dynamic="isDynamic || undefined"
     variant="button"
     @click="toggleShuffle"
@@ -14,7 +16,7 @@
       :size="size"
       :smart="smartShuffleActive"
     />
-    <IconArrowsRight v-else :size="size" />
+    <ShuffleOffIcon v-else :size="size" />
   </Icon>
 </template>
 
@@ -22,6 +24,7 @@
 defineOptions({ inheritAttrs: false });
 import Icon, { IconProps } from "@/components/Icon.vue";
 import ShuffleIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleIcon.vue";
+import ShuffleOffIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/ShuffleOffIcon.vue";
 import { getValueFromSources } from "@/helpers/utils";
 import { useExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
@@ -29,7 +32,6 @@ import api from "@/plugins/api";
 import { isQueueInfiniteStream } from "@/plugins/api/helpers";
 import { Player, PlayerQueue } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { IconArrowsRight } from "@tabler/icons-vue";
 import { computed, toRef } from "vue";
 
 // properties

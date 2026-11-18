@@ -44,7 +44,7 @@
         </Button>
       </header>
 
-      <div class="space-y-3">
+      <div v-if="canEdit" class="space-y-3">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-lg font-semibold tracking-tight">
             {{ $t("providers.ai_radio.hosts.title") }}
@@ -91,6 +91,7 @@
         <AlertDescription>
           <p>{{ $t("providers.ai_radio.prereq.description") }}</p>
           <Button
+            v-if="canEdit"
             variant="outline"
             size="sm"
             class="mt-2"
@@ -115,7 +116,7 @@
           <h2 class="text-lg font-semibold tracking-tight">
             {{ $t("providers.ai_radio.gallery.title") }}
           </h2>
-          <Button @click="openCreateDialog()">
+          <Button v-if="canEdit" @click="openCreateDialog()">
             <Plus class="mr-1 h-4 w-4" />
             {{ $t("providers.ai_radio.gallery.add_show") }}
           </Button>
@@ -128,13 +129,25 @@
           <Sparkles class="h-10 w-10 text-muted-foreground" />
           <div>
             <h2 class="text-lg font-semibold">
-              {{ $t("providers.ai_radio.gallery.empty_title") }}
+              {{
+                $t(
+                  canEdit
+                    ? "providers.ai_radio.gallery.empty_title"
+                    : "providers.ai_radio.gallery.empty_title_listener",
+                )
+              }}
             </h2>
             <p class="mt-1 max-w-md text-sm text-muted-foreground">
-              {{ $t("providers.ai_radio.gallery.empty_description") }}
+              {{
+                $t(
+                  canEdit
+                    ? "providers.ai_radio.gallery.empty_description"
+                    : "providers.ai_radio.gallery.empty_description_listener",
+                )
+              }}
             </p>
           </div>
-          <Button @click="openCreateDialog()">
+          <Button v-if="canEdit" @click="openCreateDialog()">
             <Plus class="mr-1 h-4 w-4" />
             {{ $t("providers.ai_radio.gallery.create_cta") }}
           </Button>
@@ -190,6 +203,8 @@ import {
   uniqueHostName,
   type HostDraft,
 } from "@/helpers/ai_radio";
+import { Scope } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Plus, RefreshCw, Sparkles, TriangleAlert, X } from "@lucide/vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -203,18 +218,22 @@ const {
   shows,
   loadingShows,
   loadingSections,
-  loadingStatus,
   loadingPlaylists,
+  loadingDjStatus,
   loadShows,
   loadSections,
-  loadStatus,
+  refreshDjStatus,
   loadPlaylists,
-  startStatusPolling,
-  stopStatusPolling,
   noAiProviderAlert,
   dismissNoAiProviderAlert,
 } = useShows();
 const { hosts, presets, loadingHosts, loadHosts, loadPresets } = useHosts();
+
+// everyone plays the shows; creating and changing shows and hosts takes
+// config.providers.write
+const canEdit = computed(() =>
+  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+);
 
 const createDialogOpen = ref(false);
 const createDialogInitialPlaylist = ref<PlaylistSelection | undefined>();
@@ -229,8 +248,8 @@ const isRefreshing = computed(
     loadingHosts.value ||
     loadingShows.value ||
     loadingSections.value ||
-    loadingStatus.value ||
-    loadingPlaylists.value,
+    loadingPlaylists.value ||
+    loadingDjStatus.value,
 );
 const showEmptyState = computed(
   () => !loadingShows.value && shows.value.length === 0,
@@ -297,6 +316,8 @@ async function closeCustomizeHost() {
 }
 
 function applyRouteQuery() {
+  // both deep links open an editor
+  if (!canEdit.value) return;
   const stationId = getQueryValue(route.query.station_id);
   if (stationId) {
     onCustomize(stationId);
@@ -319,10 +340,10 @@ function applyRouteQuery() {
 async function handleRefresh() {
   try {
     await Promise.all([
-      loadHosts(),
+      ...(canEdit.value ? [loadHosts()] : []),
       loadShows(),
       loadSections(),
-      loadStatus(),
+      refreshDjStatus(),
       loadPlaylists(),
     ]);
   } catch (error) {
@@ -337,21 +358,22 @@ let unmounted = false;
 onMounted(async () => {
   try {
     await Promise.all([
-      loadHosts(),
+      ...(canEdit.value ? [loadHosts()] : []),
       loadShows(),
       loadSections(),
+      refreshDjStatus(),
       loadPlaylists(),
     ]);
   } catch (error) {
     toast.error(errorMessage(error));
   }
   // Leaving the view while the loads are in flight runs the unmount hook first,
-  // so bail out rather than start a poll loop nothing will stop and rewrite the
-  // query of a route this view no longer owns.
+  // so bail out rather than rewrite the query of a route this view no longer owns.
   if (unmounted) return;
-  // Best effort: the "Add host" menu still works with just "Blank host" if this fails.
-  void loadPresets().catch(() => {});
-  startStatusPolling();
+  if (canEdit.value) {
+    // Best effort: the "Add host" menu still works with just "Blank host" if this fails.
+    void loadPresets().catch(() => {});
+  }
   applyRouteQuery();
 });
 
@@ -359,6 +381,5 @@ watch(() => route.query, applyRouteQuery);
 
 onUnmounted(() => {
   unmounted = true;
-  stopStatusPolling();
 });
 </script>

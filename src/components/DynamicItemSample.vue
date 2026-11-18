@@ -10,11 +10,13 @@
             $t(
               isPlaylist
                 ? "smart_playlist.dynamic_sample_heading"
-                : "dynamic_radio_heading",
+                : isFiniteStation
+                  ? "tracklist_heading"
+                  : "dynamic_radio_heading",
             )
           }}
         </div>
-        <div class="text-body-2 text-medium-emphasis">
+        <div v-if="!isFiniteStation" class="text-body-2 text-medium-emphasis">
           {{ $t("smart_playlist.dynamic_sample_note") }}
         </div>
       </div>
@@ -60,7 +62,7 @@
             }}
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent v-if="isPlaylist">
+        <EmptyContent v-if="isPlaylist && canEditRules">
           <Button variant="outline" size="sm" @click="emit('edit-rules')">
             <SlidersHorizontal class="h-3.5 w-3.5 mr-1.5" />
             {{ $t("smart_playlist.edit_rules") }}
@@ -89,6 +91,7 @@ import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
   MediaType,
   PlaybackState,
+  Scope,
   type Audiobook,
   type MediaItemType,
   type Playlist,
@@ -96,6 +99,7 @@ import {
   type Radio,
   type Track,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import { Music2, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -110,6 +114,16 @@ const emit = defineEmits<{ (e: "edit-rules"): void }>();
 const isPlaylist = computed(
   () => props.itemDetails.media_type === MediaType.PLAYLIST,
 );
+// a finite static station (an AI Radio show) lists its whole tracklist; a finite
+// dynamic one still returns a changing batch per fetch, so it stays a sample
+const isFiniteStation = computed(
+  () =>
+    props.itemDetails.media_type === MediaType.RADIO &&
+    !(props.itemDetails as Radio).is_dynamic &&
+    (props.itemDetails as Radio).is_endless === false,
+);
+// editing the rules of a smart playlist changes the library
+const canEditRules = computed(() => authManager.hasScope(Scope.LIBRARY_WRITE));
 
 const loading = ref(true);
 const tracks = ref<(Track | Radio | PodcastEpisode | Audiobook)[]>([]);
@@ -127,7 +141,7 @@ const loadSample = async function () {
         )
       : await api.getRadioTracks(props.itemDetails.item_id, props.provider);
     // the provider returns a bounded sample for dynamic sources; cap defensively
-    tracks.value = result.slice(0, 25);
+    tracks.value = isFiniteStation.value ? result : result.slice(0, 25);
   } catch {
     tracks.value = [];
   } finally {

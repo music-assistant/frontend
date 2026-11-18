@@ -69,7 +69,7 @@
           :boost-badge-color="boostBadgeColor"
           :request-badge-color="requestBadgeColor"
           :adding-items="addingItems"
-          :added-items="addedItems"
+          :added-items="shownAddedItems"
           :queued-uris="queuedUris"
           :is-expanded="
             expandedResultItemId === `${track.media_type}-${track.item_id}`
@@ -129,7 +129,7 @@
         :boost-badge-color="boostBadgeColor"
         :request-badge-color="requestBadgeColor"
         :adding-items="addingItems"
-        :added-items="addedItems"
+        :added-items="shownAddedItems"
         :queued-uris="queuedUris"
         :is-expanded="true"
         @add-to-queue="addToQueue"
@@ -150,6 +150,10 @@
       :skip-song-tokens="skipSongTokens"
       :skipping-song="skippingSong"
       :skip-token-countdown="skipTokenCountdown"
+      :skip-votes="skipVotes"
+      :skip-votes-required="skipVotesRequired"
+      :has-voted-to-skip="hasVotedToSkip"
+      :has-current-item="!!currentQueueItemId"
       :boost-badge-color="boostBadgeColor"
       :request-badge-color="requestBadgeColor"
       :boost-enabled="boostEnabled"
@@ -174,6 +178,7 @@ import { useGuestArtistTracks } from "@/composables/guest/useGuestArtistTracks";
 import { useGuestQueue } from "@/composables/guest/useGuestQueue";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { useRateLimiting } from "@/composables/useRateLimiting";
+import { queuedGuestTrackUris } from "@/helpers/queue_position";
 import api from "@/plugins/api";
 import {
   type Artist,
@@ -262,17 +267,22 @@ const onSearchSelect = (item: MediaItemTypeOrItemMapping) => {
   }
 };
 
-const queuedUris = computed(() => {
-  const uris = new Set<string>();
-  for (const item of queueItems.value) {
-    if (item.media_item?.uri) uris.add(item.media_item.uri);
-  }
-  return uris;
-});
+const queuedUris = computed(() =>
+  queuedGuestTrackUris(
+    queueItems.value,
+    partyConfig.value?.prevent_duplicate_tracks ?? true,
+  ),
+);
 
 // --- Template-specific state ---
 const addingItems = ref(new Set<string>());
 const addedItems = ref(new Set<string>());
+// only shown while duplicates are prevented, so toggling the setting takes effect right away
+const shownAddedItems = computed(() =>
+  (partyConfig.value?.prevent_duplicate_tracks ?? true)
+    ? addedItems.value
+    : new Set<string>(),
+);
 const skippingSong = ref(false);
 const boostingQueueItemId = ref("");
 const expandedResultItemId = ref("");
@@ -421,9 +431,44 @@ const boostQueueItem = async (item: QueueItem) => {
   }
 };
 
+// Skip votes are tallied by the server on the currently playing queue item
+const skipVotesRequired = computed(
+  () => partyConfig.value?.skip_votes_required ?? 1,
+);
+const currentQueueItemId = computed(
+  () => currentQueue.value?.current_item?.queue_item_id ?? "",
+);
+const skipVotes = computed(
+  () =>
+    currentQueue.value?.current_item?.extra_attributes?.party_skip_votes ?? 0,
+);
+const votedSkipItemId = ref("");
+// The server keeps the votes on the queue item, so a new track starts over
+watch(currentQueueItemId, () => {
+  votedSkipItemId.value = "";
+});
+// Every counted vote shows in the tally, so a tally back at zero means the
+// votes were dropped, e.g. when the last track of the queue was voted away
+watch(skipVotes, (votes) => {
+  if (votes === 0) votedSkipItemId.value = "";
+});
+const hasVotedToSkip = computed(
+  () =>
+    !!currentQueueItemId.value &&
+    votedSkipItemId.value === currentQueueItemId.value,
+);
+
 const skipCurrentSong = async () => {
   if (!skipSongEnabled.value) {
     toast.warning($t("providers.party.guest_page.skip_disabled"));
+    return;
+  }
+
+  // A vote is always for the track the guest sees, so wait until it is known
+  if (!currentQueueItemId.value) return;
+
+  if (hasVotedToSkip.value) {
+    toast.info($t("providers.party.guest_page.skip_already_voted"));
     return;
   }
 
@@ -436,20 +481,52 @@ const skipCurrentSong = async () => {
   }
 
   skippingSong.value = true;
+  const votedItemId = currentQueueItemId.value;
   try {
-    const result = (await api.sendCommand("party/skip")) as {
+    // Tell the server which track the guest saw, so a vote that arrives after
+    // the track changed does not count towards the next one
+    const result = (await api.sendCommand("party/skip", {
+      queue_item_id: votedItemId,
+    })) as {
       success: boolean;
+      skipped: boolean;
+      vote_counted: boolean;
+      song_changed: boolean;
+      votes: number;
+      votes_required: number;
     };
 
     if (!result.success) {
       throw new Error("Server rejected the request");
     }
 
+    if (result.song_changed) {
+      toast.info($t("providers.party.guest_page.skip_song_changed"));
+      return;
+    }
+
+    if (!result.vote_counted) {
+      votedSkipItemId.value = votedItemId;
+      toast.info($t("providers.party.guest_page.skip_already_voted"));
+      return;
+    }
+
     if (rateLimitingEnabled.value) {
       consumeSkipSongToken();
     }
 
-    toast.success($t("providers.party.guest_page.song_skipped"));
+    if (result.skipped) {
+      toast.success($t("providers.party.guest_page.song_skipped"));
+      return;
+    }
+
+    votedSkipItemId.value = votedItemId;
+    toast.success(
+      $t("providers.party.guest_page.skip_vote_counted", [
+        result.votes,
+        result.votes_required,
+      ]),
+    );
   } catch (error) {
     console.error("Failed to skip song:", error);
     toast.error($t("providers.party.guest_page.skip_failed"));

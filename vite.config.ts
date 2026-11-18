@@ -8,6 +8,13 @@ import { VitePWA } from "vite-plugin-pwa";
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import webfontDownload from "vite-plugin-webfont-dl";
 
+// Vitest's module runner gets each module's AST from Rust as one string, and
+// every locale compiled into one messages module passes V8's string length
+// limit, so tests load only the locales they switch to.
+const TRANSLATIONS = process.env.VITEST
+  ? "./src/translations/{en,de,sk_SK,sr_Latn}.json"
+  : "./src/translations/**";
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "./",
@@ -63,7 +70,7 @@ export default defineConfig({
       },
     }),
     VueI18nPlugin({
-      include: [path.resolve(__dirname, "./src/translations/**")],
+      include: [path.resolve(__dirname, TRANSLATIONS)],
     }),
   ],
   define: { "process.env": {} },
@@ -76,6 +83,10 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+  },
+  optimizeDeps: {
+    // Avoid dev reloads on new vuetify imports. VOverflowBtn has no CSS.
+    include: ["vuetify/components/!(VOverflowBtn)", "vuetify/directives/*"],
   },
   build: {
     outDir: "./music_assistant_frontend",

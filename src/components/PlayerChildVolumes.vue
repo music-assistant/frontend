@@ -18,7 +18,7 @@
           />
         </span>
         <span class="min-w-0 flex-1 truncate text-xs font-medium">
-          {{ player.name }}
+          {{ getPlayerDisplayName(player) }}
         </span>
       </div>
       <PlayerVolume :player="player" :allow-wheel="allowWheel" width="100%" />
@@ -29,6 +29,7 @@
 <script setup lang="ts">
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Separator } from "@/components/ui/separator";
+import { getPlayerDisplayName } from "@/helpers/players";
 import PlayerVolume from "@/layouts/default/PlayerOSD/PlayerVolume.vue";
 import type { Player } from "@/plugins/api/interfaces";
 

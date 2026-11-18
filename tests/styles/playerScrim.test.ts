@@ -97,8 +97,13 @@ describe("player scrim height", () => {
       footerSource.match(/\.player-scrim\s*\{([^}]*)\}/)?.[1] ?? "";
 
     expect(scrimRule).toMatch(/(?:^|\s)backdrop-filter:\s*blur\(14px\)/);
-    expect(scrimRule).toContain("-webkit-backdrop-filter: blur(14px)");
     expect(scrimRule).toMatch(/(?:^|\s)mask-image:\s*linear-gradient/);
+    // the minifier keeps only the last of a hand-written pair, which leaves the
+    // blur on a prefix Chromium does not support
+    expect(
+      scrimRule,
+      "the scrim must not declare a -webkit- prefix of its own",
+    ).not.toMatch(/-webkit-[a-z-]+\s*:/);
     expect(dockRules).not.toContain("backdrop-filter");
     expect(footerSource).not.toMatch(/\.player-scrim::before\s*\{/);
   });

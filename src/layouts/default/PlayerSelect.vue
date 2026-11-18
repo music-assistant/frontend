@@ -128,9 +128,9 @@
 
       <div
         ref="playerList"
-        class="player-volume-scroller min-h-0 flex-1 overflow-y-auto pb-6"
+        class="player-volume-scroller min-h-0 flex-1 overflow-y-auto pb-3"
       >
-        <!-- outranks the selected player badge on the cards scrolling underneath -->
+        <!-- keeps search controls above the cards scrolling underneath -->
         <div
           v-if="showSearch"
           class="bg-background sticky top-0 z-20 px-3 pt-3 pb-2"
@@ -164,7 +164,6 @@
             :show-group-controls="true"
             :show-disabled-group-control="true"
             :show-group-member-names="showGroupMemberNames"
-            group-member-layout="subtitle-list"
             :stack-media-details="true"
             :allow-power-control="true"
             :group-control-expanded="
@@ -209,13 +208,18 @@ import {
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
+import { keepPlayerOrder } from "@/helpers/player_order";
 import {
+  canEditPlayerGroup,
+  getPlayerDisplayName,
   isBuiltinPlayer,
   isPlayerActive,
   isSelectablePlayer,
+  resolvePlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
-import { PlayerType, type Player } from "@/plugins/api/interfaces";
+import { PlayerType, Scope, type Player } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
@@ -268,15 +272,22 @@ let restoreFocusOnClose = false;
 let autoSelectedPlayerId: string | undefined;
 
 // PlayerSelect is the only surface that lists needs_setup players (a click here
-// launches the setup flow, see selectPlayer) and capture-only audio inputs
-// (informational rows, so the device stays discoverable).
+// launches the setup flow, see selectPlayer), to a role that may set them up.
+// It also lists capture-only audio inputs (informational rows, so the device
+// stays discoverable).
 const orderedPlayers = useOrderedPlayers({
-  allowNeedsSetup: true,
+  allowNeedsSetup: () => authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
   allowSources: true,
   selectedPlayerFirst: showSelectedPlayerFirst,
   activePlayersFirst: showActivePlayersFirst,
   includePausedAsActive: true,
 });
+// the order is taken when the panel opens, so cards stay under the finger
+// while players start, stop or get selected
+const panelOrder = ref<string[]>([]);
+const panelPlayers = computed(() =>
+  keepPlayerOrder(orderedPlayers.value, panelOrder.value),
+);
 
 const showSearch = computed(
   () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
@@ -293,11 +304,11 @@ const popoutAnchor = computed(() =>
 );
 
 const filteredPlayers = computed(() => {
-  if (!showSearch.value) return orderedPlayers.value;
+  if (!showSearch.value) return panelPlayers.value;
   const query = playerSearchQuery.value.trim().toLocaleLowerCase();
-  if (!query) return orderedPlayers.value;
-  return orderedPlayers.value.filter((player) =>
-    player.name.toLocaleLowerCase().includes(query),
+  if (!query) return panelPlayers.value;
+  return panelPlayers.value.filter((player) =>
+    getPlayerDisplayName(player).toLocaleLowerCase().includes(query),
   );
 });
 
@@ -311,6 +322,8 @@ watch(
         activeElement instanceof HTMLElement && activeElement !== document.body
           ? activeElement
           : null;
+      takePanelOrder();
+      expandActivePlayerGroupControls();
       void scrollSelectedPlayerIntoView();
       return;
     }
@@ -328,6 +341,8 @@ watch(
     });
   },
 );
+
+watch([showSelectedPlayerFirst, showActivePlayersFirst], takePanelOrder);
 
 watch(showSelectedPlayerFirst, (showFirst) => {
   if (!showFirst && store.showPlayersMenu) {
@@ -366,7 +381,10 @@ onMounted(() => {
   document.addEventListener("keydown", markKeyboardInteraction, true);
   document.addEventListener("pointerdown", markPointerInteraction, true);
   checkDefaultPlayer();
-  if (store.showPlayersMenu) void scrollSelectedPlayerIntoView();
+  if (store.showPlayersMenu) {
+    takePanelOrder();
+    void scrollSelectedPlayerIntoView();
+  }
 });
 
 onBeforeUnmount(() => {
@@ -470,6 +488,17 @@ function toggleExpandedPlayer(playerIds: Set<string>, playerId: string) {
   }
 }
 
+/**
+ * Open the group controls of the active player when the panel is opened from
+ * the fullscreen player, where changing the group is the only reason to open it.
+ */
+function expandActivePlayerGroupControls() {
+  const player = store.activePlayer;
+  if (!popoutFromFullscreen.value || !player || !canEditPlayerGroup(player))
+    return;
+  expandedMemberPlayerIds.add(player.player_id);
+}
+
 function getGroupControlsId(playerId: string) {
   return `player-select-group-${encodeURIComponent(playerId)}`;
 }
@@ -481,6 +510,8 @@ function resetPanelState() {
 }
 
 function checkDefaultPlayer() {
+  // dashboard viewers never pick players themselves; the hosting view pins one.
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayer) return;
   const defaultPlayerId = selectDefaultPlayer();
   if (!defaultPlayerId) return;
@@ -498,6 +529,8 @@ function checkDefaultPlayer() {
  * device, which only registers a moment after the app has started.
  */
 function preferBuiltinPlayer() {
+  // a display must never end up showing its own built-in player
+  if (authManager.isDashboardViewer()) return;
   if (store.activePlayerId !== autoSelectedPlayerId) return;
   if (getPreference<string>("activePlayerId").value) return;
   const builtinPlayerId = selectBuiltinPlayer();
@@ -507,6 +540,8 @@ function preferBuiltinPlayer() {
 }
 
 function rememberPlayer(playerId: string) {
+  // dashboard viewer preferences are shared by every dashboard session
+  if (authManager.isDashboardViewer()) return;
   const player = api.players[playerId];
   if (!player) return;
   const rememberedPlayer = isBuiltinPlayer(player)
@@ -524,8 +559,9 @@ function selectDefaultPlayer() {
   // they show up instead of settling for another player
   if (lastPlayerId === BUILTIN_PLAYER_PREFERENCE) return selectBuiltinPlayer();
   if (lastPlayerId) {
-    if (!(lastPlayerId in api.players)) return;
-    if (isSelectablePlayerId(lastPlayerId)) return lastPlayerId;
+    const lastPlayer = resolvePlayer(lastPlayerId);
+    if (!lastPlayer) return;
+    if (isSelectablePlayer(lastPlayer)) return lastPlayer.player_id;
   }
   const builtinPlayerId = selectBuiltinPlayer();
   if (builtinPlayerId) return builtinPlayerId;
@@ -547,6 +583,10 @@ function selectBuiltinPlayer() {
 
 function isSelectablePlayerId(playerId: string | null | undefined) {
   return !!playerId && isSelectablePlayer(api.players[playerId]);
+}
+
+function takePanelOrder() {
+  panelOrder.value = orderedPlayers.value.map((player) => player.player_id);
 }
 
 async function scrollSelectedPlayerIntoView() {

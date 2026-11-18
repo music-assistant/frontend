@@ -3,7 +3,6 @@
  * Handles token storage, JWT claims, and authentication state
  */
 
-import { clearGuestQuizAffinity } from "@/helpers/guest_quiz_affinity";
 import {
   clearGuestSessionEnded,
   clearGuestSessionStorage,
@@ -13,7 +12,7 @@ import {
 } from "@/helpers/guest_session";
 import type { ConnectionIdentity } from "@/helpers/connection_identity";
 import { api } from "./api";
-import type { User } from "./api/interfaces";
+import { Scope, type User } from "./api/interfaces";
 import { store } from "./store";
 
 const TOKEN_STORAGE_KEY = "ma_access_token";
@@ -103,10 +102,11 @@ export class AuthManager {
   }
 
   /**
-   * Check if current user is admin
+   * Check if the role of the current user grants the given scope
    */
-  isAdmin(): boolean {
-    return store.currentUser?.role === "admin";
+  hasScope(scope: Scope): boolean {
+    const scopes = store.roleScopes[store.currentUser?.role ?? ""] ?? [];
+    return scopes.includes(Scope.ALL) || scopes.includes(scope);
   }
 
   /**
@@ -114,7 +114,6 @@ export class AuthManager {
    * Automatically decodes JWT claims for frontend use
    */
   setToken(token: string, connectionIdentity?: ConnectionIdentity): void {
-    const previousIdentity = this.claims?.jti;
     this.token = token;
     this.claims = this.decodeJWT(token);
     if (this.isGuestAccessSession() || this.isDashboardViewer()) {
@@ -130,10 +129,6 @@ export class AuthManager {
       } else {
         localStorage.removeItem(TOKEN_CONNECTION_STORAGE_KEY);
       }
-    }
-    const nextIdentity = this.claims?.jti;
-    if (!nextIdentity || previousIdentity !== nextIdentity) {
-      clearGuestQuizAffinity();
     }
   }
 
@@ -225,7 +220,6 @@ export class AuthManager {
 
     this.restorePersistentToken();
     store.currentUser = undefined;
-    clearGuestQuizAffinity();
   }
 
   /**
@@ -286,7 +280,6 @@ export class AuthManager {
     this.token = null;
     this.claims = null;
     store.currentUser = undefined;
-    clearGuestQuizAffinity();
     clearGuestSessionStorage();
     clearGuestSessionEnded();
     localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -328,7 +321,11 @@ export class AuthManager {
       return;
     }
 
-    // Reload page to show Vue login screen (browser mode)
+    // Reload page to show Vue login screen (browser mode). Reset the route so
+    // the next user doesn't land on the page the previous user left open.
+    const loginUrl = new URL(window.location.href);
+    loginUrl.hash = "/discover";
+    window.history.replaceState({}, "", loginUrl);
     window.location.reload();
   }
 

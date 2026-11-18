@@ -1,3 +1,4 @@
+import { getMediaTypeIcon } from "@/helpers/media_type_icon";
 import { getImageThumbForItem } from "@/helpers/utils";
 import {
   ImageType,
@@ -5,6 +6,7 @@ import {
   type MediaItemType,
   MediaType,
 } from "@/plugins/api/interfaces";
+import type { Component } from "vue";
 
 type AnyItem = MediaItemType | ItemMapping;
 
@@ -22,15 +24,6 @@ export const bannerBackground = `url("${bannerArtwork}") center / cover no-repea
 /** Flat tile background for art that should not sit on the banner. */
 export const placeholderBackground = "rgba(var(--v-theme-on-surface), 0.08)";
 
-/** Up-to-two-letter initials from a name (first letters of the first two
- * words, or the first two characters of a single word). */
-export function itemInitials(name: string): string {
-  const words = (name || "").trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return "";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
-}
-
 /**
  * Resolve the real cover-art URL for a media item, falling back to the MA
  * banner artwork when no artwork is available.
@@ -39,23 +32,41 @@ export function itemArtwork(
   item: AnyItem,
   size = 320,
   preferFanart = false,
-): { image: string | undefined; gradient: string; initials?: string } {
+): {
+  image: string | undefined;
+  gradient: string;
+  placeholderIcon?: Component;
+} {
   // When requested, prefer wide fanart for the background and fall back to the
   // regular thumbnail art (which itself falls back to landscape) when none.
   const image = preferFanart
     ? (getImageThumbForItem(item, ImageType.FANART, size) ??
       getImageThumbForItem(item, ImageType.THUMB, size))
     : getImageThumbForItem(item, ImageType.THUMB, size);
-  // For artists/albums with no artwork, surface the initials over the banner.
-  const showInitials =
-    !image &&
-    (item.media_type === MediaType.ARTIST ||
-      item.media_type === MediaType.ALBUM);
-  const useBanner = !image || item.media_type === MediaType.GENRE;
+  if (!image) return placeholderArtwork(item);
 
   return {
     image,
-    gradient: useBanner ? bannerBackground : placeholderBackground,
-    initials: showInitials ? itemInitials(item.name) : undefined,
+    gradient:
+      item.media_type === MediaType.GENRE
+        ? bannerBackground
+        : placeholderBackground,
+  };
+}
+
+/**
+ * The look of an item whose artwork can not be shown: the banner background,
+ * with the menu icon of its media type over it. Use it when the real
+ * artwork turns out to be unloadable.
+ */
+export function placeholderArtwork(item: AnyItem): {
+  image: undefined;
+  gradient: string;
+  placeholderIcon?: Component;
+} {
+  return {
+    image: undefined,
+    gradient: bannerBackground,
+    placeholderIcon: getMediaTypeIcon(item.media_type),
   };
 }

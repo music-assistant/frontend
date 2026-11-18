@@ -67,7 +67,7 @@
               </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
                 <v-icon size="14" class="mr-1">mdi-tag</v-icon>
-                {{ $t(`player_type.${api.players[config.player_id].type}`) }}
+                {{ getPlayerTypeLabel(api.players[config.player_id]) }}
               </span>
             </div>
             <div
@@ -96,7 +96,6 @@
           </Button>
         </CardHeader>
         <CardContent
-          v-if="playerSetupLabel || showAdvancedToggle"
           class="flex flex-wrap items-center gap-3 border-t bg-muted/20 px-6 py-4"
         >
           <Button
@@ -107,11 +106,17 @@
             <RefreshCw class="size-4" />
             {{ $t(playerSetupLabel) }}
           </Button>
-          <AdvancedSettingsToggle
-            v-if="showAdvancedToggle"
-            v-model:show-advanced-settings="showAdvancedSettings"
-            test-id="player-advanced-settings"
-          />
+          <Button
+            as="a"
+            data-testid="player-documentation"
+            variant="outline"
+            :href="documentationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <BookOpen class="size-4" />
+            {{ $t("settings.documentation") }}
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -148,7 +153,7 @@
       class="mb-4"
     >
       <div class="disabled-banner">
-        <span>{{ $t("settings.player_needs_setup") }}</span>
+        <span>{{ setupReason ?? $t("settings.player_needs_setup") }}</span>
         <v-btn
           size="small"
           color="warning"
@@ -170,7 +175,7 @@
       class="mb-4"
     >
       <div class="disabled-banner">
-        <span>{{ $t("settings.player_not_available") }}</span>
+        <span>{{ setupReason ?? $t("settings.player_not_available") }}</span>
       </div>
     </v-alert>
 
@@ -183,7 +188,6 @@
     <edit-config
       v-if="config"
       ref="editConfig"
-      v-model:show-advanced-settings="showAdvancedSettings"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
@@ -228,30 +232,36 @@ import {
   HassControlPickerEntry,
   HassControlPlayerKey,
   UI_ENTRY_TYPE,
-  hasAdvancedEntries,
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
-import { getPlayerSetupLabel } from "@/helpers/player_config";
-import {
-  getPlayerName,
-  getPlayerSettingsMenuItems,
-} from "@/helpers/player_settings_actions";
+import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
+import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { MoreVertical, Pencil, RefreshCw, RotateCcw } from "@lucide/vue";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
+import {
+  BookOpen,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+} from "@lucide/vue";
 import EditConfig from "./EditConfig.vue";
 import PlayerSettingsLinks from "./PlayerSettingsLinks.vue";
+
+const PLAYER_DOCS_URL =
+  "https://music-assistant.io/settings/individual-player/";
+
 // global refs
 const router = useRouter();
 const config = ref<PlayerConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const loading = ref(false);
-const showAdvancedSettings = ref(false);
 const enabling = ref(false);
 let configLoadRequestId = 0;
 let configRefreshRequestId = 0;
@@ -287,6 +297,11 @@ const player = computed(() =>
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
 );
+
+const setupReason = computed(() => getPlayerSetupReason(player.value));
+
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(PLAYER_DOCS_URL));
 
 const config_entries = computed(() => {
   if (!config.value) return [];
@@ -363,10 +378,6 @@ const config_entries = computed(() => {
   return entries;
 });
 
-const showAdvancedToggle = computed(
-  () => !!config.value?.enabled && hasAdvancedEntries(config_entries.value),
-);
-
 // watchers
 
 watch(
@@ -391,6 +402,20 @@ const openPlayerMenu = function (evt: MouseEvent) {
     onDeleted: () => {
       editConfig.value?.discardChanges();
       router.replace({ name: "playersettings" });
+    },
+    // the player went into the one that stays, which now holds its settings
+    onMerged: (targetPlayerId) => {
+      editConfig.value?.discardChanges();
+      router.replace(`/settings/editplayer/${targetPlayerId}`);
+    },
+    // the server reset the choices that named the output that went, so the
+    // form starts over from what is stored
+    onSplitOff: () => {
+      if (!config.value) return;
+      const playerId = config.value.player_id;
+      editConfig.value?.discardChanges();
+      config.value = undefined;
+      void loadConfig(playerId);
     },
   });
   // resetting acts on the form rather than on the player, so it is not part of
@@ -437,10 +462,10 @@ const enablePlayer = async function () {
 
     applyPlayerConfig(updatedConfig);
     toast.success($t("settings.player_saved"));
-  } catch (err) {
+  } catch {
+    // the api reports the failure itself; the page shows what the server kept
     if (!isCurrentPlayer(playerId)) return;
 
-    toast.error(String(err));
     await refreshPlayerConfig(playerId);
   } finally {
     if (requestId === enableRequestId) enabling.value = false;
@@ -549,7 +574,6 @@ function isCurrentPlayer(playerId: string) {
 function resetPlayerState(playerId?: string) {
   if (config.value?.player_id === playerId) return;
   config.value = undefined;
-  showAdvancedSettings.value = false;
   enabling.value = false;
   enableRequestId++;
 }

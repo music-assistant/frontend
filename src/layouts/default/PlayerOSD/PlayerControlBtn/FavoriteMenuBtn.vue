@@ -1,64 +1,79 @@
 <template>
-  <!-- reka owns the open state; mirroring it here keeps the trigger's hover
-       suppression in step with it -->
-  <DropdownMenu @update:open="menuOpen = $event">
-    <DropdownMenuTrigger as-child>
-      <Button
-        variant="ghost"
-        size="icon-lg"
-        v-bind="$attrs"
-        :disabled="!currentItem"
-        :data-suppress-hover="suppressHover"
-        :title="$t('tooltip.favorite')"
-        :aria-label="$t('tooltip.favorite')"
-        @pointerenter="onPointerEnter"
-      >
-        <Heart :size="size" :fill="isFavorite ? 'currentColor' : 'none'" />
-      </Button>
-    </DropdownMenuTrigger>
-    <!-- the button sits low on both surfaces it is used on, so the menu hangs
-         above it rather than over the volume slider under it -->
-    <DropdownMenuContent side="top" align="center" class="z-[100001]">
-      <DropdownMenuItem @click="toggleFavorite">
-        <Heart class="size-4" :fill="isFavorite ? 'currentColor' : 'none'" />
-        {{ isFavorite ? $t("favorites_remove") : $t("favorites_add") }}
+  <!-- the state lives outside the queue item, so the menu is told what to show
+       rather than reading it from the item itself -->
+  <FavoriteMenu
+    v-bind="$attrs"
+    v-model:favorite="favorite"
+    :item="currentItem"
+    :trigger-favorite="songLabel ? songFavorite : undefined"
+    :labels="songLabel ? STATION_LABELS : undefined"
+    :variant="variant"
+    size="icon-lg"
+    :icon-class="iconClass"
+    side="top"
+  >
+    <!-- the song a station names comes first, apart from the station -->
+    <template v-if="songLabel" #before>
+      <DropdownMenuLabel class="max-w-64 truncate text-muted-foreground">
+        {{ songLabel }}
+      </DropdownMenuLabel>
+      <DropdownMenuItem v-if="songFavorite" @click="unlikeSong">
+        <Heart class="size-4" fill="currentColor" />
+        {{ $t("favorites_song_remove") }}
       </DropdownMenuItem>
-      <DropdownMenuItem @click="addToPlaylist">
+      <DropdownMenuItem v-else @click="likeSong">
+        <Heart class="size-4" fill="none" />
+        {{ $t("favorites_song_add") }}
+      </DropdownMenuItem>
+      <DropdownMenuItem @click="addSongToPlaylist">
         <PlusCircle class="size-4" />
-        {{ $t("add_playlist") }}
+        {{ $t("add_song_playlist") }}
       </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+    </template>
+  </FavoriteMenu>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import { Button } from "@/components/ui/button";
+import FavoriteMenu, {
+  type FavoriteMenuLabels,
+} from "@/components/FavoriteMenu.vue";
+import type { ButtonVariants } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useCurrentItemFavorite } from "@/composables/useCurrentItemFavorite";
-import { usePopoutTriggerHover } from "@/composables/usePopoutTriggerHover";
+import { useRadioSongFavorite } from "@/composables/useRadioSongFavorite";
 import { Heart, PlusCircle } from "@lucide/vue";
-import { ref } from "vue";
 
 export interface Props {
-  /** glyph size in px; the button box comes from the call site */
-  size?: number;
+  /** look of the button */
+  variant?: ButtonVariants["variant"];
+  /** size class of the glyph; the button box comes from the call site */
+  iconClass?: string;
 }
 
 withDefaults(defineProps<Props>(), {
-  size: 20,
+  variant: "ghost",
+  iconClass: "size-5",
 });
 
-const { currentItem, isFavorite, toggleFavorite, addToPlaylist } =
-  useCurrentItemFavorite();
+// next to the song's entries, the station's say what they act on
+const STATION_LABELS: FavoriteMenuLabels = {
+  add: "favorites_station_add",
+  remove: "favorites_station_remove",
+  dislike: "favorites_station_dislike",
+  dislikeRemove: "favorites_station_dislike_remove",
+  playlist: "add_station_playlist",
+};
 
-const menuOpen = ref(false);
-const { suppressHover, onPointerEnter } = usePopoutTriggerHover(
-  () => menuOpen.value,
-);
+const { currentItem, favorite } = useCurrentItemFavorite();
+const {
+  songLabel,
+  favorite: songFavorite,
+  like: likeSong,
+  unlike: unlikeSong,
+  addToPlaylist: addSongToPlaylist,
+} = useRadioSongFavorite();
 </script>
