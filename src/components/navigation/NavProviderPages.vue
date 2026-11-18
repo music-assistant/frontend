@@ -31,6 +31,10 @@ const entries = computed(() =>
   ),
 );
 
+// the icon rail shows no second line, so the tooltip names the instance
+const tooltipOf = (entry: ProviderPageEntry) =>
+  entry.instanceName ? `${entry.label} (${entry.instanceName})` : entry.label;
+
 const choose = (entry: ProviderPageEntry) => {
   if (isMobile.value) setOpenMobile(false);
   void openProviderPage(entry.instanceId);
@@ -51,7 +55,7 @@ const choose = (entry: ProviderPageEntry) => {
         >
           <!-- grows to fit the instance's name on a second line -->
           <SidebarMenuButton
-            :tooltip="entry.label"
+            :tooltip="tooltipOf(entry)"
             class="h-auto text-sm font-medium"
             @click="choose(entry)"
           >
@@ -79,5 +83,13 @@ const choose = (entry: ProviderPageEntry) => {
   width: 1.2rem !important;
   height: 1.2rem !important;
   padding-right: 3px !important;
+}
+
+/* a named icon is a font glyph, which the menu's spacing for an svg misses */
+:deep([data-sidebar="menu-button"] > .v-icon) {
+  width: 1.2rem !important;
+  height: 1.2rem !important;
+  margin-right: 0.5rem !important;
+  font-size: 1.2rem !important;
 }
 </style>

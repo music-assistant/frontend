@@ -51,7 +51,10 @@ vi.mock("@/components/ui/sidebar", () => {
     SidebarGroupLabel: { template: "<h2><slot /></h2>" },
     SidebarMenu: slotHost,
     SidebarMenuItem: slotHost,
-    SidebarMenuButton: { template: "<button><slot /></button>" },
+    SidebarMenuButton: {
+      props: ["tooltip"],
+      template: '<button :data-tooltip="tooltip"><slot /></button>',
+    },
     useSidebar: () => sidebarMock,
   };
 });
@@ -85,6 +88,7 @@ describe("NavProviderPages", () => {
 
     expect(wrapper.find("h2").text()).toBe("provider_pages.heading");
     expect(buttonTexts(wrapper)).toEqual(["Listening stats"]);
+    expect(tooltips(wrapper)).toEqual(["Listening stats"]);
     expect(wrapper.find(".menu-icon").attributes("data-icon")).toBe(
       "mdi-chart-line",
     );
@@ -130,6 +134,10 @@ describe("NavProviderPages", () => {
       "Listening stats / Kitchen",
       "Listening stats / Stats",
     ]);
+    expect(tooltips(wrapper)).toEqual([
+      "Listening stats (Kitchen)",
+      "Listening stats (Stats)",
+    ]);
   });
 
   it("opens the chosen page, and closes the menu on a phone", async () => {
@@ -164,4 +172,11 @@ function buttonTexts(wrapper: ReturnType<typeof mountNav>) {
       .map((line) => line.text())
       .join(" / "),
   );
+}
+
+/** Per entry, the tooltip it shows on the icon rail. */
+function tooltips(wrapper: ReturnType<typeof mountNav>) {
+  return wrapper
+    .findAll("button")
+    .map((button) => button.attributes("data-tooltip"));
 }
