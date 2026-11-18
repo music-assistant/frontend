@@ -237,13 +237,16 @@ const config = computed<ListingConfig | undefined>(() => {
 });
 
 const backToArtist = function () {
-  goBack(router, {
-    name:
-      route.name === AUDIOBOOK_ARTIST_LISTING_ROUTE
-        ? AUDIOBOOK_ARTIST_ROUTE
-        : "artist",
-    params: { provider: props.provider, itemId: props.itemId },
-  });
+  const params = { provider: props.provider, itemId: props.itemId };
+  goBack(
+    router,
+    route.name === AUDIOBOOK_ARTIST_LISTING_ROUTE
+      ? {
+          name: AUDIOBOOK_ARTIST_ROUTE,
+          params: { ...params, role: route.params.role },
+        }
+      : { name: "artist", params },
+  );
 };
 
 async function loadArtistTrackPage(

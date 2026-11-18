@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detailRouteName, isAuthorOrNarrator } from "./author_narrator";
+import { detailRoute, isAuthorOrNarrator } from "./author_narrator";
 import {
   ArtistType,
   MediaType,
@@ -11,8 +11,13 @@ const item = (
   artist_type?: ArtistType,
 ): MediaItemTypeOrItemMapping =>
   (artist_type === undefined
-    ? { media_type }
-    : { media_type, artist_type }) as MediaItemTypeOrItemMapping;
+    ? { media_type, item_id: "item_1", provider: "deezer" }
+    : {
+        media_type,
+        artist_type,
+        item_id: "item_1",
+        provider: "deezer",
+      }) as MediaItemTypeOrItemMapping;
 
 describe("isAuthorOrNarrator", () => {
   it.each([
@@ -27,14 +32,24 @@ describe("isAuthorOrNarrator", () => {
   });
 });
 
-describe("detailRouteName", () => {
+describe("detailRoute", () => {
+  const params = { itemId: "item_1", provider: "deezer" };
+
   it.each([
-    [MediaType.ARTIST, ArtistType.AUTHOR, "audiobookartist"],
-    [MediaType.ARTIST, ArtistType.NARRATOR, "audiobookartist"],
-    [MediaType.ARTIST, ArtistType.SINGER, "artist"],
-    [MediaType.ARTIST, undefined, "artist"],
-    [MediaType.AUDIOBOOK, undefined, "audiobook"],
-  ])("%s of type %s opens %s", (mediaType, artistType, expected) => {
-    expect(detailRouteName(item(mediaType, artistType))).toBe(expected);
+    [
+      MediaType.ARTIST,
+      ArtistType.AUTHOR,
+      { name: "audiobookartist", params: { ...params, role: "authors" } },
+    ],
+    [
+      MediaType.ARTIST,
+      ArtistType.NARRATOR,
+      { name: "audiobookartist", params: { ...params, role: "narrators" } },
+    ],
+    [MediaType.ARTIST, ArtistType.SINGER, { name: "artist", params }],
+    [MediaType.ARTIST, undefined, { name: "artist", params }],
+    [MediaType.AUDIOBOOK, undefined, { name: "audiobook", params }],
+  ])("%s of type %s opens %o", (mediaType, artistType, expected) => {
+    expect(detailRoute(item(mediaType, artistType))).toEqual(expected);
   });
 });

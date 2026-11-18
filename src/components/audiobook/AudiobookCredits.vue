@@ -1,9 +1,9 @@
 <template>
   <div
     v-for="credit in credits"
-    :key="credit.label"
+    :key="credit.role"
     class="flex min-w-0 items-center gap-2"
-    :title="$t(credit.label)"
+    :title="$t(credit.role)"
   >
     <component
       :is="credit.icon"
@@ -11,7 +11,7 @@
       class="flex-none"
       aria-hidden="true"
     />
-    <span class="sr-only">{{ $t(credit.label) }}:</span>
+    <span class="sr-only">{{ $t(credit.role) }}:</span>
     <span class="min-w-0 truncate">
       <template v-for="(person, index) in credit.people" :key="index">
         <span v-if="index > 0"> / </span>
@@ -20,7 +20,7 @@
           v-else
           type="button"
           class="inline cursor-pointer border-0 bg-transparent p-0 align-baseline text-inherit [font:inherit] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          @click="gotoArtist(person)"
+          @click="gotoArtist(person, credit.role)"
         >
           {{ person.name }}
         </button>
@@ -30,7 +30,10 @@
 </template>
 
 <script setup lang="ts">
-import { AUDIOBOOK_ARTIST_ROUTE } from "@/helpers/author_narrator";
+import {
+  AUDIOBOOK_ARTIST_ROUTE,
+  type AudiobookArtistRole,
+} from "@/helpers/author_narrator";
 import type { Artist } from "@/plugins/api/interfaces";
 import { Mic, PenLine } from "@lucide/vue";
 import { computed } from "vue";
@@ -46,16 +49,23 @@ const router = useRouter();
 
 // a provider's artist is a link, a plain name stays text
 const credits = computed(() =>
-  [
-    { label: "authors", icon: PenLine, people: props.authors },
-    { label: "narrators", icon: Mic, people: props.narrators },
-  ].filter((credit) => credit.people.length),
+  (
+    [
+      { role: "authors", icon: PenLine, people: props.authors },
+      { role: "narrators", icon: Mic, people: props.narrators },
+    ] satisfies {
+      role: AudiobookArtistRole;
+      icon: typeof PenLine;
+      people: (string | Artist)[];
+    }[]
+  ).filter((credit) => credit.people.length),
 );
 
-const gotoArtist = function (artist: Artist) {
+// the line gives the role, an artist from the library carries no type
+const gotoArtist = function (artist: Artist, role: AudiobookArtistRole) {
   router.push({
     name: AUDIOBOOK_ARTIST_ROUTE,
-    params: { itemId: artist.item_id, provider: artist.provider },
+    params: { role, itemId: artist.item_id, provider: artist.provider },
   });
 };
 </script>

@@ -457,13 +457,13 @@ describe("ArtistDetails", () => {
   });
 
   it.each([
-    [ArtistType.AUTHOR, "artist", true],
-    [ArtistType.NARRATOR, "artist", true],
-    [ArtistType.AUTHOR, "audiobookartist", false],
-    [ArtistType.SINGER, "artist", false],
+    [ArtistType.AUTHOR, "artist", "authors"],
+    [ArtistType.NARRATOR, "artist", "narrators"],
+    [ArtistType.AUTHOR, "audiobookartist", undefined],
+    [ArtistType.SINGER, "artist", undefined],
   ])(
-    "moves a %s opened on the %s route to the audiobooks section: %s",
-    async (artistType, routeName, moved) => {
+    "moves a %s opened on the %s route to the audiobooks section as %s",
+    async (artistType, routeName, role) => {
       route.name = routeName;
       route.params = { provider: "deezer", itemId: "author_1" };
       await mountDetails(
@@ -475,12 +475,12 @@ describe("ArtistDetails", () => {
       );
 
       expect(mockRouterReplace.mock.calls).toEqual(
-        moved
+        role
           ? [
               [
                 {
                   name: "audiobookartist",
-                  params: { provider: "deezer", itemId: "author_1" },
+                  params: { provider: "deezer", itemId: "author_1", role },
                   query: {},
                 },
               ],

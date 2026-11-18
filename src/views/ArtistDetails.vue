@@ -230,6 +230,7 @@ import ProviderDetails from "@/components/ProviderDetails.vue";
 import {
   AUDIOBOOK_ARTIST_LISTING_ROUTE,
   AUDIOBOOK_ARTIST_ROUTE,
+  audiobookArtistRole,
   isAuthorOrNarrator,
 } from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
@@ -444,10 +445,11 @@ watch(
 // an author or narrator opened through a plain artist link moves to the
 // audiobooks section, so the navigation shows where the user is
 watch(itemDetails, (artist) => {
-  if (!artist || !isAuthorOrNarrator(artist) || route.name !== "artist") return;
+  const role = artist && audiobookArtistRole(artist);
+  if (!role || route.name !== "artist") return;
   router.replace({
     name: AUDIOBOOK_ARTIST_ROUTE,
-    params: route.params,
+    params: { ...route.params, role },
     query: route.query,
   });
 });
@@ -574,15 +576,15 @@ function listingRoute(
   source?: RowSource,
 ): RouteLocationRaw | undefined {
   if (!itemDetails.value) return undefined;
+  const params = {
+    provider: itemDetails.value.provider,
+    itemId: itemDetails.value.item_id,
+    listing,
+  };
+  const role = audiobookArtistRole(itemDetails.value);
   return {
-    name: isAudiobookArtist.value
-      ? AUDIOBOOK_ARTIST_LISTING_ROUTE
-      : "artistlisting",
-    params: {
-      provider: itemDetails.value.provider,
-      itemId: itemDetails.value.item_id,
-      listing,
-    },
+    name: role ? AUDIOBOOK_ARTIST_LISTING_ROUTE : "artistlisting",
+    params: role ? { ...params, role } : params,
     query: source ? { source } : undefined,
   };
 }

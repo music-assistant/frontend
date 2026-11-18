@@ -315,13 +315,16 @@ describe("AI Radio guard", () => {
 
 describe("audiobook artist routes", () => {
   it.each([
-    ["/audiobooks/artists/deezer/author_1", "audiobookartist"],
+    ["/audiobooks/authors/deezer/author_1", "audiobookartist"],
+    ["/audiobooks/narrators/deezer/narrator_1", "audiobookartist"],
     [
-      "/audiobooks/artists/deezer/author_1/audiobooks",
+      "/audiobooks/authors/deezer/author_1/audiobooks",
       "audiobookartistlisting",
     ],
     ["/audiobooks/deezer/book_1", "audiobook"],
     ["/audiobooks/deezer/collection/series_1", "collection"],
+    // an old bookmark of an author page still opens the artist route
+    ["/artists/deezer/author_1", "artist"],
   ])("resolves %s to %s", (path, name) => {
     expect(resolveRoute(path).name).toBe(name);
   });

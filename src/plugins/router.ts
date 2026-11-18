@@ -440,24 +440,32 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
           },
-          // authors and narrators keep the audiobooks section active
+          // authors and narrators keep the audiobooks section active; the role
+          // only names the page, the views get no role prop
           {
-            path: "artists/:provider/:itemId",
+            path: ":role(authors|narrators)/:provider/:itemId",
             name: AUDIOBOOK_ARTIST_ROUTE,
             component: () =>
               import(
                 /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
               ),
-            props: true,
+            props: (route: { params: Record<string, string> }) => ({
+              provider: route.params.provider,
+              itemId: route.params.itemId,
+            }),
           },
           {
-            path: "artists/:provider/:itemId/:listing",
+            path: ":role(authors|narrators)/:provider/:itemId/:listing",
             name: AUDIOBOOK_ARTIST_LISTING_ROUTE,
             component: () =>
               import(
                 /* webpackChunkName: "artistlisting" */ "@/views/ArtistListing.vue"
               ),
-            props: true,
+            props: (route: { params: Record<string, string> }) => ({
+              provider: route.params.provider,
+              itemId: route.params.itemId,
+              listing: route.params.listing,
+            }),
           },
         ],
       },
