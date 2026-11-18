@@ -1,4 +1,4 @@
-import { Scope } from "@/plugins/api/interfaces";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
@@ -6,7 +6,11 @@ import {
   OWN_SOURCES_ROLE_SCOPES,
   scopeChecker,
 } from "../../tests/fixtures/scopes";
-import { availableSettingsSections } from "./settings_sections";
+import {
+  availableSettingsSections,
+  providerSettingsSectionName,
+  SETTINGS_SECTIONS,
+} from "./settings_sections";
 
 const ALL_SECTIONS = [
   "catalog",
@@ -77,5 +81,25 @@ describe("availableSettingsSections", () => {
     expect(
       sectionNames([...BUILTIN_ROLE_SCOPES.guest, Scope.USERS_READ]),
     ).toContain("users");
+  });
+});
+
+describe("providerSettingsSectionName", () => {
+  it("names an existing section for every provider type", () => {
+    const sectionNames = SETTINGS_SECTIONS.map((section) => section.name);
+    for (const type of Object.values(ProviderType)) {
+      expect(sectionNames).toContain(providerSettingsSectionName(type));
+    }
+  });
+
+  it("names the section of a provider type", () => {
+    expect(providerSettingsSectionName(ProviderType.AUDIO_ANALYSIS)).toBe(
+      "audio_analysis_providers",
+    );
+  });
+
+  it("names no section for an unknown or missing type", () => {
+    expect(providerSettingsSectionName("constructor")).toBeUndefined();
+    expect(providerSettingsSectionName(undefined)).toBeUndefined();
   });
 });

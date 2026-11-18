@@ -96,9 +96,17 @@ import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
-import { availableSettingsSections } from "@/helpers/settings_sections";
+import {
+  coreOwner,
+  pageOfWholeOwner,
+  SETTINGS_PAGES,
+} from "@/helpers/settings_pages";
+import {
+  availableSettingsSections,
+  providerSettingsSectionName,
+} from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
-import { ProviderType, Scope } from "@/plugins/api/interfaces";
+import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { LayoutGrid, List, Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
@@ -374,6 +382,9 @@ const activeTab = computed(() => {
   if (name === "profile") {
     return "profile";
   }
+  if (name === "audioanalysissettings") {
+    return "audio_analysis_providers";
+  }
   if (
     name.includes("player") ||
     name.includes("queue") ||
@@ -388,7 +399,6 @@ const activeTab = computed(() => {
     name === "backgroundtasks" ||
     name === "diagnostics" ||
     name === "genremanagement" ||
-    name === "audioanalysissettings" ||
     name === "storagesettings"
   ) {
     return "system";
@@ -413,11 +423,8 @@ const activeTab = computed(() => {
   const typesQuery = router.currentRoute.value.query.types as
     string | undefined;
   const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
-  if (firstType === "music") return "music_providers";
-  if (firstType === "player") return "player_providers";
-  if (firstType === "metadata") return "metadata_providers";
-  if (firstType === "plugin") return "plugin_providers";
-  if (firstType === "audio_analysis") return "audio_analysis_providers";
+  const typeSection = providerSettingsSectionName(firstType);
+  if (typeSection) return typeSection;
 
   if (name === "editprovider") {
     const instanceId = router.currentRoute.value.params.instanceId as string;
@@ -425,12 +432,8 @@ const activeTab = computed(() => {
     const providerType =
       api.getProvider(instanceId)?.type ||
       api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
-    if (providerType === ProviderType.MUSIC) return "music_providers";
-    if (providerType === ProviderType.PLAYER) return "player_providers";
-    if (providerType === ProviderType.METADATA) return "metadata_providers";
-    if (providerType === ProviderType.PLUGIN) return "plugin_providers";
-    if (providerType === ProviderType.AUDIO_ANALYSIS)
-      return "audio_analysis_providers";
+    const providerSection = providerSettingsSectionName(providerType);
+    if (providerSection) return providerSection;
   }
 
   return "music_providers";
@@ -519,7 +522,10 @@ const breadcrumbItems = computed(() => {
       items.push({
         title: t("settings.audio_analysis_providers"),
         disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "audio_analysis" } },
+        // the provider list is only open to who manages every provider
+        to: authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
+          ? { name: "providersettings", query: { types: "audio_analysis" } }
+          : undefined,
       });
     } else if (currentTab === "about") {
       items.push({
@@ -569,6 +575,15 @@ const breadcrumbItems = computed(() => {
     )
     .with("editcore", () => {
       const domain = route.params.domain as string;
+      // the settings of a controller a settings page shows as a whole sit
+      // under that page
+      const wholePage = pageOfWholeOwner(coreOwner(domain));
+      if (wholePage) {
+        const { title, route: pageRoute } = SETTINGS_PAGES[wholePage];
+        items.push({ title: t(title), disabled: false, to: pageRoute });
+        items.push({ title: t("settings.settings"), disabled: true });
+        return;
+      }
       const translated = t(`settings.core_module.${domain}.name`);
       const moduleName =
         translated !== `settings.core_module.${domain}.name`
@@ -605,7 +620,7 @@ const breadcrumbItems = computed(() => {
     })
     .with("audioanalysissettings", () => {
       items.push({
-        title: t("settings.audio_analysis"),
+        title: t(SETTINGS_PAGES.audio_analysis.title),
         disabled: true,
       });
     })

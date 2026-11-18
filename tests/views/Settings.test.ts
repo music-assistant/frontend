@@ -9,7 +9,7 @@ import {
   ProviderType,
   UserRole,
   type ProviderManifest,
-  type Scope,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
@@ -59,7 +59,8 @@ vi.mock("@/composables/useOnboarding", () => ({
   useOnboarding: () => ({ open: onboardingOpen }),
 }));
 // the sections are covered where they are decided
-vi.mock("@/helpers/settings_sections", () => ({
+vi.mock("@/helpers/settings_sections", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/settings_sections")>()),
   availableSettingsSections: () => [],
 }));
 vi.mock("@/composables/userPreferences", async () => {
@@ -256,6 +257,101 @@ describe("Settings breadcrumbs on the storage page", () => {
         to: { name: "systemsettings" },
       },
       { title: "settings.storage.title", disabled: true },
+    ]);
+  });
+});
+
+/** The trail the settings page hands its heading on the given page. */
+function pageTrail(
+  name: string,
+  params: Record<string, string> = {},
+): ToolbarHeadingItem[] {
+  routeState.name = name;
+  routeState.params = params;
+  const wrapper = mount(Settings, {
+    global: {
+      stubs: {
+        Toolbar: {
+          template: '<div><slot name="title" /><slot name="append" /></div>',
+        },
+        ToolbarHeading: ToolbarHeadingStub,
+        RouterView: true,
+        VBtn: true,
+        VDivider: true,
+      },
+    },
+  });
+  const items = wrapper.getComponent(ToolbarHeadingStub).props("items");
+  wrapper.unmount();
+  return items;
+}
+
+describe("Settings breadcrumbs on the audio analysis status", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("hang the status page under the audio analysis providers", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+
+    expect(pageTrail("audioanalysissettings")).toEqual([
+      {
+        title: "settings.audio_analysis_providers",
+        disabled: false,
+        to: { name: "providersettings", query: { types: "audio_analysis" } },
+      },
+      { title: "settings.audio_analysis_status.title", disabled: true },
+    ]);
+  });
+
+  it("name the providers as plain text for who may not manage them", () => {
+    hasScope.mockImplementation(
+      (scope) => scope !== Scope.CONFIG_PROVIDERS_WRITE,
+    );
+
+    expect(pageTrail("audioanalysissettings")[0]).toEqual({
+      title: "settings.audio_analysis_providers",
+      disabled: false,
+      to: undefined,
+    });
+  });
+});
+
+describe("Settings breadcrumbs on the settings of a controller", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("hang the settings of the tasks under the background tasks", () => {
+    expect(pageTrail("editcore", { domain: "tasks" })).toEqual([
+      {
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
+      },
+      {
+        title: "background_tasks.title",
+        disabled: false,
+        to: { name: "backgroundtasks" },
+      },
+      { title: "settings.settings", disabled: true },
+    ]);
+  });
+
+  it("name any other controller below the System settings", () => {
+    expect(pageTrail("editcore", { domain: "streams" })).toEqual([
+      {
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
+      },
+      { title: "streams", disabled: true },
     ]);
   });
 });

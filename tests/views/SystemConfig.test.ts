@@ -1,3 +1,4 @@
+import type { CoreConfig } from "@/plugins/api/interfaces";
 import SystemConfig from "@/views/settings/SystemConfig.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,7 +7,10 @@ import { ref } from "vue";
 const { apiMock, routerPush } = vi.hoisted(() => ({
   apiMock: {
     getCoreConfigs: vi.fn(),
-    providerManifests: {},
+    providerManifests: {
+      streams: { name: "Streams" },
+      tasks: { name: "Background tasks" },
+    } as Record<string, { name: string }>,
   },
   routerPush: vi.fn(),
 }));
@@ -39,6 +43,35 @@ describe("SystemConfig", () => {
       expect(routerPush).toHaveBeenCalledWith("/settings/storage");
     },
   );
+
+  it.each(["card", "list"] as const)(
+    "lists Background tasks once, as its page, in the %s view",
+    async (viewMode) => {
+      apiMock.getCoreConfigs.mockResolvedValue([
+        coreConfig("streams"),
+        coreConfig("tasks"),
+      ]);
+      const wrapper = await mountPage(viewMode);
+
+      const text = entryTitles(wrapper).join("\n");
+      expect(text).toContain("Streams");
+      // the controller itself, by the name of its manifest
+      expect(text).not.toContain("Background tasks");
+      const tasks = entries(wrapper).filter((entry) =>
+        entry.text().includes("background_tasks.title"),
+      );
+      expect(tasks).toHaveLength(1);
+      await tasks[0].trigger("click");
+
+      expect(routerPush).toHaveBeenCalledWith("/settings/tasks");
+    },
+  );
+
+  it("no longer lists the audio analysis status", async () => {
+    const wrapper = await mountPage("list");
+
+    expect(entryTitles(wrapper).join(" ")).not.toContain("audio_analysis");
+  });
 });
 
 async function mountPage(viewMode: "card" | "list") {
@@ -63,8 +96,20 @@ async function mountPage(viewMode: "card" | "list") {
   return wrapper;
 }
 
+function entries(wrapper: Awaited<ReturnType<typeof mountPage>>) {
+  return wrapper.findAll(".setting-card, .list-item");
+}
+
+function entryTitles(wrapper: Awaited<ReturnType<typeof mountPage>>) {
+  return entries(wrapper).map((entry) => entry.text());
+}
+
 function storageEntry(wrapper: Awaited<ReturnType<typeof mountPage>>) {
-  return wrapper
-    .findAll(".setting-card, .list-item")
-    .find((entry) => entry.text().includes("settings.storage.title"));
+  return entries(wrapper).find((entry) =>
+    entry.text().includes("settings.storage.title"),
+  );
+}
+
+function coreConfig(domain: string): CoreConfig {
+  return { domain, last_error: null, values: {} };
 }
