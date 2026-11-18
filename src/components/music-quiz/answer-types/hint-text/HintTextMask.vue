@@ -8,7 +8,7 @@
     <div
       v-for="(word, wordIndex) in words"
       :key="wordIndex"
-      class="flex gap-1"
+      class="flex max-w-full flex-wrap justify-center gap-1"
       aria-hidden="true"
     >
       <span
