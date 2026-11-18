@@ -67,7 +67,7 @@
               </span>
               <span v-if="api.players[config.player_id]" class="meta-item">
                 <v-icon size="14" class="mr-1">mdi-tag</v-icon>
-                {{ $t(`player_type.${api.players[config.player_id].type}`) }}
+                {{ getPlayerTypeLabel(api.players[config.player_id]) }}
               </span>
             </div>
             <div
@@ -239,7 +239,7 @@ import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
 import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
-import { getPlayerSetupReason } from "@/helpers/players";
+import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { eventbus } from "@/plugins/eventbus";
@@ -402,6 +402,20 @@ const openPlayerMenu = function (evt: MouseEvent) {
     onDeleted: () => {
       editConfig.value?.discardChanges();
       router.replace({ name: "playersettings" });
+    },
+    // the player went into the one that stays, which now holds its settings
+    onMerged: (targetPlayerId) => {
+      editConfig.value?.discardChanges();
+      router.replace(`/settings/editplayer/${targetPlayerId}`);
+    },
+    // the server reset the choices that named the output that went, so the
+    // form starts over from what is stored
+    onSplitOff: () => {
+      if (!config.value) return;
+      const playerId = config.value.player_id;
+      editConfig.value?.discardChanges();
+      config.value = undefined;
+      void loadConfig(playerId);
     },
   });
   // resetting acts on the form rather than on the player, so it is not part of

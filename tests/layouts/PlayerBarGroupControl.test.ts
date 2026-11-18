@@ -1,4 +1,7 @@
 import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
+import { api } from "@/plugins/api";
+import type { Player } from "@/plugins/api/interfaces";
+import { store } from "@/plugins/store";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -29,6 +32,8 @@ vi.mock("@/helpers/players", async (importOriginal) => ({
   groupMemberPickerVisible: () => true,
 }));
 
+// the mock's active player is a plain field the tests set
+const storeMock = store as unknown as { activePlayer: Player };
 let wrapper: VueWrapper | undefined;
 
 function mountGroupButton(props: { floating?: boolean } = {}) {
@@ -39,9 +44,23 @@ function mountGroupButton(props: { floating?: boolean } = {}) {
   return wrapper.get("[data-player-group-trigger]");
 }
 
+function groupPlayer(playerId: string, overrides: Partial<Player> = {}) {
+  return {
+    player_id: playerId,
+    name: playerId,
+    type: "player",
+    available: true,
+    group_members: [],
+    output_protocols: [],
+    ...overrides,
+  } as unknown as Player;
+}
+
 describe("PlayerBarGroupControl", () => {
   beforeEach(() => {
     groupSize.value = 3;
+    api.players = {};
+    storeMock.activePlayer = groupPlayer("kitchen");
   });
 
   afterEach(() => {
@@ -125,5 +144,32 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.get(".player-bar-action-label").text()).toBe(
       "1 player_type.player",
     );
+  });
+
+  it("hands the panel the members that are offline", async () => {
+    const kitchen = groupPlayer("kitchen", {
+      group_members: ["kitchen", "office"],
+    });
+    const office = groupPlayer("office", { available: false });
+    api.players = { kitchen, office };
+    storeMock.activePlayer = kitchen;
+
+    // the panel's content renders in place, whether the popover is open or not
+    wrapper = mount(PlayerBarGroupControl, {
+      global: {
+        stubs: {
+          PlayerGroupPanel: true,
+          PopoverContent: { template: "<div><slot /></div>" },
+          Teleport: true,
+        },
+      },
+    });
+
+    expect(
+      wrapper
+        .getComponent({ name: "PlayerGroupPanel" })
+        .props("members")
+        .map((member: Player) => member.player_id),
+    ).toEqual(["kitchen", "office"]);
   });
 });

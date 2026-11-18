@@ -83,7 +83,7 @@
       <!-- named after the player alone: the switch itself says on or off -->
       <Switch
         :model-value="enabled"
-        :disabled="!canEdit || !player.canToggle || savingEnabled"
+        :disabled="!canEdit || savingEnabled"
         :aria-label="player.name"
         data-testid="onboarding-player-enabled"
         @update:model-value="setEnabled"

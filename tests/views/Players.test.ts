@@ -173,6 +173,7 @@ describe("Players", () => {
       name: "Test",
       instance_id: "test",
       supported_features: [],
+      supported_artist_types: [],
       available: true,
       is_streaming_provider: null,
     });
