@@ -2502,7 +2502,6 @@
         "copy_share_link": "Copy share link",
         "copy_provider_link": "Copy {0} link",
         "copy_all": "Copy all",
-        "link_copy": "Copy share link",
         "link_copied": "Share link copied",
         "link_copy_failed": "Could not create or copy the share link.",
         "preview_failed": "Could not create a share preview.",
