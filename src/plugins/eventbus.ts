@@ -15,6 +15,8 @@ import {
 export type PlaylistDialogEvent = {
   items: MediaItemType[];
   parentItem?: MediaItemType;
+  // add the items of this queue instead of items
+  queueId?: string;
 };
 
 export type ContextMenuDialogEvent = {
@@ -25,7 +27,6 @@ export type ContextMenuDialogEvent = {
 };
 
 export type CreatePlaylistEvent = {
-  queueId?: string;
   providerId?: string;
 };
 
@@ -113,6 +114,14 @@ export type PlayerRenameDialogEvent = {
   defaultName?: string | null;
 };
 
+export type PlayerMergeDialogEvent = {
+  // the player that goes into the one the user picks
+  playerId: string;
+  playerName: string;
+  // called with the id of the player that stays
+  onMerged?: (targetPlayerId: string) => void;
+};
+
 // finished: the flow ended on a FINISH step rather than an ABORT
 export type SetupFlowEndedCallback = (finished: boolean) => void;
 
@@ -153,6 +162,7 @@ export type Events = {
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;
   playerRenameDialog: PlayerRenameDialogEvent;
+  playerMergeDialog: PlayerMergeDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

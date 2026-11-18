@@ -13,16 +13,16 @@
 
     <template v-if="item" #main>
       <div
-        class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
+        class="flex w-full min-w-0 items-end gap-6 @max-3xl/detail-hero:flex-col @max-3xl/detail-hero:items-stretch @max-3xl/detail-hero:gap-3"
       >
         <div
-          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
+          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:size-[132px]"
         >
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
         <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
           <h1
-            class="m-0 line-clamp-2 text-[44px] font-medium leading-[1.2] tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px] max-md:tracking-[-0.7px]"
+            class="m-0 line-clamp-2 text-[44px] font-medium leading-[1.2] tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-[30px] @max-3xl/detail-hero:tracking-[-0.7px]"
           >
             {{ item.name }}
             <span v-if="item.version" class="text-white/70">
@@ -30,7 +30,7 @@
             </span>
           </h1>
           <div
-            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] max-md:text-sm"
+            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
           >
             <div
               v-for="credit in credits"
@@ -111,7 +111,6 @@ import {
   type Artist,
   type Audiobook,
 } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { Mic, PenLine, Timer } from "@lucide/vue";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -124,7 +123,6 @@ const emit = defineEmits<{ (e: "edit-rows"): void }>();
 
 const router = useRouter();
 
-const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
 // a provider's artist is a link, a plain name stays text
 const credits = computed(() =>
   [

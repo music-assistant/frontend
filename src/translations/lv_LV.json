@@ -733,7 +733,6 @@
     "remove_provider_mapping_confirm": "Vai tiešām vēlies noņemt šo sniedzēja kartējumu? Tas atvienos vienumu no esošā vienuma detaļām. Tas var atkal parādīties ja tu veic atkārtotu sakritību skenēšanu pret visiem sniedzējiem.",
     "map_provider_mapping": "Saistīt šo mūzikas pakalpojumu sniedzēja ierakstu ar pašreizējo vienumu",
     "player_tip": {
-        "selected_player": "Izvēlētais atskaņotājs",
         "currently_playing": "Pašlaik atskaņo uz",
         "click_to_change": "Noklikšķini zemāk, lai mainītu izvades ierīci"
     },

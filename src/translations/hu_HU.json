@@ -1485,7 +1485,6 @@
     "remove_provider_mapping_confirm": "Biztosan le szeretné választani ezt a forrást az elemről? Előfordulhat, hogy visszatér, ha újra egyezéseket keres az összes zenei forrásban.",
     "map_provider_mapping": "Forrásbejegyzés társítása a jelenlegi elemhez",
     "player_tip": {
-        "selected_player": "Kiválasztott lejátszó",
         "currently_playing": "Jelenleg ezen szól:",
         "click_to_change": "Kattintson alább a kimeneti eszköz módosításához"
     },
@@ -2437,7 +2436,6 @@
     "grouped_volume": "Csoportos hangerő",
     "player_select": {
         "active_player_volume_only": "Hangerőszabályzók megjelenítése csak az aktív lejátszókhoz",
-        "and_more": "...és még {0}",
         "disable_player_confirmation": "Ez a lejátszó rejtett marad, amíg újra nem engedélyezi a lejátszó beállításaiban.",
         "disable_player_title": "Letiltja a(z) {0} lejátszót?",
         "display_options": "Megjelenítési beállítások",
@@ -2668,8 +2666,7 @@
                 "music_hub": {
                     "label": "Zenei központként",
                     "description": "Egyesítse a streamingszolgáltatásait és a helyi zenéit egyetlen könyvtárban."
-                },
-                "settings_note": "Ezt később a beállításokban módosíthatja."
+                }
             },
             "music_sources": {
                 "title": "Zenei források hozzáadása",
@@ -2839,10 +2836,6 @@
         "end": "Bemutató befejezése",
         "next": "Tovább",
         "step_counter": "{current}\/{total}",
-        "offer": {
-            "title": "Szeretne egy gyors körbevezetést?",
-            "description": "Egy rövid bemutató megmutatja az alkalmazás fő részeit. Bármikor újra megtekintheti a profilmenüből."
-        },
         "stops": {
             "menu": {
                 "title": "A menü",

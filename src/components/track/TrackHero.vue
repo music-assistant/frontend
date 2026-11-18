@@ -16,7 +16,7 @@
     <template v-if="item" #main>
       <div class="track-hero__main">
         <div class="track-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
 
         <div class="track-hero__text">
@@ -144,8 +144,6 @@ const emit = defineEmits<{
 const router = useRouter();
 
 const isPhone = computed(() => isPhoneSizedScreen());
-
-const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
 
@@ -295,7 +293,7 @@ const gotoItem = function (
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+@container detail-hero (width < 48rem) {
   .track-hero__main {
     flex-direction: column;
     align-items: stretch;
@@ -315,6 +313,8 @@ const gotoItem = function (
   .track-hero__actions {
     gap: 10px;
   }
+}
+@media (max-width: 768px) {
   .track-hero__badge {
     width: 44px;
     height: 44px;

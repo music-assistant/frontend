@@ -13,21 +13,23 @@
 
     <template v-if="item" #main>
       <div
-        class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
+        class="flex w-full min-w-0 items-end gap-6 @max-3xl/detail-hero:flex-col @max-3xl/detail-hero:items-stretch @max-3xl/detail-hero:gap-3"
       >
         <div
-          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
+          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:size-[132px]"
         >
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
 
         <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
           <h1
-            class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px] max-md:tracking-[-0.7px]"
+            class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-[30px] @max-3xl/detail-hero:tracking-[-0.7px]"
           >
             {{ item.name }}
           </h1>
-          <div class="flex min-w-0 items-center gap-2 max-md:gap-2.5">
+          <div
+            class="flex min-w-0 items-center gap-2 @max-3xl/detail-hero:gap-2.5"
+          >
             <DetailHeroPlayButton :item="item" />
             <DetailHeroSourceBadge :item="item" library-only />
           </div>
@@ -52,7 +54,6 @@ import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vu
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { ImageType, type Radio } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { computed } from "vue";
 
 export interface Props {
@@ -64,8 +65,6 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
 
-const isPhone = computed(() => isPhoneSizedScreen());
-const coverSize = computed(() => (isPhone.value ? 132 : 200));
 const backdrop = computed(() => {
   if (!props.item) return undefined;
   return (

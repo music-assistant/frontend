@@ -1,14 +1,16 @@
 /**
  * Creating a playlist from the add-to-playlist sheet asks for its name in the
- * app's own dialog, and adds the selected items to what it creates.
+ * app's own dialog, and adds the selected items, or a whole queue, to what it
+ * creates.
  */
 import AddToPlaylistDialog from "@/layouts/default/AddToPlaylistDialog.vue";
 import { MediaType, ProviderFeature } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
+import { eventbus, type PlaylistDialogEvent } from "@/plugins/eventbus";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../fixtures/playlist";
 import { providerMapping } from "../fixtures/providerMapping";
+import { queueItem } from "../fixtures/queueItem";
 import { track } from "../fixtures/track";
 
 const { apiMock, storeMock } = vi.hoisted(() => ({
@@ -18,6 +20,8 @@ const { apiMock, storeMock } = vi.hoisted(() => ({
     createPlaylist: vi.fn(),
     getLibraryPlaylists: vi.fn(),
     getProvider: vi.fn(),
+    getPlayerQueueItems: vi.fn(),
+    queueCommandAddToPlaylist: vi.fn(),
   },
   storeMock: { dialogActive: false, currentUser: undefined },
 }));
@@ -108,6 +112,74 @@ describe("AddToPlaylistDialog creating a playlist", () => {
   });
 });
 
+describe("AddToPlaylistDialog adding a queue", () => {
+  const queueEvent = { items: [], queueId: "queue-1" };
+
+  beforeEach(() => {
+    apiMock.getPlayerQueueItems.mockResolvedValue([
+      queueItem({ media_item: track({ item_id: "7" }) }),
+    ]);
+  });
+
+  it("adds the whole queue to the picked playlist", async () => {
+    apiMock.getLibraryPlaylists.mockResolvedValue([
+      targetPlaylist("5", "Road trip", "Alice"),
+    ]);
+    const wrapper = await openSheet(queueEvent);
+
+    // the queue's first item decides which playlists can take it
+    expect(apiMock.getPlayerQueueItems).toHaveBeenCalledWith("queue-1", 1, 0);
+    expect(wrapper.text()).toContain("add_queue_to_playlist");
+    expect(rowTitles(wrapper)).toEqual(["Road trip", "new_playlist"]);
+
+    await wrapper.get(".playlist-list button").trigger("click");
+
+    expect(apiMock.queueCommandAddToPlaylist).toHaveBeenCalledWith(
+      "queue-1",
+      "5",
+    );
+    expect(apiMock.addPlaylistTracks).not.toHaveBeenCalled();
+    expect(wrapper.find(".playlist-sheet").exists()).toBe(false);
+  });
+
+  it("adds the whole queue to a new playlist", async () => {
+    const wrapper = await openSheet(queueEvent);
+
+    await wrapper.get(".playlist-list button").trigger("click");
+    await wrapper.get(".name-dialog input").setValue("Road trip");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(apiMock.createPlaylist).toHaveBeenCalledWith(
+      "Road trip",
+      "builtin--1",
+      [MediaType.TRACK],
+    );
+    expect(apiMock.queueCommandAddToPlaylist).toHaveBeenCalledWith(
+      "queue-1",
+      "42",
+    );
+    expect(apiMock.addPlaylistTracks).not.toHaveBeenCalled();
+  });
+
+  it("adds items again after it was opened for a queue", async () => {
+    apiMock.getLibraryPlaylists.mockResolvedValue([
+      targetPlaylist("5", "Road trip", "Alice"),
+    ]);
+    const wrapper = await openSheet(queueEvent);
+
+    eventbus.emit("playlistdialog", { items: [track({ item_id: "1" })] });
+    await flushPromises();
+    await wrapper.get(".playlist-list button").trigger("click");
+
+    expect(wrapper.text()).not.toContain("add_queue_to_playlist");
+    expect(apiMock.addPlaylistTracks).toHaveBeenCalledWith("5", [
+      "library://track/1",
+    ]);
+    expect(apiMock.queueCommandAddToPlaylist).not.toHaveBeenCalled();
+  });
+});
+
 describe("AddToPlaylistDialog search", () => {
   beforeEach(() => {
     apiMock.getLibraryPlaylists.mockResolvedValue([
@@ -157,7 +229,9 @@ const openOnlyStub = (className: string) => ({
   template: `<div v-if="open" class="${className}"><slot /></div>`,
 });
 
-async function openSheet() {
+async function openSheet(
+  event: PlaylistDialogEvent = { items: [track({ item_id: "1" })] },
+) {
   const wrapper = mount(AddToPlaylistDialog, {
     global: {
       mocks: { $t: (key: string) => key },
@@ -190,7 +264,7 @@ async function openSheet() {
       },
     },
   });
-  eventbus.emit("playlistdialog", { items: [track({ item_id: "1" })] });
+  eventbus.emit("playlistdialog", event);
   await flushPromises();
   return wrapper;
 }
