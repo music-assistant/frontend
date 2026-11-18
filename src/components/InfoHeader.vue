@@ -400,7 +400,7 @@
             style="padding-bottom: 10px; cursor: pointer"
             @click="onDescriptionClick"
           >
-            <MarkdownText :text="shortDescription" />
+            <MarkdownText :text="shortDescription" allow-images />
           </v-card-subtitle>
 
           <!-- genres/tags -->
@@ -441,6 +441,7 @@
         </DialogHeader>
         <MarkdownText
           :text="rawDescription"
+          allow-images
           class="max-w-none text-sm leading-relaxed"
           style="max-height: 60vh; overflow-y: auto"
         />
