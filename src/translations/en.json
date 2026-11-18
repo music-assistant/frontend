@@ -497,6 +497,16 @@
             "title": "Playback",
             "description": "Crossfade, volume normalization, autoplay and what happens when you press play"
         },
+        "library": {
+            "title": "Library",
+            "description": "Music locations, which source plays, genres and library maintenance",
+            "source_selection": "Source selection",
+            "maintenance": "Library maintenance"
+        },
+        "metadata": {
+            "title": "Metadata settings",
+            "description": "Language, online lookups, genres and the artwork cache"
+        },
         "about": "About",
         "about_description": "Version information, credits and more",
         "auto_refresh_log": "Auto-refresh",
@@ -1036,7 +1046,6 @@
         "music_sources_shared": "Shared with you",
         "music_sources_shared_empty": "No music sources have been shared with you yet.",
         "storage": {
-            "title": "Storage",
             "description": "The folders, drives and network shares your music can come from",
             "load_failed": "Could not load the storage",
             "music_locations": "Music locations",

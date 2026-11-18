@@ -789,7 +789,33 @@ describe("Providers leading to the settings pages of their section", () => {
     expect(wrapper.find(STATUS_ROW).exists()).toBe(false);
   });
 
-  it("leads the music sources nowhere else", async () => {
+  it.each([
+    [ProviderType.MUSIC, "library", "librarysettings"],
+    [ProviderType.METADATA, "metadata", "metadatasettings"],
+  ])(
+    "leads the %s sources to the %s settings",
+    async (type, pageId, routeName) => {
+      routeMock.query.types = type;
+
+      const wrapper = await mountWithLinks();
+
+      const rows = wrapper.findAll('[data-testid^="settings-page-link-"]');
+      expect(rows).toHaveLength(1);
+      expect(rows[0].attributes("data-testid")).toBe(
+        `settings-page-link-${pageId}`,
+      );
+      expect(JSON.parse(rows[0].attributes("href")!)).toEqual({
+        name: routeName,
+      });
+      expect(rows[0].text()).toContain(`settings.${pageId}.title`);
+    },
+  );
+
+  it("leads a member nowhere else from its music sources", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+
     const wrapper = await mountWithLinks();
 
     expect(wrapper.find('[data-testid^="settings-page-link-"]').exists()).toBe(

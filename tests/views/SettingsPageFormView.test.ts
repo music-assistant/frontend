@@ -1,3 +1,4 @@
+import type { SettingsPageId } from "@/helpers/settings_pages";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -5,7 +6,7 @@ import {
   type CoreConfig,
   type Scope,
 } from "@/plugins/api/interfaces";
-import PlaybackSettings from "@/views/settings/PlaybackSettings.vue";
+import SettingsPageFormView from "@/views/settings/SettingsPageFormView.vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -38,13 +39,13 @@ beforeEach(() => {
   hasScope.mockReturnValue(true);
 });
 
-describe("PlaybackSettings", () => {
+describe("SettingsPageFormView on the playback defaults", () => {
   it("shows the playback defaults of each module in one form, by category", async () => {
     apiMock.getCoreConfig.mockImplementation(async (domain) =>
       playbackConfig(domain, STREAMS_ENTRIES),
     );
 
-    expect(await formEntries()).toEqual([
+    expect(await formEntries("playback")).toEqual([
       { key: "core/player_queues/crossfade_mode", category: "crossfade" },
       {
         key: "core/player_queues/volume_normalization",
@@ -75,7 +76,9 @@ describe("PlaybackSettings", () => {
     );
 
     expect(
-      (await formEntries()).filter(({ key }) => key.startsWith("core/streams")),
+      (await formEntries("playback")).filter(({ key }) =>
+        key.startsWith("core/streams"),
+      ),
     ).toEqual([
       { key: "core/streams/buffer_size", category: "playback" },
       { key: "core/streams/volume_normalization_tracks", category: "playback" },
@@ -95,9 +98,55 @@ const STREAMS_ENTRIES: ConfigEntry[] = [
   entry("log_level", "generic"),
 ];
 
-/** The key and category of each entry the form gets. */
-async function formEntries() {
-  const wrapper = mount(PlaybackSettings, {
+describe("SettingsPageFormView on the metadata settings", () => {
+  it("shows every setting of the metadata module", async () => {
+    apiMock.getCoreConfig.mockResolvedValue(
+      coreConfig("metadata", [
+        entry("language", "generic"),
+        entry("enable_online_metadata", "generic"),
+        entry("log_level", "generic"),
+      ]),
+    );
+
+    expect(await formEntries("metadata")).toEqual([
+      { key: "language", category: "generic" },
+      { key: "enable_online_metadata", category: "generic" },
+      { key: "log_level", category: "generic" },
+    ]);
+    expect(apiMock.getCoreConfig).toHaveBeenCalledExactlyOnceWith("metadata");
+  });
+});
+
+describe("SettingsPageFormView", () => {
+  it("loads the form of the page the route hands it", async () => {
+    apiMock.getCoreConfig.mockImplementation(async (domain) =>
+      domain === "metadata"
+        ? coreConfig("metadata", [entry("language", "generic")])
+        : playbackConfig(domain, STREAMS_ENTRIES),
+    );
+    const wrapper = mount(SettingsPageFormView, {
+      props: { page: "playback" },
+      global: { stubs: { EditConfig: editConfigStub } },
+    });
+    await flushPromises();
+
+    await wrapper.setProps({ page: "metadata" });
+    await flushPromises();
+
+    expect(
+      (
+        wrapper
+          .getComponent(editConfigStub)
+          .props("configEntries") as ConfigEntry[]
+      ).map(({ key }) => key),
+    ).toEqual(["language"]);
+  });
+});
+
+/** The key and category of each entry the form of a page gets. */
+async function formEntries(page: SettingsPageId) {
+  const wrapper = mount(SettingsPageFormView, {
+    props: { page },
     global: { stubs: { EditConfig: editConfigStub } },
   });
   await flushPromises();
@@ -132,9 +181,13 @@ function playbackConfig(domain: string, streams: ConfigEntry[]): CoreConfig {
       entry("log_level", "generic"),
     ],
   };
+  return coreConfig(domain, values[domain]);
+}
+
+function coreConfig(domain: string, entries: ConfigEntry[]): CoreConfig {
   return {
     domain,
     last_error: null,
-    values: Object.fromEntries(values[domain].map((e) => [e.key, e])),
+    values: Object.fromEntries(entries.map((e) => [e.key, e])),
   };
 }

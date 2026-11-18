@@ -9,6 +9,8 @@ const { apiMock, routerPush } = vi.hoisted(() => ({
     getCoreConfigs: vi.fn(),
     providerManifests: {
       discovery: { name: "Discovery" },
+      metadata: { name: "Metadata" },
+      music: { name: "Music" },
       player_queues: { name: "Player queues" },
       players: { name: "Players" },
       streams: { name: "Streams" },
@@ -35,18 +37,28 @@ beforeEach(() => {
 });
 
 describe("SystemConfig", () => {
-  it.each(["card", "list"] as const)(
-    "offers the Storage page in the %s view",
-    async (viewMode) => {
-      const wrapper = await mountPage(viewMode);
+  it("leaves the music locations and the genres to the library options", async () => {
+    const wrapper = await mountPage("list");
 
-      const entry = storageEntry(wrapper);
-      expect(entry).toBeDefined();
-      await entry!.trigger("click");
+    const text = entryTitles(wrapper).join("\n");
+    expect(text).not.toContain("storage");
+    expect(text).not.toContain("genre");
+  });
 
-      expect(routerPush).toHaveBeenCalledWith("/settings/storage");
-    },
-  );
+  it("leaves the music and metadata modules to their settings pages", async () => {
+    apiMock.getCoreConfigs.mockResolvedValue([
+      coreConfig("metadata"),
+      coreConfig("music"),
+      coreConfig("streams"),
+    ]);
+    const wrapper = await mountPage("list");
+
+    const text = entryTitles(wrapper).join("\n");
+    // the streams keep their log level here
+    expect(text).toContain("Streams");
+    expect(text).not.toContain("Music");
+    expect(text).not.toContain("Metadata");
+  });
 
   it.each(["card", "list"] as const)(
     "lists Background tasks once, as its page, in the %s view",
@@ -145,12 +157,6 @@ function entries(wrapper: Awaited<ReturnType<typeof mountPage>>) {
 
 function entryTitles(wrapper: Awaited<ReturnType<typeof mountPage>>) {
   return entries(wrapper).map((entry) => entry.text());
-}
-
-function storageEntry(wrapper: Awaited<ReturnType<typeof mountPage>>) {
-  return entries(wrapper).find((entry) =>
-    entry.text().includes("settings.storage.title"),
-  );
 }
 
 function coreConfig(domain: string): CoreConfig {

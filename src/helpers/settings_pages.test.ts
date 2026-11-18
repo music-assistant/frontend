@@ -13,6 +13,8 @@ import {
   DISCOVERY_DOMAIN,
   isEntryClaimed,
   isOwnerFullyClaimed,
+  METADATA_DOMAIN,
+  MUSIC_DOMAIN,
   pageOfWholeOwner,
   PLAYER_QUEUES_DOMAIN,
   PLAYERS_DOMAIN,
@@ -131,10 +133,10 @@ describe("isEntryClaimed", () => {
     ).toBe(true);
   });
 
-  it("leaves the other entries of the streams controller alone", () => {
+  it("claims the source selection entries of the streams controller", () => {
     expect(
       isEntryClaimed(STREAMS, entry("stream_source_mode", "source_selection")),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it.each(["playback", "crossfade", "volume_normalization"])(
@@ -175,11 +177,7 @@ describe("claimedEntries", () => {
       AUDIO_ANALYSIS_CATEGORY,
     );
     expect(
-      claimedEntries(STREAMS, [
-        first,
-        entry("stream_source_mode", "source_selection"),
-        second,
-      ]),
+      claimedEntries(STREAMS, [first, entry("log_level", "generic"), second]),
     ).toEqual([first, second]);
   });
 });
@@ -205,6 +203,8 @@ describe("pageOfWholeOwner", () => {
     expect(pageOfWholeOwner(coreOwner(DISCOVERY_DOMAIN))).toBe("network");
     expect(pageOfWholeOwner(coreOwner(PLAYER_QUEUES_DOMAIN))).toBe("playback");
     expect(pageOfWholeOwner(coreOwner(PLAYERS_DOMAIN))).toBe("playback");
+    expect(pageOfWholeOwner(coreOwner(MUSIC_DOMAIN))).toBe("library");
+    expect(pageOfWholeOwner(coreOwner(METADATA_DOMAIN))).toBe("metadata");
     expect(pageOfWholeOwner(STREAMS)).toBeUndefined();
   });
 });
@@ -246,10 +246,34 @@ describe("settingsSectionLinks", () => {
     ).toEqual([]);
   });
 
-  it("links nothing from a section without pages", () => {
+  it.each([
+    ["music_providers", "library"],
+    ["metadata_providers", "metadata"],
+  ])(
+    "links the %s section to the %s settings for an admin",
+    (section, pageId) => {
+      expect(
+        settingsSectionLinks(
+          section,
+          scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+        ).map((link) => link.id),
+      ).toEqual([pageId]);
+    },
+  );
+
+  it("leaves the library options out for a member", () => {
     expect(
       settingsSectionLinks(
         "music_providers",
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      ),
+    ).toEqual([]);
+  });
+
+  it("links nothing from a section without pages", () => {
+    expect(
+      settingsSectionLinks(
+        "plugin_providers",
         scopeChecker(BUILTIN_ROLE_SCOPES.admin),
       ),
     ).toEqual([]);

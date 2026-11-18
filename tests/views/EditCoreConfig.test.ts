@@ -416,7 +416,7 @@ describe("EditCoreConfig", () => {
     await flushPromises();
 
     // the log level stays with the controller as a whole
-    expect(renderedKeys(wrapper)).toEqual(["log_level", "stream_source_mode"]);
+    expect(renderedKeys(wrapper)).toEqual(["log_level"]);
 
     await wrapper.find('[data-testid="config-save"]').trigger("click");
     await flushPromises();

@@ -6,6 +6,7 @@ import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { returnedByHistory } from "@/helpers/navigation";
+import type { SettingsPageId } from "@/helpers/settings_pages";
 import { parseStatisticsPeriod } from "@/helpers/statistics_period";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
@@ -566,6 +567,16 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
+            path: "library",
+            name: "librarysettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "librarysettings" */ "@/views/settings/LibrarySettings.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
             path: "storage",
             name: "storagesettings",
             component: () =>
@@ -592,9 +603,19 @@ export const routes: RouteRecordRaw[] = [
             name: "playbacksettings",
             component: () =>
               import(
-                /* webpackChunkName: "playbacksettings" */ "@/views/settings/PlaybackSettings.vue"
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
               ),
-            props: true,
+            props: { page: "playback" satisfies SettingsPageId },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
+            path: "metadata",
+            name: "metadatasettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
+              ),
+            props: { page: "metadata" satisfies SettingsPageId },
             meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {

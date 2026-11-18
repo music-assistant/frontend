@@ -123,7 +123,6 @@
 </template>
 
 <script setup lang="ts">
-import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
@@ -136,7 +135,7 @@ import {
 import { coreOwner, isOwnerFullyClaimed } from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
 import { CoreConfig } from "@/plugins/api/interfaces";
-import { HardDrive, Network } from "@lucide/vue";
+import { Network } from "@lucide/vue";
 import {
   computed,
   inject,
@@ -189,20 +188,6 @@ const extraSystemEntries: SystemConfigExtraEntry[] = [
     description: "background_tasks.description",
     icon: "mdi-playlist-play",
     route: "/settings/tasks",
-  },
-  {
-    domain: "genre_management",
-    name: "settings.genre_management",
-    description: "settings.genre_management_description",
-    icon: GenreIcon,
-    route: "/settings/genremanagement",
-  },
-  {
-    domain: "storage",
-    name: "settings.storage.title",
-    description: "settings.storage.description",
-    icon: HardDrive,
-    route: "/settings/storage",
   },
 ];
 

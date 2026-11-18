@@ -360,6 +360,18 @@ describe("settings pages", () => {
       }
     },
   );
+
+  it.each(["playback", "metadata"] as const)(
+    "hands the %s page to the view showing its form",
+    (id) => {
+      if (!mocks.router) {
+        throw new Error("The router module did not create a router");
+      }
+      const route = mocks.router.resolve(SETTINGS_PAGES[id].route);
+
+      expect(route.matched.at(-1)?.props.default).toEqual({ page: id });
+    },
+  );
 });
 
 describe("global navigation guard", () => {
@@ -608,6 +620,9 @@ describe("scope-gated routes", () => {
     ],
     ["/settings/system", ["admin"]],
     ["/settings/network", ["admin"]],
+    ["/settings/library", ["admin"]],
+    ["/settings/storage", ["admin"]],
+    ["/settings/metadata", ["admin"]],
     ["/settings/editcore/webserver", ["admin"]],
     ["/settings/audio-analysis", ["admin"]],
     ["/settings/remote-access", ["admin"]],
