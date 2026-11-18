@@ -605,8 +605,6 @@ export enum ProviderFeature {
   ARTIST_METADATA = "artist_metadata",
   ALBUM_METADATA = "album_metadata",
   TRACK_METADATA = "track_metadata",
-  // plugin provider specific features
-  AUDIO_SOURCE = "audio_source",
 }
 
 export enum ProviderType {
@@ -1853,9 +1851,10 @@ export interface ProviderManifest {
   // menu_actions: entries this provider adds to the menu of a media item;
   // absent from an older server
   menu_actions?: ProviderMenuAction[];
-  // features: the features the provider always offers, known before it is set
-  // up; absent from an older server
-  features?: ProviderFeature[];
+  // media_types: the media types the provider offers whatever its config
+  // (audio_source for a provider that plays audio into Music Assistant);
+  // optional metadata for discovery
+  media_types?: MediaType[];
 }
 
 export interface ProviderMenuAction {

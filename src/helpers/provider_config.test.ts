@@ -1,5 +1,5 @@
 import {
-  ProviderFeature,
+  MediaType,
   type ProviderInstance,
   ProviderStage,
   ProviderStatus,
@@ -215,34 +215,34 @@ describe("a provider that ships with the server", () => {
 });
 
 describe("a plugin that lets an app play to Music Assistant", () => {
-  it("is a plugin whose manifest declares the audio source feature", () => {
+  it("is a plugin whose manifest names the audio source media type", () => {
     expect(
       isAudioSourcePlugin(
         providerManifest({
           type: ProviderType.PLUGIN,
-          features: [ProviderFeature.AUDIO_SOURCE],
+          media_types: [MediaType.AUDIO_SOURCE],
         }),
       ),
     ).toBe(true);
   });
 
-  it("is no provider of another type that declares the feature", () => {
+  it("is no provider of another type that names it", () => {
     expect(
       isAudioSourcePlugin(
         providerManifest({
           type: ProviderType.PLAYER,
-          features: [ProviderFeature.AUDIO_SOURCE],
+          media_types: [MediaType.AUDIO_SOURCE],
         }),
       ),
     ).toBe(false);
   });
 
-  it("is no plugin without the feature, or without features at all", () => {
+  it("is no plugin without it, or without media types at all", () => {
     expect(
       isAudioSourcePlugin(
         providerManifest({
           type: ProviderType.PLUGIN,
-          features: [ProviderFeature.SEARCH],
+          media_types: [MediaType.RADIO],
         }),
       ),
     ).toBe(false);

@@ -1,7 +1,7 @@
 import {
   CommunityProviderState,
+  MediaType,
   type ProviderConfig,
-  ProviderFeature,
   type ProviderManifest,
   ProviderStage,
   ProviderTier,
@@ -58,11 +58,11 @@ const MANIFESTS: ProviderManifest[] = [
   manifest("spotify_connect", "Spotify Connect", ProviderType.PLUGIN, {
     multi_instance: true,
     depends_on: "spotify",
-    features: [ProviderFeature.AUDIO_SOURCE],
+    media_types: [MediaType.AUDIO_SOURCE],
   }),
   manifest("airplay_receiver", "AirPlay Receiver", ProviderType.PLUGIN, {
     stage: ProviderStage.ALPHA,
-    features: [ProviderFeature.AUDIO_SOURCE],
+    media_types: [MediaType.AUDIO_SOURCE],
   }),
   manifest("party", "Party", ProviderType.PLUGIN),
   manifest("cast", "Cast", "core" as ProviderType),
@@ -181,11 +181,11 @@ describe("what can be added", () => {
       "Spotify Connect",
       "AirPlay Receiver",
     ]);
-    // a player provider declares the feature for the line-ins of its devices
+    // a player provider names it for the line-ins of its devices
     expect(
       isOfferable(
         manifest("sendspin", "Sendspin", ProviderType.PLAYER, {
-          features: [ProviderFeature.AUDIO_SOURCE],
+          media_types: [MediaType.AUDIO_SOURCE],
         }),
         restrictions,
       ),
