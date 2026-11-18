@@ -2151,6 +2151,7 @@ export class MusicAssistantApi {
     provider: string,
     item_id: string,
     providers?: string[],
+    hidePlayed?: boolean,
   ): Promise<MediaItemTypeOrItemMapping[]> {
     // Fetches a single recommendation row's items. Per-row timeout/error
     // isolation lives server-side: an unknown id or a failing provider
@@ -2159,12 +2160,14 @@ export class MusicAssistantApi {
     // global error toast.
     // providers: source provider instance ids to include (only rows with
     // supports_provider_filter accept this); omit for the unfiltered row.
+    // hidePlayed: leave out fully played podcast episodes and audiobooks.
     return this.sendCommand(
       "music/recommendations/items",
       {
         provider,
         item_id,
         providers,
+        ...(hidePlayed && { hide_played: true }),
       },
       { suppressGlobalError: true },
     );
