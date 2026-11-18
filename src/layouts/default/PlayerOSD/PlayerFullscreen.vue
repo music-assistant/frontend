@@ -95,7 +95,7 @@
               <PlayerIcon
                 :icon="store.activePlayer?.icon"
                 :grouped="
-                  store.activePlayer?.type == PlayerType.PLAYER &&
+                  isSpeakerPlayer(store.activePlayer) &&
                   !!store.activePlayer?.group_members.length
                 "
                 :size="128"
@@ -362,7 +362,7 @@
               <PlayerIcon
                 :icon="store.activePlayer?.icon"
                 :grouped="
-                  store.activePlayer?.type == PlayerType.PLAYER &&
+                  isSpeakerPlayer(store.activePlayer) &&
                   !!store.activePlayer?.group_members.length
                 "
                 :size="128"
@@ -535,7 +535,11 @@ import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { openExternalItem } from "@/helpers/open_external_item";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  getPlayerName,
+  isSpeakerPlayer,
+} from "@/helpers/players";
 import {
   ImageColorPalette,
   formatDuration,
@@ -580,7 +584,6 @@ import {
   MediaItemChapter,
   MediaType,
   PlaybackState,
-  PlayerType,
   Track,
   TranscriptCue,
 } from "@/plugins/api/interfaces";
