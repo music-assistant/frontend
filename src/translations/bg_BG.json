@@ -418,7 +418,9 @@
             "setup_player_title": "Настройка на плейъра",
             "external_default_title": "Продължете във вашия браузър",
             "setup_title": "Настройване на {0}",
-            "reconfigure_title": "Преконфигуриране на {0}"
+            "reconfigure_title": "Преконфигуриране на {0}",
+            "copy": "Копиране",
+            "copy_success": "Копирано в клипборда"
         },
         "options": "Опции",
         "server_clock_offset": "Разлика във времето (между сървъра и това устройство)",
@@ -583,7 +585,40 @@
         },
         "unsupported_install_title": "Неподдържана инсталация",
         "unsupported_install_link": "поддържани методи за инсталиране",
-        "error_loading_sort_options": "Грешка при зареждане на опциите за сортиране"
+        "error_loading_sort_options": "Грешка при зареждане на опциите за сортиране",
+        "provider_community": "Общност",
+        "provider_community_maintained": "Поддържано от общността",
+        "provider_maintained_by": "поддържа се от {maintainers}",
+        "provider_get_help": "Получете помощ",
+        "catalog": {
+            "community": {
+                "note_help": "За въпроси и проблеми, попитайте на {link}.",
+                "installing": "Инсталиране…",
+                "source_code": "Изходен код",
+                "version": "Версия {version}",
+                "refresh": "Проверка за промени",
+                "installed_empty": "Нищо от каталога на общността не е инсталирано.",
+                "remove": "Премахване",
+                "remove_named": "Премахване на {name}",
+                "remove_title": "Премахване на {name}?",
+                "reason_link": "Прочетете повече",
+                "update": "Актуализация",
+                "update_named": "Актуализиране на {name}",
+                "update_all": "Актуализиране на всичко",
+                "updating": "Актуализиране…",
+                "update_available": "Налична е версия {version}.",
+                "updated_all_toast": "Всичко е актуално",
+                "no_updates": "Няма чакащи актуализации",
+                "auto_update": "Автоматично актуализиране",
+                "dismiss": "Отхвърляне",
+                "new_title": "Ново в каталога на общността",
+                "state": {
+                    "restart_required": "Необходимо е рестартиране"
+                }
+            },
+            "shown_of": "{shown} от {total}"
+        },
+        "provider_status_unavailable": "Не е налично"
     },
     "show_info": "Показване на информация",
     "show_select_boxes": "Показване на полета за избор",
@@ -1002,7 +1037,6 @@
     "search_all_providers": "Търсене на съвпадения при всички доставчици",
     "search_all_providers_confirm": "Сигурни ли сте, че искате да търсите съвпадения при всички доставчици? Това може да отнеме известно време и ще се изпълнява във фонов режим.",
     "player_tip": {
-        "selected_player": "Избран плейър",
         "currently_playing": "В момента се възпроизвежда на",
         "click_to_change": "Кликнете по-долу, за да промените изходното устройство"
     },
@@ -1569,7 +1603,6 @@
     "volume": "Сила на звука",
     "player_select": {
         "active_player_volume_only": "Показване на плъзгачите за силата на звука само за активните плейъри",
-        "and_more": "...и още {0}",
         "disable_player_title": "Деактивиране на {0}?",
         "display_options": "Опции за показване",
         "rename_player": "Преименуване на плейъра",
@@ -1662,8 +1695,7 @@
                 "title": "Изберете как искате да използвате Music Assistant",
                 "phone_apps": {
                     "label": "От приложенията на телефона ми"
-                },
-                "settings_note": "Можете да промените това по-късно от настройките."
+                }
             },
             "music_sources": {
                 "title": "Добавете вашите музикални източници"
@@ -1833,11 +1865,17 @@
     "statistics": "Статистика",
     "statistics_subtitle": "Какво сте пускали в Music Assistant",
     "statistics_period": "Период",
+    "statistics_all": "Всички статистики",
     "statistics_chart_accessible_summary": "{title}. {values}",
     "statistics_genre_other": "Друг",
     "statistics_genres_accessible": "Жанрове: {values}",
     "statistics_minutes": "{count} min | {count} min",
+    "statistics_heatmap_less": "По-малко",
+    "statistics_heatmap_more": "Повече",
     "statistics_most_played": "Най-често възпроизвежданите песни",
+    "statistics_top_albums": "Топ албуми",
+    "statistics_top_artists": "Топ изпълнители",
+    "statistics_top_playlists": "Топ плейлисти",
     "statistics_column_rank": "#",
     "statistics_column_title": "Заглавие",
     "period_today": "Днес",
@@ -1861,5 +1899,15 @@
     "bookmark_rename_failed": "Отметката не може да бъде преименувана",
     "bookmark_delete_failed": "Отметката не може да бъде изтрита",
     "playlist_moved_to_top": "Преместено в началото на плейлиста",
-    "playlist_moved_to_bottom": "Преместено в долната част на плейлиста"
+    "playlist_moved_to_bottom": "Преместено в долната част на плейлиста",
+    "statistics_users": "Потребители",
+    "statistics_users_me": "Само аз",
+    "statistics_users_all": "Всички потребители",
+    "statistics_users_count": "{count} потребители",
+    "discography_types_summary": "{first} +{count}",
+    "album_type_plural": {
+        "album": "Албуми",
+        "single": "Сингли",
+        "soundtrack": "Саундтракове"
+    }
 }
