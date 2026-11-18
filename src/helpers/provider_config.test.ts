@@ -19,6 +19,7 @@ import {
   isAudioSourcePlugin,
   isBuiltinProvider,
   isCommunityProvider,
+  isProviderErrorStatus,
   providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
@@ -68,6 +69,19 @@ describe("provider configuration state", () => {
     [undefined, "settings.provider_status_unknown"],
   ])("maps provider status %s to %s", (status, expected) => {
     expect(getProviderStatusTranslationKey(status)).toBe(expected);
+  });
+
+  it.each([
+    [ProviderStatus.AUTH_REQUIRED, true],
+    [ProviderStatus.INCOMPATIBLE, true],
+    [ProviderStatus.ERROR, true],
+    [ProviderStatus.UNAVAILABLE, true],
+    [ProviderStatus.LOADED, false],
+    [ProviderStatus.LOADING, false],
+    [ProviderStatus.DISABLED, false],
+    [null, false],
+  ])("tells whether status %s needs attention", (status, expected) => {
+    expect(isProviderErrorStatus(status)).toBe(expected);
   });
 
   it.each([

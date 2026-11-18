@@ -1,6 +1,7 @@
 import { isOwnMusicSource } from "@/helpers/provider_access";
 import { isBuiltinProvider } from "@/helpers/provider_config";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
+import { providerSettingsPage } from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -61,6 +62,9 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
       // Default to showing only music providers when no types are specified
       listed = listed.filter((item) => item.type === ProviderType.MUSIC);
     }
+
+    // a provider with a settings page of its own is managed from that page
+    listed = listed.filter((item) => !providerSettingsPage(item.domain));
 
     // a provider that ships with the server is not a source anyone chose, so a
     // member is not shown it among the sources it may use

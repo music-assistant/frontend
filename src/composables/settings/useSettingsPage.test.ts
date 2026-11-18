@@ -2,12 +2,16 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import { coreOwner } from "@/helpers/settings_pages";
 import {
   ConfigEntryType,
+  ProviderStatus,
+  ProviderType,
   Scope,
   type ConfigEntry,
   type CoreConfig,
+  type ProviderConfig,
 } from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { providerConfig } from "../../../tests/fixtures/providerConfig";
 import { useSettingsPage } from "./useSettingsPage";
 
 const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
@@ -16,6 +20,11 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
     invokeCoreConfigAction:
       vi.fn<MusicAssistantApi["invokeCoreConfigAction"]>(),
     saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
+    getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
+    invokeProviderConfigAction:
+      vi.fn<MusicAssistantApi["invokeProviderConfigAction"]>(),
+    saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { error: vi.fn(), success: vi.fn() },
@@ -275,6 +284,94 @@ describe("useSettingsPage on a page with several owners", () => {
   });
 });
 
+describe("useSettingsPage on the page of a provider", () => {
+  beforeEach(() => {
+    // the list of provider configs comes without their entries
+    apiMock.getProviderConfigs.mockResolvedValue([
+      { ...hassConfig(), values: {} },
+    ]);
+    apiMock.getProviderConfig.mockResolvedValue(hassConfig());
+    apiMock.saveProviderConfig.mockImplementation(async (domain, values) =>
+      hassConfig(values),
+    );
+  });
+
+  it("loads nothing for a user who may not change provider settings", async () => {
+    hasScope.mockImplementation(
+      (scope) => scope !== Scope.CONFIG_PROVIDERS_WRITE,
+    );
+
+    const page = useSettingsPage("home_assistant");
+    await flushPromises();
+
+    expect(page.canEdit).toBe(false);
+    expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+  });
+
+  it("shows the settings of the instance of the provider, keyed as the provider knows them", async () => {
+    const page = useSettingsPage("home_assistant");
+    await flushPromises();
+
+    expect(apiMock.getProviderConfigs).toHaveBeenCalledExactlyOnceWith(
+      undefined,
+      "hass",
+    );
+    expect(page.loaded.value).toBe(true);
+    expect(page.entries.value.map((entry) => entry.key)).toEqual([
+      "power_controls",
+      "volume_controls",
+    ]);
+  });
+
+  it("shows nothing while the provider is not set up", async () => {
+    apiMock.getProviderConfigs.mockResolvedValueOnce([]);
+
+    const page = useSettingsPage("home_assistant");
+    await flushPromises();
+
+    expect(page.loaded.value).toBe(true);
+    expect(page.entries.value).toEqual([]);
+  });
+
+  it("saves only what changed, to the instance of the provider", async () => {
+    const page = useSettingsPage("home_assistant");
+    await flushPromises();
+
+    await expect(
+      page.save({
+        power_controls: ["switch.amplifier"],
+        volume_controls: [],
+      }),
+    ).resolves.toBe(true);
+
+    expect(apiMock.saveProviderConfig).toHaveBeenCalledExactlyOnceWith(
+      "hass",
+      { power_controls: ["switch.amplifier"] },
+      "hass--1",
+    );
+  });
+
+  it("runs an action on the instance of the provider", async () => {
+    const config = hassConfig();
+    config.values.power_controls.action = "refresh_entities";
+    apiMock.getProviderConfig.mockResolvedValueOnce(config);
+    apiMock.invokeProviderConfigAction.mockResolvedValueOnce({
+      message: "Refreshed",
+      open_url: null,
+    });
+    const page = useSettingsPage("home_assistant");
+    await flushPromises();
+
+    await page.onAction("refresh_entities", {}, false);
+
+    expect(apiMock.invokeProviderConfigAction).toHaveBeenCalledExactlyOnceWith(
+      "hass--1",
+      "refresh_entities",
+    );
+    expect(apiMock.invokeCoreConfigAction).not.toHaveBeenCalled();
+  });
+});
+
 function valueOf(page: ReturnType<typeof useSettingsPage>, key: string) {
   return page.entries.value.find((entry) => entry.key === key)?.value;
 }
@@ -361,4 +458,33 @@ function networkConfig(
       ]),
     ),
   };
+}
+
+// the Home Assistant provider, with an entry outside the player controls
+function hassConfig(
+  overrides: Record<string, ConfigEntry["value"]> = {},
+): ProviderConfig {
+  const values: Record<string, ConfigEntry["value"]> = {
+    power_controls: [],
+    volume_controls: [],
+    ...overrides,
+  };
+  return providerConfig({
+    domain: "hass",
+    type: ProviderType.PLUGIN,
+    status: ProviderStatus.LOADED,
+    values: {
+      power_controls: {
+        ...entry("power_controls", "player_controls", values.power_controls),
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+      },
+      volume_controls: {
+        ...entry("volume_controls", "player_controls", values.volume_controls),
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+      },
+      url: entry("url", "generic", "http://supervisor/core/api"),
+    },
+  });
 }

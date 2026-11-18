@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, type Ref } from "vue";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import {
+  type ConfigEntry,
   ConfigEntryType,
   EventType,
   ProviderFeature,
@@ -783,6 +784,44 @@ describe("EditProvider", () => {
 
     wrapper.unmount();
     expect(unsubscribeMock).toHaveBeenCalledOnce();
+  });
+
+  it("leaves out the settings the provider's own settings page shows", async () => {
+    const config = spotifyConfig(ProviderStatus.LOADED);
+    apiMock.getProviderConfig.mockResolvedValue({
+      ...config,
+      domain: "hass",
+      values: {
+        ...config.values,
+        power_controls: {
+          ...config.values.account,
+          key: "power_controls",
+          category: "player_controls",
+        },
+      },
+    });
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "hass--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper
+        .findComponent({ name: "EditConfig" })
+        .props("configEntries")
+        .map(({ key, hidden }: ConfigEntry) => [key, hidden === true]),
+    ).toEqual([
+      ["account", false],
+      ["power_controls", true],
+    ]);
   });
 
   it("merges fresh entry definitions while keeping a pending local edit", async () => {

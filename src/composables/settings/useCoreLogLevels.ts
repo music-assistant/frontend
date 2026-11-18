@@ -30,6 +30,7 @@ export function useCoreLogLevels() {
   const loadFailed = ref(false);
   const busy = ref(false);
   let fields = new Map<string, SettingsField>();
+  let configs: CoreConfig[] = [];
   // the values the server has, so a save only sends what changed
   let saved: Record<string, ConfigValueType> = {};
 
@@ -44,10 +45,14 @@ export function useCoreLogLevels() {
     if (changes.length === 0) return true;
     busy.value = true;
     try {
-      return await saveOwnerChanges(changes, (owner, config) => {
-        const form = buildForm([{ domain: owner.id, values: config.values }]);
-        saved = { ...saved, ...storedValues(form.entries) };
-      });
+      return await saveOwnerChanges(
+        changes,
+        (owner) => configs.find(({ domain }) => domain === owner.id)!,
+        (owner, config) => {
+          const form = buildForm([{ domain: owner.id, values: config.values }]);
+          saved = { ...saved, ...storedValues(form.entries) };
+        },
+      );
     } finally {
       busy.value = false;
     }
@@ -55,7 +60,8 @@ export function useCoreLogLevels() {
 
   const load = async function (): Promise<void> {
     try {
-      const form = buildForm(await api.getCoreConfigs(true));
+      configs = await api.getCoreConfigs(true);
+      const form = buildForm(configs);
       entries.value = form.entries;
       fields = form.fields;
       saved = storedValues(form.entries);

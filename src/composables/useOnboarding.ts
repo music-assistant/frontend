@@ -8,7 +8,7 @@ import {
   useUserPreferences,
 } from "@/composables/userPreferences";
 import { EXPERT_MODE_PREFERENCE, expertModeOf } from "@/helpers/expert_mode";
-import { HASS_DOMAIN } from "@/helpers/hass_controls";
+import { HASS_DOMAIN } from "@/helpers/home_assistant";
 import {
   applicableSteps,
   pendingSteps,

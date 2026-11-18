@@ -442,6 +442,48 @@ describe("Settings breadcrumbs on the network pages", () => {
   });
 });
 
+describe("Settings breadcrumbs on the Home Assistant pages", () => {
+  const SYSTEM = {
+    title: "settings.system",
+    disabled: false,
+    to: { name: "systemsettings" },
+  };
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    apiMock.getProvider.mockReturnValue(undefined);
+    apiMock.providerManifests.hass = {
+      name: "Home Assistant",
+      type: ProviderType.PLUGIN,
+    };
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+    delete apiMock.providerManifests.hass;
+  });
+
+  it("hang the Home Assistant page under the System settings", () => {
+    expect(pageTrail("homeassistantsettings")).toEqual([
+      SYSTEM,
+      { title: "settings.home_assistant.title", disabled: true },
+    ]);
+  });
+
+  it("hang the settings of the Home Assistant provider under its page", async () => {
+    expect(await providerTrail(true, "hass")).toEqual([
+      SYSTEM,
+      {
+        title: "settings.home_assistant.title",
+        disabled: false,
+        to: { name: "homeassistantsettings" },
+      },
+      { title: "Home Assistant", disabled: true },
+    ]);
+  });
+});
+
 describe("Settings breadcrumbs on the pages below the players", () => {
   const players = {
     title: "settings.players",

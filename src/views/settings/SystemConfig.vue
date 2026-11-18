@@ -16,7 +16,13 @@ import { api } from "@/plugins/api";
 import { Scope, type CoreConfig } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { ListChecks, Network, Settings2, Stethoscope } from "@lucide/vue";
+import {
+  House,
+  ListChecks,
+  Network,
+  Settings2,
+  Stethoscope,
+} from "@lucide/vue";
 import { computed, markRaw, onMounted, ref, type Component } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
@@ -44,6 +50,14 @@ const SYSTEM_PAGES: readonly SystemPage[] = [
     description: "settings.network.description",
     route: { name: "networksettings" },
     requiresScope: Scope.CONFIG_CORE_WRITE,
+  },
+  {
+    key: "home_assistant",
+    icon: House,
+    label: "settings.home_assistant.title",
+    description: "settings.home_assistant.description",
+    route: { name: "homeassistantsettings" },
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
   },
   {
     key: "background_tasks",

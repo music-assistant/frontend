@@ -46,15 +46,19 @@ beforeEach(() => {
 });
 
 describe("SystemConfig", () => {
-  it("leads to the network, the background tasks and the diagnostics", async () => {
+  it("leads to the network, Home Assistant, the background tasks and the diagnostics", async () => {
     const wrapper = await mountPage();
 
     expect(rowKeys(wrapper)).toEqual([
       "network",
+      "home_assistant",
       "background_tasks",
       "diagnostics",
     ]);
     expect(linkOf(wrapper, "network")).toEqual({ name: "networksettings" });
+    expect(linkOf(wrapper, "home_assistant")).toEqual({
+      name: "homeassistantsettings",
+    });
     expect(linkOf(wrapper, "background_tasks")).toEqual({
       name: "backgroundtasks",
     });
@@ -80,6 +84,7 @@ describe("SystemConfig", () => {
 
     expect(rowKeys(wrapper)).toEqual([
       "network",
+      "home_assistant",
       "background_tasks",
       "diagnostics",
       "core_metrics",
@@ -96,6 +101,7 @@ describe("SystemConfig", () => {
 
   it.each([
     [Scope.CONFIG_CORE_WRITE, "network"],
+    [Scope.CONFIG_PROVIDERS_WRITE, "home_assistant"],
     [Scope.SYSTEM_READ, "background_tasks"],
     [Scope.SYSTEM_MANAGE, "diagnostics"],
   ])("leaves a page out without %s, which it needs", async (scope, key) => {
@@ -104,7 +110,7 @@ describe("SystemConfig", () => {
     const wrapper = await mountPage();
 
     expect(rowKeys(wrapper)).not.toContain(key);
-    expect(rowKeys(wrapper)).toHaveLength(2);
+    expect(rowKeys(wrapper)).toHaveLength(3);
   });
 });
 

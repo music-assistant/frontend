@@ -21,21 +21,26 @@ import type {
   ConfigActionResult,
   ConfigEntry,
   ConfigValueType,
+  ProviderConfig,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { ref, toRef } from "vue";
 
-// how the settings of one kind of owner are read, saved and acted on
+// how the settings of one kind of owner are read, saved and acted on; a save
+// and an action get the config the owner loaded
 interface SettingsOwnerAdapter {
-  load: (id: string) => Promise<Config>;
+  // resolves nothing for an owner without settings to show
+  load: (id: string) => Promise<Config | undefined>;
   save: (
     id: string,
     values: Record<string, ConfigValueType>,
+    loaded: Config,
   ) => Promise<Config>;
   invokeAction: (
     id: string,
     action: string,
+    loaded: Config,
   ) => Promise<ConfigEntry[] | ConfigActionResult>;
 }
 
@@ -47,6 +52,19 @@ const OWNER_ADAPTERS: Readonly<
     // clears the cached core config values as well
     save: (id, values) => api.saveCoreConfig(id, values),
     invokeAction: (id, action) => api.invokeCoreConfigAction(id, action),
+  },
+  // the settings of the single instance of a provider; nothing while the
+  // provider is not set up
+  provider: {
+    load: async (id) => {
+      // the list of provider configs comes without their entries
+      const [summary] = await api.getProviderConfigs(undefined, id);
+      return summary && api.getProviderConfig(summary.instance_id);
+    },
+    save: (id, values, loaded) =>
+      api.saveProviderConfig(id, values, instanceIdOf(loaded)),
+    invokeAction: (_id, action, loaded) =>
+      api.invokeProviderConfigAction(instanceIdOf(loaded), action),
   },
 };
 
@@ -66,8 +84,9 @@ export function useSettingsPage(pageId: SettingsPageId) {
     authManager.hasScope(scope),
   );
 
-  // the config of each source of the page, in the order of the sources
-  const configs = ref<Config[]>([]);
+  // the config of each source of the page, in the order of the sources; none
+  // for an owner without settings to show
+  const configs = ref<(Config | undefined)[]>([]);
   const entries = ref<ConfigEntry[]>([]);
   const loaded = ref(false);
   const loadFailed = ref(false);
@@ -87,9 +106,13 @@ export function useSettingsPage(pageId: SettingsPageId) {
     if (changes.length === 0) return true;
     busy.value = true;
     try {
-      return await saveOwnerChanges(changes, (owner, config) => {
-        saved = { ...saved, ...storedValues(formEntriesOf(owner, config)) };
-      });
+      return await saveOwnerChanges(
+        changes,
+        loadedConfigOf,
+        (owner, config) => {
+          saved = { ...saved, ...storedValues(formEntriesOf(owner, config)) };
+        },
+      );
     } finally {
       busy.value = false;
     }
@@ -108,22 +131,23 @@ export function useSettingsPage(pageId: SettingsPageId) {
     if (!field) return;
     const { owner } = field;
     const index = sourceIndexOf(owner);
-    const ownerEntry = configs.value[index].values[field.key];
+    const loaded = loadedConfigOf(owner);
+    const ownerEntry = loaded.values[field.key];
     // the form is rebuilt from the configs afterwards, so they take what was typed
     keepFormValues(values);
     const adapter = OWNER_ADAPTERS[owner.kind];
     const { onAction: invoke } = useConfigAction({
       config: toRef(configs.value, index),
       loading: busy,
-      invokeAction: (name) => adapter.invokeAction(owner.id, name),
-      saveValues: (raw) => adapter.save(owner.id, raw),
+      invokeAction: (name) => adapter.invokeAction(owner.id, name, loaded),
+      saveValues: (raw) => adapter.save(owner.id, raw, loaded),
     });
     await invoke(ownerEntry.action || ownerEntry.key, values, immediateApply);
     rebuildForm();
     if (immediateApply) {
       saved = {
         ...saved,
-        ...storedValues(formEntriesOf(owner, configs.value[index])),
+        ...storedValues(formEntriesOf(owner, loadedConfigOf(owner))),
       };
     }
   };
@@ -194,13 +218,18 @@ export function useSettingsPage(pageId: SettingsPageId) {
     for (const [formKey, value] of Object.entries(values)) {
       const field = fields.get(formKey);
       if (!field) continue;
-      const entry = configs.value[sourceIndexOf(field.owner)].values[field.key];
+      const entry = loadedConfigOf(field.owner).values[field.key];
       if (entry) entry.value = value;
     }
   };
 
   const sourceIndexOf = function (owner: SettingsOwner): number {
     return sources.findIndex((source) => isSameOwner(source.owner, owner));
+  };
+
+  // the config of an owner with entries in the form, which only such an owner has
+  const loadedConfigOf = function (owner: SettingsOwner): Config {
+    return configs.value[sourceIndexOf(owner)]!;
   };
 
   if (canEdit) void load();
@@ -222,16 +251,27 @@ export function useSettingsPage(pageId: SettingsPageId) {
  * stored its changes; the api reports a failed save itself.
  *
  * @param changes - The changed values of each owner.
+ * @param loadedConfigOf - Gives the config an owner loaded.
  * @param onSaved - Takes the config an owner stored.
  */
 export async function saveOwnerChanges(
   changes: readonly OwnerChanges[],
+  loadedConfigOf: (owner: SettingsOwner) => Config,
   onSaved: (owner: SettingsOwner, config: Config) => void,
 ): Promise<boolean> {
   const outcomes = await Promise.allSettled(
     changes.map(async ({ owner, values }) => {
-      onSaved(owner, await OWNER_ADAPTERS[owner.kind].save(owner.id, values));
+      const adapter = OWNER_ADAPTERS[owner.kind];
+      onSaved(
+        owner,
+        await adapter.save(owner.id, values, loadedConfigOf(owner)),
+      );
     }),
   );
   return outcomes.every((outcome) => outcome.status === "fulfilled");
+}
+
+// the instance a provider owner loaded
+function instanceIdOf(loaded: Config): string {
+  return (loaded as ProviderConfig).instance_id;
 }

@@ -361,6 +361,16 @@ describe("settings pages", () => {
     },
   );
 
+  it("opens the Home Assistant page for who may change provider settings", () => {
+    if (!mocks.router) {
+      throw new Error("The router module did not create a router");
+    }
+    const route = mocks.router.resolve(SETTINGS_PAGES.home_assistant.route);
+
+    expect(route.path).toBe("/settings/home-assistant");
+    expect(route.meta.requiresScope).toBe(Scope.CONFIG_PROVIDERS_WRITE);
+  });
+
   it.each(["playback", "metadata", "task_settings"] as const)(
     "hands the %s page to the view showing its form",
     (id) => {
