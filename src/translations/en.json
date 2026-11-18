@@ -463,6 +463,7 @@
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "playerprovider": "Player support",
         "providers_total": "{count} total | {count} total",
+        "providers_active": "{count} active | {count} active",
         "stage": {
             "label": "Stage",
             "options": {
@@ -478,7 +479,7 @@
             "label": "Force mobile layout",
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
-        "players_description": "Configure and manage your audio output devices",
+        "players_description": "Your players, lights, screens and audio inputs, and how they play",
         "frontend_description": "Customize the user interface theme and appearance",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
@@ -491,6 +492,10 @@
             "web": "Web interface and API",
             "streaming": "Audio streaming",
             "discovery": "Discovery"
+        },
+        "playback": {
+            "title": "Playback",
+            "description": "Crossfade, volume normalization, autoplay and what happens when you press play"
         },
         "about": "About",
         "about_description": "Version information, credits and more",
@@ -905,7 +910,7 @@
             "load_error": "Couldn't load failures from the server."
         },
         "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
-        "queue_global_settings_link": "Open global queue settings",
+        "queue_global_settings_link": "Open playback settings",
         "protocol_provider_unavailable": "The player support for this output protocol is currently unavailable.",
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
         "protocol_configure_title": "Configure {name}",
@@ -3029,6 +3034,7 @@
     "artist_no_library_audiobooks": "You don't have any audiobooks in your library for this author\/narrator.",
     "artist_all_audiobooks": "All audiobooks",
     "lights": "Lights",
+    "audio_inputs": "Audio inputs",
     "players_in_group": "Players in group",
     "volume": "Volume",
     "grouped_volume": "Grouped volume",

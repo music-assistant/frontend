@@ -588,6 +588,16 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
+            path: "playback",
+            name: "playbacksettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "playbacksettings" */ "@/views/settings/PlaybackSettings.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
             path: "system",
             name: "systemsettings",
             component: () =>

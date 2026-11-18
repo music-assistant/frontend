@@ -15,7 +15,6 @@ import {
 const ALL_SECTIONS = [
   "catalog",
   "music_providers",
-  "player_providers",
   "metadata_providers",
   "plugin_providers",
   "players",
@@ -84,11 +83,16 @@ describe("availableSettingsSections", () => {
 });
 
 describe("providerSettingsSectionName", () => {
-  it("names an existing section for every provider type", () => {
+  it("names an existing section for every other provider type", () => {
     const sectionNames = SETTINGS_SECTIONS.map((section) => section.name);
     for (const type of Object.values(ProviderType)) {
+      if (type === ProviderType.PLAYER) continue;
       expect(sectionNames).toContain(providerSettingsSectionName(type));
     }
+  });
+
+  it("names no section for the player providers, which the players section lists", () => {
+    expect(providerSettingsSectionName(ProviderType.PLAYER)).toBeUndefined();
   });
 
   it("names the section of a provider type", () => {

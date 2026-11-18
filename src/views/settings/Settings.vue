@@ -106,7 +106,7 @@ import {
   providerSettingsSectionName,
 } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
-import { Scope } from "@/plugins/api/interfaces";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { LayoutGrid, List, Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
@@ -331,7 +331,6 @@ const settingsSections = computed(() =>
 const providerSectionNames = [
   "catalog",
   "music_providers",
-  "player_providers",
   "metadata_providers",
   "plugin_providers",
   "audio_analysis_providers",
@@ -388,7 +387,8 @@ const activeTab = computed(() => {
   if (
     name.includes("player") ||
     name.includes("queue") ||
-    name === "addgroup"
+    name === "addgroup" ||
+    name === "playbacksettings"
   ) {
     return "players";
   }
@@ -422,7 +422,7 @@ const activeTab = computed(() => {
   const typesQuery = router.currentRoute.value.query.types as
     string | undefined;
   const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
-  const typeSection = providerSettingsSectionName(firstType);
+  const typeSection = providerTypeTab(firstType);
   if (typeSection) return typeSection;
 
   if (name === "editprovider") {
@@ -431,12 +431,19 @@ const activeTab = computed(() => {
     const providerType =
       api.getProvider(instanceId)?.type ||
       api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
-    const providerSection = providerSettingsSectionName(providerType);
+    const providerSection = providerTypeTab(providerType);
     if (providerSection) return providerSection;
   }
 
   return "music_providers";
 });
+
+// the tab of a provider type; the player providers hang under the players
+const providerTypeTab = function (type: string | undefined) {
+  return type === ProviderType.PLAYER
+    ? "players"
+    : providerSettingsSectionName(type);
+};
 
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
@@ -493,12 +500,6 @@ const breadcrumbItems = computed(() => {
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "music" } },
       });
-    } else if (currentTab === "player_providers") {
-      items.push({
-        title: t("settings.playerproviders"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "player" } },
-      });
     } else if (currentTab === "metadata_providers") {
       items.push({
         title: t("settings.metadataproviders"),
@@ -530,7 +531,22 @@ const breadcrumbItems = computed(() => {
   }
 
   match(name)
+    // the player providers are listed below the players
+    .with("providersettings", () => {
+      if (activeTab.value !== "players") return;
+      items.push({ title: t("settings.playerproviders"), disabled: true });
+    })
     .with("editprovider", () => {
+      if (activeTab.value === "players") {
+        items.push({
+          title: t("settings.playerproviders"),
+          disabled: false,
+          to: {
+            name: "providersettings",
+            query: { types: ProviderType.PLAYER },
+          },
+        });
+      }
       items.push({
         title:
           editedProviderName.value ||
@@ -610,6 +626,9 @@ const breadcrumbItems = computed(() => {
         title: t("settings.storage.title"),
         disabled: true,
       });
+    })
+    .with("playbacksettings", () => {
+      items.push({ title: t(SETTINGS_PAGES.playback.title), disabled: true });
     })
     .with("networksettings", () => {
       items.push({ title: t(SETTINGS_PAGES.network.title), disabled: true });

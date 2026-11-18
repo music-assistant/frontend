@@ -33,9 +33,11 @@ export interface OwnerChanges {
 
 /**
  * The form of a settings page: copies of the entries each source shows, in
- * their given order. On a page with several sources, each source is a section
- * of its own under its title, and the keys of its entries are qualified by
- * their owner, so owners sharing a key do not clash.
+ * their given order. On a page with several sources, the keys of the entries
+ * are qualified by their owner, so owners sharing a key do not clash, and a
+ * source with a title is a section of its own under that title; the entries of
+ * a source without one keep their categories, so the entries of owners sharing
+ * a category share its section.
  *
  * @param loaded - The entries loaded for each source of the page.
  * @param translate - Gives the text of a translation key.
@@ -59,9 +61,9 @@ export function buildSettingsForm(
         depends_on: entry.depends_on && formKey(entry.depends_on),
         action: entry.action && formKey(entry.action),
       };
-      if (sectioned) {
+      if (sectioned && source.title) {
         formEntry.category = ownerQualifier(owner);
-        formEntry.category_label = source.title && translate(source.title);
+        formEntry.category_label = translate(source.title);
       }
       fields.set(formEntry.key, { owner, key: entry.key });
       entries.push(formEntry);

@@ -10,11 +10,13 @@ import {
   ProviderType,
   Scope,
   type PlayerConfig,
+  type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { providerInstance } from "../fixtures/providerInstance";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
@@ -44,7 +46,7 @@ const {
       }
     >,
     providerManifests: {},
-    providers: {},
+    providers: {} as Record<string, ProviderInstance>,
     subscribe_multi: vi.fn(),
   },
   emitEvent: vi.fn(),
@@ -115,7 +117,8 @@ vi.mock("@/views/settings/AddPlayerGroupDialog.vue", () => ({
   },
 }));
 
-vi.mock("vue-router", () => ({
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
   useRouter: () => ({
     push: routerPush,
   }),
@@ -150,6 +153,11 @@ const passthroughStub = {
   template: "<div><slot /></div>",
 };
 
+const RouterLinkStub = {
+  props: ["to"],
+  template: '<a :href="JSON.stringify(to)"><slot /></a>',
+};
+
 describe("Players", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -178,8 +186,110 @@ describe("Players", () => {
       is_streaming_provider: null,
     });
     apiMock.getProviderManifest.mockReturnValue(providerManifest());
+    apiMock.providers = {};
     apiMock.subscribe_multi.mockReturnValue(vi.fn());
     getPlayerSettingsMenuItems.mockReturnValue([{ label: "settings.delete" }]);
+  });
+
+  it("leads an admin to the playback defaults and to the player support, saying how many run", async () => {
+    apiMock.providers = {
+      "sonos--1": providerInstance({
+        instance_id: "sonos--1",
+        type: ProviderType.PLAYER,
+      }),
+      "airplay--1": providerInstance({
+        instance_id: "airplay--1",
+        type: ProviderType.PLAYER,
+      }),
+      "spotify--1": providerInstance({
+        instance_id: "spotify--1",
+        type: ProviderType.MUSIC,
+      }),
+    };
+    const wrapper = await mountPlayers("list");
+
+    expect(linkRowKeys(wrapper)).toEqual(["playback", "player_support"]);
+    const support = wrapper.get(
+      '[data-testid="settings-page-link-player_support"]',
+    );
+    expect(JSON.parse(support.attributes("href")!)).toEqual({
+      name: "providersettings",
+      query: { types: "player" },
+    });
+    expect(support.get('[data-testid="settings-page-state"]').text()).toBe(
+      "2 active",
+    );
+  });
+
+  it.each([
+    {
+      role: "a role that only changes player settings",
+      scopes: [...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PLAYERS_WRITE],
+      rows: [],
+    },
+    {
+      role: "a role that changes player and server settings",
+      scopes: [
+        ...BUILTIN_ROLE_SCOPES.guest,
+        Scope.CONFIG_PLAYERS_WRITE,
+        Scope.CONFIG_CORE_WRITE,
+      ],
+      rows: ["playback"],
+    },
+  ])("leads $role only where it may go", async ({ scopes, rows }) => {
+    hasScope.mockImplementation(scopeChecker(scopes));
+    const wrapper = await mountPlayers("list");
+
+    expect(linkRowKeys(wrapper)).toEqual(rows);
+  });
+
+  it.each(["list", "card"] as const)(
+    "lists each kind of device under a heading of its own in %s view",
+    async (viewMode) => {
+      apiMock.getPlayerConfigs.mockResolvedValue(DEVICES);
+      const wrapper = await mountPlayers(viewMode);
+
+      expect(
+        wrapper.findAll('[data-testid="player-section"]').map((section) => ({
+          key: section.attributes("data-section"),
+          heading: section.get("h2").text(),
+          players: section.findAll(PLAYER_SELECTORS[viewMode]).length,
+        })),
+      ).toEqual([
+        { key: "players", heading: "Players", players: 1 },
+        { key: "lights", heading: "Lights", players: 1 },
+        { key: "screens", heading: "Screens", players: 1 },
+        { key: "inputs", heading: "Audio inputs", players: 1 },
+      ]);
+    },
+  );
+
+  it("shows no heading over a single kind of device", async () => {
+    const wrapper = await mountPlayers("list");
+
+    expect(sectionKeys(wrapper)).toEqual(["players"]);
+    expect(wrapper.find('[data-testid="player-section"] h2').exists()).toBe(
+      false,
+    );
+  });
+
+  it("splits what the filters leave into sections", async () => {
+    apiMock.getPlayerConfigs.mockResolvedValue(DEVICES);
+    const wrapper = await mountPlayers("list");
+    const filters = wrapper.findComponent({ name: "PlayerFilters" });
+
+    filters.vm.$emit("update:types", [PlayerType.LIGHT, PlayerType.SOURCE]);
+    await flushPromises();
+
+    expect(sectionKeys(wrapper)).toEqual(["lights", "inputs"]);
+
+    filters.vm.$emit("update:types", [PlayerType.LIGHT]);
+    await flushPromises();
+
+    expect(sectionKeys(wrapper)).toEqual(["lights"]);
+    expect(wrapper.find('[data-testid="player-section"] h2').exists()).toBe(
+      false,
+    );
   });
 
   it("points an admin to the player providers", async () => {
@@ -423,12 +533,55 @@ describe("Players", () => {
   });
 });
 
+// a device of each kind; only the kitchen player is registered, the others
+// go by the type their config holds
+const DEVICES: PlayerConfig[] = [
+  { ...playerConfig },
+  {
+    ...playerConfig,
+    player_id: "lamp",
+    name: "Lamp",
+    player_type: PlayerType.LIGHT,
+  },
+  {
+    ...playerConfig,
+    player_id: "tv",
+    name: "TV",
+    player_type: PlayerType.DISPLAY,
+  },
+  {
+    ...playerConfig,
+    player_id: "mic",
+    name: "Mic",
+    player_type: PlayerType.SOURCE,
+  },
+];
+
+const PLAYER_SELECTORS = {
+  list: ".player-row",
+  card: ".settings-player-card",
+} as const;
+
 const REMOVE_UNAVAILABLE = "settings.remove_unavailable_players";
 const HIDE_UNAVAILABLE = "settings.hide_unavailable_players";
 
 /** The item with this label in what the page publishes into the toolbar menu. */
 function toolbarMenuItem(label: string): ToolBarMenuItem | undefined {
   return toolbarMenu.value.find((item) => item.label === label);
+}
+
+function linkRowKeys(wrapper: Awaited<ReturnType<typeof mountPlayers>>) {
+  return wrapper
+    .findAll('[data-testid^="settings-page-link-"]')
+    .map((row) =>
+      row.attributes("data-testid")!.replace("settings-page-link-", ""),
+    );
+}
+
+function sectionKeys(wrapper: Awaited<ReturnType<typeof mountPlayers>>) {
+  return wrapper
+    .findAll('[data-testid="player-section"]')
+    .map((section) => section.attributes("data-section"));
 }
 
 function unavailablePlayer(playerId: string) {
@@ -460,7 +613,7 @@ async function mountPlayers(viewMode: "list" | "card") {
         Container: passthroughStub,
         PlayerFilters: true,
         PlayerIcon: true,
-        RouterLink: true,
+        RouterLink: RouterLinkStub,
         SettingsPlayerCard: SettingsPlayerCardStub,
       },
     },
