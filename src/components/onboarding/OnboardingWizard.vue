@@ -117,6 +117,7 @@ import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
 import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
+import HomeAssistantStep from "@/components/onboarding/steps/HomeAssistantStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
@@ -178,6 +179,7 @@ const STEP_VIEWS: Record<
     props: { providerType: ProviderType.PLUGIN },
   },
   core_settings: { component: markRaw(CoreSettingsStep) },
+  home_assistant: { component: markRaw(HomeAssistantStep) },
   invite_members: { component: markRaw(InviteMembersStep) },
   finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
   welcome: { component: markRaw(WelcomeStep) },

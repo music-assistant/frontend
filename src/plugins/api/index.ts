@@ -2969,6 +2969,12 @@ export class MusicAssistantApi {
     });
   }
 
+  public async openProviderPage(instance_id: string): Promise<string> {
+    // Open the page a provider instance declares in its manifest. Returns a
+    // short-lived address of it, relative to the server's address.
+    return this.sendCommand("providers/open_page", { instance_id });
+  }
+
   public async saveProviderConfig(
     provider_domain: string,
     values: Record<string, ConfigValueType>,
@@ -3351,9 +3357,10 @@ export class MusicAssistantApi {
 
   // Core Config related functions
 
-  public async getCoreConfigs(): Promise<CoreConfig[]> {
-    // Return all known core configurations
-    return this.sendCommand("config/core");
+  public async getCoreConfigs(includeValues = false): Promise<CoreConfig[]> {
+    // Return all known core configurations; without includeValues, the configs
+    // carry no entries.
+    return this.sendCommand("config/core", { include_values: includeValues });
   }
 
   public async getCoreConfig(domain: string): Promise<CoreConfig> {

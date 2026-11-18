@@ -44,6 +44,22 @@ describe("EditPlayerQueue", () => {
     );
   });
 
+  it("leads to the playback defaults every queue follows", async () => {
+    const wrapper = shallowMount(EditPlayerQueue, {
+      props: { queueId: "kitchen" },
+      global: {
+        mocks: { $t: (key: string) => key },
+        // the link sits in the slot of its button
+        renderStubDefaultSlot: true,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: "RouterLink" }).props("to")).toEqual({
+      name: "playbacksettings",
+    });
+  });
+
   it("stays on the form when the server refuses the save", async () => {
     apiMock.savePlayerQueueConfig.mockRejectedValueOnce(
       new ApiCommandError(REASON, 1, REASON),

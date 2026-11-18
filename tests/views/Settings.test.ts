@@ -9,7 +9,7 @@ import {
   ProviderType,
   UserRole,
   type ProviderManifest,
-  type Scope,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
@@ -43,6 +43,7 @@ const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
     routeState: {
       name: "editplayeroptions",
       params: { playerId: "kitchen" } as Record<string, string>,
+      query: {} as Record<string, string>,
     },
   }));
 
@@ -59,7 +60,8 @@ vi.mock("@/composables/useOnboarding", () => ({
   useOnboarding: () => ({ open: onboardingOpen }),
 }));
 // the sections are covered where they are decided
-vi.mock("@/helpers/settings_sections", () => ({
+vi.mock("@/helpers/settings_sections", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/settings_sections")>()),
   availableSettingsSections: () => [],
 }));
 vi.mock("@/composables/userPreferences", async () => {
@@ -78,7 +80,7 @@ vi.mock("vue-router", async (importOriginal) => ({
       value: {
         name: routeState.name,
         params: routeState.params,
-        query: {},
+        query: routeState.query,
       },
     },
     push: routerPush,
@@ -224,38 +226,279 @@ describe("Settings breadcrumbs on the settings of a provider", () => {
   });
 });
 
-describe("Settings breadcrumbs on the storage page", () => {
+describe("Settings breadcrumbs on the library pages", () => {
+  const MUSIC_SOURCES = {
+    title: "settings.music_sources",
+    disabled: false,
+    to: { name: "providersettings", query: { types: "music" } },
+  };
+  const LIBRARY = {
+    title: "settings.library.title",
+    disabled: false,
+    to: { name: "librarysettings" },
+  };
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
   afterEach(() => {
     routeState.name = "editplayeroptions";
     routeState.params = { playerId: "kitchen" };
   });
 
-  it("names the storage page as a page of the System settings", () => {
-    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
-    routeState.name = "storagesettings";
-    routeState.params = {};
+  it("hang the library options under the music sources", () => {
+    expect(pageTrail("librarysettings")).toEqual([
+      MUSIC_SOURCES,
+      { title: "settings.library.title", disabled: true },
+    ]);
+  });
 
-    const wrapper = mount(Settings, {
-      global: {
-        stubs: {
-          Toolbar: {
-            template: '<div><slot name="title" /><slot name="append" /></div>',
-          },
-          ToolbarHeading: ToolbarHeadingStub,
-          RouterView: true,
-          VBtn: true,
-          VDivider: true,
-        },
-      },
+  it.each([
+    ["storagesettings", "settings.storage.music_locations"],
+    ["genremanagement", "genres"],
+  ])("hang %s under the library options", (name, title) => {
+    expect(pageTrail(name)).toEqual([
+      MUSIC_SOURCES,
+      LIBRARY,
+      { title, disabled: true },
+    ]);
+  });
+
+  it("name the library options as plain text for who may not open them", () => {
+    hasScope.mockImplementation((scope) => scope !== Scope.CONFIG_CORE_WRITE);
+
+    expect(pageTrail("storagesettings")[1]).toEqual({
+      ...LIBRARY,
+      to: undefined,
     });
+  });
+});
 
-    expect(wrapper.getComponent(ToolbarHeadingStub).props("items")).toEqual([
+describe("Settings breadcrumbs on the metadata settings", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("hang the metadata settings under the metadata sources", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+
+    expect(pageTrail("metadatasettings")).toEqual([
+      {
+        title: "settings.metadataproviders",
+        disabled: false,
+        to: { name: "providersettings", query: { types: "metadata" } },
+      },
+      { title: "settings.metadata.title", disabled: true },
+    ]);
+  });
+});
+
+/** The trail the settings page hands its heading on the given page. */
+function pageTrail(
+  name: string,
+  params: Record<string, string> = {},
+  query: Record<string, string> = {},
+): ToolbarHeadingItem[] {
+  routeState.name = name;
+  routeState.params = params;
+  routeState.query = query;
+  const wrapper = mount(Settings, {
+    global: {
+      stubs: {
+        Toolbar: {
+          template: '<div><slot name="title" /><slot name="append" /></div>',
+        },
+        ToolbarHeading: ToolbarHeadingStub,
+        RouterView: true,
+        VBtn: true,
+        VDivider: true,
+      },
+    },
+  });
+  const items = wrapper.getComponent(ToolbarHeadingStub).props("items");
+  wrapper.unmount();
+  return items;
+}
+
+describe("Settings breadcrumbs on the audio analysis status", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("hang the status page under the audio analysis providers", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+
+    expect(pageTrail("audioanalysissettings")).toEqual([
+      {
+        title: "settings.audio_analysis_providers",
+        disabled: false,
+        to: { name: "providersettings", query: { types: "audio_analysis" } },
+      },
+      { title: "settings.audio_analysis_status.title", disabled: true },
+    ]);
+  });
+
+  it("name the providers as plain text for who may not manage them", () => {
+    hasScope.mockImplementation(
+      (scope) => scope !== Scope.CONFIG_PROVIDERS_WRITE,
+    );
+
+    expect(pageTrail("audioanalysissettings")[0]).toEqual({
+      title: "settings.audio_analysis_providers",
+      disabled: false,
+      to: undefined,
+    });
+  });
+});
+
+describe("Settings breadcrumbs on the System pages", () => {
+  const SYSTEM = {
+    title: "settings.system",
+    disabled: false,
+    to: { name: "systemsettings" },
+  };
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+    delete apiMock.providerManifests.radio_tuner;
+  });
+
+  it("hang the task settings under the background tasks", () => {
+    expect(pageTrail("tasksettings")).toEqual([
+      SYSTEM,
+      {
+        title: "background_tasks.title",
+        disabled: false,
+        to: { name: "backgroundtasks" },
+      },
+      { title: "background_tasks.settings.title", disabled: true },
+    ]);
+  });
+
+  it("hang the diagnostics under the System settings", () => {
+    expect(pageTrail("diagnostics")).toEqual([
+      SYSTEM,
+      { title: "settings.diagnostics", disabled: true },
+    ]);
+  });
+
+  it("name a module no settings page shows by its manifest, below the System settings", () => {
+    apiMock.providerManifests.radio_tuner = {
+      name: "Radio tuner",
+      // the manifest of a core module has a type the provider types leave out
+      type: "core" as ProviderType,
+    };
+
+    expect(pageTrail("editcore", { domain: "radio_tuner" })).toEqual([
+      SYSTEM,
+      { title: "Radio tuner", disabled: true },
+    ]);
+  });
+});
+
+describe("Settings breadcrumbs on the network pages", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("hang the network page under the System settings", () => {
+    expect(pageTrail("networksettings")).toEqual([
       {
         title: "settings.system",
         disabled: false,
         to: { name: "systemsettings" },
       },
-      { title: "settings.storage.title", disabled: true },
+      { title: "settings.network.title", disabled: true },
+    ]);
+  });
+
+  it("hang remote access under the network page", () => {
+    expect(pageTrail("remoteaccesssettings")).toEqual([
+      {
+        title: "settings.system",
+        disabled: false,
+        to: { name: "systemsettings" },
+      },
+      {
+        title: "settings.network.title",
+        disabled: false,
+        to: { name: "networksettings" },
+      },
+      { title: "settings.remote_access", disabled: true },
+    ]);
+  });
+});
+
+describe("Settings breadcrumbs on the pages below the players", () => {
+  const players = {
+    title: "settings.players",
+    disabled: false,
+    to: { name: "playersettings" },
+  };
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+    routeState.query = {};
+    delete apiMock.providerManifests.sonos;
+  });
+
+  it("hang the playback defaults under the players", () => {
+    expect(pageTrail("playbacksettings")).toEqual([
+      players,
+      { title: "settings.playback.title", disabled: true },
+    ]);
+  });
+
+  it("hang the player providers under the players", () => {
+    expect(pageTrail("providersettings", {}, { types: "player" })).toEqual([
+      players,
+      { title: "settings.playerproviders", disabled: true },
+    ]);
+  });
+
+  it("hang the settings of a player provider under the player providers", async () => {
+    apiMock.getProvider.mockReturnValue(undefined);
+    apiMock.providerManifests.sonos = {
+      name: "Sonos",
+      type: ProviderType.PLAYER,
+    };
+
+    expect(await providerTrail(true, "sonos--kitchen")).toEqual([
+      players,
+      {
+        title: "settings.playerproviders",
+        disabled: false,
+        to: { name: "providersettings", query: { types: "player" } },
+      },
+      { title: "Sonos", disabled: true },
+    ]);
+  });
+
+  it("leave the music sources as they are", () => {
+    expect(pageTrail("providersettings", {}, { types: "music" })).toEqual([
+      {
+        title: "settings.music_sources",
+        disabled: true,
+        to: { name: "providersettings", query: { types: "music" } },
+      },
     ]);
   });
 });

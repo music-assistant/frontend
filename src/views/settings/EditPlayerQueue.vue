@@ -17,7 +17,7 @@
         {{ $t("settings.queue_global_settings_hint") }}
       </p>
       <Button as-child variant="outline" size="sm">
-        <RouterLink to="/settings/editcore/player_queues" class="no-underline">
+        <RouterLink :to="SETTINGS_PAGES.playback.route" class="no-underline">
           {{ $t("settings.queue_global_settings_link") }}
         </RouterLink>
       </Button>
@@ -49,6 +49,7 @@ import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { goBack } from "@/helpers/navigation";
+import { SETTINGS_PAGES } from "@/helpers/settings_pages";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { Info, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";

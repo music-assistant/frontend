@@ -1,432 +1,107 @@
 <template>
-  <div class="settings-overview">
-    <UnsupportedInstallBanner class="mb-4" />
-    <div v-if="viewMode === 'card'" class="settings-grid">
-      <Card
-        v-for="item in sortedCoreConfigs"
-        :key="item.domain"
-        class="setting-card card-hover"
-        @click="handleItemClick(item)"
-      >
-        <CardHeader>
-          <div class="setting-header-top">
-            <div class="setting-icon" :style="getIconBackgroundStyle('blue')">
-              <div class="provider-icon-white">
-                <provider-icon :domain="item.domain" :size="20" />
-              </div>
-            </div>
-            <div class="setting-chevron">
-              <v-icon
-                v-if="item.last_error"
-                color="red"
-                icon="mdi-alert-circle"
-                :title="item.last_error"
-              />
-              <v-icon icon="mdi-chevron-right" size="20" />
-            </div>
-          </div>
-          <CardTitle class="setting-title">{{ getItemTitle(item) }}</CardTitle>
-          <CardDescription class="setting-description">{{
-            getItemDescription(item)
-          }}</CardDescription>
-        </CardHeader>
-      </Card>
-
-      <Card
-        v-for="item in extraSystemEntries"
-        :key="item.domain"
-        class="setting-card card-hover"
-        @click="handleItemClick(item)"
-      >
-        <CardHeader>
-          <div class="setting-header-top">
-            <div class="setting-icon" :style="getIconBackgroundStyle('purple')">
-              <component
-                :is="item.icon"
-                v-if="typeof item.icon !== 'string'"
-                class="size-5 text-white"
-              />
-              <v-icon v-else :icon="item.icon" size="20" color="white" />
-            </div>
-            <div class="setting-chevron">
-              <v-icon icon="mdi-chevron-right" size="20" />
-            </div>
-          </div>
-          <CardTitle class="setting-title">{{ t(item.name) }}</CardTitle>
-          <CardDescription class="setting-description">{{
-            t(item.description)
-          }}</CardDescription>
-        </CardHeader>
-      </Card>
-    </div>
-
-    <v-list v-else class="settings-list">
-      <ListItem
-        v-for="item in sortedCoreConfigs"
-        :key="item.domain"
-        link
-        class="settings-list-item"
-        @click="handleItemClick(item)"
-      >
-        <template #prepend>
-          <div
-            class="setting-list-icon"
-            :style="getIconBackgroundStyle('blue')"
-          >
-            <div class="provider-icon-white">
-              <provider-icon :domain="item.domain" :size="20" />
-            </div>
-          </div>
-        </template>
-        <template #title>{{ getItemTitle(item) }}</template>
-        <template #subtitle>{{ getItemDescription(item) }}</template>
-        <template #append>
-          <v-icon
-            v-if="item.last_error"
-            color="red"
-            icon="mdi-alert-circle"
-            class="mr-2"
-            :title="item.last_error"
-          />
-          <v-icon icon="mdi-chevron-right" size="20" />
-        </template>
-      </ListItem>
-
-      <ListItem
-        v-for="item in extraSystemEntries"
-        :key="item.domain"
-        link
-        class="settings-list-item"
-        @click="handleItemClick(item)"
-      >
-        <template #prepend>
-          <div
-            class="setting-list-icon"
-            :style="getIconBackgroundStyle('purple')"
-          >
-            <component
-              :is="item.icon"
-              v-if="typeof item.icon !== 'string'"
-              class="size-5 text-white"
-            />
-            <v-icon v-else :icon="item.icon" size="20" color="white" />
-          </div>
-        </template>
-        <template #title>{{ t(item.name) }}</template>
-        <template #subtitle>{{ t(item.description) }}</template>
-        <template #append>
-          <v-icon icon="mdi-chevron-right" size="20" />
-        </template>
-      </ListItem>
-    </v-list>
+  <div class="space-y-6 p-6">
+    <UnsupportedInstallBanner />
+    <SettingsLinkRows :rows="rows" test-id-prefix="system" />
   </div>
 </template>
 
 <script setup lang="ts">
-import GenreIcon from "@/components/icons/GenreIcon.vue";
-import ListItem from "@/components/ListItem.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import SettingsLinkRows, {
+  type SettingsRow,
+} from "@/components/settings/SettingsLinkRows.vue";
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { coreModuleName } from "@/helpers/core_modules";
+import { coreOwner, isKnownOwner } from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
-import { CoreConfig } from "@/plugins/api/interfaces";
-import { HardDrive } from "@lucide/vue";
-import {
-  computed,
-  inject,
-  onMounted,
-  ref,
-  type Component,
-  type Ref,
-} from "vue";
-import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { Scope, type CoreConfig } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import { $t } from "@/plugins/i18n";
+import { ListChecks, Network, Settings2, Stethoscope } from "@lucide/vue";
+import { computed, markRaw, onMounted, ref, type Component } from "vue";
+import type { RouteLocationRaw } from "vue-router";
 
-// global refs
-const router = useRouter();
-const { t } = useI18n();
+/**
+ * The hub for running the server: a row for each page about the server, and
+ * one for the settings of a core module that no settings page shows.
+ */
 
-const injected = inject<{ viewMode: Ref<"list" | "card"> }>("systemViewMode");
-const viewMode = computed(() => injected?.viewMode.value ?? "list");
-
-// local refs
-const coreConfigs = ref<CoreConfig[]>([]);
-
-interface SystemConfigExtraEntry {
-  domain: string;
-  route: string;
-  name: string;
+interface SystemPage {
+  key: string;
+  icon: Component;
+  label: string;
   description: string;
-  icon: string | Component;
+  route: RouteLocationRaw;
+  // the scope the route of the page needs
+  requiresScope: Scope;
 }
 
-type SystemConfigItem = CoreConfig | SystemConfigExtraEntry;
-
-const extraSystemEntries: SystemConfigExtraEntry[] = [
+// the pages of the hub, in display order
+const SYSTEM_PAGES: readonly SystemPage[] = [
   {
-    domain: "diagnostics",
-    name: "settings.diagnostics",
-    description: "settings.diagnostics_description",
-    icon: "mdi-stethoscope",
-    route: "/settings/diagnostics",
+    key: "network",
+    icon: Network,
+    label: "settings.network.title",
+    description: "settings.network.description",
+    route: { name: "networksettings" },
+    requiresScope: Scope.CONFIG_CORE_WRITE,
   },
   {
-    domain: "tasks",
-    name: "background_tasks.title",
+    key: "background_tasks",
+    icon: ListChecks,
+    label: "background_tasks.title",
     description: "background_tasks.description",
-    icon: "mdi-playlist-play",
-    route: "/settings/tasks",
+    route: { name: "backgroundtasks" },
+    requiresScope: Scope.SYSTEM_READ,
   },
   {
-    domain: "genre_management",
-    name: "settings.genre_management",
-    description: "settings.genre_management_description",
-    icon: GenreIcon,
-    route: "/settings/genremanagement",
-  },
-  {
-    domain: "audio_analysis",
-    name: "settings.audio_analysis",
-    description: "settings.audio_analysis_description",
-    icon: "mdi-waveform",
-    route: "/settings/audio-analysis",
-  },
-  {
-    domain: "storage",
-    name: "settings.storage.title",
-    description: "settings.storage.description",
-    icon: HardDrive,
-    route: "/settings/storage",
+    key: "diagnostics",
+    icon: Stethoscope,
+    label: "settings.diagnostics",
+    description: "settings.diagnostics_description",
+    route: { name: "diagnostics" },
+    requiresScope: Scope.SYSTEM_MANAGE,
   },
 ];
 
-const sortedCoreConfigs = computed(() => {
-  return [...coreConfigs.value].sort((a, b) =>
-    api.providerManifests[a.domain].name!.localeCompare(
-      api.providerManifests[b.domain].name!,
-    ),
-  );
-});
+const coreConfigs = ref<CoreConfig[]>([]);
 
-const getItemTitle = (item: CoreConfig) => {
-  const translated = t(`settings.core_module.${item.domain}.name`);
-  return translated !== `settings.core_module.${item.domain}.name`
-    ? translated
-    : api.providerManifests[item.domain].name;
-};
+// a module added on the server before any settings page shows it keeps its
+// plain page, so its settings stay reachable
+const unknownModuleRows = computed<SettingsRow[]>(() =>
+  coreConfigs.value
+    .filter(({ domain }) => !isKnownOwner(coreOwner(domain)))
+    .map(({ domain }) => ({
+      key: `core_${domain}`,
+      icon: markRaw(Settings2),
+      label: coreModuleName(
+        domain,
+        (key) => $t(key),
+        api.providerManifests[domain]?.name,
+      ),
+      description: api.providerManifests[domain]?.description ?? "",
+      to: { name: "editcore", params: { domain } },
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+);
 
-const getItemDescription = (item: CoreConfig) => {
-  const translated = t(`settings.core_module.${item.domain}.description`);
-  return translated !== `settings.core_module.${item.domain}.description`
-    ? translated
-    : api.providerManifests[item.domain].description;
-};
-
-const handleItemClick = (item: SystemConfigItem) => {
-  if ("route" in item && item.route) {
-    router.push(item.route);
-  } else {
-    router.push(`/settings/editcore/${(item as CoreConfig).domain}`);
-  }
-};
-
-const getIconBackgroundStyle = (color: "blue" | "purple") => {
-  const colorMap = {
-    blue: "rgb(59, 130, 246)",
-    purple: "rgb(168, 85, 247)",
-  };
-  return { backgroundColor: colorMap[color] };
-};
+const rows = computed<SettingsRow[]>(() => [
+  ...SYSTEM_PAGES.filter((page) =>
+    authManager.hasScope(page.requiresScope),
+  ).map((page) => ({
+    key: page.key,
+    icon: markRaw(page.icon),
+    label: $t(page.label),
+    description: $t(page.description),
+    to: page.route,
+  })),
+  ...unknownModuleRows.value,
+]);
 
 onMounted(async () => {
-  coreConfigs.value = await api.getCoreConfigs();
+  try {
+    coreConfigs.value = await api.getCoreConfigs();
+  } catch {
+    // the api reports the failure itself
+  }
 });
 </script>
-
-<style scoped>
-.settings-overview {
-  padding: 24px;
-}
-
-.settings-list {
-  padding: 0;
-  background: transparent;
-}
-
-.list-item-main {
-  border-radius: 10px !important;
-}
-
-.settings-list-item {
-  cursor: pointer;
-  padding: 20px 24px;
-  min-height: 80px;
-  border-bottom: none;
-  background: transparent;
-}
-
-.settings-list-item:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
-}
-
-.settings-list-item :deep(.v-list-item__prepend) {
-  padding-inline-end: 6px;
-}
-
-.settings-list-item :deep(.v-list-item__prepend .v-icon) {
-  margin-inline-end: 0 !important;
-}
-
-.settings-list-item :deep(.v-list-item__content > div) {
-  padding-left: 0;
-}
-
-.settings-list-item :deep(.v-list-item-title) {
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.settings-list-item :deep(.v-list-item-subtitle) {
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-top: 4px;
-}
-
-.settings-list-item :deep(.v-list-item__append) {
-  opacity: 0.4;
-  transition: opacity 0.2s ease;
-}
-
-.settings-list-item:hover :deep(.v-list-item__append) {
-  opacity: 1;
-}
-
-.setting-list-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
-}
-
-.settings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-}
-
-@media (min-width: 960px) {
-  .settings-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1280px) {
-  .settings-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.setting-card {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  padding: 6px 0 0 0;
-}
-
-.setting-header-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.setting-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
-}
-
-.setting-chevron {
-  opacity: 0.4;
-  transition:
-    opacity 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(var(--v-theme-on-surface), 0.05);
-  flex-shrink: 0;
-}
-
-.setting-card:hover .setting-chevron {
-  opacity: 1;
-  background: rgba(var(--v-theme-primary), 0.1);
-  color: rgb(var(--v-theme-primary));
-}
-
-.setting-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 4px;
-  line-height: 1.3;
-}
-
-.setting-description {
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin: 0;
-}
-
-.provider-icon-white {
-  filter: brightness(0) invert(1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-@media (max-width: 768px) {
-  .settings-overview {
-    padding: 16px 12px;
-  }
-
-  .settings-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .setting-header-top {
-    margin-bottom: 8px;
-  }
-
-  .setting-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .setting-chevron {
-    width: 26px;
-    height: 26px;
-  }
-}
-</style>

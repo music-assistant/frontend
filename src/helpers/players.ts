@@ -310,7 +310,7 @@ export const canBeGroupMember = function (player: Player): boolean {
  * Visualizers and metadata-only displays are both screens to the user, so the
  * group pickers offer them as one category.
  */
-export const isScreenPlayer = function (player: Player): boolean {
+export const isScreenPlayer = function (player: Pick<Player, "type">): boolean {
   return (
     player.type === PlayerType.VISUALIZER || player.type === PlayerType.DISPLAY
   );

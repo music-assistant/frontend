@@ -11,7 +11,7 @@ import {
   ProviderStatus,
   ProviderTier,
   ProviderType,
-  type Scope,
+  Scope,
   type User,
   UserRole,
 } from "@/plugins/api/interfaces";
@@ -763,6 +763,67 @@ describe("Providers", () => {
   });
 });
 
+describe("Providers leading to the settings pages of their section", () => {
+  const STATUS_ROW = '[data-testid="settings-page-link-audio_analysis"]';
+
+  it("leads the audio analysis providers to the analysis status", async () => {
+    routeMock.query.types = ProviderType.AUDIO_ANALYSIS;
+
+    const wrapper = await mountWithLinks();
+
+    const row = wrapper.get(STATUS_ROW);
+    expect(JSON.parse(row.attributes("href")!)).toEqual({
+      name: "audioanalysissettings",
+    });
+    expect(row.text()).toContain("settings.audio_analysis_status.title");
+  });
+
+  it("leaves the row out for a role that may not open the status", async () => {
+    routeMock.query.types = ProviderType.AUDIO_ANALYSIS;
+    authMock.hasScope.mockImplementation(
+      (scope) => scope !== Scope.SYSTEM_MANAGE,
+    );
+
+    const wrapper = await mountWithLinks();
+
+    expect(wrapper.find(STATUS_ROW).exists()).toBe(false);
+  });
+
+  it.each([
+    [ProviderType.MUSIC, "library", "librarysettings"],
+    [ProviderType.METADATA, "metadata", "metadatasettings"],
+  ])(
+    "leads the %s sources to the %s settings",
+    async (type, pageId, routeName) => {
+      routeMock.query.types = type;
+
+      const wrapper = await mountWithLinks();
+
+      const rows = wrapper.findAll('[data-testid^="settings-page-link-"]');
+      expect(rows).toHaveLength(1);
+      expect(rows[0].attributes("data-testid")).toBe(
+        `settings-page-link-${pageId}`,
+      );
+      expect(JSON.parse(rows[0].attributes("href")!)).toEqual({
+        name: routeName,
+      });
+      expect(rows[0].text()).toContain(`settings.${pageId}.title`);
+    },
+  );
+
+  it("leads a member nowhere else from its music sources", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+
+    const wrapper = await mountWithLinks();
+
+    expect(wrapper.find('[data-testid^="settings-page-link-"]').exists()).toBe(
+      false,
+    );
+  });
+});
+
 describe("Providers with something that moved to the community catalog", () => {
   const moved = (domain: string, type: ProviderType) =>
     communityProvider(domain, {
@@ -1466,6 +1527,32 @@ async function mountWithConfigs(
         ProviderAccessDialog: AccessDialogStub,
         ProviderRow: ProviderRowStub,
         "v-icon": true,
+      },
+    },
+  });
+  await flushPromises();
+  return wrapper;
+}
+
+// with the rows leading to the settings pages rendered, so they can be read
+async function mountWithLinks() {
+  apiMock.getProviderConfigs.mockResolvedValue([]);
+  const wrapper = shallowMount(Providers, {
+    global: {
+      mocks: { $t: (key: string) => key },
+      provide: {
+        providersViewMode: {
+          toggleViewMode: vi.fn(),
+          viewMode: ref<"list" | "card">("list"),
+        },
+      },
+      stubs: {
+        RouterLink: {
+          props: ["to"],
+          template: '<a :href="JSON.stringify(to)"><slot /></a>',
+        },
+        SettingsLinkRows: false,
+        SettingsPageLinks: false,
       },
     },
   });

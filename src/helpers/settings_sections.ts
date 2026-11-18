@@ -1,8 +1,7 @@
-import { Scope } from "@/plugins/api/interfaces";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import {
   AudioWaveform,
   Blocks,
-  CloudCog,
   FileCode,
   Info,
   Music,
@@ -10,7 +9,6 @@ import {
   Puzzle,
   Server,
   SlidersHorizontal,
-  Speaker,
   UserCog,
   Users,
 } from "@lucide/vue";
@@ -51,35 +49,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     requiresScope: Scope.CONFIG_PROVIDERS_READ,
   },
   {
-    name: "player_providers",
-    label: "settings.playerproviders",
-    description: "settings.player_providers_description",
-    icon: Speaker,
-    color: "green",
-    route: { name: "providersettings", query: { types: "player" } },
-    // the provider types share the route a member opens for its own music
-    // sources, managing any other type takes managing every provider
-    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-  },
-  {
-    name: "metadata_providers",
-    label: "settings.metadataproviders",
-    description: "settings.metadata_providers_description",
-    icon: FileCode,
-    color: "indigo",
-    route: { name: "providersettings", query: { types: "metadata" } },
-    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-  },
-  {
-    name: "plugin_providers",
-    label: "settings.plugins",
-    description: "settings.plugin_providers_description",
-    icon: Puzzle,
-    color: "deep-purple",
-    route: { name: "providersettings", query: { types: "plugin" } },
-    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-  },
-  {
     name: "players",
     label: "settings.players",
     description: "settings.players_description",
@@ -89,12 +58,32 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     requiresScope: Scope.CONFIG_PLAYERS_WRITE,
   },
   {
+    name: "metadata_providers",
+    label: "settings.metadataproviders",
+    description: "settings.metadata_providers_description",
+    icon: FileCode,
+    color: "indigo",
+    route: { name: "providersettings", query: { types: "metadata" } },
+    // the provider types share the route a member opens for its own music
+    // sources, managing any other type takes managing every provider
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
     name: "audio_analysis_providers",
     label: "settings.audio_analysis_providers",
     description: "settings.audio_analysis_providers_description",
     icon: AudioWaveform,
     color: "blue",
     route: { name: "providersettings", query: { types: "audio_analysis" } },
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
+    name: "plugin_providers",
+    label: "settings.plugins",
+    description: "settings.plugin_providers_description",
+    icon: Puzzle,
+    color: "deep-purple",
+    route: { name: "providersettings", query: { types: "plugin" } },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
   },
   {
@@ -123,15 +112,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     requiresScope: Scope.USERS_READ,
   },
   {
-    name: "remote_access",
-    label: "settings.remote_access",
-    description: "settings.remote_access_description",
-    icon: CloudCog,
-    color: "deep-purple",
-    route: { name: "remoteaccesssettings" },
-    requiresScope: Scope.SYSTEM_MANAGE,
-  },
-  {
     name: "system",
     label: "settings.system",
     description: "settings.system_description",
@@ -150,6 +130,16 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
 ];
 
+// the settings section listing the providers of each type; the player
+// providers are listed from the players section
+const PROVIDER_TYPE_SECTIONS: Readonly<Partial<Record<ProviderType, string>>> =
+  {
+    [ProviderType.MUSIC]: "music_providers",
+    [ProviderType.METADATA]: "metadata_providers",
+    [ProviderType.PLUGIN]: "plugin_providers",
+    [ProviderType.AUDIO_ANALYSIS]: "audio_analysis_providers",
+  };
+
 /**
  * The settings sections the current user may open.
  *
@@ -161,4 +151,16 @@ export function availableSettingsSections(
   return SETTINGS_SECTIONS.filter(
     (section) => !section.requiresScope || hasScope(section.requiresScope),
   );
+}
+
+/**
+ * The name of the settings section listing the providers of a type, if a
+ * section of its own lists them.
+ */
+export function providerSettingsSectionName(
+  type: string | undefined,
+): string | undefined {
+  return Object.entries(PROVIDER_TYPE_SECTIONS).find(
+    ([providerType]) => providerType === type,
+  )?.[1];
 }

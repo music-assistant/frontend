@@ -1851,6 +1851,23 @@ export interface ProviderManifest {
   // menu_actions: entries this provider adds to the menu of a media item;
   // absent from an older server
   menu_actions?: ProviderMenuAction[];
+  // media_types: the media types the provider offers whatever its config
+  // (audio_source for a provider that plays audio into Music Assistant);
+  // optional metadata for discovery
+  media_types?: MediaType[];
+  // page: a page this provider serves, listed in the app's menu; an older
+  // server declares none
+  page?: ProviderPage | null;
+}
+
+export interface ProviderPage {
+  // A page a provider serves, opened through providers/open_page.
+  // label: the text of the menu entry, already in the user's language
+  label: string;
+  // scope: what a user needs to see and open the page
+  scope: Scope;
+  // icon: name of a material design icon, such as mdi-chart-line
+  icon: string | null;
 }
 
 export interface ProviderMenuAction {

@@ -463,6 +463,7 @@
         "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
         "playerprovider": "Player support",
         "providers_total": "{count} total | {count} total",
+        "providers_active": "{count} active | {count} active",
         "stage": {
             "label": "Stage",
             "options": {
@@ -478,13 +479,34 @@
             "label": "Force mobile layout",
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
-        "players_description": "Configure and manage your audio output devices",
+        "players_description": "Your players, lights, screens and audio inputs, and how they play",
         "frontend_description": "Customize the user interface theme and appearance",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
-        "system_description": "Configure Music Assistant server settings and core modules",
+        "system_description": "The network, background tasks and diagnostics of the server",
         "system": "System",
+        "network": {
+            "title": "Network",
+            "description": "Remote access, addresses, ports and discovery",
+            "web": "Web interface and API",
+            "streaming": "Audio streaming",
+            "discovery": "Discovery"
+        },
+        "playback": {
+            "title": "Playback",
+            "description": "Crossfade, volume normalization, autoplay and what happens when you press play"
+        },
+        "library": {
+            "title": "Library",
+            "description": "Music locations, which source plays, genres and library maintenance",
+            "source_selection": "Source selection",
+            "maintenance": "Library maintenance"
+        },
+        "metadata": {
+            "title": "Metadata settings",
+            "description": "Language, online lookups, genres and the artwork cache"
+        },
         "about": "About",
         "about_description": "Version information, credits and more",
         "auto_refresh_log": "Auto-refresh",
@@ -499,36 +521,28 @@
         "proud_part_of": "Proud part of",
         "core_module": {
             "cache": {
-                "name": "Cache",
-                "description": "Configuration of the core module that handles caching of data across the application"
+                "name": "Cache"
             },
             "metadata": {
-                "name": "Metadata",
-                "description": "Configuration of the core metadata management module"
+                "name": "Metadata"
             },
             "music": {
-                "name": "Music",
-                "description": "Configuration of the core music (library) management module"
+                "name": "Music"
             },
             "players": {
-                "name": "Players",
-                "description": "Configuration of the core player management module"
+                "name": "Players"
             },
             "player_queues": {
-                "name": "Player Queues",
-                "description": "Configuration of the core player queue management module"
+                "name": "Player Queues"
             },
-            "remote_access": {
-                "name": "Remote Access",
-                "description": "Enables remote access to your Music Assistant server"
+            "statistics": {
+                "name": "Statistics"
             },
             "streams": {
-                "name": "Streams",
-                "description": "Configuration of the audio streaming and processing engine"
+                "name": "Streams"
             },
             "webserver": {
-                "name": "Webserver",
-                "description": "Configuration of the webserver and API"
+                "name": "Webserver"
             }
         },
         "remote_access": "Remote Access",
@@ -621,6 +635,7 @@
             }
         },
         "settings_saved": "Settings saved successfully",
+        "settings_load_failed": "Couldn't load these settings",
         "protocol_no_settings": "This output protocol does not have any additional configuration",
         "protocol_no_settings_with_advanced": "No settings visible. Enable advanced settings to see more configuration options.",
         "show_advanced_settings": "Show advanced settings",
@@ -850,21 +865,16 @@
         "add_audio_analysis_provider": "Add audio analysis",
         "audio_analysis_providers": "Audio analysis",
         "audio_analysis_providers_description": "Manage providers that analyze your audio",
-        "audio_analysis": "Audio analysis",
-        "audio_analysis_status_hint": "See how the analysis is progressing per provider, and any failures, on the status page.",
-        "audio_analysis_status_link": "Open audio analysis status",
+        "audio_analysis_status": {
+            "title": "Analysis status",
+            "description": "Progress per provider, failed tracks and analysis settings"
+        },
         "audio_analysis_coverage": {
             "title": "Audio Analysis Coverage",
             "col_pending": "Pending",
             "col_stale": "Stale",
             "unavailable": "unavailable",
             "none": "—"
-        },
-        "audio_analysis_description": "Track audio analysis coverage across your providers",
-        "audio_analysis_concurrency": {
-            "title": "Background analysis concurrency",
-            "description": "Control how many tracks are analyzed concurrently during the nightly background scan. This setting lives in the Streams core configuration.",
-            "open_settings": "Open Streams settings"
         },
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
@@ -902,7 +912,7 @@
             "load_error": "Couldn't load failures from the server."
         },
         "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
-        "queue_global_settings_link": "Open global queue settings",
+        "queue_global_settings_link": "Open playback settings",
         "protocol_provider_unavailable": "The player support for this output protocol is currently unavailable.",
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
         "protocol_configure_title": "Configure {name}",
@@ -921,7 +931,8 @@
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
-        "diagnostics_description": "View server logs and download a diagnostics report for troubleshooting",
+        "diagnostics_description": "Server logs, log levels and a diagnostics report for troubleshooting",
+        "log_levels": "Log levels",
         "customize_menu": {
             "label": "Customize menu",
             "description": "Put the navigation menu in edit mode to show, hide, reorder and rename its items."
@@ -955,6 +966,7 @@
         "options": "Options",
         "server_clock_offset": "Clock offset (server vs this device)",
         "action_completed": "Action completed",
+        "action_link_refused": "The link was not opened, because it leads into Music Assistant itself.",
         "hass_controls": {
             "add_hass_entity": "Add a Home Assistant entity...",
             "add_entity": "Add entity...",
@@ -1009,7 +1021,7 @@
         "merge_player_confirmation_outputs": "{0} disappears and its outputs ({2}) move to {1}. Settings only {0} has are kept. Its queue is cleared.",
         "merge_player_confirm": "Merge",
         "player_merged": "Players merged",
-        "split_off_output": "Split off an output",
+        "split_off_output": "Split off as its own player",
         "split_off_output_title": "Split {0} off {1}?",
         "split_off_output_confirmation": "{0} is no longer part of {1} and shows up as a new player of its own, with default settings. {1} keeps its name, settings and queue.",
         "split_off": "Split off",
@@ -1027,7 +1039,6 @@
         "music_sources_shared": "Shared with you",
         "music_sources_shared_empty": "No music sources have been shared with you yet.",
         "storage": {
-            "title": "Storage",
             "description": "The folders, drives and network shares your music can come from",
             "load_failed": "Could not load the storage",
             "music_locations": "Music locations",
@@ -2394,6 +2405,10 @@
     "background_tasks": {
         "title": "Background tasks",
         "description": "Monitor scheduled jobs and recent long-running actions.",
+        "settings": {
+            "title": "Task settings",
+            "description": "How many tasks run at once"
+        },
         "total": "{count} total background task | {count} total background tasks",
         "clear_finished": "Clear finished",
         "empty_title": "No background tasks",
@@ -3021,6 +3036,7 @@
     "artist_no_library_audiobooks": "You don't have any audiobooks in your library for this author\/narrator.",
     "artist_all_audiobooks": "All audiobooks",
     "lights": "Lights",
+    "audio_inputs": "Audio inputs",
     "players_in_group": "Players in group",
     "volume": "Volume",
     "grouped_volume": "Grouped volume",
@@ -3094,6 +3110,11 @@
     "period_all_time": "All Time",
     "open_settings": "Settings",
     "pages": "Pages",
+    "provider_pages": {
+        "heading": "Extras",
+        "home_network": "The page opened on the home network address of Music Assistant, so it only loads while you are at home.",
+        "unavailable": "The page can only open on your home network, but the home network address of Music Assistant is unknown."
+    },
     "recent_searches": "Recent searches",
     "command_center_navigate": "navigate",
     "command_center_open": "open",
@@ -3182,9 +3203,8 @@
             },
             "plugins": {
                 "title": "Add plugins",
-                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later.",
                 "phone_apps_title": "Connect your music apps",
-                "phone_apps_description": "Add Spotify Connect or the AirPlay receiver, then open its settings to choose your speakers. Other plugins are available here too.",
+                "phone_apps_description": "Add Spotify Connect or the AirPlay receiver, then open its settings to choose your speakers.",
                 "connect": "Connect a music app"
             },
             "core_settings": {
@@ -3205,7 +3225,7 @@
                     "unchecked": "Could not check from this device"
                 },
                 "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, change it with Edit below.",
-                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system}, in {webserver} and {streams}.",
+                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system} › {network}.",
                 "remote": {
                     "title": "Listen from outside your home",
                     "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",
@@ -3216,7 +3236,7 @@
                         "switch": "Remote access",
                         "id": "Your remote access ID",
                         "copy": "Copy the remote access ID",
-                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {remote_access}."
+                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {system} › {network} › {remote_access}."
                     },
                     "proxy": {
                         "title": "Your own reverse proxy",
@@ -3225,6 +3245,11 @@
                     }
                 },
                 "load_failed": "The server settings could not be loaded. You can change them later from the settings."
+            },
+            "home_assistant": {
+                "title": "Connect Home Assistant",
+                "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Cloud.",
+                "connect": "Connect to Home Assistant"
             },
             "invite_members": {
                 "title": "Add users",

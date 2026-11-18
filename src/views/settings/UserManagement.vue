@@ -133,6 +133,8 @@
             </CardContent>
           </Card>
         </div>
+
+        <SettingsPageForm page="user_management" embedded />
       </TabsContent>
       <TabsContent value="roles">
         <RoleManagement :users="users" />
@@ -187,6 +189,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
+import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
