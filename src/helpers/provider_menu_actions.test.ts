@@ -277,6 +277,7 @@ function demo(instanceId: string, available = true): ProviderInstance {
     supported_features: [],
     available,
     is_streaming_provider: false,
+    supported_artist_types: [],
   };
 }
 
