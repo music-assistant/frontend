@@ -197,7 +197,6 @@ describe("the menu of a media item", () => {
     apiMock.invokeProviderMenuAction.mockResolvedValue({
       message: null,
       open_url: `${window.location.origin}/raw_route`,
-      open_page: null,
     });
 
     await choose(await itemMenu([song]), ASK.label);

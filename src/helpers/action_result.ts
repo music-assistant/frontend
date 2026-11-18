@@ -1,6 +1,5 @@
 // What the user is told after a one-shot action ran: an action button of a
 // settings form, or a menu entry a provider declares.
-import { isHomeAssistantIngressSession } from "@/helpers/ingress";
 import { isCommunityProvider } from "@/helpers/provider_config";
 import { openActionResultUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -12,8 +11,8 @@ import { toast } from "vue-sonner";
 const PROTOCOL_ACTION_SPLITTER = "||protocol||";
 
 /**
- * Show the outcome of a one-shot action: open its url or page once, and say
- * what happened in its own message or, without one, that it is done.
+ * Show the outcome of a one-shot action: open its url once, and say what
+ * happened in its own message or, without one, that it is done.
  *
  * @param result - What the action answered, if anything.
  * @param provider - Domain or instance id of the provider that answered, if a provider did.
@@ -23,21 +22,23 @@ export const showActionResult = (
   provider?: string,
 ) => {
   const title = result?.message || $t("settings.action_completed");
-  if (result?.open_page) {
-    openPage(result.open_page, title);
-    return;
-  }
-  if (
-    result?.open_url &&
-    isCommunity(provider) &&
-    isOwnOrigin(result.open_url)
-  ) {
+  if (result?.open_url && isRefusedActionUrl(result.open_url, provider)) {
     toast.warning(title, { description: $t("settings.action_link_refused") });
     return;
   }
   openActionResultUrl(result?.open_url);
   toast.success(title);
 };
+
+/**
+ * Whether a url an action answered is not opened: a community provider's
+ * link to one of the app's own addresses.
+ *
+ * @param url - The url the action answered.
+ * @param provider - Domain or instance id of the provider that answered, if a provider did.
+ */
+export const isRefusedActionUrl = (url: string, provider?: string): boolean =>
+  isCommunity(provider) && isOwnOrigin(url);
 
 /**
  * The provider that answers an action of a player's settings: the protocol the
@@ -56,34 +57,6 @@ export const getPlayerActionProvider = (
     (protocol) => protocol.output_protocol_id === protocolId,
   )?.protocol_domain;
 };
-
-const openPage = (page: string, title: string) => {
-  if (
-    !api.isRemoteConnection.value &&
-    !isHomeAssistantIngressSession(api.serverInfo.value)
-  ) {
-    openActionResultUrl(resolveAgainst(page, api.baseUrl));
-    toast.success(title);
-    return;
-  }
-  // Ingress and Remote Access cannot carry a page opened in its own tab, so
-  // it can only open on the server's own address on the home network
-  const internalUrl = api.serverInfo.value?.internal_url;
-  if (!internalUrl) {
-    toast.warning(title, {
-      description: $t("settings.action_page_unavailable"),
-    });
-    return;
-  }
-  openActionResultUrl(resolveAgainst(page, internalUrl));
-  toast.success(title, {
-    description: $t("settings.action_page_home_network"),
-  });
-};
-
-// the page's address is relative to the server's, which may carry a base path
-const resolveAgainst = (page: string, base = ""): string =>
-  new URL(page, base.endsWith("/") ? base : `${base}/`).href;
 
 const isCommunity = (provider?: string): boolean =>
   !!provider && isCommunityProvider(api.getProviderManifest(provider));

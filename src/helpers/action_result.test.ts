@@ -1,5 +1,6 @@
 import {
   getPlayerActionProvider,
+  isRefusedActionUrl,
   showActionResult,
 } from "@/helpers/action_result";
 import {
@@ -8,28 +9,21 @@ import {
   ProviderTier,
 } from "@/plugins/api/interfaces";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
 
-const { apiMock, ingressMock, toastMock } = vi.hoisted(() => ({
+const { apiMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
     baseUrl: "",
-    isRemoteConnection: { value: false },
     serverInfo: { value: { internal_url: null as string | null } },
     getProviderManifest: vi.fn(),
   },
-  ingressMock: vi.fn(() => false),
   toastMock: { success: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/plugins/api", () => ({ api: apiMock }));
-vi.mock("@/helpers/ingress", () => ({
-  isHomeAssistantIngressSession: ingressMock,
-}));
 
 const HOME_ADDRESS = "http://192.168.1.3:8095";
-const PAGE = "provider_page/abc123/stats";
 
 describe("showActionResult", () => {
   let click: ReturnType<typeof vi.spyOn>;
@@ -41,10 +35,8 @@ describe("showActionResult", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     apiMock.baseUrl = window.location.origin;
-    apiMock.isRemoteConnection = ref(false);
     apiMock.serverInfo.value = { internal_url: HOME_ADDRESS };
     apiMock.getProviderManifest.mockReturnValue({ tier: ProviderTier.CORE });
-    ingressMock.mockReturnValue(false);
     click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => undefined);
@@ -140,55 +132,37 @@ describe("showActionResult", () => {
       expect(opened()).toEqual(["https://example.org/x"]);
     });
   });
+});
 
-  describe("a page", () => {
-    it("opens against the server address on a direct connection", () => {
-      apiMock.baseUrl = "http://ma.local:8095";
-
-      showActionResult(result({ message: "Stats", open_page: PAGE }));
-
-      expect(opened()).toEqual([`http://ma.local:8095/${PAGE}`]);
-      expect(toastMock.success).toHaveBeenCalledExactlyOnceWith("Stats");
+describe("isRefusedActionUrl", () => {
+  beforeEach(() => {
+    apiMock.baseUrl = "http://ma.local:8095";
+    apiMock.serverInfo.value = { internal_url: HOME_ADDRESS };
+    apiMock.getProviderManifest.mockReturnValue({
+      tier: ProviderTier.COMMUNITY,
     });
+  });
 
-    it("keeps the base path of the server address", () => {
-      apiMock.baseUrl = "https://example.org/music";
+  it.each([
+    ["the app's own origin", () => `${window.location.origin}/x`],
+    ["the address the app talks to", () => "http://ma.local:8095/x"],
+    ["the server's home address", () => `${HOME_ADDRESS}/x`],
+  ])("refuses a community provider's link to %s", (_where, url) => {
+    expect(isRefusedActionUrl(url(), "community_demo")).toBe(true);
+  });
 
-      showActionResult(result({ open_page: PAGE }));
-
-      expect(opened()).toEqual([`https://example.org/music/${PAGE}`]);
-    });
-
-    it.each([
-      ["Home Assistant Ingress", () => ingressMock.mockReturnValue(true)],
-      ["Remote Access", () => (apiMock.isRemoteConnection.value = true)],
-    ])(
-      "opens on the home network address under %s, and says so",
-      (_way, connect) => {
-        connect();
-
-        showActionResult(result({ open_page: PAGE }));
-
-        expect(opened()).toEqual([`${HOME_ADDRESS}/${PAGE}`]);
-        expect(toastMock.success).toHaveBeenCalledExactlyOnceWith(
-          "settings.action_completed",
-          { description: "settings.action_page_home_network" },
-        );
-      },
+  it("allows a link elsewhere, or an unreadable one", () => {
+    expect(isRefusedActionUrl("https://example.org/x", "community_demo")).toBe(
+      false,
     );
+    expect(isRefusedActionUrl("not a url", "community_demo")).toBe(false);
+  });
 
-    it("opens nothing without a home network address, and says so", () => {
-      apiMock.isRemoteConnection.value = true;
-      apiMock.serverInfo.value = { internal_url: null };
-
-      showActionResult(result({ open_page: PAGE }));
-
-      expect(opened()).toEqual([]);
-      expect(toastMock.warning).toHaveBeenCalledExactlyOnceWith(
-        "settings.action_completed",
-        { description: "settings.action_page_unavailable" },
-      );
-    });
+  it("allows any link from a built-in provider, or without one named", () => {
+    const own = `${window.location.origin}/x`;
+    expect(isRefusedActionUrl(own)).toBe(false);
+    apiMock.getProviderManifest.mockReturnValue({ tier: ProviderTier.CORE });
+    expect(isRefusedActionUrl(own, "fastmcp_server")).toBe(false);
   });
 });
 
@@ -219,5 +193,5 @@ describe("getPlayerActionProvider", () => {
 });
 
 function result(overrides: Partial<ConfigActionResult>): ConfigActionResult {
-  return { message: null, open_url: null, open_page: null, ...overrides };
+  return { message: null, open_url: null, ...overrides };
 }

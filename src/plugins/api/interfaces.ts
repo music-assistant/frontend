@@ -888,14 +888,11 @@ export interface Config {
 
 export interface ConfigActionResult {
   // Outcome of a one-shot config action: a message to show to the user
-  // and/or a url or page to open once. Any may be null; a result that carries
+  // and/or a url to open once. Either may be null; a result that carries
   // neither reports a generic success.
   // message: already localized server-side for the connection locale
   message: string | null;
   open_url: string | null;
-  // open_page: address of a page the provider serves itself, relative to the
-  // server's address; opened once in a new tab
-  open_page: string | null;
 }
 
 export enum FlowStepType {
@@ -1854,6 +1851,19 @@ export interface ProviderManifest {
   // menu_actions: entries this provider adds to the menu of a media item;
   // absent from an older server
   menu_actions?: ProviderMenuAction[];
+  // page: a page this provider serves, listed in the app's menu; an older
+  // server declares none
+  page?: ProviderPage | null;
+}
+
+export interface ProviderPage {
+  // A page a provider serves, opened through providers/open_page.
+  // label: the text of the menu entry, already in the user's language
+  label: string;
+  // scope: what a user needs to see and open the page
+  scope: Scope;
+  // icon: name of a material design icon, such as mdi-chart-line
+  icon: string | null;
 }
 
 export interface ProviderMenuAction {

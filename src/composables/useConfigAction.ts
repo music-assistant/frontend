@@ -6,14 +6,15 @@
 
 import type { Ref } from "vue";
 import { toast } from "vue-sonner";
-import { showActionResult } from "@/helpers/action_result";
+import { isRefusedActionUrl, showActionResult } from "@/helpers/action_result";
 import { mergeActionEntries } from "@/helpers/config_entry_ui";
 import { openActionUrlEntries } from "@/helpers/utils";
-import type {
-  Config,
-  ConfigActionResult,
-  ConfigEntry,
-  ConfigValueType,
+import {
+  type Config,
+  type ConfigActionResult,
+  type ConfigEntry,
+  ConfigEntryType,
+  type ConfigValueType,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 
@@ -54,17 +55,27 @@ export function useConfigAction<T extends Config>({
     loading.value = true;
     try {
       const response = await invokeAction(action);
+      const provider = answeredBy?.(action);
       if (!Array.isArray(response)) {
         // A result only reports the outcome of the action: it never carries
         // values, so the form is left untouched.
-        showActionResult(response, answeredBy?.(action));
+        showActionResult(response, provider);
         return;
       }
-      const entries = openActionUrlEntries(response);
+      const allowed = response.filter(
+        (entry) => !isRefusedUrlEntry(entry, provider),
+      );
+      const refused = allowed.length < response.length;
+      if (refused) {
+        toast.warning($t("settings.action_completed"), {
+          description: $t("settings.action_link_refused"),
+        });
+      }
+      const entries = openActionUrlEntries(allowed);
       // An empty response means the action was a one-off side effect with
       // nothing to re-render: leave the form untouched.
       if (entries.length === 0) {
-        toast.success($t("settings.action_completed"));
+        if (!refused) toast.success($t("settings.action_completed"));
         return;
       }
       config.value!.values = mergeActionEntries(config.value!.values, entries);
@@ -89,3 +100,13 @@ export function useConfigAction<T extends Config>({
 
   return { onAction };
 }
+
+// a url entry opens once like an action's url, so it follows the same rule
+const isRefusedUrlEntry = (entry: ConfigEntry, provider?: string): boolean => {
+  const target = entry.value ?? entry.default_value;
+  return (
+    entry.type === ConfigEntryType.URL &&
+    typeof target === "string" &&
+    isRefusedActionUrl(target, provider)
+  );
+};
