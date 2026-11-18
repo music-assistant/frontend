@@ -68,6 +68,7 @@ const isOwnOrigin = (url: string): boolean => {
     window.location.href,
     api.baseUrl,
     api.serverInfo.value?.internal_url,
+    api.serverInfo.value?.external_url,
   ].map(originOf);
   const origin = originOf(url);
   return !!origin && own.includes(origin);
