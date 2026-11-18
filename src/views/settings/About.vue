@@ -10,12 +10,12 @@
           <Button
             variant="ghost"
             size="icon-sm"
-            :title="$t('settings.core_module.webserver.name')"
-            @click="editWebserverConfig"
+            :title="$t('settings.network.title')"
+            @click="openNetworkSettings"
           >
             <Pencil class="size-4" />
             <span class="sr-only">
-              {{ $t("settings.core_module.webserver.name") }}
+              {{ $t("settings.network.title") }}
             </span>
           </Button>
         </CardAction>
@@ -422,6 +422,7 @@ import {
 } from "@/components/ui/card";
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 import { useServerTime } from "@/composables/useServerTime";
+import { SETTINGS_PAGES } from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -445,8 +446,8 @@ const canEditServerConfig = computed(() =>
 
 const internalUrl = computed(() => api.serverInfo.value?.internal_url || "");
 
-const editWebserverConfig = () => {
-  router.push({ name: "editcore", params: { domain: "webserver" } });
+const openNetworkSettings = () => {
+  router.push(SETTINGS_PAGES.network.route);
 };
 
 const clockOffsetIsLarge = computed(

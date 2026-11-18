@@ -27,36 +27,121 @@ function entry(
   };
 }
 
+// the text of a translation key, as the form gets it
+const translate = (key: string) => `text of ${key}`;
+
 describe("buildSettingsForm", () => {
-  it("takes the entries each source shows, in their order", () => {
+  it("takes the entries a single source shows, as they are", () => {
     const concurrency = entry("background_scan_concurrency", "audio_analysis");
     const logLevel = entry("smart_fades_log_level", "audio_analysis");
-    const maxTasks = entry("max_concurrent_tasks", "advanced");
 
-    const form = buildSettingsForm([
-      {
-        source: { owner: STREAMS, categories: ["audio_analysis"] },
-        entries: [concurrency, entry("fade_in", "playback"), logLevel],
+    const form = buildSettingsForm(
+      [
+        {
+          source: { owner: STREAMS, categories: ["audio_analysis"] },
+          entries: [concurrency, entry("fade_in", "playback"), logLevel],
+        },
+      ],
+      translate,
+    );
+
+    expect(form.entries).toEqual([concurrency, logLevel]);
+    expect(Object.fromEntries(form.fields)).toEqual({
+      background_scan_concurrency: {
+        owner: STREAMS,
+        key: "background_scan_concurrency",
       },
-      { source: { owner: TASKS }, entries: [maxTasks] },
-    ]);
-
-    expect(form.entries).toEqual([concurrency, logLevel, maxTasks]);
-    expect(form.entries[0]).toBe(concurrency);
-    expect(Object.fromEntries(form.owners)).toEqual({
-      background_scan_concurrency: STREAMS,
-      smart_fades_log_level: STREAMS,
-      max_concurrent_tasks: TASKS,
+      smart_fades_log_level: { owner: STREAMS, key: "smart_fades_log_level" },
     });
   });
 
-  it("throws when two owners feed the same key", () => {
-    expect(() =>
-      buildSettingsForm([
+  it("shows each of several sources as a section of its own, under its title", () => {
+    const form = buildSettingsForm(
+      [
+        {
+          source: { owner: STREAMS, categories: ["generic"], title: "audio" },
+          entries: [entry("bind_port"), entry("fade_in", "playback")],
+        },
+        {
+          source: { owner: TASKS, title: "tasks" },
+          entries: [entry("max_concurrent_tasks", "advanced")],
+        },
+      ],
+      translate,
+    );
+
+    expect(
+      form.entries.map(({ key, category, category_label }) => ({
+        key,
+        category,
+        category_label,
+      })),
+    ).toEqual([
+      {
+        key: "core/streams/bind_port",
+        category: "core/streams",
+        category_label: "text of audio",
+      },
+      {
+        key: "core/tasks/max_concurrent_tasks",
+        category: "core/tasks",
+        category_label: "text of tasks",
+      },
+    ]);
+  });
+
+  it("keeps the entries of owners sharing a key apart", () => {
+    const form = buildSettingsForm(
+      [
         { source: { owner: STREAMS }, entries: [entry("log_level")] },
         { source: { owner: TASKS }, entries: [entry("log_level")] },
-      ]),
-    ).toThrow("log_level");
+      ],
+      translate,
+    );
+
+    expect(Object.fromEntries(form.fields)).toEqual({
+      "core/streams/log_level": { owner: STREAMS, key: "log_level" },
+      "core/tasks/log_level": { owner: TASKS, key: "log_level" },
+    });
+  });
+
+  it("points dependencies and actions at the entries of their own owner", () => {
+    const form = buildSettingsForm(
+      [
+        {
+          source: { owner: STREAMS },
+          entries: [
+            entry("enable_ssl"),
+            entry("verify_ssl", "generic", {
+              depends_on: "enable_ssl",
+              action: "verify_ssl",
+            }),
+          ],
+        },
+        { source: { owner: TASKS }, entries: [entry("enable_ssl")] },
+      ],
+      translate,
+    );
+
+    expect(form.entries[1]).toMatchObject({
+      key: "core/streams/verify_ssl",
+      depends_on: "core/streams/enable_ssl",
+      action: "core/streams/verify_ssl",
+    });
+  });
+
+  it("leaves the loaded entries as they are", () => {
+    const bindPort = entry("bind_port");
+
+    buildSettingsForm(
+      [
+        { source: { owner: STREAMS }, entries: [bindPort] },
+        { source: { owner: TASKS }, entries: [] },
+      ],
+      translate,
+    );
+
+    expect(bindPort).toEqual(entry("bind_port"));
   });
 });
 
@@ -74,10 +159,10 @@ describe("storedValues", () => {
 });
 
 describe("changedValuesByOwner", () => {
-  const owners = new Map([
-    ["concurrency", STREAMS],
-    ["codecs", STREAMS],
-    ["max_tasks", TASKS],
+  const fields = new Map([
+    ["concurrency", { owner: STREAMS, key: "concurrency" }],
+    ["codecs", { owner: STREAMS, key: "codecs" }],
+    ["max_tasks", { owner: TASKS, key: "max_tasks" }],
   ]);
   const saved = { concurrency: 2, codecs: ["flac", "mp3"], max_tasks: 4 };
 
@@ -86,7 +171,7 @@ describe("changedValuesByOwner", () => {
       changedValuesByOwner(
         { concurrency: 3, codecs: ["flac", "mp3"], max_tasks: 5 },
         saved,
-        owners,
+        fields,
       ),
     ).toEqual([
       { owner: STREAMS, values: { concurrency: 3 } },
@@ -94,28 +179,43 @@ describe("changedValuesByOwner", () => {
     ]);
   });
 
+  it("keys the values the way their owner knows them", () => {
+    const qualified = new Map([
+      ["core/streams/log_level", { owner: STREAMS, key: "log_level" }],
+      ["core/tasks/log_level", { owner: TASKS, key: "log_level" }],
+    ]);
+
+    expect(
+      changedValuesByOwner(
+        { "core/streams/log_level": "DEBUG", "core/tasks/log_level": "INFO" },
+        { "core/streams/log_level": "GLOBAL", "core/tasks/log_level": "INFO" },
+        qualified,
+      ),
+    ).toEqual([{ owner: STREAMS, values: { log_level: "DEBUG" } }]);
+  });
+
   it("compares lists by their content", () => {
     expect(
-      changedValuesByOwner({ codecs: ["flac", "mp3"] }, saved, owners),
+      changedValuesByOwner({ codecs: ["flac", "mp3"] }, saved, fields),
     ).toEqual([]);
-    expect(changedValuesByOwner({ codecs: ["flac"] }, saved, owners)).toEqual([
+    expect(changedValuesByOwner({ codecs: ["flac"] }, saved, fields)).toEqual([
       { owner: STREAMS, values: { codecs: ["flac"] } },
     ]);
   });
 
   it("counts a reset to the default as a change", () => {
-    expect(changedValuesByOwner({ max_tasks: null }, saved, owners)).toEqual([
+    expect(changedValuesByOwner({ max_tasks: null }, saved, fields)).toEqual([
       { owner: TASKS, values: { max_tasks: null } },
     ]);
   });
 
   it("ignores keys outside the form", () => {
-    expect(changedValuesByOwner({ bind_port: 8097 }, saved, owners)).toEqual(
+    expect(changedValuesByOwner({ bind_port: 8097 }, saved, fields)).toEqual(
       [],
     );
   });
 
   it("finds nothing when nothing changed", () => {
-    expect(changedValuesByOwner({ ...saved }, saved, owners)).toEqual([]);
+    expect(changedValuesByOwner({ ...saved }, saved, fields)).toEqual([]);
   });
 });

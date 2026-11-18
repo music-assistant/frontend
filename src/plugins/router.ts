@@ -599,6 +599,16 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
+            path: "network",
+            name: "networksettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "networksettings" */ "@/views/settings/NetworkSettings.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
             path: "audio-analysis",
             name: "audioanalysissettings",
             component: () =>

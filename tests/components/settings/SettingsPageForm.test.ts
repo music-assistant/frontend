@@ -1,5 +1,6 @@
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
 import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { coreOwner } from "@/helpers/settings_pages";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   ConfigEntryType,
@@ -198,6 +199,92 @@ describe("SettingsPageForm", () => {
   });
 });
 
+describe("SettingsPageForm with settings the page edits itself", () => {
+  const WEBSERVER = coreOwner("webserver");
+  const customSettings = [
+    { owner: WEBSERVER, key: "base_url" },
+    { owner: WEBSERVER, key: "external_url" },
+  ];
+  // shows the keys and values of the entries it is handed, and sets one
+  const customSlot = `
+    <div data-testid="custom">
+      <span v-for="entry in entries" :key="entry.key">{{ entry.key }}={{ entry.value }};</span>
+      <button @click="setValue(entries[0].key, 'http://ma.local')" />
+    </div>`;
+
+  beforeEach(() => {
+    apiMock.getCoreConfig.mockImplementation(async (domain) =>
+      networkConfig(domain),
+    );
+  });
+
+  it("hands the page their entries and keeps them out of view in the form", async () => {
+    const wrapper = await mountCustom(customSettings);
+
+    expect(wrapper.get('[data-testid="custom"]').text()).toBe(
+      "core/webserver/base_url=auto;core/webserver/external_url=;",
+    );
+    const entries = wrapper
+      .getComponent(editConfigStub)
+      .props("configEntries") as ConfigEntry[];
+    expect(entries.filter((e) => e.hidden).map((e) => e.key)).toEqual([
+      "core/webserver/base_url",
+      "core/webserver/external_url",
+    ]);
+  });
+
+  it("sets the value the page edits on the entry the form saves", async () => {
+    const wrapper = await mountCustom(customSettings);
+
+    await wrapper.get('[data-testid="custom"] button').trigger("click");
+
+    const entries = wrapper
+      .getComponent(editConfigStub)
+      .props("configEntries") as ConfigEntry[];
+    expect(entries.find((e) => e.key === "core/webserver/base_url")).toEqual(
+      expect.objectContaining({ value: "http://ma.local" }),
+    );
+  });
+
+  it("resets them with the form and tells the page", async () => {
+    const wrapper = await mountCustom(customSettings);
+    await wrapper.get('[data-testid="custom"] button').trigger("click");
+
+    useSettingsToolbarMenu().value[0].action?.();
+
+    const entries = wrapper
+      .getComponent(editConfigStub)
+      .props("configEntries") as ConfigEntry[];
+    const baseUrl = entries.find((e) => e.key === "core/webserver/base_url")!;
+    expect(baseUrl.value).toBe(baseUrl.default_value);
+    expect(resetToDefaults).toHaveBeenCalledOnce();
+    expect(wrapper.emitted("reset")).toHaveLength(1);
+  });
+
+  it("leaves them in the form when it does not hold every one of them", async () => {
+    const wrapper = await mountCustom([
+      ...customSettings,
+      { owner: WEBSERVER, key: "missing" },
+    ]);
+
+    expect(wrapper.find('[data-testid="custom"]').exists()).toBe(false);
+    const entries = wrapper
+      .getComponent(editConfigStub)
+      .props("configEntries") as ConfigEntry[];
+    expect(entries.some((e) => e.hidden)).toBe(false);
+  });
+
+  async function mountCustom(settings: typeof customSettings) {
+    const wrapper = mount(SettingsPageForm, {
+      props: { page: "network", customSettings: settings },
+      slots: { custom: customSlot },
+      global: { stubs: { EditConfig: editConfigStub } },
+    });
+    await flushPromises();
+    return wrapper;
+  }
+});
+
 async function mountForm() {
   const wrapper = mount(SettingsPageForm, {
     props: { page: "audio_analysis" },
@@ -228,5 +315,28 @@ function streamsConfig(): CoreConfig {
         "audio_analysis",
       ),
     },
+  };
+}
+
+function networkConfig(domain: string): CoreConfig {
+  const entry = (key: string, value: string): ConfigEntry => ({
+    key,
+    category: "generic",
+    type: ConfigEntryType.STRING,
+    label: key,
+    default_value: null,
+    required: false,
+    options: [],
+    value,
+  });
+  const values: Record<string, ConfigEntry[]> = {
+    webserver: [entry("base_url", "auto"), entry("external_url", "")],
+    streams: [entry("publish_ip", "192.168.1.2")],
+    discovery: [],
+  };
+  return {
+    domain,
+    last_error: null,
+    values: Object.fromEntries(values[domain].map((e) => [e.key, e])),
   };
 }

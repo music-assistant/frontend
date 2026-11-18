@@ -485,6 +485,13 @@
         "users_description": "Manage user accounts, roles, and permissions",
         "system_description": "Configure Music Assistant server settings and core modules",
         "system": "System",
+        "network": {
+            "title": "Network",
+            "description": "Remote access, addresses, ports and discovery",
+            "web": "Web interface and API",
+            "streaming": "Audio streaming",
+            "discovery": "Discovery"
+        },
         "about": "About",
         "about_description": "Version information, credits and more",
         "auto_refresh_log": "Auto-refresh",
@@ -3211,7 +3218,7 @@
                     "unchecked": "Could not check from this device"
                 },
                 "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, change it with Edit below.",
-                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system}, in {webserver} and {streams}.",
+                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system} › {network}.",
                 "remote": {
                     "title": "Listen from outside your home",
                     "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",
@@ -3222,7 +3229,7 @@
                         "switch": "Remote access",
                         "id": "Your remote access ID",
                         "copy": "Copy the remote access ID",
-                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {remote_access}."
+                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {system} › {network} › {remote_access}."
                     },
                     "proxy": {
                         "title": "Your own reverse proxy",

@@ -607,6 +607,7 @@ describe("scope-gated routes", () => {
       ["admin", "user", "guest", "own_sources", "reads_sources"],
     ],
     ["/settings/system", ["admin"]],
+    ["/settings/network", ["admin"]],
     ["/settings/editcore/webserver", ["admin"]],
     ["/settings/audio-analysis", ["admin"]],
     ["/settings/remote-access", ["admin"]],

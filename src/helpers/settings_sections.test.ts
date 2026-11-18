@@ -23,7 +23,6 @@ const ALL_SECTIONS = [
   "profile",
   "frontend",
   "users",
-  "remote_access",
   "system",
   "about",
 ];

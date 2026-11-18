@@ -399,15 +399,14 @@ const activeTab = computed(() => {
     name === "backgroundtasks" ||
     name === "diagnostics" ||
     name === "genremanagement" ||
-    name === "storagesettings"
+    name === "storagesettings" ||
+    name === "networksettings" ||
+    name === "remoteaccesssettings"
   ) {
     return "system";
   }
   if (name.includes("frontend")) {
     return "frontend";
-  }
-  if (name.includes("remoteaccess")) {
-    return "remote_access";
   }
   if (name.includes("user")) {
     return "users";
@@ -474,12 +473,6 @@ const breadcrumbItems = computed(() => {
           to: { name: "systemsettings" },
         });
       }
-    } else if (currentTab === "remote_access") {
-      items.push({
-        title: t("settings.remote_access"),
-        disabled: name === "remoteaccesssettings",
-        to: { name: "remoteaccesssettings" },
-      });
     } else if (currentTab === "frontend") {
       items.push({
         title: t("settings.frontend"),
@@ -617,6 +610,14 @@ const breadcrumbItems = computed(() => {
         title: t("settings.storage.title"),
         disabled: true,
       });
+    })
+    .with("networksettings", () => {
+      items.push({ title: t(SETTINGS_PAGES.network.title), disabled: true });
+    })
+    .with("remoteaccesssettings", () => {
+      const { title, route: pageRoute } = SETTINGS_PAGES.network;
+      items.push({ title: t(title), disabled: false, to: pageRoute });
+      items.push({ title: t("settings.remote_access"), disabled: true });
     })
     .with("audioanalysissettings", () => {
       items.push({

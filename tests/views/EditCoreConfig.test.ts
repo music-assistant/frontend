@@ -408,20 +408,23 @@ describe("EditCoreConfig", () => {
     expect(reset).toHaveBeenCalledOnce();
   });
 
-  it("leaves out the settings the audio analysis page shows, while saving them as they are", async () => {
+  it("leaves out the settings other pages show, while saving them as they are", async () => {
     apiMock.getCoreConfig.mockResolvedValueOnce(streamsConfig());
     apiMock.saveCoreConfig.mockResolvedValueOnce(streamsConfig());
 
     const wrapper = mountWithForm("streams");
     await flushPromises();
 
-    expect(renderedKeys(wrapper)).toEqual(["publish_ip"]);
+    // the log level stays with the controller as a whole
+    expect(renderedKeys(wrapper)).toEqual(["log_level", "fade_in"]);
 
     await wrapper.find('[data-testid="config-save"]').trigger("click");
     await flushPromises();
 
     expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
       publish_ip: "publish_ip value",
+      log_level: "log_level value",
+      fade_in: "fade_in value",
       background_scan_concurrency: "background_scan_concurrency value",
     });
     expect(routerMock.push).toHaveBeenCalledWith({ name: "systemsettings" });
@@ -523,6 +526,8 @@ function streamsConfig(): CoreConfig {
     last_error: null,
     values: {
       publish_ip: stringEntry("publish_ip", "generic"),
+      log_level: stringEntry("log_level", "generic"),
+      fade_in: stringEntry("fade_in", "playback"),
       background_scan_concurrency: stringEntry(
         "background_scan_concurrency",
         "audio_analysis",
