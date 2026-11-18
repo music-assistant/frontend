@@ -78,7 +78,7 @@
           <strong>{{ $t("settings.provider_credits") }}:</strong>
           {{ credits }}
         </p>
-        <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
+        <!-- eslint-disable vue/no-v-html -- providerMarkdownToHtml sanitizes with DOMPurify -->
         <div
           v-else-if="credits"
           data-testid="catalog-detail-credits"
@@ -222,7 +222,7 @@ import {
   getProviderHelpUrl,
   shouldShowStageBadge,
 } from "@/helpers/provider_config";
-import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
+import { getExternalLinkUrl, providerMarkdownToHtml } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import {
   BookOpen,
@@ -317,6 +317,8 @@ const updateText = computed(() => {
 const credits = computed(() => props.entry.manifest.credits.join(" / "));
 
 const creditsHtml = computed(() =>
-  markdownToHtml(`**${$t("settings.provider_credits")}**: ${credits.value}`),
+  providerMarkdownToHtml(
+    `**${$t("settings.provider_credits")}**: ${credits.value}`,
+  ),
 );
 </script>
