@@ -145,6 +145,22 @@
   --sidebar-ring: #03a9f4;
 }
 
+/* Black theme: the dark theme on a true black background, for OLED screens.
+   Set together with .dark, so only the two surfaces that differ are listed. */
+.dark.black {
+  --background: #000000;
+  --sidebar: #000000;
+}
+
+/* Black has no grey surfaces to separate these, so give them a border. */
+.dark.black [data-slot="sidebar"] [data-sidebar="sidebar"] {
+  border-right: 1px solid var(--sidebar-border);
+}
+
+.dark.black .v-footer.mediacontrols-player-default {
+  border-top: 1px solid var(--sidebar-border);
+}
+
 .player-control-button {
   color: var(--muted-foreground) !important;
 }

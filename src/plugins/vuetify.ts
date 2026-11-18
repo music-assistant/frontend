@@ -69,6 +69,18 @@ export default createVuetify(
             primary: "#03a9f4",
           },
         },
+        // the dark theme on a true black background, for OLED screens
+        black: {
+          dark: true,
+          colors: {
+            fg: "#ffffff",
+            background: "#000000",
+            overlay: "#000000",
+            panel: "#232323",
+            default: "#000000",
+            primary: "#03a9f4",
+          },
+        },
       },
     },
   },

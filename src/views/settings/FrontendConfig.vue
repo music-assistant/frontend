@@ -113,6 +113,7 @@ onMounted(() => {
       options: [
         { title: "auto", value: "auto" },
         { title: "dark", value: "dark" },
+        { title: "black", value: "black" },
         { title: "light", value: "light" },
       ],
       multi_value: false,
