@@ -323,6 +323,7 @@ import {
   isHassControlPickerEntry,
 } from "@/helpers/config_entry_ui";
 import { HASS_DOMAIN } from "@/helpers/hass_controls";
+import { isEmbeddedImage } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
@@ -354,11 +355,11 @@ const isNumberEntry = computed(
 
 // Only surface an <img> when a source is actually available; otherwise the
 // element would render as a broken image (both value and default missing).
-const imageSrc = computed(
-  () =>
-    (props.confEntry.value ?? props.confEntry.default_value) as
-      string | undefined,
-);
+// A provider's image is only drawn when embedded, so it loads nothing remote.
+const imageSrc = computed(() => {
+  const src = props.confEntry.value ?? props.confEntry.default_value;
+  return typeof src === "string" && isEmbeddedImage(src) ? src : undefined;
+});
 
 const emit = defineEmits<{
   (e: "togglePassword"): void;

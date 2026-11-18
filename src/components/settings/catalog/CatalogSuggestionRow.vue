@@ -28,7 +28,13 @@
          shadow of a hovered card, and its negative margins keep it in place -->
     <div
       ref="scroller"
-      class="-mx-6 -mt-1 -mb-3 flex snap-x snap-mandatory scroll-px-6 gap-4 overflow-x-auto px-6 pt-1 pb-5 max-md:-mx-3 max-md:scroll-px-3 max-md:px-3"
+      :class="scrollerClass"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+      @click.capture="onClickCapture"
+      @dragstart.prevent
     >
       <div
         v-for="suggestion in suggestions"
@@ -52,14 +58,16 @@
 <script setup lang="ts">
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import { Button } from "@/components/ui/button";
+import { useDragScroll } from "@/composables/useDragScroll";
 import {
   type CatalogSuggestion,
   isPersonalSuggestion,
 } from "@/helpers/catalog_recommendations";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
+import { cn } from "@/lib/utils";
 import { $t } from "@/plugins/i18n";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
-import { useTemplateRef } from "vue";
+import { computed, useTemplateRef } from "vue";
 
 interface Props {
   suggestions: CatalogSuggestion[];
@@ -77,6 +85,16 @@ const emit = defineEmits<{
 }>();
 
 const scroller = useTemplateRef<HTMLElement>("scroller");
+const { dragging, onPointerDown, onPointerMove, onPointerUp, onClickCapture } =
+  useDragScroll(scroller);
+
+const scrollerClass = computed(() =>
+  cn(
+    "-mx-6 -mt-1 -mb-3 flex snap-x snap-mandatory scroll-px-6 gap-4 overflow-x-auto px-6 pt-1 pb-5 max-md:-mx-3 max-md:scroll-px-3 max-md:px-3",
+    // snapping fights the drag while the pointer drives the scroll
+    dragging.value && "cursor-grabbing snap-none select-none",
+  ),
+);
 
 // a page of cards at a time, keeping one in view for context
 const scroll = (direction: 1 | -1) => {
