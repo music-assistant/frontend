@@ -168,12 +168,15 @@ const visibleRows = computed(() => {
 });
 
 // how many other episodes the podcast holds, for the editor's meta line;
-// siblings counts this episode too, and is empty until it has loaded
+// siblings counts this episode too, and still holds the previous podcast's
+// episodes until this episode's podcast is checked
 const rowMeta = computed<Partial<Record<PodcastEpisodeRowId, string>>>(() => {
   const count = siblings.value.length - 1;
   return {
     episodes:
-      count >= 0 ? $t("n_episodes", count, { named: { count } }) : undefined,
+      podcastChecked.value && count >= 0
+        ? $t("n_episodes", count, { named: { count } })
+        : undefined,
   };
 });
 

@@ -350,6 +350,33 @@ describe("PodcastEpisodeDetails", () => {
       expect(editor(wrapper).props("rowMeta").episodes).toBe("2 episodes");
     });
 
+    it("leaves out the episode count until another podcast's episodes have loaded", async () => {
+      const otherShow = podcast({ item_id: "pod2", provider: "rss" });
+      const otherEpisodes = [1, 2, 3, 4].map((position) =>
+        podcastEpisode({
+          item_id: `other${position}`,
+          provider: "rss",
+          position,
+          podcast: otherShow,
+        }),
+      );
+      const wrapper = await mountDetails(EPISODES[1]);
+      let resolveEpisodes!: (value: PodcastEpisode[]) => void;
+      mockGetPodcastEpisode.mockResolvedValue(otherEpisodes[0]);
+      mockGetPodcastEpisodes.mockReturnValue(
+        new Promise((resolve) => (resolveEpisodes = resolve)),
+      );
+      mockGetPodcast.mockResolvedValue(otherShow);
+
+      await wrapper.setProps({ itemId: "other1" });
+      await flushPromises();
+      expect(editor(wrapper).props("rowMeta").episodes).toBeUndefined();
+
+      resolveEpisodes(otherEpisodes);
+      await flushPromises();
+      expect(editor(wrapper).props("rowMeta").episodes).toBe("3 episodes");
+    });
+
     it("closes the rows editor when another episode opens", async () => {
       const wrapper = await mountDetails(EPISODES[1]);
       hero(wrapper).vm.$emit("edit-rows");
