@@ -464,7 +464,7 @@ const loadArtistAudiobooks = async function (params: LoadDataParams) {
     providerMapping?.item_id ?? artist.item_id,
     providerMapping?.provider_instance ?? artist.provider,
     artist.artist_type,
-    undefined,
+    true,
     params.collapseCollections,
     params.search,
     params.limit,

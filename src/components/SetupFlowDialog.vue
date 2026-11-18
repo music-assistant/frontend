@@ -163,7 +163,7 @@
             class="flex w-full flex-col items-center justify-center gap-4 py-3 text-center"
           >
             <img
-              v-if="step.image"
+              v-if="isEmbeddedImage(step.image)"
               :src="step.image"
               alt=""
               class="max-h-[220px] max-w-[220px] rounded-lg"
@@ -321,7 +321,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
-import { copyToClipboard } from "@/helpers/utils";
+import { copyToClipboard, isEmbeddedImage } from "@/helpers/utils";
 import {
   allRequiredValuesPresent,
   isEntryDisabled,

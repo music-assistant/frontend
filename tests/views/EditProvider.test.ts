@@ -145,6 +145,7 @@ vi.mock("@/helpers/utils", async (importOriginal) => {
         : undefined,
     // the real renderer, so the error banner's markdown is assertable
     markdownToHtml: actual.markdownToHtml,
+    providerMarkdownToHtml: actual.providerMarkdownToHtml,
     openActionUrlEntries: <T>(entries: T) => entries,
   };
 });

@@ -1185,7 +1185,6 @@
     "remove_provider_mapping_confirm": "您确定要删除此提供程序映射吗？这将取消此程序与当前项目详细信息的链接。如果重新扫描所有提供程序匹配，它可能会返回。",
     "map_provider_mapping": "将此提供程序条目映射到当前项目",
     "player_tip": {
-        "selected_player": "选择播放器",
         "currently_playing": "正在播放",
         "click_to_change": "点击下方更改输出设备"
     },

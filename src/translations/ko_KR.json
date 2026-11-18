@@ -1434,7 +1434,6 @@
     "remove_provider_mapping_confirm": "이 항목에서 이 소스의 연결을 해제하시겠습니까? 모든 음악 소스에서 일치 항목을 다시 검색하면 다시 연결될 수 있습니다.",
     "map_provider_mapping": "이 소스 항목을 현재 항목에 연결",
     "player_tip": {
-        "selected_player": "선택한 플레이어",
         "currently_playing": "현재 재생 중인 기기",
         "click_to_change": "출력 기기를 바꾸려면 아래를 클릭하세요"
     },
@@ -2380,7 +2379,6 @@
     "grouped_volume": "그룹 볼륨",
     "player_select": {
         "active_player_volume_only": "활성 플레이어에만 볼륨 슬라이더 표시",
-        "and_more": "...외 {0}개",
         "disable_player_confirmation": "플레이어 설정에서 다시 활성화할 때까지 이 플레이어가 숨겨집니다.",
         "disable_player_title": "{0}을(를) 비활성화하시겠습니까?",
         "display_options": "표시 옵션",
@@ -2611,8 +2609,7 @@
                 "music_hub": {
                     "label": "음악 허브로 사용",
                     "description": "스트리밍 서비스와 로컬 음악을 하나의 라이브러리로 모읍니다."
-                },
-                "settings_note": "나중에 설정에서 변경할 수 있습니다."
+                }
             },
             "music_sources": {
                 "title": "음악 소스 추가",
@@ -2774,10 +2771,6 @@
         "end": "둘러보기 종료",
         "next": "다음",
         "step_counter": "{current} \/ {total}",
-        "offer": {
-            "title": "간단히 둘러볼까요?",
-            "description": "앱의 주요 부분을 짧게 안내합니다. 프로필 메뉴에서 언제든 다시 볼 수 있습니다."
-        },
         "stops": {
             "menu": {
                 "title": "메뉴",
