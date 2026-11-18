@@ -18,6 +18,7 @@ export function providerInstance(
     available: true,
     // only a music provider tells whether it streams
     is_streaming_provider: type === ProviderType.MUSIC ? false : null,
+    supported_artist_types: [],
     ...overrides,
   };
 }

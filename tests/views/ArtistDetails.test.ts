@@ -137,6 +137,9 @@ vi.mock("@/components/ProviderDetails.vue", () => ({
 vi.mock("@/components/MediaItemImages.vue", () => ({
   default: { name: "MediaItemImages", template: '<div data-row="artwork" />' },
 }));
+vi.mock("@/composables/useHistoryScrollRestore", () => ({
+  useHistoryScrollRestore: () => ({ returning: () => false }),
+}));
 // the stub renders path/itemtype so tests can read which preference key
 // (see userPreferences.ts's getItemsListingPreferences) each row was given
 vi.mock("@/components/ItemsListing.vue", () => ({
@@ -488,7 +491,7 @@ describe("ArtistDetails", () => {
       "author-1",
       "library",
       ArtistType.AUTHOR,
-      undefined,
+      true,
       true,
       "story",
       20,
@@ -527,7 +530,7 @@ describe("ArtistDetails", () => {
       "provider-author",
       "qobuz_1",
       ArtistType.AUTHOR,
-      undefined,
+      true,
       undefined,
       "",
       20,

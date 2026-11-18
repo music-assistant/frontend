@@ -840,7 +840,6 @@
     "remove_provider_mapping_confirm": "Czy na pewno chcesz usunąć mapowanie dostawcy? Spowoduje to odłączenie pozycji od bieżących szczegółów pozycji. Może powrócić, jeśli wykonasz ponowne skanowanie dla wszystkich dopasowań dostawcy.",
     "map_provider_mapping": "Mapuj dostawcę do tego elementu",
     "player_tip": {
-        "selected_player": "Wybrany odtwarzacz",
         "currently_playing": "Obecnie odtwarzane na",
         "click_to_change": "Kliknij poniżej, aby zmienić urządzenie wyjściowe"
     },

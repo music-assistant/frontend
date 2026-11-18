@@ -1947,6 +1947,7 @@ export interface ProviderInstance {
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider: boolean | null;
+  supported_artist_types: ArtistType[];
 }
 
 export interface DashboardDevice {

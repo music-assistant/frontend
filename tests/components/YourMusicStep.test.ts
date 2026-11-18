@@ -32,6 +32,7 @@ function addSource(instanceId: string, name: string, builtin = false) {
     name,
     type: ProviderType.MUSIC,
     supported_features: [],
+    supported_artist_types: [],
     available: true,
     is_streaming_provider: null,
   };

@@ -1,4 +1,4 @@
-import { createI18n } from "vue-i18n";
+import { createI18n, type PluralizationRule } from "vue-i18n";
 
 export interface LocaleOption {
   value: string;
@@ -107,6 +107,20 @@ export function resolveLocale(
 
 const availableLocales = Object.keys(messages ?? {});
 
+// Slovak and Serbian messages carry one|few|other forms; the default rule
+// reads three forms as zero|one|other, so pick the form via CLDR instead.
+// TODO: vue-i18n v12 does this itself via Intl.PluralRules, but only for BCP-47
+// locale keys (sk-SK, not sk_SK). Drop these rules once we upgrade and map the keys.
+function oneFewOtherRule(locale: string): PluralizationRule {
+  const rules = new Intl.PluralRules(locale);
+  return (choice, choicesLength, orgRule) => {
+    if (choicesLength !== 3) return orgRule!(choice, choicesLength);
+    const category = rules.select(Math.abs(choice));
+    if (category === "one") return 0;
+    return category === "few" ? 1 : 2;
+  };
+}
+
 const i18n = createI18n({
   legacy: false,
   globalInjection: true,
@@ -116,6 +130,11 @@ const i18n = createI18n({
   fallbackWarn: false,
   silentTranslationWarn: true,
   messages,
+  pluralRules: {
+    sk_SK: oneFewOtherRule("sk"),
+    sr: oneFewOtherRule("sr"),
+    sr_Latn: oneFewOtherRule("sr"),
+  },
 });
 
 // @ts-ignore
