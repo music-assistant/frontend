@@ -9,6 +9,8 @@ const { apiMock, routerPush } = vi.hoisted(() => ({
     getCoreConfigs: vi.fn(),
     providerManifests: {
       discovery: { name: "Discovery" },
+      player_queues: { name: "Player queues" },
+      players: { name: "Players" },
       streams: { name: "Streams" },
       tasks: { name: "Background tasks" },
       webserver: { name: "Webserver" },
@@ -92,6 +94,21 @@ describe("SystemConfig", () => {
       expect(routerPush).toHaveBeenCalledWith("/settings/network");
     },
   );
+
+  it("leaves the modules of the playback defaults to the Playback page", async () => {
+    apiMock.getCoreConfigs.mockResolvedValue([
+      coreConfig("player_queues"),
+      coreConfig("players"),
+      coreConfig("streams"),
+    ]);
+    const wrapper = await mountPage("list");
+
+    const text = entryTitles(wrapper).join("\n");
+    // the streams keep their other settings here
+    expect(text).toContain("Streams");
+    expect(text).not.toContain("Player queues");
+    expect(text).not.toContain("Players");
+  });
 
   it("no longer lists the audio analysis status", async () => {
     const wrapper = await mountPage("list");

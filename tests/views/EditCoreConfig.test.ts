@@ -416,7 +416,7 @@ describe("EditCoreConfig", () => {
     await flushPromises();
 
     // the log level stays with the controller as a whole
-    expect(renderedKeys(wrapper)).toEqual(["log_level", "fade_in"]);
+    expect(renderedKeys(wrapper)).toEqual(["log_level", "stream_source_mode"]);
 
     await wrapper.find('[data-testid="config-save"]').trigger("click");
     await flushPromises();
@@ -424,7 +424,8 @@ describe("EditCoreConfig", () => {
     expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
       publish_ip: "publish_ip value",
       log_level: "log_level value",
-      fade_in: "fade_in value",
+      buffer_size: "buffer_size value",
+      stream_source_mode: "stream_source_mode value",
       background_scan_concurrency: "background_scan_concurrency value",
     });
     expect(routerMock.push).toHaveBeenCalledWith({ name: "systemsettings" });
@@ -527,7 +528,8 @@ function streamsConfig(): CoreConfig {
     values: {
       publish_ip: stringEntry("publish_ip", "generic"),
       log_level: stringEntry("log_level", "generic"),
-      fade_in: stringEntry("fade_in", "playback"),
+      buffer_size: stringEntry("buffer_size", "playback"),
+      stream_source_mode: stringEntry("stream_source_mode", "source_selection"),
       background_scan_concurrency: stringEntry(
         "background_scan_concurrency",
         "audio_analysis",

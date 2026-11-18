@@ -1,5 +1,5 @@
 import { type ConfigEntry, Scope } from "@/plugins/api/interfaces";
-import { Activity } from "@lucide/vue";
+import { Activity, CirclePlay } from "@lucide/vue";
 import type { Component } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
@@ -15,7 +15,8 @@ export interface SettingsSource {
   owner: SettingsOwner;
   // the categories of the owner's entries the page shows; left out: all of them
   categories?: readonly string[];
-  // the heading of the source's entries on a page with several sources
+  // the heading of the source's entries on a page with several sources; left
+  // out: its entries show under their categories
   title?: string;
 }
 
@@ -36,7 +37,8 @@ export interface SettingsPage {
   sources: readonly SettingsSource[];
 }
 
-export type SettingsPageId = "audio_analysis" | "background_tasks" | "network";
+export type SettingsPageId =
+  "audio_analysis" | "background_tasks" | "network" | "playback";
 
 // a settings page with the row leading to it
 export interface LinkedSettingsPage {
@@ -49,6 +51,8 @@ export const STREAMS_DOMAIN = "streams";
 export const TASKS_DOMAIN = "tasks";
 export const WEBSERVER_DOMAIN = "webserver";
 export const DISCOVERY_DOMAIN = "discovery";
+export const PLAYER_QUEUES_DOMAIN = "player_queues";
+export const PLAYERS_DOMAIN = "players";
 export const AUDIO_ANALYSIS_CATEGORY = "audio_analysis";
 // the category of an entry that names none
 const GENERIC_CATEGORY = "generic";
@@ -101,6 +105,26 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
         owner: coreOwner(DISCOVERY_DOMAIN),
         title: "settings.network.discovery",
       },
+    ],
+  },
+  playback: {
+    title: "settings.playback.title",
+    route: { name: "playbacksettings" },
+    link: {
+      section: "players",
+      icon: CirclePlay,
+      label: "settings.playback.title",
+      description: "settings.playback.description",
+      requiresScope: Scope.CONFIG_CORE_WRITE,
+    },
+    // the sections follow the order of the sources
+    sources: [
+      { owner: coreOwner(PLAYER_QUEUES_DOMAIN) },
+      {
+        owner: coreOwner(STREAMS_DOMAIN),
+        categories: ["playback", "crossfade", "volume_normalization"],
+      },
+      { owner: coreOwner(PLAYERS_DOMAIN) },
     ],
   },
 };

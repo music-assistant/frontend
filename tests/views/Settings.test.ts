@@ -43,6 +43,7 @@ const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
     routeState: {
       name: "editplayeroptions",
       params: { playerId: "kitchen" } as Record<string, string>,
+      query: {} as Record<string, string>,
     },
   }));
 
@@ -79,7 +80,7 @@ vi.mock("vue-router", async (importOriginal) => ({
       value: {
         name: routeState.name,
         params: routeState.params,
-        query: {},
+        query: routeState.query,
       },
     },
     push: routerPush,
@@ -265,9 +266,11 @@ describe("Settings breadcrumbs on the storage page", () => {
 function pageTrail(
   name: string,
   params: Record<string, string> = {},
+  query: Record<string, string> = {},
 ): ToolbarHeadingItem[] {
   routeState.name = name;
   routeState.params = params;
+  routeState.query = query;
   const wrapper = mount(Settings, {
     global: {
       stubs: {
@@ -406,6 +409,67 @@ describe("Settings breadcrumbs on the network pages", () => {
         to: { name: "networksettings" },
       },
       { title: "settings.remote_access", disabled: true },
+    ]);
+  });
+});
+
+describe("Settings breadcrumbs on the pages below the players", () => {
+  const players = {
+    title: "settings.players",
+    disabled: false,
+    to: { name: "playersettings" },
+  };
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+    routeState.query = {};
+    delete apiMock.providerManifests.sonos;
+  });
+
+  it("hang the playback defaults under the players", () => {
+    expect(pageTrail("playbacksettings")).toEqual([
+      players,
+      { title: "settings.playback.title", disabled: true },
+    ]);
+  });
+
+  it("hang the player providers under the players", () => {
+    expect(pageTrail("providersettings", {}, { types: "player" })).toEqual([
+      players,
+      { title: "settings.playerproviders", disabled: true },
+    ]);
+  });
+
+  it("hang the settings of a player provider under the player providers", async () => {
+    apiMock.getProvider.mockReturnValue(undefined);
+    apiMock.providerManifests.sonos = {
+      name: "Sonos",
+      type: ProviderType.PLAYER,
+    };
+
+    expect(await providerTrail(true, "sonos--kitchen")).toEqual([
+      players,
+      {
+        title: "settings.playerproviders",
+        disabled: false,
+        to: { name: "providersettings", query: { types: "player" } },
+      },
+      { title: "Sonos", disabled: true },
+    ]);
+  });
+
+  it("leave the music sources as they are", () => {
+    expect(pageTrail("providersettings", {}, { types: "music" })).toEqual([
+      {
+        title: "settings.music_sources",
+        disabled: true,
+        to: { name: "providersettings", query: { types: "music" } },
+      },
     ]);
   });
 });

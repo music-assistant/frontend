@@ -13,15 +13,17 @@ import { computed } from "vue";
 
 /**
  * The rows a settings section shows above its list, each leading to a settings
- * page the current user may open. Renders nothing without such pages.
+ * page the current user may open. Renders nothing without rows.
  */
 const props = defineProps<{
   // the name of the settings section
   section: string | undefined;
+  // rows of the section itself, after the ones leading to its pages
+  extraRows?: readonly SettingsRow[];
 }>();
 
-const rows = computed<SettingsRow[]>(() =>
-  settingsSectionLinks(props.section, (scope) =>
+const rows = computed<SettingsRow[]>(() => [
+  ...settingsSectionLinks(props.section, (scope) =>
     authManager.hasScope(scope),
   ).map(({ id, route, link }) => ({
     key: id,
@@ -30,5 +32,6 @@ const rows = computed<SettingsRow[]>(() =>
     description: $t(link.description),
     to: route,
   })),
-);
+  ...(props.extraRows ?? []),
+]);
 </script>

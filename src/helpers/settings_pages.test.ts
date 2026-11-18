@@ -14,6 +14,8 @@ import {
   isEntryClaimed,
   isOwnerFullyClaimed,
   pageOfWholeOwner,
+  PLAYER_QUEUES_DOMAIN,
+  PLAYERS_DOMAIN,
   SETTINGS_PAGES,
   settingsSectionLinks,
   sourceIncludesEntry,
@@ -74,10 +76,17 @@ describe("SETTINGS_PAGES", () => {
     }
   });
 
-  it("titles each source of a page with several sources", () => {
+  it("groups a page with several sources either by source or by category", () => {
     for (const page of Object.values(SETTINGS_PAGES)) {
       if (page.sources.length < 2) continue;
-      for (const source of page.sources) expect(source.title).toBeTruthy();
+      const titled = page.sources.filter((source) => source.title);
+      expect([0, page.sources.length]).toContain(titled.length);
+    }
+  });
+
+  it("titles no source of a page with a single source", () => {
+    for (const page of Object.values(SETTINGS_PAGES)) {
+      if (page.sources.length === 1) expect(page.sources[0].title).toBeFalsy();
     }
   });
 
@@ -123,8 +132,19 @@ describe("isEntryClaimed", () => {
   });
 
   it("leaves the other entries of the streams controller alone", () => {
-    expect(isEntryClaimed(STREAMS, entry("fade_in", "playback"))).toBe(false);
+    expect(
+      isEntryClaimed(STREAMS, entry("stream_source_mode", "source_selection")),
+    ).toBe(false);
   });
+
+  it.each(["playback", "crossfade", "volume_normalization"])(
+    "claims the %s entries of the streams controller",
+    (category) => {
+      expect(isEntryClaimed(STREAMS, entry("buffer_size", category))).toBe(
+        true,
+      );
+    },
+  );
 
   it("claims the network entries of the streams controller", () => {
     expect(isEntryClaimed(STREAMS, entry("bind_port", "generic"))).toBe(true);
@@ -155,7 +175,11 @@ describe("claimedEntries", () => {
       AUDIO_ANALYSIS_CATEGORY,
     );
     expect(
-      claimedEntries(STREAMS, [first, entry("fade_in", "playback"), second]),
+      claimedEntries(STREAMS, [
+        first,
+        entry("stream_source_mode", "source_selection"),
+        second,
+      ]),
     ).toEqual([first, second]);
   });
 });
@@ -179,6 +203,8 @@ describe("pageOfWholeOwner", () => {
     expect(pageOfWholeOwner(TASKS)).toBe("background_tasks");
     expect(pageOfWholeOwner(coreOwner(WEBSERVER_DOMAIN))).toBe("network");
     expect(pageOfWholeOwner(coreOwner(DISCOVERY_DOMAIN))).toBe("network");
+    expect(pageOfWholeOwner(coreOwner(PLAYER_QUEUES_DOMAIN))).toBe("playback");
+    expect(pageOfWholeOwner(coreOwner(PLAYERS_DOMAIN))).toBe("playback");
     expect(pageOfWholeOwner(STREAMS)).toBeUndefined();
   });
 });
@@ -191,6 +217,24 @@ describe("settingsSectionLinks", () => {
         scopeChecker(BUILTIN_ROLE_SCOPES.admin),
       ).map((link) => link.id),
     ).toEqual(["audio_analysis"]);
+  });
+
+  it("links the players section to the playback defaults for an admin", () => {
+    expect(
+      settingsSectionLinks(
+        "players",
+        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+      ).map((link) => link.id),
+    ).toEqual(["playback"]);
+  });
+
+  it("leaves the playback defaults out for a role that may not change server settings", () => {
+    expect(
+      settingsSectionLinks(
+        "players",
+        scopeChecker([Scope.CONFIG_PLAYERS_WRITE]),
+      ),
+    ).toEqual([]);
   });
 
   it("leaves a link out for a role without its scope", () => {

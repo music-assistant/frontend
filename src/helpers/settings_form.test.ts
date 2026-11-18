@@ -9,6 +9,7 @@ import { coreOwner } from "./settings_pages";
 
 const STREAMS = coreOwner("streams");
 const TASKS = coreOwner("tasks");
+const QUEUES = coreOwner("player_queues");
 
 function entry(
   key: string,
@@ -86,6 +87,58 @@ describe("buildSettingsForm", () => {
         key: "core/tasks/max_concurrent_tasks",
         category: "core/tasks",
         category_label: "text of tasks",
+      },
+    ]);
+  });
+
+  it("shows the entries of sources without a title under their categories, which owners share", () => {
+    const form = buildSettingsForm(
+      [
+        {
+          source: { owner: QUEUES },
+          entries: [
+            entry("crossfade_mode", "crossfade", {
+              category_label: "Crossfade",
+            }),
+            entry("pause_timeout", "playback", {
+              category_label: "Queue Playback",
+            }),
+          ],
+        },
+        {
+          source: { owner: STREAMS, categories: ["crossfade"] },
+          entries: [
+            entry("allow_crossfade_same_album", "crossfade", {
+              category_label: "Crossfade",
+            }),
+            entry("bind_port"),
+          ],
+        },
+      ],
+      translate,
+    );
+
+    expect(
+      form.entries.map(({ key, category, category_label }) => ({
+        key,
+        category,
+        category_label,
+      })),
+    ).toEqual([
+      {
+        key: "core/player_queues/crossfade_mode",
+        category: "crossfade",
+        category_label: "Crossfade",
+      },
+      {
+        key: "core/player_queues/pause_timeout",
+        category: "playback",
+        category_label: "Queue Playback",
+      },
+      {
+        key: "core/streams/allow_crossfade_same_album",
+        category: "crossfade",
+        category_label: "Crossfade",
       },
     ]);
   });

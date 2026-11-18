@@ -9,7 +9,6 @@ import {
   Puzzle,
   Server,
   SlidersHorizontal,
-  Speaker,
   UserCog,
   Users,
 } from "@lucide/vue";
@@ -50,23 +49,14 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     requiresScope: Scope.CONFIG_PROVIDERS_READ,
   },
   {
-    name: "player_providers",
-    label: "settings.playerproviders",
-    description: "settings.player_providers_description",
-    icon: Speaker,
-    color: "green",
-    route: { name: "providersettings", query: { types: "player" } },
-    // the provider types share the route a member opens for its own music
-    // sources, managing any other type takes managing every provider
-    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-  },
-  {
     name: "metadata_providers",
     label: "settings.metadataproviders",
     description: "settings.metadata_providers_description",
     icon: FileCode,
     color: "indigo",
     route: { name: "providersettings", query: { types: "metadata" } },
+    // the provider types share the route a member opens for its own music
+    // sources, managing any other type takes managing every provider
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
   },
   {
@@ -140,14 +130,15 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
 ];
 
-// the settings section listing the providers of each type
-const PROVIDER_TYPE_SECTIONS: Readonly<Record<ProviderType, string>> = {
-  [ProviderType.MUSIC]: "music_providers",
-  [ProviderType.PLAYER]: "player_providers",
-  [ProviderType.METADATA]: "metadata_providers",
-  [ProviderType.PLUGIN]: "plugin_providers",
-  [ProviderType.AUDIO_ANALYSIS]: "audio_analysis_providers",
-};
+// the settings section listing the providers of each type; the player
+// providers are listed from the players section
+const PROVIDER_TYPE_SECTIONS: Readonly<Partial<Record<ProviderType, string>>> =
+  {
+    [ProviderType.MUSIC]: "music_providers",
+    [ProviderType.METADATA]: "metadata_providers",
+    [ProviderType.PLUGIN]: "plugin_providers",
+    [ProviderType.AUDIO_ANALYSIS]: "audio_analysis_providers",
+  };
 
 /**
  * The settings sections the current user may open.
@@ -163,8 +154,8 @@ export function availableSettingsSections(
 }
 
 /**
- * The name of the settings section listing the providers of a type, if it is a
- * known provider type.
+ * The name of the settings section listing the providers of a type, if a
+ * section of its own lists them.
  */
 export function providerSettingsSectionName(
   type: string | undefined,
