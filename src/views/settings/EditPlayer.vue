@@ -237,6 +237,7 @@ import {
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
+import { getPlayerActionProvider } from "@/helpers/action_result";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
 import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
@@ -531,6 +532,8 @@ const { onAction } = useConfigAction({
   invokeAction: (action) =>
     api.invokePlayerConfigAction(config.value!.player_id, action),
   saveValues: (values) => api.savePlayerConfig(props.playerId!, values),
+  answeredBy: (action) =>
+    getPlayerActionProvider(api.players[config.value!.player_id], action),
 });
 
 async function loadConfig(playerId: string) {

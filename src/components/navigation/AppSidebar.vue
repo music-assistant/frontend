@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NavMain from "@/components/navigation/NavMain.vue";
+import NavProviderPages from "@/components/navigation/NavProviderPages.vue";
 import NavShortcuts from "@/components/navigation/NavShortcuts.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -185,6 +186,7 @@ onUnmounted(() => {
         section-id="plugins"
         :edit-mode="editMode"
       />
+      <NavProviderPages />
       <NavMain
         :items="systemItems"
         :label="sections.system.label"
