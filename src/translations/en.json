@@ -1009,7 +1009,7 @@
         "merge_player_confirmation_outputs": "{0} disappears and its outputs ({2}) move to {1}. Settings only {0} has are kept. Its queue is cleared.",
         "merge_player_confirm": "Merge",
         "player_merged": "Players merged",
-        "split_off_output": "Split off an output",
+        "split_off_output": "Split off as its own player",
         "split_off_output_title": "Split {0} off {1}?",
         "split_off_output_confirmation": "{0} is no longer part of {1} and shows up as a new player of its own, with default settings. {1} keeps its name, settings and queue.",
         "split_off": "Split off",
