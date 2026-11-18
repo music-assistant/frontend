@@ -53,6 +53,21 @@ const {
   mockLoadArtistAppearsOnCount: vi.fn(),
 }));
 
+const { route, mockRouterReplace } = vi.hoisted(() => ({
+  route: { name: "artist", params: {}, query: {} } as {
+    name: string;
+    params: Record<string, string>;
+    query: Record<string, string>;
+  },
+  mockRouterReplace: vi.fn(),
+}));
+
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRoute: () => route,
+  useRouter: () => ({ replace: mockRouterReplace }),
+}));
+
 vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
@@ -202,6 +217,8 @@ function pathFor(wrapper: VueWrapper, itemtype: string) {
 
 describe("ArtistDetails", () => {
   beforeEach(() => {
+    route.name = "artist";
+    mockRouterReplace.mockReset();
     mockGetArtist.mockReset();
     mockGetArtistAudiobooks.mockReset().mockResolvedValue([]);
     mockSubscribe.mockReset().mockReturnValue(() => {});
@@ -438,6 +455,40 @@ describe("ArtistDetails", () => {
     expect(shelf?.props("items")).toEqual([]);
     expect(shelf?.props("emptyMessage")).toBe("discography_types_empty");
   });
+
+  it.each([
+    [ArtistType.AUTHOR, "artist", true],
+    [ArtistType.NARRATOR, "artist", true],
+    [ArtistType.AUTHOR, "audiobookartist", false],
+    [ArtistType.SINGER, "artist", false],
+  ])(
+    "moves a %s opened on the %s route to the audiobooks section: %s",
+    async (artistType, routeName, moved) => {
+      route.name = routeName;
+      route.params = { provider: "deezer", itemId: "author_1" };
+      await mountDetails(
+        artist({
+          item_id: "author_1",
+          provider: "deezer",
+          artist_type: artistType,
+        }),
+      );
+
+      expect(mockRouterReplace.mock.calls).toEqual(
+        moved
+          ? [
+              [
+                {
+                  name: "audiobookartist",
+                  params: { provider: "deezer", itemId: "author_1" },
+                  query: {},
+                },
+              ],
+            ]
+          : [],
+      );
+    },
+  );
 
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {
     const wrapperA = await mountDetails(

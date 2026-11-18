@@ -313,6 +313,20 @@ describe("AI Radio guard", () => {
   });
 });
 
+describe("audiobook artist routes", () => {
+  it.each([
+    ["/audiobooks/artists/deezer/author_1", "audiobookartist"],
+    [
+      "/audiobooks/artists/deezer/author_1/audiobooks",
+      "audiobookartistlisting",
+    ],
+    ["/audiobooks/deezer/book_1", "audiobook"],
+    ["/audiobooks/deezer/collection/series_1", "collection"],
+  ])("resolves %s to %s", (path, name) => {
+    expect(resolveRoute(path).name).toBe(name);
+  });
+});
+
 describe("player settings routes", () => {
   it.each(PLAYER_SETTINGS_ROUTES)(
     "opens $name on a page of its own",

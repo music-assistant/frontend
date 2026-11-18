@@ -53,6 +53,10 @@ import {
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import {
+  AUDIOBOOK_ARTIST_LISTING_ROUTE,
+  AUDIOBOOK_ARTIST_ROUTE,
+} from "@/helpers/author_narrator";
+import {
   DISCOGRAPHY_TYPES,
   validDiscographyTypes,
 } from "@/helpers/discography_types";
@@ -234,7 +238,10 @@ const config = computed<ListingConfig | undefined>(() => {
 
 const backToArtist = function () {
   goBack(router, {
-    name: "artist",
+    name:
+      route.name === AUDIOBOOK_ARTIST_LISTING_ROUTE
+        ? AUDIOBOOK_ARTIST_ROUTE
+        : "artist",
     params: { provider: props.provider, itemId: props.itemId },
   });
 };

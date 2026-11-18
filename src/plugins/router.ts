@@ -1,3 +1,7 @@
+import {
+  AUDIOBOOK_ARTIST_LISTING_ROUTE,
+  AUDIOBOOK_ARTIST_ROUTE,
+} from "@/helpers/author_narrator";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
@@ -433,6 +437,25 @@ export const routes: RouteRecordRaw[] = [
             component: () =>
               import(
                 /* webpackChunkName: "collection" */ "@/views/CollectionDetails.vue"
+              ),
+            props: true,
+          },
+          // authors and narrators keep the audiobooks section active
+          {
+            path: "artists/:provider/:itemId",
+            name: AUDIOBOOK_ARTIST_ROUTE,
+            component: () =>
+              import(
+                /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
+              ),
+            props: true,
+          },
+          {
+            path: "artists/:provider/:itemId/:listing",
+            name: AUDIOBOOK_ARTIST_LISTING_ROUTE,
+            component: () =>
+              import(
+                /* webpackChunkName: "artistlisting" */ "@/views/ArtistListing.vue"
               ),
             props: true,
           },

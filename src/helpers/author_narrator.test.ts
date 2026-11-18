@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAuthorOrNarrator } from "./author_narrator";
+import { detailRouteName, isAuthorOrNarrator } from "./author_narrator";
 import {
   ArtistType,
   MediaType,
@@ -24,5 +24,17 @@ describe("isAuthorOrNarrator", () => {
     [MediaType.ALBUM, undefined, false],
   ])("%s of type %s is %s", (mediaType, artistType, expected) => {
     expect(isAuthorOrNarrator(item(mediaType, artistType))).toBe(expected);
+  });
+});
+
+describe("detailRouteName", () => {
+  it.each([
+    [MediaType.ARTIST, ArtistType.AUTHOR, "audiobookartist"],
+    [MediaType.ARTIST, ArtistType.NARRATOR, "audiobookartist"],
+    [MediaType.ARTIST, ArtistType.SINGER, "artist"],
+    [MediaType.ARTIST, undefined, "artist"],
+    [MediaType.AUDIOBOOK, undefined, "audiobook"],
+  ])("%s of type %s opens %s", (mediaType, artistType, expected) => {
+    expect(detailRouteName(item(mediaType, artistType))).toBe(expected);
   });
 });

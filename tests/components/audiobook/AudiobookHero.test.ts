@@ -89,7 +89,7 @@ describe("AudiobookHero", () => {
 
     await wrapper.get("button").trigger("click");
     expect(routerPush).toHaveBeenCalledWith({
-      name: "artist",
+      name: "audiobookartist",
       params: { itemId: "author_1", provider: "deezer" },
     });
   });

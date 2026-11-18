@@ -215,16 +215,18 @@ export const getAuthorsNarratorsArray = function (
 export const getAudiobookCollectionArtists = function (
   collection: MediaCollection<Audiobook>,
   selector: (book: Audiobook) => (string | Artist)[],
-): string[] {
-  const artists = new Set<string>();
+): (string | Artist)[] {
+  // one entry per name, where a linkable artist wins over a plain name
+  const people = new Map<string, string | Artist>();
 
   collection.items.forEach((book) => {
-    getAuthorsNarratorsArray(selector(book)).forEach((name) =>
-      artists.add(name),
-    );
+    selector(book).forEach((person) => {
+      const name = typeof person === "string" ? person : person.name;
+      if (typeof people.get(name) !== "object") people.set(name, person);
+    });
   });
 
-  return [...artists];
+  return [...people.values()];
 };
 
 export const getBrowseFolderName = function (browseItem: BrowseFolder) {
