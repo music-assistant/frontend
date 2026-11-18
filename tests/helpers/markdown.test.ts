@@ -123,6 +123,32 @@ describe("providerMarkdownToHtml", () => {
   });
 });
 
+describe.each([
+  ["markdownToHtml", markdownToHtml],
+  ["providerMarkdownToHtml", providerMarkdownToHtml],
+])("%s", (_name, render) => {
+  it("leaves out a style block after a paragraph", () => {
+    const html = render("Intro\n\n<style>p { color: red; }</style>");
+
+    expect(html).toContain("<p>Intro</p>");
+    expect(html).not.toContain("<style");
+    expect(html).not.toContain("color: red");
+  });
+
+  it("leaves out a form and its fields after a paragraph", () => {
+    const html = render(
+      "Intro\n\n<form><input name=a><textarea>t</textarea>" +
+        "<select><optgroup><option>o</option></optgroup></select>" +
+        "<button>Go</button></form>",
+    );
+
+    expect(html).toContain("<p>Intro</p>");
+    expect(html).not.toMatch(
+      /<(form|input|textarea|select|optgroup|option|button)\b/,
+    );
+  });
+});
+
 describe("isEmbeddedImage", () => {
   it.each([
     ["data:image/png;base64,iVBORw0KGgo=", true],

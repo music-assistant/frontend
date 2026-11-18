@@ -658,7 +658,8 @@ markdownPurifier.addHook("afterSanitizeAttributes", (node) => {
  * Render markdown as sanitized HTML, safe to pass to `v-html`.
  *
  * Supports the full block syntax (lists, paragraphs, ...) and turns single
- * newlines into line breaks. Links always open in a new tab.
+ * newlines into line breaks. Links always open in a new tab. The result
+ * carries no forms or style blocks.
  *
  * @param text - Markdown source. May use escaped `\n` sequences as newlines.
  */
@@ -678,18 +679,22 @@ export const providerMarkdownToHtml = function (text: string): string {
   // svg and math are left out entirely: both can load an image themselves
   return renderMarkdown(text, {
     USE_PROFILES: { html: true },
-    FORBID_TAGS: [
-      "img",
-      "picture",
-      "source",
-      "video",
-      "audio",
-      "track",
-      "input",
-    ],
+    FORBID_TAGS: ["img", "picture", "source", "video", "audio", "track"],
     FORBID_ATTR: ["src", "srcset", "poster", "background", "style"],
   });
 };
+
+// rendered markdown is text and links, never a form or a style block
+const NON_TEXT_TAGS = [
+  "form",
+  "input",
+  "button",
+  "select",
+  "option",
+  "optgroup",
+  "textarea",
+  "style",
+];
 
 const renderMarkdown = function (text: string, config: PurifyConfig): string {
   // some sources encode their line breaks literally; block syntax only parses on real ones
@@ -697,6 +702,7 @@ const renderMarkdown = function (text: string, config: PurifyConfig): string {
   // Metadata can carry attacker-controlled HTML that reaches v-html; SANITIZE_NAMED_PROPS also blocks DOM clobbering
   return markdownPurifier.sanitize(marked(source, { breaks: true }) as string, {
     ...config,
+    FORBID_TAGS: [...NON_TEXT_TAGS, ...(config.FORBID_TAGS ?? [])],
     SANITIZE_NAMED_PROPS: true,
   });
 };
