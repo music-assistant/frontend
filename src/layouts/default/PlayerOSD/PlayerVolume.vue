@@ -93,6 +93,7 @@
       @click="onSliderClick"
       @mousedown="onMouseDown"
       @pointerdown.capture="onPointerDown"
+      @pointerdown="releaseTouchFromSlider"
       @pointermove.capture="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerCancel"
@@ -137,6 +138,8 @@
         </button>
       </div>
 
+      <!-- touch-pan-y: the slider's own touch-none would block the scroll of the
+           lists it sits in, and the container claims horizontal drags itself -->
       <Slider
         :model-value="[displayValue]"
         :disabled="isSliderDisabled"
@@ -144,7 +147,7 @@
         :max="100"
         :step="step"
         class="volume-slider"
-        :class="cn('w-full', props.class)"
+        :class="cn('w-full touch-pan-y', props.class)"
         @update:model-value="onSliderUpdate"
       />
 
@@ -971,6 +974,17 @@ const onPointerDown = (event: PointerEvent) => {
   pointerMoved = false;
 };
 
+// The touch handlers own touch gestures. Releasing the slider's capture instead of
+// stopping the event keeps the press visible to enclosing popovers' outside-press check.
+const releaseTouchFromSlider = (event: PointerEvent) => {
+  if (event.pointerType !== "touch" || !(event.target instanceof Element)) {
+    return;
+  }
+  if (event.target.hasPointerCapture(event.pointerId)) {
+    event.target.releasePointerCapture(event.pointerId);
+  }
+};
+
 const onPointerMove = (event: PointerEvent) => {
   if (pointerStartX === null) return;
   if (Math.abs(event.clientX - pointerStartX) > POINTER_DRAG_THRESHOLD) {
@@ -1372,16 +1386,6 @@ watch(
 }
 
 /* --- Group volume popout styles are in the unscoped style block below --- */
-
-/* On touch devices the container owns the gesture, so the slider itself must
-   not swallow pointer events. Mouse input still reaches the slider, which in
-   absolute mode keeps click-to-position and keyboard control working. */
-@media (pointer: coarse) {
-  .volume-slider,
-  .volume-slider :deep(*) {
-    pointer-events: none;
-  }
-}
 
 /* Relative mode: the container owns pointer interaction on every device. */
 .player-volume-container.relative-mode {

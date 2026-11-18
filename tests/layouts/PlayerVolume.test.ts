@@ -158,6 +158,48 @@ function mountPopoutVolume(player: Player, allowWheel = false) {
   });
 }
 
+describe("PlayerVolume input routing", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.players = {};
+  });
+
+  // on a touchscreen PC the mouse must still drive the slider, while touch
+  // stays with the container's touch handlers
+  it.each([
+    ["mouse", 0],
+    ["pen", 0],
+    ["touch", 1],
+  ])("routes a %s press on the slider", async (pointerType, released) => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mount(PlayerVolume, {
+      props: { player },
+      attachTo: document.body,
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: sliderStub,
+      },
+    });
+    const slider = wrapper.find('[data-slot="slider"]');
+    const releasePointerCapture = vi.fn();
+    Object.assign(slider.element, {
+      hasPointerCapture: () => true,
+      releasePointerCapture,
+    });
+    const reachedDocument = vi.fn();
+    document.addEventListener("pointerdown", reachedDocument);
+
+    await slider.trigger("pointerdown", { pointerId: 1, pointerType });
+
+    document.removeEventListener("pointerdown", reachedDocument);
+    wrapper.unmount();
+    expect(releasePointerCapture).toHaveBeenCalledTimes(released);
+    // enclosing popovers detect an outside press from the document
+    expect(reachedDocument).toHaveBeenCalledOnce();
+  });
+});
+
 describe("PlayerVolume group expansion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
