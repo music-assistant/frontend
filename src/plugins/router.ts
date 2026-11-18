@@ -1,3 +1,7 @@
+import {
+  AUDIOBOOK_ARTIST_LISTING_ROUTE,
+  AUDIOBOOK_ARTIST_ROUTE,
+} from "@/helpers/author_narrator";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
@@ -435,6 +439,33 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "collection" */ "@/views/CollectionDetails.vue"
               ),
             props: true,
+          },
+          // authors and narrators keep the audiobooks section active; the role
+          // only names the page, the views get no role prop
+          {
+            path: ":role(authors|narrators)/:provider/:itemId",
+            name: AUDIOBOOK_ARTIST_ROUTE,
+            component: () =>
+              import(
+                /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
+              ),
+            props: (route: { params: Record<string, string> }) => ({
+              provider: route.params.provider,
+              itemId: route.params.itemId,
+            }),
+          },
+          {
+            path: ":role(authors|narrators)/:provider/:itemId/:listing",
+            name: AUDIOBOOK_ARTIST_LISTING_ROUTE,
+            component: () =>
+              import(
+                /* webpackChunkName: "artistlisting" */ "@/views/ArtistListing.vue"
+              ),
+            props: (route: { params: Record<string, string> }) => ({
+              provider: route.params.provider,
+              itemId: route.params.itemId,
+              listing: route.params.listing,
+            }),
           },
         ],
       },
