@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { markdownToHtml } from "@/helpers/utils";
+import { markdownToHtml, providerMarkdownToHtml } from "@/helpers/utils";
 import { computed } from "vue";
 
 const props = defineProps<{
   /** Markdown source, rendered as sanitized HTML. */
   text?: string | null;
+  /** Keep images, for text that is not a provider's own, such as a media item's description. */
+  allowImages?: boolean;
 }>();
 
-const html = computed(() => (props.text ? markdownToHtml(props.text) : ""));
+const html = computed(() => {
+  if (!props.text) return "";
+  return props.allowImages
+    ? markdownToHtml(props.text)
+    : providerMarkdownToHtml(props.text);
+});
 </script>
 
 <template>
