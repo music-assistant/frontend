@@ -1,5 +1,5 @@
 import { type ConfigEntry, Scope } from "@/plugins/api/interfaces";
-import { Activity, CirclePlay } from "@lucide/vue";
+import { Activity, CirclePlay, Library, Tags } from "@lucide/vue";
 import type { Component } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
@@ -38,7 +38,12 @@ export interface SettingsPage {
 }
 
 export type SettingsPageId =
-  "audio_analysis" | "background_tasks" | "network" | "playback";
+  | "audio_analysis"
+  | "background_tasks"
+  | "library"
+  | "metadata"
+  | "network"
+  | "playback";
 
 // a settings page with the row leading to it
 export interface LinkedSettingsPage {
@@ -53,6 +58,8 @@ export const WEBSERVER_DOMAIN = "webserver";
 export const DISCOVERY_DOMAIN = "discovery";
 export const PLAYER_QUEUES_DOMAIN = "player_queues";
 export const PLAYERS_DOMAIN = "players";
+export const MUSIC_DOMAIN = "music";
+export const METADATA_DOMAIN = "metadata";
 export const AUDIO_ANALYSIS_CATEGORY = "audio_analysis";
 // the category of an entry that names none
 const GENERIC_CATEGORY = "generic";
@@ -87,6 +94,41 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     title: "background_tasks.title",
     route: { name: "backgroundtasks" },
     sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
+  },
+  library: {
+    title: "settings.library.title",
+    route: { name: "librarysettings" },
+    link: {
+      section: "music_providers",
+      icon: Library,
+      label: "settings.library.title",
+      description: "settings.library.description",
+      requiresScope: Scope.CONFIG_CORE_WRITE,
+    },
+    // the sections follow the order of the sources: which source plays leads
+    sources: [
+      {
+        owner: coreOwner(STREAMS_DOMAIN),
+        categories: ["source_selection"],
+        title: "settings.library.source_selection",
+      },
+      {
+        owner: coreOwner(MUSIC_DOMAIN),
+        title: "settings.library.maintenance",
+      },
+    ],
+  },
+  metadata: {
+    title: "settings.metadata.title",
+    route: { name: "metadatasettings" },
+    link: {
+      section: "metadata_providers",
+      icon: Tags,
+      label: "settings.metadata.title",
+      description: "settings.metadata.description",
+      requiresScope: Scope.CONFIG_CORE_WRITE,
+    },
+    sources: [{ owner: coreOwner(METADATA_DOMAIN) }],
   },
   network: {
     title: "settings.network.title",

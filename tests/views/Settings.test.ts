@@ -226,38 +226,71 @@ describe("Settings breadcrumbs on the settings of a provider", () => {
   });
 });
 
-describe("Settings breadcrumbs on the storage page", () => {
+describe("Settings breadcrumbs on the library pages", () => {
+  const MUSIC_SOURCES = {
+    title: "settings.music_sources",
+    disabled: false,
+    to: { name: "providersettings", query: { types: "music" } },
+  };
+  const LIBRARY = {
+    title: "settings.library.title",
+    disabled: false,
+    to: { name: "librarysettings" },
+  };
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
   afterEach(() => {
     routeState.name = "editplayeroptions";
     routeState.params = { playerId: "kitchen" };
   });
 
-  it("names the storage page as a page of the System settings", () => {
-    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
-    routeState.name = "storagesettings";
-    routeState.params = {};
+  it("hang the library options under the music sources", () => {
+    expect(pageTrail("librarysettings")).toEqual([
+      MUSIC_SOURCES,
+      { title: "settings.library.title", disabled: true },
+    ]);
+  });
 
-    const wrapper = mount(Settings, {
-      global: {
-        stubs: {
-          Toolbar: {
-            template: '<div><slot name="title" /><slot name="append" /></div>',
-          },
-          ToolbarHeading: ToolbarHeadingStub,
-          RouterView: true,
-          VBtn: true,
-          VDivider: true,
-        },
-      },
+  it.each([
+    ["storagesettings", "settings.storage.music_locations"],
+    ["genremanagement", "genres"],
+  ])("hang %s under the library options", (name, title) => {
+    expect(pageTrail(name)).toEqual([
+      MUSIC_SOURCES,
+      LIBRARY,
+      { title, disabled: true },
+    ]);
+  });
+
+  it("name the library options as plain text for who may not open them", () => {
+    hasScope.mockImplementation((scope) => scope !== Scope.CONFIG_CORE_WRITE);
+
+    expect(pageTrail("storagesettings")[1]).toEqual({
+      ...LIBRARY,
+      to: undefined,
     });
+  });
+});
 
-    expect(wrapper.getComponent(ToolbarHeadingStub).props("items")).toEqual([
+describe("Settings breadcrumbs on the metadata settings", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("hang the metadata settings under the metadata sources", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+
+    expect(pageTrail("metadatasettings")).toEqual([
       {
-        title: "settings.system",
+        title: "settings.metadataproviders",
         disabled: false,
-        to: { name: "systemsettings" },
+        to: { name: "providersettings", query: { types: "metadata" } },
       },
-      { title: "settings.storage.title", disabled: true },
+      { title: "settings.metadata.title", disabled: true },
     ]);
   });
 });

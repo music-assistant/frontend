@@ -376,6 +376,13 @@ useEscapeBack(
   () => !isOverview.value,
 );
 
+// the library options and the pages they lead to, which sit with the music sources
+const LIBRARY_ROUTE_NAMES = [
+  "librarysettings",
+  "storagesettings",
+  "genremanagement",
+];
+
 const activeTab = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
   if (name === "profile") {
@@ -383,6 +390,12 @@ const activeTab = computed(() => {
   }
   if (name === "audioanalysissettings") {
     return "audio_analysis_providers";
+  }
+  if (LIBRARY_ROUTE_NAMES.includes(name)) {
+    return "music_providers";
+  }
+  if (name === "metadatasettings") {
+    return "metadata_providers";
   }
   if (
     name.includes("player") ||
@@ -398,8 +411,6 @@ const activeTab = computed(() => {
     name.includes("serverlog") ||
     name === "backgroundtasks" ||
     name === "diagnostics" ||
-    name === "genremanagement" ||
-    name === "storagesettings" ||
     name === "networksettings" ||
     name === "remoteaccesssettings"
   ) {
@@ -443,6 +454,16 @@ const providerTypeTab = function (type: string | undefined) {
   return type === ProviderType.PLAYER
     ? "players"
     : providerSettingsSectionName(type);
+};
+
+// the crumb of the library options, a link for whoever may open them
+const libraryCrumb = function (): ToolbarHeadingItem {
+  const { title, route } = SETTINGS_PAGES.library;
+  return {
+    title: t(title),
+    disabled: false,
+    to: authManager.hasScope(Scope.CONFIG_CORE_WRITE) ? route : undefined,
+  };
 };
 
 const breadcrumbItems = computed(() => {
@@ -615,17 +636,20 @@ const breadcrumbItems = computed(() => {
         disabled: true,
       });
     })
-    .with("genremanagement", () => {
-      items.push({
-        title: t("settings.genre_management"),
+    .with("librarysettings", () => {
+      items.push({ title: t(SETTINGS_PAGES.library.title), disabled: true });
+    })
+    .with("storagesettings", () => {
+      items.push(libraryCrumb(), {
+        title: t("settings.storage.music_locations"),
         disabled: true,
       });
     })
-    .with("storagesettings", () => {
-      items.push({
-        title: t("settings.storage.title"),
-        disabled: true,
-      });
+    .with("genremanagement", () => {
+      items.push(libraryCrumb(), { title: t("genres"), disabled: true });
+    })
+    .with("metadatasettings", () => {
+      items.push({ title: t(SETTINGS_PAGES.metadata.title), disabled: true });
     })
     .with("playbacksettings", () => {
       items.push({ title: t(SETTINGS_PAGES.playback.title), disabled: true });
