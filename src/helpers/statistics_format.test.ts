@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatAverage,
   formatCount,
+  formatHistoryTimestamp,
   formatHour,
   formatShortHour,
   weekdayNames,
@@ -11,6 +12,18 @@ describe("formatCount", () => {
   it("groups thousands the locale's way", () => {
     expect(formatCount(1234, "en-GB")).toBe("1,234");
     expect(formatCount(1234, "de-DE")).toBe("1.234");
+  });
+});
+
+describe("formatHistoryTimestamp", () => {
+  it("formats Unix seconds using the same local date and time as the browser", () => {
+    const timestamp = Date.UTC(2026, 10, 9, 12, 30) / 1000;
+    expect(formatHistoryTimestamp(timestamp, "en-GB")).toBe(
+      new Intl.DateTimeFormat("en-GB", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(timestamp * 1000)),
+    );
   });
 });
 

@@ -113,6 +113,21 @@ This project is migrating from **Vuetify** to **[shadcn-vue](https://www.shadcn-
 
 ---
 
+## Personal listening history
+
+Track, album and artist detail heroes show the signed-in user's recorded play
+count and a 30-day trend. Select the count to view dated plays, choose one of the
+existing statistics periods or load more history.
+
+In the user profile, **Personal listening statistics** can hide this display
+separately for tracks, albums and artists. These account-synced preferences do
+not stop play recording or change the Statistics page. Album and artist counts
+represent completed track plays, not complete album listens.
+
+The hero and dialog share `useItemListeningHistory`; charts and period controls
+reuse the Statistics page components. The paired server must provide the
+schema-105 item filters and dated `PlayHistoryItem` contract.
+
 # Stable releases
 
 The server's stable channel pins a frontend release from main. Fixes for it ship as `<pinned>.postN` releases built from the `stable` branch:

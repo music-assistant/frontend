@@ -119,7 +119,7 @@ interface LatestLoadOptions<Result> {
  * new data arrives. A failure toasts only when the user changed the key;
  * views show their own inline error for every failure.
  */
-function useLatestLoad<Result>(options: LatestLoadOptions<Result>) {
+export function useLatestLoad<Result>(options: LatestLoadOptions<Result>) {
   const loading = ref(false);
   let generation = 0;
   let disposed = false;
@@ -164,6 +164,7 @@ function useLatestLoad<Result>(options: LatestLoadOptions<Result>) {
   const unsubscribe = api.subscribe(
     EventType.PLAYLOG_UPDATED,
     (event: EventMessage) => {
+      if (!canLoad()) return;
       const update = event.data as PlaylogUpdate | undefined;
       if (!update?.fully_played) return;
       const { users, all_users } = options.users?.value ?? {};

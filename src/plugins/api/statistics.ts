@@ -9,6 +9,8 @@ import type {
   StatisticsTimeSeriesPoint,
   StatisticsTopItemResult,
   StatisticsUsers,
+  StatisticsItemFilter,
+  PlayHistoryItem,
   MediaType,
 } from "./interfaces";
 
@@ -39,12 +41,36 @@ export class StatisticsApi {
     period: StatisticsPeriod = "week",
     granularity: StatisticsGranularity = "day",
     users: StatisticsUsers = {},
+    item?: StatisticsItemFilter,
   ): Promise<StatisticsTimeSeriesPoint[]> {
     return this.sendStatisticsCommand("statistics/plays_over_time", {
       period,
       granularity,
       ...users,
+      ...item,
     });
+  }
+
+  public async getPlayHistory(
+    item: StatisticsItemFilter,
+    period: StatisticsPeriod = "all_time",
+    limit = 50,
+    offset = 0,
+  ): Promise<PlayHistoryItem[]> {
+    return this.sendStatisticsCommand("statistics/play_history", {
+      ...item,
+      period,
+      limit,
+      offset,
+    });
+  }
+
+  public async getPlayCount(item: StatisticsItemFilter): Promise<number> {
+    return this.sendCommand(
+      "statistics/play_count",
+      { ...item },
+      { suppressGlobalError: true },
+    );
   }
 
   public async getListeningActivity(
