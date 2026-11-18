@@ -2,17 +2,20 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   getPlayerSettingsMenuItems,
   getSetupRequiredPlayerMenuItems,
+  mergePlayer,
   removeUnavailablePlayers,
   renamePlayer,
   setPlayerEnabled,
 } from "@/helpers/player_settings_actions";
 import {
   PlayerType,
+  ProtocolRole,
   ProviderFeature,
   ProviderType,
   Scope,
   type Player,
   type PlayerOption,
+  type PlayerProtocolInfo,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
@@ -34,11 +37,13 @@ const {
     getProvider: vi.fn(),
     getPlayerConfig: vi.fn(),
     getProviderManifest: vi.fn(),
+    mergePlayers: vi.fn(),
     players: {} as Record<string, unknown>,
     queues: {} as Record<string, unknown>,
     removePlayer: vi.fn(),
     removeUnavailablePlayers: vi.fn(),
     savePlayerConfig: vi.fn(),
+    unlinkProtocol: vi.fn(),
   },
   emitEvent: vi.fn(),
   hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -699,6 +704,139 @@ describe("renamePlayer", () => {
   });
 });
 
+describe("getPlayerSettingsMenuItems merging and splitting", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    apiMock.getProviderManifest.mockImplementation((domain: string) =>
+      providerManifest({ domain, name: domain.toUpperCase() }),
+    );
+  });
+
+  it("opens the merge dialog for the player", () => {
+    const onMerged = vi.fn();
+    const menuItems = getPlayerSettingsMenuItems(
+      playerConfig({ name: "Kitchen" }),
+      { onMerged },
+    );
+
+    menuItem(menuItems, "settings.merge_player").action?.();
+
+    expect(emitEvent).toHaveBeenCalledWith("playerMergeDialog", {
+      playerId: "kitchen",
+      playerName: "Kitchen",
+      onMerged,
+    });
+  });
+
+  it("does not offer to merge a group", () => {
+    expect(
+      visibleLabels(
+        getPlayerSettingsMenuItems(
+          playerConfig({ player_type: PlayerType.GROUP }),
+        ),
+      ),
+    ).not.toContain("settings.merge_player");
+  });
+
+  it("does not offer to split off the only output", () => {
+    registerPlayer({ protocols: [protocol("chromecast")] });
+
+    expect(
+      visibleLabels(getPlayerSettingsMenuItems(playerConfig())),
+    ).not.toContain("settings.split_off_output");
+  });
+
+  it("offers each output to split off by its name, in order of name", () => {
+    registerPlayer({
+      protocols: [protocol("chromecast"), protocol("airplay")],
+    });
+
+    const subItems = menuItem(
+      getPlayerSettingsMenuItems(playerConfig()),
+      "settings.split_off_output",
+    ).subItems;
+
+    expect(subItems?.map((item) => item.text)).toEqual([
+      "AIRPLAY",
+      "CHROMECAST",
+    ]);
+  });
+
+  it("splits an output off after asking and reports the new player", async () => {
+    const onSplitOff = vi.fn();
+    apiMock.unlinkProtocol.mockResolvedValue("new-player");
+    registerPlayer({
+      protocols: [protocol("chromecast"), protocol("airplay")],
+    });
+
+    menuItem(
+      getPlayerSettingsMenuItems(playerConfig(), { onSplitOff }),
+      "settings.split_off_output",
+    ).subItems?.[0].action?.();
+
+    expect(apiMock.unlinkProtocol).not.toHaveBeenCalled();
+    await confirmation().onConfirm();
+    expect(apiMock.unlinkProtocol).toHaveBeenCalledWith("airplay");
+    expect(onSplitOff).toHaveBeenCalledOnce();
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("leaves the player as it is when the server refuses the split", async () => {
+    const onSplitOff = vi.fn();
+    apiMock.unlinkProtocol.mockRejectedValueOnce(new Error("Refused"));
+    registerPlayer({
+      protocols: [protocol("chromecast"), protocol("airplay")],
+    });
+
+    menuItem(
+      getPlayerSettingsMenuItems(playerConfig(), { onSplitOff }),
+      "settings.split_off_output",
+    ).subItems?.[1].action?.();
+    await confirmation().onConfirm();
+
+    expect(onSplitOff).not.toHaveBeenCalled();
+    // the api layer reports the server's reason, so this must not toast a second time
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+  });
+});
+
+describe("mergePlayer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("hands the player bar to the player that stays", async () => {
+    apiMock.mergePlayers.mockResolvedValue(undefined);
+    storeMock.activePlayerId = "kitchen-airplay";
+
+    expect(await mergePlayer("kitchen-airplay", "kitchen")).toBe(true);
+
+    expect(apiMock.mergePlayers).toHaveBeenCalledWith(
+      "kitchen-airplay",
+      "kitchen",
+    );
+    expect(storeMock.activePlayerId).toBe("kitchen");
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", "kitchen");
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("keeps everything as it is when the server refuses the merge", async () => {
+    apiMock.mergePlayers.mockRejectedValueOnce(new Error("Refused"));
+    storeMock.activePlayerId = "kitchen-airplay";
+
+    expect(await mergePlayer("kitchen-airplay", "kitchen")).toBe(false);
+
+    expect(storeMock.activePlayerId).toBe("kitchen-airplay");
+    expect(setPreference).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+});
+
 /**
  * The labels a user actually sees, so an entry the menu hides counts as absent.
  */
@@ -752,8 +890,21 @@ function player(overrides: Partial<Player> = {}): Player {
     hide_in_ui: false,
     synced_to: null,
     options: [{ key: "eq", name: "EQ" } as PlayerOption],
+    protocols: [],
+    output_protocols: [],
     ...overrides,
   } as Player;
+}
+
+function protocol(domain: string): PlayerProtocolInfo {
+  return {
+    protocol_id: domain,
+    domain,
+    provider: domain,
+    role: ProtocolRole.AUDIO,
+    available: true,
+    active: false,
+  };
 }
 
 function providerInstance(

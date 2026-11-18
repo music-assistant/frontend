@@ -1269,12 +1269,14 @@ export class MusicAssistantApi {
   public removePlaylistTracks(
     db_playlist_id: string | number,
     positions_to_remove: number[],
+    uris?: string[],
   ): Promise<BackgroundTask> {
     return this.sendCommand<BackgroundTask>(
       "music/playlists/remove_playlist_tracks",
       {
         db_playlist_id,
         positions_to_remove,
+        uris,
       },
     ).then((task) => {
       this._notifyBackgroundTaskStarted(task);
@@ -1286,11 +1288,13 @@ export class MusicAssistantApi {
     db_playlist_id: string | number,
     from_position: number,
     to_position: number,
+    uri?: string,
   ): Promise<void> {
     return this.sendCommand("music/playlists/move_playlist_track", {
       db_playlist_id,
       from_position,
       to_position,
+      uri,
     });
   }
 
@@ -1298,11 +1302,13 @@ export class MusicAssistantApi {
     db_playlist_id: string | number,
     positions: number[],
     to_position?: number,
+    uris?: string[],
   ): Promise<void> {
     return this.sendCommand("music/playlists/move_playlist_tracks", {
       db_playlist_id,
       positions,
       to_position,
+      uris,
     });
   }
 
@@ -2301,6 +2307,20 @@ export class MusicAssistantApi {
     });
   }
 
+  public queueCommandAddToPlaylist(
+    queueId: string,
+    db_playlist_id: string | number,
+  ): Promise<BackgroundTask> {
+    // Add the queue's items to an existing library playlist.
+    return this.sendCommand<BackgroundTask>("player_queues/add_to_playlist", {
+      queue_id: queueId,
+      db_playlist_id,
+    }).then((task) => {
+      this._notifyBackgroundTaskStarted(task);
+      return task;
+    });
+  }
+
   public queueCommandClear(queueId: string) {
     // Clear all items in the queue.
     this.playerQueueCommand(queueId, "clear");
@@ -2448,23 +2468,6 @@ export class MusicAssistantApi {
       auto_play: autoPlay,
     });
   }
-  public queueCommandSaveAsPlaylist(
-    queueId: string,
-    name: string,
-    options: { showBackgroundTaskToast?: boolean } = {},
-  ): Promise<BackgroundTask> {
-    // Save the current queue items as a new playlist.
-    return this.sendCommand<BackgroundTask>("player_queues/save_as_playlist", {
-      queue_id: queueId,
-      name,
-    }).then((task) => {
-      if (options.showBackgroundTaskToast !== false) {
-        this._notifyBackgroundTaskStarted(task);
-      }
-      return task;
-    });
-  }
-
   // Player related functions/commands
 
   public async getPlayers(): Promise<Player[]> {
@@ -2753,6 +2756,31 @@ export class MusicAssistantApi {
    */
   public removeUnavailablePlayers(dry_run = false): Promise<string[]> {
     return this.sendCommand("players/remove_unavailable", { dry_run });
+  }
+
+  /**
+   * Merge a player into another one, when the two turn out to be one device.
+   *
+   * @param playerId The player that goes; its outputs move to the target player.
+   * @param targetPlayer The player that stays.
+   */
+  public mergePlayers(playerId: string, targetPlayer: string): Promise<void> {
+    return this.sendCommand("players/merge", {
+      player_id: playerId,
+      target_player: targetPlayer,
+    });
+  }
+
+  /**
+   * Take an output off its player and give it a player of its own, and return
+   * the id of that new player.
+   *
+   * @param protocolId The protocol_id of the output.
+   */
+  public unlinkProtocol(protocolId: string): Promise<string> {
+    return this.sendCommand("players/unlink_protocol", {
+      protocol_id: protocolId,
+    });
   }
 
   // Sleep timer related functions/commands
@@ -3512,6 +3540,8 @@ export class MusicAssistantApi {
     // Imported dynamically: router.ts imports this module statically, so a
     // static import here would make the api client and the router directly circular.
     const { default: router } = await import("../router");
+    // the task list would otherwise open underneath the full screen player
+    store.showFullscreenPlayer = false;
     if (router.currentRoute.value.name === "backgroundtasks") {
       return;
     }
