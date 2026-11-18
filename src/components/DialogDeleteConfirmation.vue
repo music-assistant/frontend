@@ -77,8 +77,10 @@ const acknowledgement = ref("");
 const acknowledged = ref<boolean | "indeterminate">(false);
 const acknowledgementId = useId();
 let onConfirm: (() => void | Promise<void>) | undefined;
+let onCancel: (() => void) | undefined;
 
 const handleConfirm = async () => {
+  onCancel = undefined;
   if (!onConfirm) {
     open.value = false;
     return;
@@ -101,6 +103,14 @@ const reset = () => {
   acknowledged.value = false;
   loading.value = false;
   onConfirm = undefined;
+  onCancel = undefined;
+};
+
+// called at most once per confirmation
+const cancelPending = () => {
+  const cancel = onCancel;
+  onCancel = undefined;
+  cancel?.();
 };
 
 // the confirmation can be asked on top of another dialog that stays open
@@ -111,6 +121,7 @@ let dialogActiveBeforeOpen = false;
 watch(open, (v) => {
   store.dialogActive = v || (dialogActiveBeforeOpen && store.dialogActive);
   if (!v) {
+    cancelPending();
     // Reset after close animation
     setTimeout(reset, 200);
   }
@@ -120,6 +131,7 @@ onMounted(() => {
   eventbus.on(
     "deleteConfirmationDialog",
     (evt: DeleteConfirmationDialogEvent) => {
+      if (open.value) cancelPending();
       reset();
       if (!open.value) dialogActiveBeforeOpen = store.dialogActive;
       title.value = evt.title ?? t("delete");
@@ -129,12 +141,14 @@ onMounted(() => {
       destructive.value = evt.destructive ?? true;
       acknowledgement.value = evt.acknowledgement ?? "";
       onConfirm = evt.onConfirm;
+      onCancel = evt.onCancel;
       open.value = true;
     },
   );
 });
 
 onBeforeUnmount(() => {
+  cancelPending();
   eventbus.off("deleteConfirmationDialog");
 });
 </script>

@@ -10,10 +10,12 @@
       :tracks-sort-direction="tracksListing?.[0]?.sortDirection"
       :has-rules="!!smartRules"
       :can-edit-rules="!!smartRules && canEditLibrary"
+      :can-edit-rotation="canEditRotation"
       :can-share="canShare"
       @edit-rows="rowsEditorOpen = true"
       @show-rules="showRulesDialog = true"
       @edit-rules="showEditDialog = true"
+      @edit-rotation="editRotation"
       @share="openAccessDialog"
     />
 
@@ -25,7 +27,7 @@
             v-if="itemDetails.is_dynamic"
             :item-details="itemDetails"
             :provider="props.provider"
-            @edit-rules="showEditDialog = true"
+            @edit-rules="editSampleRules"
           />
           <!-- the listing keeps its own toolbar, but takes the title and gutter of the rows around it -->
           <ItemsListing
@@ -138,6 +140,7 @@ import {
   type PlaylistRowId,
 } from "@/components/playlist/playlistRows";
 import ProviderDetails from "@/components/ProviderDetails.vue";
+import { ROTATION_PROVIDER_DOMAIN } from "@/components/rotation/constants";
 import SmartPlaylistRulesView from "@/components/smart_playlist/SmartPlaylistRulesView.vue";
 import {
   Dialog,
@@ -152,6 +155,7 @@ import {
   canReorderPlaylistItems,
   canSharePlaylist,
 } from "@/helpers/playlist_access";
+import { rotationIdOf } from "@/helpers/rotation";
 import EditSmartPlaylistDialog from "@/layouts/default/EditSmartPlaylistDialog.vue";
 import { api } from "@/plugins/api";
 import { providerSupportsPlaylistMove } from "@/plugins/api/helpers";
@@ -166,15 +170,23 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 
 export interface Props {
   itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
+const router = useRouter();
 const updateAvailable = ref(false);
 const itemDetails = ref<Playlist>();
 const smartRules = ref<SmartPlaylistRules | null>(null);
+const rotationId = computed(() => rotationIdOf(itemDetails.value));
+// a Rotation can only be edited while its plugin runs
+const rotationPluginEnabled = computed(() =>
+  store.enabledPlugins.has(ROTATION_PROVIDER_DOMAIN),
+);
 const showEditDialog = ref(false);
 const showRulesDialog = ref(false);
 const rowsEditorOpen = ref(false);
@@ -192,6 +204,11 @@ const {
   reset: resetTracks,
 } = usePlaylistTracks(() => props);
 const tracksListing = ref<InstanceType<typeof ItemsListing>[]>();
+
+const canEditRotation = computed(
+  () =>
+    !!rotationId.value && rotationPluginEnabled.value && canEditLibrary.value,
+);
 
 const canShare = computed(
   () =>
@@ -252,6 +269,21 @@ const rowMeta = computed<Partial<Record<PlaylistRowId, string>>>(() => ({
       })
     : undefined,
 }));
+
+const editRotation = function () {
+  if (!rotationId.value || !rotationPluginEnabled.value) return;
+  router.push({
+    name: "rotation-edit",
+    params: { rotationId: rotationId.value },
+  });
+};
+
+// the sample's edit action opens the editor of whatever generates the tracks
+const editSampleRules = function () {
+  if (!rotationId.value) showEditDialog.value = true;
+  else if (rotationPluginEnabled.value) editRotation();
+  else toast.error($t("rotation.plugin_disabled"));
+};
 
 const openAccessDialog = function () {
   if (!itemDetails.value) return;

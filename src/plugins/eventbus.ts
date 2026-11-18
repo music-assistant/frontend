@@ -58,6 +58,9 @@ export type DeleteConfirmationDialogEvent = {
   // shown as a list below the message, such as the names of what is removed
   items?: string[];
   onConfirm: () => void | Promise<void>;
+  // called when the dialog closes without a confirmation, also when a later
+  // confirmation takes its place
+  onCancel?: () => void;
 };
 
 export type PlayerGroupPlaybackChange = "remove" | "power_off";
