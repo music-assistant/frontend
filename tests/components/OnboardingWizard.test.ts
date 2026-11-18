@@ -68,6 +68,7 @@ const {
         server_id: "server-1",
         internal_url: "http://192.168.1.10:8095",
         has_remote_access: false,
+        homeassistant_addon: true,
       },
     },
   },
@@ -431,6 +432,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       ),
     );
     apiMock.sendCommand.mockReset();
+    // the add-on connects Home Assistant by itself, so only the tests of the
+    // Home Assistant step run on a server that is not the add-on
+    apiMock.serverInfo.value.homeassistant_addon = true;
     apiMock.subscribe.mockClear();
     apiMock.subscribe_multi.mockReset();
     apiMock.subscribe_multi.mockImplementation(() => vi.fn());
@@ -675,6 +679,62 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       wrapper.find("[data-testid=onboarding-receiver-instructions]").exists(),
     ).toBe(false);
     wrapper.unmount();
+  });
+
+  it("offers to connect Home Assistant before the finish on a server that is not the add-on", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = false;
+    preferenceState.intent.value = "phone_apps";
+    const wrapper = await mountWizard({ step: "plugins" });
+    try {
+      await flushPromises();
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.home_assistant.title");
+      expect(stepCount(wrapper)).toBe("3/4");
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-home-assistant-connect]")
+          .exists(),
+      ).toBe(true);
+      // optional, so it can be skipped on the way to the finish
+      expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+        "onboarding.skip",
+      );
+
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it("shows a Home Assistant connection that is set up instead of the connect button", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = false;
+    preferenceState.intent.value = "music_hub";
+    addProvider("hass--1", "hass", ProviderType.PLUGIN, "Home Assistant");
+    const wrapper = await mountWizard({ step: "home_assistant" });
+    try {
+      await flushPromises();
+
+      expect(heading(wrapper)).toBe("onboarding.steps.home_assistant.title");
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-home-assistant-connection]")
+          .text(),
+      ).toBe("Home Assistant");
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-home-assistant-connect]")
+          .exists(),
+      ).toBe(false);
+      expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+        "onboarding.next",
+      );
+    } finally {
+      wrapper.unmount();
+    }
   });
 
   describe("on a fresh server's first run", () => {

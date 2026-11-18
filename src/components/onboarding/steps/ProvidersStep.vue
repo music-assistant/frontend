@@ -4,45 +4,12 @@
 
     <ScrollFade>
       <ItemGroup v-if="configured.length > 0" class="gap-2">
-        <Item
+        <ConfiguredProviderItem
           v-for="provider in configured"
           :key="provider.instance_id"
-          variant="outline"
-          size="sm"
+          :provider="provider"
           data-testid="onboarding-configured-provider"
-        >
-          <ItemMedia variant="icon">
-            <ProviderIcon :domain="provider.domain" :size="20" />
-          </ItemMedia>
-          <ItemContent>
-            <ItemTitle>{{ provider.name }}</ItemTitle>
-          </ItemContent>
-          <ItemActions>
-            <!-- a provider that is set up but switched off or broken is no tick -->
-            <Check
-              v-if="!provider.needsAttention"
-              class="text-primary size-4"
-              aria-hidden="true"
-            />
-            <template v-else>
-              <Button
-                v-if="needsReconfigure(provider)"
-                variant="secondary"
-                size="sm"
-                data-testid="onboarding-provider-reconfigure"
-                @click="reconfigure(provider)"
-              >
-                {{ $t("settings.reconfigure") }}
-              </Button>
-              <span :title="$t(attentionLabelKey(provider.status))">
-                <TriangleAlert
-                  class="text-muted-foreground size-4"
-                  :aria-label="$t(attentionLabelKey(provider.status))"
-                />
-              </span>
-            </template>
-          </ItemActions>
-        </Item>
+        />
       </ItemGroup>
 
       <Empty v-else class="border-border rounded-md border border-dashed py-6">
@@ -75,8 +42,8 @@
 </template>
 
 <script setup lang="ts">
+import ConfiguredProviderItem from "@/components/onboarding/ConfiguredProviderItem.vue";
 import ScrollFade from "@/components/onboarding/ScrollFade.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -84,26 +51,15 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemGroup,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
+import { ItemGroup } from "@/components/ui/item";
 import {
   configuredAudioSourcePlugins,
   configuredProviders,
-  type ConfiguredProvider,
 } from "@/composables/useOnboarding";
-import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
-import { providerRequiresReconfiguration } from "@/helpers/provider_config";
-import { api } from "@/plugins/api";
+import type { OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
-import { Check, Music, Plus, Smartphone, TriangleAlert } from "@lucide/vue";
+import { Music, Plus, Smartphone } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 
 const props = defineProps<{
@@ -124,20 +80,6 @@ const showAddProviderDialog = ref(false);
 const connectingApps = computed(
   () => props.providerType === ProviderType.PLUGIN,
 );
-
-const needsReconfigure = (provider: ConfiguredProvider) =>
-  providerRequiresReconfiguration(
-    provider.status,
-    api.providerManifests[provider.domain]?.has_setup_flow,
-  );
-
-const reconfigure = function (provider: ConfiguredProvider) {
-  eventbus.emit("setupFlowDialog", {
-    kind: "reconfigure",
-    instanceId: provider.instance_id,
-    name: provider.name,
-  });
-};
 
 const configured = computed(() =>
   connectingApps.value

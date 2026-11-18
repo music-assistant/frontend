@@ -67,7 +67,10 @@ const {
         ) => () => void
       >(),
     sendCommand: vi.fn(),
-    serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
+    serverInfo: {
+      value: undefined as
+        { onboard_done: boolean; homeassistant_addon?: boolean } | undefined,
+    },
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // what the server hands back as the player configurations
@@ -341,7 +344,12 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     apiMock.subscribe_multi.mockImplementation(() => vi.fn());
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
-    apiMock.serverInfo.value = { onboard_done: false };
+    // the add-on connects Home Assistant by itself, so only the tests of the
+    // Home Assistant step run on a server that is not the add-on
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: true,
+    };
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
     );
@@ -430,6 +438,35 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "spotify_connect",
     ]);
     expect(module.useOnboarding().pending.value).toEqual([]);
+  });
+
+  it("offers to connect Home Assistant only on a server that is not the add-on", async () => {
+    let { steps } = await loadOnboarding();
+    expect(steps.value.map((step) => step.id)).not.toContain("home_assistant");
+
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: false,
+    };
+    ({ steps } = await loadOnboarding());
+    expect(steps.value.map((step) => step.id)).toContain("home_assistant");
+  });
+
+  it("ticks Home Assistant off once its connection is set up, working or not", async () => {
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: false,
+    };
+    let { ctx, pending } = await loadOnboarding();
+    expect(ctx.value.homeAssistantConfigured).toBe(false);
+    expect(pending.value.map((step) => step.id)).toContain("home_assistant");
+
+    addProvider("hass--1", "hass", ProviderType.PLUGIN, { enabled: false });
+    ({ ctx, pending } = await loadOnboarding());
+    expect(ctx.value.homeAssistantConfigured).toBe(true);
+    expect(pending.value.map((step) => step.id)).not.toContain(
+      "home_assistant",
+    );
   });
 
   it("asks nothing of a guest, who is only passing through", async () => {

@@ -61,6 +61,10 @@ function context(
     ownedMusicSourceCount: 0,
     providers: [],
     playerCount: 0,
+    // the add-on connects Home Assistant by itself, so only the tests of the
+    // Home Assistant step run on a server that is not the add-on
+    homeAssistantAddon: true,
+    homeAssistantConfigured: false,
     memberCount: null,
     answers: {},
     ...overrides,
@@ -166,8 +170,9 @@ describe("onboarding step order", () => {
     ).toEqual([...BASE_ORDER]);
     // the registry carries the account step ahead of the admin track, which
     // only a first run is offered, the app connections only the existing-app
-    // path is, and the own-sources step between the music and the summary,
-    // whether or not a given member is offered it
+    // path is, Home Assistant only a server that is not the add-on is, and the
+    // own-sources step between the music and the summary, whether or not a
+    // given member is offered it
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([
       "account",
       "intent",
@@ -175,6 +180,7 @@ describe("onboarding step order", () => {
       "players",
       "plugins",
       "core_settings",
+      "home_assistant",
       "invite_members",
       "finish",
       "welcome",
@@ -430,6 +436,62 @@ describe("the step the wizard opens on", () => {
       memberCount: 2,
     });
     expect(firstStep(ctx)).toBe("finish");
+  });
+});
+
+describe("the Home Assistant step", () => {
+  /** A server that is not the Home Assistant add-on. */
+  function standaloneContext(
+    overrides: Partial<OnboardingContext> = {},
+  ): OnboardingContext {
+    return context({ homeAssistantAddon: false, ...overrides });
+  }
+
+  it("offers the full setup to connect Home Assistant before the household", () => {
+    const ctx = standaloneContext({ answers: { intent: "music_hub" } });
+    expect(stepIds(applicableSteps(ctx))).toEqual([
+      "intent",
+      "music_sources",
+      "players",
+      "core_settings",
+      "home_assistant",
+      "invite_members",
+      "finish",
+    ]);
+  });
+
+  it("offers the existing-app setup to connect Home Assistant before the finish", () => {
+    const ctx = standaloneContext({ answers: { intent: "phone_apps" } });
+    expect(stepIds(applicableSteps(ctx))).toEqual([
+      "intent",
+      "players",
+      "plugins",
+      "home_assistant",
+      "finish",
+    ]);
+  });
+
+  it("never asks the add-on, which connects Home Assistant by itself", () => {
+    for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
+      const ctx = context({ answers: intent ? { intent } : {} });
+      expect(stepIds(applicableSteps(ctx))).not.toContain("home_assistant");
+    }
+  });
+
+  it("keeps it optional, and pending until Home Assistant is connected", () => {
+    const open = standaloneContext();
+    expect(step(open, "home_assistant").optional).toBe(true);
+    expect(stepIds(pendingSteps(open))).toContain("home_assistant");
+
+    const connected = standaloneContext({ homeAssistantConfigured: true });
+    expect(step(connected, "home_assistant").isDone(connected)).toBe(true);
+    expect(stepIds(pendingSteps(connected))).not.toContain("home_assistant");
+  });
+
+  it("keeps it off the member track", () => {
+    expect(
+      stepIds(applicableSteps(memberContext({ homeAssistantAddon: false }))),
+    ).not.toContain("home_assistant");
   });
 });
 
