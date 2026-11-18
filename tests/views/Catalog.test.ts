@@ -1309,9 +1309,14 @@ describe("Catalog suggestions from the server", () => {
       apiMock.updateUser.mockResolvedValue(undefined);
     });
 
+    // Vue ignores a handler attached in the same instant as the event, and
+    // the clock is frozen here
+    const settleClock = () => vi.setSystemTime(Date.now() + 1);
+
     it("stops suggesting it from its tile, and keeps it in its list", async () => {
       recommendations = [...FOUR_FOUND, GOES_WELL];
       await mountCatalog();
+      settleClock();
       const dismiss = document.querySelector<HTMLElement>(
         "[data-domain='soundcloud'] [data-testid='catalog-card-dismiss']",
       )!;
@@ -1337,6 +1342,7 @@ describe("Catalog suggestions from the server", () => {
     it("says so, names it, and brings it back with Undo", async () => {
       recommendations = [...FOUR_FOUND, GOES_WELL];
       await mountCatalog();
+      settleClock();
 
       document
         .querySelector<HTMLElement>(
@@ -1380,6 +1386,7 @@ describe("Catalog suggestions from the server", () => {
       apiMock.updateUser.mockRejectedValue(new Error("refused"));
       vi.spyOn(console, "error").mockImplementation(() => {});
       await mountCatalog();
+      settleClock();
 
       document
         .querySelector<HTMLElement>(
