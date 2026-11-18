@@ -3238,6 +3238,11 @@
                 },
                 "load_failed": "The server settings could not be loaded. You can change them later from the settings."
             },
+            "home_assistant": {
+                "title": "Connect Home Assistant",
+                "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Cloud.",
+                "connect": "Connect to Home Assistant"
+            },
             "invite_members": {
                 "title": "Add users",
                 "description": "Everyone in your home gets an account of their own, with the players and music sources you give them access to.",
