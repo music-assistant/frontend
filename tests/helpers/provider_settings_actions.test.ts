@@ -488,6 +488,7 @@ function providerInstance(
     is_streaming_provider: null,
     name: "Spotify",
     supported_features: [],
+    supported_artist_types: [],
     type: ProviderType.MUSIC,
     ...overrides,
   };

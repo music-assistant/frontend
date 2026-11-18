@@ -414,9 +414,10 @@ const isMobile = computed(() => store.mobileLayout);
   cursor: default;
 }
 
-/* Source row hides in place; the ghost stands in while dragging. */
+/* Source row hides in place; the ghost stands in while dragging. Visibility,
+   not opacity, so the row is back at once on drop and does not fade in. */
 .qitem--dragging {
-  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
 }
 

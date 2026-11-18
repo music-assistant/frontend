@@ -43,6 +43,9 @@
         <Check class="size-3" aria-hidden="true" />
         {{ $t("settings.catalog.added") }}
       </Badge>
+      <Badge v-if="badge" variant="info" data-testid="catalog-card-badge">
+        {{ badge }}
+      </Badge>
     </template>
     <p
       class="m-0 mt-0.5 text-xs text-muted-foreground"
@@ -129,6 +132,8 @@ interface Props {
   pairedWith?: string | null;
   // whether the user may ask not to have it suggested any more
   dismissible?: boolean;
+  // why it is suggested, as the label of a badge
+  badge?: string;
 }
 
 const props = defineProps<Props>();

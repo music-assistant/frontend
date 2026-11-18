@@ -1,6 +1,7 @@
-import { shallowMount, type VueWrapper } from "@vue/test-utils";
+import { mount, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isEntryDisabled, type ConfigEntryUI } from "@/helpers/config_entry_ui";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   ConfigEntryType,
   type ConfigEntry,
@@ -8,15 +9,20 @@ import {
 } from "@/plugins/api/interfaces";
 import ProtocolConfigSection from "@/views/settings/ProtocolConfigSection.vue";
 
-const { apiMock } = vi.hoisted(() => ({
+const { apiMock, emitEvent } = vi.hoisted(() => ({
   apiMock: {
     getProvider: vi.fn(),
   },
+  emitEvent: vi.fn(),
 }));
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
   default: apiMock,
+}));
+
+vi.mock("@/plugins/eventbus", () => ({
+  eventbus: { emit: emitEvent },
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -25,6 +31,7 @@ vi.mock("@/plugins/i18n", () => ({
 
 describe("ProtocolConfigSection", () => {
   beforeEach(() => {
+    emitEvent.mockReset();
     apiMock.getProvider.mockReset();
     apiMock.getProvider.mockImplementation((domain: string) => ({
       available: true,
@@ -166,7 +173,93 @@ describe("ProtocolConfigSection", () => {
     ).toEqual([true, true]);
     expect(wrapper.text()).toContain("settings.protocol_provider_unavailable");
   });
+
+  it("offers a menu only on an output that has something to offer", () => {
+    const outputMenuItems = vi.fn((output: OutputProtocol) =>
+      output.protocol_domain === "airplay" ? [SPLIT_OFF_ITEM] : [],
+    );
+
+    const wrapper = mountSection(MULTIPLE_OUTPUT_ENTRIES, MULTIPLE_OUTPUTS, {
+      outputMenuItems,
+    });
+
+    const panels = wrapper.findAllComponents({ name: "AccordionItem" });
+    expect(panels.map((panel) => panel.find(OUTPUT_MENU).exists())).toEqual([
+      false,
+      true,
+    ]);
+    expect(panels[1].get(OUTPUT_MENU).attributes("aria-label")).toBe(
+      "more_options: airplay",
+    );
+    expect(outputMenuItems).toHaveBeenCalledWith(MULTIPLE_OUTPUTS[1]);
+    // the output without a menu keeps its place, so the chevrons line up
+    expect(
+      panels.map((panel) => panel.find(OUTPUT_MENU_PLACEHOLDER).exists()),
+    ).toEqual([true, false]);
+  });
+
+  it("offers no menu on a config that is not a player's", () => {
+    const wrapper = mountSection(MULTIPLE_OUTPUT_ENTRIES, MULTIPLE_OUTPUTS);
+
+    expect(wrapper.find(OUTPUT_MENU).exists()).toBe(false);
+    expect(wrapper.find(OUTPUT_MENU_PLACEHOLDER).exists()).toBe(false);
+  });
+
+  it("opens the menu of an output under its button without toggling its panel", async () => {
+    const wrapper = mount(ProtocolConfigSection, {
+      props: {
+        ...sectionProps(MULTIPLE_OUTPUT_ENTRIES, MULTIPLE_OUTPUTS),
+        outputMenuItems: () => [SPLIT_OFF_ITEM],
+      },
+      global: { stubs: { ConfigEntryRow: true, ProviderIcon: true } },
+    });
+    const panel = wrapper.findAll('[data-slot="accordion-item"]')[1];
+    const menuButton = panel.get(OUTPUT_MENU);
+    vi.spyOn(menuButton.element, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(40, 20, 32, 32),
+    );
+
+    await menuButton.trigger("click");
+
+    expect(emitEvent).toHaveBeenCalledWith("contextmenu", {
+      items: [SPLIT_OFF_ITEM],
+      posX: 40,
+      posY: 52,
+    });
+    expect(panel.attributes("data-state")).toBe("closed");
+    // the trigger beside it still opens the panel
+    await panel.get('[data-slot="accordion-trigger"]').trigger("click");
+    expect(panel.attributes("data-state")).toBe("open");
+  });
+
+  it("offers the menu of a single output too", () => {
+    const wrapper = mountSection(
+      [entry("native_buffer", "protocol_sonos")],
+      [outputProtocol("native", "sonos", true)],
+      { outputMenuItems: () => [SPLIT_OFF_ITEM] },
+    );
+
+    expect(wrapper.findComponent({ name: "Accordion" }).exists()).toBe(false);
+    expect(wrapper.find(OUTPUT_MENU).exists()).toBe(true);
+  });
 });
+
+const OUTPUT_MENU = '[data-testid="output-menu"]';
+
+const OUTPUT_MENU_PLACEHOLDER = '[data-testid="output-menu-placeholder"]';
+
+const SPLIT_OFF_ITEM: ContextMenuItem = { label: "settings.split_off_output" };
+
+// a native output without a menu next to an output with one
+const MULTIPLE_OUTPUT_ENTRIES = [
+  entry("native_buffer", "protocol_sonos"),
+  enabledEntry("airplay-output", "protocol_airplay", true),
+];
+
+const MULTIPLE_OUTPUTS = [
+  outputProtocol("native", "sonos", true),
+  outputProtocol("airplay-output", "airplay"),
+];
 
 function entry(
   key: string,
@@ -262,9 +355,12 @@ function sectionProps(
 function mountSection(
   entries: ConfigEntryUI[],
   outputProtocols: OutputProtocol[],
+  extraProps: {
+    outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
+  } = {},
 ) {
   return shallowMount(ProtocolConfigSection, {
-    props: sectionProps(entries, outputProtocols),
+    props: { ...sectionProps(entries, outputProtocols), ...extraProps },
     global: { renderStubDefaultSlot: true },
   });
 }

@@ -871,7 +871,6 @@
     "uri_copied": "URI kopiert til utklippstavlen",
     "uri_copy_failed": "Kunne ikke kopiere URI til utklippstavlen",
     "player_tip": {
-        "selected_player": "Valgte spiller",
         "currently_playing": "Spiller på"
     },
     "more_options": "Flere alternativer",
@@ -1423,7 +1422,6 @@
     "grouped_volume": "Gruppert volum",
     "player_select": {
         "active_player_volume_only": "Vis kun volumglidebrytere for aktive spillere",
-        "and_more": "...og {0} flere",
         "disable_player_confirmation": "Denne spilleren vil være skjult inntil den aktiveres på nytt i spillerinnstillingene.",
         "disable_player_title": "Deaktiver {0}?",
         "display_options": "Visningsalternativer",

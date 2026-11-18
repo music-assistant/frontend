@@ -1,22 +1,28 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
+  getOutputMenuItems,
   getPlayerSettingsMenuItems,
   getSetupRequiredPlayerMenuItems,
+  mergePlayer,
   removeUnavailablePlayers,
   renamePlayer,
   setPlayerEnabled,
 } from "@/helpers/player_settings_actions";
 import {
   PlayerType,
+  ProtocolRole,
   ProviderFeature,
   ProviderType,
   Scope,
+  type OutputProtocol,
   type Player,
   type PlayerOption,
+  type PlayerProtocolInfo,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import { flushPromises } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { outputProtocol } from "../fixtures/outputProtocol";
 import { playerConfig } from "../fixtures/playerConfig";
 import { providerManifest } from "../fixtures/providerManifest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
@@ -34,11 +40,13 @@ const {
     getProvider: vi.fn(),
     getPlayerConfig: vi.fn(),
     getProviderManifest: vi.fn(),
+    mergePlayers: vi.fn(),
     players: {} as Record<string, unknown>,
     queues: {} as Record<string, unknown>,
     removePlayer: vi.fn(),
     removeUnavailablePlayers: vi.fn(),
     savePlayerConfig: vi.fn(),
+    unlinkProtocol: vi.fn(),
   },
   emitEvent: vi.fn(),
   hasScope: vi.fn<(scope: Scope) => boolean>(),
@@ -699,6 +707,191 @@ describe("renamePlayer", () => {
   });
 });
 
+describe("getPlayerSettingsMenuItems merging", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer();
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  it("opens the merge dialog for the player", () => {
+    const onMerged = vi.fn();
+    const menuItems = getPlayerSettingsMenuItems(
+      playerConfig({ name: "Kitchen" }),
+      { onMerged },
+    );
+
+    menuItem(menuItems, "settings.merge_player").action?.();
+
+    expect(emitEvent).toHaveBeenCalledWith("playerMergeDialog", {
+      playerId: "kitchen",
+      playerName: "Kitchen",
+      onMerged,
+    });
+  });
+
+  it("does not offer to merge a group", () => {
+    expect(
+      visibleLabels(
+        getPlayerSettingsMenuItems(
+          playerConfig({ player_type: PlayerType.GROUP }),
+        ),
+      ),
+    ).not.toContain("settings.merge_player");
+  });
+
+  it("leaves splitting an output off to the menu of that output", () => {
+    registerPlayer({
+      protocols: [protocol("chromecast"), protocol("airplay")],
+    });
+
+    expect(
+      visibleLabels(getPlayerSettingsMenuItems(playerConfig())),
+    ).not.toContain("settings.split_off_output");
+  });
+});
+
+describe("getOutputMenuItems", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer({
+      protocols: [protocol("chromecast"), protocol("airplay")],
+    });
+    apiMock.getProviderManifest.mockImplementation((domain: string) =>
+      providerManifest({ domain, name: domain.toUpperCase() }),
+    );
+  });
+
+  it("offers to split off an output of a player with more than one", () => {
+    expect(
+      visibleLabels(getOutputMenuItems(playerConfig(), output("airplay"))),
+    ).toEqual(["settings.split_off_output"]);
+  });
+
+  it("offers nothing for the only output of a player", () => {
+    registerPlayer({ protocols: [protocol("chromecast")] });
+
+    expect(getOutputMenuItems(playerConfig(), output("chromecast"))).toEqual(
+      [],
+    );
+  });
+
+  it("offers nothing for an output that rides on another one", () => {
+    const sendspin = output("sendspin", { derived_from: "airplay" });
+    registerPlayer({
+      protocols: [
+        protocol("chromecast"),
+        protocol("airplay"),
+        protocol("sendspin"),
+      ],
+      output_protocols: [output("chromecast"), output("airplay"), sendspin],
+    });
+
+    expect(getOutputMenuItems(playerConfig(), sendspin)).toEqual([]);
+    expect(
+      visibleLabels(getOutputMenuItems(playerConfig(), output("airplay"))),
+    ).toEqual(["settings.split_off_output"]);
+  });
+
+  it("offers nothing for a player that has no live state", () => {
+    apiMock.players = {};
+
+    expect(getOutputMenuItems(playerConfig(), output("airplay"))).toEqual([]);
+  });
+
+  it("splits the output off after asking and reports the new player", async () => {
+    const onSplitOff = vi.fn();
+    apiMock.unlinkProtocol.mockResolvedValue("new-player");
+
+    menuItem(
+      getOutputMenuItems(playerConfig(), output("airplay"), { onSplitOff }),
+      "settings.split_off_output",
+    ).action?.();
+
+    expect(apiMock.unlinkProtocol).not.toHaveBeenCalled();
+    await confirmation().onConfirm();
+    expect(apiMock.unlinkProtocol).toHaveBeenCalledWith("airplay");
+    expect(onSplitOff).toHaveBeenCalledOnce();
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("splits off the protocol behind the native output", async () => {
+    apiMock.unlinkProtocol.mockResolvedValue("new-player");
+    registerPlayer({
+      protocols: [
+        {
+          ...protocol("sonos"),
+          protocol_id: "RINCON_1",
+          role: ProtocolRole.NATIVE,
+        },
+        protocol("airplay"),
+      ],
+    });
+
+    menuItem(
+      getOutputMenuItems(
+        playerConfig(),
+        output("sonos", { output_protocol_id: "native", is_native: true }),
+      ),
+      "settings.split_off_output",
+    ).action?.();
+    await confirmation().onConfirm();
+
+    expect(apiMock.unlinkProtocol).toHaveBeenCalledWith("RINCON_1");
+  });
+
+  it("leaves the player as it is when the server refuses the split", async () => {
+    const onSplitOff = vi.fn();
+    apiMock.unlinkProtocol.mockRejectedValueOnce(new Error("Refused"));
+
+    menuItem(
+      getOutputMenuItems(playerConfig(), output("chromecast"), { onSplitOff }),
+      "settings.split_off_output",
+    ).action?.();
+    await confirmation().onConfirm();
+
+    expect(onSplitOff).not.toHaveBeenCalled();
+    // the api layer reports the server's reason, so this must not toast a second time
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+  });
+});
+
+describe("mergePlayer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("hands the player bar to the player that stays", async () => {
+    apiMock.mergePlayers.mockResolvedValue(undefined);
+    storeMock.activePlayerId = "kitchen-airplay";
+
+    expect(await mergePlayer("kitchen-airplay", "kitchen")).toBe(true);
+
+    expect(apiMock.mergePlayers).toHaveBeenCalledWith(
+      "kitchen-airplay",
+      "kitchen",
+    );
+    expect(storeMock.activePlayerId).toBe("kitchen");
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", "kitchen");
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("keeps everything as it is when the server refuses the merge", async () => {
+    apiMock.mergePlayers.mockRejectedValueOnce(new Error("Refused"));
+    storeMock.activePlayerId = "kitchen-airplay";
+
+    expect(await mergePlayer("kitchen-airplay", "kitchen")).toBe(false);
+
+    expect(storeMock.activePlayerId).toBe("kitchen-airplay");
+    expect(setPreference).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+});
+
 /**
  * The labels a user actually sees, so an entry the menu hides counts as absent.
  */
@@ -752,8 +945,36 @@ function player(overrides: Partial<Player> = {}): Player {
     hide_in_ui: false,
     synced_to: null,
     options: [{ key: "eq", name: "EQ" } as PlayerOption],
+    protocols: [],
+    output_protocols: [],
     ...overrides,
   } as Player;
+}
+
+function protocol(domain: string): PlayerProtocolInfo {
+  return {
+    protocol_id: domain,
+    domain,
+    provider: domain,
+    role: ProtocolRole.AUDIO,
+    available: true,
+    active: false,
+  };
+}
+
+/**
+ * The output a protocol of the given domain gives a player.
+ */
+function output(
+  domain: string,
+  overrides: Partial<OutputProtocol> = {},
+): OutputProtocol {
+  return outputProtocol({
+    output_protocol_id: domain,
+    name: domain,
+    protocol_domain: domain,
+    ...overrides,
+  });
 }
 
 function providerInstance(
@@ -767,6 +988,7 @@ function providerInstance(
     available: true,
     is_streaming_provider: null,
     supported_features: [ProviderFeature.REMOVE_PLAYER],
+    supported_artist_types: [],
     ...overrides,
   };
 }

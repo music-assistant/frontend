@@ -31,11 +31,17 @@ import { playlist } from "../../fixtures/playlist";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
 import { userSummary } from "../../fixtures/user";
 
-const { hasScope, mockToastError, mockToastInfo } = vi.hoisted(() => ({
-  hasScope: vi.fn<(scope: Scope) => boolean>(),
-  mockToastError: vi.fn(),
-  mockToastInfo: vi.fn(),
-}));
+const { hasScope, mockToastError, mockToastInfo, routerMock, storeMock } =
+  vi.hoisted(() => ({
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
+    mockToastError: vi.fn(),
+    mockToastInfo: vi.fn(),
+    routerMock: {
+      currentRoute: { value: { name: "home" as string } },
+      push: vi.fn(),
+    },
+    storeMock: { showFullscreenPlayer: false },
+  }));
 
 vi.mock("vue-sonner", () => ({
   toast: {
@@ -54,8 +60,9 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 vi.mock("@/plugins/store", () => ({
-  store: {},
+  store: storeMock,
 }));
+vi.mock("@/plugins/router", () => ({ default: routerMock }));
 
 vi.mock("@/plugins/auth", () => ({
   authManager: { hasScope },
@@ -1883,6 +1890,42 @@ describe("MusicAssistantApi error handling", () => {
     expect(toast.action?.label).toBe("background_tasks.open");
   });
 
+  it("closes the full screen player when the task toast opens the task list", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    storeMock.showFullscreenPlayer = true;
+
+    const toast = await runTaskToast(api, transport);
+    toast.action?.onClick();
+
+    await vi.waitFor(() =>
+      expect(routerMock.push).toHaveBeenCalledWith({ name: "backgroundtasks" }),
+    );
+    expect(storeMock.showFullscreenPlayer).toBe(false);
+  });
+
+  it("adds a queue to a playlist and notifies the background task toast", async () => {
+    const result = api.queueCommandAddToPlaylist("queue-1", "42");
+
+    expect(transport.lastCommand.command).toBe("player_queues/add_to_playlist");
+    expect(transport.lastCommand.args).toEqual({
+      queue_id: "queue-1",
+      db_playlist_id: "42",
+    });
+
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: { id: "task-1" },
+      partial: false,
+    });
+    await result;
+    await vi.waitFor(() =>
+      expect(mockToastInfo).toHaveBeenCalledWith(
+        "background_tasks.toast.added",
+        expect.anything(),
+      ),
+    );
+  });
+
   it("leaves the task list out of the task toast for a guest", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
 
@@ -1892,14 +1935,18 @@ describe("MusicAssistantApi error handling", () => {
   });
 
   describe("with the auth module gone after a server update", () => {
-    beforeEach(() => {
+    // Importing settles each mock in the hook: that takes a round trip to the
+    // Vitest main process, which must not eat into the toast's wait.
+    beforeEach(async () => {
       vi.doMock("@/plugins/auth", () => {
         throw new TypeError("Failed to fetch dynamically imported module");
       });
+      await expect(import("@/plugins/auth")).rejects.toThrow();
     });
 
-    afterEach(() => {
+    afterEach(async () => {
       vi.doMock("@/plugins/auth", () => ({ authManager: { hasScope } }));
+      await import("@/plugins/auth");
     });
 
     it("still shows the task toast, without the task list", async () => {
@@ -2007,7 +2054,7 @@ function setUrl(url: string) {
 async function runTaskToast(
   api: MusicAssistantApi,
   transport: TestTransport,
-): Promise<{ action?: { label: string } }> {
+): Promise<{ action?: { label: string; onClick: () => void } }> {
   const result = api.runTask("task-1");
   transport.receive({
     message_id: transport.lastCommand.message_id!,

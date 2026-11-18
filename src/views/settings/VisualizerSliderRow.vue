@@ -14,7 +14,7 @@
     <div class="flex w-full shrink-0 items-center gap-3 sm:w-64">
       <Slider
         :model-value="[draft]"
-        :thumb-label="ariaLabel"
+        :thumb-label="label"
         :min="min"
         :max="max"
         :step="step"
@@ -46,7 +46,6 @@ const props = defineProps<{
   step: number;
   /** Suffix of the value readout, such as "%". */
   unit: string;
-  ariaLabel?: string;
 }>();
 
 const emit = defineEmits<{

@@ -125,6 +125,43 @@ describe("pluralized settings messages", () => {
   });
 });
 
+describe("one|few|other plural forms", () => {
+  let originalLocale: string;
+
+  beforeEach(() => {
+    originalLocale = i18n.global.locale.value;
+  });
+
+  afterEach(() => {
+    i18n.global.locale.value = originalLocale;
+  });
+
+  const nTracks = (n: number) =>
+    i18n.global.t("n_tracks", n, { named: { count: n } });
+
+  it("picks the Slovak form for 1, few and many", () => {
+    i18n.global.locale.value = "sk_SK";
+    expect(nTracks(1)).toBe("1 skladba");
+    expect(nTracks(3)).toBe("3 skladby");
+    expect(nTracks(5)).toBe("5 skladieb");
+    expect(
+      i18n.global.t("settings.players_total", 0, { named: { count: 0 } }),
+    ).toBe("Celkom 0 prehrávačov");
+  });
+
+  it("picks the Serbian form for 1, few and many", () => {
+    i18n.global.locale.value = "sr_Latn";
+    expect(nTracks(1)).toBe("1 numera");
+    expect(nTracks(3)).toBe("3 numere");
+    expect(nTracks(5)).toBe("5 numera");
+    expect(
+      i18n.global.t("artist_view_tracks", 21, { named: { count: 21 } }),
+    ).toBe("Prikaži 21 numeru");
+    expect(nTracks(22)).toBe("22 numere");
+    expect(nTracks(12)).toBe("12 numera");
+  });
+});
+
 describe("locale presentation", () => {
   it("canonicalizes underscore, script, and region subtags", () => {
     expect(canonicalizeLocale("pt_BR")).toBe("pt-BR");

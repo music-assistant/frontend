@@ -288,6 +288,10 @@ export const sortPopularFirst = (
     return compareNames(a.manifest.name, b.manifest.name);
   });
 
+/** Compares two names as the Catalog sorts them, ignoring case and accents. */
+export const compareNames = (a: string, b: string): number =>
+  a.localeCompare(b, undefined, { sensitivity: "base" });
+
 /**
  * How many entries a list shows at first, and how many more each time after: a
  * multiple of every column count of the list, so each page fills its last row.
@@ -428,8 +432,4 @@ export const getMaintainerProfileUrl = (handle: string) =>
 function popularRank(popular: readonly string[], domain: string): number {
   const index = popular.indexOf(domain);
   return index === -1 ? popular.length : index;
-}
-
-function compareNames(a: string, b: string): number {
-  return a.localeCompare(b, undefined, { sensitivity: "base" });
 }

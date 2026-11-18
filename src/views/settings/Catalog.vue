@@ -114,6 +114,7 @@
             "
             :type="activeType"
             :installing="community.installing"
+            :badges="badges"
             @open="openDetail"
             @add="addEntry"
           />
@@ -199,7 +200,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCatalogDetail } from "@/composables/settings/catalog/useCatalogDetail";
 import { useCommunityCatalog } from "@/composables/settings/catalog/useCommunityCatalog";
 import { useCatalogRecommendations } from "@/composables/settings/catalog/useCatalogRecommendations";
+import { useDismissedSuggestions } from "@/composables/settings/catalog/useDismissedSuggestions";
 import { useProviderCatalog } from "@/composables/settings/catalog/useProviderCatalog";
+import {
+  getCatalogBadges,
+  getCatalogSuggestions,
+} from "@/helpers/catalog_recommendations";
 import { getCommunityCatalogMenuItems } from "@/helpers/community_catalog_menu";
 import { startAddProvider } from "@/helpers/provider_add";
 import {
@@ -232,6 +238,22 @@ const { recommendations, settled: recommendationsSettled } =
   useCatalogRecommendations(() =>
     community.settled ? community.enabled : undefined,
   );
+
+const { dismissed } = useDismissedSuggestions();
+
+// why the lists of the tabs suggest an entry, from the suggestions of Discover
+const badges = computed(() =>
+  getCatalogBadges(
+    getCatalogSuggestions(
+      entries.value,
+      recommendations.value,
+      dismissed.value,
+      // a list does not say what a suggestion goes well with
+      () => undefined,
+    ),
+    community.enabled,
+  ),
+);
 
 // the community catalog joins the list and the suggestions lead Discover, so
 // the page waits for both too

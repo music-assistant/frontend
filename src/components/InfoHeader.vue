@@ -281,8 +281,7 @@
               <MarqueeText :sync="marqueeSync">
                 <a style="color: secondary" @click="albumClick(item.album)">{{
                   item.album.name
-                }}</a
-                ><span v-if="'year' in item.album && item.album.year">
+                }}</a><span v-if="'year' in item.album && item.album.year">
                   • {{ item.album.year }}</span
                 ></MarqueeText
               >
@@ -401,7 +400,7 @@
             style="padding-bottom: 10px; cursor: pointer"
             @click="onDescriptionClick"
           >
-            <MarkdownText :text="shortDescription" />
+            <MarkdownText :text="shortDescription" allow-images />
           </v-card-subtitle>
 
           <!-- genres/tags -->
@@ -442,6 +441,7 @@
         </DialogHeader>
         <MarkdownText
           :text="rawDescription"
+          allow-images
           class="max-w-none text-sm leading-relaxed"
           style="max-height: 60vh; overflow-y: auto"
         />
@@ -748,18 +748,22 @@ const collectionMediaType = computed(() => {
 const collectionArtists = computed(() => {
   if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
 
-  return getAudiobookCollectionArtists(
-    compProps.item as MediaCollection<Audiobook>,
-    (book) => book.authors,
+  return getAuthorsNarratorsArray(
+    getAudiobookCollectionArtists(
+      compProps.item as MediaCollection<Audiobook>,
+      (book) => book.authors,
+    ),
   );
 });
 
 const collectionNarrators = computed(() => {
   if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
 
-  return getAudiobookCollectionArtists(
-    compProps.item as MediaCollection<Audiobook>,
-    (book) => book.narrators,
+  return getAuthorsNarratorsArray(
+    getAudiobookCollectionArtists(
+      compProps.item as MediaCollection<Audiobook>,
+      (book) => book.narrators,
+    ),
   );
 });
 </script>

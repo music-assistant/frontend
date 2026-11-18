@@ -59,6 +59,7 @@
           :show-password-values="showPasswordValues"
           :is-disabled="isRowDisabled"
           :output-protocols="outputProtocols"
+          :output-menu-items="outputMenuItems"
           @update:value="onValueUpdate"
           @action="onEntryAction"
           @toggle-password="showPasswordValues = !showPasswordValues"
@@ -162,6 +163,7 @@ import {
 } from "@/helpers/config_entry_ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -196,6 +198,9 @@ export interface Props {
   // Output protocols of the player being configured; drives derived-transport labelling
   // in the protocol section. Omitted for provider/core configs.
   outputProtocols?: OutputProtocol[];
+  // The menu entries of an output of the player being configured; an output without any
+  // gets no menu button. Omitted for provider/core configs.
+  outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
   // Domain of the provider being configured; lets a field recognise the entries of the
   // provider it belongs to. Omitted for player/core configs.
   providerDomain?: string;
@@ -234,6 +239,7 @@ const resetKeys = ref(new Set<string>());
 // props
 const props = withDefaults(defineProps<Props>(), {
   outputProtocols: undefined,
+  outputMenuItems: undefined,
   providerDomain: undefined,
   // left unset rather than cast to false, so the user's own choice can apply
   showAdvancedSettings: undefined,

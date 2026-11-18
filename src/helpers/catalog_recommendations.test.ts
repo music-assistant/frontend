@@ -1,12 +1,15 @@
 import {
   CATALOG_ROW_SIZE,
+  type CatalogBadge,
   type CatalogSuggestion,
+  getCatalogBadges,
   getCatalogSuggestions,
   getReleaseLine,
   getSuggestionRows,
   getTopPicks,
   isPersonalSuggestion,
   readDismissedSuggestions,
+  sortSuggestedFirst,
   TOP_PICK_COUNT,
 } from "@/helpers/catalog_recommendations";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
@@ -17,6 +20,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { communityProvider } from "../../tests/fixtures/communityProvider";
+import { providerConfig } from "../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 
 const { DISCOVERED, COMPLEMENTS, POPULAR, NEW, UPDATED } =
@@ -234,6 +238,139 @@ describe("getSuggestionRows", () => {
   });
 });
 
+describe("getCatalogBadges", () => {
+  it("gives each the strongest reason, in its own order rather than the server's", () => {
+    const badges = getCatalogBadges(
+      [
+        suggestion("sonos", POPULAR),
+        suggestion("tidal", NEW),
+        suggestion("sonos", DISCOVERED),
+        suggestion("radio", UPDATED, true),
+        suggestion("tidal", COMPLEMENTS),
+        suggestion("radio", POPULAR, true),
+        suggestion("podcast", NEW, true),
+        suggestion("spotify", POPULAR),
+        suggestion("plex", NEW),
+        suggestion("plex", POPULAR),
+      ],
+      true,
+    );
+
+    expect(Object.fromEntries(badges)).toEqual({
+      sonos: badge("discovered", "settings.catalog.discovered_title"),
+      tidal: badge("complements", "settings.catalog.fits_your_setup"),
+      plex: badge("new", "settings.catalog.new_in_version"),
+      podcast: badge("community-new", "settings.catalog.community.new_badge"),
+      radio: badge(
+        "community-updated",
+        "settings.catalog.community.updated_title",
+      ),
+      spotify: badge("popular", "settings.catalog.popular"),
+    });
+  });
+
+  it("puts no badge on what is set up already, even when another can be added", () => {
+    const setUp = { ...entry("spotify"), instances: [providerConfig()] };
+
+    const badges = getCatalogBadges(
+      [
+        { entry: setUp, reason: DISCOVERED, pairedWith: null },
+        { entry: setUp, reason: POPULAR, pairedWith: null },
+        suggestion("sonos", POPULAR),
+      ],
+      true,
+    );
+
+    expect([...badges.keys()]).toEqual(["sonos"]);
+  });
+
+  it("puts no badge on what the user let go", () => {
+    const entries = [entry("sonos"), entry("tidal")];
+
+    const badges = getCatalogBadges(
+      getCatalogSuggestions(
+        entries,
+        [recommend("sonos", DISCOVERED), recommend("tidal", POPULAR)],
+        ["sonos"],
+        getName,
+      ),
+      true,
+    );
+
+    expect([...badges.keys()]).toEqual(["tidal"]);
+  });
+
+  it("leaves what is new in the community catalog out while it is not enabled", () => {
+    const badges = getCatalogBadges(
+      [
+        suggestion("radio", NEW, true),
+        suggestion("podcast", UPDATED, true),
+        suggestion("podcast", POPULAR, true),
+      ],
+      false,
+    );
+
+    expect(Object.fromEntries(badges)).toEqual({
+      podcast: badge("popular", "settings.catalog.popular"),
+    });
+  });
+
+  it("gives no badge without suggestions", () => {
+    expect(getCatalogBadges([], true).size).toBe(0);
+  });
+});
+
+describe("sortSuggestedFirst", () => {
+  const entries = [
+    "Zune",
+    "Sonos",
+    "Bandcamp",
+    "Plex",
+    "Airsonic",
+    "Tidal",
+  ].map((name) => ({ ...entry(name.toLowerCase()), manifest: manifest(name) }));
+
+  it("puts what has a badge first, the strongest reason first, by name within one reason and among the rest", () => {
+    const badges = getCatalogBadges(
+      [
+        suggestion("zune", POPULAR),
+        suggestion("tidal", NEW),
+        suggestion("sonos", POPULAR),
+        suggestion("plex", DISCOVERED),
+      ],
+      true,
+    );
+
+    expect(names(sortSuggestedFirst(entries, badges))).toEqual([
+      "Plex",
+      "Tidal",
+      "Sonos",
+      "Zune",
+      "Airsonic",
+      "Bandcamp",
+    ]);
+  });
+
+  it("lists by name without badges", () => {
+    expect(names(sortSuggestedFirst(entries, new Map()))).toEqual([
+      "Airsonic",
+      "Bandcamp",
+      "Plex",
+      "Sonos",
+      "Tidal",
+      "Zune",
+    ]);
+  });
+
+  function manifest(name: string) {
+    return providerManifest({ domain: name.toLowerCase(), name });
+  }
+
+  function names(list: CatalogEntry[]): string[] {
+    return list.map(({ manifest }) => manifest.name);
+  }
+});
+
 describe("isPersonalSuggestion", () => {
   it.each([
     [DISCOVERED, true],
@@ -312,6 +449,10 @@ function suggestion(
     reason,
     pairedWith: null,
   };
+}
+
+function badge(key: string, label: string): CatalogBadge {
+  return { key, label };
 }
 
 function domains(suggestions: CatalogSuggestion[]): string[] {
