@@ -118,7 +118,7 @@ import {
   isScheduledTask,
 } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
-import { TASKS_DOMAIN } from "@/helpers/settings_pages";
+import { SETTINGS_PAGES } from "@/helpers/settings_pages";
 import { copyToClipboard } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
@@ -157,7 +157,7 @@ const viewMode = computed(() => tasksViewMode.viewMode.value);
 const canManageTasks = computed(() =>
   authManager.hasScope(Scope.SYSTEM_MANAGE),
 );
-// the settings of the tasks controller sit on a page of their own
+// the settings of the tasks module sit on a page of their own
 const taskSettingsRows = computed<SettingsRow[]>(() =>
   authManager.hasScope(Scope.CONFIG_CORE_WRITE)
     ? [
@@ -166,7 +166,7 @@ const taskSettingsRows = computed<SettingsRow[]>(() =>
           icon: markRaw(Settings2),
           label: t("background_tasks.settings.title"),
           description: t("background_tasks.settings.description"),
-          to: { name: "editcore", params: { domain: TASKS_DOMAIN } },
+          to: SETTINGS_PAGES.task_settings.route,
         },
       ]
     : [],

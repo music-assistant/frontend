@@ -354,7 +354,13 @@ describe("Settings breadcrumbs on the audio analysis status", () => {
   });
 });
 
-describe("Settings breadcrumbs on the settings of a controller", () => {
+describe("Settings breadcrumbs on the System pages", () => {
+  const SYSTEM = {
+    title: "settings.system",
+    disabled: false,
+    to: { name: "systemsettings" },
+  };
+
   beforeEach(() => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   });
@@ -362,48 +368,38 @@ describe("Settings breadcrumbs on the settings of a controller", () => {
   afterEach(() => {
     routeState.name = "editplayeroptions";
     routeState.params = { playerId: "kitchen" };
+    delete apiMock.providerManifests.radio_tuner;
   });
 
-  it("hang the settings of the tasks under the background tasks", () => {
-    expect(pageTrail("editcore", { domain: "tasks" })).toEqual([
-      {
-        title: "settings.system",
-        disabled: false,
-        to: { name: "systemsettings" },
-      },
+  it("hang the task settings under the background tasks", () => {
+    expect(pageTrail("tasksettings")).toEqual([
+      SYSTEM,
       {
         title: "background_tasks.title",
         disabled: false,
         to: { name: "backgroundtasks" },
       },
-      { title: "settings.settings", disabled: true },
+      { title: "background_tasks.settings.title", disabled: true },
     ]);
   });
 
-  it("hang the settings of the webserver under the network page", () => {
-    expect(pageTrail("editcore", { domain: "webserver" })).toEqual([
-      {
-        title: "settings.system",
-        disabled: false,
-        to: { name: "systemsettings" },
-      },
-      {
-        title: "settings.network.title",
-        disabled: false,
-        to: { name: "networksettings" },
-      },
-      { title: "settings.settings", disabled: true },
+  it("hang the diagnostics under the System settings", () => {
+    expect(pageTrail("diagnostics")).toEqual([
+      SYSTEM,
+      { title: "settings.diagnostics", disabled: true },
     ]);
   });
 
-  it("name any other controller below the System settings", () => {
-    expect(pageTrail("editcore", { domain: "streams" })).toEqual([
-      {
-        title: "settings.system",
-        disabled: false,
-        to: { name: "systemsettings" },
-      },
-      { title: "streams", disabled: true },
+  it("name a module no settings page shows by its manifest, below the System settings", () => {
+    apiMock.providerManifests.radio_tuner = {
+      name: "Radio tuner",
+      // the manifest of a core module has a type the provider types leave out
+      type: "core" as ProviderType,
+    };
+
+    expect(pageTrail("editcore", { domain: "radio_tuner" })).toEqual([
+      SYSTEM,
+      { title: "Radio tuner", disabled: true },
     ]);
   });
 });

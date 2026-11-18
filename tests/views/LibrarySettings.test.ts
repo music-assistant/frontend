@@ -111,11 +111,6 @@ describe("LibrarySettings", () => {
         category: "core/music",
         category_label: "settings.library.maintenance",
       },
-      {
-        key: "core/music/log_level",
-        category: "core/music",
-        category_label: "settings.library.maintenance",
-      },
     ]);
   });
 

@@ -40,7 +40,7 @@ beforeEach(() => {
 });
 
 describe("SettingsPageFormView on the playback defaults", () => {
-  it("shows the playback defaults of each module in one form, by category", async () => {
+  it("shows the playback defaults of each module in one form, by category, without their log levels", async () => {
     apiMock.getCoreConfig.mockImplementation(async (domain) =>
       playbackConfig(domain, STREAMS_ENTRIES),
     );
@@ -51,7 +51,6 @@ describe("SettingsPageFormView on the playback defaults", () => {
         key: "core/player_queues/volume_normalization",
         category: "volume_normalization",
       },
-      { key: "core/player_queues/log_level", category: "generic" },
       { key: "core/streams/buffer_size", category: "playback" },
       {
         key: "core/streams/volume_normalization_tracks",
@@ -60,7 +59,6 @@ describe("SettingsPageFormView on the playback defaults", () => {
       { key: "core/streams/allow_crossfade_same_album", category: "crossfade" },
       { key: "core/players/volume_step", category: "generic" },
       { key: "core/players/announce_tts_engine", category: "announcements" },
-      { key: "core/players/log_level", category: "generic" },
     ]);
   });
 
@@ -99,7 +97,7 @@ const STREAMS_ENTRIES: ConfigEntry[] = [
 ];
 
 describe("SettingsPageFormView on the metadata settings", () => {
-  it("shows every setting of the metadata module", async () => {
+  it("shows every setting of the metadata module but its log level", async () => {
     apiMock.getCoreConfig.mockResolvedValue(
       coreConfig("metadata", [
         entry("language", "generic"),
@@ -111,9 +109,24 @@ describe("SettingsPageFormView on the metadata settings", () => {
     expect(await formEntries("metadata")).toEqual([
       { key: "language", category: "generic" },
       { key: "enable_online_metadata", category: "generic" },
-      { key: "log_level", category: "generic" },
     ]);
     expect(apiMock.getCoreConfig).toHaveBeenCalledExactlyOnceWith("metadata");
+  });
+});
+
+describe("SettingsPageFormView on the task settings", () => {
+  it("shows every setting of the tasks module but its log level", async () => {
+    apiMock.getCoreConfig.mockResolvedValue(
+      coreConfig("tasks", [
+        entry("max_concurrent_tasks", "generic"),
+        entry("log_level", "generic"),
+      ]),
+    );
+
+    expect(await formEntries("task_settings")).toEqual([
+      { key: "max_concurrent_tasks", category: "generic" },
+    ]);
+    expect(apiMock.getCoreConfig).toHaveBeenCalledExactlyOnceWith("tasks");
   });
 });
 

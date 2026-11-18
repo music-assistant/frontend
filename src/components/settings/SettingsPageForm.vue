@@ -60,6 +60,9 @@ const props = defineProps<{
   page: SettingsPageId;
   // settings the page edits with controls of its own, in the custom slot
   customSettings?: readonly SettingsField[];
+  // the form is a part of a page about something else, so the toolbar's menu
+  // does not offer to reset it
+  embedded?: boolean;
 }>();
 
 defineSlots<{
@@ -125,7 +128,7 @@ const resetToDefaults = function () {
 // the toolbar's menu resets the form while it is on screen
 const toolbarMenu = useSettingsToolbarMenu();
 watch(
-  () => showForm.value && loaded.value,
+  () => !props.embedded && showForm.value && loaded.value,
   (resettable) => {
     toolbarMenu.value = resettable
       ? [

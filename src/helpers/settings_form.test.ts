@@ -1,6 +1,11 @@
-import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
+import {
+  ConfigEntryType,
+  type ConfigEntry,
+  type CoreConfig,
+} from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import {
+  buildLogLevelForm,
   buildSettingsForm,
   changedValuesByOwner,
   storedValues,
@@ -146,15 +151,15 @@ describe("buildSettingsForm", () => {
   it("keeps the entries of owners sharing a key apart", () => {
     const form = buildSettingsForm(
       [
-        { source: { owner: STREAMS }, entries: [entry("log_level")] },
-        { source: { owner: TASKS }, entries: [entry("log_level")] },
+        { source: { owner: STREAMS }, entries: [entry("bind_port")] },
+        { source: { owner: TASKS }, entries: [entry("bind_port")] },
       ],
       translate,
     );
 
     expect(Object.fromEntries(form.fields)).toEqual({
-      "core/streams/log_level": { owner: STREAMS, key: "log_level" },
-      "core/tasks/log_level": { owner: TASKS, key: "log_level" },
+      "core/streams/bind_port": { owner: STREAMS, key: "bind_port" },
+      "core/tasks/bind_port": { owner: TASKS, key: "bind_port" },
     });
   });
 
@@ -183,6 +188,20 @@ describe("buildSettingsForm", () => {
     });
   });
 
+  it("leaves out the log level of every source", () => {
+    const form = buildSettingsForm(
+      [
+        {
+          source: { owner: TASKS },
+          entries: [entry("max_concurrent_tasks"), entry("log_level")],
+        },
+      ],
+      translate,
+    );
+
+    expect(form.entries.map((e) => e.key)).toEqual(["max_concurrent_tasks"]);
+  });
+
   it("leaves the loaded entries as they are", () => {
     const bindPort = entry("bind_port");
 
@@ -195,6 +214,87 @@ describe("buildSettingsForm", () => {
     );
 
     expect(bindPort).toEqual(entry("bind_port"));
+  });
+});
+
+describe("buildLogLevelForm", () => {
+  const MODULE_NAMES: Record<string, string> = {
+    streams: "Streams",
+    tasks: "Background tasks",
+    cache: "Cache",
+  };
+  const moduleName = (domain: string) => MODULE_NAMES[domain];
+
+  function moduleConfig(domain: string, entries: ConfigEntry[]): CoreConfig {
+    return {
+      domain,
+      last_error: null,
+      values: Object.fromEntries(entries.map((e) => [e.key, e])),
+    };
+  }
+
+  function logLevel(value: string): ConfigEntry {
+    return entry("log_level", "generic", {
+      type: ConfigEntryType.STRING,
+      default_value: "GLOBAL",
+      description: "Set the log verbosity for this provider.",
+      advanced: true,
+      value,
+    });
+  }
+
+  it("shows the log level of each module under the name of the module, by name", () => {
+    const form = buildLogLevelForm(
+      [
+        moduleConfig("streams", [entry("bind_port"), logLevel("DEBUG")]),
+        moduleConfig("tasks", [logLevel("GLOBAL")]),
+        moduleConfig("cache", [logLevel("INFO")]),
+      ],
+      moduleName,
+      "Log levels",
+    );
+
+    expect(
+      form.entries.map(({ key, label, value }) => ({ key, label, value })),
+    ).toEqual([
+      {
+        key: "core/tasks/log_level",
+        label: "Background tasks",
+        value: "GLOBAL",
+      },
+      { key: "core/cache/log_level", label: "Cache", value: "INFO" },
+      { key: "core/streams/log_level", label: "Streams", value: "DEBUG" },
+    ]);
+    expect(Object.fromEntries(form.fields)).toEqual({
+      "core/tasks/log_level": { owner: TASKS, key: "log_level" },
+      "core/cache/log_level": { owner: coreOwner("cache"), key: "log_level" },
+      "core/streams/log_level": { owner: STREAMS, key: "log_level" },
+    });
+  });
+
+  it("puts every log level in one section, without the description of a single module", () => {
+    const form = buildLogLevelForm(
+      [moduleConfig("streams", [logLevel("DEBUG")])],
+      moduleName,
+      "Log levels",
+    );
+
+    expect(form.entries[0]).toMatchObject({
+      category: "log_levels",
+      category_label: "Log levels",
+      description: null,
+      default_value: "GLOBAL",
+    });
+  });
+
+  it("leaves out a module without a log level", () => {
+    const form = buildLogLevelForm(
+      [moduleConfig("streams", [entry("bind_port")])],
+      moduleName,
+      "Log levels",
+    );
+
+    expect(form.entries).toEqual([]);
   });
 });
 
