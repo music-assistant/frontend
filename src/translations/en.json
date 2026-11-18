@@ -954,6 +954,9 @@
         "options": "Options",
         "server_clock_offset": "Clock offset (server vs this device)",
         "action_completed": "Action completed",
+        "action_link_refused": "The link was not opened, because it leads into Music Assistant itself.",
+        "action_page_home_network": "The page opened on the home network address of Music Assistant, so it only loads while you are at home.",
+        "action_page_unavailable": "The page can only open on your home network, but the home network address of Music Assistant is unknown.",
         "hass_controls": {
             "add_hass_entity": "Add a Home Assistant entity...",
             "add_entity": "Add entity...",

@@ -26,6 +26,8 @@ interface UseConfigActionOptions<T extends Config> {
   invokeAction: (action: string) => Promise<ConfigEntry[] | ConfigActionResult>;
   /** Persists the given raw values and returns the stored config. */
   saveValues: (values: Record<string, ConfigValueType>) => Promise<Config>;
+  /** Domain or instance id of the provider that answers the given action, if a provider does. */
+  answeredBy?: (action: string) => string | undefined;
 }
 
 /**
@@ -35,12 +37,14 @@ interface UseConfigActionOptions<T extends Config> {
  * @param loading - Ref driving the form's loading overlay.
  * @param invokeAction - Invokes the action for this config's flavour.
  * @param saveValues - Saves raw values for this config's flavour.
+ * @param answeredBy - Names the provider that answers an action.
  */
 export function useConfigAction<T extends Config>({
   config,
   loading,
   invokeAction,
   saveValues,
+  answeredBy,
 }: UseConfigActionOptions<T>) {
   const onAction = async function (
     action: string,
@@ -53,7 +57,7 @@ export function useConfigAction<T extends Config>({
       if (!Array.isArray(response)) {
         // A result only reports the outcome of the action: it never carries
         // values, so the form is left untouched.
-        showActionResult(response);
+        showActionResult(response, answeredBy?.(action));
         return;
       }
       const entries = openActionUrlEntries(response);

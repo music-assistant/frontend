@@ -677,6 +677,7 @@ const { onAction } = useConfigAction({
       values,
       config.value!.instance_id,
     ),
+  answeredBy: () => config.value!.domain,
 });
 
 const getAuthorsMarkdown = function (authors: string[]) {

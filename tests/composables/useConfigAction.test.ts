@@ -8,7 +8,8 @@ import {
   type ConfigValueType,
 } from "@/plugins/api/interfaces";
 
-const { toastMock } = vi.hoisted(() => ({
+const { showActionResultMock, toastMock } = vi.hoisted(() => ({
+  showActionResultMock: vi.fn(),
   toastMock: {
     error: vi.fn(),
     success: vi.fn(),
@@ -22,6 +23,13 @@ vi.mock("vue-sonner", () => ({
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
 }));
+
+vi.mock("@/helpers/action_result", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/helpers/action_result")>();
+  showActionResultMock.mockImplementation(actual.showActionResult);
+  return { ...actual, showActionResult: showActionResultMock };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -93,6 +101,7 @@ describe("useConfigAction", () => {
     invokeAction.mockResolvedValueOnce({
       message: "Kopieer deze url naar je client",
       open_url: null,
+      open_page: null,
     });
 
     await onAction("do_thing", {}, true);
@@ -113,6 +122,7 @@ describe("useConfigAction", () => {
     invokeAction.mockResolvedValueOnce({
       message: null,
       open_url: "https://example.com/mcp",
+      open_page: null,
     });
 
     await onAction("do_thing", {}, false);
@@ -121,6 +131,20 @@ describe("useConfigAction", () => {
     expect(config.value!.values).toEqual({ existing: entry() });
     expect(toastMock.success).toHaveBeenCalledWith("settings.action_completed");
     openSpy.mockRestore();
+  });
+
+  it("tells the result handling which provider answered the action", async () => {
+    const answeredBy = vi.fn((action: string) => `domain_of_${action}`);
+    const { invokeAction, onAction } = setup(answeredBy);
+    const answer = { message: "Done", open_url: null, open_page: null };
+    invokeAction.mockResolvedValueOnce(answer);
+
+    await onAction("do_thing", {}, false);
+
+    expect(showActionResultMock).toHaveBeenCalledExactlyOnceWith(
+      answer,
+      "domain_of_do_thing",
+    );
   });
 
   it("leaves reporting a failed action to the api and clears loading", async () => {
@@ -162,7 +186,7 @@ describe("useConfigAction", () => {
   });
 });
 
-function setup() {
+function setup(answeredBy?: (action: string) => string | undefined) {
   const config = ref<{ values: Record<string, ConfigEntry> }>({
     values: { existing: entry() },
   });
@@ -181,6 +205,7 @@ function setup() {
     loading,
     invokeAction,
     saveValues,
+    answeredBy,
   });
 
   return { config, loading, invokeAction, saveValues, onAction };

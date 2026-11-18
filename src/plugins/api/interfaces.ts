@@ -888,11 +888,14 @@ export interface Config {
 
 export interface ConfigActionResult {
   // Outcome of a one-shot config action: a message to show to the user
-  // and/or a url to open once. Either may be null; a result that carries
+  // and/or a url or page to open once. Any may be null; a result that carries
   // neither reports a generic success.
   // message: already localized server-side for the connection locale
   message: string | null;
   open_url: string | null;
+  // open_page: address of a page the provider serves itself, relative to the
+  // server's address; opened once in a new tab
+  open_page: string | null;
 }
 
 export enum FlowStepType {
