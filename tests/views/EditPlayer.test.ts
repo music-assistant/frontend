@@ -518,6 +518,7 @@ function providerInstance(): ProviderInstance {
     available: true,
     is_streaming_provider: null,
     supported_features: [],
+    supported_artist_types: [],
   };
 }
 

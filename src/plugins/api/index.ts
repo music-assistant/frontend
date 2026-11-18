@@ -2333,14 +2333,18 @@ export class MusicAssistantApi {
     queueId: string,
     queue_item_id: string,
     pos_shift = 1,
-  ) {
-    // Move queue item x up/down the queue.
+  ): Promise<void> {
+    // Move queue item x up/down the queue; resolves once the server has moved it.
     // - queue_id: id of the queue to process this request.
     // - queue_item_id: the item_id of the queueitem that needs to be moved.
     // - pos_shift: move item x positions down if positive value
     // - pos_shift: move item x positions up if negative value
     // - pos_shift:  move item to top of queue as next item if 0
-    this.playerQueueCommand(queueId, "move_item", { queue_item_id, pos_shift });
+    return this.sendCommand("player_queues/move_item", {
+      queue_id: queueId,
+      queue_item_id,
+      pos_shift,
+    });
   }
   public queueCommandMoveItemEnd(queueId: string, queue_item_id: string) {
     // Move queue item to the end of the queue.
@@ -2746,6 +2750,31 @@ export class MusicAssistantApi {
    */
   public removeUnavailablePlayers(dry_run = false): Promise<string[]> {
     return this.sendCommand("players/remove_unavailable", { dry_run });
+  }
+
+  /**
+   * Merge a player into another one, when the two turn out to be one device.
+   *
+   * @param playerId The player that goes; its outputs move to the target player.
+   * @param targetPlayer The player that stays.
+   */
+  public mergePlayers(playerId: string, targetPlayer: string): Promise<void> {
+    return this.sendCommand("players/merge", {
+      player_id: playerId,
+      target_player: targetPlayer,
+    });
+  }
+
+  /**
+   * Take an output off its player and give it a player of its own, and return
+   * the id of that new player.
+   *
+   * @param protocolId The protocol_id of the output.
+   */
+  public unlinkProtocol(protocolId: string): Promise<string> {
+    return this.sendCommand("players/unlink_protocol", {
+      protocol_id: protocolId,
+    });
   }
 
   // Sleep timer related functions/commands
