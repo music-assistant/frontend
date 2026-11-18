@@ -369,6 +369,7 @@ import {
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   AUDIOBOOK_ARTIST_TYPES,
+  detailRoute,
   isAuthorOrNarrator,
 } from "@/helpers/author_narrator";
 import {
@@ -752,10 +753,7 @@ const onMediaSelect = function (item: MediaItemTypeOrItemMapping) {
   recordRecentSearch();
   close();
   store.showFullscreenPlayer = false;
-  router.push({
-    name: item.media_type,
-    params: { itemId: item.item_id, provider: item.provider },
-  });
+  router.push(detailRoute(item));
 };
 
 // item mappings may omit is_playable, so treat only an explicit false as

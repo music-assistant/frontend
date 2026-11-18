@@ -27,22 +27,7 @@
           <div
             class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
           >
-            <div
-              v-if="authors.length"
-              class="flex min-w-0 items-center gap-2"
-              :title="$t('authors')"
-            >
-              <PenLine :size="16" class="flex-none" />
-              <span class="min-w-0 truncate">{{ authors.join(" / ") }}</span>
-            </div>
-            <div
-              v-if="narrators.length"
-              class="flex min-w-0 items-center gap-2"
-              :title="$t('narrators')"
-            >
-              <Mic :size="16" class="flex-none" />
-              <span class="min-w-0 truncate">{{ narrators.join(" / ") }}</span>
-            </div>
+            <AudiobookCredits :authors="authors" :narrators="narrators" />
             <DetailHeroFacts :icon="BookAudio" :facts="facts" />
           </div>
 
@@ -59,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import AudiobookCredits from "@/components/audiobook/AudiobookCredits.vue";
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
@@ -76,7 +62,7 @@ import {
   type MediaCollection,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { BookAudio, Mic, PenLine } from "@lucide/vue";
+import { BookAudio } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {

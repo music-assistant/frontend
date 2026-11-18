@@ -1,5 +1,6 @@
 // Shared handlers for the click/play/menu interactions on a media item,
 // dispatching to the details views and the item context menu.
+import { detailRoute } from "@/helpers/author_narrator";
 import { openExternalItem } from "@/helpers/open_external_item";
 import {
   showContextMenuForMediaItem,
@@ -183,13 +184,7 @@ export const handleMediaItemClick = async function (
 
   // all other: go to details view
   if (isExternalItem(item)) return openExternalItem(item);
-  router.push({
-    name: item.media_type,
-    params: {
-      itemId: item.item_id,
-      provider: item.provider,
-    },
-  });
+  router.push(detailRoute(item));
 };
 
 /**
