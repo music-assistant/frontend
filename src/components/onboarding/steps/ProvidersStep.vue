@@ -69,6 +69,7 @@
     <AddProviderDialog
       v-model:show="showAddProviderDialog"
       :provider-type="providerType"
+      :audio-source-only="connectingApps"
     />
   </section>
 </template>
@@ -92,8 +93,8 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import {
+  configuredAudioSourcePlugins,
   configuredProviders,
-  useOnboarding,
   type ConfiguredProvider,
 } from "@/composables/useOnboarding";
 import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
@@ -102,8 +103,7 @@ import { api } from "@/plugins/api";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
-import { Check, Music, Plus, Puzzle, TriangleAlert } from "@lucide/vue";
-import { match } from "ts-pattern";
+import { Check, Music, Plus, Smartphone, TriangleAlert } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 
 const props = defineProps<{
@@ -119,10 +119,10 @@ defineEmits<{
 }>();
 
 const showAddProviderDialog = ref(false);
-const { intent } = useOnboarding();
+// the players have a step of their own, so this one is the music sources or
+// the plugins that let the music apps play to Music Assistant
 const connectingApps = computed(
-  () =>
-    props.providerType === ProviderType.PLUGIN && intent.value === "phone_apps",
+  () => props.providerType === ProviderType.PLUGIN,
 );
 
 const needsReconfigure = (provider: ConfiguredProvider) =>
@@ -139,29 +139,23 @@ const reconfigure = function (provider: ConfiguredProvider) {
   });
 };
 
-const configured = computed(() => configuredProviders(props.providerType));
+const configured = computed(() =>
+  connectingApps.value
+    ? configuredAudioSourcePlugins()
+    : configuredProviders(props.providerType),
+);
 
-// the players have a step of their own, so this one is the music sources or
-// the plugins
-const descriptionKey = computed(() => {
-  if (connectingApps.value)
-    return "onboarding.steps.plugins.phone_apps_description";
-  return match(props.providerType)
-    .with(ProviderType.PLUGIN, () => "onboarding.steps.plugins.description")
-    .otherwise(() => "onboarding.steps.music_sources.description");
-});
+const descriptionKey = computed(() =>
+  connectingApps.value
+    ? "onboarding.steps.plugins.phone_apps_description"
+    : "onboarding.steps.music_sources.description",
+);
 
 const addLabelKey = computed(() =>
   connectingApps.value
     ? "onboarding.steps.plugins.connect"
-    : match(props.providerType)
-        .with(ProviderType.PLUGIN, () => "settings.add_plugin_provider")
-        .otherwise(() => "settings.add_music_provider"),
+    : "settings.add_music_provider",
 );
 
-const icon = computed(() =>
-  match(props.providerType)
-    .with(ProviderType.PLUGIN, () => markRaw(Puzzle))
-    .otherwise(() => markRaw(Music)),
-);
+const icon = computed(() => markRaw(connectingApps.value ? Smartphone : Music));
 </script>
