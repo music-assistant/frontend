@@ -191,6 +191,7 @@
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
+      :output-menu-items="getOutputMenu"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -221,6 +222,7 @@ import {
   ConfigValueType,
   EventMessage,
   EventType,
+  OutputProtocol,
   PlayerConfig,
   PlayerFeature,
   PlayerType,
@@ -239,7 +241,10 @@ import { getPlayerActionProvider } from "@/helpers/action_result";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
 import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
-import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import {
+  getOutputMenuItems,
+  getPlayerSettingsMenuItems,
+} from "@/helpers/player_settings_actions";
 import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
@@ -409,15 +414,6 @@ const openPlayerMenu = function (evt: MouseEvent) {
       editConfig.value?.discardChanges();
       router.replace(`/settings/editplayer/${targetPlayerId}`);
     },
-    // the server reset the choices that named the output that went, so the
-    // form starts over from what is stored
-    onSplitOff: () => {
-      if (!config.value) return;
-      const playerId = config.value.player_id;
-      editConfig.value?.discardChanges();
-      config.value = undefined;
-      void loadConfig(playerId);
-    },
   });
   // resetting acts on the form rather than on the player, so it is not part of
   // the menu the other player surfaces share
@@ -437,6 +433,21 @@ const openPlayerMenu = function (evt: MouseEvent) {
     items: menuItems,
     posX: trigger ? trigger.left : evt.clientX,
     posY: trigger ? trigger.bottom : evt.clientY,
+  });
+};
+
+const getOutputMenu = function (output: OutputProtocol) {
+  if (!config.value) return [];
+  return getOutputMenuItems(config.value, output, {
+    // the server reset the choices that named the output that went, so the
+    // form starts over from what is stored
+    onSplitOff: () => {
+      if (!config.value) return;
+      const playerId = config.value.player_id;
+      editConfig.value?.discardChanges();
+      config.value = undefined;
+      void loadConfig(playerId);
+    },
   });
 };
 

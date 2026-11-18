@@ -227,7 +227,12 @@ import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
 import MediaItemImages from "@/components/MediaItemImages.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
-import { isAuthorOrNarrator } from "@/helpers/author_narrator";
+import {
+  AUDIOBOOK_ARTIST_LISTING_ROUTE,
+  AUDIOBOOK_ARTIST_ROUTE,
+  audiobookArtistRole,
+  isAuthorOrNarrator,
+} from "@/helpers/author_narrator";
 import { useArtistRowData } from "@/composables/useArtistRowData";
 import { useDiscographyRows } from "@/composables/useDiscographyRows";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
@@ -245,13 +250,15 @@ import { authManager } from "@/plugins/auth";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed, ref, watch } from "vue";
-import type { RouteLocationRaw } from "vue-router";
+import { useRoute, useRouter, type RouteLocationRaw } from "vue-router";
 
 export interface Props {
   itemId: string;
   provider: string;
 }
 const props = defineProps<Props>();
+const route = useRoute();
+const router = useRouter();
 
 const itemDetails = ref<Artist>();
 const loading = ref(false);
@@ -435,6 +442,18 @@ watch(
   { immediate: true },
 );
 
+// an author or narrator opened through a plain artist link moves to the
+// audiobooks section, so the navigation shows where the user is
+watch(itemDetails, (artist) => {
+  const role = artist && audiobookArtistRole(artist);
+  if (!role || route.name !== "artist") return;
+  router.replace({
+    name: AUDIOBOOK_ARTIST_ROUTE,
+    params: { ...route.params, role },
+    query: route.query,
+  });
+});
+
 // a new artist starts at the top of the page; anything else (a favorite
 // toggle, a metadata update) leaves the page where the user left it
 watch(
@@ -557,13 +576,15 @@ function listingRoute(
   source?: RowSource,
 ): RouteLocationRaw | undefined {
   if (!itemDetails.value) return undefined;
+  const params = {
+    provider: itemDetails.value.provider,
+    itemId: itemDetails.value.item_id,
+    listing,
+  };
+  const role = audiobookArtistRole(itemDetails.value);
   return {
-    name: "artistlisting",
-    params: {
-      provider: itemDetails.value.provider,
-      itemId: itemDetails.value.item_id,
-      listing,
-    },
+    name: role ? AUDIOBOOK_ARTIST_LISTING_ROUTE : "artistlisting",
+    params: role ? { ...params, role } : params,
     query: source ? { source } : undefined,
   };
 }

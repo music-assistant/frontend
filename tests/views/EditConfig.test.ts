@@ -675,6 +675,30 @@ describe("EditConfig", () => {
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
   });
 
+  it("hands the menu of each output on to the protocol section", () => {
+    const outputMenuItems = () => [];
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({
+            key: "airplay-output||protocol||enabled",
+            type: ConfigEntryType.BOOLEAN,
+            category: "protocol_airplay",
+          }),
+        ],
+        disabled: false,
+        outputMenuItems,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(
+      wrapper
+        .findComponent({ name: "ProtocolConfigSection" })
+        .props("outputMenuItems"),
+    ).toBe(outputMenuItems);
+  });
+
   it("leaves room below the last row for the floating save action", () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
