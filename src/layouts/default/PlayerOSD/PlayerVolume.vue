@@ -88,12 +88,14 @@
         expandable: expandOnTouch,
         expanded: showStepButtons,
         'relative-mode': isRelativeMode,
+        'pointer-hover': isPointerHovering,
       }"
       :style="{ width: width }"
       @click="onSliderClick"
       @mousedown="onMouseDown"
+      @pointerenter="onPointerEnter"
+      @pointerleave="onPointerLeave"
       @pointerdown.capture="onPointerDown"
-      @pointerdown="releaseTouchFromSlider"
       @pointermove.capture="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerCancel"
@@ -138,8 +140,6 @@
         </button>
       </div>
 
-      <!-- touch-pan-y: the slider's own touch-none would block the scroll of the
-           lists it sits in, and the container claims horizontal drags itself -->
       <Slider
         :model-value="[displayValue]"
         :disabled="isSliderDisabled"
@@ -147,7 +147,7 @@
         :max="100"
         :step="step"
         class="volume-slider"
-        :class="cn('w-full touch-pan-y', props.class)"
+        :class="cn('w-full', props.class)"
         @update:model-value="onSliderUpdate"
       />
 
@@ -520,6 +520,7 @@ const isDrag = ref(false);
 const touchMoveCount = ref(0);
 const maxMovement = ref(0);
 const isTouching = ref(false);
+const isPointerHovering = ref(false);
 
 // Dragging state: blocks server sync only while actively dragging the slider
 const isDragging = ref(false);
@@ -974,15 +975,13 @@ const onPointerDown = (event: PointerEvent) => {
   pointerMoved = false;
 };
 
-// The touch handlers own touch gestures. Releasing the slider's capture instead of
-// stopping the event keeps the press visible to enclosing popovers' outside-press check.
-const releaseTouchFromSlider = (event: PointerEvent) => {
-  if (event.pointerType !== "touch" || !(event.target instanceof Element)) {
-    return;
-  }
-  if (event.target.hasPointerCapture(event.pointerId)) {
-    event.target.releasePointerCapture(event.pointerId);
-  }
+// Only a hovering mouse or pen enables the slider; touch stays with the touch handlers
+const onPointerEnter = (event: PointerEvent) => {
+  if (event.pointerType !== "touch") isPointerHovering.value = true;
+};
+
+const onPointerLeave = (event: PointerEvent) => {
+  if (event.pointerType !== "touch") isPointerHovering.value = false;
 };
 
 const onPointerMove = (event: PointerEvent) => {
@@ -1387,14 +1386,24 @@ watch(
 
 /* --- Group volume popout styles are in the unscoped style block below --- */
 
+/* The container owns touch gestures, so the slider takes pointer events only
+   while a mouse or pen hovers it. */
+.volume-slider,
+.volume-slider :deep(*) {
+  pointer-events: none;
+}
+
+.player-volume-container.pointer-hover:not(.relative-mode, .muted)
+  .volume-slider,
+.player-volume-container.pointer-hover:not(.relative-mode, .muted)
+  .volume-slider
+  :deep(*) {
+  pointer-events: auto;
+}
+
 /* Relative mode: the container owns pointer interaction on every device. */
 .player-volume-container.relative-mode {
   cursor: ew-resize;
-}
-
-.player-volume-container.relative-mode .volume-slider,
-.player-volume-container.relative-mode .volume-slider :deep(*) {
-  pointer-events: none;
 }
 </style>
 
