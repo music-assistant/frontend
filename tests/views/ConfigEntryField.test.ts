@@ -126,6 +126,17 @@ describe("ConfigEntryField", () => {
     },
   );
 
+  it.each([
+    ["an embedded", IMAGE_DATA_URI, true],
+    ["a remote", "https://example.com/qr.png", false],
+  ])("draws %s image only when it is embedded", (_kind, value, drawn) => {
+    const wrapper = mountField(
+      entry({ key: "qr", type: ConfigEntryType.IMAGE, value }),
+    );
+
+    expect(wrapper.find("img").exists()).toBe(drawn);
+  });
+
   it("offers the entity picker for a Home Assistant control list", () => {
     const wrapper = mountField(hassControlsEntry(), false, "hass");
 
