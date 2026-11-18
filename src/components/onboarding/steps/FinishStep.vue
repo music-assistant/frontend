@@ -126,6 +126,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import {
+  configuredAudioSourcePlugins,
   configuredProviders,
   useOnboarding,
 } from "@/composables/useOnboarding";
@@ -187,7 +188,7 @@ const pendingGroups = computed(() =>
 const receiverInstructions = computed(() =>
   !appFirst.value
     ? []
-    : configuredProviders(ProviderType.PLUGIN)
+    : configuredAudioSourcePlugins()
         .filter((provider) => !provider.needsAttention)
         .flatMap((provider) => {
           const key = APP_RECEIVER_INSTRUCTIONS[provider.domain];
@@ -225,7 +226,7 @@ const countLabels = computed<Partial<Record<OnboardingStepId, string>>>(() => ({
   ),
   plugins: countLabel(
     "onboarding.plugins_count",
-    configuredProviders(ProviderType.PLUGIN).length,
+    configuredAudioSourcePlugins().length,
   ),
 }));
 

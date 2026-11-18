@@ -1,6 +1,7 @@
 import {
   ConfigEntryType,
   EventType,
+  MediaType,
   ProviderType,
   UserRole,
   type EventMessage,
@@ -36,7 +37,12 @@ const {
     providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<
       string,
-      { builtin: boolean; name?: string }
+      {
+        builtin: boolean;
+        name?: string;
+        type?: ProviderType;
+        media_types?: MediaType[];
+      }
     >,
     getAllUsers: vi.fn(),
     configureRemoteAccess: vi.fn(),
@@ -124,7 +130,11 @@ vi.mock("@/composables/useTour", async () => {
 // the dialogs and the config form are covered where they live; here they only
 // have to be reachable
 vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
-  default: { template: "<div />" },
+  default: {
+    name: "AddProviderDialog",
+    props: ["show", "providerType", "audioSourceOnly"],
+    template: "<div />",
+  },
 }));
 
 // the player actions are covered where they live, and pulling them in would
@@ -250,6 +260,16 @@ function addProvider(
     last_error: null,
   });
   apiMock.providerManifests[domain] = { builtin: false };
+}
+
+/** A plugin that lets an app play to Music Assistant. */
+function addAudioSourcePlugin(instanceId: string, domain: string) {
+  addProvider(instanceId, domain, ProviderType.PLUGIN);
+  apiMock.providerManifests[domain] = {
+    builtin: false,
+    type: ProviderType.PLUGIN,
+    media_types: [MediaType.AUDIO_SOURCE],
+  };
 }
 
 function addMusicProvider() {
@@ -499,10 +519,53 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
+  it("lists and offers only the plugins that let an app play when connecting music apps", async () => {
+    preferenceState.intent.value = "phone_apps";
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
+    addProvider("party--1", "party", ProviderType.PLUGIN);
+    const wrapper = await mountWizard({ step: "plugins" });
+    try {
+      await flushPromises();
+
+      expect(
+        wrapper
+          .findAll("[data-testid=onboarding-configured-provider]")
+          .map((item) =>
+            item.findComponent({ name: "ProviderIcon" }).props("domain"),
+          ),
+      ).toEqual(["spotify_connect"]);
+      expect(
+        wrapper.findComponent({ name: "AddProviderDialog" }).props(),
+      ).toMatchObject({
+        providerType: ProviderType.PLUGIN,
+        audioSourceOnly: true,
+      });
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it("offers every music source in the full setup", async () => {
+    preferenceState.intent.value = "music_hub";
+    const wrapper = await mountWizard({ step: "music_sources" });
+    try {
+      await flushPromises();
+
+      expect(
+        wrapper.findComponent({ name: "AddProviderDialog" }).props(),
+      ).toMatchObject({
+        providerType: ProviderType.MUSIC,
+        audioSourceOnly: false,
+      });
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
   it("finishes existing-app setup without library, user setup or a tour offer", async () => {
     preferenceState.intent.value = "phone_apps";
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
-    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
     const wrapper = await mountWizard({ step: "finish" });
     await flushPromises();
 
@@ -529,7 +592,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
   it("walks existing-app setup from the choice through speakers and apps to the finish", async () => {
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
-    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
     const wrapper = await mountWizard({ step: "intent" });
     await flushPromises();
 
@@ -573,8 +636,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
   it("does not show app playback instructions after full-experience setup", async () => {
     preferenceState.intent.value = "music_hub";
-    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
-    addProvider("airplay--1", "airplay_receiver", ProviderType.PLUGIN);
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
+    addAudioSourcePlugin("airplay--1", "airplay_receiver");
     const wrapper = await mountWizard({ step: "finish" });
     try {
       await flushPromises();
@@ -590,8 +653,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
   it("gives app-setup listening instructions only for configured, enabled receivers without errors", async () => {
     preferenceState.intent.value = "phone_apps";
-    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
-    addProvider("airplay--1", "airplay_receiver", ProviderType.PLUGIN);
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
+    addAudioSourcePlugin("airplay--1", "airplay_receiver");
     addProvider("party--1", "party", ProviderType.PLUGIN);
     const wrapper = await mountWizard({ step: "finish" });
     await flushPromises();
@@ -656,10 +719,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
-      expect(stepCount(wrapper)).toBe("1/6");
+      expect(stepCount(wrapper)).toBe("1/5");
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
-      expect(stepCount(wrapper)).toBe("2/6");
+      expect(stepCount(wrapper)).toBe("2/5");
       // the music source that is set up counts, now that it can be seen
       const progress = wrapper.findAll(
         "[data-testid=onboarding-progress-step]",
@@ -757,11 +820,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
   });
 
   it("follows a deep link and offers to skip an optional step", async () => {
-    const wrapper = await mountWizard({ step: "plugins" });
+    const wrapper = await mountWizard({ step: "invite_members" });
     await flushPromises();
 
-    expect(heading(wrapper)).toBe("onboarding.steps.plugins.title");
-    expect(wrapper.find("[data-testid=onboarding-add-provider]").exists()).toBe(
+    expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
+    expect(wrapper.find("[data-testid=onboarding-add-member]").exists()).toBe(
       true,
     );
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
@@ -1074,7 +1137,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     // clicking one behind takes the wizard back to it
     expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
-    expect(stepCount(wrapper)).toBe("1/6");
+    expect(stepCount(wrapper)).toBe("1/5");
 
     wrapper.unmount();
   });
@@ -1123,7 +1186,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
-    expect(stepCount(wrapper)).toBe("1/6");
+    expect(stepCount(wrapper)).toBe("1/5");
     wrapper.unmount();
   });
 
@@ -1131,7 +1194,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const wrapper = await mountWizard({ step: "finish" });
     await flushPromises();
 
-    expect(stepCount(wrapper)).toBe("6/6");
+    expect(stepCount(wrapper)).toBe("5/5");
 
     wrapper.unmount();
   });
@@ -1150,7 +1213,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     ).toHaveLength(2);
     expect(
       wrapper.findAll("[data-testid=onboarding-summary-optional]"),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
     // the server settings are only there to be looked over, so they are on
     // neither list: nothing about them is set up or still to do
     expect(wrapper.text()).not.toContain("onboarding.steps.core_settings");
@@ -1172,12 +1235,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     async (intent) => {
       preferenceState.intent.value = intent;
       addEveryProvider();
-      addProvider("connect--1", "spotify_connect", ProviderType.PLUGIN);
+      addAudioSourcePlugin("connect--1", "spotify_connect");
       addMember("alex");
       const targets =
         intent === "phone_apps"
           ? ["intent", "players", "plugins"]
-          : ["intent", "music_sources", "players", "plugins", "invite_members"];
+          : ["intent", "music_sources", "players", "invite_members"];
 
       for (const id of targets) {
         const wrapper = await mountWizard({ step: "finish" });
@@ -1400,12 +1463,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
-  it("moves on from the plugins to the server settings", async () => {
+  it("moves on from the players to the server settings", async () => {
     addMusicProvider();
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
     preferenceState.intent.value = "music_hub";
 
-    const wrapper = await mountWizard({ step: "plugins" });
+    const wrapper = await mountWizard({ step: "players" });
     await flushPromises();
 
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");

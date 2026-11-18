@@ -1851,6 +1851,10 @@ export interface ProviderManifest {
   // menu_actions: entries this provider adds to the menu of a media item;
   // absent from an older server
   menu_actions?: ProviderMenuAction[];
+  // media_types: the media types the provider offers whatever its config
+  // (audio_source for a provider that plays audio into Music Assistant);
+  // optional metadata for discovery
+  media_types?: MediaType[];
   // page: a page this provider serves, listed in the app's menu; an older
   // server declares none
   page?: ProviderPage | null;

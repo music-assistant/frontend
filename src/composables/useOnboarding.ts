@@ -28,6 +28,7 @@ import {
   userDisplayName,
 } from "@/helpers/provider_access";
 import {
+  isAudioSourcePlugin,
   isBuiltinProvider,
   providerDisplayName,
 } from "@/helpers/provider_config";
@@ -37,6 +38,7 @@ import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
   PlayerType,
+  ProviderType,
   Scope,
   UserRole,
   type EventMessage,
@@ -44,7 +46,6 @@ import {
   type PlayerConfig,
   type ProviderConfig,
   type ProviderStatus,
-  type ProviderType,
   type User,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -327,6 +328,13 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
     }));
 }
 
+/** The plugins the user set up that let an app play to Music Assistant. */
+export function configuredAudioSourcePlugins(): ConfiguredProvider[] {
+  return configuredProviders(ProviderType.PLUGIN).filter((provider) =>
+    isAudioSourcePlugin(api.providerManifests[provider.domain]),
+  );
+}
+
 // what a player of a builtin provider was last labelled with while it was
 // registered: switching it off unregisters it, and its outputs with it
 const lastPlayerLabels = new Map<string, string>();
@@ -472,6 +480,7 @@ const ctx = computed<OnboardingContext>(() => ({
     domain: config.domain,
     builtin: isBuiltinProvider(api.providerManifests[config.domain]),
     enabled: config.enabled,
+    audioSource: isAudioSourcePlugin(api.providerManifests[config.domain]),
   })),
   // the players switched on, as the players step lists them; only the
   // summary's "2 players" label reads this, as whether the step is done keys

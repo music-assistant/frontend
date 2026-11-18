@@ -3195,9 +3195,8 @@
             },
             "plugins": {
                 "title": "Add plugins",
-                "description": "Plugins add extra features on top of Music Assistant, such as Party, Spotify Connect and an AirPlay receiver. You can always add them later.",
                 "phone_apps_title": "Connect your music apps",
-                "phone_apps_description": "Add Spotify Connect or the AirPlay receiver, then open its settings to choose your speakers. Other plugins are available here too.",
+                "phone_apps_description": "Add Spotify Connect or the AirPlay receiver, then open its settings to choose your speakers.",
                 "connect": "Connect a music app"
             },
             "core_settings": {

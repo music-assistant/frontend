@@ -1,10 +1,12 @@
 import {
+  MediaType,
   type ProviderConfig,
   type ProviderInstance,
   type ProviderManifest,
   ProviderStage,
   ProviderStatus,
   ProviderTier,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 
 const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
@@ -148,6 +150,19 @@ export const getProviderHelpUrl = (
  */
 export const isBuiltinProvider = (manifest?: ProviderManifest): boolean =>
   manifest?.builtin === true;
+
+/**
+ * A plugin that lets an app play to Music Assistant, such as Spotify Connect or
+ * the AirPlay receiver: its manifest names the audio source media type. A
+ * provider of another type that names it, such as a player provider for the
+ * line-ins of its devices, is no such app.
+ */
+export const isAudioSourcePlugin = (manifest?: {
+  type: ProviderType;
+  media_types?: readonly MediaType[];
+}): boolean =>
+  manifest?.type === ProviderType.PLUGIN &&
+  (manifest.media_types?.includes(MediaType.AUDIO_SOURCE) ?? false);
 
 /**
  * The name a provider instance goes by: the custom name set on its configuration,

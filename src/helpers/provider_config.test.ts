@@ -1,8 +1,10 @@
 import {
+  MediaType,
   type ProviderInstance,
   ProviderStage,
   ProviderStatus,
   ProviderTier,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { providerConfig } from "../../tests/fixtures/providerConfig";
@@ -14,6 +16,7 @@ import {
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isAudioSourcePlugin,
   isBuiltinProvider,
   isCommunityProvider,
   providerDisplayName,
@@ -208,6 +211,45 @@ describe("a provider that ships with the server", () => {
 
   it("claims nothing about a provider whose manifest is missing", () => {
     expect(isBuiltinProvider(undefined)).toBe(false);
+  });
+});
+
+describe("a plugin that lets an app play to Music Assistant", () => {
+  it("is a plugin whose manifest names the audio source media type", () => {
+    expect(
+      isAudioSourcePlugin(
+        providerManifest({
+          type: ProviderType.PLUGIN,
+          media_types: [MediaType.AUDIO_SOURCE],
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("is no provider of another type that names it", () => {
+    expect(
+      isAudioSourcePlugin(
+        providerManifest({
+          type: ProviderType.PLAYER,
+          media_types: [MediaType.AUDIO_SOURCE],
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is no plugin without it, or without media types at all", () => {
+    expect(
+      isAudioSourcePlugin(
+        providerManifest({
+          type: ProviderType.PLUGIN,
+          media_types: [MediaType.RADIO],
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isAudioSourcePlugin(providerManifest({ type: ProviderType.PLUGIN })),
+    ).toBe(false);
+    expect(isAudioSourcePlugin(undefined)).toBe(false);
   });
 });
 
