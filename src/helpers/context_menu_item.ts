@@ -6,7 +6,10 @@ import type { Component } from "vue";
 // exported from the ItemContextMenu.vue SFC) so editors resolve it natively
 // without going through the Vue language plugin's virtual files.
 export interface ContextMenuItem {
+  // a translation key; with text it only names the entry, which keeps it unique
   label: string;
+  // shown as it is in place of the label, for text that arrives ready to show
+  text?: string;
   // positional for a `{0}` message, named for a `{name}` one
   labelArgs?: Array<string | number> | Record<string, string | number>;
   action?: () => void;
@@ -16,6 +19,8 @@ export interface ContextMenuItem {
   selected?: boolean;
   subItems?: ContextMenuItem[];
   close_on_click?: boolean;
+  // Draws a separator below this item.
+  separatorAfter?: boolean;
   color?: string;
   // Renders a custom control in place of the standard row (label/icon/action
   // are ignored except for the list key). Used for inline controls like the
@@ -27,10 +32,12 @@ export interface ContextMenuItem {
   componentProps?: Record<string, unknown>;
 }
 
-/** The label to show for a menu item, with its arguments filled in. */
+/** The label to show for a menu item: its text, or its label translated with its arguments. */
 export const menuItemLabel = (
-  item: Pick<ContextMenuItem, "label" | "labelArgs">,
-): string =>
-  Array.isArray(item.labelArgs)
+  item: Pick<ContextMenuItem, "label" | "labelArgs" | "text">,
+): string => {
+  if (item.text !== undefined) return item.text;
+  return Array.isArray(item.labelArgs)
     ? $t(item.label, item.labelArgs)
     : $t(item.label, item.labelArgs ?? {});
+};

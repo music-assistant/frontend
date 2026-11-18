@@ -162,9 +162,10 @@ const groupMembers = computed(() => {
   if (player.value.type !== PlayerType.GROUP) {
     playerIds.add(player.value.player_id);
   }
+  // a member that is offline stays listed, so it can still be removed
   return [...playerIds]
     .map((playerId) => api.players[playerId])
-    .filter((member): member is Player => member?.available === true)
+    .filter((member): member is Player => member !== undefined)
     .sort((left, right) =>
       getPlayerDisplayName(left).localeCompare(
         getPlayerDisplayName(right),

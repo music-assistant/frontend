@@ -21,6 +21,7 @@ const aiRadioProvider: ProviderInstance = {
   name: "AI Radio",
   instance_id: "ai_radio",
   supported_features: [],
+  supported_artist_types: [],
   available: true,
   is_streaming_provider: null,
 };

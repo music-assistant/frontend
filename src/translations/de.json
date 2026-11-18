@@ -76,7 +76,7 @@
     "queue_options": "Warteschlangen-Einstellungen",
     "queue_previous_items": "Gespielte Titel",
     "radios": "Radio",
-    "read_more": "Lese mehr",
+    "read_more": "Lies mehr",
     "refresh_item": "Element aktualisieren",
     "remove_library": "Aus Bibliothek entfernen",
     "remove_playlist": "Von Wiedergabeliste entfernen",
@@ -90,14 +90,14 @@
         "enable": "Aktivieren",
         "enable_player": "Aktiviere dieses Wiedergabegerät",
         "invalid_input": "Die Eingabe ist ungültig",
-        "metadataproviders": "Metadaten-Anbieter",
+        "metadataproviders": "Metadatenquellen",
         "player_disabled": "Dieses Wiedergabegerät ist deaktiviert",
         "player_name": "Benutzerdefinierter Name",
         "player_not_available": "Dieses Wiedergabegerät ist derzeit (noch) nicht verfügbar",
-        "player_provider": "Anbieter von Wiedergabegeräten",
+        "player_provider": "Wiedergabegeräte-Support",
         "player_settings": "Wiedergabegeräte-Einstellungen",
         "player_type_label": "Art des Wiedergabegeräts",
-        "playerproviders": "Wiedergabegeräte-Anbieter",
+        "playerproviders": "Wiedergabegeräte-Support",
         "players": "Wiedergabegeräte",
         "provider_disabled": "Derzeit deaktiviert",
         "provider_name": "Benutzerdefinierter Name",
@@ -355,7 +355,7 @@
             "label": "Dieser Gruppentyp unterstützt keinen DSP, wenn die Wiedergabe auf mehrere Geräte erfolgt."
         },
         "add_group_player_desc_universal": "Durch die Erstellung einer universellen Wiedergabegeräte-Gruppe kannst du Wiedergabegeräte aus verschiedenen Ökosystemen zusammenfassen. \nDadurch wird derselbe Ton an alle Wiedergabegeräte in der Gruppe übertragen (jedoch nicht synchron).",
-        "playerprovider": "Wiedergabegerät-Anbieter",
+        "playerprovider": "Wiedergabegeräte-Support",
         "providers_total": "{count} Gesamt | {count} Gesamt",
         "stage": {
             "label": "Phase",
@@ -468,7 +468,7 @@
         "view_players": "Wiedergabegeräte ansehen",
         "players_total": "{count} Wiedergabegerät insgesamt | {count} Wiedergabegeräte insgesamt",
         "api_docs": "API-Dokumentation",
-        "no_group_providers": "Derzeit stehen dir keine Wiedergabegeräte-Anbieter zur Verfügung, die die Erstellung von Gruppen unterstützen.",
+        "no_group_providers": "Der von dir hinzugefügte Wiedergabegeräte-Support kann keine Gruppen erstellen",
         "provider_codeowners": "Beitrag\/Pflege durch",
         "provider_credits": "Ermöglicht durch",
         "category": {
@@ -542,21 +542,21 @@
         "error_loading_genres": "Fehler beim Laden der Genres",
         "player_needs_setup": "Dieses Wiedergabegerät erfordert eine Einrichtung.",
         "add_music_provider": "Füge eine Musikquelle hinzu",
-        "add_player_provider": "Füge einen Wiedergabegeräte-Anbieter hinzu",
-        "add_metadata_provider": "Füge einen Metadaten-Anbieter hinzu.",
+        "add_player_provider": "Unterstützung für Wiedergabegerät hinzufügen",
+        "add_metadata_provider": "Metadatenquelle hinzufügen",
         "add_plugin_provider": "Plugin hinzufügen",
         "music_sources": "Musikquellen",
         "plugins": "Plugins",
         "music_providers_description": "Verwalte deine Musikstreaming-Dienste und lokalen Bibliotheken.",
-        "player_providers_description": "Konfiguriere Wiedergabegeräte-Anbieter für deine Audioausgabegeräte",
-        "metadata_providers_description": "Metadaten-Anbieter für Kunstwerke und zusätzliche Informationen verwalten",
+        "player_providers_description": "Konfiguriere die Wiedergabegeräte-Unterstützung für deine Audioausgabegeräte",
+        "metadata_providers_description": "Verwalte, woher Bildmaterial und zusätzliche Informationen stammen",
         "plugin_providers_description": "Plugins verwalten, die die Funktionen von Music Assistant erweitern",
         "restore_genres": "Genres wiederherstellen",
         "genre_statistics_description": "Durchsuche und filtere alle Genres in deiner Bibliothek. Genres können global ausgeschlossen und wieder hinzugefügt werden.",
         "genre_table_rows_per_page": "Zeilen pro Seite",
         "missing_players_hint": "Fehlende Wiedergabegeräte? {0}",
-        "add_player_providers": "Weitere Wiedergabegeräte-Anbieter hinzufügen",
-        "add_audio_analysis_provider": "Anbieter von Audioanalysen hinzufügen",
+        "add_player_providers": "Mehr Unterstützung für Wiedergabegeräte hinzufügen",
+        "add_audio_analysis_provider": "Audioanalyse hinzufügen",
         "audio_analysis_providers": "Audioanalyse",
         "audio_analysis_providers_description": "Verwalte Anbieter, die deine Audiodaten analysieren",
         "audio_analysis": "Audioanalyse",
@@ -608,7 +608,7 @@
         },
         "queue_global_settings_hint": "Diese Einstellungen gelten nur für diese Warteschlange. Du kannst auch die Standardeinstellungen konfigurieren, die für alle Wiedergabegeräte-Warteschlangen gelten.",
         "queue_global_settings_link": "Globale Warteschlangeneinstellungen öffnen",
-        "protocol_provider_unavailable": "Der Wiedergabegeräte-Provider für dieses Ausgabeprotokoll ist derzeit nicht verfügbar.",
+        "protocol_provider_unavailable": "Die Wiedergabegeräte-Unterstützung für dieses Ausgabeprotokoll ist derzeit nicht verfügbar.",
         "protocol_multi_info": "Dieses Wiedergabegerät unterstützt mehrere Ausgabeprotokolle. Music Assistant kombiniert diese zu einem einzigen Wiedergabegerät. Wähle unten ein Protokoll aus, um dessen Verwendung zu konfigurieren.",
         "protocol_configure_title": "Konfigurieren {name}",
         "protocol_configure_title_via": "{name} konfigurieren (unter {base})",
@@ -644,7 +644,10 @@
             "session_ended_title": "Setup-Sitzung beendet",
             "session_ended_text": "Die Einrichtungssitzung ist beendet – möglicherweise ist sie bereits abgeschlossen. Überprüfe dies bitte bei deinen Anbietern oder Wiedergabegeräten.",
             "setup_title": "{0} einrichten",
-            "reconfigure_title": "{0} neu konfigurieren"
+            "reconfigure_title": "{0} neu konfigurieren",
+            "copy": "Kopieren",
+            "copy_success": "In die Zwischenablage kopiert",
+            "copy_failed": "Fehler beim Kopieren in die Zwischenablage"
         },
         "options": "Optionen",
         "server_clock_offset": "Zeitversatz (Server gegenüber diesem Gerät)",
@@ -717,8 +720,8 @@
         "player_option_error": "Fehler beim Festlegen der Wiedergabegeräte-Optionen: {key} {value}",
         "server_logs_load_failed": "Serverprotokolle konnten nicht geladen werden",
         "audiobook_chapter_progress": {
-            "label": "Fortschritt im Hörbuchkapitel anzeigen",
-            "description": "Zeige die verstrichene und verbleibende Zeit für das aktuelle Hörbuchkapitel anstelle der Gesamtdauer des Hörbuchs an."
+            "label": "Kapitelfortschritt anzeigen",
+            "description": "Zeige die verstrichene und verbleibende Zeit für das aktuelle Kapitel eines Hörbuchs oder einer Podcast-Folge an, anstatt für den gesamten Titel."
         },
         "provider_status_retired": "Nicht mehr verfügbar",
         "player_status": {
@@ -905,7 +908,152 @@
         "unsupported_install_title": "Nicht unterstützte Installation",
         "unsupported_install_description": "Dieser Server wurde nicht über eine der {0} installiert. Einige Funktionen funktionieren möglicherweise nicht wie erwartet, und von diesem Server gemeldete Probleme werden möglicherweise ohne Support geschlossen.",
         "unsupported_install_link": "Unterstützte Installationsmethoden",
-        "error_loading_sort_options": "Fehler beim Laden der Sortieroptionen"
+        "error_loading_sort_options": "Fehler beim Laden der Sortieroptionen",
+        "provider_community": "Community",
+        "provider_community_maintained": "Von der Community gepflegt",
+        "provider_maintained_by": "betreut von {maintainers}",
+        "provider_get_help": "Hilfe erhalten",
+        "show_letter_index": {
+            "label": "A–Z-Index anzeigen",
+            "description": "Fügt den Listen mit Interpreten, Alben und Titeln eine Buchstabenleiste hinzu, damit man direkt zu einem Buchstaben springen kann. Wird nur angezeigt, wenn die Liste nach Namen sortiert ist und du gerade keine Suche durchführst."
+        },
+        "setup_reason": {
+            "pairing_required": "Kopplung erforderlich",
+            "password_required": "Passwort erforderlich"
+        },
+        "hide_unavailable_players": "Nicht verfügbare Wiedergabegeräte ausblenden",
+        "remove_unavailable_players": "Nicht verfügbare Wiedergabegeräte entfernen",
+        "remove_unavailable_players_title": "Nicht verfügbare Wiedergabegeräte entfernen?",
+        "remove_unavailable_players_confirmation": "Dadurch wird ein Wiedergabegerät, dessen Gerät nicht mehr auffindbar ist, zusammen mit seinen Einstellungen entfernt: | Dadurch werden {count} Wiedergabegeräte, deren Geräte nicht mehr auffindbar sind, zusammen mit ihren Einstellungen entfernt:",
+        "no_unavailable_players": "Es gibt keine nicht verfügbaren Wiedergabegeräte, die entfernt werden könnten.",
+        "unavailable_players_removed": "Es wurden keine nicht verfügbaren Wiedergabegeräte gefunden | Ein nicht verfügbares Wiedergabegerät wurde entfernt | {count} nicht verfügbare Wiedergabegeräte wurden entfernt",
+        "catalog": {
+            "title": "Marktplatz",
+            "description": "Erweitere Music Assistant um weitere Musikquellen, Unterstützung für weitere Wiedergabegeräte und leistungsstarke Plugins.",
+            "installed": "Installiert",
+            "popular": "Beliebt",
+            "previous": "Zurück",
+            "next": "Weiter",
+            "add": "Hinzufügen",
+            "add_named": "{name} hinzufügen",
+            "added": "Hinzugefügt",
+            "manage": "Verwalten",
+            "manage_named": "{name} verwalten",
+            "by_maintainers": "von {maintainers}",
+            "by_team": "vom Music Assistant-Team",
+            "created_by": "Erstellt und gepflegt von {maintainers}",
+            "created_by_team": "Erstellt und gepflegt vom Music Assistant-Team",
+            "request_change": "Änderung anfordern",
+            "missing": "Fehlt etwas? {link}",
+            "request_it": "Anfordern",
+            "installed_empty_title": "Noch nichts hinzugefügt",
+            "installed_empty": "Was du aus dem Marketplace hinzufügst, wird hier angezeigt.",
+            "load_failed": "Der Marktplatz konnte nicht geladen werden.",
+            "try_again": "Versuche es nochmal",
+            "no_match": "Es gibt keine Treffer, die deiner Suche oder deinen Filtereinstellungen entsprechen.",
+            "type": {
+                "music": "Musikquelle",
+                "player": "Wiedergabegeräte-Support",
+                "metadata": "Metadatenquelle",
+                "plugin": "Plugin",
+                "audio_analysis": "Audioanalyse"
+            },
+            "manage_type": {
+                "music": "Verwalte deine Musikquellen",
+                "player": "Wiedergabegeräte-Support verwalten",
+                "metadata": "Verwalte deine Metadatenquellen",
+                "plugin": "Plugins verwalten",
+                "audio_analysis": "Audioanalyse verwalten"
+            },
+            "community": {
+                "title": "Community-Katalog",
+                "enable": "Community-Katalog aktivieren",
+                "disable": "Community-Katalog deaktivieren",
+                "banner_title": "Community-Katalog aktivieren",
+                "banner_description": "Erhalte weitere Musikquellen, Wiedergabegeräte-Unterstützung und Plugins, die von Mitgliedern der Community und nicht vom Music Assistant-Team entwickelt und gepflegt werden.",
+                "banner_enable": "Aktivieren",
+                "banner_dismiss": "Nicht erneut anzeigen",
+                "unavailable": "Community-Katalog nicht verfügbar",
+                "unavailable_title": "Der Community-Katalog ist derzeit nicht verfügbar.",
+                "unavailable_message": "Was du daraus installiert hast, wird hier erst wieder angezeigt, wenn es wieder verfügbar ist.",
+                "confirm_title": "Den Community-Katalog aktivieren?",
+                "confirm": "Aktivieren",
+                "enabled_toast": "Der Community-Katalog ist aktiviert",
+                "disabled_toast": "Der Community-Katalog ist deaktiviert",
+                "note_title": "{name} stammt aus der Community",
+                "note_maintainers": "{name} wird von der Community unter {maintainers} erstellt und gepflegt, nicht vom Music Assistant-Team. Es läuft als Teil deines Servers.",
+                "note_no_maintainers": "{name} wird von der Community erstellt und gepflegt, nicht vom Music Assistant-Team. Es läuft als Teil deines Servers.",
+                "note_help": "Bei Fragen und Problemen wende dich bitte an {link}.",
+                "note_help_link": "sein Betreuer | seine Betreuer",
+                "continue": "Fortsetzen",
+                "installing": "Wird installiert…",
+                "installed_toast": "{name} ist installiert",
+                "installed_restored_toast": "{name} ist installiert, und was du zuvor damit eingerichtet hast, ist wieder da",
+                "source_code": "Quellcode",
+                "version": "Version {version}",
+                "version_released": "Version {version}, veröffentlicht am {date}",
+                "refresh": "Auf Änderungen prüfen",
+                "installed_empty": "Es wurde nichts aus dem Community-Katalog installiert.",
+                "remove": "Entfernen",
+                "remove_named": "{name} entfernen",
+                "remove_title": "{name} entfernen?",
+                "remove_message": "{name} wird von deinem Server entfernt. Was du damit eingerichtet hast, bleibt auf der Seite {page} erhalten, wo du es ebenfalls entfernen kannst.",
+                "removed_toast": "{name} wurde entfernt",
+                "reason_link": "Mehr lesen",
+                "withdrawn_hint": "Der Community-Katalog bietet dies nicht mehr an. Er läuft so lange weiter, bis du es entfernst.",
+                "state": {
+                    "blocked": "Blockiert",
+                    "unavailable": "Läuft nicht",
+                    "withdrawn": "Zurückgezogen",
+                    "restart_required": "Neustart erforderlich"
+                },
+                "update": "Aktualisieren",
+                "update_named": "{name} aktualisieren",
+                "update_all": "Alle aktualisieren",
+                "updating": "Wird aktualisiert…",
+                "update_available": "Die Version {version} ist verfügbar.",
+                "update_released": "Die Version {version}, veröffentlicht am {date}, ist verfügbar",
+                "updated_toast": "{name} wurde aktualisiert",
+                "update_failed_toast": "Die Version {version} von {name} konnte auf deinem Server nicht geladen werden, daher hat Music Assistant die vorherige Version wiederhergestellt.",
+                "updated_all_toast": "Alles ist auf dem neuesten Stand",
+                "updated_all_restart": "Die Updates sind bereit. Starte Music Assistant neu, um sie abzuschließen.",
+                "update_all_failed": "Es konnten nicht alle Updates installiert werden. Installiere sie nacheinander, um herauszufinden, woran das liegt.",
+                "updates_waiting": "{count} Update wartet | {count} Updates warten",
+                "no_updates": "Es stehen keine Updates an",
+                "restart_hint": "Die Version {version} ist bereit. Starte Music Assistant neu, um das Update abzuschließen.",
+                "failed_version": "Die Version {version} wurde auf deinem Server nicht geladen, daher hat Music Assistant die vorherige Version wiederhergestellt.",
+                "retry_version_named": "{name} erneut versuchen",
+                "auto_update": "Automatisch aktualisieren",
+                "auto_update_on_toast": "Updates werden nun automatisch installiert. Während der Wiedergabe werden keine Updates durchgeführt.",
+                "auto_update_off_toast": "Updates werden nicht mehr automatisch installiert",
+                "moved_title": "{name} wurde in den Community-Katalog verschoben",
+                "moved_message": "Es wird nun von seinen eigenen Betreuern gepflegt, nicht mehr vom Music Assistant-Team. Music Assistant hat es aus dem Community-Katalog installiert, daher funktioniert es weiterhin.",
+                "moved_message_not_running": "Es wird nun von seinen eigenen Betreuern gepflegt, nicht mehr vom Music Assistant-Team. Music Assistant hat es aus dem Community-Katalog installiert.",
+                "dismiss": "Zurückweisen",
+                "new_title": "Neu im Community-Katalog",
+                "updated_title": "Kürzlich aktualisiert"
+            },
+            "search": "Den Marktplatz durchsuchen",
+            "search_results": "Suchergebnisse",
+            "discover": "Entdecken",
+            "top_pick": "Unsere Top-Empfehlung für dich",
+            "show_pick": "{name} anzeigen",
+            "browse_everything": "Alles ansehen",
+            "to_choose_from": "{count} zur Auswahl",
+            "shown_of": "{shown} von {total}",
+            "discovered_title": "In deinem Netzwerk gefunden",
+            "complements_title": "Passt gut zu dem, was du hast",
+            "goes_well_with": "Passt gut zu {name}",
+            "new_in_version": "Neu in {version}",
+            "dont_suggest": "Schlage das nicht vor",
+            "dont_suggest_named": "Schlage {name} nicht vor",
+            "not_suggested_toast": "{name} wird nicht mehr vorgeschlagen",
+            "dont_suggest_failed": "Konnte nicht aufhören {name} vorzuschlagen",
+            "suggested_again_toast": "{name} wird erneut vorgeschlagen",
+            "suggest_again_failed": "Konnte {name} nicht erneut empfehlen.",
+            "undo": "Rückgängig"
+        },
+        "provider_status_unavailable": "Nicht verfügbar"
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -949,7 +1097,8 @@
         "random_play_count": "Zufällig (die am wenigsten gespielten zuerst)",
         "album_name": "Album",
         "sort_by": "Sortieren nach",
-        "sort_by_current": "Sortieren nach: {0}"
+        "sort_by_current": "Sortieren nach: {0}",
+        "release_date": "Veröffentlichung"
     },
     "state": {
         "idle": "Inaktiv",
@@ -1022,7 +1171,7 @@
         "import_file": "Datei importieren",
         "bpm": "Tempo (Schläge pro Minute)",
         "musical_key": "Tonart",
-        "show_dashboard": "Dashboard auf ein Gerät übertragen",
+        "show_dashboard": "Dashboard anzeigen",
         "collapse_collections": "Sammlungen ausblenden",
         "volume_down": "Lautstärke verringern",
         "volume_up": "Lautstärke erhöhen",
@@ -1039,7 +1188,9 @@
         "view_mode_switch": "Aktuelle Ansicht: {0}. Wechseln zu {1}",
         "mute": "Stummschalten",
         "unmute": "Stummschaltung aufheben",
-        "view_mode": "Ansichtsmodus"
+        "view_mode": "Ansichtsmodus",
+        "view_all_count": "Alle {name} ({count}) anzeigen",
+        "energy_level": "Energiepegel, von 1 (am ruhigsten) bis 10 (am energiegeladensten)"
     },
     "topresult": "Top-Ergebnis",
     "track": "Titel",
@@ -1481,9 +1632,9 @@
     "remove_provider_mapping_confirm": "Bist du sicher, dass du diese Quelle vom Element trennen möchtest? Sie könnte wieder angezeigt werden, wenn du erneut alle Musikquellen nach Übereinstimmungen durchsuchst.",
     "map_provider_mapping": "Verknüpfe diesen Quelleneintrag mit dem aktuellen Element.",
     "player_tip": {
-        "selected_player": "Ausgewähltes Wiedergabegerät",
         "currently_playing": "Derzeit abgespielt auf",
-        "click_to_change": "Klicke unten, um das Ausgabegerät zu ändern."
+        "click_to_change": "Klicke unten, um das Ausgabegerät zu ändern.",
+        "selected": "Ausgewählt"
     },
     "more_options": "Mehr Optionen",
     "edit": "Bearbeiten",
@@ -1613,7 +1764,10 @@
                 "listen_in_error_no_web_player": "Audio ist auf diesem Gerät nicht verfügbar.",
                 "listen_in_error_start": "Mithören konnte nicht gestartet werden. Bitte erneut versuchen.",
                 "listen_in_error_stop": "Mithören konnte nicht beendet werden. Bitte erneut versuchen.",
-                "listen_in_powered_by": "Powered by Sendspin"
+                "listen_in_powered_by": "Powered by Sendspin",
+                "skip_vote_counted": "Stimme gezählt! {0} von {1} Stimmen sind erforderlich, um diesen Titel zu überspringen.",
+                "skip_already_voted": "Du hast bereits dafür gestimmt, diesen Song zu überspringen.",
+                "skip_song_changed": "Dieser Song wurde bereits geändert, daher wurde deine Stimme nicht gezählt."
             },
             "add": "Hinzufügen",
             "boost": "Boost",
@@ -1642,7 +1796,8 @@
             "share_failed": "Die Einladung konnte nicht geteilt werden",
             "share_invitation": "Einladung teilen",
             "share_named_title": "Verbinden {0}",
-            "share_title": "Mach mit bei der Music Assistant Party!"
+            "share_title": "Mach mit bei der Music Assistant Party!",
+            "skip_votes": "{0}\/{1} uberspringen"
         },
         "music_quiz": {
             "title": "Musikquiz",
@@ -1799,7 +1954,7 @@
             "artist_count": "{0} Interpret",
             "artists_count": "{0} Interpreten",
             "game_type_trivia": "Musik-Trivia",
-            "game_type_trivia_description": "Beantworte AI-generierte Musikfragen basierend auf deiner ausgewählten Bibliothek.",
+            "game_type_trivia_description": "Beantworte KI-generierte Musikfragen basierend auf deiner ausgewählten Bibliothek.",
             "phase_answer_revealed": "Die Antwort ist enthüllt!",
             "error_load_game_types": "Die verfügbaren Quiztypen konnten nicht geladen werden.",
             "game_ended_wait": "Bitte den Spielleiter, ein neues Spiel zu starten, wenn alle bereit sind.",
@@ -1878,9 +2033,9 @@
             "round_result_answer": "Antwort"
         },
         "ai_radio": {
-            "title": "AI-Radio",
+            "title": "KI-Radio",
             "context": {
-                "run_with": "Als AI-Radio abspielen"
+                "run_with": "Als KI-Radio abspielen"
             },
             "actions": {
                 "discard": "Verwerfen",
@@ -1905,7 +2060,7 @@
             },
             "field_descriptions": {
                 "source_playtime_cap": "Maximale Gesamtspielzeit der Hintergrundmusik in Minuten. Die Titel werden in der Reihenfolge abgespielt, in der sie in der Sendung vorkommen, bis die Obergrenze erreicht ist. Für keine Begrenzung den Wert auf 0 setzen.",
-                "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die AI gesendet.",
+                "instructions": "Beschreibt die Persönlichkeit des Moderators und wie die Beiträge verfasst werden sollen. Diese Beschreibung wird zusammen mit jedem Beitrag an die KI gesendet.",
                 "shuffle_playlist_tracks": "Die Quell-Wiedergabeliste wird in zufälliger Reihenfolge abgespielt. Deaktiviere diese Option, um die Reihenfolge der Wiedergabeliste beizubehalten.",
                 "allow_post": "Das Ende dieses Segments wird über den Anfang des nächsten Songs gelegt, wobei die Musik unter der Stimme leiser gestellt wird und kurz vor Beginn des Gesangs endet. Dies geschieht nur, wenn Music Assistant weiß, wo der Gesang beginnt, und das Intro lang genug ist. Wenn mehrere Segmente als eine Pause gesprochen werden, muss diese Funktion bei allen aktiviert sein."
             },
@@ -1924,7 +2079,7 @@
                 "occasionally": "Gelegentlich ({0}%)"
             },
             "validation": {
-                "invalid_import_file": "Die Datei ist kein gültiger AI Radio-Export.",
+                "invalid_import_file": "Die Datei ist kein gültiger KI Radio-Export.",
                 "station_name_required": "Der Name der Station ist erforderlich",
                 "station_source_playlist_required": "Eine Wiedergabeliste der Senderquelle ist erforderlich",
                 "select_section": "Wähle mindestens einen Abschnitt aus.",
@@ -1949,7 +2104,7 @@
             },
             "toast": {
                 "playlists_truncated": "Es wurden nur die ersten {0} Wiedergabelisten geladen.",
-                "unavailable": "AI-Radio ist nicht aktiviert.",
+                "unavailable": "KI-Radio ist nicht aktiviert.",
                 "live_starting": "Live-Radio gestartet",
                 "station_saved": "Station gespeichert",
                 "station_deleted": "Station gelöscht",
@@ -1960,11 +2115,11 @@
                 "show_stopped": "Die Show wurde abgebrochen"
             },
             "header": {
-                "subtitle": "Verwandle eine Wiedergabeliste in eine Radiosendung mit einem AI-Moderator."
+                "subtitle": "Verwandle eine Wiedergabeliste in eine Radiosendung mit einem KI-Moderator."
             },
             "gallery": {
                 "empty_title": "Erstelle deine erste Sendung",
-                "empty_description": "AI Radio verwandelt eine deiner Wiedergabelisten in eine Radiosendung mit einem KI-Moderator. AI Radio benötigt einen KI-fähigen Anbieter (z.B. Home Assistant), um den Moderator zu generieren – konfiguriere einen unter Einstellungen → Plugins.",
+                "empty_description": "KI Radio verwandelt eine deiner Wiedergabelisten in eine Radiosendung mit einem KI-Moderator. KI Radio benötigt einen KI-fähigen Anbieter (z.B. Home Assistant), um den Moderator zu generieren – konfiguriere einen unter Einstellungen → Plugins.",
                 "create_cta": "Sendung erstellen",
                 "new_show": "Neue Sendung",
                 "refresh": "Aktualisieren",
@@ -2003,8 +2158,8 @@
                 "playlist_search": "Wiedergabelisten durchsuchen"
             },
             "prereq": {
-                "title": "AI-Anbieter benötigt",
-                "description": "AI Radio benötigt einen AI-fähigen Anbieter (z. B. Home Assistant), um den Host zu generieren.",
+                "title": "KI-Anbieter benötigt",
+                "description": "KI Radio benötigt einen KI-fähigen Anbieter (z. B. Home Assistant), um den Host zu generieren.",
                 "action": "Gehe zu Einstellungen → Plugins"
             },
             "customize": {
@@ -2292,7 +2447,10 @@
         "picker_search": "Suche {label}",
         "field_folder": "Ordner",
         "field_folder_is": "Ordner ist",
-        "picker_empty_folder_sources": "Es ist keine Musikquelle mit Ordnern eingerichtet."
+        "picker_empty_folder_sources": "Es ist keine Musikquelle mit Ordnern eingerichtet.",
+        "favorites_only": "Nur Favoriten",
+        "favorites_exclude": "Favoriten ausschließen",
+        "favorites_exclude_hint": "Deine Lieblingstitel werden immer ausgeschlossen, selbst wenn sie einer anderen Regel entsprechen."
     },
     "explore": "Erkunden",
     "shortcuts": "Abkürzungen",
@@ -2311,7 +2469,7 @@
     "artist_no_library_tracks": "Du hast keine Titel dieses Interpreten in deiner Bibliothek.",
     "artist_all_albums": "Alle Alben",
     "artist_all_tracks": "Alle Titel",
-    "on_provider": "An {0}",
+    "on_provider": "Auf {0}",
     "open_queue_settings": "Warteschlangeneinstellungen öffnen",
     "crossfade_enable": "Crossfade aktivieren",
     "crossfade_disable": "Crossfade deaktivieren",
@@ -2433,7 +2591,6 @@
     "grouped_volume": "Lautstärke der Gruppe",
     "player_select": {
         "active_player_volume_only": "Lautstärkeregler nur für aktive Wiedergabegeräte anzeigen",
-        "and_more": "...und {0} mehr",
         "disable_player_confirmation": "Dieses Wiedergabegerät wird ausgeblendet, bis es in den Wiedergabegeräte-Einstellungen wieder aktiviert wird.",
         "disable_player_title": "{0} deaktivieren?",
         "display_options": "Anzeigeoptionen",
@@ -2479,9 +2636,13 @@
         "credits": "Credits",
         "credits_butterchurn": "Die Darstellung erfolgt mithilfe von „Butterchurn“ von Jordan Berg (MIT-Lizenz), der WebGL-Implementierung von MilkDrop 2.",
         "credits_milkdrop": "MilkDrop wurde ursprünglich von Ryan Geiss als Visualizer für Winamp entwickelt. Die Voreinstellungen stammen aus der MilkDrop-Voreinstellungs-Community und werden über „butterchurn-presets“ gebündelt.",
-        "enabled": "Aktiviert"
+        "enabled": "Aktiviert",
+        "palette_ramp": "Alles entsprechend dem Albumcover einfärben.",
+        "palette_ramp_description": "Passe das gesamte Bild an die Farben des Albumcover an und behalte dabei die Helligkeit der Voreinstellung bei, damit Bewegung und Details erhalten bleiben. Bei voller Intensität übernimmt jede Voreinstellung die Farbpalette des Albums.",
+        "palette_colors": "Farbelemente aus dem Albumcover",
+        "palette_colors_description": "Färbe die Wellenform und die Ränder der Voreinstellung mit der Grafikpalette ein. Dies betrifft nur Voreinstellungen, bei denen diese Elemente dargestellt werden."
     },
-    "ai_dj": "AI Radio DJ aktivieren",
+    "ai_dj": "KI Radio DJ aktivieren",
     "ai_dj_off": "Aus",
     "ai_dj_show_on_air": "Auf Sendung: {0}",
     "ai_dj_show_on_air_unknown": "Eine Sendung wird gerade ausgestrahlt",
@@ -2621,7 +2782,7 @@
     },
     "singles_eps": "Singles & EPs",
     "view_all": "Alle anzeigen",
-    "play_on_player": "Weiter spielen {player}",
+    "play_on_player": "Abspielen auf {player}",
     "artist_radio": "Endloser Mix des Interpreten",
     "newest_first": "Neueste zuerst",
     "appears_on_hint": "In einem Titel genannt, nicht als Interpret des Albums",
@@ -2650,22 +2811,24 @@
         "needs_attention": "Aufmerksamkeit erforderlich",
         "set_up": "Fertig",
         "still_to_do": "Noch zu erledigen",
-        "all_done": "Alles, was auf der Liste steht, ist eingerichtet.",
+        "all_done": "Du kannst die Einrichtung jetzt abschließen und jederzeit weitere Funktionen hinzufügen.",
         "players_count": "{count} Wiedergabegerät | {count} Wiedergabegeräte",
         "run_again": "Führe den Installationsassistenten erneut aus",
         "steps": {
             "intent": {
-                "title": "Wähle aus, wie du den Music Assistant nutzen möchtest",
-                "description": "Hiermit legst du fest, was der Music Assistant als Erstes ausführt. Unabhängig davon, wofür du dich entscheidest, bleiben alle Funktionen verfügbar.",
+                "title": "Wie möchtest du Music Assistant nutzen?",
+                "description": "Wähle deinen Ausgangspunkt. Mit beiden Optionen kannst du alle Funktionen nutzen.",
                 "phone_apps": {
-                    "label": "Von den Apps auf meinem Handy",
-                    "description": "Streame Inhalte von Spotify, AirPlay und anderen Apps auf die Lautsprecher in deinem Zuhause."
+                    "label": "Meine Musik-Apps mit meinen Lautsprechern verbinden",
+                    "description": "Wähle weiterhin Musik in Apps wie Spotify aus oder nutze AirPlay. Music Assistant arbeitet im Hintergrund und verbindet die Musik mit deinen Lautsprechern, ohne dass du eine Musikbibliothek einrichten musst.",
+                    "preview": "Als Nächstes fügen wir deine Lautsprecher hinzu, verbinden deine Musik-Apps und zeigen dir, wie du mit dem Hören beginnen kannst."
                 },
                 "music_hub": {
-                    "label": "Als meine Musikzentrale",
-                    "description": "Verbinde deine Streaming-Dienste und deine lokale Musik in einer einzigen Bibliothek."
+                    "label": "Das volle Music Assistant-Erlebnis",
+                    "description": "Fasse deine Musikdienste, lokale Musikdateien und Lautsprecher an einem Ort zusammen. Stöbere in Music Assistant, suche nach Titeln und erstelle Wiedergabelisten. Du kannst weiterhin über Spotify Connect und AirPlay abspielen.",
+                    "preview": "Als Nächstes verbinden wir deine Musikdienste und fügen deine Lautsprecher hinzu, dann erkunden wir weitere Funktionen."
                 },
-                "settings_note": "Das kannst du später in den Einstellungen ändern."
+                "summary_title": "Deine Konfigurationsauswahl"
             },
             "music_sources": {
                 "title": "Füge deine Musikquellen hinzu",
@@ -2674,9 +2837,9 @@
             "players": {
                 "title": "Füge deine Wiedergabegeräte hinzu",
                 "description": "Music Assistant hat die Wiedergabegeräte bereits gefunden. Deaktiviere diejenigen, die du nicht verwenden möchtest, und benenne sie nach Belieben um.",
-                "description_empty": "Music Assistant erkennt deine Lautsprecher über Wiedergabe-Dienste wie Sonos, Chromecast oder AirPlay.",
+                "description_empty": "Music Assistant erkennt deine Lautsprecher über die von dir hinzugefügten Wiedergabegeräte wie Sonos, Chromecast oder AirPlay.",
                 "empty": "Es wurden noch keine Spieler gefunden.",
-                "no_provider_hint": "Füge einen Wiedergabegeräte-Anbieter hinzu und dessen Wiedergabegeräte werden hier angezeigt.",
+                "no_provider_hint": "Füge die Wiedergabegeräte-Unterstützung für deine Lautsprecher hinzu, dann werden sie hier angezeigt.",
                 "discovering_hint": "Das Auffinden von Wiedergabegeräten kann einen Moment dauern. Stelle sicher, dass deine Lautsprecher eingeschaltet sind und sich im selben Netzwerk wie Music Assistant befinden.",
                 "add_more": "Weitere Wiedergabegeräte hinzufügen",
                 "rename": "{name} umbenennen",
@@ -2684,16 +2847,20 @@
             },
             "plugins": {
                 "title": "Plugins hinzufügen",
-                "description": "Plugins erweitern den Music Assistant um zusätzliche Funktionen wie „Party“, „Spotify Connect“ und einen AirPlay-Empfänger. Du kannst sie jederzeit nachträglich hinzufügen."
+                "description": "Plugins erweitern den Music Assistant um zusätzliche Funktionen wie „Party“, „Spotify Connect“ und einen AirPlay-Empfänger. Du kannst sie jederzeit nachträglich hinzufügen.",
+                "phone_apps_title": "Verbinde deine Musik-Apps",
+                "phone_apps_description": "Füge Spotify Connect oder den AirPlay-Empfänger hinzu und öffne anschließend dessen Einstellungen, um deine Lautsprecher auszuwählen. Weitere Plugins sind ebenfalls verfügbar.",
+                "connect": "Verbinde eine Musik-App"
             },
             "finish": {
                 "title": "Einrichtung abschließen",
-                "description": "Gut gemacht, dass du alles eingerichtet hast. Hier noch einmal eine kurze Zusammenfassung – du kannst all das später in den Einstellungen ändern."
+                "description": "Gut gemacht, dass du alles eingerichtet hast. Hier noch einmal eine kurze Zusammenfassung – du kannst all das später in den Einstellungen ändern.",
+                "phone_apps_description": "Hier ist eine Übersicht deiner Lautsprecher- und App-Verbindungen. Du kannst später in den Einstellungen eine Musikbibliothek und weitere Funktionen hinzufügen."
             },
             "core_settings": {
-                "title": "Überprüfe deine Servereinstellungen",
+                "title": "Access Music Assistant",
                 "load_failed": "Die Server-Einstellungen konnten nicht geladen werden. Du kannst sie später in den Einstellungen ändern.",
-                "intro": "Die Adressen, die Music Assistant derzeit verwendet. Sie werden automatisch ermittelt und sind in der Regel korrekt, sodass du einfach weitermachen kannst.",
+                "intro": "Music Assistant funktioniert automatisch in deinem Heimnetzwerk. Richte den Fernzugriff ein, wenn du auch unterwegs Musik hören möchtest.",
                 "internal_address": "Interne Adresse",
                 "internal_address_hint": "Wo die Apps und Geräte in deinem Haushalt mit Music Assistant verbunden sind.",
                 "stream_address": "Adresse des Stream-Servers",
@@ -2705,7 +2872,7 @@
                     "unreachable": "Von diesem Gerät aus nicht erreichbar",
                     "unchecked": "Von diesem Gerät aus konnte keine Überprüfung durchgeführt werden"
                 },
-                "unreachable_hint": "Eine Adresse, die hier nicht reagiert, reagiert möglicherweise auch bei deinen Wiedergabegeräten nicht. Sollte die Wiedergabe fehlschlagen, nimm die Einstellung in den erweiterten Einstellungen vor.",
+                "unreachable_hint": "Eine Adresse, die hier nicht funktioniert, funktioniert möglicherweise auch für deine Wiedergabegeräte nicht. Sollte die Wiedergabe fehlschlagen, ändere die Adresse über Bearbeiten weiter unten.",
                 "override_hint": "Du musst diese Einstellungen nur in einem komplexeren Netzwerk ändern, beispielsweise hinter einem Reverse-Proxy oder über VLANs hinweg. Du findest sie später unter Einstellungen › {system}, unter {webserver} und {streams}.",
                 "remote": {
                     "title": "Höre von außerhalb deines Hauses zu",
@@ -2724,7 +2891,10 @@
                         "description": "Schalte einen Reverse-Proxy vor den Server und gib die Adresse, unter der der Server von extern erreicht wird, als externe Adresse ein.",
                         "set_external": "Externe Adresse festlegen"
                     }
-                }
+                },
+                "network_details": "Server- und Netzwerkdetails",
+                "external_address": "Externe Adresse",
+                "external_address_hint": "Wo du von außerhalb deines Netzwerks über deinen Reverse-Proxy deinen Music Assistant erreichst."
             },
             "invite_members": {
                 "title": "Benutzer hinzufügen",
@@ -2735,7 +2905,7 @@
                 "title": "Fühl dich wie zu Hause",
                 "description": "Hallo {name}, hier ist die Musik in deinem Zuhause zu Hause. Wähle aus, wie viel du sehen möchtest, während etwas abgespielt wird.",
                 "defaults_hint": "Damit werden lediglich einige Standardeinstellungen festgelegt. Du kanst jede Einstellung nach Belieben ändern.",
-                "save_failed": "Ihre Auswahl konnte nicht gespeichert werden. Bitte versuche es erneut.",
+                "save_failed": "Deine Auswahl konnte nicht gespeichert werden. Bitte versuche es erneut.",
                 "standard": {
                     "label": "Standard",
                     "description": "Eine übersichtliche Benutzeroberfläche, die sich auf das Wesentliche beschränkt."
@@ -2791,12 +2961,17 @@
         "welcome_description": "Ein kurzer Überblick über Music Assistant.",
         "more_count": "+{count} mehr",
         "paused_title": "Einrichtung pausiert",
-        "paused_text": "Setze deine Arbeit jetzt oder später in den Einstellungen dort fort, wo du aufgehört hast.",
+        "paused_text": "Fahre jetzt fort oder öffne den Einrichtungsassistenten später erneut über die Einstellungen.",
         "resume": "Wieder aufnehmen",
         "pause": "Einrichtung pausieren",
         "dismiss": "Zurückweisen",
         "music_sources_count": "{count} Musikquelle | {count} Musikquellen",
-        "plugins_count": "{count} Plugin | {count} Plugins"
+        "plugins_count": "{count} Plugin | {count} Plugins",
+        "continue": "Fortsetzen",
+        "explore_more": "Mehr entdecken",
+        "listen_from_apps": "Versuche, die Musik über deine Musik-Apps abzuspielen.",
+        "spotify_connect_hint": "Wähle in den Einstellungen von Spotify Connect die gewünschten Lautsprecher aus. Öffne anschließend die Geräteauswahl von Spotify und wähle einen dieser Lautsprecher aus.",
+        "airplay_receiver_hint": "Wähle in den Einstellungen des AirPlay-Empfängers die gewünschten Lautsprecher aus. Öffne anschließend die AirPlay-Audioauswahl auf deinem Apple-Gerät und wähle den Empfänger für deinen Lautsprecher aus."
     },
     "share_playlist": "Wiedergabeliste teilen",
     "playlist_access": {
@@ -2835,10 +3010,6 @@
         "end": "Die Tour beenden",
         "next": "Weiter",
         "step_counter": "{current} von {total}",
-        "offer": {
-            "title": "Möchtest du dich kurz umschauen?",
-            "description": "Eine kurze Tour führt dich durch die wichtigsten Bereiche der App. Du kannst diese jederzeit über dein Profilmenü erneut aufrufen."
-        },
         "stops": {
             "menu": {
                 "title": "Das Menü",
@@ -2931,7 +3102,8 @@
         "duration": "Dauer",
         "columns": "Spalten",
         "choose_columns": "Spalten auswählen",
-        "hidden_at_width": "Bei dieser Breite ausgeblendet"
+        "hidden_at_width": "Bei dieser Breite ausgeblendet",
+        "reorder_track": "Zum Bewegen ziehen oder die Pfeiltasten drücken {0}"
     },
     "selection_actions": "Auswahlaktionen",
     "n_selected": "{count} ausgewählt | {count} ausgewählt",
@@ -2975,7 +3147,7 @@
     "statistics_average_year": "{average} im Durchschnitt pro Jahr.",
     "statistics_busiest_sentence_hour": "{label} war deine geschäftigste Stunde.",
     "statistics_busiest_sentence_day": "{label} war dein geschäftigster Tag.",
-    "statistics_busiest_sentence_month": "{label} war Ihr geschäftigster Monat.",
+    "statistics_busiest_sentence_month": "{label} war dein geschäftigster Monat.",
     "statistics_busiest_sentence_year": "{label} war dein geschäftigstes Jahr.",
     "statistics_per_hour": "Pro Stunde",
     "statistics_per_day": "Pro Tag",
@@ -3019,7 +3191,7 @@
     "statistics_top_tracks": "Top-Titel",
     "statistics_top_albums": "Top-Alben",
     "statistics_top_artists": "Top-Interpreten",
-    "statistics_top_playlists": "Top-Playlists",
+    "statistics_top_playlists": "Top-Wiedergabelisten",
     "statistics_column_rank": "#",
     "statistics_column_title": "Titel",
     "statistics_column_share": "Teilen",
@@ -3036,5 +3208,79 @@
     "show_action_buttons": "Aktionstasten anzeigen",
     "action_buttons_too_small": "Die Cover sind zu klein für die Aktionstasten",
     "open_item_failed": "Dieser Eintrag konnte nicht geöffnet werden.",
-    "edit_rows_subtitle_genre": "Gilt für jede Genre-Seite"
+    "edit_rows_subtitle_genre": "Gilt für jede Genre-Seite",
+    "chapters_and_bookmarks": "Kapitel & Lesezeichen",
+    "chapters_and_bookmarks_tab": "Alle",
+    "bookmarks": "Lesezeichen",
+    "add_bookmark": "Lesezeichen hinzufügen",
+    "add_bookmark_at": "Lesezeichen hinzufügen bei {time}",
+    "rename_bookmark": "Lesezeichen umbenennen",
+    "delete_bookmark": "Lesezeichen löschen",
+    "delete_bookmark_confirm": "Das Lesezeichen „{name}“ löschen?",
+    "bookmark_name": "Name",
+    "bookmark_saved_in": "Gespeichert unter {name}",
+    "play_from_position": "Abspielen von {time}",
+    "bookmark_added": "Lesezeichen hinzugefügt",
+    "bookmark_renamed": "Lesezeichen umbenannt",
+    "bookmark_deleted": "Lesezeichen gelöscht",
+    "bookmark_add_failed": "Das Lesezeichen konnte nicht hinzugefügt werden",
+    "bookmark_rename_failed": "Das Lesezeichen konnte nicht umbenannt werden",
+    "bookmark_delete_failed": "Das Lesezeichen konnte nicht gelöscht werden",
+    "playlist_move_to_top": "Nach oben schieben",
+    "playlist_move_to_bottom": "Nach unten schieben",
+    "playlist_moved_to_top": "An den Anfang der Wiedergabeliste verschoben",
+    "playlist_moved_to_bottom": "Ans Ende der Wiedergabeliste verschoben",
+    "statistics_highlight_track": "Top-Titel",
+    "statistics_highlight_artist": "Top-Interpret",
+    "statistics_highlight_album": "Top-Album",
+    "edit_rows_subtitle_radio": "Gilt für jede Radioseite",
+    "statistics_subtitle_other_users": "Was wurde auf Music Assistant abgespielt?",
+    "statistics_users": "Benutzer",
+    "statistics_users_me": "Nur ich",
+    "statistics_users_all": "Alle Benutzer",
+    "statistics_users_count": "{count} Benutzer",
+    "statistics_users_removed": "Einige ausgewählte Benutzer existieren nicht mehr und wurden entfernt.",
+    "statistics_busiest_sentence_hour_other_users": "{label} war die geschäftigste Stunde.",
+    "statistics_busiest_sentence_day_other_users": "{label} war der geschäftigste Tag.",
+    "statistics_busiest_sentence_month_other_users": "{label} war der geschäftigste Monat.",
+    "statistics_busiest_sentence_year_other_users": "{label} war das geschäftigste Jahr.",
+    "statistics_top_artist_other_users": "Interpret Nummer eins",
+    "statistics_top_artist_accessible_other_users": "{name}: {share}% der Wiedergaben",
+    "statistics_when_you_listen_other_users": "Hörzeiten",
+    "statistics_window_share_other_users": "{share}% der Wiedergaben begannen zwischen {start} und {end}",
+    "statistics_heatmap_other_users": "Die Woche im Stundentakt",
+    "stream_held": {
+        "title": "Stattdessen hier abspielen?",
+        "message": "{0} wird bereits auf {1} abgespielt. Es kann jeweils nur von einem Wiedergabegerät gleichzeitig abgespielt werden.",
+        "stop_and_play_here": "Halte dort an und spiele hier ab"
+    },
+    "discography_first_row": "Diskografie (erste Reihe)",
+    "discography_second_row": "Diskografie (zweite Reihe)",
+    "discography_types_summary": "{first} +{count}",
+    "album_type_plural": {
+        "album": "Alben",
+        "single": "Singles",
+        "ep": "EPs",
+        "compilation": "Zusammenstellungen",
+        "live": "Live",
+        "soundtrack": "Soundtracks"
+    },
+    "sleep_timer_end_of_chapter": "Ende des Kapitels",
+    "sleep_timer_end_of_item": {
+        "track": "Ende des Titels",
+        "podcast_episode": "Ende der Folge",
+        "audiobook": "Ende des Hörbuchs",
+        "other": "Ende des aktuellen Eintrags"
+    },
+    "collection_refresh_failed": "Der Wiedergabestatus der Sammlung konnte nicht aktualisiert werden",
+    "alphabet_jump": "Zum Buchstaben springen",
+    "view_all_count": "Alle ({count}) anzeigen",
+    "energy_level": "Energie",
+    "source_auto": "Automatisch",
+    "edit_rows_subtitle_audiobook": "Gilt für jede Hörbuchseite",
+    "chapter_of": "Kapitel {current} von {total}",
+    "chapter_progress_show_audiobook": "Das gesamte Hörbuch anzeigen",
+    "chapter_progress_show_episode": "Die gesamte Folge ansehen",
+    "chapter_progress_show_chapter": "Nur dieses Kapitel anzeigen",
+    "transfer_queue_no_audio": "Audio ist auf diesem Gerät noch nicht verfügbar."
 }

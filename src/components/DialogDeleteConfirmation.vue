@@ -8,6 +8,14 @@
         <p class="text-sm text-muted-foreground">
           {{ message }}
         </p>
+        <ul
+          v-if="items.length"
+          tabindex="0"
+          class="mt-3 max-h-60 list-disc overflow-y-auto rounded-md border py-2 pr-3 pl-8 text-sm break-words outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          data-testid="delete-confirmation-items"
+        >
+          <li v-for="(item, index) in items" :key="index">{{ item }}</li>
+        </ul>
         <div v-if="acknowledgement" class="mt-4 flex items-start gap-2">
           <Checkbox
             :id="acknowledgementId"
@@ -62,6 +70,7 @@ const open = ref(false);
 const loading = ref(false);
 const title = ref("");
 const message = ref("");
+const items = ref<string[]>([]);
 const confirmLabel = ref("");
 const destructive = ref(true);
 const acknowledgement = ref("");
@@ -85,6 +94,7 @@ const handleConfirm = async () => {
 const reset = () => {
   title.value = "";
   message.value = "";
+  items.value = [];
   confirmLabel.value = "";
   destructive.value = true;
   acknowledgement.value = "";
@@ -114,6 +124,7 @@ onMounted(() => {
       if (!open.value) dialogActiveBeforeOpen = store.dialogActive;
       title.value = evt.title ?? t("delete");
       message.value = evt.message;
+      items.value = evt.items ?? [];
       confirmLabel.value = evt.confirmLabel ?? t("delete");
       destructive.value = evt.destructive ?? true;
       acknowledgement.value = evt.acknowledgement ?? "";

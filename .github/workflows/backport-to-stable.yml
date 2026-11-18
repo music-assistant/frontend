@@ -136,9 +136,10 @@ jobs:
       - name: Reset stable to the server pin and pick the next version
         id: sync
         run: |
+          # Older server releases pin the frontend by version, newer ones by release URL
           PIN=$(gh api -H "Accept: application/vnd.github.raw" \
             "repos/music-assistant/server/contents/pyproject.toml?ref=stable" |
-            sed -nE 's/.*"music-assistant-frontend==([^"]+)".*/\1/p')
+            sed -nE 's#.*"music-assistant-frontend(==| @ https://github\.com/music-assistant/frontend/releases/download/)([^"/]+).*#\2#p')
           if [[ ! "$PIN" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(\.post[0-9]+)?$ ]]; then
             echo "::error::Unexpected frontend pin on server stable: '$PIN'."
             exit 1

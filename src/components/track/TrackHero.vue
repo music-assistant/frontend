@@ -16,7 +16,7 @@
     <template v-if="item" #main>
       <div class="track-hero__main">
         <div class="track-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
 
         <div class="track-hero__text">
@@ -88,12 +88,7 @@
               @click="gotoRadio(item)"
             />
             <DetailHeroSourceBadge :item="item" />
-            <span
-              v-if="
-                item.audio_metadata?.bpm || item.audio_metadata?.musical_key
-              "
-              class="track-hero__badge"
-            >
+            <span v-if="hasAudioAnalysis" class="track-hero__badge">
               <AudioAnalysisMetadata :audio-metadata="item.audio_metadata" />
             </span>
             <span v-if="qualityLabel" class="track-hero__pill">
@@ -150,9 +145,12 @@ const router = useRouter();
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-const coverSize = computed(() => (isPhone.value ? 132 : 200));
-
 const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
+
+const hasAudioAnalysis = computed(() => {
+  const metadata = props.item?.audio_metadata;
+  return !!(metadata?.bpm || metadata?.musical_key || metadata?.energy_level);
+});
 
 const qualityLabel = computed(() => {
   const format = props.item && bestAudioFormat(props.item);
@@ -295,7 +293,7 @@ const gotoItem = function (
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+@container detail-hero (width < 48rem) {
   .track-hero__main {
     flex-direction: column;
     align-items: stretch;
@@ -315,6 +313,8 @@ const gotoItem = function (
   .track-hero__actions {
     gap: 10px;
   }
+}
+@media (max-width: 768px) {
   .track-hero__badge {
     width: 44px;
     height: 44px;

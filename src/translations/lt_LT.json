@@ -770,7 +770,6 @@
     "remove_provider_mapping_confirm": "Ar tikrai norite pašalinti šį tiekėjo susiejimą? Tai atsieis elementą nuo dabartinių elemento duomenų. Jis gali vėl atsirasti, jei iš naujo nuskaitysite visus atitikmenis tiekėjams.",
     "map_provider_mapping": "Susieti šį teikėjo įrašą su dabartiniu elementu",
     "player_tip": {
-        "selected_player": "Pasirinktas grotuvas",
         "currently_playing": "Šiuo metu leidžiama per",
         "click_to_change": "Spustelėkite žemiau, kad pakeistumėte išvesties įrenginį"
     },
