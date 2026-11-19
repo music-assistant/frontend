@@ -63,6 +63,6 @@ const introKey = computed(() =>
 // the server routes remote access through Home Assistant Link by itself
 // whenever the Home Assistant it is connected to has it
 const homeAssistantConnected = computed(
-  () => ctx.value.homeAssistantAddon || ctx.value.homeAssistantConfigured,
+  () => ctx.value.homeAssistantAddon || ctx.value.homeAssistantConnected,
 );
 </script>

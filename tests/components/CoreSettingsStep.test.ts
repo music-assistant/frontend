@@ -9,6 +9,7 @@ const { authMock, onboardingState } = vi.hoisted(() => ({
   onboardingState: {
     homeAssistantAddon: false,
     homeAssistantConfigured: false,
+    homeAssistantConnected: false,
   },
 }));
 
@@ -61,6 +62,7 @@ beforeEach(() => {
   grantAllBut();
   onboardingState.homeAssistantAddon = false;
   onboardingState.homeAssistantConfigured = false;
+  onboardingState.homeAssistantConnected = false;
 });
 
 describe("CoreSettingsStep", () => {
@@ -74,6 +76,7 @@ describe("CoreSettingsStep", () => {
     it("says the add-on is reached wherever Home Assistant is", () => {
       onboardingState.homeAssistantAddon = true;
       onboardingState.homeAssistantConfigured = true;
+      onboardingState.homeAssistantConnected = true;
 
       const wrapper = mountStep();
 
@@ -91,6 +94,7 @@ describe("CoreSettingsStep", () => {
     it("is kept from whoever may not switch it", () => {
       grantAllBut(Scope.SYSTEM_MANAGE);
       onboardingState.homeAssistantConfigured = true;
+      onboardingState.homeAssistantConnected = true;
 
       const wrapper = mountStep();
 
@@ -110,12 +114,23 @@ describe("CoreSettingsStep", () => {
 
     it("shows with Home Assistant connected", () => {
       onboardingState.homeAssistantConfigured = true;
+      onboardingState.homeAssistantConnected = true;
 
       const wrapper = mountStep();
 
       expect(homeAssistantLine(wrapper).text()).toBe(
         "onboarding.steps.core_settings.remote.home_assistant",
       );
+    });
+
+    it("is left out while the Home Assistant connection does not work", () => {
+      // set up, but switched off or failed: the server only goes through
+      // Home Assistant Link with a connection that is up
+      onboardingState.homeAssistantConfigured = true;
+
+      const wrapper = mountStep();
+
+      expect(homeAssistantLine(wrapper).exists()).toBe(false);
     });
 
     it("shows on the add-on, which connects Home Assistant by itself", () => {

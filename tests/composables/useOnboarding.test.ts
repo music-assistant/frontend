@@ -5,6 +5,7 @@ import {
   MediaType,
   PlayerType,
   ProviderSharing,
+  ProviderStatus,
   ProviderType,
   Scope,
   UserRole,
@@ -222,6 +223,7 @@ function addProvider(
     builtin?: boolean;
     enabled?: boolean;
     lastError?: unknown;
+    status?: ProviderStatus;
     name?: string;
     mediaTypes?: MediaType[];
   } = {},
@@ -233,6 +235,7 @@ function addProvider(
     name: options.name ?? null,
     enabled: options.enabled ?? true,
     last_error: options.lastError ?? null,
+    status: options.status,
   });
   apiMock.providerManifests[domain] = {
     builtin: options.builtin ?? false,
@@ -468,6 +471,23 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "home_assistant",
     );
   });
+
+  it.each([
+    [ProviderStatus.LOADED, true],
+    [ProviderStatus.LOADING, false],
+    [ProviderStatus.DISABLED, false],
+    [ProviderStatus.ERROR, false],
+  ])(
+    "sees a Home Assistant connection that is %s as connected: %s",
+    async (status, connected) => {
+      addProvider("hass--1", "hass", ProviderType.PLUGIN, { status });
+
+      const { ctx } = await loadOnboarding();
+
+      expect(ctx.value.homeAssistantConfigured).toBe(true);
+      expect(ctx.value.homeAssistantConnected).toBe(connected);
+    },
+  );
 
   it("asks nothing of a guest, who is only passing through", async () => {
     signInAs(
