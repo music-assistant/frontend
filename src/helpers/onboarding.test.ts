@@ -126,21 +126,31 @@ describe("onboarding step order", () => {
     expect(stepIds(applicableSteps(context()))).toEqual([...BASE_ORDER]);
   });
 
-  it("starts a first run with the account, before anyone can sign in", () => {
+  it("starts a first run with its welcome and the account, before anyone can sign in", () => {
     // no account yet, so no permissions either: the track is the first run's
     const ctx = context({ isAdmin: false, firstRun: true, signedIn: false });
 
-    expect(stepIds(applicableSteps(ctx))).toEqual(["account", ...BASE_ORDER]);
-    expect(firstStep(ctx)).toBe("account");
+    expect(stepIds(applicableSteps(ctx))).toEqual([
+      "get_started",
+      "account",
+      ...BASE_ORDER,
+    ]);
+    expect(firstStep(ctx)).toBe("get_started");
+    expect(step(ctx, "get_started").isDone(ctx)).toBe(false);
     expect(step(ctx, "account").isDone(ctx)).toBe(false);
     // nothing is a member either: the two tracks never mix
-    expect(pendingSteps(ctx)[0]?.id).toBe("account");
+    expect(stepIds(pendingSteps(ctx)).slice(0, 2)).toEqual([
+      "get_started",
+      "account",
+    ]);
   });
 
   it("ticks the account off once the first run is signed in, and moves on", () => {
     const ctx = context({ firstRun: true, signedIn: true });
 
     expect(step(ctx, "account").isDone(ctx)).toBe(true);
+    // the welcome is behind the first run once its account is made
+    expect(stepIds(applicableSteps(ctx))).toEqual(["account", ...BASE_ORDER]);
     expect(firstStep(ctx)).toBe("intent");
   });
 
@@ -152,6 +162,7 @@ describe("onboarding step order", () => {
     });
 
     expect(stepIds(applicableSteps(ctx))).toEqual([
+      "get_started",
       "account",
       "intent",
       "players",
@@ -160,10 +171,12 @@ describe("onboarding step order", () => {
     ]);
   });
 
-  it("never asks a setup run again for an account", () => {
-    expect(stepIds(applicableSteps(context({ signedIn: true })))).not.toContain(
-      "account",
-    );
+  it("never welcomes a setup run again, nor asks it for an account", () => {
+    const ctx = context({ signedIn: true });
+
+    expect(stepIds(applicableSteps(ctx))).not.toContain("get_started");
+    expect(stepIds(applicableSteps(ctx))).not.toContain("account");
+    expect(firstStep(ctx)).toBe("intent");
   });
 
   it("keeps the base order for someone building a music hub", () => {
@@ -189,12 +202,13 @@ describe("onboarding step order", () => {
     expect(
       stepIds(applicableSteps(context({ answers: { intent: "music_hub" } }))),
     ).toEqual([...BASE_ORDER]);
-    // the registry carries the account step ahead of the admin track, which
-    // only a first run is offered, the app connections only the existing-app
-    // path is, Home Assistant only a server that is not the add-on is, and the
-    // own-sources step between the music and the summary, whether or not a
-    // given member is offered it
+    // the registry carries the welcome and the account step ahead of the admin
+    // track, which only a first run is offered, the app connections only the
+    // existing-app path is, Home Assistant only a server that is not the add-on
+    // is, and the own-sources step between the music and the summary, whether
+    // or not a given member is offered it
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([
+      "get_started",
       "account",
       "intent",
       "music_sources",
@@ -573,6 +587,10 @@ describe("the member track", () => {
   it("keeps the two tracks apart", () => {
     const admin = stepIds(applicableSteps(context()));
     for (const id of MEMBER_ORDER) expect(admin).not.toContain(id);
+    // a fresh server's welcome is not the member's
+    expect(stepIds(applicableSteps(memberContext()))).not.toContain(
+      "get_started",
+    );
   });
 
   it.each([undefined, "music_hub", "phone_apps"] as const)(

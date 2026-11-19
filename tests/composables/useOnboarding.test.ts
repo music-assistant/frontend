@@ -1107,8 +1107,12 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       // no account, so no permissions and no member either
       expect(ctx.value.isAdmin).toBe(false);
       expect(ctx.value.isMember).toBe(false);
-      expect(steps.value[0]?.id).toBe("account");
-      expect(pending.value[0]?.id).toBe("account");
+      // the welcome comes first, and the account straight after it
+      expect(steps.value.slice(0, 2).map((step) => step.id)).toEqual([
+        "get_started",
+        "account",
+      ]);
+      expect(pending.value[0]?.id).toBe("get_started");
       // nothing was asked of a server nobody is signed in to
       expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
       expect(apiMock.getAllUsers).not.toHaveBeenCalled();
@@ -1125,6 +1129,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       expect(ctx.value.signedIn).toBe(true);
       expect(ctx.value.isAdmin).toBe(true);
       expect(pending.value.map((step) => step.id)).not.toContain("account");
+      expect(pending.value.map((step) => step.id)).not.toContain("get_started");
     });
 
     it("stays the admin's while their permissions are still on their way", async () => {

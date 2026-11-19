@@ -15,6 +15,7 @@ import { ProviderType, type ProviderStatus } from "@/plugins/api/interfaces";
 
 export type OnboardingStepId =
   // the admin track: setting the server up
+  | "get_started"
   | "account"
   | "intent"
   | "music_sources"
@@ -43,9 +44,17 @@ export const APP_RECEIVER_INSTRUCTIONS: Readonly<Record<string, string>> = {
   airplay_receiver: "onboarding.airplay_receiver_hint",
 };
 
-/** How the wizard leaves a step: moving on, or pausing the setup. */
+/** How the wizard leaves a step: moving on, going back, or pausing the setup. */
 export interface StepLeaveOptions {
+  back?: boolean;
   pausing?: boolean;
+}
+
+/** A step's own form, which the wizard's forward button submits. */
+export interface StepForwardForm {
+  // the id of the form element
+  id: string;
+  labelKey: string;
 }
 
 /** How much of the app a member wants to see, as the welcome asks it. */
@@ -129,6 +138,8 @@ export interface OnboardingStep {
   kind: OnboardingStepKind;
   // optional by nature: the wizard offers a skip instead of a Next
   optional?: boolean;
+  // done for good once it is done: the wizard never takes the user back to it
+  oneWay?: boolean;
   appliesTo(ctx: OnboardingContext): boolean;
   isDone(ctx: OnboardingContext): boolean;
 }
@@ -172,8 +183,17 @@ export const attentionLabelKey = (status: ProviderStatus | null) =>
 /** Both tracks, each in its base order. */
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   {
+    // the welcome a fresh server opens with, there until its account is made
+    id: "get_started",
+    kind: "step",
+    appliesTo: (ctx) => ctx.firstRun && !ctx.signedIn,
+    // nothing to tick off: it is only ever walked past
+    isDone: () => false,
+  },
+  {
     id: "account",
     kind: "step",
+    oneWay: true,
     // only a fresh server asks for this: the account is made once, before
     // anything else, and a setup run again later has nothing to make
     appliesTo: (ctx) => ctx.firstRun,
