@@ -21,13 +21,7 @@
       </DetailSectionTitle>
     </template>
     <template v-if="viewAllTo" #actions>
-      <RouterLink
-        :to="viewAllTo"
-        class="release-shelf__more"
-        :aria-label="$t('tooltip.view_all', { name: title })"
-      >
-        {{ $t("view_all") }}
-      </RouterLink>
+      <ViewAllLink :to="viewAllTo" :name="title" />
     </template>
 
     <template v-if="items">
@@ -72,6 +66,7 @@ import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
+import ViewAllLink from "@/components/ViewAllLink.vue";
 import { parseBool } from "@/helpers/parse";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
@@ -84,7 +79,7 @@ import {
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
-import { RouterLink, type RouteLocationRaw } from "vue-router";
+import type { RouteLocationRaw } from "vue-router";
 
 export interface Props {
   title: string;
@@ -157,18 +152,6 @@ function shelfTilesPerView(): number {
 </script>
 
 <style scoped>
-.release-shelf__more {
-  flex: none;
-  font-size: 13px;
-  font-weight: 500;
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-  white-space: nowrap;
-}
-.release-shelf__more:hover,
-.release-shelf__more:focus-visible {
-  text-decoration: underline;
-}
 .release-shelf__art-scrim {
   position: absolute;
   inset: 0;

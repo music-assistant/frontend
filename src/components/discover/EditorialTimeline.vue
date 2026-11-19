@@ -1,7 +1,7 @@
 <template>
   <EditorialShelf
     :title="title"
-    :title-to="titleTo"
+    :view-all-to="viewAllTo"
     :provider="provider"
     :dimmed="dimmed"
     :tiles-per-view="tilesPerView"
@@ -51,7 +51,7 @@ const props = defineProps<{
   tilesPerView?: number;
   maxDays?: number;
   gap?: number;
-  titleTo?: RouteLocationRaw;
+  viewAllTo?: RouteLocationRaw;
 }>();
 
 const MAX_DAYS = computed(() => props.maxDays ?? 15);

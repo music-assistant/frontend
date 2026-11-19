@@ -9,23 +9,25 @@
       <slot name="header">
         <div class="ed-shelf__titles">
           <div class="ed-shelf__title-row">
-            <h2 class="ed-shelf__title">
-              <TitleLink :title="title" :to="titleTo" />
-            </h2>
+            <h2 class="ed-shelf__title">{{ title }}</h2>
             <slot name="title-append"></slot>
           </div>
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
       </slot>
-      <div v-if="provider || $slots.actions" class="ed-shelf__aside">
+      <div
+        v-if="provider || $slots.actions || viewAllTo"
+        class="ed-shelf__aside"
+      >
         <ProviderIcon
           v-if="provider"
           class="ed-shelf__provider"
           :domain="provider"
           :size="20"
         />
-        <div v-if="$slots.actions" class="ed-shelf__actions">
+        <div v-if="$slots.actions || viewAllTo" class="ed-shelf__actions">
           <slot name="actions"></slot>
+          <ViewAllLink v-if="viewAllTo" :to="viewAllTo" :name="title" />
         </div>
       </div>
     </div>
@@ -96,7 +98,7 @@ import { useDragScroll } from "@/composables/useDragScroll";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import TitleLink from "@/components/TitleLink.vue";
+import ViewAllLink from "@/components/ViewAllLink.vue";
 import type { RouteLocationRaw } from "vue-router";
 
 interface Props {
@@ -107,8 +109,8 @@ interface Props {
   navCenter?: number;
   dimmed?: boolean;
   tilesPerView?: number;
-  // makes the title a link, e.g. to the full listing of the shelf's items
-  titleTo?: RouteLocationRaw;
+  // adds a "View all" link, e.g. to the full listing of the shelf's items
+  viewAllTo?: RouteLocationRaw;
 }
 const props = withDefaults(defineProps<Props>(), {
   title: "",
@@ -118,7 +120,7 @@ const props = withDefaults(defineProps<Props>(), {
   navCenter: 92,
   dimmed: false,
   tilesPerView: 0,
-  titleTo: undefined,
+  viewAllTo: undefined,
 });
 
 const CARD_PAD = 16;
