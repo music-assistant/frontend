@@ -55,7 +55,7 @@
       <ItemDescription v-else-if="description">
         {{ description }}
       </ItemDescription>
-      <SourceLabels v-if="labels?.length" :labels="labels" />
+      <ProviderLabels v-if="labels?.length" :labels="labels" />
       <ItemDescription v-if="accessSummary" data-testid="provider-access">
         {{ accessSummary }}
       </ItemDescription>
@@ -214,7 +214,7 @@
       >
         {{ description }}
       </p>
-      <SourceLabels v-if="labels?.length" :labels="labels" class="mt-3" />
+      <ProviderLabels v-if="labels?.length" :labels="labels" class="mt-3" />
     </div>
 
     <div
@@ -229,8 +229,8 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProviderLabels from "@/components/settings/providers/ProviderLabels.vue";
 import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
-import SourceLabels from "@/components/settings/providers/SourceLabels.vue";
 import TooltipIcon from "@/components/TooltipIcon.vue";
 import { Badge, type BadgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -245,7 +245,7 @@ import {
 } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
-import type { SourceLabel } from "@/helpers/source_labels";
+import type { ProviderLabel } from "@/helpers/provider_labels";
 import type { ProviderConfig } from "@/plugins/api/interfaces";
 import {
   Ban,
@@ -270,8 +270,8 @@ interface Props {
   name: string;
   // the provider description, shown while the source is healthy
   description?: string;
-  // what the source offers
-  labels?: readonly SourceLabel[];
+  // what the provider offers
+  labels?: readonly ProviderLabel[];
   // the access summary line; omitted hides it (a source the viewer cannot manage)
   accessSummary?: string | null;
   // the status badge variant; omitted hides the badge (a healthy source)

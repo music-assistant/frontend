@@ -2,7 +2,7 @@ import DiscoveredPlayerItem from "@/components/onboarding/DiscoveredPlayerItem.v
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
   EventType,
-  MediaType,
+  ProviderOffering,
   PlayerType,
   ProviderSharing,
   ProviderType,
@@ -51,7 +51,7 @@ const {
         builtin: boolean;
         name: string;
         type?: ProviderType;
-        media_types?: MediaType[];
+        provides?: ProviderOffering[];
       }
     >,
     getAllUsers: vi.fn(),
@@ -223,7 +223,7 @@ function addProvider(
     enabled?: boolean;
     lastError?: unknown;
     name?: string;
-    mediaTypes?: MediaType[];
+    provides?: ProviderOffering[];
   } = {},
 ) {
   providerConfigs.list.push({
@@ -238,7 +238,7 @@ function addProvider(
     builtin: options.builtin ?? false,
     name: `${domain} manifest`,
     type,
-    media_types: options.mediaTypes,
+    provides: options.provides,
   };
 }
 
@@ -410,10 +410,10 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
   });
 
   it("only takes a plugin whose manifest declares an audio source for an app connection", async () => {
-    const audioSource = [MediaType.AUDIO_SOURCE];
+    const audioSource = [ProviderOffering.AUDIO_SOURCE];
     // a player provider declares it for the line-ins of its devices
     addProvider("sendspin--1", "sendspin", ProviderType.PLAYER, {
-      mediaTypes: audioSource,
+      provides: audioSource,
     });
     addProvider("party--1", "party", ProviderType.PLUGIN);
     preferenceState.intent.value = "phone_apps";
@@ -428,7 +428,7 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     );
 
     addProvider("connect--1", "spotify_connect", ProviderType.PLUGIN, {
-      mediaTypes: audioSource,
+      provides: audioSource,
     });
     module = await loadOnboardingModule();
     expect(

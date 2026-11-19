@@ -1,6 +1,6 @@
 import {
   ConfigEntryType,
-  MediaType,
+  ProviderOffering,
   ProviderType,
   Scope,
   type ConfigEntry,
@@ -257,11 +257,11 @@ describe("providerSettingsPageId", () => {
 describe("providerListType", () => {
   it("lists a plugin offering audio sources with the music sources", () => {
     expect(
-      providerListType(ProviderType.PLUGIN, [MediaType.AUDIO_SOURCE]),
+      providerListType(ProviderType.PLUGIN, [ProviderOffering.AUDIO_SOURCE]),
     ).toBe(ProviderType.MUSIC);
   });
 
-  it("lists a plugin with the plugins when its manifest names no media types", () => {
+  it("lists a plugin with the plugins when its manifest provides no audio sources", () => {
     expect(providerListType(ProviderType.PLUGIN)).toBe(ProviderType.PLUGIN);
     expect(providerListType(ProviderType.PLUGIN, [])).toBe(ProviderType.PLUGIN);
   });
@@ -269,10 +269,10 @@ describe("providerListType", () => {
   it("lists any other type with its type, whatever it offers", () => {
     // the Sendspin player provider declares audio sources for its line-ins
     expect(
-      providerListType(ProviderType.PLAYER, [MediaType.AUDIO_SOURCE]),
+      providerListType(ProviderType.PLAYER, [ProviderOffering.AUDIO_SOURCE]),
     ).toBe(ProviderType.PLAYER);
     expect(
-      providerListType(ProviderType.METADATA, [MediaType.AUDIO_SOURCE]),
+      providerListType(ProviderType.METADATA, [ProviderOffering.AUDIO_SOURCE]),
     ).toBe(ProviderType.METADATA);
   });
 });

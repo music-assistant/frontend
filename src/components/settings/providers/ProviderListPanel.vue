@@ -14,7 +14,7 @@
           v-if="list.showSearch"
           @update:search="emit('search', $event)"
         />
-        <SourceLabelFilter
+        <ProviderLabelFilter
           v-if="list.labels.length"
           :model-value="list.labelFilter"
           :labels="list.labels"
@@ -88,7 +88,7 @@
 <script setup lang="ts">
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
-import SourceLabelFilter from "@/components/settings/providers/SourceLabelFilter.vue";
+import ProviderLabelFilter from "@/components/settings/providers/ProviderLabelFilter.vue";
 import SettingsListPanel, {
   type SettingsPanelAction,
 } from "@/components/settings/SettingsListPanel.vue";
@@ -103,8 +103,8 @@ import {
 import { ItemGroup } from "@/components/ui/item";
 import type { ProviderList } from "@/composables/settings/providers/useProviderSources";
 import { getCatalogType } from "@/helpers/provider_catalog";
+import type { ProviderLabel } from "@/helpers/provider_labels";
 import { canOwnSources } from "@/helpers/provider_permissions";
-import type { SourceLabel } from "@/helpers/source_labels";
 import { type ProviderConfig, ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Music, Plus, Puzzle } from "@lucide/vue";
@@ -113,7 +113,7 @@ import { computed, markRaw } from "vue";
 
 /**
  * A list of providers on a settings page, in a panel headed by its name, with
- * its search, its filter on what the sources offer, its add button and its
+ * its search, its filter on what the providers offer, its add button and its
  * empty state. The page renders the row of each provider.
  */
 const props = defineProps<{
@@ -125,8 +125,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "search", query: string): void;
-  // the list should show only the sources offering the label; null for all
-  (e: "filter-label", label: SourceLabel | null): void;
+  // the list should show only the providers offering the label; null for all
+  (e: "filter-label", label: ProviderLabel | null): void;
   // the Marketplace should open on the type of the list
   (e: "add"): void;
   (e: "toggle-view-mode"): void;

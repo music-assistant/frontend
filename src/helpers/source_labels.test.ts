@@ -1,31 +1,31 @@
 import {
-  MediaType,
+  ProviderOffering,
   ProviderFeature,
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { providerInstance } from "../../tests/fixtures/providerInstance";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
-import { getFilterLabels, getSourceLabels } from "./source_labels";
+import { getSourceLabels } from "./source_labels";
 
 describe("what a source offers", () => {
   it.each([
-    [MediaType.ARTIST, "library"],
-    [MediaType.ALBUM, "library"],
-    [MediaType.TRACK, "library"],
-    [MediaType.PLAYLIST, "library"],
-    [MediaType.RADIO, "radio"],
-    [MediaType.PODCAST, "podcasts"],
-    [MediaType.AUDIOBOOK, "audiobooks"],
+    [ProviderOffering.ARTIST, "library"],
+    [ProviderOffering.ALBUM, "library"],
+    [ProviderOffering.TRACK, "library"],
+    [ProviderOffering.PLAYLIST, "library"],
+    [ProviderOffering.RADIO, "radio"],
+    [ProviderOffering.PODCAST, "podcasts"],
+    [ProviderOffering.AUDIOBOOK, "audiobooks"],
   ])("labels a source whose manifest names %s with %s", (mediaType, label) => {
     expect(
-      getSourceLabels(providerManifest({ media_types: [mediaType] })),
+      getSourceLabels(providerManifest({ provides: [mediaType] })),
     ).toEqual([label]);
   });
 
   it("labels a source by the media types its manifest names, running or not", () => {
     // a radio catalogue offers radio without a radio library
-    const manifest = providerManifest({ media_types: [MediaType.RADIO] });
+    const manifest = providerManifest({ provides: [ProviderOffering.RADIO] });
     const instance = providerInstance({
       supported_features: [ProviderFeature.SEARCH, ProviderFeature.BROWSE],
     });
@@ -37,7 +37,7 @@ describe("what a source offers", () => {
   it("adds what a running source reports on top of its manifest's media types", () => {
     // audiobooks the account turns on are no media type the manifest names
     const manifest = providerManifest({
-      media_types: [MediaType.TRACK, MediaType.PODCAST],
+      provides: [ProviderOffering.TRACK, ProviderOffering.PODCAST],
     });
     const instance = providerInstance({
       supported_features: [ProviderFeature.LIBRARY_AUDIOBOOKS],
@@ -107,7 +107,7 @@ describe("what a source offers", () => {
   it("labels a plugin declaring audio sources in its manifest as a live source only", () => {
     const manifest = providerManifest({
       type: ProviderType.PLUGIN,
-      media_types: [MediaType.AUDIO_SOURCE],
+      provides: [ProviderOffering.AUDIO_SOURCE],
     });
 
     expect(getSourceLabels(manifest)).toEqual(["live"]);
@@ -133,7 +133,7 @@ describe("what a source offers", () => {
     const manifest = providerManifest({
       domain: "sendspin",
       type: ProviderType.PLAYER,
-      media_types: [MediaType.AUDIO_SOURCE],
+      provides: [ProviderOffering.AUDIO_SOURCE],
     });
     const instance = providerInstance({
       domain: "sendspin",
@@ -143,19 +143,5 @@ describe("what a source offers", () => {
 
     expect(getSourceLabels(manifest)).toEqual([]);
     expect(getSourceLabels(manifest, instance)).toEqual([]);
-  });
-});
-
-describe("the labels to filter a list on", () => {
-  it("are those at least one source has, in the order the labels show", () => {
-    expect(
-      getFilterLabels([["live"], ["podcasts"], [], ["library", "podcasts"]]),
-    ).toEqual(["library", "podcasts", "live"]);
-  });
-
-  it("are none while fewer than two labels occur", () => {
-    expect(getFilterLabels([["live"], ["live"], []])).toEqual([]);
-    expect(getFilterLabels([[], []])).toEqual([]);
-    expect(getFilterLabels([])).toEqual([]);
   });
 });

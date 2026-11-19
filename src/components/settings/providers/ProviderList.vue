@@ -18,7 +18,7 @@
         :syncing="isProviderSyncing(item.instance_id)"
         :name="getProviderName(item)"
         :description="api.providerManifests[item.domain]?.description"
-        :labels="sourceLabelsOf(item)"
+        :labels="labelsOf(item)"
         :access-summary="
           canConfigureSourceAccess(item) ? accessSummary(item) : null
         "
@@ -70,8 +70,8 @@ import {
   managesAllSources,
   maySetUpSource,
 } from "@/helpers/provider_permissions";
+import { getProviderLabels } from "@/helpers/provider_labels";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
-import { getSourceLabels } from "@/helpers/source_labels";
 import { api } from "@/plugins/api";
 import { type ProviderConfig, ProviderStatus } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -109,9 +109,9 @@ const getProviderName = function (config: ProviderConfig) {
   );
 };
 
-// its manifest says what a source offers, a running one also what it reports
-const sourceLabelsOf = function (config: ProviderConfig) {
-  return getSourceLabels(
+// its manifest says what a provider offers, a running source also what it reports
+const labelsOf = function (config: ProviderConfig) {
+  return getProviderLabels(
     api.providerManifests[config.domain],
     api.providers[config.instance_id],
   );
@@ -162,7 +162,7 @@ const {
   managesAllSources,
   listType: () => props.type,
   getProviderName,
-  getSourceLabels: sourceLabelsOf,
+  getLabels: labelsOf,
   isErrorStatus,
 });
 

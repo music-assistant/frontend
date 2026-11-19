@@ -21,7 +21,7 @@ const { moved, dismissNotice } = useCommunityCatalog();
 const movedHere = computed(() =>
   moved.value.filter(
     ({ manifest }) =>
-      providerListType(manifest.type, manifest.media_types) === props.type,
+      providerListType(manifest.type, manifest.provides) === props.type,
   ),
 );
 </script>

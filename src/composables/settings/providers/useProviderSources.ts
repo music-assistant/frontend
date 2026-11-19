@@ -1,11 +1,11 @@
 import { isOwnMusicSource } from "@/helpers/provider_access";
 import { isBuiltinProvider } from "@/helpers/provider_config";
+import { getFilterLabels, type ProviderLabel } from "@/helpers/provider_labels";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import {
   providerListType,
   providerSettingsPageId,
 } from "@/helpers/settings_pages";
-import { getFilterLabels, type SourceLabel } from "@/helpers/source_labels";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -41,9 +41,9 @@ export interface ProviderList {
   // the search narrowing the list down; empty while the list offers none
   searchQuery: string;
   // the labels the list can be filtered on; none while it offers no filter
-  labels: SourceLabel[];
+  labels: ProviderLabel[];
   // the label narrowing the list down; null for all of them
-  labelFilter: SourceLabel | null;
+  labelFilter: ProviderLabel | null;
   // what the search and the label leave: sources needing attention first, then
   // alphabetically
   filteredProviders: ProviderConfig[];
@@ -59,18 +59,18 @@ interface UseProviderSourcesOptions {
   // the list type, as providerListType gives it
   listType: MaybeRefOrGetter<string>;
   getProviderName: (config: ProviderConfig) => string;
-  // what a source offers
-  getSourceLabels: (config: ProviderConfig) => SourceLabel[];
+  // what a provider offers
+  getLabels: (config: ProviderConfig) => ProviderLabel[];
   isErrorStatus: (status?: ProviderStatus | null) => boolean;
 }
 
 /**
  * The provider configs of a list on a settings page, kept in sync with the
- * server and shaped for the list: searched, filtered on what the sources offer,
- * sorted and split into sections.
+ * server and shaped for the list: searched, filtered on what the providers
+ * offer, sorted and split into sections.
  */
 export function useProviderSources(options: UseProviderSourcesOptions) {
-  const { getProviderName, getSourceLabels, isErrorStatus } = options;
+  const { getProviderName, getLabels, isErrorStatus } = options;
 
   const providerConfigs = ref<ProviderConfig[]>([]);
   // the empty states wait for the first load, so they never flash before the list
@@ -78,7 +78,7 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
   // the search and label as last set, which the list only applies while it
   // offers them
   const search = ref("");
-  const pickedLabel = ref<SourceLabel | null>(null);
+  const pickedLabel = ref<ProviderLabel | null>(null);
 
   const list = computed((): ProviderList =>
     buildList(toValue(options.listType)),
@@ -90,10 +90,10 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
   };
 
   /**
-   * Narrow the list down to the sources offering the label; null shows them
+   * Narrow the list down to the providers offering the label; null shows them
    * all again.
    */
-  const setLabelFilter = function (label: SourceLabel | null) {
+  const setLabelFilter = function (label: ProviderLabel | null) {
     pickedLabel.value = label;
   };
 
@@ -177,13 +177,13 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
     // a search typed before the list shrank below the threshold would keep
     // narrowing it down unseen
     const searchQuery = showSearch ? search.value : "";
-    const labels = getFilterLabels(listed.map(getSourceLabels));
-    // the same goes for a label no source in the list offers any more
+    const labels = getFilterLabels(listed.map(getLabels));
+    // the same goes for a label no provider in the list offers any more
     const picked = pickedLabel.value;
     const labelFilter = picked && labels.includes(picked) ? picked : null;
     const filteredProviders = sortProviders(
       searchProviders(listed, searchQuery, getProviderName).filter(
-        (item) => !labelFilter || getSourceLabels(item).includes(labelFilter),
+        (item) => !labelFilter || getLabels(item).includes(labelFilter),
       ),
       getProviderName,
       isErrorStatus,
@@ -214,7 +214,7 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
     return providerConfigs.value.filter((item) => {
       const manifest = api.providerManifests[item.domain];
       return (
-        providerListType(item.type, manifest?.media_types) === type &&
+        providerListType(item.type, manifest?.provides) === type &&
         // a provider with a settings page of its own is managed from that page
         !providerSettingsPageId(item.domain) &&
         // a provider that ships with the server is not a source anyone chose,

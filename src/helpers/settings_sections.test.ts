@@ -1,5 +1,9 @@
 import { SETTINGS_PAGES, type SettingsPageId } from "@/helpers/settings_pages";
-import { MediaType, ProviderType, Scope } from "@/plugins/api/interfaces";
+import {
+  ProviderOffering,
+  ProviderType,
+  Scope,
+} from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
@@ -320,7 +324,7 @@ describe("providerListingRoute", () => {
   it("leads a provider with a settings page of its own to that page", () => {
     expect(
       providerListingRoute({ domain: "hass", type: ProviderType.PLUGIN }, [
-        MediaType.AUDIO_SOURCE,
+        ProviderOffering.AUDIO_SOURCE,
       ]),
     ).toEqual({ name: "homeassistantsettings" });
   });
@@ -329,7 +333,7 @@ describe("providerListingRoute", () => {
     expect(
       providerListingRoute(
         { domain: "airplay_receiver", type: ProviderType.PLUGIN },
-        [MediaType.AUDIO_SOURCE],
+        [ProviderOffering.AUDIO_SOURCE],
       ),
     ).toEqual({ name: "musicsettings" });
   });

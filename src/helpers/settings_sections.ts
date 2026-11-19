@@ -6,8 +6,8 @@ import {
   type SettingsPageId,
 } from "@/helpers/settings_pages";
 import {
-  type MediaType,
   type ProviderConfig,
+  type ProviderOffering,
   ProviderType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -461,15 +461,15 @@ export function providerOwnPage(domain: string): SettingsMenuPage | undefined {
  * own, or the page showing its list.
  *
  * @param config - The provider instance.
- * @param mediaTypes - The media types its manifest names.
+ * @param provides - What its manifest says it provides.
  */
 export function providerListingRoute(
   config: Pick<ProviderConfig, "domain" | "type">,
-  mediaTypes?: readonly MediaType[],
+  provides?: readonly ProviderOffering[],
 ): RouteLocationRaw {
   return (
     providerOwnPage(config.domain)?.route ??
-    providerListRoute(providerListType(config.type, mediaTypes))
+    providerListRoute(providerListType(config.type, provides))
   );
 }
 

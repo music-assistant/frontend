@@ -2,7 +2,7 @@ import { HASS_DOMAIN } from "@/helpers/home_assistant";
 import { isAudioSourcePlugin } from "@/helpers/provider_config";
 import {
   type ConfigEntry,
-  type MediaType,
+  type ProviderOffering,
   ProviderType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -228,15 +228,13 @@ export function providerSettingsPageId(
  * settings page of its own is managed from that page instead of a list.
  *
  * @param type - The type of the provider.
- * @param mediaTypes - The media types its manifest names.
+ * @param provides - What its manifest says it provides.
  */
 export function providerListType(
   type: ProviderType,
-  mediaTypes?: readonly MediaType[],
+  provides?: readonly ProviderOffering[],
 ): ProviderType {
-  return isAudioSourcePlugin({ type, media_types: mediaTypes })
-    ? ProviderType.MUSIC
-    : type;
+  return isAudioSourcePlugin({ type, provides }) ? ProviderType.MUSIC : type;
 }
 
 /**
