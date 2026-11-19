@@ -3304,6 +3304,11 @@
         "what_you_picked": "What you picked",
         "more_count": "+{count} more",
         "steps": {
+            "get_started": {
+                "title": "Welcome to Music Assistant",
+                "description": "Let's set you up. First you create your account, then we go through the rest one step at a time.",
+                "start": "Get started"
+            },
             "account": {
                 "title": "Create your account",
                 "description": "This is the administrator account for this Music Assistant server. Accounts for the other users in your home can be added later.",

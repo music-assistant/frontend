@@ -197,7 +197,8 @@ await import("@/components/onboarding/OnboardingWizard.vue");
 async function mountWizard({
   fresh = true,
   step,
-}: { fresh?: boolean; step?: OnboardingStepId } = {}) {
+  attach = false,
+}: { fresh?: boolean; step?: OnboardingStepId; attach?: boolean } = {}) {
   if (fresh) vi.resetModules();
   // the wizard reads the requested step from the same composable instance it
   // imports, so it has to be set on that instance before the wizard mounts
@@ -209,6 +210,8 @@ async function mountWizard({
     await import("@/components/onboarding/OnboardingWizard.vue");
   return mount(component.default, {
     global: { mocks: { $t: (key: string) => key } },
+    // in the document, for a button that submits a form by its id
+    attachTo: attach ? document.body : undefined,
   });
 }
 
@@ -305,14 +308,21 @@ function stepCount(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
  * The wizard as a fresh server opens it: sent to the server's setup page,
  * before there is an account to sign in with, let alone permissions.
  */
-async function mountFirstRunWizard() {
+async function mountFirstRunWizard({ attach = false } = {}) {
   vi.resetModules();
   window.history.replaceState({}, "", "/setup");
   const { enterFirstRunSetup } = await import("@/composables/useFirstRunSetup");
   expect(enterFirstRunSetup()).toBe(true);
   storeState.store.currentUser = undefined;
   authMock.hasScope.mockReturnValue(false);
-  return await mountWizard({ fresh: false });
+  return await mountWizard({ fresh: false, attach });
+}
+
+/** Past the first run's welcome, onto the account step. */
+async function getStarted(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
+  await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+  await flushPromises();
+  expect(heading(wrapper)).toBe("onboarding.steps.account.title");
 }
 
 /** The app signing in with the admin account the first run made. */
@@ -708,31 +718,152 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
   });
 
   describe("on a fresh server's first run", () => {
-    it("opens on the unnumbered account step", async () => {
+    it("opens on an unnumbered welcome, with the account step behind it", async () => {
       const wrapper = await mountFirstRunWizard();
-      await flushPromises();
+      try {
+        await flushPromises();
 
-      expect(heading(wrapper)).toBe("onboarding.steps.account.title");
-      expect(wrapper.find("form#form-onboarding-account").exists()).toBe(true);
-      // the form submits itself, so the wizard's own Next stands down
-      expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
-        false,
+        expect(heading(wrapper)).toBe("onboarding.steps.get_started.title");
+        expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
+          true,
+        );
+        expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
+          false,
+        );
+        expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+          "onboarding.steps.get_started.start",
+        );
+        expect(stepCount(wrapper)).toBeNull();
+
+        await getStarted(wrapper);
+
+        // the logo belongs to the welcome alone
+        expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
+          false,
+        );
+
+        expect(wrapper.find("form#form-onboarding-account").exists()).toBe(
+          true,
+        );
+        // the wizard's forward button is the form's submit button
+        const submit = wrapper.find("[data-testid=onboarding-next]");
+        expect(submit.text()).toBe("onboarding.steps.account.create");
+        expect(submit.attributes("type")).toBe("submit");
+        expect(submit.attributes("form")).toBe("form-onboarding-account");
+        // making the account comes before the setup it opens, so it is not
+        // counted as part of it
+        expect(stepCount(wrapper)).toBeNull();
+        // nothing was asked of a server nobody is signed in to
+        expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+        expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+        expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
+      } finally {
+        wrapper.unmount();
+      }
+    });
+
+    it("goes back from the account step to the welcome", async () => {
+      const wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+        await getStarted(wrapper);
+
+        await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+        await flushPromises();
+
+        expect(heading(wrapper)).toBe("onboarding.steps.get_started.title");
+      } finally {
+        wrapper.unmount();
+      }
+    });
+
+    it("creates the account through the wizard's forward button", async () => {
+      let answerSetup: (response: Response) => void = () => {};
+      const fetchMock = vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            answerSetup = resolve;
+          }),
       );
-      // making the account comes before the setup it opens, so it is not
-      // counted as part of it
-      expect(stepCount(wrapper)).toBeNull();
-      // nothing was asked of a server nobody is signed in to
-      expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
-      expect(apiMock.getAllUsers).not.toHaveBeenCalled();
-      expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
+      vi.stubGlobal("fetch", fetchMock);
+      const wrapper = await mountFirstRunWizard({ attach: true });
+      try {
+        await flushPromises();
+        await getStarted(wrapper);
+        await wrapper.get('input[name="username"]').setValue("admin");
+        await wrapper
+          .get('input[name="password"]')
+          .setValue("correct horse battery");
+        await wrapper
+          .get('input[name="confirmPassword"]')
+          .setValue("correct horse battery");
 
-      wrapper.unmount();
+        const submit = wrapper.find("[data-testid=onboarding-next]");
+        await submit.trigger("click");
+        await flushPromises();
+
+        expect(fetchMock).toHaveBeenCalledOnce();
+        // the account is on its way: the forward button shows it, and Back
+        // holds still
+        expect(submit.attributes("aria-busy")).toBe("true");
+        expect(submit.attributes("disabled")).toBeDefined();
+        expect(
+          wrapper.find("[data-testid=onboarding-back]").attributes("disabled"),
+        ).toBeDefined();
+
+        answerSetup(
+          new Response(JSON.stringify({ success: true, token: "token-1" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+        await flushPromises();
+        expect(authMock.setToken).toHaveBeenCalledWith("token-1");
+        // still busy while the app signs in with it
+        expect(submit.attributes("aria-busy")).toBe("true");
+
+        signInAsNewAdmin();
+        await flushPromises();
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+      } finally {
+        wrapper.unmount();
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("shows no Back to the account step once it is done", async () => {
+      const wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+        await getStarted(wrapper);
+        signInAsNewAdmin();
+        await flushPromises();
+
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+        expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
+          false,
+        );
+
+        // the steps after it still go back as far as the first one
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+        await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+        expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
+          false,
+        );
+      } finally {
+        wrapper.unmount();
+      }
     });
 
     it("loads the setup for the admin once they are signed in, and moves on", async () => {
       addMusicProvider();
       const wrapper = await mountFirstRunWizard();
       await flushPromises();
+      await getStarted(wrapper);
 
       signInAsNewAdmin();
       await flushPromises();
@@ -768,6 +899,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       const wrapper = await mountFirstRunWizard();
       try {
         await flushPromises();
+        await getStarted(wrapper);
         signInAsNewAdmin();
         await flushPromises();
         expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
@@ -793,10 +925,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       }
     });
 
-    it("stays on a step whose answer did not land, whichever way out", async () => {
+    it("stays on the question when its answer did not land", async () => {
       const wrapper = await mountFirstRunWizard();
       try {
         await flushPromises();
+        await getStarted(wrapper);
         signInAsNewAdmin();
         await flushPromises();
         // the write is rolled back, so nothing is on the account
@@ -804,12 +937,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
         await wrapper.find("[data-testid=onboarding-next]").trigger("click");
         await flushPromises();
-        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
-
-        // going back leaves the question behind just the same
-        await wrapper.find("[data-testid=onboarding-back]").trigger("click");
-        await flushPromises();
-        expect(setUserPreferenceMock).toHaveBeenCalledTimes(2);
+        expect(setUserPreferenceMock).toHaveBeenCalledOnce();
         expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
       } finally {
         wrapper.unmount();
@@ -831,6 +959,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       const wrapper = await mountFirstRunWizard();
       try {
         await flushPromises();
+        await getStarted(wrapper);
         signInAsNewAdmin();
         await flushPromises();
 
@@ -842,9 +971,6 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
         // the answer is still on its way out, and the footer says so
         expect(next.attributes("disabled")).toBeDefined();
-        expect(
-          wrapper.find("[data-testid=onboarding-back]").attributes("disabled"),
-        ).toBeDefined();
 
         landIntent();
         await flushPromises();
@@ -861,6 +987,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       let wrapper = await mountFirstRunWizard();
       try {
         await flushPromises();
+        await getStarted(wrapper);
         signInAsNewAdmin();
         await flushPromises();
         wrapper.unmount();
