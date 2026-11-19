@@ -3459,15 +3459,17 @@ export class MusicAssistantApi {
   public async saveCoreConfig(
     domain: string,
     values: Record<string, ConfigValueType>,
+    options?: CommandOptions,
   ): Promise<CoreConfig> {
     // Save Core controller Config.
     // domain: (mandatory) domain of the core controller.
     // values: the raw values for config entries that need to be stored/updated.
     // action: [optional] action key called from config entries UI.
-    const config = await this.sendCommand<CoreConfig>("config/core/save", {
-      domain,
-      values,
-    });
+    const config = await this.sendCommand<CoreConfig>(
+      "config/core/save",
+      { domain, values },
+      options,
+    );
     this._coreConfigValues.clear();
     return config;
   }

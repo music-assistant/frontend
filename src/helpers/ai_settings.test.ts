@@ -5,10 +5,18 @@ import {
   ProviderFeature,
   ProviderType,
 } from "@/plugins/api/interfaces";
-import { House, Puzzle } from "@lucide/vue";
+import { House, MessageSquareText, Puzzle } from "@lucide/vue";
 import { describe, expect, it, vi } from "vitest";
 import { providerInstance } from "../../tests/fixtures/providerInstance";
-import { aiServiceRows, engineSummary, engineUsageRows } from "./ai_settings";
+import {
+  aiServiceRows,
+  engineSettingOwner,
+  engineSettingState,
+  engineSummary,
+  engineUsageRows,
+  hasEnginePicker,
+  withRestartingSettings,
+} from "./ai_settings";
 
 // the key, with the values it is given in brackets
 vi.mock("@/plugins/i18n", () => ({
@@ -82,27 +90,16 @@ describe("engineSummary", () => {
 describe("engineUsageRows", () => {
   const reconfigure = vi.fn();
 
-  it("names the default engine a setting follows", () => {
+  it("leaves the engine of a setting to the picker on its row", () => {
     const [row] = engineUsageRows([setting()], [engine("gpt")], reconfigure);
 
-    expect(row).toMatchObject({
+    expect(row).toEqual({
       key: "smart_playlist--1/ai_engine",
+      icon: MessageSquareText,
       label: "Smart playlists",
-      description: "settings.ai.kind.text",
-      state: "settings.ai.follows_default(OpenAI | gpt)",
-      error: false,
-      to: { name: "editprovider", params: { instanceId: "smart_playlist--1" } },
+      // the picker names the kind of engine
+      description: "",
     });
-  });
-
-  it("names the engine a setting picks itself", () => {
-    const [row] = engineUsageRows(
-      [setting({ follows_default: false })],
-      [engine("gpt")],
-      reconfigure,
-    );
-
-    expect(row.state).toBe("OpenAI | gpt");
   });
 
   it.each([
@@ -115,11 +112,25 @@ describe("engineUsageRows", () => {
       reconfigure,
     );
 
-    expect(row.state).toBe("settings.ai.not_available");
+    expect(row.description).toBe("settings.ai.not_available");
     expect(row.error).toBe(true);
   });
 
-  it("describes the kind of engine of each setting", () => {
+  it("calmly says no engine of its kind is available", () => {
+    const [row] = engineUsageRows(
+      [setting({ kind: AIEngineKind.IMAGE, engine: null })],
+      [engine("gpt")],
+      reconfigure,
+    );
+
+    expect(row).toMatchObject({
+      description: "settings.ai.kind.image",
+      state: "settings.ai.not_available",
+    });
+    expect(row.error).toBeUndefined();
+  });
+
+  it("describes the kind of engine of a setting without a picker", () => {
     const rows = engineUsageRows(
       [
         setting({ key: "image_engine", kind: AIEngineKind.IMAGE }),
@@ -135,20 +146,48 @@ describe("engineUsageRows", () => {
     ]);
   });
 
-  it("starts the setup flow of a provider for a setting changed there", () => {
+  describe("a setting changed in the setup of its provider", () => {
     const radio = setting({
       owner: "ai_radio--1",
       domain: "ai_radio",
+      name: "AI Radio",
       in_setup_data: true,
     });
-    const [row] = engineUsageRows([radio], [engine("gpt")], reconfigure);
 
-    expect(row.to).toBeUndefined();
-    row.action?.();
-    expect(reconfigure).toHaveBeenCalledExactlyOnceWith(radio);
+    it("names the engine and starts that setup", () => {
+      const [row] = engineUsageRows([radio], [engine("gpt")], reconfigure);
+
+      expect(row).toMatchObject({
+        description: "settings.ai.kind.text",
+        state: "settings.ai.follows_default(OpenAI | gpt)",
+        error: false,
+      });
+      expect(row.to).toBeUndefined();
+      row.action?.();
+      expect(reconfigure).toHaveBeenCalledExactlyOnceWith(radio);
+    });
+
+    it("reports an engine that is gone", () => {
+      const [row] = engineUsageRows(
+        [{ ...radio, engine: "removed" }],
+        [engine("gpt")],
+        reconfigure,
+      );
+
+      expect(row.state).toBe("settings.ai.not_available");
+      expect(row.error).toBe(true);
+    });
+
+    it("still starts the setup without engines of its kind", () => {
+      const [row] = engineUsageRows([radio], [], reconfigure);
+
+      expect(row.state).toBe("settings.ai.not_available");
+      expect(row.error).toBeUndefined();
+      expect(row.action).toBeDefined();
+    });
   });
 
-  it("names a core module after the page showing its setting and leads there", () => {
+  it("names a core module after the page showing its setting", () => {
     const [row] = engineUsageRows(
       [
         setting({
@@ -157,17 +196,18 @@ describe("engineUsageRows", () => {
           domain: "players",
           name: "Players",
           kind: AIEngineKind.SPEECH,
+          engine: "nova",
         }),
       ],
-      [],
+      [engine("nova", AIEngineKind.SPEECH)],
       reconfigure,
     );
 
     expect(row.label).toBe("settings.playback.title");
-    expect(row.to).toEqual({ name: "playbacksettings" });
+    expect(row.to).toBeUndefined();
   });
 
-  it("leads a core module no page shows to its own settings", () => {
+  it("names a core module no page shows by its own name", () => {
     const [row] = engineUsageRows(
       [
         setting({
@@ -182,10 +222,103 @@ describe("engineUsageRows", () => {
     );
 
     expect(row.label).toBe("Radio tuner");
-    expect(row.to).toEqual({
-      name: "editcore",
-      params: { domain: "radio_tuner" },
+  });
+});
+
+describe("hasEnginePicker", () => {
+  it("picks the engine of a setting on its row", () => {
+    expect(hasEnginePicker(setting(), [engine("gpt")])).toBe(true);
+  });
+
+  it("leaves a setting of the setup of its provider to that setup", () => {
+    expect(
+      hasEnginePicker(setting({ in_setup_data: true }), [engine("gpt")]),
+    ).toBe(false);
+  });
+
+  it("has nothing to pick without engines of its kind", () => {
+    expect(
+      hasEnginePicker(setting({ kind: AIEngineKind.SPEECH }), [engine("gpt")]),
+    ).toBe(false);
+  });
+});
+
+describe("engineSettingState", () => {
+  it.each([
+    [
+      "the default engine it follows",
+      {},
+      "settings.ai.follows_default(OpenAI | gpt)",
+    ],
+    ["the engine it picks", { follows_default: false }, "OpenAI | gpt"],
+    [
+      "that its engine is gone",
+      { engine: "removed" },
+      "settings.ai.not_available",
+    ],
+  ])("names %s", (_name, overrides, state) => {
+    expect(engineSettingState(setting(overrides), [engine("gpt")])).toBe(state);
+  });
+});
+
+describe("engineSettingOwner", () => {
+  it("stores the setting of a core module in that module", () => {
+    expect(
+      engineSettingOwner(
+        setting({ owner_type: "core", owner: "players", domain: "players" }),
+      ),
+    ).toEqual({ kind: "core", domain: "players" });
+  });
+
+  it("stores the setting of a provider in its instance", () => {
+    expect(engineSettingOwner(setting())).toEqual({
+      kind: "provider",
+      domain: "smart_playlist",
+      instanceId: "smart_playlist--1",
     });
+  });
+});
+
+describe("withRestartingSettings", () => {
+  const players = setting({
+    owner_type: "core",
+    owner: "players",
+    domain: "players",
+    name: "Players",
+  });
+  const quiz = setting({ owner: "music_quiz--1", name: "Music Quiz" });
+  const smart = setting({
+    owner: "smart_playlist--1",
+    name: "smart playlists",
+  });
+  const radio = setting({ owner: "ai_radio--1", name: "AI Radio" });
+
+  it("lists the current settings", () => {
+    expect(
+      withRestartingSettings([players, quiz], [players, smart], new Set()),
+    ).toEqual([players, quiz]);
+  });
+
+  it("keeps the settings of a restarting provider in their place", () => {
+    expect(
+      withRestartingSettings(
+        [players, radio, smart],
+        [players, radio, quiz, smart],
+        new Set(["music_quiz--1"]),
+      ),
+    ).toEqual([players, radio, quiz, smart]);
+  });
+
+  it("lists a restarting provider that is back as the server has it", () => {
+    const listedAgain = { ...quiz, follows_default: false };
+
+    expect(
+      withRestartingSettings(
+        [players, listedAgain],
+        [players, quiz],
+        new Set(["music_quiz--1"]),
+      ),
+    ).toEqual([players, listedAgain]);
   });
 });
 
