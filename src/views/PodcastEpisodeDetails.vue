@@ -12,44 +12,62 @@
       @previous="openEpisode(previousEpisode)"
       @next="openEpisode(nextEpisode)"
       @transcript="openTranscript"
+      @edit-rows="rowsEditorOpen = true"
     />
 
-    <DetailTextRow
-      v-if="itemDetails?.metadata.description"
-      :title="$t('about_episode')"
-      :text="itemDetails.metadata.description"
-      :dialog-title="itemDetails.name"
-      markdown
-      :lines="4"
-    />
+    <template v-if="itemDetails">
+      <template v-for="rowId in visibleRows" :key="rowId">
+        <DetailTextRow
+          v-if="rowId === 'about' && itemDetails.metadata.description"
+          :title="$t('about_episode')"
+          :text="itemDetails.metadata.description"
+          :dialog-title="itemDetails.name"
+          markdown
+          :lines="4"
+          @edit-rows="rowsEditorOpen = true"
+        />
 
-    <!-- episode chapters, with the user's bookmarks inside them -->
-    <Chapters v-if="itemDetails" :item-details="itemDetails" />
+        <!-- episode chapters, with the user's bookmarks inside them -->
+        <Chapters
+          v-else-if="rowId === 'chapters'"
+          :item-details="itemDetails"
+        />
 
-    <!-- keyed per episode: a listing already loading drops a reload request, so
-    clicking through episodes quickly would leave the previous episode's list.
-    it waits for the podcast lookup so it opens with that podcast's settings -->
-    <ItemsListing
-      v-if="itemDetails && podcastChecked"
-      :key="episodeKey"
-      itemtype="podcastepisodes"
-      :parent-item="episodePodcast"
-      :refresh-on-parent-update="true"
-      :show-provider="false"
-      :show-favorites-only-filter="false"
-      :show-hide-fully-played-filter="true"
-      :show-track-number="true"
-      :show-refresh-button="false"
-      :sort-listing="ListingType.PODCAST_EPISODES"
-      library-toolbar
-      :show-count="false"
-      :load-paged-data="loadOtherEpisodes"
-      :title="$t('other_episodes')"
-      detail-row
-      :hide-on-empty="true"
-      :allow-collapse="true"
-      :path="`podcast.${podcastKey}`"
-      :restore-state="false"
+        <!-- keyed per episode: a listing already loading drops a reload request, so
+        clicking through episodes quickly would leave the previous episode's list.
+        it waits for the podcast lookup so it opens with that podcast's settings -->
+        <ItemsListing
+          v-else-if="rowId === 'episodes' && podcastChecked"
+          :key="episodeKey"
+          itemtype="podcastepisodes"
+          :parent-item="episodePodcast"
+          :refresh-on-parent-update="true"
+          :show-provider="false"
+          :show-favorites-only-filter="false"
+          :show-hide-fully-played-filter="true"
+          :show-track-number="true"
+          :show-refresh-button="false"
+          :sort-listing="ListingType.PODCAST_EPISODES"
+          library-toolbar
+          :show-count="false"
+          :load-paged-data="loadOtherEpisodes"
+          :title="$t('other_episodes')"
+          detail-row
+          :hide-on-empty="true"
+          :allow-collapse="true"
+          :path="`podcast.${podcastKey}`"
+          :restore-state="false"
+        />
+      </template>
+    </template>
+    <RowsEditor
+      v-if="itemDetails"
+      v-model:open="rowsEditorOpen"
+      :item="itemDetails"
+      :registry="podcastEpisodeRows"
+      :available-ids="availableRows"
+      :row-meta="rowMeta"
+      :subtitle="$t('edit_rows_subtitle_podcast_episode')"
     />
 
     <Dialog v-model:open="showTranscript">
@@ -79,6 +97,7 @@
 <script setup lang="ts">
 import Chapters from "@/components/Chapters.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
+import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, {
   type LoadDataParams,
 } from "@/components/ItemsListing.vue";
@@ -87,6 +106,11 @@ import {
   type PodcastEpisodeBackdrop,
 } from "@/components/podcast/podcastEpisodeData";
 import PodcastEpisodeHero from "@/components/podcast/PodcastEpisodeHero.vue";
+import {
+  PODCAST_EPISODE_ROWS,
+  podcastEpisodeRows,
+  type PodcastEpisodeRowId,
+} from "@/components/podcast/podcastEpisodeRows";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -106,6 +130,7 @@ import {
   type Podcast,
   type PodcastEpisode,
 } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -131,6 +156,29 @@ const showTranscript = ref(false);
 const transcript = ref<string | null>(null);
 const transcriptLoaded = ref(false);
 const transcriptLoading = ref(false);
+const rowsEditorOpen = ref(false);
+
+// every row applies to every episode; the editor lists the same set
+const availableRows = PODCAST_EPISODE_ROWS.map((row) => row.id);
+
+// reads the user's preferences from the store, so the page follows the editor
+const visibleRows = computed(() => {
+  const { order, hidden } = podcastEpisodeRows.resolve(availableRows);
+  return order.filter((rowId) => !hidden.has(rowId));
+});
+
+// how many other episodes the podcast holds, for the editor's meta line;
+// siblings counts this episode too, and still holds the previous podcast's
+// episodes until this episode's podcast is checked
+const rowMeta = computed<Partial<Record<PodcastEpisodeRowId, string>>>(() => {
+  const count = siblings.value.length - 1;
+  return {
+    episodes:
+      podcastChecked.value && count >= 0
+        ? $t("n_episodes", count, { named: { count } })
+        : undefined,
+  };
+});
 
 // the episodes listing reloads as soon as the route changes, a moment before
 // the new details arrive; sharing the request keeps the two on one episode
@@ -255,6 +303,7 @@ watch(
     transcriptLoaded.value = false;
     transcriptLoading.value = false;
     showTranscript.value = false;
+    rowsEditorOpen.value = false;
     checkedEpisodeKey.value = undefined;
     const details = (detailsRequest = api.getPodcastEpisode(itemId, provider));
     const episodes = details
