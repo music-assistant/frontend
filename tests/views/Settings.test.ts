@@ -7,7 +7,7 @@ import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import {
-  ProviderFeature,
+  MediaType,
   ProviderType,
   UserRole,
   type ProviderManifest,
@@ -27,7 +27,7 @@ const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
       players: { kitchen: { name: "Kitchen" } },
       providerManifests: {} as Record<
         string,
-        Pick<ProviderManifest, "name" | "type" | "features">
+        Pick<ProviderManifest, "name" | "type" | "media_types">
       >,
       getProvider: vi.fn(),
       // resolves an instance id to a name, falling back to the manifest name
@@ -643,7 +643,7 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
     apiMock.providerManifests.airplay_receiver = {
       name: "AirPlay Receiver",
       type: ProviderType.PLUGIN,
-      features: [ProviderFeature.AUDIO_SOURCE],
+      media_types: [MediaType.AUDIO_SOURCE],
     };
 
     const trail = await providerTrail(true, "airplay_receiver--kitchen");

@@ -20,26 +20,12 @@ describe("SettingsListPanel", () => {
 
     expect(wrapper.get("h2").text()).toContain("Music sources");
     expect(wrapper.get('[data-testid="panel-count"]').text()).toBe("9");
-    expect(wrapper.find('[data-testid="panel-description"]').exists()).toBe(
-      false,
-    );
   });
 
   it("counts an empty list too", () => {
     const wrapper = mountPanel({ title: "Audio sources", count: 0 });
 
     expect(wrapper.get('[data-testid="panel-count"]').text()).toBe("0");
-  });
-
-  it("says what the list is for in a line below its title", () => {
-    const wrapper = mountPanel({
-      title: "Audio sources",
-      description: "Apps play to Music Assistant through these",
-    });
-
-    expect(wrapper.get('[data-testid="panel-description"]').text()).toBe(
-      "Apps play to Music Assistant through these",
-    );
   });
 
   it("holds the search and the filters of the list in its header", () => {

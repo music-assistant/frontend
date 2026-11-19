@@ -1,9 +1,5 @@
-import {
-  AUDIO_SOURCES,
-  SETTINGS_PAGES,
-  type SettingsPageId,
-} from "@/helpers/settings_pages";
-import { ProviderFeature, ProviderType, Scope } from "@/plugins/api/interfaces";
+import { SETTINGS_PAGES, type SettingsPageId } from "@/helpers/settings_pages";
+import { MediaType, ProviderType, Scope } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import {
   BUILTIN_ROLE_SCOPES,
@@ -13,7 +9,6 @@ import {
 } from "../../tests/fixtures/scopes";
 import {
   availableSettingsSections,
-  pageProviderLists,
   providerListingRoute,
   providerListName,
   providerListPage,
@@ -277,7 +272,6 @@ describe("providerListPage", () => {
 describe("providerListName", () => {
   it.each([
     [ProviderType.MUSIC, "music"],
-    [AUDIO_SOURCES, "music"],
     [ProviderType.PLUGIN, "plugin_providers"],
     [ProviderType.METADATA, "metadata_providers"],
     [ProviderType.AUDIO_ANALYSIS, "audio_analysis_providers"],
@@ -293,35 +287,9 @@ describe("providerListName", () => {
   });
 });
 
-describe("pageProviderLists", () => {
-  it("lists the music sources and then the audio sources on Music", () => {
-    expect(pageProviderLists(ProviderType.MUSIC)).toEqual([
-      ProviderType.MUSIC,
-      AUDIO_SOURCES,
-    ]);
-  });
-
-  it("shows Music for the audio sources too", () => {
-    expect(pageProviderLists(AUDIO_SOURCES)).toEqual([
-      ProviderType.MUSIC,
-      AUDIO_SOURCES,
-    ]);
-  });
-
-  it.each([
-    ProviderType.PLUGIN,
-    ProviderType.PLAYER,
-    ProviderType.METADATA,
-    ProviderType.AUDIO_ANALYSIS,
-  ])("lists the %s providers alone on their page", (type) => {
-    expect(pageProviderLists(type)).toEqual([type]);
-  });
-});
-
 describe("providerListRoute", () => {
   it.each([
     [ProviderType.MUSIC, "musicsettings"],
-    [AUDIO_SOURCES, "musicsettings"],
     [ProviderType.PLUGIN, "pluginproviders"],
     [ProviderType.PLAYER, "playerproviders"],
     [ProviderType.METADATA, "metadataproviders"],
@@ -352,7 +320,7 @@ describe("providerListingRoute", () => {
   it("leads a provider with a settings page of its own to that page", () => {
     expect(
       providerListingRoute({ domain: "hass", type: ProviderType.PLUGIN }, [
-        ProviderFeature.AUDIO_SOURCE,
+        MediaType.AUDIO_SOURCE,
       ]),
     ).toEqual({ name: "homeassistantsettings" });
   });
@@ -361,7 +329,7 @@ describe("providerListingRoute", () => {
     expect(
       providerListingRoute(
         { domain: "airplay_receiver", type: ProviderType.PLUGIN },
-        [ProviderFeature.AUDIO_SOURCE],
+        [MediaType.AUDIO_SOURCE],
       ),
     ).toEqual({ name: "musicsettings" });
   });

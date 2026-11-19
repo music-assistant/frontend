@@ -1,6 +1,6 @@
 import {
   ConfigEntryType,
-  ProviderFeature,
+  MediaType,
   ProviderType,
   Scope,
   type ConfigEntry,
@@ -11,7 +11,6 @@ import { HASS_DOMAIN } from "./home_assistant";
 import {
   ACCOUNT_ACCESS_CATEGORY,
   AUDIO_ANALYSIS_CATEGORY,
-  AUDIO_SOURCES,
   CACHE_DOMAIN,
   canEditSettingsPage,
   coreOwner,
@@ -256,21 +255,25 @@ describe("providerSettingsPageId", () => {
 });
 
 describe("providerListType", () => {
-  it("lists a plugin offering audio sources with them", () => {
+  it("lists a plugin offering audio sources with the music sources", () => {
     expect(
-      providerListType(ProviderType.PLUGIN, [ProviderFeature.AUDIO_SOURCE]),
-    ).toBe(AUDIO_SOURCES);
+      providerListType(ProviderType.PLUGIN, [MediaType.AUDIO_SOURCE]),
+    ).toBe(ProviderType.MUSIC);
   });
 
-  it("lists a plugin with the plugins when its manifest names no features", () => {
+  it("lists a plugin with the plugins when its manifest names no media types", () => {
     expect(providerListType(ProviderType.PLUGIN)).toBe(ProviderType.PLUGIN);
     expect(providerListType(ProviderType.PLUGIN, [])).toBe(ProviderType.PLUGIN);
   });
 
   it("lists any other type with its type, whatever it offers", () => {
+    // the Sendspin player provider declares audio sources for its line-ins
     expect(
-      providerListType(ProviderType.MUSIC, [ProviderFeature.AUDIO_SOURCE]),
-    ).toBe(ProviderType.MUSIC);
+      providerListType(ProviderType.PLAYER, [MediaType.AUDIO_SOURCE]),
+    ).toBe(ProviderType.PLAYER);
+    expect(
+      providerListType(ProviderType.METADATA, [MediaType.AUDIO_SOURCE]),
+    ).toBe(ProviderType.METADATA);
   });
 });
 

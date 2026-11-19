@@ -173,7 +173,7 @@ onMounted(async () => {
       erroredProviderRoute.value = firstError
         ? providerListingRoute(
             firstError,
-            api.providerManifests[firstError.domain]?.features,
+            api.providerManifests[firstError.domain]?.media_types,
           )
         : null;
     } catch {

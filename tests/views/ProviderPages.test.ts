@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CommunityProviderState,
   type CoreConfig,
+  MediaType,
   type ProviderConfig,
   ProviderFeature,
   type ProviderInstance,
@@ -26,7 +27,6 @@ import {
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
-import { AUDIO_SOURCES } from "@/helpers/settings_pages";
 import SettingsListPanel from "@/components/settings/SettingsListPanel.vue";
 import MusicSettings from "@/views/settings/MusicSettings.vue";
 import ProviderListSettings from "@/views/settings/ProviderListSettings.vue";
@@ -228,6 +228,7 @@ const ProviderRowStub = {
     "errorText",
     "community",
     "removable",
+    "labels",
   ],
   emits: ["open", "menu", "reconfigure", "remove"],
   template: `<div data-testid="provider-row">{{ name }}</div>`,
@@ -968,7 +969,7 @@ describe("Providers on a hub", () => {
   function withAirplayReceiver() {
     (apiMock.providerManifests as Record<string, unknown>).airplay_receiver = {
       ...apiMock.providerManifests.spotify,
-      features: [ProviderFeature.AUDIO_SOURCE],
+      media_types: [MediaType.AUDIO_SOURCE],
       name: "AirPlay Receiver",
     };
     return providerConfig({
@@ -980,7 +981,7 @@ describe("Providers on a hub", () => {
     });
   }
 
-  it("heads Music with its title, and lists the audio sources below the music sources", async () => {
+  it("heads Music with its title, and lists the audio sources with the music sources", async () => {
     const wrapper = await mountWithConfigs([
       ownSource(),
       withAirplayReceiver(),
@@ -990,46 +991,27 @@ describe("Providers on a hub", () => {
       wrapper.findComponent({ name: "SettingsPageHeader" }).props("page"),
     ).toBe("music");
     expect(panels(wrapper)).toEqual([
-      { list: ProviderType.MUSIC, title: "settings.music_sources", count: 1 },
-      { list: AUDIO_SOURCES, title: "settings.audio_sources", count: 1 },
+      { list: ProviderType.MUSIC, title: "settings.music_sources", count: 2 },
     ]);
     expect(
       wrapper
-        .get(`[data-list="${AUDIO_SOURCES}"]`)
-        .get('[data-testid="provider-row"]')
-        .text(),
-    ).toBe("AirPlay Receiver");
-    expect(
-      wrapper
-        .findAllComponents(SettingsListPanel)
-        .find((panel) => panel.attributes("data-list") === AUDIO_SOURCES)
-        ?.props("description"),
-    ).toBe("settings.audio_sources_description");
+        .get(`[data-list="${ProviderType.MUSIC}"]`)
+        .findAll('[data-testid="provider-row"]')
+        .map((row) => row.text()),
+    ).toEqual(["AirPlay Receiver", "Own Spotify"]);
   });
 
-  it("opens the Marketplace on the audio sources from their list", async () => {
+  it("opens the Marketplace on the music sources from their list", async () => {
     const wrapper = await mountWithConfigs([ownSource()]);
 
     await wrapper
-      .get(`[data-list="${AUDIO_SOURCES}"] [data-testid="add-provider"]`)
+      .get(`[data-list="${ProviderType.MUSIC}"] [data-testid="add-provider"]`)
       .trigger("click");
 
     expect(routerMock.push).toHaveBeenCalledWith({
       name: "catalog",
-      query: { types: AUDIO_SOURCES },
+      query: { types: ProviderType.MUSIC },
     });
-  });
-
-  it("says in a line that there are no audio sources yet", async () => {
-    const wrapper = await mountWithConfigs([ownSource()]);
-
-    const audioSources = wrapper.get(`[data-list="${AUDIO_SOURCES}"]`);
-    expect(
-      audioSources.find('[data-testid="audio-sources-empty"]').exists(),
-    ).toBe(true);
-    expect(audioSources.find("[data-testid=providers-empty]").exists()).toBe(
-      false,
-    );
   });
 
   it("no longer lists a plugin offering audio sources with the plugins", async () => {
@@ -1081,6 +1063,213 @@ describe("Providers on a hub", () => {
     expect(wrapper.getComponent(SettingsListPanel).props("viewMode")).toBe(
       "list",
     );
+  });
+});
+
+describe("Providers labelled with what they offer", () => {
+  afterEach(() => {
+    delete (apiMock.providerManifests as Record<string, unknown>)
+      .airplay_receiver;
+    delete (apiMock.providerManifests as Record<string, unknown>).podcastfeed;
+  });
+
+  // a running Spotify reports a library and podcasts, a podcast feed that is
+  // not running says in its manifest that it offers podcasts, and the AirPlay
+  // receiver says in its manifest that apps play through it
+  function labelledSources(): ProviderConfig[] {
+    const manifests = apiMock.providerManifests as Record<string, unknown>;
+    manifests.airplay_receiver = {
+      ...apiMock.providerManifests.spotify,
+      media_types: [MediaType.AUDIO_SOURCE],
+      name: "AirPlay Receiver",
+      type: ProviderType.PLUGIN,
+    };
+    manifests.podcastfeed = {
+      ...apiMock.providerManifests.spotify,
+      media_types: [MediaType.PODCAST],
+      name: "Podcast feed",
+      type: ProviderType.MUSIC,
+    };
+    apiMock.providers = {
+      "spotify--own": providerInstance({
+        domain: "spotify",
+        instance_id: "spotify--own",
+        supported_features: [
+          ProviderFeature.LIBRARY_TRACKS,
+          ProviderFeature.LIBRARY_PODCASTS,
+        ],
+      }),
+    };
+    return [
+      ownSource(),
+      providerConfig({
+        domain: "podcastfeed",
+        enabled: false,
+        instance_id: "podcastfeed--1",
+        name: "Podcast feed",
+        status: ProviderStatus.DISABLED,
+      }),
+      providerConfig({
+        domain: "airplay_receiver",
+        instance_id: "airplay_receiver--1",
+        name: "AirPlay Receiver",
+        status: ProviderStatus.LOADED,
+        type: ProviderType.PLUGIN,
+      }),
+    ];
+  }
+
+  // the instance ids of the rows, in their order
+  function rowIds(wrapper: Awaited<ReturnType<typeof mountWithConfigs>>) {
+    return wrapper
+      .findAllComponents(ProviderRowStub)
+      .map((row) => row.props("config").instance_id);
+  }
+
+  function chips(wrapper: Awaited<ReturnType<typeof mountWithConfigs>>) {
+    return wrapper
+      .findAll('[data-testid="source-label-filter"] button')
+      .map((chip) => ({
+        label: chip.attributes("data-label"),
+        pressed: chip.attributes("aria-pressed"),
+      }));
+  }
+
+  async function pickChip(
+    wrapper: Awaited<ReturnType<typeof mountWithConfigs>>,
+    label: string,
+  ) {
+    await wrapper
+      .get(`[data-testid="source-label-filter"] [data-label="${label}"]`)
+      .trigger("click");
+  }
+
+  it("hands each row what its source offers, from the running source or else its manifest", async () => {
+    const wrapper = await mountWithConfigs(labelledSources());
+
+    expect(rowFor(wrapper, "spotify--own").props("labels")).toEqual([
+      "library",
+      "podcasts",
+    ]);
+    expect(rowFor(wrapper, "podcastfeed--1").props("labels")).toEqual([
+      "podcasts",
+    ]);
+    expect(rowFor(wrapper, "airplay_receiver--1").props("labels")).toEqual([
+      "live",
+    ]);
+  });
+
+  it("offers a chip for every label a listed source has, after All", async () => {
+    const wrapper = await mountWithConfigs(labelledSources());
+
+    expect(chips(wrapper)).toEqual([
+      { label: "all", pressed: "true" },
+      { label: "library", pressed: "false" },
+      { label: "podcasts", pressed: "false" },
+      { label: "live", pressed: "false" },
+    ]);
+  });
+
+  it("narrows the list down to the sources offering the chip picked, and back with All", async () => {
+    const wrapper = await mountWithConfigs(labelledSources());
+
+    await pickChip(wrapper, "podcasts");
+
+    expect(rowIds(wrapper)).toEqual(["spotify--own", "podcastfeed--1"]);
+    expect(panels(wrapper)[0].count).toBe(2);
+    expect(chips(wrapper).find((chip) => chip.pressed === "true")?.label).toBe(
+      "podcasts",
+    );
+
+    await pickChip(wrapper, "live");
+    expect(rowIds(wrapper)).toEqual(["airplay_receiver--1"]);
+
+    await pickChip(wrapper, "all");
+    expect(rowIds(wrapper)).toHaveLength(3);
+  });
+
+  it("combines the chip with the search", async () => {
+    const wrapper = await mountWithConfigs([
+      ...labelledSources(),
+      ...spotifyConfigs(9),
+    ]);
+
+    await pickChip(wrapper, "podcasts");
+    wrapper
+      .findComponent({ name: "ProviderFilters" })
+      .vm.$emit("update:search", "podcast");
+    await flushPromises();
+
+    expect(rowIds(wrapper)).toEqual(["podcastfeed--1"]);
+
+    wrapper
+      .findComponent({ name: "ProviderFilters" })
+      .vm.$emit("update:search", "airplay");
+    await flushPromises();
+
+    expect(rowIds(wrapper)).toEqual([]);
+    expect(wrapper.find("[data-testid=providers-empty]").exists()).toBe(true);
+  });
+
+  it("offers no chips while the listed sources have a single label between them", async () => {
+    apiMock.providers = {
+      "spotify--own": providerInstance({
+        domain: "spotify",
+        instance_id: "spotify--own",
+        supported_features: [ProviderFeature.LIBRARY_TRACKS],
+      }),
+    };
+
+    const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
+
+    expect(rowFor(wrapper, "spotify--own").props("labels")).toEqual([
+      "library",
+    ]);
+    expect(wrapper.find('[data-testid="source-label-filter"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("narrows a member's own and shared sources down alike", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    apiMock.providers = {
+      "spotify--own": providerInstance({
+        domain: "spotify",
+        instance_id: "spotify--own",
+        supported_features: [ProviderFeature.LIBRARY_TRACKS],
+      }),
+      "spotify--other": providerInstance({
+        domain: "spotify",
+        instance_id: "spotify--other",
+        supported_features: [ProviderFeature.LIBRARY_RADIOS],
+      }),
+      "spotify--household": providerInstance({
+        domain: "spotify",
+        instance_id: "spotify--household",
+        supported_features: [ProviderFeature.LIBRARY_TRACKS],
+      }),
+    };
+
+    const wrapper = await mountWithConfigs([
+      ownSource(),
+      otherSource(),
+      householdSource(),
+    ]);
+    await pickChip(wrapper, "library");
+
+    expect(
+      panelSections(wrapper, ProviderType.MUSIC).map((section) => [
+        section.attributes("data-section"),
+        section
+          .findAll('[data-testid="provider-row"]')
+          .map((row) => row.text()),
+      ]),
+    ).toEqual([
+      ["own", ["Own Spotify"]],
+      ["shared", ["Household Spotify"]],
+    ]);
   });
 });
 
@@ -1881,6 +2070,7 @@ async function mountWithConfigs(
         ProviderRow: ProviderRowStub,
         // the panel holds the list, its heading and its add button
         SettingsListPanel: false,
+        SourceLabelFilter: false,
         "v-icon": true,
       },
     },

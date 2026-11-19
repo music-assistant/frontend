@@ -12,13 +12,6 @@
             {{ count }}
           </span>
         </h2>
-        <p
-          v-if="description"
-          class="m-0 mt-0.5 text-sm text-muted-foreground"
-          data-testid="panel-description"
-        >
-          {{ description }}
-        </p>
       </div>
       <div class="flex shrink-0 items-center gap-1">
         <SettingsViewModeToggle
@@ -113,7 +106,6 @@ import { EllipsisVertical } from "@lucide/vue";
 defineProps<{
   title: string;
   count?: number;
-  description?: string;
   // the view the list is in; no switch without it
   viewMode?: "list" | "card";
   actions?: readonly SettingsPanelAction[];

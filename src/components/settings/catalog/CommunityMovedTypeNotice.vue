@@ -23,7 +23,9 @@ const movedHere = computed(() =>
   moved.value.filter(
     ({ manifest }) =>
       !props.types ||
-      props.types.includes(providerListType(manifest.type, manifest.features)),
+      props.types.includes(
+        providerListType(manifest.type, manifest.media_types),
+      ),
   ),
 );
 </script>

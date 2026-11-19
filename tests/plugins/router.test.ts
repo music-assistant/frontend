@@ -5,7 +5,6 @@ import {
   SETTINGS_SECTIONS,
   settingsPageRoute,
 } from "@/helpers/settings_sections";
-import { AUDIO_SOURCES } from "@/helpers/settings_pages";
 import { ConnectionState } from "@/plugins/api";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { routes } from "@/plugins/router";
@@ -460,7 +459,6 @@ describe("earlier addresses of the settings pages", () => {
 
   it.each([
     [ProviderType.MUSIC, "musicsettings"],
-    [AUDIO_SOURCES, "musicsettings"],
     [ProviderType.PLUGIN, "pluginproviders"],
     [ProviderType.PLAYER, "playerproviders"],
     [ProviderType.METADATA, "metadataproviders"],
