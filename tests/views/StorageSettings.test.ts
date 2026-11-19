@@ -39,6 +39,14 @@ const { apiMock, eventbusMock, toastMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+// the page is only open to who manages the storage
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: scopeChecker(BUILTIN_ROLE_SCOPES.admin) },
+  };
+});
 vi.mock("@/plugins/eventbus", () => ({ eventbus: eventbusMock }));
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,

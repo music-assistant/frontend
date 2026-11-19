@@ -183,6 +183,7 @@ import { useStorageInfo } from "@/composables/useStorageInfo";
 import { LOCAL_FILES_DOMAIN } from "@/helpers/provider_domain";
 import {
   canHoldNewSource,
+  DOCKER_DOCS_URL,
   isManagedShare,
   type ManagedShareLocation,
   storageErrorText,
@@ -197,11 +198,18 @@ import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
-const DOCKER_DOCS_URL = "https://music-assistant.io/installation/#with-docker";
 const STORAGE_DOCS_URL = "https://music-assistant.io/settings/storage/";
 
 const { t } = useI18n();
-const { info, loading, failed, mediaLocations, refresh } = useStorageInfo();
+const {
+  info,
+  loading,
+  failed,
+  mediaLocations,
+  canAddShare,
+  canAddFolder,
+  refresh,
+} = useStorageInfo();
 
 const showShareDialog = ref(false);
 const showFolderDialog = ref(false);
@@ -211,12 +219,6 @@ const locationToRemove = ref<StorageLocation | null>(null);
 // wait for it and for any refresh, so none is pressed on what the page showed before
 const pending = ref<{ path: string; action: "reload" | "remove" } | null>(null);
 
-const canAddShare = computed(
-  () =>
-    !!info.value?.can_mount_shares &&
-    info.value.supported_share_types.length > 0,
-);
-const canAddFolder = computed(() => !!info.value?.can_add_local_folder);
 const showMountHint = computed(
   () => !!info.value && !info.value.can_mount_shares,
 );
