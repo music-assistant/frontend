@@ -16,20 +16,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { reactive } from "vue";
 import { providerInstance } from "../fixtures/providerInstance";
 
-const { apiMock, eventbusMock, hasScope } = vi.hoisted(() => ({
+const { apiMock, hasScope } = vi.hoisted(() => ({
   apiMock: {
     getAIEngines: vi.fn<MusicAssistantApi["getAIEngines"]>(),
     getAIUsage: vi.fn<MusicAssistantApi["getAIUsage"]>(),
     subscribe: vi.fn(),
     providers: {} as Record<string, ProviderInstance>,
   },
-  eventbusMock: { emit: vi.fn() },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
-vi.mock("@/plugins/eventbus", () => ({ eventbus: eventbusMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 enableAutoUnmount(afterEach);
@@ -40,6 +38,12 @@ const settingsPageFormStub = {
   props: { page: String },
   emits: ["saved"],
   template: "<div data-testid='settings-page-form' />",
+};
+const aiEngineUsageStub = {
+  name: "AIEngineUsage",
+  props: { usage: Array, engines: Array },
+  emits: ["changed"],
+  template: "<div />",
 };
 const RouterLinkStub = {
   props: ["to"],
@@ -140,37 +144,18 @@ describe("AISettings", () => {
     }
   });
 
-  it("lists what uses AI, each with its engine", async () => {
+  it("hands what uses AI to its section, and reloads when it changes", async () => {
     const wrapper = await mountPage();
-
-    expect(rowKeys(wrapper, "ai-usage")).toEqual([
-      "ai_radio--1/ai_engine",
-      "smart_playlist--1/ai_engine",
-    ]);
-    expect(
-      linkOf(row(wrapper, "ai-usage", "smart_playlist--1/ai_engine")),
-    ).toEqual({
-      name: "editprovider",
-      params: { instanceId: "smart_playlist--1" },
+    const section = wrapper.getComponent(aiEngineUsageStub);
+    expect(section.props()).toEqual({
+      usage: await apiMock.getAIUsage.mock.results[0].value,
+      engines: [GPT, NOVA],
     });
-  });
-
-  it("starts the setup flow of a provider for a setting changed there", async () => {
-    const wrapper = await mountPage();
-
-    await row(wrapper, "ai-usage", "ai_radio--1/ai_engine").trigger("click");
-
-    expect(eventbusMock.emit).toHaveBeenCalledExactlyOnceWith(
-      "setupFlowDialog",
-      expect.objectContaining({
-        kind: "reconfigure",
-        instanceId: "ai_radio--1",
-        name: "AI Radio",
-      }),
-    );
     apiMock.getAIUsage.mockClear();
-    eventbusMock.emit.mock.calls[0][1].onFlowEnded();
+
+    section.vm.$emit("changed");
     await flushPromises();
+
     expect(apiMock.getAIUsage).toHaveBeenCalledOnce();
   });
 
@@ -241,6 +226,7 @@ describe("AISettings", () => {
 
 const STUBS = {
   AIAssistantAccess: true,
+  AIEngineUsage: aiEngineUsageStub,
   AddProviderDialog: addProviderDialogStub,
   SettingsPageForm: settingsPageFormStub,
   RouterLink: RouterLinkStub,
@@ -261,10 +247,6 @@ function rowKeys(wrapper: Wrapper, prefix: string) {
     .map((found) => found.attributes("data-testid")!.slice(start.length));
 }
 
-function row(wrapper: Wrapper, prefix: string, key: string) {
-  return wrapper.get(`[data-testid="${prefix}-link-${key}"]`);
-}
-
 // the button opens the dialog adding an AI service, on the page itself
 async function expectAddsAIService(wrapper: Wrapper, button: string) {
   const dialog = wrapper.getComponent(addProviderDialogStub);
@@ -277,10 +259,6 @@ async function expectAddsAIService(wrapper: Wrapper, button: string) {
   await wrapper.get(button).trigger("click");
 
   expect(dialog.props("show")).toBe(true);
-}
-
-function linkOf(found: ReturnType<Wrapper["get"]>) {
-  return JSON.parse(found.attributes("href")!);
 }
 
 function engine(uid: string, kind: AIEngineKind): AIEngine {

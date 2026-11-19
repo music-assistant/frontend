@@ -1,4 +1,5 @@
 import type { SettingsRow } from "@/components/settings/SettingsLinkRows.vue";
+import type { ConfigValueOwner } from "@/composables/useConfigValue";
 import {
   AI_ENGINE_KINDS,
   enginesOf,
@@ -7,11 +8,7 @@ import {
 import { coreModuleName } from "@/helpers/core_modules";
 import { getInstanceSettingsRoute } from "@/helpers/provider_catalog";
 import { coreSettingsPageId } from "@/helpers/settings_pages";
-import {
-  providerOwnPage,
-  settingsMenuPage,
-  settingsPageRoute,
-} from "@/helpers/settings_sections";
+import { providerOwnPage, settingsMenuPage } from "@/helpers/settings_sections";
 import {
   type AIEngine,
   AIEngineKind,
@@ -48,8 +45,10 @@ export function engineSummary(engines: readonly AIEngine[]): string {
 }
 
 /**
- * A row for each engine setting: what it belongs to, the kind of engine, the
- * engine it uses, and where it is changed.
+ * A row for each engine setting, saying what it belongs to and the kind of
+ * engine. A setting stored in the setup of its provider names its engine and
+ * starts that setup; the engine of any other setting is picked on its row,
+ * see hasEnginePicker. A setting without engines of its kind says so.
  *
  * @param usage - The engine settings of the core modules and providers.
  * @param engines - The available engines.
@@ -61,23 +60,108 @@ export function engineUsageRows(
   engines: readonly AIEngine[],
   reconfigure: (setting: AIEngineUsage) => void,
 ): SettingsRow[] {
-  const engineNames = new Map(
-    engines.map((engine) => [engine.uid, engine.name]),
-  );
   return usage.map((setting) => {
-    const engineName = setting.engine
-      ? engineNames.get(setting.engine)
-      : undefined;
-    return {
-      key: `${setting.owner}/${setting.key}`,
+    const row: SettingsRow = {
+      key: engineSettingKey(setting),
       icon: markRaw(ENGINE_KIND_ICONS[setting.kind]),
       label: ownerLabel(setting),
       description: $t(`settings.ai.kind.${setting.kind}`),
-      state: engineState(setting, engineName),
-      error: !engineName,
-      ...settingDestination(setting, reconfigure),
+      ...(setting.in_setup_data && { action: () => reconfigure(setting) }),
     };
+    const engineName = engineNameOf(setting, engines);
+    if (!engines.some((engine) => engine.kind === setting.kind)) {
+      return { ...row, state: $t("settings.ai.not_available") };
+    }
+    if (setting.in_setup_data) {
+      return {
+        ...row,
+        state: engineSettingState(setting, engines),
+        error: !engineName,
+      };
+    }
+    // the picker on the row names the kind of engine itself
+    return engineName
+      ? { ...row, description: "" }
+      : { ...row, description: $t("settings.ai.not_available"), error: true };
   });
+}
+
+/**
+ * Whether the engine of a setting is picked on its row: the setting is not
+ * stored in the setup of its provider, and there are engines of its kind.
+ *
+ * @param setting - The engine setting.
+ * @param engines - The available engines.
+ */
+export function hasEnginePicker(
+  setting: AIEngineUsage,
+  engines: readonly AIEngine[],
+): boolean {
+  return (
+    !setting.in_setup_data &&
+    engines.some((engine) => engine.kind === setting.kind)
+  );
+}
+
+/**
+ * The engine a setting uses, as its row states it: the engine, the default
+ * engine it follows, or that its engine is not available.
+ *
+ * @param setting - The engine setting.
+ * @param engines - The available engines.
+ */
+export function engineSettingState(
+  setting: AIEngineUsage,
+  engines: readonly AIEngine[],
+): string {
+  const engineName = engineNameOf(setting, engines);
+  if (!engineName) return $t("settings.ai.not_available");
+  return setting.follows_default
+    ? $t("settings.ai.follows_default", { engine: engineName })
+    : engineName;
+}
+
+/**
+ * The key of an engine setting among those of every owner, as its row has it.
+ *
+ * @param setting - The engine setting.
+ */
+export function engineSettingKey(setting: AIEngineUsage): string {
+  return `${setting.owner}/${setting.key}`;
+}
+
+/**
+ * The core module or provider instance storing an engine setting.
+ *
+ * @param setting - The engine setting.
+ */
+export function engineSettingOwner(setting: AIEngineUsage): ConfigValueOwner {
+  return setting.owner_type === "core"
+    ? { kind: "core", domain: setting.owner }
+    : { kind: "provider", domain: setting.domain, instanceId: setting.owner };
+}
+
+/**
+ * The engine settings to list: the current ones, and the ones listed before of
+ * each restarting provider, which the server leaves out until the provider is
+ * loaded again. Those keep their place: the core modules first, then the
+ * providers by name, as the server lists them.
+ *
+ * @param current - The engine settings the server lists now.
+ * @param previous - The engine settings listed before.
+ * @param restarting - The instance ids of the restarting providers.
+ */
+export function withRestartingSettings(
+  current: readonly AIEngineUsage[],
+  previous: readonly AIEngineUsage[],
+  restarting: ReadonlySet<string>,
+): AIEngineUsage[] {
+  const listed = new Set(current.map(({ owner }) => owner));
+  const kept = previous.filter(
+    ({ owner }) => restarting.has(owner) && !listed.has(owner),
+  );
+  if (kept.length === 0) return [...current];
+  return [...current, ...kept].sort(byListOrder);
 }
 
 /**
@@ -117,33 +201,20 @@ function ownerLabel(setting: AIEngineUsage): string {
     : coreModuleName(setting.domain, (key) => $t(key), setting.name);
 }
 
-function engineState(
+// the name of the available engine a setting selects, if any
+function engineNameOf(
   setting: AIEngineUsage,
-  engineName: string | undefined,
-): string {
-  if (!engineName) return $t("settings.ai.not_available");
-  return setting.follows_default
-    ? $t("settings.ai.follows_default", { engine: engineName })
-    : engineName;
+  engines: readonly AIEngine[],
+): string | undefined {
+  return engines.find((engine) => engine.uid === setting.engine)?.name;
 }
 
-function settingDestination(
-  setting: AIEngineUsage,
-  reconfigure: (setting: AIEngineUsage) => void,
-): Pick<SettingsRow, "to" | "action"> {
-  if (setting.owner_type === "core") {
-    const pageId = coreSettingsPageId(setting.domain);
-    return {
-      to: pageId
-        ? settingsPageRoute(pageId)
-        : { name: "editcore", params: { domain: setting.domain } },
-    };
-  }
-  if (setting.in_setup_data) return { action: () => reconfigure(setting) };
-  return {
-    to: getInstanceSettingsRoute({
-      domain: setting.domain,
-      instance_id: setting.owner,
-    }),
-  };
+// the core modules in the order the server has them, then the providers by
+// their case folded name
+function byListOrder(a: AIEngineUsage, b: AIEngineUsage): number {
+  if (a.owner_type !== b.owner_type) return a.owner_type === "core" ? -1 : 1;
+  if (a.owner_type === "core") return 0;
+  const nameA = a.name.toLowerCase();
+  const nameB = b.name.toLowerCase();
+  return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
 }

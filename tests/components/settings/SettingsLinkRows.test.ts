@@ -67,6 +67,45 @@ describe("SettingsLinkRows", () => {
       wrapper.get('[data-testid="tasks-link-settings"]').element.tagName,
     ).toBe("DIV");
   });
+
+  it("shows the control a row holds at its end, in place of the chevron", async () => {
+    const action = vi.fn();
+    const wrapper = mountRows(
+      [row({ to: { name: "editcore" }, action })],
+      '<input v-if="row.key === \'settings\'" data-testid="control" />',
+    );
+
+    const held = wrapper.get('[data-testid="tasks-link-settings"]');
+    // the control acts, so the row is no link or button itself
+    expect(held.element.tagName).toBe("DIV");
+    expect(held.attributes("href")).toBeUndefined();
+    expect(held.classes()).not.toContain("hover:bg-accent/50");
+    expect(held.find('[data-testid="control"]').exists()).toBe(true);
+    expect(held.findComponent(ChevronRight).exists()).toBe(false);
+    await held.trigger("click");
+    expect(action).not.toHaveBeenCalled();
+  });
+
+  it("keeps the rows a control leaves out as they are", () => {
+    const wrapper = mountRows(
+      [
+        row({ key: "picker" }),
+        row({ key: "settings", to: { name: "editcore" } }),
+      ],
+      '<input v-if="row.key === \'picker\'" data-testid="control" />',
+    );
+
+    const link = wrapper.get('[data-testid="tasks-link-settings"]');
+    expect(link.element.tagName).toBe("A");
+    expect(link.find('[data-testid="control"]').exists()).toBe(false);
+    expect(link.findComponent(ChevronRight).exists()).toBe(true);
+    expect(
+      wrapper
+        .get('[data-testid="tasks-link-picker"]')
+        .find('[data-testid="control"]')
+        .exists(),
+    ).toBe(true);
+  });
 });
 
 function row(overrides: Partial<SettingsRow> = {}): SettingsRow {
@@ -79,9 +118,13 @@ function row(overrides: Partial<SettingsRow> = {}): SettingsRow {
   };
 }
 
-function mountRows(rows: SettingsRow[]) {
+// the control slot, as a template that sees the row it renders for
+function mountRows(rows: SettingsRow[], control?: string) {
   return mount(SettingsLinkRows, {
     props: { rows, testIdPrefix: "tasks" },
+    slots: control
+      ? { control: `<template #control="{ row }">${control}</template>` }
+      : {},
     global: { stubs: { RouterLink: RouterLinkStub } },
   });
 }

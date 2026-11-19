@@ -27,12 +27,7 @@
            form of their own -->
       <SettingsPageForm v-else :key="engineKey" page="ai" @saved="refresh" />
 
-      <section v-if="usageRows.length" class="space-y-3">
-        <h2 class="text-muted-foreground text-sm font-medium">
-          {{ $t("settings.ai.usage") }}
-        </h2>
-        <SettingsLinkRows :rows="usageRows" test-id-prefix="ai-usage" />
-      </section>
+      <AIEngineUsage :usage="usage" :engines="engines" @changed="refresh" />
 
       <section v-if="serviceRows.length" class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -80,6 +75,7 @@
 
 <script setup lang="ts">
 import AIAssistantAccess from "@/components/settings/ai/AIAssistantAccess.vue";
+import AIEngineUsage from "@/components/settings/ai/AIEngineUsage.vue";
 import SettingsLinkRows from "@/components/settings/SettingsLinkRows.vue";
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
@@ -94,10 +90,9 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { useAIEngines } from "@/composables/settings/useAIEngines";
-import { aiServiceRows, engineUsageRows } from "@/helpers/ai_settings";
+import { aiServiceRows } from "@/helpers/ai_settings";
 import { api } from "@/plugins/api";
-import { type AIEngineUsage, ProviderType } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
+import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
 import { Plus, Sparkles } from "@lucide/vue";
@@ -117,23 +112,7 @@ const engineKey = computed(() =>
   engines.value.map((engine) => engine.uid).join(),
 );
 
-const usageRows = computed(() =>
-  engineUsageRows(usage.value, engines.value, reconfigure),
-);
-
 const serviceRows = computed(() =>
   aiServiceRows(Object.values(api.providers), engines.value),
 );
-
-// the setting is changed through the setup flow of its provider
-function reconfigure(setting: AIEngineUsage) {
-  eventbus.emit("setupFlowDialog", {
-    kind: "reconfigure",
-    instanceId: setting.owner,
-    name: setting.name,
-    onFlowEnded: () => {
-      void refresh();
-    },
-  });
-}
 </script>
