@@ -32,6 +32,7 @@ import {
   Settings2,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Speaker,
   Stethoscope,
   Tags,
@@ -104,6 +105,15 @@ export const SETTINGS_SECTIONS: readonly SettingsMenuPage[] = [
     color: "deep-purple",
     route: { name: "pluginproviders" },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
+    key: "ai",
+    label: "settings.ai.title",
+    description: "settings.ai.description",
+    icon: Sparkles,
+    color: "pink",
+    route: { name: "aisettings" },
+    requiresScope: Scope.CONFIG_CORE_WRITE,
   },
   {
     key: "profile",

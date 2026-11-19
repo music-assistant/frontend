@@ -34,6 +34,7 @@ const ALL_SECTIONS = [
   "music",
   "players",
   "plugin_providers",
+  "ai",
   "profile",
   "users",
   "system",
@@ -313,6 +314,10 @@ describe("providerListRoute", () => {
 describe("providerOwnPage", () => {
   it("leads Home Assistant to its page below System", () => {
     expect(providerOwnPage("hass")?.key).toBe("home_assistant");
+  });
+
+  it("leads the built-in MCP server to the AI page", () => {
+    expect(providerOwnPage("mcp_server")?.key).toBe("ai");
   });
 
   it("gives any other provider none", () => {

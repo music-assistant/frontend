@@ -65,6 +65,7 @@ function context(
     // Home Assistant step run on a server that is not the add-on
     homeAssistantAddon: true,
     homeAssistantConfigured: false,
+    homeAssistantConnected: false,
     memberCount: null,
     answers: {},
     ...overrides,
@@ -179,8 +180,8 @@ describe("onboarding step order", () => {
       "music_sources",
       "players",
       "plugins",
-      "core_settings",
       "home_assistant",
+      "core_settings",
       "invite_members",
       "finish",
       "welcome",
@@ -447,14 +448,16 @@ describe("the Home Assistant step", () => {
     return context({ homeAssistantAddon: false, ...overrides });
   }
 
-  it("offers the full setup to connect Home Assistant before the household", () => {
+  it("offers the full setup to connect Home Assistant before remote access", () => {
+    // remote access goes through Home Assistant Link once Home Assistant is
+    // connected, so the remote access step can say so
     const ctx = standaloneContext({ answers: { intent: "music_hub" } });
     expect(stepIds(applicableSteps(ctx))).toEqual([
       "intent",
       "music_sources",
       "players",
-      "core_settings",
       "home_assistant",
+      "core_settings",
       "invite_members",
       "finish",
     ]);

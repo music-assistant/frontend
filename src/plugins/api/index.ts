@@ -60,6 +60,8 @@ import {
   type SortOptionInfo,
   type User,
   type UserSummary,
+  type AIEngine,
+  type AIEngineUsage,
   AlbumType,
   Audiobook,
   AuthExchangeResult,
@@ -110,7 +112,6 @@ import {
   SourceFolder,
   StorageInfo,
   StorageLocation,
-  StreamServerInfo,
   TranscriptCue,
   MediaCollection,
   ArtistType,
@@ -2151,6 +2152,7 @@ export class MusicAssistantApi {
     provider: string,
     item_id: string,
     providers?: string[],
+    hidePlayed?: boolean,
   ): Promise<MediaItemTypeOrItemMapping[]> {
     // Fetches a single recommendation row's items. Per-row timeout/error
     // isolation lives server-side: an unknown id or a failing provider
@@ -2159,12 +2161,14 @@ export class MusicAssistantApi {
     // global error toast.
     // providers: source provider instance ids to include (only rows with
     // supports_provider_filter accept this); omit for the unfiltered row.
+    // hidePlayed: leave out fully played podcast episodes and audiobooks.
     return this.sendCommand(
       "music/recommendations/items",
       {
         provider,
         item_id,
         providers,
+        ...(hidePlayed && { hide_played: true }),
       },
       { suppressGlobalError: true },
     );
@@ -4051,6 +4055,18 @@ export class MusicAssistantApi {
     return this.accountApi.disableUser(userId);
   }
 
+  // AI methods
+
+  public async getAIEngines(): Promise<AIEngine[]> {
+    // Return the available AI engines of all kinds.
+    return this.sendCommand<AIEngine[]>("ai/engines");
+  }
+
+  public async getAIUsage(): Promise<AIEngineUsage[]> {
+    // Return each engine setting of the core modules and providers, with its engine.
+    return this.sendCommand<AIEngineUsage[]>("ai/usage");
+  }
+
   // Remote Access methods
 
   public async getRemoteAccessInfo(): Promise<RemoteAccessInfo> {
@@ -4065,19 +4081,6 @@ export class MusicAssistantApi {
     return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
       enabled,
     });
-  }
-
-  // Stream server methods
-
-  public async getStreamServerInfo(
-    options?: CommandOptions,
-  ): Promise<StreamServerInfo> {
-    // Get the address the stream server hands to players
-    return this.sendCommand<StreamServerInfo>(
-      "streams/info",
-      undefined,
-      options,
-    );
   }
 
   // Storage methods

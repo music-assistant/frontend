@@ -1,3 +1,4 @@
+import { MCP_SERVER_DOMAIN } from "@/helpers/ai_engines";
 import { HASS_DOMAIN } from "@/helpers/home_assistant";
 import { isAudioSourcePlugin } from "@/helpers/provider_config";
 import {
@@ -35,6 +36,7 @@ export interface SettingsPage {
 }
 
 export type SettingsPageId =
+  | "ai"
   | "audio_analysis"
   | "diagnostics"
   | "home_assistant"
@@ -55,6 +57,7 @@ export const MUSIC_DOMAIN = "music";
 export const METADATA_DOMAIN = "metadata";
 export const CACHE_DOMAIN = "cache";
 export const STATISTICS_DOMAIN = "statistics";
+export const AI_DOMAIN = "ai";
 export const AUDIO_ANALYSIS_CATEGORY = "audio_analysis";
 export const ACCOUNT_ACCESS_CATEGORY = "account_access";
 // the log level every core module has, which Diagnostics sets for every module
@@ -70,6 +73,11 @@ const OWNER_WRITE_SCOPES: Readonly<Record<SettingsOwnerKind, Scope>> = {
 
 // the settings pages and the config entries each of them shows
 export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
+  ai: {
+    // the page switches access for AI assistants on and off
+    provider: MCP_SERVER_DOMAIN,
+    sources: [{ owner: coreOwner(AI_DOMAIN) }],
+  },
   audio_analysis: {
     sources: [
       {
@@ -219,6 +227,21 @@ export function providerSettingsPageId(
   domain: string,
 ): SettingsPageId | undefined {
   return pageIds().find((id) => SETTINGS_PAGES[id].provider === domain);
+}
+
+/**
+ * The settings page showing the settings of a core module, the first of them
+ * when several pages each show some of its settings.
+ *
+ * @param domain - The domain of the core module.
+ */
+export function coreSettingsPageId(domain: string): SettingsPageId | undefined {
+  const owner = coreOwner(domain);
+  return pageIds().find((id) =>
+    SETTINGS_PAGES[id].sources.some((source) =>
+      isSameOwner(source.owner, owner),
+    ),
+  );
 }
 
 /**

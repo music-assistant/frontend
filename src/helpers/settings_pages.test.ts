@@ -7,6 +7,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../tests/fixtures/scopes";
+import { MCP_SERVER_DOMAIN } from "./ai_engines";
 import { HASS_DOMAIN } from "./home_assistant";
 import {
   ACCOUNT_ACCESS_CATEGORY,
@@ -14,6 +15,7 @@ import {
   CACHE_DOMAIN,
   canEditSettingsPage,
   coreOwner,
+  coreSettingsPageId,
   isKnownOwner,
   LOG_LEVEL_KEY,
   providerOwner,
@@ -35,6 +37,7 @@ const TASKS = coreOwner(TASKS_DOMAIN);
 const WEBSERVER = coreOwner(WEBSERVER_DOMAIN);
 // the core modules the server offers settings of
 const CONFIGURABLE_CORE_MODULES = [
+  "ai",
   "cache",
   "discovery",
   "metadata",
@@ -249,8 +252,26 @@ describe("providerSettingsPageId", () => {
     expect(providerSettingsPageId(HASS_DOMAIN)).toBe("home_assistant");
   });
 
+  it("manages the built-in MCP server from the AI page", () => {
+    expect(providerSettingsPageId(MCP_SERVER_DOMAIN)).toBe("ai");
+  });
+
   it("gives any other provider none", () => {
     expect(providerSettingsPageId("hass_players")).toBeUndefined();
+  });
+});
+
+describe("coreSettingsPageId", () => {
+  it.each([
+    ["players", "playback"],
+    ["ai", "ai"],
+    ["tasks", "task_settings"],
+  ])("finds the page showing the settings of the %s module", (domain, id) => {
+    expect(coreSettingsPageId(domain)).toBe(id);
+  });
+
+  it("finds none for a module no page shows", () => {
+    expect(coreSettingsPageId("radio_tuner")).toBeUndefined();
   });
 });
 

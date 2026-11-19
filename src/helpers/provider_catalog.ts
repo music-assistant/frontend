@@ -405,7 +405,7 @@ export const getTypeSettingsRoute = (type: ProviderType): RouteLocationRaw =>
  * that has one of its own, else the settings of the instance.
  */
 export const getInstanceSettingsRoute = (
-  config: ProviderConfig,
+  config: Pick<ProviderConfig, "domain" | "instance_id">,
 ): RouteLocationRaw =>
   providerOwnPage(config.domain)?.route ?? {
     name: "editprovider",

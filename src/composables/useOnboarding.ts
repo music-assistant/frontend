@@ -8,7 +8,7 @@ import {
   useUserPreferences,
 } from "@/composables/userPreferences";
 import { EXPERT_MODE_PREFERENCE, expertModeOf } from "@/helpers/expert_mode";
-import { HASS_DOMAIN } from "@/helpers/home_assistant";
+import { HASS_DOMAIN, hassConnectionState } from "@/helpers/home_assistant";
 import {
   applicableSteps,
   pendingSteps,
@@ -491,6 +491,10 @@ const ctx = computed<OnboardingContext>(() => ({
   homeAssistantConfigured: (providerConfigs.value ?? []).some(
     (config) => config.domain === HASS_DOMAIN,
   ),
+  homeAssistantConnected:
+    hassConnectionState(
+      providerConfigs.value?.find((config) => config.domain === HASS_DOMAIN),
+    ) === "connected",
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,
