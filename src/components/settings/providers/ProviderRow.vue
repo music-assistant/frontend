@@ -268,7 +268,9 @@ const { t } = useI18n();
 
 const menuLabel = computed(() => `${t("more_options")}: ${props.name}`);
 
-const onRootClick = function () {
+const onRootClick = function (evt: MouseEvent) {
+  // a tap on an info icon opens its popover, not the provider
+  if ((evt.target as Element).closest("[data-info-trigger]")) return;
   if (props.manageable) emit("open");
 };
 
