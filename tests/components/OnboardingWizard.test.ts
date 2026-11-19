@@ -2,6 +2,7 @@ import {
   EventType,
   MediaType,
   ProviderType,
+  ProviderStatus,
   UserRole,
   type EventMessage,
   type Scope,
@@ -629,6 +630,38 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it("connects Home Assistant before remote access in the full setup on a server that is not the add-on", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = false;
+    preferenceState.intent.value = "music_hub";
+    addEveryProvider();
+    addProvider("hass--1", "hass", ProviderType.PLUGIN, "Home Assistant");
+    providerConfigs.list.at(-1)!.status = ProviderStatus.LOADED;
+    const wrapper = await mountWizard({ step: "players" });
+    try {
+      await flushPromises();
+      expect(stepCount(wrapper)).toBe("2/6");
+
+      for (const [title, count] of [
+        ["onboarding.steps.home_assistant.title", "3/6"],
+        ["onboarding.steps.core_settings.title", "4/6"],
+      ]) {
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe(title);
+        expect(stepCount(wrapper)).toBe(count);
+      }
+      // connected one step earlier, so remote access can say it goes through
+      // Home Assistant Link
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-remote-access-home-assistant]")
+          .exists(),
+      ).toBe(true);
     } finally {
       wrapper.unmount();
     }
