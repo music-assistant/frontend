@@ -175,7 +175,7 @@
       </div>
     </div>
 
-    <div class="flex-1 px-4">
+    <div class="flex flex-1 flex-col gap-3 px-4">
       <div
         v-if="isError"
         class="bg-destructive/8 rounded-(--radius-lg) px-3 py-2"
@@ -214,7 +214,8 @@
       >
         {{ description }}
       </p>
-      <ProviderLabels v-if="labels?.length" :labels="labels" class="mt-3" />
+      <!-- at the bottom, so the labels line up across the cards of a row -->
+      <ProviderLabels v-if="labels?.length" :labels="labels" class="mt-auto" />
     </div>
 
     <div
