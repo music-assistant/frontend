@@ -1,109 +1,68 @@
 <template>
-  <section class="flex min-h-0 flex-col gap-4">
-    <p class="text-muted-foreground text-sm">{{ $t(descriptionKey) }}</p>
+  <OnboardingInvitation
+    :intro="$t(descriptionKey)"
+    :features="features"
+    :set-up="configured.length > 0"
+    :linked="linked"
+  >
+    <template #partner>
+      <component :is="icon" />
+    </template>
 
-    <ScrollFade>
-      <ItemGroup v-if="configured.length > 0" class="gap-2">
-        <Item
-          v-for="provider in configured"
-          :key="provider.instance_id"
-          variant="outline"
-          size="sm"
-          data-testid="onboarding-configured-provider"
-        >
-          <ItemMedia variant="icon">
-            <ProviderIcon :domain="provider.domain" :size="20" />
-          </ItemMedia>
-          <ItemContent>
-            <ItemTitle>{{ provider.name }}</ItemTitle>
-          </ItemContent>
-          <ItemActions>
-            <!-- a provider that is set up but switched off or broken is no tick -->
-            <Check
-              v-if="!provider.needsAttention"
-              class="text-primary size-4"
-              aria-hidden="true"
-            />
-            <template v-else>
-              <Button
-                v-if="needsReconfigure(provider)"
-                variant="secondary"
-                size="sm"
-                data-testid="onboarding-provider-reconfigure"
-                @click="reconfigure(provider)"
-              >
-                {{ $t("settings.reconfigure") }}
-              </Button>
-              <span :title="$t(attentionLabelKey(provider.status))">
-                <TriangleAlert
-                  class="text-muted-foreground size-4"
-                  :aria-label="$t(attentionLabelKey(provider.status))"
-                />
-              </span>
-            </template>
-          </ItemActions>
-        </Item>
-      </ItemGroup>
+    <ItemGroup v-if="configured.length > 0" class="gap-2">
+      <ConfiguredProviderItem
+        v-for="provider in configured"
+        :key="provider.instance_id"
+        :provider="provider"
+        data-testid="onboarding-configured-provider"
+      />
+    </ItemGroup>
 
-      <Empty v-else class="border-border rounded-md border border-dashed py-6">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <component :is="icon" />
-          </EmptyMedia>
-          <EmptyTitle>{{ $t("onboarding.nothing_configured") }}</EmptyTitle>
-        </EmptyHeader>
-      </Empty>
-    </ScrollFade>
-
-    <div>
-      <Button
-        :variant="configured.length > 0 ? 'secondary' : 'default'"
-        data-testid="onboarding-add-provider"
-        @click="showAddProviderDialog = true"
-      >
-        <Plus class="size-4" />
-        {{ $t(addLabelKey) }}
-      </Button>
-    </div>
+    <!-- the invitation while nothing is set up, a way to add another after -->
+    <Button
+      :variant="configured.length > 0 ? 'secondary' : 'default'"
+      :size="configured.length > 0 ? 'default' : 'lg'"
+      class="self-center"
+      data-testid="onboarding-add-provider"
+      @click="showAddProviderDialog = true"
+    >
+      <Plus class="size-4" />
+      {{ $t(addLabelKey) }}
+    </Button>
 
     <AddProviderDialog
       v-model:show="showAddProviderDialog"
       :provider-type="providerType"
+      :audio-source-only="connectingApps"
     />
-  </section>
+  </OnboardingInvitation>
 </template>
 
 <script setup lang="ts">
-import ScrollFade from "@/components/onboarding/ScrollFade.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import ConfiguredProviderItem from "@/components/onboarding/ConfiguredProviderItem.vue";
+import OnboardingInvitation, {
+  type InvitationFeature,
+} from "@/components/onboarding/OnboardingInvitation.vue";
 import { Button } from "@/components/ui/button";
+import { ItemGroup } from "@/components/ui/item";
 import {
-  Empty,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemGroup,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
-import {
+  configuredAudioSourcePlugins,
   configuredProviders,
-  useOnboarding,
-  type ConfiguredProvider,
 } from "@/composables/useOnboarding";
-import { attentionLabelKey, type OnboardingStepId } from "@/helpers/onboarding";
-import { providerRequiresReconfiguration } from "@/helpers/provider_config";
-import { api } from "@/plugins/api";
+import type { OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
-import { Check, Music, Plus, Puzzle, TriangleAlert } from "@lucide/vue";
-import { match } from "ts-pattern";
+import {
+  Airplay,
+  AudioLines,
+  HardDrive,
+  Headphones,
+  Music,
+  Music2,
+  Plus,
+  Radio,
+  Smartphone,
+} from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 
 const props = defineProps<{
@@ -119,49 +78,56 @@ defineEmits<{
 }>();
 
 const showAddProviderDialog = ref(false);
-const { intent } = useOnboarding();
+// the players have a step of their own, so this one is the music sources or
+// the plugins that let the music apps play to Music Assistant
 const connectingApps = computed(
-  () =>
-    props.providerType === ProviderType.PLUGIN && intent.value === "phone_apps",
+  () => props.providerType === ProviderType.PLUGIN,
 );
 
-const needsReconfigure = (provider: ConfiguredProvider) =>
-  providerRequiresReconfiguration(
-    provider.status,
-    api.providerManifests[provider.domain]?.has_setup_flow,
-  );
+const configured = computed(() =>
+  connectingApps.value
+    ? configuredAudioSourcePlugins()
+    : configuredProviders(props.providerType),
+);
 
-const reconfigure = function (provider: ConfiguredProvider) {
-  eventbus.emit("setupFlowDialog", {
-    kind: "reconfigure",
-    instanceId: provider.instance_id,
-    name: provider.name,
-  });
-};
-
-const configured = computed(() => configuredProviders(props.providerType));
-
-// the players have a step of their own, so this one is the music sources or
-// the plugins
-const descriptionKey = computed(() => {
-  if (connectingApps.value)
-    return "onboarding.steps.plugins.phone_apps_description";
-  return match(props.providerType)
-    .with(ProviderType.PLUGIN, () => "onboarding.steps.plugins.description")
-    .otherwise(() => "onboarding.steps.music_sources.description");
-});
+const descriptionKey = computed(() =>
+  connectingApps.value
+    ? "onboarding.steps.plugins.phone_apps_instructions"
+    : "onboarding.steps.music_sources.description",
+);
 
 const addLabelKey = computed(() =>
   connectingApps.value
     ? "onboarding.steps.plugins.connect"
-    : match(props.providerType)
-        .with(ProviderType.PLUGIN, () => "settings.add_plugin_provider")
-        .otherwise(() => "settings.add_music_provider"),
+    : "settings.add_music_provider",
 );
 
-const icon = computed(() =>
-  match(props.providerType)
-    .with(ProviderType.PLUGIN, () => markRaw(Puzzle))
-    .otherwise(() => markRaw(Music)),
+const icon = computed(() => markRaw(connectingApps.value ? Smartphone : Music));
+
+const MUSIC_SOURCE_FEATURES: readonly InvitationFeature[] = [
+  {
+    icon: Headphones,
+    labelKey: "onboarding.steps.music_sources.features.streaming",
+  },
+  {
+    icon: HardDrive,
+    labelKey: "onboarding.steps.music_sources.features.files",
+  },
+  { icon: Radio, labelKey: "onboarding.steps.music_sources.features.radio" },
+];
+const MUSIC_APP_FEATURES: readonly InvitationFeature[] = [
+  { icon: Music2, labelKey: "onboarding.steps.plugins.features.apps" },
+  {
+    icon: AudioLines,
+    labelKey: "onboarding.steps.plugins.features.spotify_connect",
+  },
+  { icon: Airplay, labelKey: "onboarding.steps.plugins.features.airplay" },
+];
+
+const features = computed(() =>
+  connectingApps.value ? MUSIC_APP_FEATURES : MUSIC_SOURCE_FEATURES,
+);
+const linked = computed(() =>
+  configured.value.some((provider) => !provider.needsAttention),
 );
 </script>

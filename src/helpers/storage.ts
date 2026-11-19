@@ -10,6 +10,13 @@ import { $t, canonicalizeLocale } from "@/plugins/i18n";
 import { Container, Folder, HardDrive, House, Network, Usb } from "@lucide/vue";
 import type { Component } from "vue";
 
+/** Where the documentation explains how to map a folder into the Docker container. */
+export const DOCKER_DOCS_URL =
+  "https://music-assistant.io/installation/#with-docker";
+
+/** Where the documentation explains the storage settings. */
+export const STORAGE_DOCS_URL = "https://music-assistant.io/settings/storage/";
+
 /** The icon of each kind of storage location. */
 export const STORAGE_KIND_ICONS: Record<StorageKind, Component> = {
   [StorageKind.BUILTIN_MEDIA]: House,

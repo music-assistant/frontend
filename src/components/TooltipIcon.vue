@@ -1,37 +1,37 @@
 <template>
-  <TooltipProvider :delay-duration="200">
-    <Tooltip>
-      <TooltipTrigger as-child>
-        <span
-          v-bind="$attrs"
-          role="img"
-          tabindex="0"
-          class="text-muted-foreground inline-flex"
-          :aria-label="label"
-        >
-          <slot></slot>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top">{{ label }}</TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
+  <!-- a popover, not a tooltip: tooltips never open on touch -->
+  <Popover>
+    <PopoverTrigger as-child>
+      <button
+        v-bind="$attrs"
+        type="button"
+        data-info-trigger
+        class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 -my-[5px] inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm outline-none focus-visible:ring-[3px]"
+        :aria-label="label"
+      >
+        <slot></slot>
+      </button>
+    </PopoverTrigger>
+    <PopoverContent side="top" class="w-auto max-w-72 px-3 py-2 text-sm">
+      {{ label }}
+    </PopoverContent>
+  </Popover>
 </template>
 
 <script setup lang="ts">
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 defineOptions({
-  // the providers render no element, so attributes go to the icon itself
+  // the popover renders no element, so attributes go to the button itself
   inheritAttrs: false,
 });
 
 interface Props {
-  // the text read out for the icon and shown in its tooltip
+  // the text read out for the icon and shown in its popover
   label: string;
 }
 

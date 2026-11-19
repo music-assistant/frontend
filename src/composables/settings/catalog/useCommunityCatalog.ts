@@ -7,7 +7,7 @@ import {
   getInstalledCommunityProviders,
   hasCommunityUpdate,
 } from "@/helpers/community_catalog";
-import { getCatalogType } from "@/helpers/provider_catalog";
+import { getManifestCatalogType } from "@/helpers/provider_catalog";
 import { api } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
@@ -170,7 +170,7 @@ export function useCommunityCatalog() {
    */
   const remove = function (provider: CommunityProvider) {
     const name = provider.manifest.name;
-    const type = getCatalogType(provider.manifest.type);
+    const type = getManifestCatalogType(provider.manifest);
     eventbus.emit("deleteConfirmationDialog", {
       title: $t("settings.catalog.community.remove_title", { name }),
       message: $t("settings.catalog.community.remove_message", {

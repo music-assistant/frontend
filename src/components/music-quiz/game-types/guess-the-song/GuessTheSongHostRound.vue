@@ -13,6 +13,8 @@ import GuessTheSongReveal from "@/components/music-quiz/game-types/guess-the-son
 import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongRound,
+  MusicQuizTitleRevealHostState,
+  MusicQuizTitleRevealRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { copyToClipboard, getMediaImageUrl } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
@@ -22,8 +24,8 @@ import { toast } from "vue-sonner";
 const props =
   defineProps<
     MusicQuizHostGameAdapterProps<
-      MusicQuizGuessTheSongHostState,
-      MusicQuizGuessTheSongRound
+      MusicQuizGuessTheSongHostState | MusicQuizTitleRevealHostState,
+      MusicQuizGuessTheSongRound | MusicQuizTitleRevealRound
     >
   >();
 

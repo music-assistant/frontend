@@ -97,6 +97,8 @@ html {
      card floating above the player bar instead of a full-height panel. Measured
      below the status bar: each consumer adds --device-inset-top itself. */
   --player-bar-popout-top-gap: 24px;
+  /* Widest the content of a settings page grows; a wider window centres it. */
+  --settings-column-width: 1400px;
 }
 
 :root[data-embedded-layout] {

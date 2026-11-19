@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-col gap-6 p-6 pb-40">
+    <SettingsPageHeader page="storage" />
     <section class="space-y-3" data-testid="storage-music-locations">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h2 class="text-muted-foreground text-sm font-medium">
@@ -166,6 +167,7 @@ import LocalFolderDialog from "@/components/settings/storage/LocalFolderDialog.v
 import NetworkShareDialog from "@/components/settings/storage/NetworkShareDialog.vue";
 import RemoveLocationDialog from "@/components/settings/storage/RemoveLocationDialog.vue";
 import StorageLocationRow from "@/components/settings/storage/StorageLocationRow.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -181,8 +183,10 @@ import { useStorageInfo } from "@/composables/useStorageInfo";
 import { LOCAL_FILES_DOMAIN } from "@/helpers/provider_domain";
 import {
   canHoldNewSource,
+  DOCKER_DOCS_URL,
   isManagedShare,
   type ManagedShareLocation,
+  STORAGE_DOCS_URL,
   storageErrorText,
   usedByShownOn,
 } from "@/helpers/storage";
@@ -195,11 +199,16 @@ import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
-const DOCKER_DOCS_URL = "https://music-assistant.io/installation/#with-docker";
-const STORAGE_DOCS_URL = "https://music-assistant.io/settings/storage/";
-
 const { t } = useI18n();
-const { info, loading, failed, mediaLocations, refresh } = useStorageInfo();
+const {
+  info,
+  loading,
+  failed,
+  mediaLocations,
+  canAddShare,
+  canAddFolder,
+  refresh,
+} = useStorageInfo();
 
 const showShareDialog = ref(false);
 const showFolderDialog = ref(false);
@@ -209,12 +218,6 @@ const locationToRemove = ref<StorageLocation | null>(null);
 // wait for it and for any refresh, so none is pressed on what the page showed before
 const pending = ref<{ path: string; action: "reload" | "remove" } | null>(null);
 
-const canAddShare = computed(
-  () =>
-    !!info.value?.can_mount_shares &&
-    info.value.supported_share_types.length > 0,
-);
-const canAddFolder = computed(() => !!info.value?.can_add_local_folder);
 const showMountHint = computed(
   () => !!info.value && !info.value.can_mount_shares,
 );

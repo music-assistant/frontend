@@ -1,5 +1,5 @@
 import PodcastEpisodeHero from "@/components/podcast/PodcastEpisodeHero.vue";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { podcast } from "../../fixtures/podcast";
 import { podcastEpisode } from "../../fixtures/podcastEpisode";
@@ -16,7 +16,11 @@ vi.mock("@/plugins/i18n", () => ({
     args ? `${key}(${args.join(",")})` : key,
 }));
 vi.mock("@/components/details/DetailHero.vue", () => ({
-  default: { template: '<div><slot name="main" /></div>' },
+  default: {
+    name: "DetailHero",
+    emits: ["edit-rows"],
+    template: '<div><slot name="main" /></div>',
+  },
 }));
 vi.mock("@/components/details/DetailHeroButton.vue", () => ({
   default: { template: "<div />" },
@@ -105,5 +109,12 @@ describe("PodcastEpisodeHero", () => {
     const facts = wrapper.findAll(".podcast-episode-hero__line")[1];
     expect(facts.findAll(".podcast-episode-hero__fact")).toHaveLength(1);
     expect(facts.text()).toContain("episode_number_short(53)");
+  });
+
+  it("forwards the shared hero's edit-rows action", async () => {
+    const wrapper = mountHero({ item: EPISODE });
+    wrapper.findComponent({ name: "DetailHero" }).vm.$emit("edit-rows");
+    await flushPromises();
+    expect(wrapper.emitted("edit-rows")).toHaveLength(1);
   });
 });

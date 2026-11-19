@@ -14,6 +14,7 @@ interface MockQueue {
   state?: PlaybackState;
   active?: boolean;
   current_item?: { extra_attributes?: { playback_speed?: number } };
+  extra_attributes?: { announcement_in_progress?: boolean };
 }
 
 interface MockPlayer {
@@ -596,5 +597,23 @@ describe("resolveQueueTiming / resolveQueueElapsedTime", () => {
 
     vi.setSystemTime((NOW + 50) * 1000);
     expect(resolveQueueElapsedTime()).toBe(42);
+  });
+
+  it("holds the position while an announcement interrupts the playing queue", () => {
+    seedQueue({
+      queue_id: "q1",
+      state: PlaybackState.PLAYING,
+      active: true,
+      extra_attributes: { announcement_in_progress: true },
+    });
+    apiMock.queueElapsedTime["q1"] = {
+      elapsed_time: 42,
+      elapsed_time_last_updated: NOW,
+    };
+
+    vi.setSystemTime((NOW + 50) * 1000);
+    expect(resolveQueueTiming()?.playbackState).toBe(PlaybackState.PLAYING);
+    expect(resolveQueueElapsedTime()).toBe(42);
+    expect(resolveActiveElapsedTime()).toBe(42);
   });
 });

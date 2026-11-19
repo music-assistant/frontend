@@ -89,7 +89,7 @@ describe("listing the users", () => {
   it("lists the share candidates for a role that owns only its own sources", async () => {
     await mountAccess({ canOwnSources: true, managesAllSources: false });
 
-    expect(apiMock.getShareCandidates).toHaveBeenCalledOnce();
+    expect(apiMock.getShareCandidates).toHaveBeenCalledExactlyOnceWith(true);
     expect(apiMock.getAllUsers).not.toHaveBeenCalled();
   });
 
@@ -128,7 +128,7 @@ describe("accessShareCandidates", () => {
 
     expect(
       result.accessShareCandidates.value?.map((candidate) => candidate.user_id),
-    ).toEqual(["user-a"]);
+    ).toEqual(["user-a", "user-guest"]);
   });
 
   it("uses the loaded share candidates for a role that owns only its own sources", async () => {

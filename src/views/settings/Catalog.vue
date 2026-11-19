@@ -105,6 +105,7 @@
             v-else
             :key="activeTab"
             v-model:stages="selectedStages"
+            v-model:label="selectedLabel"
             :entries="listEntries"
             :query="searchQuery"
             :title="
@@ -212,15 +213,18 @@ import {
   CATALOG_DISCOVER_TAB,
   CATALOG_INSTALLED_TAB,
   type CatalogEntry,
+  catalogEntriesOfType,
   type CatalogTab,
   countCatalogTypes,
   FEATURE_REQUESTS_URL,
   filterCatalogEntries,
+  getCatalogLabel,
   getCatalogTab,
   getCatalogTabQuery,
   getCatalogType,
   needsInstall,
 } from "@/helpers/provider_catalog";
+import type { ProviderLabel } from "@/helpers/provider_labels";
 import { CircleAlert, RefreshCw } from "@lucide/vue";
 import { computed, nextTick, reactive, ref, useTemplateRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -277,6 +281,8 @@ const noteOpen = ref(false);
 const searchQuery = ref("");
 // the stage filter belongs to the list of one tab, and starts empty on each
 const selectedStages = ref<string[]>([]);
+// the same goes for the label filter, which a link can pick for the tab it opens
+const selectedLabel = ref<ProviderLabel | null>(getCatalogLabel(route.query));
 
 const { selectedEntry, detailOpen, openDetail, closeDetail } =
   useCatalogDetail(entries);
@@ -293,23 +299,27 @@ const activeTab = computed(() =>
 
 const activeType = computed(() => getCatalogType(activeTab.value));
 
-// what each tab lists with the search, and on the active tab its stage filter
+// what each tab lists with the search, and on the active tab its filters
 const tabCounts = computed(() =>
-  typeCounts.value.map(({ type }) => ({
-    type,
-    count: filterCatalogEntries(entries.value, {
-      types: [type.type],
-      query: searchQuery.value,
-      stages: type.type === activeTab.value ? selectedStages.value : [],
-    }).length,
-  })),
+  typeCounts.value.map(({ type }) => {
+    const active = type.type === activeTab.value;
+    return {
+      type,
+      count: filterCatalogEntries(
+        catalogEntriesOfType(entries.value, type.type),
+        {
+          query: searchQuery.value,
+          stages: active ? selectedStages.value : [],
+          label: active ? selectedLabel.value : null,
+        },
+      ).length,
+    };
+  }),
 );
 
 const listEntries = computed(() =>
   activeType.value
-    ? entries.value.filter(
-        (entry) => entry.manifest.type === activeType.value!.type,
-      )
+    ? catalogEntriesOfType(entries.value, activeType.value.type)
     : entries.value,
 );
 
@@ -321,6 +331,7 @@ const getMenuItems = () => getCommunityCatalogMenuItems(community);
 
 watch(activeTab, () => {
   selectedStages.value = [];
+  selectedLabel.value = getCatalogLabel(route.query);
 });
 
 const selectTab = (tab: string | number) => {

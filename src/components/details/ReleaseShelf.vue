@@ -31,13 +31,11 @@
       </DetailSectionTitle>
     </template>
     <template v-if="viewAllTo && itemCount !== 0" #actions>
-      <RouterLink
+      <ViewAllLink
         :to="viewAllTo"
-        class="release-shelf__more"
-        :aria-label="viewAllAriaLabel"
-      >
-        {{ viewAllLabel }}
-      </RouterLink>
+        :name="viewAllName ?? title"
+        :count="itemCount"
+      />
     </template>
 
     <template v-if="items">
@@ -82,6 +80,7 @@ import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
+import ViewAllLink from "@/components/ViewAllLink.vue";
 import { parseBool } from "@/helpers/parse";
 import { panelViewItemResponsive } from "@/helpers/utils";
 import { isExternalItem, itemIsAvailable } from "@/plugins/api/helpers";
@@ -94,7 +93,7 @@ import {
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
-import { RouterLink, type RouteLocationRaw } from "vue-router";
+import type { RouteLocationRaw } from "vue-router";
 
 export interface Props {
   title: string;
@@ -151,19 +150,6 @@ defineSlots<{
 const SKELETONS = 6;
 
 const tilesPerView = computed(() => shelfTilesPerView());
-const viewAllAriaLabel = computed(() =>
-  props.itemCount === undefined
-    ? $t("tooltip.view_all", { name: props.viewAllName ?? props.title })
-    : $t("tooltip.view_all_count", {
-        name: props.viewAllName ?? props.title,
-        count: props.itemCount,
-      }),
-);
-const viewAllLabel = computed(() =>
-  props.itemCount === undefined
-    ? $t("view_all")
-    : $t("view_all_count", { count: props.itemCount }),
-);
 
 // the item's type, so every card says what it is; the year already sits on the
 // artwork, so it isn't repeated here. A release that is not in the library says
@@ -196,18 +182,6 @@ function shelfTilesPerView(): number {
 </script>
 
 <style scoped>
-.release-shelf__more {
-  flex: none;
-  font-size: 13px;
-  font-weight: 500;
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-  white-space: nowrap;
-}
-.release-shelf__more:hover,
-.release-shelf__more:focus-visible {
-  text-decoration: underline;
-}
 .release-shelf__art-scrim {
   position: absolute;
   inset: 0;

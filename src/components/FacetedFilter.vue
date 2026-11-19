@@ -58,6 +58,25 @@
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <div class="faceted-filter-content">
+        <template v-if="toggles?.length">
+          <div
+            v-for="toggleOption in toggles"
+            :key="toggleOption.id"
+            class="flex items-center justify-between gap-3 px-1.5 py-1"
+          >
+            <Label :for="toggleControlId(toggleOption.id)" class="font-normal">
+              {{ toggleOption.label }}
+            </Label>
+            <Switch
+              :id="toggleControlId(toggleOption.id)"
+              :model-value="toggleOption.active"
+              @update:model-value="
+                (active: boolean) => emit('toggle', toggleOption.id, active)
+              "
+            />
+          </div>
+          <Separator v-if="options.length" />
+        </template>
         <Input
           v-if="showSearch"
           v-model="search"
@@ -65,7 +84,7 @@
           :aria-label="$t('faceted_filter.search_for', { title })"
           class="mb-2 h-8"
         />
-        <div class="faceted-filter-list">
+        <div v-if="options.length" class="faceted-filter-list">
           <div
             v-for="option in filteredOptions"
             :key="option.value"
@@ -105,18 +124,20 @@
 <script setup lang="ts" generic="TValue extends string">
 import { PlusCircle, X } from "@lucide/vue";
 import type { HTMLAttributes } from "vue";
-import { computed, ref } from "vue";
+import { computed, ref, useId } from "vue";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 
 interface FacetedOption {
@@ -124,15 +145,24 @@ interface FacetedOption {
   value: TValue;
 }
 
+interface FacetedToggle {
+  id: string;
+  label: string;
+  active: boolean;
+}
+
 const props = defineProps<{
   title: string;
   options: FacetedOption[];
   modelValue: TValue[];
+  /** On/off switches shown above the options. */
+  toggles?: FacetedToggle[];
   class?: HTMLAttributes["class"];
 }>();
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: TValue[]): void;
+  (e: "toggle", id: string, active: boolean): void;
 }>();
 
 // a list this short is quicker to scan than to search - and on a touch device
@@ -140,6 +170,8 @@ const emit = defineEmits<{
 const MAX_OPTIONS_WITHOUT_SEARCH = 8;
 
 const search = ref("");
+
+const idPrefix = useId();
 
 const showSearch = computed(
   () => props.options.length > MAX_OPTIONS_WITHOUT_SEARCH,
@@ -178,6 +210,8 @@ const removeFilter = (value: TValue) => {
 const clear = () => {
   emit("update:modelValue", []);
 };
+
+const toggleControlId = (toggleId: string) => `${idPrefix}-${toggleId}`;
 
 // only the popover content unmounts on close, so a term left in the field has to
 // be dropped by hand - on open, to leave the closing animation on the list the

@@ -1,6 +1,6 @@
 import PlayerBarGroupControl from "@/layouts/default/PlayerOSD/PlayerBarGroupControl.vue";
 import { api } from "@/plugins/api";
-import type { Player } from "@/plugins/api/interfaces";
+import { type Player, PlayerType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -144,6 +144,33 @@ describe("PlayerBarGroupControl", () => {
     expect(trigger.get(".player-bar-action-label").text()).toBe(
       "1 player_type.player",
     );
+  });
+
+  it("offers the players and each other kind of player that can be picked", () => {
+    const kitchen = groupPlayer("kitchen", {
+      can_group_with: ["lamp", "remote"],
+    });
+    const lamp = groupPlayer("lamp", { type: PlayerType.LIGHT });
+    const remote = groupPlayer("remote", { type: PlayerType.CONTROLLER });
+    api.players = { kitchen, lamp, remote };
+    storeMock.activePlayer = kitchen;
+
+    wrapper = mount(PlayerBarGroupControl, {
+      global: {
+        stubs: {
+          PlayerGroupPanel: true,
+          PopoverContent: { template: "<div><slot /></div>" },
+          Teleport: true,
+        },
+      },
+    });
+
+    expect(
+      wrapper
+        .getComponent({ name: "PlayerGroupPanel" })
+        .props("filterOptions")
+        .map(({ key }: { key: string }) => key),
+    ).toEqual(["players", "lights", "controllers"]);
   });
 
   it("hands the panel the members that are offline", async () => {

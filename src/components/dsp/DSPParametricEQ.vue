@@ -560,6 +560,9 @@ interface Viewport {
   padding_tb: number;
 }
 
+const DISABLED_BAND_ALPHA = 0.35;
+const DISABLED_BAND_DASH = [6, 4];
+
 const viewport = ref<Viewport>({
   width: 0,
   height: 0,
@@ -614,6 +617,9 @@ const drawGraph = () => {
       ctx.lineWidth = 2;
     }
     ctx.strokeStyle = color;
+    // Switched-off bands stay visible but faded and dashed
+    ctx.globalAlpha = band.enabled ? 1 : DISABLED_BAND_ALPHA;
+    ctx.setLineDash(band.enabled ? [] : DISABLED_BAND_DASH);
 
     const frequencies = new Float32Array(width);
     for (let x = 0; x < width; x++) {
@@ -651,6 +657,9 @@ const drawGraph = () => {
     ctx.arc(handleX, handleY, 6, 0, 2 * Math.PI);
 
     ctx.fill();
+
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([]);
 
     return { frequencies, magResponse };
   };
@@ -702,23 +711,21 @@ const drawGraph = () => {
 
     // Draw individual filter responses
     peq.value.bands.forEach((band, index) => {
-      if (band.enabled) {
-        const { frequencies, magResponse } = drawBandResponse(band, index, ctx);
+      const { magResponse } = drawBandResponse(band, index, ctx);
+      if (!band.enabled) return;
 
-        // Add band response to appropriate channel(s)
-        if (band.channel === AudioChannel.ALL) {
-          // Add to all channels
-          channels.forEach((ch) => {
-            for (let x = 0; x < width; x++) {
-              channelResponses[ch][x] += 20 * Math.log10(magResponse[x]);
-            }
-          });
-        } else {
-          // Add to specific channel
+      // Add band response to appropriate channel(s)
+      if (band.channel === AudioChannel.ALL) {
+        // Add to all channels
+        channels.forEach((ch) => {
           for (let x = 0; x < width; x++) {
-            channelResponses[band.channel][x] +=
-              20 * Math.log10(magResponse[x]);
+            channelResponses[ch][x] += 20 * Math.log10(magResponse[x]);
           }
+        });
+      } else {
+        // Add to specific channel
+        for (let x = 0; x < width; x++) {
+          channelResponses[band.channel][x] += 20 * Math.log10(magResponse[x]);
         }
       }
     });
@@ -739,15 +746,17 @@ const drawGraph = () => {
     // Draw individual filter responses
     peq.value.bands.forEach((band, index) => {
       if (
-        (band.enabled && band.channel === editedChannel.value) ||
-        band.channel === AudioChannel.ALL
+        band.channel !== editedChannel.value &&
+        band.channel !== AudioChannel.ALL
       ) {
-        const { magResponse } = drawBandResponse(band, index, ctx);
+        return;
+      }
+      const { magResponse } = drawBandResponse(band, index, ctx);
+      if (!band.enabled) return;
 
-        // Add to total response
-        for (let x = 0; x < width; x++) {
-          totalResponse[x] += 20 * Math.log10(magResponse[x]);
-        }
+      // Add to total response
+      for (let x = 0; x < width; x++) {
+        totalResponse[x] += 20 * Math.log10(magResponse[x]);
       }
     });
 

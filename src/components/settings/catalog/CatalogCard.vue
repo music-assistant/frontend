@@ -47,17 +47,21 @@
         {{ badge }}
       </Badge>
     </template>
-    <p
-      class="m-0 mt-0.5 text-xs text-muted-foreground"
-      data-testid="catalog-card-type"
-    >
-      {{ typeLabel }}
-    </p>
-    <p
-      class="m-0 mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground"
-    >
-      {{ entry.manifest.description }}
-    </p>
+    <!-- takes the free room, so the labels line up across the cards of a row -->
+    <div class="flex-1">
+      <p
+        class="m-0 mt-0.5 text-xs text-muted-foreground"
+        data-testid="catalog-card-type"
+      >
+        {{ typeLabel }}
+      </p>
+      <p
+        class="m-0 mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground"
+      >
+        {{ entry.manifest.description }}
+      </p>
+    </div>
+    <ProviderLabels :labels="labels" class="mt-3" />
     <template #footer>
       <span
         v-if="pairedWith"
@@ -114,6 +118,7 @@
 
 <script setup lang="ts">
 import CatalogBannerCard from "@/components/settings/catalog/CatalogBannerCard.vue";
+import ProviderLabels from "@/components/settings/providers/ProviderLabels.vue";
 import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -144,7 +149,7 @@ const emit = defineEmits<{
   (e: "dismiss"): void;
 }>();
 
-const { typeLabel, community, isSetUp, manageRoute, maintainers } =
+const { typeLabel, community, labels, isSetUp, manageRoute, maintainers } =
   useCatalogEntryDetails(() => props.entry);
 
 const credit = computed(() =>

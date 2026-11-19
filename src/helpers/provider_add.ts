@@ -1,6 +1,6 @@
 import { api } from "@/plugins/api";
 import type { ProviderManifest } from "@/plugins/api/interfaces";
-import { eventbus } from "@/plugins/eventbus";
+import { eventbus, type SetupFlowEndedCallback } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 
 /**
@@ -10,10 +10,13 @@ import { $t } from "@/plugins/i18n";
  * @param manifest - The manifest of the provider to add.
  * @param onStart - Called right before a setup flow opens, for a caller that
  *   closes itself.
+ * @param onFlowEnded - Called when the setup flow of the provider itself ends,
+ *   not that of the provider it depends on.
  */
 export function startAddProvider(
   manifest: ProviderManifest,
   onStart?: () => void,
+  onFlowEnded?: SetupFlowEndedCallback,
 ) {
   const dependsOn = manifest.depends_on;
   if (dependsOn && !api.getProvider(dependsOn)) {
@@ -42,5 +45,6 @@ export function startAddProvider(
   eventbus.emit("setupFlowDialog", {
     kind: "provider",
     domain: manifest.domain,
+    onFlowEnded,
   });
 }

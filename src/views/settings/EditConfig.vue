@@ -59,6 +59,8 @@
           :show-password-values="showPasswordValues"
           :is-disabled="isRowDisabled"
           :output-protocols="outputProtocols"
+          :output-menu-items="outputMenuItems"
+          :multi-channel="multiChannel"
           @update:value="onValueUpdate"
           @action="onEntryAction"
           @toggle-password="showPasswordValues = !showPasswordValues"
@@ -161,7 +163,9 @@ import {
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
 import { Button } from "@/components/ui/button";
+import { isSpeakerChannelEntry } from "@/helpers/multi_channel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -196,6 +200,11 @@ export interface Props {
   // Output protocols of the player being configured; drives derived-transport labelling
   // in the protocol section. Omitted for provider/core configs.
   outputProtocols?: OutputProtocol[];
+  // The menu entries of an output of the player being configured; an output without any
+  // gets no menu button. Omitted for provider/core configs.
+  outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
+  // The config is that of a multi-channel player, whose speakers show as rows of their own.
+  multiChannel?: boolean;
   // Domain of the provider being configured; lets a field recognise the entries of the
   // provider it belongs to. Omitted for player/core configs.
   providerDomain?: string;
@@ -234,6 +243,7 @@ const resetKeys = ref(new Set<string>());
 // props
 const props = withDefaults(defineProps<Props>(), {
   outputProtocols: undefined,
+  outputMenuItems: undefined,
   providerDomain: undefined,
   // left unset rather than cast to false, so the user's own choice can apply
   showAdvancedSettings: undefined,
@@ -303,14 +313,17 @@ const hasVisibleSections = computed(
 );
 
 // what the save button can store: a visible entry holding a value, or the enable
-// switch of an optional protocol; actions and labels alone leave nothing to save
+// switch of an optional protocol; actions and labels alone leave nothing to save,
+// and neither do entries that are saved the moment they change
 const hasEditableEntries = computed(
   () =>
     Object.values(visibleEntriesByCategory.value)
       .flat()
       .some(
         (entry) =>
-          !VALUELESS_ENTRY_TYPES.includes(entry.type) && !isInjected(entry),
+          !VALUELESS_ENTRY_TYPES.includes(entry.type) &&
+          !isInjected(entry) &&
+          !entry.immediate_apply,
       ) ||
     (entries.value ?? []).some((entry) =>
       entry.key.endsWith("||protocol||enabled"),
@@ -652,10 +665,14 @@ const getSaveValues = function () {
 /**
  * Whether a save unsets an entry that was reset, rather than send its default. The
  * name and the switches that turn a provider, an output or a plugin on keep sending
- * their value, as does an entry that is not saved as a value at all.
+ * their value, as does an entry that is not saved as a value at all, and the channel
+ * of a speaker of a multi-channel player, which always plays one.
  */
 const unsetsOnReset = function (entry: ConfigEntryUI) {
   if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
+    return false;
+  }
+  if (props.multiChannel && isSpeakerChannelEntry(entry, entries.value ?? [])) {
     return false;
   }
   const { key } = entry;
@@ -673,7 +690,12 @@ const unsetsOnReset = function (entry: ConfigEntryUI) {
   position: fixed;
   /* A landscape phone is wide enough to count as the desktop layout, so this
      rule is what keeps the button clear of a side cutout. */
-  right: calc(24px + var(--device-inset-right));
+  /* 100cqw is the width of the settings page, its query container: on a page
+     wider than the settings column, the button moves in to the column's edge. */
+  right: calc(
+    24px + var(--device-inset-right) +
+      max(0px, (100cqw - var(--settings-column-width)) / 2)
+  );
   bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
   z-index: 20;
 }

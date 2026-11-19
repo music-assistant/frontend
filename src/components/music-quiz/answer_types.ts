@@ -1,3 +1,6 @@
+import HintTextHostAnswer from "@/components/music-quiz/answer-types/hint-text/HintTextHostAnswer.vue";
+import HintTextPlayerAnswer from "@/components/music-quiz/answer-types/hint-text/HintTextPlayerAnswer.vue";
+import HintTextPresentAnswer from "@/components/music-quiz/answer-types/hint-text/HintTextPresentAnswer.vue";
 import MultipleChoiceHostAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoiceHostAnswer.vue";
 import MultipleChoicePlayerAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePlayerAnswer.vue";
 import MultipleChoicePresentAnswer from "@/components/music-quiz/answer-types/multiple-choice/MultipleChoicePresentAnswer.vue";
@@ -37,6 +40,14 @@ const MUSIC_QUIZ_ANSWER_TYPE_REGISTRY = {
       player: markRaw(TimelinePlayerAnswer),
       host: markRaw(TimelineHostAnswer),
       present: markRaw(TimelinePresentAnswer),
+    },
+  },
+  hint_text: {
+    id: "hint_text",
+    adapters: {
+      player: markRaw(HintTextPlayerAnswer),
+      host: markRaw(HintTextHostAnswer),
+      present: markRaw(HintTextPresentAnswer),
     },
   },
 } satisfies MusicQuizAnswerRegistry;

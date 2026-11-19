@@ -7,7 +7,9 @@ import {
   setUserPreferences,
   useUserPreferences,
 } from "@/composables/userPreferences";
+import { isAIService } from "@/helpers/ai_engines";
 import { EXPERT_MODE_PREFERENCE, expertModeOf } from "@/helpers/expert_mode";
+import { HASS_DOMAIN, hassConnectionState } from "@/helpers/home_assistant";
 import {
   applicableSteps,
   pendingSteps,
@@ -28,6 +30,7 @@ import {
   userDisplayName,
 } from "@/helpers/provider_access";
 import {
+  isAudioSourcePlugin,
   isBuiltinProvider,
   providerDisplayName,
 } from "@/helpers/provider_config";
@@ -37,6 +40,7 @@ import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
   PlayerType,
+  ProviderType,
   Scope,
   UserRole,
   type EventMessage,
@@ -44,7 +48,6 @@ import {
   type PlayerConfig,
   type ProviderConfig,
   type ProviderStatus,
-  type ProviderType,
   type User,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -327,6 +330,23 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
     }));
 }
 
+/** The plugins the user set up that let an app play to Music Assistant. */
+export function configuredAudioSourcePlugins(): ConfiguredProvider[] {
+  return configuredProviders(ProviderType.PLUGIN).filter((provider) =>
+    isAudioSourcePlugin(api.providerManifests[provider.domain]),
+  );
+}
+
+/** The AI services the user set up, Home Assistant while it provides engines. */
+export function configuredAIServices(): ConfiguredProvider[] {
+  return configuredProviders(ProviderType.PLUGIN).filter((provider) =>
+    isAIService(
+      api.providerManifests[provider.domain],
+      api.providers[provider.instance_id],
+    ),
+  );
+}
+
 // what a player of a builtin provider was last labelled with while it was
 // registered: switching it off unregisters it, and its outputs with it
 const lastPlayerLabels = new Map<string, string>();
@@ -472,11 +492,24 @@ const ctx = computed<OnboardingContext>(() => ({
     domain: config.domain,
     builtin: isBuiltinProvider(api.providerManifests[config.domain]),
     enabled: config.enabled,
+    audioSource: isAudioSourcePlugin(api.providerManifests[config.domain]),
+    aiService: isAIService(
+      api.providerManifests[config.domain],
+      api.providers[config.instance_id],
+    ),
   })),
   // the players switched on, as the players step lists them; only the
   // summary's "2 players" label reads this, as whether the step is done keys
   // off a configured PLAYER provider, not off players turning up
   playerCount: listedPlayerConfigs().filter((config) => config.enabled).length,
+  homeAssistantAddon: !!api.serverInfo.value?.homeassistant_addon,
+  homeAssistantConfigured: (providerConfigs.value ?? []).some(
+    (config) => config.domain === HASS_DOMAIN,
+  ),
+  homeAssistantConnected:
+    hassConnectionState(
+      providerConfigs.value?.find((config) => config.domain === HASS_DOMAIN),
+    ) === "connected",
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,

@@ -191,6 +191,8 @@
       :disabled="!config?.enabled"
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
+      :output-menu-items="getOutputMenu"
+      :multi-channel="isMultiChannel"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -221,6 +223,7 @@ import {
   ConfigValueType,
   EventMessage,
   EventType,
+  OutputProtocol,
   PlayerConfig,
   PlayerFeature,
   PlayerType,
@@ -235,13 +238,19 @@ import {
   isInjected,
   mergeConfigEntries,
 } from "@/helpers/config_entry_ui";
+import { getPlayerActionProvider } from "@/helpers/action_result";
 import { getHassProviderInstance } from "@/helpers/hass_controls";
 import { goBack } from "@/helpers/navigation";
 import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
-import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import {
+  getOutputMenuItems,
+  getPlayerSettingsMenuItems,
+  isPlayerBeingRemoved,
+} from "@/helpers/player_settings_actions";
 import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { useMultiChannelCandidates } from "@/composables/settings/players/useMultiChannelCandidates";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import {
@@ -289,9 +298,25 @@ const unsubConfigUpdated = api.subscribe(
 );
 onBeforeUnmount(unsubConfigUpdated);
 
+// the players the server removed while this page was open, which have no config to fetch
+const removedPlayerIds = new Set<string>();
+const unsubPlayerRemoved = api.subscribe(
+  EventType.PLAYER_REMOVED,
+  (evt: EventMessage) => {
+    if (evt.object_id) removedPlayerIds.add(evt.object_id);
+  },
+);
+onBeforeUnmount(unsubPlayerRemoved);
+
 // computed properties
 const player = computed(() =>
   config.value ? api.players[config.value.player_id] : undefined,
+);
+
+const multiChannelCandidates = useMultiChannelCandidates(player);
+
+const isMultiChannel = computed(
+  () => player.value?.type === PlayerType.MULTI_CHANNEL,
 );
 
 const playerSetupLabel = computed(() =>
@@ -408,15 +433,6 @@ const openPlayerMenu = function (evt: MouseEvent) {
       editConfig.value?.discardChanges();
       router.replace(`/settings/editplayer/${targetPlayerId}`);
     },
-    // the server reset the choices that named the output that went, so the
-    // form starts over from what is stored
-    onSplitOff: () => {
-      if (!config.value) return;
-      const playerId = config.value.player_id;
-      editConfig.value?.discardChanges();
-      config.value = undefined;
-      void loadConfig(playerId);
-    },
   });
   // resetting acts on the form rather than on the player, so it is not part of
   // the menu the other player surfaces share
@@ -436,6 +452,27 @@ const openPlayerMenu = function (evt: MouseEvent) {
     items: menuItems,
     posX: trigger ? trigger.left : evt.clientX,
     posY: trigger ? trigger.bottom : evt.clientY,
+  });
+};
+
+const getOutputMenu = function (output: OutputProtocol) {
+  if (!config.value) return [];
+  return getOutputMenuItems(config.value, output, {
+    multiChannelCandidates: multiChannelCandidates.value,
+    // the server reset the choices that named the output that went, so the
+    // form starts over from what is stored
+    onSplitOff: () => {
+      if (!config.value) return;
+      const playerId = config.value.player_id;
+      editConfig.value?.discardChanges();
+      config.value = undefined;
+      void loadConfig(playerId);
+    },
+    // the output moved into the new player, and this player may be gone with it
+    onMultiChannelCreated: (playerId) => {
+      editConfig.value?.discardChanges();
+      router.replace(`/settings/editplayer/${playerId}`);
+    },
   });
 };
 
@@ -504,10 +541,8 @@ const onImmediateApply = async function (
   api
     .savePlayerConfig(props.playerId!, values)
     .then((updatedConfig) => {
-      // update local config values with the server response
-      for (const [key, entry] of Object.entries(updatedConfig.values)) {
-        config.value!.values[key] = entry;
-      }
+      // the other values the user changed are still waiting for a save
+      applyPlayerConfig(updatedConfig, Object.keys(values));
     })
     .finally(() => {
       loading.value = false;
@@ -520,6 +555,8 @@ const { onAction } = useConfigAction({
   invokeAction: (action) =>
     api.invokePlayerConfigAction(config.value!.player_id, action),
   saveValues: (values) => api.savePlayerConfig(props.playerId!, values),
+  answeredBy: (action) =>
+    getPlayerActionProvider(api.players[config.value!.player_id], action),
 });
 
 async function loadConfig(playerId: string) {
@@ -537,10 +574,16 @@ async function loadConfig(playerId: string) {
 }
 
 async function refreshPlayerConfig(playerId: string) {
-  if (config.value?.player_id !== playerId) return;
+  if (config.value?.player_id !== playerId || isPlayerGoing(playerId)) return;
   const requestId = ++configRefreshRequestId;
+  // a player can go with its config while the refresh is on its way, such as a speaker
+  // that went up in a multi-channel player; the page leaves it then, so that is no error
+  const wasLive = playerId in api.players;
+  const isGone = () => wasLive && !(playerId in api.players);
   try {
-    const updatedConfig = await api.getPlayerConfig(playerId);
+    const updatedConfig = await api.getPlayerConfig(playerId, {
+      suppressGlobalError: isGone,
+    });
     if (
       requestId === configRefreshRequestId &&
       props.playerId === playerId &&
@@ -552,23 +595,36 @@ async function refreshPlayerConfig(playerId: string) {
     if (
       requestId === configRefreshRequestId &&
       props.playerId === playerId &&
-      config.value?.player_id === playerId
+      config.value?.player_id === playerId &&
+      !isGone()
     ) {
       toast.error(String(err));
     }
   }
 }
 
-function applyPlayerConfig(updatedConfig: PlayerConfig) {
+function applyPlayerConfig(updatedConfig: PlayerConfig, saved: string[] = []) {
   if (!config.value) return;
   config.value = {
     ...updatedConfig,
-    values: mergeConfigEntries(config.value.values, updatedConfig.values),
+    values: mergeConfigEntries(
+      config.value.values,
+      updatedConfig.values,
+      saved,
+    ),
   };
 }
 
 function isCurrentPlayer(playerId: string) {
   return props.playerId === playerId && config.value?.player_id === playerId;
+}
+
+// a player that is being removed, or that is gone, has no config left to fetch
+function isPlayerGoing(playerId: string): boolean {
+  return (
+    isPlayerBeingRemoved(playerId) ||
+    (removedPlayerIds.has(playerId) && !(playerId in api.players))
+  );
 }
 
 function resetPlayerState(playerId?: string) {

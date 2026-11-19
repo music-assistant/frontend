@@ -11,11 +11,12 @@ import {
   leaveFirstRunSetup,
   useFirstRunSetup,
 } from "@/composables/useFirstRunSetup";
+import { isDark } from "@/composables/useThemePreference";
 import { saveDeviceSetting } from "@/helpers/device_settings";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
-import { nextTick } from "vue";
+import { nextTick, reactive } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "vue-sonner";
 import { role } from "./fixtures/role";
@@ -501,6 +502,20 @@ describe("App initialization", () => {
 
     saveDeviceSetting("force_mobile_layout", null);
     expect(storeMock.forceMobileLayout).toBe(false);
+  });
+
+  it("shows a theme picked for the account without a reload", async () => {
+    // the preferences are written through the reactive account, as the store
+    // hands it out
+    const account = reactive(user({ preferences: { theme: "light" } }));
+    storeMock.currentUser = account;
+    wrapper = await mountApp();
+    expect(isDark.value).toBe(false);
+
+    account.preferences = { theme: "dark" };
+    await nextTick();
+
+    expect(isDark.value).toBe(true);
   });
 
   describe("onboarding", () => {

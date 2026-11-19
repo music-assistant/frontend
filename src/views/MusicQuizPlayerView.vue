@@ -348,6 +348,45 @@ const playerRoundScoreLabel = computed(() =>
 const playerRoundResults = computed<MusicQuizRoundResult[]>(() => {
   const currentState = activeState.value;
   if (!currentState || currentState.phase !== "reveal") return [];
+  // hint-text players have no single locked answer, only whether they solved it
+  if (currentState.answer_type === "hint_text") {
+    const {
+      solved,
+      title_points,
+      first_bonus,
+      artist_bonus,
+      active_from_round,
+    } = currentState.you;
+    if (solved === undefined) return [];
+    // late joiners only play from the next round, so this one is not theirs to fail
+    const round = currentState.current_round;
+    if (!round || active_from_round > round.round_index) return [];
+    const results: MusicQuizRoundResult[] = [
+      {
+        key: "answer",
+        label: $t("providers.music_quiz.round_result_answer"),
+        correct: solved,
+        points: title_points ?? 0,
+      },
+    ];
+    if (first_bonus) {
+      results.push({
+        key: "first",
+        label: $t("providers.music_quiz.title_reveal_first_bonus_result"),
+        correct: true,
+        points: first_bonus,
+      });
+    }
+    if (artist_bonus?.done) {
+      results.push({
+        key: "artist",
+        label: $t("providers.music_quiz.timeline_artist_bonus"),
+        correct: artist_bonus.correct ?? false,
+        points: artist_bonus.points ?? 0,
+      });
+    }
+    return results;
+  }
   const answer = currentState.you.answer;
   if (!answer) return [];
   // "bonuses" is required on timeline answers, unlike the optional bonus_results

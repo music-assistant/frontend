@@ -6,6 +6,14 @@
     <header class="flex shrink-0 flex-col gap-3">
       <p class="text-muted-foreground text-sm">{{ $t(trackTitleKey) }}</p>
       <template v-if="ready && currentStep">
+        <!-- decorative: the title below names the app -->
+        <img
+          v-if="currentId === 'get_started'"
+          :src="logoSrc"
+          alt=""
+          class="mx-auto my-4 h-10 w-auto max-w-full"
+          data-testid="onboarding-logo"
+        />
         <!-- as tall as the back button, so the title stays put without it -->
         <div class="flex min-h-9 min-w-0 items-center gap-2">
           <Button
@@ -13,7 +21,7 @@
             variant="ghost"
             size="icon"
             class="-ml-2 shrink-0"
-            :disabled="moving"
+            :disabled="moving || stepBusy"
             :aria-label="$t('back')"
             :title="$t('back')"
             data-testid="onboarding-back"
@@ -24,6 +32,7 @@
           <h1
             ref="stepHeading"
             class="text-xl font-semibold outline-none"
+            :class="{ 'mx-auto text-center': currentId === 'get_started' }"
             tabindex="-1"
             data-testid="onboarding-heading"
           >
@@ -98,6 +107,17 @@
         {{ $t("onboarding.finish") }}
       </Button>
       <Button
+        v-else-if="forwardForm"
+        type="submit"
+        :form="forwardForm.id"
+        class="w-full sm:w-auto"
+        :disabled="moving"
+        :loading="stepBusy"
+        data-testid="onboarding-next"
+      >
+        {{ forwardLabel }}
+      </Button>
+      <Button
         v-else
         class="w-full sm:w-auto"
         :variant="skipping ? 'secondary' : 'default'"
@@ -115,8 +135,11 @@
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
 import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
+import AIStep from "@/components/onboarding/steps/AIStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
 import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
+import GetStartedStep from "@/components/onboarding/steps/GetStartedStep.vue";
+import HomeAssistantStep from "@/components/onboarding/steps/HomeAssistantStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
@@ -128,11 +151,13 @@ import YourPlayersStep from "@/components/onboarding/steps/YourPlayersStep.vue";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useOnboarding } from "@/composables/useOnboarding";
+import { isDark } from "@/composables/useThemePreference";
 import { useTour } from "@/composables/useTour";
 import {
   firstStep,
   stepTitleKey,
   type OnboardingStepId,
+  type StepForwardForm,
   type StepLeaveOptions,
 } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
@@ -166,6 +191,7 @@ const STEP_VIEWS: Record<
   OnboardingStepId,
   { component: Component; props?: Record<string, unknown> }
 > = {
+  get_started: { component: markRaw(GetStartedStep) },
   account: { component: markRaw(AccountStep) },
   intent: { component: markRaw(IntentStep) },
   music_sources: {
@@ -178,6 +204,8 @@ const STEP_VIEWS: Record<
     props: { providerType: ProviderType.PLUGIN },
   },
   core_settings: { component: markRaw(CoreSettingsStep) },
+  home_assistant: { component: markRaw(HomeAssistantStep) },
+  ai: { component: markRaw(AIStep) },
   invite_members: { component: markRaw(InviteMembersStep) },
   finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
   welcome: { component: markRaw(WelcomeStep) },
@@ -190,9 +218,22 @@ const STEP_VIEWS: Record<
 
 // Do not announce a setup length before the user confirms their choice.
 const PRE_SETUP_STEPS: ReadonlySet<OnboardingStepId> = new Set([
+  "get_started",
   "account",
   "intent",
 ]);
+
+// the logo with light lettering is the one for a dark theme
+const logoSrc = computed(() =>
+  isDark.value
+    ? new URL("@/assets/logo/logo.svg", import.meta.url).href
+    : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
+);
+
+// the steps that move on under a label of their own instead of Next
+const FORWARD_LABEL_KEYS: Partial<Record<OnboardingStepId, string>> = {
+  get_started: "onboarding.steps.get_started.start",
+};
 
 // The step being shown is page state: the wizard never moves by itself while
 // providers arrive, only when the user (or the step it opens on) says so. It
@@ -203,8 +244,8 @@ const stepHeading = ref<HTMLHeadingElement | null>(null);
 const finishing = ref(false);
 // whether this open's data is in and its opening step is settled
 const ready = ref(false);
-// a step can take a moment to let go of the user — the server settings save on
-// their way out — and a second click must not set off from where the first one
+// a step can take a moment to let go of the user — an answer saves on its way
+// out — and a second click must not set off from where the first one
 // has already arrived
 const moving = ref(false);
 // what stops the players being followed once the wizard is gone
@@ -215,8 +256,11 @@ interface StepInstance {
   beforeLeave?: (options?: StepLeaveOptions) => Promise<boolean>;
   // a choice step raises this while its answer is on its way to the server
   busy?: boolean;
-  // a step with a submit of its own, which the wizard's Next stands down for
+  // a step whose way on is its own, which the wizard's forward button stands
+  // down for
   ownsForwardAction?: boolean;
+  // a step with a form of its own, which the wizard's forward button submits
+  forwardForm?: StepForwardForm;
 }
 
 const stepRef = ref<StepInstance | null>(null);
@@ -227,8 +271,9 @@ const stepRef = ref<StepInstance | null>(null);
 const leaveStep = async (options?: StepLeaveOptions) =>
   (await stepRef.value?.beforeLeave?.(options)) ?? true;
 
-// Next waits for the selected answer to reach the server.
+// Next and Back wait for the selected answer to reach the server.
 const stepBusy = computed(() => stepRef.value?.busy ?? false);
+const forwardForm = computed(() => stepRef.value?.forwardForm);
 
 // steps the user has been past, so a review stays ticked after going back
 const passedSteps = ref(new Set<OnboardingStepId>());
@@ -237,7 +282,12 @@ const currentIndex = computed(() =>
   steps.value.findIndex((step) => step.id === currentId.value),
 );
 const currentStep = computed(() => steps.value[currentIndex.value]);
-const canGoBack = computed(() => currentIndex.value > 0);
+const previousStep = computed(() => steps.value[currentIndex.value - 1]);
+// a step done for good is behind the user, and so is everything before it
+const canGoBack = computed(() => {
+  const previous = previousStep.value;
+  return previous != null && !(previous.oneWay && previous.isDone(ctx.value));
+});
 // the progress list, done state and all, in the same order the wizard walks
 // a review has nothing to tick off, so one the user has been past counts as
 // looked over
@@ -286,8 +336,8 @@ const stepView = computed(() => {
   };
 });
 
-// A form step owns its own submit, so the footer is for the other steps; on
-// the summary it holds Finish.
+// A step can hold its own way on, so the footer is for the other steps; on the
+// summary it holds Finish.
 const showForwardAction = computed(
   () => currentStep.value != null && !stepRef.value?.ownsForwardAction,
 );
@@ -296,15 +346,14 @@ const skipping = computed(() => {
   const step = currentStep.value;
   return !!step?.optional && !step.isDone(ctx.value);
 });
-const forwardLabel = computed(() =>
-  skipping.value
-    ? $t("onboarding.skip")
-    : $t(
-        currentId.value === "intent" || currentId.value === "welcome"
-          ? "onboarding.continue"
-          : "onboarding.next",
-      ),
-);
+const forwardLabel = computed(() => {
+  if (forwardForm.value) return $t(forwardForm.value.labelKey);
+  if (skipping.value) return $t("onboarding.skip");
+  return $t(
+    (currentId.value && FORWARD_LABEL_KEYS[currentId.value]) ??
+      "onboarding.next",
+  );
+});
 
 const goTo = function (id: OnboardingStepId) {
   currentId.value = id;
@@ -316,7 +365,7 @@ const goToGuarded = async function (id: OnboardingStepId) {
   if (moving.value) return;
   moving.value = true;
   try {
-    if (!(await leaveStep())) return;
+    if (!(await leaveStep({ back: true }))) return;
     goTo(id);
   } finally {
     moving.value = false;
@@ -324,8 +373,7 @@ const goToGuarded = async function (id: OnboardingStepId) {
 };
 
 const back = async function () {
-  const previous = steps.value[currentIndex.value - 1];
-  if (previous) await goToGuarded(previous.id);
+  if (canGoBack.value) await goToGuarded(previousStep.value.id);
 };
 
 const jumpTo = async function (id: OnboardingStepId) {
@@ -334,8 +382,7 @@ const jumpTo = async function (id: OnboardingStepId) {
 
 // Next moves one step along the visible order and no further: a step that is
 // already done is walked through, not skipped over, so the running order the
-// user sees is the order they move through. A question walked past answers
-// itself with its recommended option, which the step does on its way out.
+// user sees is the order they move through.
 const next = async function () {
   // a choice being saved must land before Next can leave the question
   if (moving.value || stepBusy.value) return;
