@@ -1,6 +1,10 @@
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
-import { ProviderStage } from "@/plugins/api/interfaces";
+import {
+  MediaType,
+  ProviderStage,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { communityProvider } from "../../fixtures/communityProvider";
@@ -120,6 +124,26 @@ describe("CatalogCard", () => {
     );
 
     expect(wrapper.text()).toContain("settings.stage.options.beta");
+  });
+
+  it("says what it offers, as its manifest says", () => {
+    const labels = (manifest: Parameters<typeof providerManifest>[0]) =>
+      mountCard(entry({ manifest: providerManifest(manifest) }))
+        .findAll("[data-testid='source-labels'] [data-label]")
+        .map((label) => label.attributes("data-label"));
+
+    expect(
+      labels({
+        media_types: [MediaType.ALBUM, MediaType.AUDIOBOOK],
+      }),
+    ).toEqual(["library", "audiobooks"]);
+    expect(
+      labels({
+        type: ProviderType.PLUGIN,
+        media_types: [MediaType.AUDIO_SOURCE],
+      }),
+    ).toEqual(["live"]);
+    expect(labels({})).toEqual([]);
   });
 
   it("says what it goes well with in place of who maintains it", () => {

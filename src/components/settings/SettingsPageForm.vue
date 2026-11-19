@@ -11,6 +11,7 @@
         ref="editConfig"
         :config-entries="entries"
         :disabled="false"
+        :provider-domain="settingsPageProviderDomain(page)"
         inline-save
         @submit="onSubmit"
         @action="onAction"
@@ -42,9 +43,12 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { useSettingsPage } from "@/composables/settings/useSettingsPage";
-import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import type { SettingsField } from "@/helpers/settings_form";
-import type { SettingsPageId } from "@/helpers/settings_pages";
+import {
+  settingsPageProviderDomain,
+  type SettingsPageId,
+} from "@/helpers/settings_pages";
 import type { ConfigEntry, ConfigValueType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import EditConfig from "@/views/settings/EditConfig.vue";
@@ -60,6 +64,9 @@ const props = defineProps<{
   page: SettingsPageId;
   // settings the page edits with controls of its own, in the custom slot
   customSettings?: readonly SettingsField[];
+  // the form is a part of a page about something else, so the page's menu
+  // does not offer to reset it
+  embedded?: boolean;
 }>();
 
 defineSlots<{
@@ -122,12 +129,12 @@ const resetToDefaults = function () {
   emit("reset");
 };
 
-// the toolbar's menu resets the form while it is on screen
-const toolbarMenu = useSettingsToolbarMenu();
+// the page's menu resets the form while it is on screen
+const pageMenu = useSettingsPageMenu();
 watch(
-  () => showForm.value && loaded.value,
+  () => !props.embedded && showForm.value && loaded.value,
   (resettable) => {
-    toolbarMenu.value = resettable
+    pageMenu.value = resettable
       ? [
           {
             label: "settings.reset_to_defaults",
@@ -140,7 +147,7 @@ watch(
   { immediate: true },
 );
 onBeforeUnmount(() => {
-  toolbarMenu.value = [];
+  pageMenu.value = [];
 });
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {

@@ -8,6 +8,7 @@ import {
   useUserPreferences,
 } from "@/composables/userPreferences";
 import { EXPERT_MODE_PREFERENCE, expertModeOf } from "@/helpers/expert_mode";
+import { HASS_DOMAIN } from "@/helpers/home_assistant";
 import {
   applicableSteps,
   pendingSteps,
@@ -486,6 +487,10 @@ const ctx = computed<OnboardingContext>(() => ({
   // summary's "2 players" label reads this, as whether the step is done keys
   // off a configured PLAYER provider, not off players turning up
   playerCount: listedPlayerConfigs().filter((config) => config.enabled).length,
+  homeAssistantAddon: !!api.serverInfo.value?.homeassistant_addon,
+  homeAssistantConfigured: (providerConfigs.value ?? []).some(
+    (config) => config.domain === HASS_DOMAIN,
+  ),
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,

@@ -1,11 +1,16 @@
-import { type ConfigEntry, Scope } from "@/plugins/api/interfaces";
-import { Activity, CirclePlay } from "@lucide/vue";
-import type { Component } from "vue";
-import type { RouteLocationRaw } from "vue-router";
+import { HASS_DOMAIN } from "@/helpers/home_assistant";
+import { isAudioSourcePlugin } from "@/helpers/provider_config";
+import {
+  type ConfigEntry,
+  type MediaType,
+  ProviderType,
+  Scope,
+} from "@/plugins/api/interfaces";
 
-export type SettingsOwnerKind = "core";
+export type SettingsOwnerKind = "core" | "provider";
 
-// what defines config entries; for a core owner the id is the controller domain
+// what defines config entries; for a core owner the id is the controller
+// domain, for a provider owner the domain of a provider with a single instance
 export interface SettingsOwner {
   kind: SettingsOwnerKind;
   id: string;
@@ -20,32 +25,25 @@ export interface SettingsSource {
   title?: string;
 }
 
-// the row a settings section shows above its list, leading to the page
-export interface SettingsPageLink {
-  // the SettingsSection name of the menu item showing the row
-  section: string;
-  icon: Component;
-  label: string;
-  description: string;
-  requiresScope?: Scope;
-}
-
+// the settings a settings page shows; the page of the settings menu under the
+// same id gives its route and heading
 export interface SettingsPage {
-  title: string;
-  route: RouteLocationRaw;
-  link?: SettingsPageLink;
+  // the domain of the provider the page is about: the page manages it, so the
+  // lists of providers leave it out
+  provider?: string;
   sources: readonly SettingsSource[];
 }
 
 export type SettingsPageId =
-  "audio_analysis" | "background_tasks" | "network" | "playback";
-
-// a settings page with the row leading to it
-export interface LinkedSettingsPage {
-  id: SettingsPageId;
-  route: RouteLocationRaw;
-  link: SettingsPageLink;
-}
+  | "audio_analysis"
+  | "diagnostics"
+  | "home_assistant"
+  | "library"
+  | "metadata"
+  | "network"
+  | "playback"
+  | "task_settings"
+  | "users";
 
 export const STREAMS_DOMAIN = "streams";
 export const TASKS_DOMAIN = "tasks";
@@ -53,29 +51,26 @@ export const WEBSERVER_DOMAIN = "webserver";
 export const DISCOVERY_DOMAIN = "discovery";
 export const PLAYER_QUEUES_DOMAIN = "player_queues";
 export const PLAYERS_DOMAIN = "players";
+export const MUSIC_DOMAIN = "music";
+export const METADATA_DOMAIN = "metadata";
+export const CACHE_DOMAIN = "cache";
+export const STATISTICS_DOMAIN = "statistics";
 export const AUDIO_ANALYSIS_CATEGORY = "audio_analysis";
+export const ACCOUNT_ACCESS_CATEGORY = "account_access";
+// the log level every core module has, which Diagnostics sets for every module
+export const LOG_LEVEL_KEY = "log_level";
 // the category of an entry that names none
 const GENERIC_CATEGORY = "generic";
-// the log level every owner has, which follows the owner as a whole
-const LOG_LEVEL_KEY = "log_level";
 
 // the scope needed to change the settings of each kind of owner
 const OWNER_WRITE_SCOPES: Readonly<Record<SettingsOwnerKind, Scope>> = {
   core: Scope.CONFIG_CORE_WRITE,
+  provider: Scope.CONFIG_PROVIDERS_WRITE,
 };
 
 // the settings pages and the config entries each of them shows
 export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
   audio_analysis: {
-    title: "settings.audio_analysis_status.title",
-    route: { name: "audioanalysissettings" },
-    link: {
-      section: "audio_analysis_providers",
-      icon: Activity,
-      label: "settings.audio_analysis_status.title",
-      description: "settings.audio_analysis_status.description",
-      requiresScope: Scope.SYSTEM_MANAGE,
-    },
     sources: [
       {
         owner: coreOwner(STREAMS_DOMAIN),
@@ -83,17 +78,50 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
       },
     ],
   },
-  background_tasks: {
-    title: "background_tasks.title",
-    route: { name: "backgroundtasks" },
-    sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
+  diagnostics: {
+    sources: [
+      {
+        owner: coreOwner(CACHE_DOMAIN),
+        title: "settings.core_module.cache.name",
+      },
+      // the statistics module has no settings besides its log level
+      {
+        owner: coreOwner(STATISTICS_DOMAIN),
+        title: "settings.core_module.statistics.name",
+      },
+    ],
+  },
+  home_assistant: {
+    provider: HASS_DOMAIN,
+    sources: [
+      {
+        owner: providerOwner(HASS_DOMAIN),
+        categories: ["player_controls"],
+      },
+    ],
+  },
+  library: {
+    // the sections follow the order of the sources: which source plays leads
+    sources: [
+      {
+        owner: coreOwner(STREAMS_DOMAIN),
+        categories: ["source_selection"],
+        title: "settings.library.source_selection",
+      },
+      {
+        owner: coreOwner(MUSIC_DOMAIN),
+        title: "settings.library.maintenance",
+      },
+    ],
+  },
+  metadata: {
+    sources: [{ owner: coreOwner(METADATA_DOMAIN) }],
   },
   network: {
-    title: "settings.network.title",
-    route: { name: "networksettings" },
     sources: [
       {
         owner: coreOwner(WEBSERVER_DOMAIN),
+        categories: [GENERIC_CATEGORY],
         title: "settings.network.web",
       },
       {
@@ -108,15 +136,6 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     ],
   },
   playback: {
-    title: "settings.playback.title",
-    route: { name: "playbacksettings" },
-    link: {
-      section: "players",
-      icon: CirclePlay,
-      label: "settings.playback.title",
-      description: "settings.playback.description",
-      requiresScope: Scope.CONFIG_CORE_WRITE,
-    },
     // the sections follow the order of the sources
     sources: [
       { owner: coreOwner(PLAYER_QUEUES_DOMAIN) },
@@ -127,85 +146,52 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
       { owner: coreOwner(PLAYERS_DOMAIN) },
     ],
   },
+  task_settings: {
+    sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
+  },
+  users: {
+    sources: [
+      {
+        owner: coreOwner(WEBSERVER_DOMAIN),
+        categories: [ACCOUNT_ACCESS_CATEGORY],
+      },
+    ],
+  },
 };
 
 export function coreOwner(domain: string): SettingsOwner {
   return { kind: "core", id: domain };
 }
 
+export function providerOwner(domain: string): SettingsOwner {
+  return { kind: "provider", id: domain };
+}
+
 /**
- * Whether a source shows the given entry of its owner. A source showing some
- * categories of its owner leaves out the log level of the owner.
+ * Whether a source shows the given entry of its owner. No source shows the log
+ * level of its owner: Diagnostics sets the log level of every module, and the
+ * page of a provider instance its own.
  */
 export function sourceIncludesEntry(
   source: SettingsSource,
   entry: ConfigEntry,
 ): boolean {
-  if (!source.categories) return true;
+  if (entry.key === LOG_LEVEL_KEY) return false;
   return (
-    entry.key !== LOG_LEVEL_KEY &&
+    !source.categories ||
     source.categories.includes(entry.category || GENERIC_CATEGORY)
   );
 }
 
 /**
- * Whether a settings page shows the given entry of an owner.
+ * Whether a settings page shows settings of an owner, all of them or some.
  */
-export function isEntryClaimed(
-  owner: SettingsOwner,
-  entry: ConfigEntry,
-): boolean {
-  return sourcesOf(owner).some((source) => sourceIncludesEntry(source, entry));
-}
-
-/**
- * The entries of an owner that a settings page shows, in their given order.
- */
-export function claimedEntries<T extends ConfigEntry>(
-  owner: SettingsOwner,
-  entries: readonly T[],
-): T[] {
-  return entries.filter((entry) => isEntryClaimed(owner, entry));
-}
-
-/**
- * The settings page showing every entry of an owner, if any.
- */
-export function pageOfWholeOwner(
-  owner: SettingsOwner,
-): SettingsPageId | undefined {
-  return pageIds().find((id) =>
-    SETTINGS_PAGES[id].sources.some(
-      (source) => isSameOwner(source.owner, owner) && !source.categories,
+export function isKnownOwner(owner: SettingsOwner): boolean {
+  return pageIds().some((id) =>
+    SETTINGS_PAGES[id].sources.some((source) =>
+      isSameOwner(source.owner, owner),
     ),
   );
-}
-
-/**
- * Whether a settings page shows every entry of an owner.
- */
-export function isOwnerFullyClaimed(owner: SettingsOwner): boolean {
-  return pageOfWholeOwner(owner) !== undefined;
-}
-
-/**
- * The settings pages a settings section links to above its list.
- *
- * @param sectionName - The name of the settings section.
- * @param hasScope - Whether the role of the current user grants the given scope.
- */
-export function settingsSectionLinks(
-  sectionName: string | undefined,
-  hasScope: (scope: Scope) => boolean,
-): LinkedSettingsPage[] {
-  const links: LinkedSettingsPage[] = [];
-  for (const id of pageIds()) {
-    const { route, link } = SETTINGS_PAGES[id];
-    if (!link || link.section !== sectionName) continue;
-    if (link.requiresScope && !hasScope(link.requiresScope)) continue;
-    links.push({ id, route, link });
-  }
-  return links;
 }
 
 /**
@@ -224,6 +210,71 @@ export function canEditSettingsPage(
 }
 
 /**
+ * The settings page of its own a provider has, which manages it instead of a
+ * list of providers.
+ *
+ * @param domain - The domain of the provider.
+ */
+export function providerSettingsPageId(
+  domain: string,
+): SettingsPageId | undefined {
+  return pageIds().find((id) => SETTINGS_PAGES[id].provider === domain);
+}
+
+/**
+ * The list a provider shows in on the settings pages and in the Marketplace: a
+ * plugin through which apps play audio into Music Assistant goes with the music
+ * sources, any other provider with the providers of its type. A provider with a
+ * settings page of its own is managed from that page instead of a list.
+ *
+ * @param type - The type of the provider.
+ * @param mediaTypes - The media types its manifest names.
+ */
+export function providerListType(
+  type: ProviderType,
+  mediaTypes?: readonly MediaType[],
+): ProviderType {
+  return isAudioSourcePlugin({ type, media_types: mediaTypes })
+    ? ProviderType.MUSIC
+    : type;
+}
+
+/**
+ * The settings of a provider that its own settings page shows, in their given
+ * order: the page of the provider instance leaves them out.
+ *
+ * @param domain - The domain of the provider.
+ * @param entries - The settings of the provider instance.
+ */
+export function providerPageEntries<T extends ConfigEntry>(
+  domain: string,
+  entries: readonly T[],
+): T[] {
+  const owner = providerOwner(domain);
+  const pageId = providerSettingsPageId(domain);
+  const sources = (pageId ? SETTINGS_PAGES[pageId].sources : []).filter(
+    (source) => isSameOwner(source.owner, owner),
+  );
+  return entries.filter((entry) =>
+    sources.some((source) => sourceIncludesEntry(source, entry)),
+  );
+}
+
+/**
+ * The domain of the provider a page shows the settings of, when it shows no
+ * other settings: the form of such a page keys them as the provider does.
+ *
+ * @param pageId - The settings page.
+ */
+export function settingsPageProviderDomain(
+  pageId: SettingsPageId,
+): string | undefined {
+  const { sources } = SETTINGS_PAGES[pageId];
+  const owner = sources.length === 1 ? sources[0].owner : undefined;
+  return owner?.kind === "provider" ? owner.id : undefined;
+}
+
+/**
  * Whether two owners are the same.
  */
 export function isSameOwner(a: SettingsOwner, b: SettingsOwner): boolean {
@@ -232,12 +283,4 @@ export function isSameOwner(a: SettingsOwner, b: SettingsOwner): boolean {
 
 function pageIds(): SettingsPageId[] {
   return Object.keys(SETTINGS_PAGES) as SettingsPageId[];
-}
-
-function sourcesOf(owner: SettingsOwner): SettingsSource[] {
-  return pageIds().flatMap((id) =>
-    SETTINGS_PAGES[id].sources.filter((source) =>
-      isSameOwner(source.owner, owner),
-    ),
-  );
 }

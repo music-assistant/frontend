@@ -1,5 +1,12 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
-import { Scope, UserRole } from "@/plugins/api/interfaces";
+import {
+  ConfigEntryType,
+  Scope,
+  UserRole,
+  type ConfigEntry,
+  type CoreConfig,
+} from "@/plugins/api/interfaces";
 import UserManagement from "@/views/settings/UserManagement.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,7 +15,7 @@ import { user } from "../fixtures/user";
 
 const { apiMock, hasScopeMock, routeMock, routerMock, storeMock } = vi.hoisted(
   () => ({
-    apiMock: { getAllUsers: vi.fn() },
+    apiMock: { getAllUsers: vi.fn(), getCoreConfig: vi.fn() },
     hasScopeMock: vi.fn<(scope: Scope) => boolean>(),
     routeMock: { query: {} as Record<string, string> },
     routerMock: { push: vi.fn(), replace: vi.fn() },
@@ -43,6 +50,13 @@ vi.mock("vue-i18n", async (importOriginal) => ({
 
 const passthrough = { template: "<div><slot /></div>" };
 
+// the form is covered where it lives
+const editConfigStub = {
+  name: "EditConfig",
+  props: { configEntries: Array, disabled: Boolean, inlineSave: Boolean },
+  template: "<div data-testid='edit-config' />",
+};
+
 async function mountView() {
   apiMock.getAllUsers.mockResolvedValue([
     user({
@@ -72,6 +86,7 @@ async function mountView() {
         DropdownMenuItem: passthrough,
         DropdownMenuSeparator: true,
         DropdownMenuTrigger: passthrough,
+        EditConfig: editConfigStub,
       },
     },
   });
@@ -80,8 +95,17 @@ async function mountView() {
 }
 
 describe("UserManagement", () => {
+  it("heads the page with the header of the users", async () => {
+    const wrapper = await mountView();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "users",
+    );
+  });
+
   beforeEach(() => {
     hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    apiMock.getCoreConfig.mockResolvedValue(webserverConfig());
   });
 
   it("shows the System badge only on the Home Assistant account's card", async () => {
@@ -131,3 +155,75 @@ describe("UserManagement", () => {
     ).toBe("line");
   });
 });
+
+describe("UserManagement account access", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  it("lets who may change the server settings choose whether people register themselves", async () => {
+    apiMock.getCoreConfig.mockResolvedValue(
+      webserverConfig({ selfRegistration: true }),
+    );
+
+    const wrapper = await mountView();
+
+    expect(apiMock.getCoreConfig).toHaveBeenCalledWith("webserver");
+    const entries = wrapper
+      .getComponent(editConfigStub)
+      .props("configEntries") as ConfigEntry[];
+    expect(entries.map((entry) => entry.key)).toEqual([
+      "auth_allow_self_registration",
+    ]);
+  });
+
+  it("shows nothing when the server has no account access settings", async () => {
+    apiMock.getCoreConfig.mockResolvedValue(webserverConfig());
+
+    const wrapper = await mountView();
+
+    expect(wrapper.find('[data-testid="edit-config"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="settings-page-form"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("shows nothing to a role that may not change the server settings", async () => {
+    hasScopeMock.mockImplementation(
+      scopeChecker([...BUILTIN_ROLE_SCOPES.guest, Scope.USERS_READ]),
+    );
+
+    const wrapper = await mountView();
+
+    expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="edit-config"]').exists()).toBe(false);
+  });
+});
+
+// the settings of the webserver; the self-registration only once the server
+// puts it in a category of its own
+function webserverConfig({ selfRegistration = false } = {}): CoreConfig {
+  const entry = (key: string, category: string): ConfigEntry => ({
+    key,
+    category,
+    type: ConfigEntryType.BOOLEAN,
+    label: key,
+    default_value: true,
+    required: false,
+    options: [],
+    value: true,
+  });
+  const entries = [
+    entry("server_name", "generic"),
+    entry("log_level", "generic"),
+    ...(selfRegistration
+      ? [entry("auth_allow_self_registration", "account_access")]
+      : []),
+  ];
+  return {
+    domain: "webserver",
+    last_error: null,
+    values: Object.fromEntries(entries.map((e) => [e.key, e])),
+  };
+}

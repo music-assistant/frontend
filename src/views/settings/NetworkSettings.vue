@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-6 p-6">
+    <SettingsPageHeader page="network" />
     <SettingsLinkRows :rows="rows" test-id-prefix="network" />
     <SettingsPageForm
       page="network"
@@ -23,13 +24,13 @@ import SettingsLinkRows, {
   type SettingsRow,
 } from "@/components/settings/SettingsLinkRows.vue";
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import type { SettingsField } from "@/helpers/settings_form";
 import { coreOwner, WEBSERVER_DOMAIN } from "@/helpers/settings_pages";
+import { sectionPages } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
-import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { CloudCog } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 import ServerUrlsCard from "./ServerUrlsCard.vue";
 
@@ -46,18 +47,17 @@ const SERVER_URL_SETTINGS: readonly SettingsField[] = [
 
 const urlCard = ref<InstanceType<typeof ServerUrlsCard>>();
 
+// the page below is remote access, which says whether it is on
 const rows = computed<SettingsRow[]>(() =>
-  authManager.hasScope(Scope.SYSTEM_MANAGE)
-    ? [
-        {
-          key: "remote_access",
-          icon: markRaw(CloudCog),
-          label: $t("settings.remote_access"),
-          description: $t("settings.remote_access_description"),
-          state: $t(api.serverInfo.value?.has_remote_access ? "on" : "off"),
-          to: { name: "remoteaccesssettings" },
-        },
-      ]
-    : [],
+  sectionPages("network", (scope) => authManager.hasScope(scope)).map(
+    (page) => ({
+      key: page.key,
+      icon: markRaw(page.icon),
+      label: $t(page.label),
+      description: $t(page.description),
+      state: $t(api.serverInfo.value?.has_remote_access ? "on" : "off"),
+      to: page.route,
+    }),
+  ),
 );
 </script>

@@ -1,34 +1,51 @@
 import {
   ConfigEntryType,
+  MediaType,
+  ProviderType,
   Scope,
   type ConfigEntry,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../tests/fixtures/scopes";
+import { HASS_DOMAIN } from "./home_assistant";
 import {
+  ACCOUNT_ACCESS_CATEGORY,
   AUDIO_ANALYSIS_CATEGORY,
+  CACHE_DOMAIN,
   canEditSettingsPage,
-  claimedEntries,
   coreOwner,
-  DISCOVERY_DOMAIN,
-  isEntryClaimed,
-  isOwnerFullyClaimed,
-  pageOfWholeOwner,
-  PLAYER_QUEUES_DOMAIN,
-  PLAYERS_DOMAIN,
+  isKnownOwner,
+  LOG_LEVEL_KEY,
+  providerOwner,
+  providerListType,
+  providerPageEntries,
+  providerSettingsPageId,
   SETTINGS_PAGES,
-  settingsSectionLinks,
+  settingsPageProviderDomain,
   sourceIncludesEntry,
   STREAMS_DOMAIN,
   TASKS_DOMAIN,
   WEBSERVER_DOMAIN,
+  type SettingsOwner,
+  type SettingsPageId,
 } from "./settings_pages";
-import { SETTINGS_SECTIONS } from "./settings_sections";
 
 const STREAMS = coreOwner(STREAMS_DOMAIN);
 const TASKS = coreOwner(TASKS_DOMAIN);
-// a controller no settings page shows
-const CACHE = coreOwner("cache");
+const WEBSERVER = coreOwner(WEBSERVER_DOMAIN);
+// the core modules the server offers settings of
+const CONFIGURABLE_CORE_MODULES = [
+  "cache",
+  "discovery",
+  "metadata",
+  "music",
+  "player_queues",
+  "players",
+  "statistics",
+  "streams",
+  "tasks",
+  "webserver",
+];
 
 function entry(key: string, category: string): ConfigEntry {
   return {
@@ -45,6 +62,18 @@ function entry(key: string, category: string): ConfigEntry {
 const ALL_SOURCES = Object.values(SETTINGS_PAGES).flatMap(
   (page) => page.sources,
 );
+
+// the pages showing an entry of an owner
+function pagesShowing(owner: SettingsOwner, configEntry: ConfigEntry) {
+  return (Object.keys(SETTINGS_PAGES) as SettingsPageId[]).filter((id) =>
+    SETTINGS_PAGES[id].sources.some(
+      (source) =>
+        source.owner.kind === owner.kind &&
+        source.owner.id === owner.id &&
+        sourceIncludesEntry(source, configEntry),
+    ),
+  );
+}
 
 describe("SETTINGS_PAGES", () => {
   it("shows no category of an owner on two pages", () => {
@@ -89,19 +118,15 @@ describe("SETTINGS_PAGES", () => {
       if (page.sources.length === 1) expect(page.sources[0].title).toBeFalsy();
     }
   });
-
-  it("links each page from an existing settings section", () => {
-    const sectionNames = SETTINGS_SECTIONS.map((section) => section.name);
-    for (const page of Object.values(SETTINGS_PAGES)) {
-      if (page.link) expect(sectionNames).toContain(page.link.section);
-    }
-  });
 });
 
 describe("sourceIncludesEntry", () => {
-  it("includes every entry for a source without categories", () => {
+  it("includes every other entry for a source without categories", () => {
     expect(
-      sourceIncludesEntry({ owner: TASKS }, entry("log_level", "advanced")),
+      sourceIncludesEntry(
+        { owner: TASKS },
+        entry("max_concurrent_tasks", "generic"),
+      ),
     ).toBe(true);
   });
 
@@ -111,149 +136,176 @@ describe("sourceIncludesEntry", () => {
     expect(sourceIncludesEntry(source, entry("b", "generic"))).toBe(false);
   });
 
-  it("leaves the log level of the owner out of listed categories", () => {
-    expect(
-      sourceIncludesEntry(
-        { owner: STREAMS, categories: ["generic"] },
-        entry("log_level", "generic"),
-      ),
-    ).toBe(false);
+  it.each([
+    ["a source without categories", { owner: TASKS }],
+    ["listed categories", { owner: STREAMS, categories: ["generic"] }],
+  ])("leaves the log level of the owner out of %s", (_name, source) => {
+    expect(sourceIncludesEntry(source, entry(LOG_LEVEL_KEY, "generic"))).toBe(
+      false,
+    );
   });
 });
 
-describe("isEntryClaimed", () => {
-  it("claims the audio analysis entries of the streams controller", () => {
+describe("the page of each setting", () => {
+  it("shows the audio analysis entries of the streams module on its page", () => {
     expect(
-      isEntryClaimed(
+      pagesShowing(
         STREAMS,
         entry("background_scan_concurrency", AUDIO_ANALYSIS_CATEGORY),
       ),
-    ).toBe(true);
-  });
-
-  it("leaves the other entries of the streams controller alone", () => {
-    expect(
-      isEntryClaimed(STREAMS, entry("stream_source_mode", "source_selection")),
-    ).toBe(false);
-  });
-
-  it.each(["playback", "crossfade", "volume_normalization"])(
-    "claims the %s entries of the streams controller",
-    (category) => {
-      expect(isEntryClaimed(STREAMS, entry("buffer_size", category))).toBe(
-        true,
-      );
-    },
-  );
-
-  it("claims the network entries of the streams controller", () => {
-    expect(isEntryClaimed(STREAMS, entry("bind_port", "generic"))).toBe(true);
-  });
-
-  it("leaves the log level of the streams controller alone", () => {
-    expect(isEntryClaimed(STREAMS, entry("log_level", "generic"))).toBe(false);
-  });
-
-  it("counts an entry without a category as generic", () => {
-    expect(isEntryClaimed(STREAMS, entry("publish_ip", ""))).toBe(true);
-  });
-
-  it("claims every entry of the tasks controller", () => {
-    expect(isEntryClaimed(TASKS, entry("log_level", "advanced"))).toBe(true);
-  });
-
-  it("claims nothing of an owner no page shows", () => {
-    expect(isEntryClaimed(CACHE, entry("bind_port", "generic"))).toBe(false);
-  });
-});
-
-describe("claimedEntries", () => {
-  it("keeps the claimed entries in their order", () => {
-    const first = entry("smart_fades_log_level", AUDIO_ANALYSIS_CATEGORY);
-    const second = entry(
-      "background_scan_concurrency",
-      AUDIO_ANALYSIS_CATEGORY,
-    );
-    expect(
-      claimedEntries(STREAMS, [
-        first,
-        entry("stream_source_mode", "source_selection"),
-        second,
-      ]),
-    ).toEqual([first, second]);
-  });
-});
-
-describe("isOwnerFullyClaimed", () => {
-  it("is true for an owner a page shows as a whole", () => {
-    expect(isOwnerFullyClaimed(TASKS)).toBe(true);
-  });
-
-  it("is false for an owner a page shows some categories of", () => {
-    expect(isOwnerFullyClaimed(STREAMS)).toBe(false);
-  });
-
-  it("is false for an owner no page shows", () => {
-    expect(isOwnerFullyClaimed(CACHE)).toBe(false);
-  });
-});
-
-describe("pageOfWholeOwner", () => {
-  it("names the page showing an owner as a whole", () => {
-    expect(pageOfWholeOwner(TASKS)).toBe("background_tasks");
-    expect(pageOfWholeOwner(coreOwner(WEBSERVER_DOMAIN))).toBe("network");
-    expect(pageOfWholeOwner(coreOwner(DISCOVERY_DOMAIN))).toBe("network");
-    expect(pageOfWholeOwner(coreOwner(PLAYER_QUEUES_DOMAIN))).toBe("playback");
-    expect(pageOfWholeOwner(coreOwner(PLAYERS_DOMAIN))).toBe("playback");
-    expect(pageOfWholeOwner(STREAMS)).toBeUndefined();
-  });
-});
-
-describe("settingsSectionLinks", () => {
-  it("links the audio analysis section to the analysis status for an admin", () => {
-    expect(
-      settingsSectionLinks(
-        "audio_analysis_providers",
-        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
-      ).map((link) => link.id),
     ).toEqual(["audio_analysis"]);
   });
 
-  it("links the players section to the playback defaults for an admin", () => {
+  it("shows the source selection of the streams module with the library", () => {
     expect(
-      settingsSectionLinks(
-        "players",
-        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
-      ).map((link) => link.id),
-    ).toEqual(["playback"]);
+      pagesShowing(STREAMS, entry("stream_source_mode", "source_selection")),
+    ).toEqual(["library"]);
   });
 
-  it("leaves the playback defaults out for a role that may not change server settings", () => {
-    expect(
-      settingsSectionLinks(
-        "players",
-        scopeChecker([Scope.CONFIG_PLAYERS_WRITE]),
-      ),
-    ).toEqual([]);
+  it.each(["playback", "crossfade", "volume_normalization"])(
+    "shows the %s entries of the streams module with the playback defaults",
+    (category) => {
+      expect(pagesShowing(STREAMS, entry("buffer_size", category))).toEqual([
+        "playback",
+      ]);
+    },
+  );
+
+  it("shows the network entries of the streams module on the network page", () => {
+    expect(pagesShowing(STREAMS, entry("bind_port", "generic"))).toEqual([
+      "network",
+    ]);
   });
 
-  it("leaves a link out for a role without its scope", () => {
-    expect(
-      settingsSectionLinks(
-        "audio_analysis_providers",
-        scopeChecker([Scope.CONFIG_PROVIDERS_WRITE]),
-      ),
-    ).toEqual([]);
+  it("counts an entry without a category as generic", () => {
+    expect(pagesShowing(STREAMS, entry("publish_ip", ""))).toEqual(["network"]);
   });
 
-  it("links nothing from a section without pages", () => {
+  it("shows the self-registration with the user management once it has a category of its own", () => {
     expect(
-      settingsSectionLinks(
-        "music_providers",
-        scopeChecker(BUILTIN_ROLE_SCOPES.admin),
+      pagesShowing(
+        WEBSERVER,
+        entry("auth_allow_self_registration", ACCOUNT_ACCESS_CATEGORY),
       ),
-    ).toEqual([]);
+    ).toEqual(["users"]);
+    expect(
+      pagesShowing(WEBSERVER, entry("auth_allow_self_registration", "generic")),
+    ).toEqual(["network"]);
   });
+
+  it("shows the task settings on a page of their own", () => {
+    expect(
+      pagesShowing(TASKS, entry("max_concurrent_tasks", "generic")),
+    ).toEqual(["task_settings"]);
+  });
+
+  it("shows the cache actions with the diagnostics", () => {
+    expect(
+      pagesShowing(coreOwner(CACHE_DOMAIN), entry("clear_cache", "generic")),
+    ).toEqual(["diagnostics"]);
+  });
+
+  it("shows the player controls of Home Assistant on its page", () => {
+    expect(
+      pagesShowing(
+        providerOwner(HASS_DOMAIN),
+        entry("power_controls", "player_controls"),
+      ),
+    ).toEqual(["home_assistant"]);
+  });
+
+  it("shows no log level on any page", () => {
+    for (const source of ALL_SOURCES) {
+      expect(
+        pagesShowing(source.owner, entry(LOG_LEVEL_KEY, "generic")),
+      ).toEqual([]);
+    }
+  });
+});
+
+describe("isKnownOwner", () => {
+  it("knows an owner a page shows as a whole", () => {
+    expect(isKnownOwner(TASKS)).toBe(true);
+  });
+
+  it("knows an owner a page shows some categories of", () => {
+    expect(isKnownOwner(STREAMS)).toBe(true);
+  });
+
+  it.each(CONFIGURABLE_CORE_MODULES)(
+    "knows the %s module of the server",
+    (domain) => {
+      expect(isKnownOwner(coreOwner(domain))).toBe(true);
+    },
+  );
+
+  it("does not know a module no page shows", () => {
+    expect(isKnownOwner(coreOwner("radio_tuner"))).toBe(false);
+  });
+});
+
+describe("providerSettingsPageId", () => {
+  it("gives Home Assistant a page of its own", () => {
+    expect(providerSettingsPageId(HASS_DOMAIN)).toBe("home_assistant");
+  });
+
+  it("gives any other provider none", () => {
+    expect(providerSettingsPageId("hass_players")).toBeUndefined();
+  });
+});
+
+describe("providerListType", () => {
+  it("lists a plugin offering audio sources with the music sources", () => {
+    expect(
+      providerListType(ProviderType.PLUGIN, [MediaType.AUDIO_SOURCE]),
+    ).toBe(ProviderType.MUSIC);
+  });
+
+  it("lists a plugin with the plugins when its manifest names no media types", () => {
+    expect(providerListType(ProviderType.PLUGIN)).toBe(ProviderType.PLUGIN);
+    expect(providerListType(ProviderType.PLUGIN, [])).toBe(ProviderType.PLUGIN);
+  });
+
+  it("lists any other type with its type, whatever it offers", () => {
+    // the Sendspin player provider declares audio sources for its line-ins
+    expect(
+      providerListType(ProviderType.PLAYER, [MediaType.AUDIO_SOURCE]),
+    ).toBe(ProviderType.PLAYER);
+    expect(
+      providerListType(ProviderType.METADATA, [MediaType.AUDIO_SOURCE]),
+    ).toBe(ProviderType.METADATA);
+  });
+});
+
+describe("providerPageEntries", () => {
+  const entries = [
+    entry("power_controls", "player_controls"),
+    entry("some_option", "generic"),
+    entry(LOG_LEVEL_KEY, "generic"),
+  ];
+
+  it("gives the settings the page of the provider shows", () => {
+    expect(
+      providerPageEntries(HASS_DOMAIN, entries).map(({ key }) => key),
+    ).toEqual(["power_controls"]);
+  });
+
+  it("gives none for a provider without a page of its own", () => {
+    expect(providerPageEntries("spotify", entries)).toEqual([]);
+  });
+});
+
+describe("settingsPageProviderDomain", () => {
+  it("names the provider of a page showing only its settings", () => {
+    expect(settingsPageProviderDomain("home_assistant")).toBe(HASS_DOMAIN);
+  });
+
+  it.each<SettingsPageId>(["metadata", "network"])(
+    "names none for the %s page of core settings",
+    (pageId) => {
+      expect(settingsPageProviderDomain(pageId)).toBeUndefined();
+    },
+  );
 });
 
 describe("canEditSettingsPage", () => {
@@ -268,6 +320,21 @@ describe("canEditSettingsPage", () => {
       canEditSettingsPage(
         "audio_analysis",
         scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      ),
+    ).toBe(false);
+  });
+
+  it("needs the provider write scope for provider settings", () => {
+    expect(
+      canEditSettingsPage(
+        "home_assistant",
+        scopeChecker([Scope.CONFIG_PROVIDERS_WRITE]),
+      ),
+    ).toBe(true);
+    expect(
+      canEditSettingsPage(
+        "home_assistant",
+        scopeChecker([Scope.CONFIG_CORE_WRITE]),
       ),
     ).toBe(false);
   });

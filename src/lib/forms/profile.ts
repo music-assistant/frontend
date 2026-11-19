@@ -23,7 +23,6 @@ export const profileSettingsSchema = (t: (key: string) => string) =>
       .refine((val) => !val || z.string().url().safeParse(val).success, {
         message: "Invalid URL format.",
       }),
-    role: z.string(),
   });
 
 export const tokenNameSchema = (t: (key: string) => string) =>

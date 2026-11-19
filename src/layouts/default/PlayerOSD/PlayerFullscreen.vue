@@ -35,9 +35,9 @@
         color="transparent"
       >
         <template #prepend>
-          <!-- on mobile the drag handle is the close affordance -->
+          <!-- kept next to the drag handle: kiosk WebViews can turn a swipe
+               down into a native pull-to-refresh -->
           <Button
-            v-if="!store.mobileLayout"
             variant="ghost"
             size="icon-sm"
             :aria-label="$t('tooltip.close_fullscreen')"

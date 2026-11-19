@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Scope } from "@/plugins/api/interfaces";
 import BackgroundTasks from "@/views/settings/BackgroundTasks.vue";
 import {
@@ -31,7 +32,7 @@ vi.mock("vue-i18n", async (importOriginal) => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
-const SETTINGS_ROW = '[data-testid="background-tasks-link-settings"]';
+const SETTINGS_ROW = '[data-testid="background-tasks-link-task_settings"]';
 
 enableAutoUnmount(afterEach);
 
@@ -40,6 +41,16 @@ beforeEach(() => {
 });
 
 describe("BackgroundTasks", () => {
+  it("heads the page with the header of the background tasks", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+
+    const wrapper = await mountPage();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "background_tasks",
+    );
+  });
+
   it("leads who may change the core settings to the task settings", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
 
@@ -47,8 +58,7 @@ describe("BackgroundTasks", () => {
 
     const row = wrapper.get(SETTINGS_ROW);
     expect(JSON.parse(row.attributes("href")!)).toEqual({
-      name: "editcore",
-      params: { domain: "tasks" },
+      name: "tasksettings",
     });
     expect(row.text()).toContain("background_tasks.settings.title");
   });

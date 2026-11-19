@@ -107,6 +107,7 @@
         "visualizer": "Visualizer",
         "light": "Light",
         "source": "Audio input",
+        "controller": "Controller",
         "unknown": "Unknown"
     },
     "channel_layout": {
@@ -226,6 +227,7 @@
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have {1} configured, do you want to do that now?",
         "theme": {
             "label": "Theme",
+            "automatic": "Automatic",
             "options": {
                 "auto": "Auto (follow system configuration)",
                 "light": "Light",
@@ -480,11 +482,12 @@
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
         "players_description": "Your players, lights, screens and audio inputs, and how they play",
-        "frontend_description": "Customize the user interface theme and appearance",
-        "profile_description": "Manage your personal account settings and preferences",
+        "music": "Music",
+        "music_description": "Your music sources, library, metadata and audio analysis",
+        "profile_description": "Your account, password, sessions and interface preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
-        "system_description": "Configure Music Assistant server settings and core modules",
+        "system_description": "The network, storage, Home Assistant, background tasks and diagnostics of the server",
         "system": "System",
         "network": {
             "title": "Network",
@@ -493,9 +496,41 @@
             "streaming": "Audio streaming",
             "discovery": "Discovery"
         },
+        "home_assistant": {
+            "title": "Home Assistant",
+            "description": "The connection with Home Assistant and what it brings to Music Assistant",
+            "not_connected": "Not connected to Home Assistant",
+            "connect_description": "Connect to Home Assistant to play on its media players, sign in with its accounts and turn its devices into player controls.",
+            "connect": "Connect",
+            "connection": "Connection",
+            "connection_description": "Reconfigure, disable or remove the connection",
+            "connection_addon": "Music Assistant runs as a Home Assistant add-on, which connects it",
+            "state_connected": "Connected",
+            "state_connecting": "Connecting",
+            "state_disabled": "Disabled",
+            "state_needs_attention": "Needs attention",
+            "players": "Home Assistant players",
+            "players_description": "Play on the media players of Home Assistant",
+            "players_add": "Add",
+            "sign_in": "Sign in with Home Assistant",
+            "sign_in_description": "Home Assistant users sign in to Music Assistant with their account",
+            "remote_access_description": "Home Assistant Cloud makes remote access work in any network",
+            "remote_access_ha_cloud": "Home Assistant Cloud",
+            "remote_access_without_ha_cloud": "Without Home Assistant Cloud"
+        },
         "playback": {
             "title": "Playback",
             "description": "Crossfade, volume normalization, autoplay and what happens when you press play"
+        },
+        "library": {
+            "title": "Library settings",
+            "description": "Which source plays a track and library maintenance",
+            "source_selection": "Source selection",
+            "maintenance": "Library maintenance"
+        },
+        "metadata": {
+            "title": "Metadata settings",
+            "description": "Language, online lookups, genres and the artwork cache"
         },
         "about": "About",
         "about_description": "Version information, credits and more",
@@ -511,41 +546,32 @@
         "proud_part_of": "Proud part of",
         "core_module": {
             "cache": {
-                "name": "Cache",
-                "description": "Configuration of the core module that handles caching of data across the application"
+                "name": "Cache"
             },
             "metadata": {
-                "name": "Metadata",
-                "description": "Configuration of the core metadata management module"
+                "name": "Metadata"
             },
             "music": {
-                "name": "Music",
-                "description": "Configuration of the core music (library) management module"
+                "name": "Music"
             },
             "players": {
-                "name": "Players",
-                "description": "Configuration of the core player management module"
+                "name": "Players"
             },
             "player_queues": {
-                "name": "Player Queues",
-                "description": "Configuration of the core player queue management module"
+                "name": "Player Queues"
             },
-            "remote_access": {
-                "name": "Remote Access",
-                "description": "Enables remote access to your Music Assistant server"
+            "statistics": {
+                "name": "Statistics"
             },
             "streams": {
-                "name": "Streams",
-                "description": "Configuration of the audio streaming and processing engine"
+                "name": "Streams"
             },
             "webserver": {
-                "name": "Webserver",
-                "description": "Configuration of the webserver and API"
+                "name": "Webserver"
             }
         },
         "remote_access": "Remote Access",
         "remote_access_description": "Securely access Music Assistant from anywhere",
-        "remote_access_title": "Secure Remote Access",
         "remote_access_explanation_intro": "Remote Access allows you to securely connect to your Music Assistant server from anywhere in the world.",
         "remote_access_explanation_ha_cloud": "For the best experience and reliability, a Home Assistant Cloud subscription is required.",
         "remote_access_feature_webrtc": "Based on WebRTC technology for peer-to-peer connections",
@@ -582,7 +608,6 @@
         "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
         "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
-        "frontend": "User Interface",
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
@@ -663,7 +688,7 @@
             "description": "Vibrate while adjusting the volume slider. Touch devices with a vibration motor only."
         },
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
-        "genre_management": "Genre Management",
+        "genre_management": "Genre management",
         "genre_management_description": "Manage default genres and restore genre defaults",
         "restore_missing_defaults": "Restore Missing Defaults",
         "restore_missing_defaults_description": "Adds any missing default genres without affecting your existing genres or custom mappings.",
@@ -815,7 +840,6 @@
                 }
             }
         },
-        "music_providers_description": "Manage your music streaming services and local libraries",
         "music_sources_empty_title": "No music sources yet",
         "music_sources_empty": "Connect a music service account or add a local library to start listening.",
         "source_access": {
@@ -929,7 +953,8 @@
         },
         "download_diagnostics": "Download diagnostics",
         "diagnostics": "Diagnostics",
-        "diagnostics_description": "View server logs and download a diagnostics report for troubleshooting",
+        "diagnostics_description": "Server logs, log levels and a diagnostics report for troubleshooting",
+        "log_levels": "Log levels",
         "customize_menu": {
             "label": "Customize menu",
             "description": "Put the navigation menu in edit mode to show, hide, reorder and rename its items."
@@ -1035,9 +1060,18 @@
         "music_sources_own": "Your sources",
         "music_sources_shared": "Shared with you",
         "music_sources_shared_empty": "No music sources have been shared with you yet.",
+        "source_labels": {
+            "filter": "Filter on what the sources offer",
+            "all": "All",
+            "library": "Library",
+            "radio": "Radio",
+            "podcasts": "Podcasts",
+            "audiobooks": "Audiobooks",
+            "live": "Live sources"
+        },
         "storage": {
             "title": "Storage",
-            "description": "The folders, drives and network shares your music can come from",
+            "description": "Music folders, drives, network shares and the storage of the server",
             "load_failed": "Could not load the storage",
             "music_locations": "Music locations",
             "music_locations_empty_title": "No music locations yet",
@@ -1277,7 +1311,6 @@
         "toggle_subplayers": "Toggle sub-players",
         "restore_genre": "Restore genre",
         "remove_rule": "Remove rule",
-        "change_avatar": "Change avatar",
         "revoke_session": "Revoke session",
         "revoke_token": "Revoke token",
         "user_options": "User options",
@@ -1600,8 +1633,16 @@
         "setup_failed": "Setup failed. Please try again.",
         "setup_error": "An error occurred during setup",
         "profile": "Profile",
-        "account_settings": "Account settings",
-        "manage_your_profile_info": "Manage your profile information and settings",
+        "profile_pages": {
+            "theme_language": "Theme and language",
+            "interface": "Interface",
+            "interface_description": "Preferences that follow your account on every device",
+            "device": "This device",
+            "device_description": "Settings that only apply on this device",
+            "security": "Security",
+            "security_description": "Password, active sessions and access tokens"
+        },
+        "edit_profile": "Edit profile",
         "change_password": "Change password",
         "update_your_password": "Update your account password",
         "old_password": "Current password",
@@ -1663,7 +1704,6 @@
         "change_role": "Change role",
         "avatar_url": "Avatar URL",
         "avatar_url_hint": "Enter URL to avatar image",
-        "change_avatar": "Change avatar",
         "profile_updated": "Profile updated successfully",
         "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in.",
         "copy_new_token_hint": "Copy your access token. It will not be shown again.",
@@ -1841,6 +1881,7 @@
     "description": "Description",
     "genre": "Genre",
     "genres": "Genres",
+    "metadata": "Metadata",
     "link": "Link",
     "link_alias": "Link alias",
     "link_alias_failed": "Failed to link alias",
@@ -2205,6 +2246,42 @@
             "name_that_track": "Name that track",
             "how_to_play_guess_the_song_description": "Listen to the song that's playing and pick the correct title from the options before time runs out.",
             "how_to_play_trivia_description": "Answer trivia questions about music. Pick the answer you think is right before time runs out.",
+            "game_type_title_reveal": "Title Reveal",
+            "game_type_title_reveal_description": "Play a track and type its title while its letters are revealed one by one.",
+            "how_to_play_title_reveal_description": "Listen to the song that's playing and type its title. More letters are revealed over time and small typos are fine, but the faster you guess, the more points you get.",
+            "title_reveal_hint_speed": "Hint speed",
+            "title_reveal_hint_speed_slow": "Slow (few letters)",
+            "title_reveal_hint_speed_normal": "Normal",
+            "title_reveal_hint_speed_fast": "Fast (many letters)",
+            "title_reveal_typo_tolerance": "Typo tolerance",
+            "title_reveal_typo_tolerance_strict": "Strict",
+            "title_reveal_typo_tolerance_normal": "Normal",
+            "title_reveal_typo_tolerance_lenient": "Lenient",
+            "title_reveal_mask_label": "Song title: {0}, {1} letters still hidden",
+            "title_reveal_hints_progress": "{0} of {1} hints revealed",
+            "title_reveal_typos_allowed": "Up to {count} typo allowed | Up to {count} typos allowed",
+            "title_reveal_exact_spelling": "Exact spelling required",
+            "title_reveal_guess_label": "Song title",
+            "title_reveal_guess_placeholder": "Type the title…",
+            "title_reveal_submit_guess": "Guess",
+            "title_reveal_attempts_left": "{count} guess left | {count} guesses left",
+            "title_reveal_your_guesses": "Your guesses",
+            "title_reveal_close": "So close!",
+            "title_reveal_solved": "You got it!",
+            "title_reveal_points": "+{0} points",
+            "title_reveal_solved_players": "Guessed",
+            "title_reveal_not_solved": "You didn't guess the title this round",
+            "title_reveal_first_bonus": "First! +{0}",
+            "title_reveal_first_bonus_result": "First correct guess",
+            "title_reveal_artist_bonus_setting": "Artist bonus",
+            "title_reveal_artist_bonus_setting_help": "After guessing the title, players get one try at the artist for bonus points.",
+            "title_reveal_artist_bonus_label": "Bonus: who is the artist?",
+            "title_reveal_artist_bonus_help": "One try for extra points.",
+            "title_reveal_artist_placeholder": "Type the artist…",
+            "title_reveal_artist_skip": "Skip",
+            "title_reveal_artist_correct": "{0} is right! +{1}",
+            "title_reveal_artist_wrong": "Not quite, it was {0}",
+            "title_reveal_artist_skipped": "Skipped, it was {0}",
             "landing_continue": "Continue"
         },
         "ai_radio": {
@@ -2405,7 +2482,7 @@
         "description": "Monitor scheduled jobs and recent long-running actions.",
         "settings": {
             "title": "Task settings",
-            "description": "How many tasks run at once, and the log level"
+            "description": "How many tasks run at once"
         },
         "total": "{count} total background task | {count} total background tasks",
         "clear_finished": "Clear finished",
@@ -3035,6 +3112,7 @@
     "artist_all_audiobooks": "All audiobooks",
     "lights": "Lights",
     "audio_inputs": "Audio inputs",
+    "controllers": "Controllers",
     "players_in_group": "Players in group",
     "volume": "Volume",
     "grouped_volume": "Grouped volume",
@@ -3244,6 +3322,11 @@
                 },
                 "load_failed": "The server settings could not be loaded. You can change them later from the settings."
             },
+            "home_assistant": {
+                "title": "Connect Home Assistant",
+                "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Cloud.",
+                "connect": "Connect to Home Assistant"
+            },
             "invite_members": {
                 "title": "Add users",
                 "description": "Everyone in your home gets an account of their own, with the players and music sources you give them access to.",
@@ -3312,7 +3395,7 @@
             },
             "profile": {
                 "title": "Your profile",
-                "description": "Your name, avatar and password live here. This menu is also where you rearrange the menu, sign out, or take this tour again."
+                "description": "Your name, avatar, password and interface preferences live here. This menu is also where you rearrange the menu, sign out, or take this tour again."
             },
             "player_bar": {
                 "title": "The player bar",

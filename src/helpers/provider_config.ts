@@ -63,6 +63,16 @@ export const providerRequiresReconfiguration = (
   status === ProviderStatus.AUTH_REQUIRED &&
   canReconfigureProvider(status, hasSetupFlow, enabled);
 
+/**
+ * Whether a provider status needs the attention of the user; the last error of
+ * the provider says why.
+ */
+export const isProviderErrorStatus = (status?: ProviderStatus | null) =>
+  status === ProviderStatus.AUTH_REQUIRED ||
+  status === ProviderStatus.INCOMPATIBLE ||
+  status === ProviderStatus.ERROR ||
+  status === ProviderStatus.UNAVAILABLE;
+
 // A retired provider fails to load as INCOMPATIBLE (the server reuses
 // UnsupportedSystemError), so the stage is what tells the two apart.
 export const getProviderStatusTranslationKey = (

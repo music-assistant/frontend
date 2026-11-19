@@ -34,13 +34,16 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { MusicQuizGuessTheSongRound } from "@/composables/music-quiz/useMusicQuiz";
+import type {
+  MusicQuizGuessTheSongRound,
+  MusicQuizTitleRevealRound,
+} from "@/composables/music-quiz/useMusicQuiz";
 import { $t } from "@/plugins/i18n";
 import { Copy } from "@lucide/vue";
 
 withDefaults(
   defineProps<{
-    round: MusicQuizGuessTheSongRound;
+    round: MusicQuizGuessTheSongRound | MusicQuizTitleRevealRound;
     imageUrl: string;
     showCopyButton?: boolean;
   }>(),

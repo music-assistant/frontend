@@ -447,6 +447,7 @@ export enum PlayerType {
   VISUALIZER = "visualizer",
   LIGHT = "light",
   SOURCE = "source", // A capture-only device that provides audio input.
+  CONTROLLER = "controller", // A device that only controls playback, such as a remote.
   UNKNOWN = "unknown",
 }
 
@@ -605,6 +606,8 @@ export enum ProviderFeature {
   ARTIST_METADATA = "artist_metadata",
   ALBUM_METADATA = "album_metadata",
   TRACK_METADATA = "track_metadata",
+  // provider delivers live audio sources, such as a receiver or a line-in
+  AUDIO_SOURCE = "audio_source",
 }
 
 export enum ProviderType {

@@ -1,40 +1,24 @@
 <template>
-  <div>
-    <SettingsPageLinks
-      class="mx-5 mt-5"
-      section="players"
-      :extra-rows="playerSupportRows"
-    />
-    <div class="players-header w-full">
-      <PlayerFilters
-        @update:search="searchQuery = $event"
-        @update:providers="selectedProviders = $event"
-        @update:types="selectedPlayerTypes = $event"
-        @update:statuses="selectedStatuses = $event"
-      />
-      <div class="header-actions">
-        <Button
-          v-if="providersWithCreateGroupSupport.length > 0"
-          class="add-player-group-btn"
-          @click="showAddPlayerGroupDialog = true"
-        >
-          <Plus class="size-4" />
-          {{ $t("settings.add_group_player") }}
-        </Button>
-      </div>
-    </div>
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="players" />
+    <SettingsPageLinks section="players" />
 
-    <div class="pl-5 font-medium">
-      {{
-        $t("settings.players_total", filteredPlayers.length, {
-          named: { count: filteredPlayers.length },
-        })
-      }}
-    </div>
-    <div
-      class="mt-4 px-5 py-2.5"
-      :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
+    <SettingsListPanel
+      :title="$t('players')"
+      :count="filteredPlayers.length"
+      :view-mode="viewMode"
+      :actions="actions"
+      data-testid="player-list"
+      @toggle-view-mode="playersViewMode.toggleViewMode()"
     >
+      <template #filters>
+        <PlayerFilters
+          @update:search="searchQuery = $event"
+          @update:providers="selectedProviders = $event"
+          @update:types="selectedPlayerTypes = $event"
+          @update:statuses="selectedStatuses = $event"
+        />
+      </template>
       <div class="space-y-6">
         <section
           v-for="section in sections"
@@ -43,13 +27,14 @@
           data-testid="player-section"
           :data-section="section.key"
         >
-          <!-- a single section needs no heading -->
-          <h2
-            v-if="sections.length > 1"
-            class="text-muted-foreground text-sm font-medium"
+          <!-- the panel heads the players, the other kinds of devices follow
+               under a heading of their own -->
+          <h3
+            v-if="section.key !== 'players'"
+            class="m-0 text-sm font-medium text-muted-foreground"
           >
             {{ $t(section.label) }}
-          </h2>
+          </h3>
           <ItemGroup v-if="viewMode === 'list'" class="gap-2">
             <SettingsPlayerRow
               v-for="item in section.items"
@@ -82,10 +67,11 @@
         :icon="VolumeOff"
         data-testid="players-empty"
       />
-    </div>
+    </SettingsListPanel>
+
     <div
       v-if="canAddPlayerProviders"
-      class="missing-players-hint flex items-center justify-center gap-1.5 px-5 py-4 text-[13px] text-muted-foreground"
+      class="missing-players-hint flex items-center justify-center gap-1.5 text-[13px] text-muted-foreground"
     >
       <Info class="size-4 shrink-0" aria-hidden="true" />
       <i18n-t keypath="settings.missing_players_hint" tag="span" scope="global">
@@ -105,20 +91,23 @@
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import SettingsPlayerRow from "@/components/settings/players/SettingsPlayerRow.vue";
-import type { SettingsRow } from "@/components/settings/SettingsLinkRows.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
+import SettingsListPanel, {
+  type SettingsPanelAction,
+} from "@/components/settings/SettingsListPanel.vue";
 import SettingsPageLinks from "@/components/settings/SettingsPageLinks.vue";
 import SettingsPlayerCard from "@/components/SettingsPlayerCard.vue";
-import { Button } from "@/components/ui/button";
 import { ItemGroup } from "@/components/ui/item";
 
 import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useSettingsPlayerList } from "@/composables/settings/players/useSettingsPlayerList";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
-import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import {
   getPlayerSettingsMenuItems,
   removeUnavailablePlayers,
 } from "@/helpers/player_settings_actions";
+import { providerListRoute } from "@/helpers/settings_sections";
 
 import { api } from "@/plugins/api";
 import {
@@ -130,16 +119,13 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { EyeOff, Info, Plus, Speaker, Trash2, VolumeOff } from "@lucide/vue";
+import { EyeOff, Info, Plus, Trash2, VolumeOff } from "@lucide/vue";
 import { computed, inject, markRaw, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
 
 // the list of the player providers
-const PLAYER_PROVIDERS_ROUTE = {
-  name: "providersettings",
-  query: { types: ProviderType.PLAYER },
-};
+const PLAYER_PROVIDERS_ROUTE = providerListRoute(ProviderType.PLAYER);
 
 // global refs
 const router = useRouter();
@@ -184,6 +170,20 @@ const providersWithCreateGroupSupport = computed(() => {
         : -1,
     );
 });
+const actions = computed<SettingsPanelAction[]>(() =>
+  providersWithCreateGroupSupport.value.length > 0
+    ? [
+        {
+          key: "add-player-group",
+          label: $t("settings.add_group_player"),
+          icon: markRaw(Plus),
+          onSelect: () => {
+            showAddPlayerGroupDialog.value = true;
+          },
+        },
+      ]
+    : [],
+);
 // the hint leads to adding player providers, which takes config.providers.write
 const canAddPlayerProviders = computed(() =>
   authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
@@ -192,26 +192,8 @@ const canRemovePlayers = computed(() =>
   authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
 );
 
-// the row to the player providers, with how many of them run
-const playerSupportRows = computed<SettingsRow[]>(() => {
-  if (!canAddPlayerProviders.value) return [];
-  const count = Object.values(api.providers).filter(
-    (provider) => provider.type === ProviderType.PLAYER,
-  ).length;
-  return [
-    {
-      key: "player_support",
-      icon: markRaw(Speaker),
-      label: $t("settings.playerproviders"),
-      description: $t("settings.player_providers_description"),
-      state: $t("settings.providers_active", count, { named: { count } }),
-      to: PLAYER_PROVIDERS_ROUTE,
-    },
-  ];
-});
-
-const toolbarMenu = useSettingsToolbarMenu();
-const toolbarMenuItems = computed<ToolBarMenuItem[]>(() => {
+const pageMenu = useSettingsPageMenu();
+const pageMenuItems = computed<ToolBarMenuItem[]>(() => {
   const items: ToolBarMenuItem[] = [
     {
       label: "settings.hide_unavailable_players",
@@ -232,14 +214,14 @@ const toolbarMenuItems = computed<ToolBarMenuItem[]>(() => {
   return items;
 });
 watch(
-  toolbarMenuItems,
+  pageMenuItems,
   (items) => {
-    toolbarMenu.value = items;
+    pageMenu.value = items;
   },
   { immediate: true },
 );
 onBeforeUnmount(() => {
-  toolbarMenu.value = [];
+  pageMenu.value = [];
 });
 
 // methods
@@ -279,72 +261,3 @@ const onMenu = function (evt: Event, playerConfig: PlayerConfig) {
   });
 };
 </script>
-
-<style scoped>
-.players-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 20px 20px 6px 20px;
-}
-
-.header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  align-self: flex-start;
-}
-
-.add-player-group-btn {
-  flex-shrink: 0;
-  align-self: flex-start;
-  margin-top: 0;
-}
-
-.players-header :deep(.filters-container) {
-  align-items: flex-start;
-}
-
-.players-header :deep(.filter-buttons) {
-  align-items: center;
-}
-
-@media (max-width: 960px) {
-  .players-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .header-actions {
-    width: 100%;
-    justify-content: space-between;
-    align-self: stretch;
-  }
-
-  .add-player-group-btn {
-    flex: 1;
-    align-self: stretch;
-    margin-top: 0;
-  }
-}
-
-@media (min-width: 961px) and (max-width: 1400px) {
-  .players-header {
-    flex-wrap: wrap;
-    align-items: flex-end;
-  }
-
-  .add-player-group-btn {
-    margin-top: 0;
-    align-self: flex-end;
-  }
-
-  .players-header :deep(.filters-container) {
-    align-items: flex-end;
-  }
-}
-</style>
