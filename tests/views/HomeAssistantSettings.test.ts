@@ -1,6 +1,8 @@
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
+  type AIEngine,
+  AIEngineKind,
   EventType,
   type Player,
   type ProviderConfig,
@@ -20,6 +22,8 @@ import { providerManifest } from "../fixtures/providerManifest";
 
 const { apiMock, hasScope, startAddProvider } = vi.hoisted(() => ({
   apiMock: {
+    getAIEngines: vi.fn<MusicAssistantApi["getAIEngines"]>(),
+    getAIUsage: vi.fn<MusicAssistantApi["getAIUsage"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
     getRemoteAccessInfo: vi.fn<MusicAssistantApi["getRemoteAccessInfo"]>(),
     subscribe: vi.fn(),
@@ -33,7 +37,11 @@ const { apiMock, hasScope, startAddProvider } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+// the key, with the count it is given in brackets
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, count?: unknown) =>
+    typeof count === "number" ? `${key}(${count})` : key,
+}));
 vi.mock("@/helpers/provider_add", () => ({ startAddProvider }));
 
 enableAutoUnmount(afterEach);
@@ -63,6 +71,13 @@ beforeEach(() => {
     async (_type, domain) => configs[domain!] ?? [],
   );
   apiMock.getRemoteAccessInfo.mockResolvedValue(remoteAccess(true, true));
+  apiMock.getAIEngines.mockResolvedValue([
+    engine("ai_task.openai", AIEngineKind.TEXT, "hass"),
+    engine("tts.piper", AIEngineKind.SPEECH, "hass"),
+    engine("tts.cloud", AIEngineKind.SPEECH, "hass"),
+    engine("gpt", AIEngineKind.TEXT, "openai_compatible--1"),
+  ]);
+  apiMock.getAIUsage.mockResolvedValue([]);
   apiMock.subscribe.mockReturnValue(vi.fn());
   apiMock.players = {
     kitchen: { provider: "hass_players" },
@@ -132,6 +147,7 @@ describe("HomeAssistantSettings while Home Assistant is connected", () => {
     expect(rowKeys(wrapper)).toEqual([
       "connection",
       "players",
+      "ai",
       "sign_in",
       "remote_access",
     ]);
@@ -175,6 +191,25 @@ describe("HomeAssistantSettings while Home Assistant is connected", () => {
     );
   });
 
+  it("leads to the AI page, with the engines Home Assistant provides", async () => {
+    const wrapper = await mountPage();
+
+    const ai = row(wrapper, "ai");
+    expect(linkOf(ai)).toEqual({ name: "aisettings" });
+    expect(ai.text()).toContain("settings.home_assistant.ai_description");
+    expect(stateOf(ai)).toBe(
+      "settings.ai.engine_count.text(1) · settings.ai.engine_count.speech(2)",
+    );
+  });
+
+  it("says when Home Assistant provides no engines", async () => {
+    apiMock.getAIEngines.mockResolvedValue([]);
+
+    const wrapper = await mountPage();
+
+    expect(stateOf(row(wrapper, "ai"))).toBe("settings.home_assistant.ai_none");
+  });
+
   it("leads to signing in with Home Assistant and to remote access through its cloud", async () => {
     const wrapper = await mountPage();
 
@@ -205,6 +240,7 @@ describe("HomeAssistantSettings while Home Assistant is connected", () => {
   });
 
   it.each([
+    [Scope.CONFIG_CORE_WRITE, "ai"],
     [Scope.USERS_READ, "sign_in"],
     [Scope.SYSTEM_MANAGE, "remote_access"],
   ])(
@@ -215,7 +251,7 @@ describe("HomeAssistantSettings while Home Assistant is connected", () => {
       const wrapper = await mountPage();
 
       expect(rowKeys(wrapper)).not.toContain(key);
-      expect(rowKeys(wrapper)).toHaveLength(3);
+      expect(rowKeys(wrapper)).toHaveLength(4);
     },
   );
 
@@ -371,6 +407,10 @@ function linkOf(found: ReturnType<typeof row>) {
 
 function stateOf(found: ReturnType<typeof row>) {
   return found.get('[data-testid="home-assistant-state"]').text();
+}
+
+function engine(uid: string, kind: AIEngineKind, provider: string): AIEngine {
+  return { uid, name: uid, kind, provider };
 }
 
 function hassConfig(status: ProviderStatus): ProviderConfig {

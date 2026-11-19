@@ -64,7 +64,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
+import { useAIEngines } from "@/composables/settings/useAIEngines";
 import { useHomeAssistantConnection } from "@/composables/settings/useHomeAssistantConnection";
+import { enginesOf } from "@/helpers/ai_engines";
+import { engineSummary } from "@/helpers/ai_settings";
 import {
   type HassConnectionState,
   remoteAccessStateKey,
@@ -73,6 +76,7 @@ import {
   getProviderStatusTranslationKey,
   isProviderErrorStatus,
 } from "@/helpers/provider_config";
+import { settingsPageRoute } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import {
   type ProviderConfig,
@@ -81,13 +85,21 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { CloudCog, House, LogIn, Plug, Plus, Speaker } from "@lucide/vue";
+import {
+  CloudCog,
+  House,
+  LogIn,
+  Plug,
+  Plus,
+  Sparkles,
+  Speaker,
+} from "@lucide/vue";
 import { computed, markRaw } from "vue";
 
 /**
- * The connection with Home Assistant and what it brings: its players, signing
- * in with it, remote access through its cloud and its devices as player
- * controls.
+ * The connection with Home Assistant and what it brings: its players, its AI
+ * tasks and voices, signing in with it, remote access through its cloud and
+ * its devices as player controls.
  */
 
 const CONNECTION_STATE_KEYS: Readonly<Record<HassConnectionState, string>> = {
@@ -108,6 +120,7 @@ const {
   connect,
   addPlayers,
 } = useHomeAssistantConnection();
+const { engines } = useAIEngines();
 
 const rows = computed<SettingsRow[]>(() => {
   const hass = hassConfig.value;
@@ -115,6 +128,13 @@ const rows = computed<SettingsRow[]>(() => {
   const items: SettingsRow[] = [connectionRow(hass)];
   const players = playersRow();
   if (players) items.push(players);
+  // Home Assistant only provides engines while it is connected
+  if (
+    state.value === "connected" &&
+    authManager.hasScope(Scope.CONFIG_CORE_WRITE)
+  ) {
+    items.push(aiRow(hass));
+  }
   // Home Assistant only signs users in while it is connected
   if (state.value === "connected" && authManager.hasScope(Scope.USERS_READ)) {
     items.push({
@@ -191,6 +211,20 @@ function playersRow(): SettingsRow | undefined {
         : $t(getProviderStatusTranslationKey(players.status)),
     error: attention,
     to: providerRoute(players),
+  };
+}
+
+// the AI page manages the engines Home Assistant provides
+function aiRow(hass: ProviderConfig): SettingsRow {
+  return {
+    key: "ai",
+    icon: markRaw(Sparkles),
+    label: $t("settings.home_assistant.ai"),
+    description: $t("settings.home_assistant.ai_description"),
+    state:
+      engineSummary(enginesOf(engines.value, hass.instance_id)) ||
+      $t("settings.home_assistant.ai_none"),
+    to: settingsPageRoute("ai"),
   };
 }
 
