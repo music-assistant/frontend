@@ -22,6 +22,7 @@ export type OnboardingStepId =
   | "plugins"
   | "home_assistant"
   | "core_settings"
+  | "ai"
   | "invite_members"
   | "finish"
   // the member track: being welcomed into a server someone else set up
@@ -69,6 +70,9 @@ export interface OnboardingProvider {
   enabled: boolean;
   // a plugin that lets an app play to Music Assistant, such as Spotify Connect
   audioSource: boolean;
+  // brings AI or speech, such as OpenAI Compatible, or Home Assistant while it
+  // provides engines
+  aiService: boolean;
 }
 
 export interface OnboardingAnswers {
@@ -218,6 +222,14 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     // is never anything missing here. What keeps the wizard from walking past
     // this step is its kind, not this answer.
     isDone: () => false,
+  },
+  {
+    id: "ai",
+    kind: "step",
+    optional: true,
+    appliesTo: onFullSetup,
+    isDone: (ctx) =>
+      ctx.providers.some((provider) => provider.aiService && !provider.builtin),
   },
   {
     id: "invite_members",

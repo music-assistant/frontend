@@ -16,6 +16,7 @@ const BASE_ORDER = [
   "music_sources",
   "players",
   "core_settings",
+  "ai",
   "invite_members",
   "finish",
 ] as const;
@@ -33,7 +34,26 @@ function provider(
   builtin = false,
   enabled = true,
 ): OnboardingProvider {
-  return { type, domain, builtin, enabled, audioSource: false };
+  return {
+    type,
+    domain,
+    builtin,
+    enabled,
+    audioSource: false,
+    aiService: false,
+  };
+}
+
+/** A plugin that brings AI or speech. */
+function aiService(
+  domain: string,
+  builtin = false,
+  enabled = true,
+): OnboardingProvider {
+  return {
+    ...provider(ProviderType.PLUGIN, domain, builtin, enabled),
+    aiService: true,
+  };
 }
 
 /** A plugin that lets an app play to Music Assistant. */
@@ -182,6 +202,7 @@ describe("onboarding step order", () => {
       "plugins",
       "home_assistant",
       "core_settings",
+      "ai",
       "invite_members",
       "finish",
       "welcome",
@@ -323,6 +344,7 @@ describe("pending onboarding steps", () => {
       "intent",
       "music_sources",
       "players",
+      "ai",
       "invite_members",
     ]);
   });
@@ -333,7 +355,7 @@ describe("pending onboarding steps", () => {
       providers: [provider(ProviderType.PLAYER, "sonos")],
       memberCount: 2,
     });
-    expect(stepIds(pendingSteps(ctx))).toEqual(["music_sources"]);
+    expect(stepIds(pendingSteps(ctx))).toEqual(["music_sources", "ai"]);
   });
 
   it("is empty once every step is done", () => {
@@ -342,7 +364,7 @@ describe("pending onboarding steps", () => {
       providers: [
         provider(ProviderType.MUSIC, "spotify"),
         provider(ProviderType.PLAYER, "sonos"),
-        provider(ProviderType.PLUGIN, "party"),
+        aiService("openai_compatible"),
       ],
       memberCount: 2,
     });
@@ -415,7 +437,7 @@ describe("the step the wizard opens on", () => {
       providers: [
         provider(ProviderType.MUSIC, "spotify"),
         provider(ProviderType.PLAYER, "sonos"),
-        provider(ProviderType.PLUGIN, "party"),
+        aiService("openai_compatible"),
       ],
     });
     expect(firstStep(ctx)).toBe("invite_members");
@@ -458,6 +480,7 @@ describe("the Home Assistant step", () => {
       "players",
       "home_assistant",
       "core_settings",
+      "ai",
       "invite_members",
       "finish",
     ]);
@@ -495,6 +518,46 @@ describe("the Home Assistant step", () => {
     expect(
       stepIds(applicableSteps(memberContext({ homeAssistantAddon: false }))),
     ).not.toContain("home_assistant");
+  });
+});
+
+describe("the AI step", () => {
+  it("offers the full setup to add AI after remote access and before the users", () => {
+    const steps = stepIds(applicableSteps(context()));
+
+    expect(steps.indexOf("ai")).toBe(steps.indexOf("core_settings") + 1);
+    expect(steps.indexOf("ai")).toBe(steps.indexOf("invite_members") - 1);
+  });
+
+  it("keeps it out of the existing-app setup and off the member track", () => {
+    expect(
+      stepIds(applicableSteps(context({ answers: { intent: "phone_apps" } }))),
+    ).not.toContain("ai");
+    expect(stepIds(applicableSteps(memberContext()))).not.toContain("ai");
+  });
+
+  it("keeps it optional, and pending until an AI service is set up", () => {
+    const open = context({
+      providers: [provider(ProviderType.PLUGIN, "lastfm_scrobble")],
+    });
+    expect(step(open, "ai").optional).toBe(true);
+    expect(step(open, "ai").isDone(open)).toBe(false);
+
+    const added = context({ providers: [aiService("openai_compatible")] });
+    expect(step(added, "ai").isDone(added)).toBe(true);
+    expect(stepIds(pendingSteps(added))).not.toContain("ai");
+  });
+
+  it("counts an AI service as set up even while it is switched off", () => {
+    const ctx = context({
+      providers: [aiService("openai_compatible", false, false)],
+    });
+    expect(step(ctx, "ai").isDone(ctx)).toBe(true);
+  });
+
+  it("does not count a builtin AI service", () => {
+    const ctx = context({ providers: [aiService("builtin_ai", true)] });
+    expect(step(ctx, "ai").isDone(ctx)).toBe(false);
   });
 });
 

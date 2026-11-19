@@ -155,6 +155,8 @@ const props = defineProps<{
   selfServiceOnly?: boolean;
   // only offer the plugins that let an app play to Music Assistant
   audioSourceOnly?: boolean;
+  // only offer the plugins that bring AI or speech
+  aiServiceOnly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -202,6 +204,7 @@ const availableProviders = computed(() =>
         multiInstanceOnly: props.multiInstanceOnly,
         selfServiceOnly: props.selfServiceOnly,
         audioSourceOnly: props.audioSourceOnly,
+        aiServiceOnly: props.aiServiceOnly,
       },
     ).filter((entry) => entry.canAdd),
     popularDomains.value,

@@ -5,6 +5,7 @@
     </ItemMedia>
     <ItemContent>
       <ItemTitle>{{ provider.name }}</ItemTitle>
+      <ItemDescription v-if="description">{{ description }}</ItemDescription>
     </ItemContent>
     <ItemActions>
       <!-- a provider that is set up but switched off or broken is no tick -->
@@ -41,6 +42,7 @@ import {
   Item,
   ItemActions,
   ItemContent,
+  ItemDescription,
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
@@ -60,6 +62,8 @@ import { computed } from "vue";
  */
 const props = defineProps<{
   provider: ConfiguredProvider;
+  // what it brings, such as the engines it provides
+  description?: string;
 }>();
 
 const needsReconfigure = computed(() =>
