@@ -27,6 +27,13 @@ describe("parentBrowsePath for Discover", () => {
 
   it("goes from a provider level to the scheme", () => {
     expect(parentBrowsePath("discover://recs")).toBe("discover://");
+    expect(parentBrowsePath("discover://recs/")).toBe("discover://");
+  });
+
+  it("goes from a row whose id carries a scheme delimiter to its provider", () => {
+    expect(parentBrowsePath("discover://spotify--abc/spotify://mix/1")).toBe(
+      "discover://spotify--abc",
+    );
   });
 });
 
@@ -109,6 +116,21 @@ describe("browsePathLevels", () => {
         segment: "mixes/for you",
       },
     ]);
+  });
+
+  it.each([
+    ["a scheme delimiter", "spotify://mix/daily 1"],
+    ["repeated slashes", "mixes//for you"],
+    ["a trailing slash", "mixes/for you/"],
+  ])("keeps a row id with %s verbatim", (_case, rowId) => {
+    const path = `discover://spotify--abc/${rowId}`;
+    // the row level's path is the key its breadcrumb name is looked up by
+    expect(summary(path).at(-1)).toEqual({
+      kind: "row",
+      path,
+      segment: rowId,
+    });
+    expect(summary(path)).toHaveLength(3);
   });
 
   it("lists the folders of a path that names no provider", () => {

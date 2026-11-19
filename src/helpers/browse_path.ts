@@ -16,9 +16,9 @@ export function parentBrowsePath(path: string): string {
   // a provider's own level is listed at the browse root
   if (!subPath) return "root";
   if (path.slice(0, separatorIndex) === DISCOVER_BROWSE_SCHEME) {
-    const [rowProvider, ...rowIdParts] = subPath.split("/");
+    const { rowProvider, rowId } = splitDiscoverPath(subPath);
     if (!rowProvider) return "root";
-    if (rowIdParts.length) return path.slice(0, prefixLength) + rowProvider;
+    return path.slice(0, prefixLength) + (rowId ? rowProvider : "");
   }
   return (
     path.slice(0, prefixLength) + subPath.split("/").slice(0, -1).join("/")
@@ -51,9 +51,10 @@ export interface BrowsePathLevel {
  * @returns The levels, outermost first; empty for a path without a provider.
  */
 export const browsePathLevels = (path: string): BrowsePathLevel[] => {
-  const [provider, folderPart = ""] = path.includes("://")
-    ? path.split("://")
-    : ["", path];
+  // only the first delimiter ends the provider, a Discover row id may carry one too
+  const separatorIndex = path.indexOf("://");
+  const provider = separatorIndex < 0 ? "" : path.slice(0, separatorIndex);
+  const folderPart = separatorIndex < 0 ? path : path.slice(separatorIndex + 3);
   if (!provider) {
     // a path without a provider reads as a plain folder tree
     const segments = folderPart.split("/").filter(Boolean);
@@ -70,7 +71,7 @@ export const browsePathLevels = (path: string): BrowsePathLevel[] => {
     const levels: BrowsePathLevel[] = [
       { kind: "scheme", path: prefix, segment: provider, provider },
     ];
-    const [rowProvider, ...rowIdParts] = folderPart.split("/").filter(Boolean);
+    const { rowProvider, rowId } = splitDiscoverPath(folderPart);
     if (!rowProvider) return levels;
     levels.push({
       kind: "provider",
@@ -78,8 +79,6 @@ export const browsePathLevels = (path: string): BrowsePathLevel[] => {
       segment: rowProvider,
       provider,
     });
-    // a row id keeps its own slashes, so it is one level rather than a tree
-    const rowId = rowIdParts.join("/");
     if (rowId) {
       levels.push({
         kind: "row",
@@ -105,3 +104,23 @@ export const browsePathLevels = (path: string): BrowsePathLevel[] => {
   });
   return levels;
 };
+
+/**
+ * Split the part of a Discover path after `discover://` into its provider and row id.
+ *
+ * Only the first slash ends the provider: the row id is everything after it, verbatim,
+ * so it matches the id the server lists the row under.
+ *
+ * @param subPath - The path after the scheme, e.g. `ytmusic--abc/mixes/for you`.
+ */
+function splitDiscoverPath(subPath: string): {
+  rowProvider: string;
+  rowId: string;
+} {
+  const slashIndex = subPath.indexOf("/");
+  if (slashIndex < 0) return { rowProvider: subPath, rowId: "" };
+  return {
+    rowProvider: subPath.slice(0, slashIndex),
+    rowId: subPath.slice(slashIndex + 1),
+  };
+}
