@@ -245,6 +245,7 @@ import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
 import {
   getOutputMenuItems,
   getPlayerSettingsMenuItems,
+  isPlayerBeingRemoved,
 } from "@/helpers/player_settings_actions";
 import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
 import { getExternalLinkUrl } from "@/helpers/utils";
@@ -296,6 +297,16 @@ const unsubConfigUpdated = api.subscribe(
   },
 );
 onBeforeUnmount(unsubConfigUpdated);
+
+// the players the server removed while this page was open, which have no config to fetch
+const removedPlayerIds = new Set<string>();
+const unsubPlayerRemoved = api.subscribe(
+  EventType.PLAYER_REMOVED,
+  (evt: EventMessage) => {
+    if (evt.object_id) removedPlayerIds.add(evt.object_id);
+  },
+);
+onBeforeUnmount(unsubPlayerRemoved);
 
 // computed properties
 const player = computed(() =>
@@ -566,7 +577,7 @@ async function loadConfig(playerId: string) {
 }
 
 async function refreshPlayerConfig(playerId: string) {
-  if (config.value?.player_id !== playerId) return;
+  if (config.value?.player_id !== playerId || isPlayerGoing(playerId)) return;
   const requestId = ++configRefreshRequestId;
   // a player can go with its config while the refresh is on its way, such as a speaker
   // that went up in a multi-channel player; the page leaves it then, so that is no error
@@ -609,6 +620,14 @@ function applyPlayerConfig(updatedConfig: PlayerConfig, saved: string[] = []) {
 
 function isCurrentPlayer(playerId: string) {
   return props.playerId === playerId && config.value?.player_id === playerId;
+}
+
+// a player that is being removed, or that is gone, has no config left to fetch
+function isPlayerGoing(playerId: string): boolean {
+  return (
+    isPlayerBeingRemoved(playerId) ||
+    (removedPlayerIds.has(playerId) && !(playerId in api.players))
+  );
 }
 
 function resetPlayerState(playerId?: string) {

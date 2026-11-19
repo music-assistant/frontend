@@ -39,6 +39,7 @@ const {
   emitEvent,
   getOutputMenuItems,
   getPlayerSettingsMenuItems,
+  isPlayerBeingRemoved,
   routerMock,
   toastMock,
 } = vi.hoisted(() => ({
@@ -60,6 +61,7 @@ const {
   emitEvent: vi.fn(),
   getOutputMenuItems: vi.fn<typeof buildOutputMenuItems>(),
   getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
+  isPlayerBeingRemoved: vi.fn<(playerId: string) => boolean>(),
   routerMock: {
     back: vi.fn(),
     push: vi.fn(),
@@ -125,6 +127,7 @@ vi.mock("@/helpers/player_config", async (importOriginal) => ({
 vi.mock("@/helpers/player_settings_actions", () => ({
   getOutputMenuItems,
   getPlayerSettingsMenuItems,
+  isPlayerBeingRemoved,
 }));
 
 vi.mock("vue-sonner", () => ({
@@ -170,6 +173,7 @@ describe("EditPlayer", () => {
       { label: "settings.delete" },
     ]);
     getOutputMenuItems.mockReturnValue([]);
+    isPlayerBeingRemoved.mockReturnValue(false);
   });
 
   it("names the player in the header", async () => {
@@ -450,6 +454,46 @@ describe("EditPlayer", () => {
     expect(routerMock.replace).toHaveBeenCalledWith(
       "/settings/editplayer/studio",
     );
+  });
+
+  it("asks no config of a player a command of this app is removing", async () => {
+    await mountPlayerPage();
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledOnce();
+
+    isPlayerBeingRemoved.mockImplementation((id) => id === "player-1");
+    playerConfigUpdated("player-1");
+    await flushPromises();
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledOnce();
+
+    // once the command is done, a change is fetched again
+    isPlayerBeingRemoved.mockReturnValue(false);
+    playerConfigUpdated("player-1");
+    await flushPromises();
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(2);
+  });
+
+  it("asks no config of a player the server removed", async () => {
+    await mountPlayerPage();
+
+    // another player going changes nothing for this page
+    playerRemoved("player-2");
+    playerConfigUpdated("player-1");
+    await flushPromises();
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(2);
+
+    const player = apiMock.players["player-1"];
+    delete apiMock.players["player-1"];
+    playerRemoved("player-1");
+    playerConfigUpdated("player-1");
+    providersUpdated();
+    await flushPromises();
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(2);
+
+    // a player that comes back has a config again
+    apiMock.players["player-1"] = player;
+    playerConfigUpdated("player-1");
+    await flushPromises();
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(3);
   });
 
   it("stays quiet when the player goes with its config while that refreshes", async () => {
@@ -911,6 +955,13 @@ function providersUpdated() {
  * Deliver the config change the server sends when the player is renamed,
  * enabled or disabled elsewhere.
  */
+function playerRemoved(playerId: string) {
+  for (const [eventType, callback] of apiMock.subscribe.mock.calls) {
+    if (eventType === EventType.PLAYER_REMOVED)
+      callback({ object_id: playerId });
+  }
+}
+
 function playerConfigUpdated(playerId: string) {
   for (const [eventType, callback] of apiMock.subscribe.mock.calls) {
     if (eventType === EventType.PLAYER_CONFIG_UPDATED) {

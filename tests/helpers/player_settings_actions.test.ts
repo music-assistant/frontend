@@ -4,6 +4,7 @@ import {
   getOutputMenuItems,
   getPlayerSettingsMenuItems,
   getSetupRequiredPlayerMenuItems,
+  isPlayerBeingRemoved,
   mergePlayer,
   removeUnavailablePlayers,
   renamePlayer,
@@ -1101,6 +1102,92 @@ describe("createMultiChannelPlayer", () => {
     expect(toastMock.success).not.toHaveBeenCalled();
     expect(toastMock.error).not.toHaveBeenCalled();
   });
+});
+
+describe("isPlayerBeingRemoved", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer({ type: PlayerType.MULTI_CHANNEL });
+    apiMock.getProvider.mockReturnValue(
+      providerInstance({
+        supported_features: [ProviderFeature.CREATE_MULTI_CHANNEL_PLAYER],
+      }),
+    );
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  it.each([
+    [
+      "combining speakers",
+      ["studio-left", "studio-right"],
+      () => apiMock.createMultiChannelPlayer,
+      () =>
+        createMultiChannelPlayer("sendspin", "Studio", {
+          "studio-left": SpeakerChannel.FRONT_LEFT,
+          "studio-right": SpeakerChannel.FRONT_RIGHT,
+        }),
+    ],
+    [
+      "merging a player",
+      ["kitchen"],
+      () => apiMock.mergePlayers,
+      () => mergePlayer("kitchen", "office"),
+    ],
+    [
+      "taking a set apart",
+      ["kitchen"],
+      () => apiMock.removePlayer,
+      async () => {
+        menuItem(
+          getPlayerSettingsMenuItems(playerConfig()),
+          "settings.multi_channel.take_apart",
+        ).action?.();
+        await confirmation().onConfirm();
+      },
+    ],
+    [
+      "deleting a player",
+      ["kitchen"],
+      () => apiMock.removePlayer,
+      async () => {
+        registerPlayer();
+        menuItem(
+          getPlayerSettingsMenuItems(playerConfig()),
+          "settings.delete",
+        ).action?.();
+        await confirmation().onConfirm();
+      },
+    ],
+  ])(
+    "holds the players while %s is on its way, done or not",
+    async (_, playerIds, command, run) => {
+      for (const outcome of ["done", "refused"]) {
+        let finish: () => void = () => undefined;
+        command().mockReturnValueOnce(
+          new Promise((resolve, reject) => {
+            finish = () =>
+              outcome === "done"
+                ? resolve({ player_id: "studio" })
+                : reject(new Error("Refused"));
+          }),
+        );
+        emitEvent.mockClear();
+
+        const running = run();
+        await Promise.resolve();
+        expect(playerIds.map(isPlayerBeingRemoved)).toEqual(
+          playerIds.map(() => true),
+        );
+        expect(isPlayerBeingRemoved("office")).toBe(false);
+
+        finish();
+        await running;
+        expect(playerIds.map(isPlayerBeingRemoved)).toEqual(
+          playerIds.map(() => false),
+        );
+      }
+    },
+  );
 });
 
 describe("mergePlayer", () => {

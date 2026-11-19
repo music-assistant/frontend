@@ -49,6 +49,10 @@ import {
 import { markRaw } from "vue";
 import { toast } from "vue-sonner";
 
+// the players a command of this app is removing right now, such as the speakers that go
+// up in a new multi-channel player
+const playersBeingRemoved = new Set<string>();
+
 export interface PlayerSettingsMenuOptions {
   // include links to the individual settings sections; the settings page itself
   // already lists them and leaves these out
@@ -68,6 +72,14 @@ export interface OutputMenuOptions {
   // called with the id of the multi-channel player the output moved into
   onMultiChannelCreated?: (playerId: string) => void;
 }
+
+/**
+ * Whether a command of this app is removing a player right now, so its config is about to
+ * go: deleting it, merging it into another one, taking it apart or combining it into a
+ * multi-channel player.
+ */
+export const isPlayerBeingRemoved = (playerId: string): boolean =>
+  playersBeingRemoved.has(playerId);
 
 /** Which settings sections a player has something to show for. */
 export const getPlayerSettingsSections = (playerId: string) => {
@@ -348,7 +360,9 @@ export const mergePlayer = async (
   targetPlayerId: string,
 ): Promise<boolean> => {
   try {
-    await api.mergePlayers(playerId, targetPlayerId);
+    await whileRemoving([playerId], () =>
+      api.mergePlayers(playerId, targetPlayerId),
+    );
   } catch {
     // a failed command is already reported by the api layer, with the
     // server's reason why the two can not be one player
@@ -377,7 +391,9 @@ export const createMultiChannelPlayer = async (
 ): Promise<Player | undefined> => {
   let player: Player;
   try {
-    player = await api.createMultiChannelPlayer(provider, name, members);
+    player = await whileRemoving(Object.keys(members), () =>
+      api.createMultiChannelPlayer(provider, name, members),
+    );
   } catch {
     // a failed command is already reported by the api layer, with the
     // server's reason why the speakers can not be combined
@@ -479,7 +495,7 @@ function confirmTakeApart(
     confirmLabel: $t("settings.multi_channel.take_apart_confirm"),
     onConfirm: async () => {
       try {
-        await api.removePlayer(playerId);
+        await whileRemoving([playerId], () => api.removePlayer(playerId));
       } catch {
         // a failed command is already reported by the api layer
         return;
@@ -504,7 +520,7 @@ function confirmDisablePlayer(playerId: string, playerName: string) {
 
 async function deletePlayer(playerId: string, onDeleted?: () => void) {
   try {
-    await api.removePlayer(playerId);
+    await whileRemoving([playerId], () => api.removePlayer(playerId));
     selectFallbackPlayer(playerId);
     onDeleted?.();
   } catch {
@@ -561,4 +577,17 @@ function selectFallbackPlayer(playerId: string) {
   // a remembered player that never registers again leaves the next visit
   // waiting for it instead of picking a player that is there
   void setUserPreference("activePlayerId", null);
+}
+
+/** Run a command that removes players, telling the rest of the app it is on its way. */
+async function whileRemoving<T>(
+  playerIds: string[],
+  command: () => Promise<T>,
+): Promise<T> {
+  for (const playerId of playerIds) playersBeingRemoved.add(playerId);
+  try {
+    return await command();
+  } finally {
+    for (const playerId of playerIds) playersBeingRemoved.delete(playerId);
+  }
 }
