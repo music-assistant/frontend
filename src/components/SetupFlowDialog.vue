@@ -322,6 +322,7 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { serverNow } from "@/composables/useServerTime";
 import { copyToClipboard, isEmbeddedImage } from "@/helpers/utils";
+import { isInVuetifyOverlay } from "@/helpers/vuetify_overlay";
 import {
   allRequiredValuesPresent,
   isEntryDisabled,
@@ -792,12 +793,7 @@ function onGuardedClose(event: Event) {
   // step) teleport OUTSIDE the dialog DOM, so Reka would treat interacting with
   // them as an outside click and dismiss the whole dialog. Keep it open when the
   // interaction lands inside a Vuetify overlay.
-  const original = (event as CustomEvent).detail?.originalEvent as
-    Event | undefined;
-  const target = (original?.target ?? event.target) as HTMLElement | null;
-  if (target?.closest?.(".v-overlay-container, .v-overlay, .v-menu")) {
-    event.preventDefault();
-  }
+  if (isInVuetifyOverlay(event)) event.preventDefault();
 }
 
 function close(sendAbort = true) {

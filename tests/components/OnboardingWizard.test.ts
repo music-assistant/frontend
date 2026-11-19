@@ -49,6 +49,8 @@ const {
     configureRemoteAccess: vi.fn(),
     getPlayerConfig: vi.fn(),
     getPlayerConfigs: vi.fn(),
+    getProvider: vi.fn(),
+    getProviderConfig: vi.fn(),
     getProviderConfigs: vi.fn(),
     getRemoteAccessInfo: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
@@ -401,6 +403,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     apiMock.getPlayerConfigs.mockReset();
     apiMock.getPlayerConfigs.mockResolvedValue([]);
     apiMock.getPlayerConfig.mockReset();
+    apiMock.getProviderConfig.mockReset();
     apiMock.getAllUsers.mockReset();
     apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
     apiMock.getRemoteAccessInfo.mockReset();
@@ -516,6 +519,40 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         providerType: ProviderType.PLUGIN,
         audioSourceOnly: true,
       });
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it("opens a connected app's settings on top of the wizard", async () => {
+    preferenceState.intent.value = "phone_apps";
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
+    // the settings stay on their way, so the dialog is caught as it opens
+    apiMock.getProviderConfig.mockReturnValue(new Promise(() => {}));
+    const wrapper = await mountWizard({ step: "plugins" });
+    try {
+      await flushPromises();
+
+      // the step says how to choose the speakers, which is what the row does
+      expect(wrapper.text()).toContain(
+        "onboarding.steps.plugins.phone_apps_instructions",
+      );
+      await wrapper
+        .find("[data-testid=onboarding-configured-provider]")
+        .trigger("click");
+      await flushPromises();
+
+      expect(apiMock.getProviderConfig).toHaveBeenCalledWith(
+        "spotify-connect--1",
+      );
+      expect(
+        document.body.querySelector("[data-testid=provider-settings-dialog]"),
+      ).not.toBeNull();
+      // the wizard stays where it is: going to the settings page would pause it
+      expect(heading(wrapper)).toBe(
+        "onboarding.steps.plugins.phone_apps_title",
+      );
+      expect(routerMock.push).not.toHaveBeenCalled();
     } finally {
       wrapper.unmount();
     }

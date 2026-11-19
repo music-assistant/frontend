@@ -3354,7 +3354,7 @@
             "plugins": {
                 "title": "Add plugins",
                 "phone_apps_title": "Connect your music apps",
-                "phone_apps_description": "Add Spotify Connect or the AirPlay receiver, then open its settings to choose your speakers.",
+                "phone_apps_instructions": "Add Spotify Connect or the AirPlay receiver, then select it to choose the speakers it plays on.",
                 "connect": "Connect a music app"
             },
             "core_settings": {
