@@ -1,7 +1,9 @@
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
+import { AUDIO_SOURCES } from "@/helpers/settings_pages";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   type ProviderConfig,
+  ProviderFeature,
   ProviderSharing,
   ProviderStatus,
   ProviderType,
@@ -17,7 +19,10 @@ const { apiMock, eventbusMock, i18nMock, storeMock, toastMock } = vi.hoisted(
   () => ({
     apiMock: {
       getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
-      providerManifests: {} as Record<string, { builtin: boolean }>,
+      providerManifests: {} as Record<
+        string,
+        { builtin: boolean; features?: ProviderFeature[] }
+      >,
       providers: {} as Record<string, unknown>,
       removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
       subscribe: vi.fn<MusicAssistantApi["subscribe"]>(),
@@ -57,15 +62,29 @@ const isErrorStatus = (status?: ProviderStatus | null) =>
   status === ProviderStatus.ERROR;
 
 function mountSources(
-  overrides: { managesAllSources?: boolean; currentType?: string } = {},
+  overrides: { managesAllSources?: boolean; listTypes?: string[] } = {},
 ) {
   return withComposable(() =>
     useProviderSources({
-      currentType: () => overrides.currentType,
+      listTypes: () => overrides.listTypes ?? [ProviderType.MUSIC],
       getProviderName,
       isErrorStatus,
       managesAllSources: () => overrides.managesAllSources ?? true,
     }),
+  );
+}
+
+type Sources = ReturnType<typeof mountSources>["result"];
+
+/** The only list of a page showing a single one. */
+function onlyList(result: Sources) {
+  return result.lists.value[0];
+}
+
+/** The instance ids a list shows, in their order. */
+function listedIds(result: Sources, index = 0) {
+  return result.lists.value[index].filteredProviders.map(
+    (config) => config.instance_id,
   );
 }
 
@@ -144,7 +163,7 @@ describe("loadItems", () => {
 });
 
 describe("filteredProviders", () => {
-  it("keeps only music sources by default", async () => {
+  it("keeps only the music sources on their list", async () => {
     apiMock.getProviderConfigs.mockResolvedValue([
       providerConfig({ domain: "spotify", instance_id: "spotify--1" }),
       providerConfig({
@@ -156,9 +175,7 @@ describe("filteredProviders", () => {
     const { result } = mountSources();
     await flushPromises();
 
-    expect(result.filteredProviders.value.map((c) => c.instance_id)).toEqual([
-      "spotify--1",
-    ]);
+    expect(listedIds(result)).toEqual(["spotify--1"]);
   });
 
   it("keeps only the given type", async () => {
@@ -170,12 +187,10 @@ describe("filteredProviders", () => {
         type: ProviderType.PLAYER,
       }),
     ]);
-    const { result } = mountSources({ currentType: ProviderType.PLAYER });
+    const { result } = mountSources({ listTypes: [ProviderType.PLAYER] });
     await flushPromises();
 
-    expect(result.filteredProviders.value.map((c) => c.instance_id)).toEqual([
-      "sonos--1",
-    ]);
+    expect(listedIds(result)).toEqual(["sonos--1"]);
   });
 
   it("excludes a builtin provider for a role that manages only its own sources", async () => {
@@ -186,9 +201,7 @@ describe("filteredProviders", () => {
     const { result } = mountSources({ managesAllSources: false });
     await flushPromises();
 
-    expect(result.filteredProviders.value.map((c) => c.instance_id)).toEqual([
-      "spotify--1",
-    ]);
+    expect(listedIds(result)).toEqual(["spotify--1"]);
   });
 
   it("keeps a builtin provider for a role that manages all sources", async () => {
@@ -200,19 +213,12 @@ describe("filteredProviders", () => {
     await flushPromises();
 
     // alphabetical by name, which falls back to the domain here
-    expect(result.filteredProviders.value.map((c) => c.instance_id)).toEqual([
-      "library--1",
-      "spotify--1",
-    ]);
+    expect(listedIds(result)).toEqual(["library--1", "spotify--1"]);
   });
 
   it("narrows the list by the search query", async () => {
     apiMock.getProviderConfigs.mockResolvedValue([
-      providerConfig({
-        domain: "spotify",
-        instance_id: "spotify--1",
-        name: "Spotify",
-      }),
+      ...musicConfigs(9),
       providerConfig({
         domain: "tidal",
         instance_id: "tidal--1",
@@ -222,11 +228,19 @@ describe("filteredProviders", () => {
     const { result } = mountSources();
     await flushPromises();
 
-    result.searchQuery.value = "tid";
+    result.setSearchQuery(ProviderType.MUSIC, "tid");
 
-    expect(result.filteredProviders.value.map((c) => c.instance_id)).toEqual([
-      "tidal--1",
-    ]);
+    expect(listedIds(result)).toEqual(["tidal--1"]);
+  });
+
+  it("ignores a search while the list offers none", async () => {
+    apiMock.getProviderConfigs.mockResolvedValue(musicConfigs(2));
+    const { result } = mountSources();
+    await flushPromises();
+
+    result.setSearchQuery(ProviderType.MUSIC, "spotify 1");
+
+    expect(listedIds(result)).toHaveLength(2);
   });
 
   it("sorts sources needing attention before the rest, then alphabetically", async () => {
@@ -253,11 +267,97 @@ describe("filteredProviders", () => {
     const { result } = mountSources();
     await flushPromises();
 
-    expect(result.filteredProviders.value.map((c) => c.instance_id)).toEqual([
-      "c--1",
-      "a--1",
-      "b--1",
+    expect(listedIds(result)).toEqual(["c--1", "a--1", "b--1"]);
+  });
+});
+
+describe("the audio sources", () => {
+  const PLUGIN_LISTS = [ProviderType.MUSIC, AUDIO_SOURCES, ProviderType.PLUGIN];
+
+  beforeEach(() => {
+    apiMock.providerManifests = {
+      airplay_receiver: {
+        builtin: false,
+        features: [ProviderFeature.AUDIO_SOURCE],
+      },
+      // a manifest from a server that does not say what a provider offers
+      lastfm_scrobble: { builtin: false },
+      hass: { builtin: false, features: [ProviderFeature.AUDIO_SOURCE] },
+      spotify: { builtin: false },
+    };
+    apiMock.getProviderConfigs.mockResolvedValue([
+      providerConfig({ domain: "spotify", instance_id: "spotify--1" }),
+      providerConfig({
+        domain: "airplay_receiver",
+        instance_id: "airplay_receiver--1",
+        type: ProviderType.PLUGIN,
+      }),
+      // not loaded, so only its manifest tells what it offers
+      providerConfig({
+        domain: "airplay_receiver",
+        enabled: false,
+        instance_id: "airplay_receiver--2",
+        status: ProviderStatus.DISABLED,
+        type: ProviderType.PLUGIN,
+      }),
+      providerConfig({
+        domain: "lastfm_scrobble",
+        instance_id: "lastfm_scrobble--1",
+        type: ProviderType.PLUGIN,
+      }),
+      providerConfig({
+        domain: "hass",
+        instance_id: "hass",
+        type: ProviderType.PLUGIN,
+      }),
     ]);
+  });
+
+  it("lists a plugin offering audio sources with them, not with the plugins", async () => {
+    const { result } = mountSources({ listTypes: PLUGIN_LISTS });
+    await flushPromises();
+
+    expect(result.lists.value.map((list) => list.type)).toEqual(PLUGIN_LISTS);
+    expect(listedIds(result, 0)).toEqual(["spotify--1"]);
+    expect(listedIds(result, 1)).toEqual([
+      "airplay_receiver--1",
+      "airplay_receiver--2",
+    ]);
+    expect(listedIds(result, 2)).toEqual(["lastfm_scrobble--1"]);
+  });
+
+  it("leaves a provider with a settings page of its own off every list", async () => {
+    const { result } = mountSources({ listTypes: PLUGIN_LISTS });
+    await flushPromises();
+
+    expect(
+      result.lists.value.flatMap((list) =>
+        list.filteredProviders.map((config) => config.domain),
+      ),
+    ).not.toContain("hass");
+  });
+
+  it("searches each list on its own", async () => {
+    apiMock.getProviderConfigs.mockResolvedValue([
+      ...musicConfigs(10),
+      ...Array.from({ length: 10 }, (_, index) =>
+        providerConfig({
+          domain: "airplay_receiver",
+          instance_id: `airplay_receiver--${index}`,
+          name: `AirPlay ${index}`,
+          type: ProviderType.PLUGIN,
+        }),
+      ),
+    ]);
+    const { result } = mountSources({
+      listTypes: [ProviderType.MUSIC, AUDIO_SOURCES],
+    });
+    await flushPromises();
+
+    result.setSearchQuery(AUDIO_SOURCES, "airplay 3");
+
+    expect(listedIds(result, 0)).toHaveLength(10);
+    expect(listedIds(result, 1)).toEqual(["airplay_receiver--3"]);
   });
 });
 
@@ -267,7 +367,7 @@ describe("showSearch", () => {
     const { result } = mountSources();
     await flushPromises();
 
-    expect(result.showSearch.value).toBe(true);
+    expect(onlyList(result).showSearch).toBe(true);
   });
 
   it("stays hidden below ten listed providers", async () => {
@@ -275,21 +375,22 @@ describe("showSearch", () => {
     const { result } = mountSources();
     await flushPromises();
 
-    expect(result.showSearch.value).toBe(false);
+    expect(onlyList(result).showSearch).toBe(false);
   });
 
   it("clears the search query once the list drops below the threshold", async () => {
     apiMock.getProviderConfigs.mockResolvedValue(musicConfigs(10));
     const { result } = mountSources();
     await flushPromises();
-    result.searchQuery.value = "spotify 1";
-    expect(result.searchQuery.value).not.toBe("");
+    result.setSearchQuery(ProviderType.MUSIC, "spotify 1");
+    expect(onlyList(result).searchQuery).not.toBe("");
 
     apiMock.getProviderConfigs.mockResolvedValue(musicConfigs(5));
     await result.loadItems();
 
-    expect(result.showSearch.value).toBe(false);
-    expect(result.searchQuery.value).toBe("");
+    expect(onlyList(result).showSearch).toBe(false);
+    expect(onlyList(result).searchQuery).toBe("");
+    expect(listedIds(result)).toHaveLength(5);
   });
 });
 
@@ -301,10 +402,10 @@ describe("sections", () => {
     const { result } = mountSources({ managesAllSources: true });
     await flushPromises();
 
-    expect(result.sections.value.map((section) => section.key)).toEqual([
+    expect(onlyList(result).sections.map((section) => section.key)).toEqual([
       "all",
     ]);
-    expect(result.sections.value[0].items).toHaveLength(1);
+    expect(onlyList(result).sections[0].items).toHaveLength(1);
   });
 
   it("splits a member's own sources from the ones shared with it", async () => {
@@ -332,15 +433,15 @@ describe("sections", () => {
     const { result } = mountSources({ managesAllSources: false });
     await flushPromises();
 
-    expect(result.sections.value.map((section) => section.key)).toEqual([
+    expect(onlyList(result).sections.map((section) => section.key)).toEqual([
       "own",
       "shared",
     ]);
     expect(
-      result.sections.value[0].items.map((item) => item.instance_id),
+      onlyList(result).sections[0].items.map((item) => item.instance_id),
     ).toEqual(["spotify--own"]);
     expect(
-      result.sections.value[1].items.map((item) => item.instance_id),
+      onlyList(result).sections[1].items.map((item) => item.instance_id),
     ).toEqual(["spotify--other"]);
   });
 
@@ -360,7 +461,7 @@ describe("sections", () => {
     const { result } = mountSources({ managesAllSources: false });
     await flushPromises();
 
-    expect(result.sections.value.map((section) => section.key)).toEqual([
+    expect(onlyList(result).sections.map((section) => section.key)).toEqual([
       "own",
     ]);
   });
@@ -371,7 +472,7 @@ describe("showMusicEmptyState", () => {
     const { result } = mountSources();
     await flushPromises();
 
-    expect(result.showMusicEmptyState.value).toBe(true);
+    expect(onlyList(result).showMusicEmptyState).toBe(true);
   });
 
   it("stays false before the list has loaded", async () => {
@@ -380,23 +481,26 @@ describe("showMusicEmptyState", () => {
     await flushPromises();
 
     expect(result.loaded.value).toBe(false);
-    expect(result.showMusicEmptyState.value).toBe(false);
+    expect(onlyList(result).showMusicEmptyState).toBe(false);
   });
 
   it("stays false while a search query is active", async () => {
     const { result } = mountSources();
     await flushPromises();
 
-    result.searchQuery.value = "spotify";
+    apiMock.getProviderConfigs.mockResolvedValue(musicConfigs(10));
+    await result.loadItems();
+    result.setSearchQuery(ProviderType.MUSIC, "nothing matches this");
 
-    expect(result.showMusicEmptyState.value).toBe(false);
+    expect(listedIds(result)).toEqual([]);
+    expect(onlyList(result).showMusicEmptyState).toBe(false);
   });
 
   it("stays false for a type other than music", async () => {
-    const { result } = mountSources({ currentType: ProviderType.PLAYER });
+    const { result } = mountSources({ listTypes: [ProviderType.PLAYER] });
     await flushPromises();
 
-    expect(result.showMusicEmptyState.value).toBe(false);
+    expect(onlyList(result).showMusicEmptyState).toBe(false);
   });
 });
 
@@ -432,13 +536,13 @@ describe("removeSource", () => {
     apiMock.getProviderConfigs.mockResolvedValue([config]);
     const { result } = mountSources();
     await flushPromises();
-    expect(result.filteredProviders.value).toHaveLength(1);
+    expect(listedIds(result)).toHaveLength(1);
 
     result.removeSource(config);
     await confirmRemoval();
 
     expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--1");
-    expect(result.filteredProviders.value).toHaveLength(0);
+    expect(listedIds(result)).toHaveLength(0);
   });
 
   it("keeps the source listed and toasts when removal fails", async () => {
@@ -456,7 +560,7 @@ describe("removeSource", () => {
     await confirmRemoval();
 
     expect(toastMock.error).toHaveBeenCalledWith("Error: nope");
-    expect(result.filteredProviders.value).toHaveLength(1);
+    expect(listedIds(result)).toHaveLength(1);
   });
 });
 

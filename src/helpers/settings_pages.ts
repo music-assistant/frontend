@@ -1,5 +1,11 @@
 import { HASS_DOMAIN } from "@/helpers/home_assistant";
-import { type ConfigEntry, Scope } from "@/plugins/api/interfaces";
+import type { SettingsColor } from "@/helpers/settings_colors";
+import {
+  type ConfigEntry,
+  ProviderFeature,
+  ProviderType,
+  Scope,
+} from "@/plugins/api/interfaces";
 import { Activity, CirclePlay, Library, Tags } from "@lucide/vue";
 import type { Component } from "vue";
 import type { RouteLocationRaw } from "vue-router";
@@ -22,11 +28,13 @@ export interface SettingsSource {
   title?: string;
 }
 
-// the row a settings section shows above its list, leading to the page
+// the tile a settings section shows above its lists, leading to the page
 export interface SettingsPageLink {
-  // the SettingsSection name of the menu item showing the row
+  // the page showing the tile: the name of a SettingsSection, or the key of a
+  // SectionPage below one
   section: string;
   icon: Component;
+  color: SettingsColor;
   label: string;
   description: string;
   requiresScope?: Scope;
@@ -53,7 +61,13 @@ export type SettingsPageId =
   | "task_settings"
   | "user_management";
 
-// a settings page with the row leading to it
+// the list of the plugins through which apps play audio into Music Assistant
+export const AUDIO_SOURCES = ProviderFeature.AUDIO_SOURCE;
+
+// the list a provider shows in: the providers of its type, or the audio sources
+export type ProviderListType = ProviderType | typeof AUDIO_SOURCES;
+
+// a settings page with the tile leading to it
 export interface LinkedSettingsPage {
   id: SettingsPageId;
   route: RouteLocationRaw;
@@ -91,6 +105,7 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     link: {
       section: "audio_analysis_providers",
       icon: Activity,
+      color: "orange",
       label: "settings.audio_analysis_status.title",
       description: "settings.audio_analysis_status.description",
       requiresScope: Scope.SYSTEM_MANAGE,
@@ -132,8 +147,9 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     title: "settings.library.title",
     route: { name: "librarysettings" },
     link: {
-      section: "music_providers",
+      section: "music",
       icon: Library,
+      color: "indigo",
       label: "settings.library.title",
       description: "settings.library.description",
       requiresScope: Scope.CONFIG_CORE_WRITE,
@@ -157,6 +173,7 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     link: {
       section: "metadata_providers",
       icon: Tags,
+      color: "green",
       label: "settings.metadata.title",
       description: "settings.metadata.description",
       requiresScope: Scope.CONFIG_CORE_WRITE,
@@ -189,6 +206,7 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     link: {
       section: "players",
       icon: CirclePlay,
+      color: "blue",
       label: "settings.playback.title",
       description: "settings.playback.description",
       requiresScope: Scope.CONFIG_CORE_WRITE,
@@ -256,7 +274,7 @@ export function isKnownOwner(owner: SettingsOwner): boolean {
 }
 
 /**
- * The settings pages a settings section links to above its list.
+ * The settings pages a settings section links to above its lists.
  *
  * @param sectionName - The name of the settings section.
  * @param hasScope - Whether the role of the current user grants the given scope.
@@ -299,6 +317,24 @@ export function providerSettingsPage(domain: string): SettingsPage | undefined {
   return pageIds()
     .map((id) => SETTINGS_PAGES[id])
     .find((page) => page.provider === domain);
+}
+
+/**
+ * The list a provider shows in on the settings pages and in the Marketplace: a
+ * plugin through which apps play audio into Music Assistant goes with the audio
+ * sources, any other provider with the providers of its type. A provider with a
+ * settings page of its own is managed from that page instead of a list.
+ *
+ * @param type - The type of the provider.
+ * @param features - The features its manifest says it always offers.
+ */
+export function providerListType(
+  type: ProviderType,
+  features: readonly ProviderFeature[] = [],
+): ProviderListType {
+  return type === ProviderType.PLUGIN && features.includes(AUDIO_SOURCES)
+    ? AUDIO_SOURCES
+    : type;
 }
 
 /**

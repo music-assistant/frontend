@@ -571,9 +571,9 @@ export const routes: RouteRecordRaw[] = [
             name: "librarysettings",
             component: () =>
               import(
-                /* webpackChunkName: "librarysettings" */ "@/views/settings/LibrarySettings.vue"
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
               ),
-            props: true,
+            props: { page: "library" satisfies SettingsPageId },
             meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {

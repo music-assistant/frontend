@@ -1,7 +1,10 @@
 import { isOwnMusicSource } from "@/helpers/provider_access";
 import { isBuiltinProvider } from "@/helpers/provider_config";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
-import { providerSettingsPage } from "@/helpers/settings_pages";
+import {
+  providerListType,
+  providerSettingsPage,
+} from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -30,16 +33,32 @@ export interface ProviderSection {
   items: ProviderConfig[];
 }
 
+// one list of providers on a settings page
+export interface ProviderList {
+  // the list type, as providerListType gives it
+  type: string;
+  // the search narrowing the list down; empty while the list offers none
+  searchQuery: string;
+  // what the search leaves: sources needing attention first, then alphabetically
+  filteredProviders: ProviderConfig[];
+  sections: ProviderSection[];
+  showSearch: boolean;
+  // an empty music list invites a first source of one's own, or tells a viewer
+  // who cannot add any that nothing has been shared yet
+  showMusicEmptyState: boolean;
+}
+
 interface UseProviderSourcesOptions {
   managesAllSources: MaybeRefOrGetter<boolean>;
-  currentType: MaybeRefOrGetter<string | undefined>;
+  // the list types the page shows, in display order
+  listTypes: MaybeRefOrGetter<readonly string[]>;
   getProviderName: (config: ProviderConfig) => string;
   isErrorStatus: (status?: ProviderStatus | null) => boolean;
 }
 
 /**
- * The provider configs of the current type, kept in sync with the server and
- * shaped for the settings list: searched, sorted and split into sections.
+ * The provider configs of the lists of a settings page, kept in sync with the
+ * server and shaped for each list: searched, sorted and split into sections.
  */
 export function useProviderSources(options: UseProviderSourcesOptions) {
   const { getProviderName, isErrorStatus } = options;
@@ -47,97 +66,17 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
   const providerConfigs = ref<ProviderConfig[]>([]);
   // the empty states wait for the first load, so they never flash before the list
   const loaded = ref(false);
-  const searchQuery = ref("");
+  // the search of each list, by its type
+  const searchQueries = ref<Record<string, string>>({});
 
-  // the providers of the current type (the music sources for a member), before
-  // the search narrows them down
-  const listedProviders = computed(() => {
-    let listed = providerConfigs.value;
-
-    const typesQuery = toValue(options.currentType);
-    if (typesQuery && typesQuery.trim().length > 0) {
-      const types = typesQuery.split(",");
-      listed = listed.filter((item) => types.includes(item.type));
-    } else {
-      // Default to showing only music providers when no types are specified
-      listed = listed.filter((item) => item.type === ProviderType.MUSIC);
-    }
-
-    // a provider with a settings page of its own is managed from that page
-    listed = listed.filter((item) => !providerSettingsPage(item.domain));
-
-    // a provider that ships with the server is not a source anyone chose, so a
-    // member is not shown it among the sources it may use
-    if (!toValue(options.managesAllSources)) {
-      listed = listed.filter(
-        (item) => !isBuiltinProvider(api.providerManifests[item.domain]),
-      );
-    }
-    return listed;
-  });
-
-  // sources needing attention (error/auth/incompatible) first, then alphabetically
-  const filteredProviders = computed(() => {
-    let filtered = listedProviders.value;
-
-    if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase();
-      filtered = filtered.filter((item) =>
-        getProviderName(item).toLowerCase().includes(query),
-      );
-    }
-
-    return [...filtered].sort((a, b) => {
-      const aHasError = isErrorStatus(a.status) ? 1 : 0;
-      const bHasError = isErrorStatus(b.status) ? 1 : 0;
-      if (aHasError !== bHasError) return bHasError - aHasError;
-      return getProviderName(a).localeCompare(getProviderName(b));
-    });
-  });
-
-  const showSearch = computed(
-    () => listedProviders.value.length >= MIN_PROVIDERS_FOR_SEARCH,
+  const lists = computed((): ProviderList[] =>
+    toValue(options.listTypes).map((type) => buildList(type)),
   );
 
-  // a search typed before the list shrank below the threshold would keep
-  // narrowing it down unseen
-  watch(showSearch, (shown) => {
-    if (!shown) searchQuery.value = "";
-  });
-
-  // a member's own sources come first, then the ones shared with it; an admin
-  // gets a single untitled section with everything
-  const sections = computed((): ProviderSection[] => {
-    const listed = filteredProviders.value;
-    const userId = store.currentUser?.user_id;
-    const split = toValue(options.managesAllSources)
-      ? [{ key: "all", items: listed }]
-      : [
-          {
-            key: "own",
-            label: "settings.music_sources_own",
-            items: listed.filter((item) => isOwnMusicSource(item, userId)),
-          },
-          {
-            key: "shared",
-            label: "settings.music_sources_shared",
-            items: listed.filter((item) => !isOwnMusicSource(item, userId)),
-          },
-        ];
-    return split.filter((section) => section.items.length > 0);
-  });
-
-  // an empty music list invites a first source of one's own, or tells a viewer
-  // who cannot add any that nothing has been shared yet; any other empty list is
-  // the result of the active search or type filter
-  const showMusicEmptyState = computed(
-    () =>
-      loaded.value &&
-      filteredProviders.value.length === 0 &&
-      !searchQuery.value &&
-      (toValue(options.currentType) || ProviderType.MUSIC) ===
-        ProviderType.MUSIC,
-  );
+  /** Narrow the list of the given type down to what matches the query. */
+  const setSearchQuery = function (type: string, query: string) {
+    searchQueries.value = { ...searchQueries.value, [type]: query };
+  };
 
   const loadItems = async function () {
     // Only load provider configs if provider manifests are available
@@ -213,14 +152,106 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
     },
   );
 
+  function buildList(type: string): ProviderList {
+    const listed = listedProviders(type);
+    const showSearch = listed.length >= MIN_PROVIDERS_FOR_SEARCH;
+    // a search typed before the list shrank below the threshold would keep
+    // narrowing it down unseen
+    const searchQuery = showSearch ? (searchQueries.value[type] ?? "") : "";
+    const filteredProviders = sortProviders(
+      searchProviders(listed, searchQuery, getProviderName),
+      getProviderName,
+      isErrorStatus,
+    );
+    return {
+      type,
+      searchQuery,
+      filteredProviders,
+      sections: splitSections(
+        filteredProviders,
+        toValue(options.managesAllSources),
+        store.currentUser?.user_id,
+      ),
+      showSearch,
+      showMusicEmptyState:
+        loaded.value &&
+        filteredProviders.length === 0 &&
+        !searchQuery &&
+        type === ProviderType.MUSIC,
+    };
+  }
+
+  // the providers of a list, before the search narrows them down
+  function listedProviders(type: string): ProviderConfig[] {
+    const managesAll = toValue(options.managesAllSources);
+    return providerConfigs.value.filter((item) => {
+      const manifest = api.providerManifests[item.domain];
+      return (
+        providerListType(item.type, manifest?.features) === type &&
+        // a provider with a settings page of its own is managed from that page
+        !providerSettingsPage(item.domain) &&
+        // a provider that ships with the server is not a source anyone chose,
+        // so a member is not shown it among the sources it may use
+        (managesAll || !isBuiltinProvider(manifest))
+      );
+    });
+  }
+
   return {
     loaded,
-    searchQuery,
-    filteredProviders,
-    sections,
-    showSearch,
-    showMusicEmptyState,
+    lists,
+    setSearchQuery,
     loadItems,
     removeSource,
   };
+}
+
+function searchProviders(
+  providers: ProviderConfig[],
+  query: string,
+  getProviderName: (config: ProviderConfig) => string,
+): ProviderConfig[] {
+  if (!query) return providers;
+  const lowerQuery = query.toLowerCase();
+  return providers.filter((item) =>
+    getProviderName(item).toLowerCase().includes(lowerQuery),
+  );
+}
+
+// sources needing attention (error/auth/incompatible) first, then alphabetically
+function sortProviders(
+  providers: ProviderConfig[],
+  getProviderName: (config: ProviderConfig) => string,
+  isErrorStatus: (status?: ProviderStatus | null) => boolean,
+): ProviderConfig[] {
+  return [...providers].sort((a, b) => {
+    const aHasError = isErrorStatus(a.status) ? 1 : 0;
+    const bHasError = isErrorStatus(b.status) ? 1 : 0;
+    if (aHasError !== bHasError) return bHasError - aHasError;
+    return getProviderName(a).localeCompare(getProviderName(b));
+  });
+}
+
+// a member's own sources come first, then the ones shared with it; an admin
+// gets a single section with everything, which the list heads
+function splitSections(
+  providers: ProviderConfig[],
+  managesAllSources: boolean,
+  userId: string | undefined,
+): ProviderSection[] {
+  const split = managesAllSources
+    ? [{ key: "all", items: providers }]
+    : [
+        {
+          key: "own",
+          label: "settings.music_sources_own",
+          items: providers.filter((item) => isOwnMusicSource(item, userId)),
+        },
+        {
+          key: "shared",
+          label: "settings.music_sources_shared",
+          items: providers.filter((item) => !isOwnMusicSource(item, userId)),
+        },
+      ];
+  return split.filter((section) => section.items.length > 0);
 }

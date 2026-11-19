@@ -1,5 +1,7 @@
 import {
   ConfigEntryType,
+  ProviderFeature,
+  ProviderType,
   Scope,
   type ConfigEntry,
 } from "@/plugins/api/interfaces";
@@ -9,12 +11,14 @@ import { HASS_DOMAIN } from "./home_assistant";
 import {
   ACCOUNT_ACCESS_CATEGORY,
   AUDIO_ANALYSIS_CATEGORY,
+  AUDIO_SOURCES,
   CACHE_DOMAIN,
   canEditSettingsPage,
   coreOwner,
   isKnownOwner,
   LOG_LEVEL_KEY,
   providerOwner,
+  providerListType,
   providerPageEntries,
   providerSettingsPage,
   SETTINGS_PAGES,
@@ -27,7 +31,7 @@ import {
   type SettingsOwner,
   type SettingsPageId,
 } from "./settings_pages";
-import { SETTINGS_SECTIONS } from "./settings_sections";
+import { SECTION_PAGES, SETTINGS_SECTIONS } from "./settings_sections";
 
 const STREAMS = coreOwner(STREAMS_DOMAIN);
 const TASKS = coreOwner(TASKS_DOMAIN);
@@ -118,10 +122,13 @@ describe("SETTINGS_PAGES", () => {
     }
   });
 
-  it("links each page from an existing settings section", () => {
-    const sectionNames = SETTINGS_SECTIONS.map((section) => section.name);
+  it("links each page from an existing settings section or a page below one", () => {
+    const names = [
+      ...SETTINGS_SECTIONS.map((section) => section.name),
+      ...SECTION_PAGES.map((page) => page.key),
+    ];
     for (const page of Object.values(SETTINGS_PAGES)) {
-      if (page.link) expect(sectionNames).toContain(page.link.section);
+      if (page.link) expect(names).toContain(page.link.section);
     }
   });
 });
@@ -288,7 +295,7 @@ describe("settingsSectionLinks", () => {
   });
 
   it.each([
-    ["music_providers", "library"],
+    ["music", "library"],
     ["metadata_providers", "metadata"],
   ])(
     "links the %s section to the %s settings for an admin",
@@ -304,10 +311,7 @@ describe("settingsSectionLinks", () => {
 
   it("leaves the library options out for a member", () => {
     expect(
-      settingsSectionLinks(
-        "music_providers",
-        scopeChecker(BUILTIN_ROLE_SCOPES.user),
-      ),
+      settingsSectionLinks("music", scopeChecker(BUILTIN_ROLE_SCOPES.user)),
     ).toEqual([]);
   });
 
@@ -330,6 +334,25 @@ describe("providerSettingsPage", () => {
 
   it("gives any other provider none", () => {
     expect(providerSettingsPage("hass_players")).toBeUndefined();
+  });
+});
+
+describe("providerListType", () => {
+  it("lists a plugin offering audio sources with them", () => {
+    expect(
+      providerListType(ProviderType.PLUGIN, [ProviderFeature.AUDIO_SOURCE]),
+    ).toBe(AUDIO_SOURCES);
+  });
+
+  it("lists a plugin with the plugins when its manifest names no features", () => {
+    expect(providerListType(ProviderType.PLUGIN)).toBe(ProviderType.PLUGIN);
+    expect(providerListType(ProviderType.PLUGIN, [])).toBe(ProviderType.PLUGIN);
+  });
+
+  it("lists any other type with its type, whatever it offers", () => {
+    expect(
+      providerListType(ProviderType.MUSIC, [ProviderFeature.AUDIO_SOURCE]),
+    ).toBe(ProviderType.MUSIC);
   });
 });
 

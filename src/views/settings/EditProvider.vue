@@ -335,10 +335,8 @@ import {
 } from "@/helpers/provider_permissions";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
-import {
-  providerPageEntries,
-  providerSettingsPage,
-} from "@/helpers/settings_pages";
+import { providerPageEntries } from "@/helpers/settings_pages";
+import { providerListingRoute } from "@/helpers/settings_sections";
 import { getExternalLinkUrl, providerMarkdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -519,12 +517,10 @@ onBeforeUnmount(() => {
 
 // methods
 const backToProviders = function () {
-  // a provider with a settings page of its own is on no list of providers
-  const ownPage = config.value && providerSettingsPage(config.value.domain);
   router.push(
-    ownPage
-      ? ownPage.route
-      : { name: "providersettings", query: { types: config.value?.type } },
+    config.value
+      ? providerListingRoute(config.value, providerManifest.value?.features)
+      : { name: "providersettings" },
   );
 };
 

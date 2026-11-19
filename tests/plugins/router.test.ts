@@ -371,7 +371,7 @@ describe("settings pages", () => {
     expect(route.meta.requiresScope).toBe(Scope.CONFIG_PROVIDERS_WRITE);
   });
 
-  it.each(["playback", "metadata", "task_settings"] as const)(
+  it.each(["library", "playback", "metadata", "task_settings"] as const)(
     "hands the %s page to the view showing its form",
     (id) => {
       if (!mocks.router) {
