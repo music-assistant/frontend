@@ -174,6 +174,25 @@ export const isAudioSourcePlugin = (manifest?: {
   manifest?.type === ProviderType.PLUGIN &&
   (manifest.provides?.includes(ProviderOffering.AUDIO_SOURCE) ?? false);
 
+// what a plugin's manifest provides to be an AI service
+const AI_SERVICE_OFFERINGS: readonly ProviderOffering[] = [
+  ProviderOffering.AI,
+  ProviderOffering.TTS,
+];
+
+/**
+ * A plugin that brings AI or speech to Music Assistant, such as OpenAI
+ * Compatible or OpenAI TTS: its manifest says it provides either.
+ */
+export const isAIServicePlugin = (manifest?: {
+  type: ProviderType;
+  provides?: readonly ProviderOffering[];
+}): boolean =>
+  manifest?.type === ProviderType.PLUGIN &&
+  AI_SERVICE_OFFERINGS.some(
+    (offering) => manifest.provides?.includes(offering) ?? false,
+  );
+
 /**
  * The name a provider instance goes by: the custom name set on its configuration,
  * then what the running instance calls itself, the default name the server gave

@@ -7,6 +7,7 @@ import {
   setUserPreferences,
   useUserPreferences,
 } from "@/composables/userPreferences";
+import { isAIService } from "@/helpers/ai_engines";
 import { EXPERT_MODE_PREFERENCE, expertModeOf } from "@/helpers/expert_mode";
 import { HASS_DOMAIN, hassConnectionState } from "@/helpers/home_assistant";
 import {
@@ -336,6 +337,16 @@ export function configuredAudioSourcePlugins(): ConfiguredProvider[] {
   );
 }
 
+/** The AI services the user set up, Home Assistant while it provides engines. */
+export function configuredAIServices(): ConfiguredProvider[] {
+  return configuredProviders(ProviderType.PLUGIN).filter((provider) =>
+    isAIService(
+      api.providerManifests[provider.domain],
+      api.providers[provider.instance_id],
+    ),
+  );
+}
+
 // what a player of a builtin provider was last labelled with while it was
 // registered: switching it off unregisters it, and its outputs with it
 const lastPlayerLabels = new Map<string, string>();
@@ -482,6 +493,10 @@ const ctx = computed<OnboardingContext>(() => ({
     builtin: isBuiltinProvider(api.providerManifests[config.domain]),
     enabled: config.enabled,
     audioSource: isAudioSourcePlugin(api.providerManifests[config.domain]),
+    aiService: isAIService(
+      api.providerManifests[config.domain],
+      api.providers[config.instance_id],
+    ),
   })),
   // the players switched on, as the players step lists them; only the
   // summary's "2 players" label reads this, as whether the step is done keys

@@ -2,15 +2,54 @@ import {
   type AIEngine,
   AIEngineKind,
   ProviderFeature,
+  ProviderOffering,
   ProviderType,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { providerInstance } from "../../tests/fixtures/providerInstance";
-import { enginesOf, providesAIEngines } from "./ai_engines";
+import { providerManifest } from "../../tests/fixtures/providerManifest";
+import { enginesOf, isAIService, providesAIEngines } from "./ai_engines";
 
 function engine(uid: string, provider: string): AIEngine {
   return { uid, name: uid, kind: AIEngineKind.TEXT, provider };
 }
+
+describe("isAIService", () => {
+  const openAI = providerManifest({
+    type: ProviderType.PLUGIN,
+    provides: [ProviderOffering.AI],
+  });
+  const homeAssistant = providerManifest({ type: ProviderType.PLUGIN });
+
+  it("counts a plugin that brings AI or speech, running or not", () => {
+    expect(isAIService(openAI)).toBe(true);
+    expect(
+      isAIService(
+        openAI,
+        providerInstance({ type: ProviderType.PLUGIN, available: false }),
+      ),
+    ).toBe(true);
+  });
+
+  it("counts another plugin only while it provides engines", () => {
+    expect(
+      isAIService(
+        homeAssistant,
+        providerInstance({
+          type: ProviderType.PLUGIN,
+          supported_features: [ProviderFeature.TTS],
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isAIService(
+        homeAssistant,
+        providerInstance({ type: ProviderType.PLUGIN, supported_features: [] }),
+      ),
+    ).toBe(false);
+    expect(isAIService(homeAssistant)).toBe(false);
+  });
+});
 
 describe("providesAIEngines", () => {
   it.each([ProviderFeature.AI_QUERY, ProviderFeature.TTS])(

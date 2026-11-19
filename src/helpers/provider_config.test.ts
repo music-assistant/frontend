@@ -16,6 +16,7 @@ import {
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isAIServicePlugin,
   isAudioSourcePlugin,
   isBuiltinProvider,
   isCommunityProvider,
@@ -264,6 +265,45 @@ describe("a plugin that lets an app play to Music Assistant", () => {
       isAudioSourcePlugin(providerManifest({ type: ProviderType.PLUGIN })),
     ).toBe(false);
     expect(isAudioSourcePlugin(undefined)).toBe(false);
+  });
+});
+
+describe("a plugin that brings AI or speech", () => {
+  it.each([ProviderOffering.AI, ProviderOffering.TTS])(
+    "is a plugin whose manifest says it provides %s",
+    (offering) => {
+      expect(
+        isAIServicePlugin(
+          providerManifest({ type: ProviderType.PLUGIN, provides: [offering] }),
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("is no provider of another type that says so", () => {
+    expect(
+      isAIServicePlugin(
+        providerManifest({
+          type: ProviderType.MUSIC,
+          provides: [ProviderOffering.AI],
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is no plugin without either, or providing nothing at all", () => {
+    expect(
+      isAIServicePlugin(
+        providerManifest({
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.SCROBBLE],
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isAIServicePlugin(providerManifest({ type: ProviderType.PLUGIN })),
+    ).toBe(false);
+    expect(isAIServicePlugin(undefined)).toBe(false);
   });
 });
 

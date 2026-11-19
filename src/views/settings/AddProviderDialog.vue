@@ -155,6 +155,8 @@ const props = defineProps<{
   selfServiceOnly?: boolean;
   // only offer the plugins that let an app play to Music Assistant
   audioSourceOnly?: boolean;
+  // only offer the plugins that bring AI or speech
+  aiServiceOnly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -174,15 +176,17 @@ const activeTypeFilter = computed(
 );
 
 const dialogTitle = computed(() =>
-  match(activeTypeFilter.value)
-    .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
-    .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
-    .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
-    .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))
-    .with(ProviderType.AUDIO_ANALYSIS, () =>
-      $t("settings.add_audio_analysis_provider"),
-    )
-    .otherwise(() => $t("settings.add_new")),
+  props.aiServiceOnly
+    ? $t("settings.ai.add_service")
+    : match(activeTypeFilter.value)
+        .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
+        .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
+        .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
+        .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))
+        .with(ProviderType.AUDIO_ANALYSIS, () =>
+          $t("settings.add_audio_analysis_provider"),
+        )
+        .otherwise(() => $t("settings.add_new")),
 );
 
 const providerStageOptions = computed(() =>
@@ -202,6 +206,7 @@ const availableProviders = computed(() =>
         multiInstanceOnly: props.multiInstanceOnly,
         selfServiceOnly: props.selfServiceOnly,
         audioSourceOnly: props.audioSourceOnly,
+        aiServiceOnly: props.aiServiceOnly,
       },
     ).filter((entry) => entry.canAdd),
     popularDomains.value,

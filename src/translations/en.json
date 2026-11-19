@@ -3372,6 +3372,10 @@
                 "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Link.",
                 "connect": "Connect to Home Assistant"
             },
+            "ai": {
+                "title": "Add AI",
+                "description": "With AI, Music Assistant can speak announcements, host AI Radio, build smart playlists, run the music quiz and create playlist covers."
+            },
             "invite_members": {
                 "title": "Add users",
                 "description": "Everyone in your home gets an account of their own, with the players and music sources you give them access to.",

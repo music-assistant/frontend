@@ -202,6 +202,31 @@ describe("what can be added", () => {
     ).toBe(false);
   });
 
+  it("offers only the plugins that bring AI or speech when restricted", () => {
+    const restrictions = { aiServiceOnly: true };
+    for (const offering of [ProviderOffering.AI, ProviderOffering.TTS]) {
+      expect(
+        isOfferable(
+          manifest("openai", "OpenAI", ProviderType.PLUGIN, {
+            provides: [offering],
+          }),
+          restrictions,
+        ),
+      ).toBe(true);
+    }
+    // the other plugins bring neither
+    expect(addable([], restrictions)).toEqual([]);
+    // a provider of another type that says so is no AI service
+    expect(
+      isOfferable(
+        manifest("ai_music", "AI Music", ProviderType.MUSIC, {
+          provides: [ProviderOffering.AI],
+        }),
+        restrictions,
+      ),
+    ).toBe(false);
+  });
+
   it("does not offer a type the catalog has no tab for", () => {
     expect(isOfferable(manifestOf("cast"))).toBe(false);
   });

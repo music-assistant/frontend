@@ -7,6 +7,7 @@ import {
 import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
   getProviderMaintainers,
+  isAIServicePlugin,
   isAudioSourcePlugin,
   isBuiltinProvider,
 } from "@/helpers/provider_config";
@@ -100,6 +101,8 @@ export interface AddRestrictions {
   selfServiceOnly?: boolean;
   // only the plugins that let an app play to Music Assistant
   audioSourceOnly?: boolean;
+  // only the plugins that bring AI or speech
+  aiServiceOnly?: boolean;
 }
 
 /** What a user who does not manage every provider may add: a music source of its own. */
@@ -189,7 +192,8 @@ export const isOfferable = (
   (!restrictions.types || restrictions.types.includes(manifest.type)) &&
   (!restrictions.multiInstanceOnly || manifest.multi_instance) &&
   (!restrictions.selfServiceOnly || isSelfServiceProvider(manifest)) &&
-  (!restrictions.audioSourceOnly || isAudioSourcePlugin(manifest));
+  (!restrictions.audioSourceOnly || isAudioSourcePlugin(manifest)) &&
+  (!restrictions.aiServiceOnly || isAIServicePlugin(manifest));
 
 /**
  * The Catalog entries for the offerable providers, alphabetically by name: one

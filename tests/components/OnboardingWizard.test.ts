@@ -44,6 +44,8 @@ const {
       }
     >,
     getAllUsers: vi.fn(),
+    getAIEngines: vi.fn(async () => []),
+    getAIUsage: vi.fn(async () => []),
     configureRemoteAccess: vi.fn(),
     getPlayerConfig: vi.fn(),
     getPlayerConfigs: vi.fn(),
@@ -237,6 +239,16 @@ function addAudioSourcePlugin(instanceId: string, domain: string) {
   };
 }
 
+/** A plugin that brings AI or speech. */
+function addAIService(instanceId: string, domain: string) {
+  addProvider(instanceId, domain, ProviderType.PLUGIN);
+  apiMock.providerManifests[domain] = {
+    builtin: false,
+    type: ProviderType.PLUGIN,
+    provides: [ProviderOffering.AI],
+  };
+}
+
 function addMusicProvider() {
   addProvider("spotify--1", "spotify", ProviderType.MUSIC, "Spotify");
 }
@@ -246,6 +258,7 @@ function addEveryProvider() {
   addMusicProvider();
   addProvider("sonos--1", "sonos", ProviderType.PLAYER);
   addProvider("party--1", "party", ProviderType.PLUGIN);
+  addAIService("openai--1", "openai_compatible");
 }
 
 function addMember(userId: string) {
@@ -644,11 +657,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const wrapper = await mountWizard({ step: "players" });
     try {
       await flushPromises();
-      expect(stepCount(wrapper)).toBe("2/6");
+      expect(stepCount(wrapper)).toBe("2/7");
 
       for (const [title, count] of [
-        ["onboarding.steps.home_assistant.title", "3/6"],
-        ["onboarding.steps.core_settings.title", "4/6"],
+        ["onboarding.steps.home_assistant.title", "3/7"],
+        ["onboarding.steps.core_settings.title", "4/7"],
       ]) {
         await wrapper.find("[data-testid=onboarding-next]").trigger("click");
         await flushPromises();
@@ -736,10 +749,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
-      expect(stepCount(wrapper)).toBe("1/5");
+      expect(stepCount(wrapper)).toBe("1/6");
       await wrapper.find("[data-testid=onboarding-next]").trigger("click");
       await flushPromises();
-      expect(stepCount(wrapper)).toBe("2/5");
+      expect(stepCount(wrapper)).toBe("2/6");
       // the music source that is set up counts, now that it can be seen
       const progress = wrapper.findAll(
         "[data-testid=onboarding-progress-step]",
@@ -1218,7 +1231,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     // clicking one behind takes the wizard back to it
     expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
-    expect(stepCount(wrapper)).toBe("1/5");
+    expect(stepCount(wrapper)).toBe("1/6");
 
     wrapper.unmount();
   });
@@ -1267,7 +1280,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
-    expect(stepCount(wrapper)).toBe("1/5");
+    expect(stepCount(wrapper)).toBe("1/6");
     wrapper.unmount();
   });
 
@@ -1275,7 +1288,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const wrapper = await mountWizard({ step: "finish" });
     await flushPromises();
 
-    expect(stepCount(wrapper)).toBe("5/5");
+    expect(stepCount(wrapper)).toBe("6/6");
 
     wrapper.unmount();
   });
@@ -1294,7 +1307,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     ).toHaveLength(2);
     expect(
       wrapper.findAll("[data-testid=onboarding-summary-optional]"),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
     // the server settings are only there to be looked over, so they are on
     // neither list: nothing about them is set up or still to do
     expect(wrapper.text()).not.toContain("onboarding.steps.core_settings");
@@ -1321,7 +1334,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       const targets =
         intent === "phone_apps"
           ? ["intent", "players", "plugins"]
-          : ["intent", "music_sources", "players", "invite_members"];
+          : ["intent", "music_sources", "players", "ai", "invite_members"];
 
       for (const id of targets) {
         const wrapper = await mountWizard({ step: "finish" });
@@ -1532,7 +1545,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       "onboarding.next",
     );
 
-    // the household is done, but a done step is still walked through
+    // the AI and the household are done, but a done step is still walked
+    // through
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.ai.title");
+
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
