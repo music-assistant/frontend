@@ -1,5 +1,7 @@
 <template>
-  <div>
+  <!-- a query container, so the floating Save button of a form can line up
+       with the column below -->
+  <div class="@container">
     <Toolbar :icon="Settings">
       <template #title>
         <ToolbarHeading
@@ -19,27 +21,33 @@
 
     <Separator />
 
-    <div v-if="isOverview" class="p-5 max-md:px-3 max-md:py-4">
-      <SettingsOverview
-        :sections="settingsSections"
-        :view-mode="settingsViewMode"
-      />
+    <!-- on a wide window every settings page keeps to a centred column -->
+    <div
+      class="mx-auto max-w-(--settings-column-width)"
+      data-testid="settings-column"
+    >
+      <div v-if="isOverview" class="p-5 max-md:px-3 max-md:py-4">
+        <SettingsOverview
+          :sections="settingsSections"
+          :view-mode="settingsViewMode"
+        />
 
-      <div v-if="canOpenOnboarding" class="mt-2 flex justify-center">
-        <Button
-          variant="link"
-          class="text-muted-foreground"
-          data-testid="run-onboarding"
-          @click="launchOnboarding"
-        >
-          {{ t(onboardingLinkKey) }}
-        </Button>
+        <div v-if="canOpenOnboarding" class="mt-2 flex justify-center">
+          <Button
+            variant="link"
+            class="text-muted-foreground"
+            data-testid="run-onboarding"
+            @click="launchOnboarding"
+          >
+            {{ t(onboardingLinkKey) }}
+          </Button>
+        </div>
       </div>
-    </div>
 
-    <router-view v-else v-slot="{ Component }">
-      <component :is="Component" v-if="Component" />
-    </router-view>
+      <router-view v-else v-slot="{ Component }">
+        <component :is="Component" v-if="Component" />
+      </router-view>
+    </div>
   </div>
 </template>
 
