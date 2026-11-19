@@ -265,6 +265,90 @@ describe("createVisualizerEngine pause envelope", () => {
   });
 });
 
+describe("createVisualizerEngine frame rate cap", () => {
+  const MAX_FPS = 30;
+  const DISPLAY_FRAME_MS = 1000 / 60;
+  // nonzero, since a last render at 0 reads as never rendered
+  const START_MS = 1000;
+  let engine: VisualizerEngine | null;
+  let visibility: DocumentVisibilityState;
+
+  beforeEach(async () => {
+    now = START_MS;
+    frameCallbacks = [];
+    renderedSamples.length = 0;
+    vi.clearAllMocks();
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      {} as unknown as RenderingContext,
+    );
+    vi.stubGlobal("AudioContext", class {});
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      frameCallbacks.push(callback);
+      return frameCallbacks.length;
+    });
+    vi.stubGlobal("cancelAnimationFrame", () => {
+      frameCallbacks = [];
+    });
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    // on the instance: happy-dom's document does not inherit the global Document
+    visibility = "visible";
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => visibility,
+    });
+
+    engine = await createVisualizerEngine(
+      document.createElement("canvas"),
+      () => LOUD,
+      undefined,
+      { maxFps: MAX_FPS },
+    );
+  });
+
+  afterEach(() => {
+    engine?.destroy();
+    Reflect.deleteProperty(document, "visibilityState");
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("renders every other tick of a 60 Hz display", () => {
+    const expected = [true, false, true, false, true, false];
+    const rendered: boolean[] = [];
+    for (const _ of expected) {
+      const before = renderedSamples.length;
+      tick();
+      rendered.push(renderedSamples.length > before);
+      advance(DISPLAY_FRAME_MS);
+    }
+
+    expect(rendered).toEqual(expected);
+  });
+
+  it("renders on the first tick after the page is shown again", () => {
+    tick();
+    expect(renderedSamples).toHaveLength(1);
+
+    visibility = "hidden";
+    advance(DISPLAY_FRAME_MS / 2);
+    tick();
+    expect(renderedSamples).toHaveLength(1);
+
+    // still inside the cap's interval, but the hidden tick reset it
+    visibility = "visible";
+    advance(DISPLAY_FRAME_MS / 2);
+    tick();
+    expect(renderedSamples).toHaveLength(2);
+  });
+});
+
 describe("isVisualizerSupported", () => {
   // The verdict is cached per module load, so each case imports a fresh one.
   const probe = async () => {
