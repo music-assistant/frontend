@@ -484,7 +484,7 @@
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
-        "system_description": "The network, background tasks and diagnostics of the server",
+        "system_description": "The network, Home Assistant, background tasks and diagnostics of the server",
         "system": "System",
         "network": {
             "title": "Network",
@@ -492,6 +492,28 @@
             "web": "Web interface and API",
             "streaming": "Audio streaming",
             "discovery": "Discovery"
+        },
+        "home_assistant": {
+            "title": "Home Assistant",
+            "description": "The connection with Home Assistant and what it brings to Music Assistant",
+            "not_connected": "Not connected to Home Assistant",
+            "connect_description": "Connect to Home Assistant to play on its media players, sign in with its accounts and turn its devices into player controls.",
+            "connect": "Connect",
+            "connection": "Connection",
+            "connection_description": "Reconfigure, disable or remove the connection",
+            "connection_addon": "Music Assistant runs as a Home Assistant add-on, which connects it",
+            "state_connected": "Connected",
+            "state_connecting": "Connecting",
+            "state_disabled": "Disabled",
+            "state_needs_attention": "Needs attention",
+            "players": "Home Assistant players",
+            "players_description": "Play on the media players of Home Assistant",
+            "players_add": "Add",
+            "sign_in": "Sign in with Home Assistant",
+            "sign_in_description": "Home Assistant users sign in to Music Assistant with their account",
+            "remote_access_description": "Home Assistant Cloud makes remote access work in any network",
+            "remote_access_ha_cloud": "Home Assistant Cloud",
+            "remote_access_without_ha_cloud": "Without Home Assistant Cloud"
         },
         "playback": {
             "title": "Playback",

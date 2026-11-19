@@ -5,6 +5,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../tests/fixtures/scopes";
+import { HASS_DOMAIN } from "./home_assistant";
 import {
   ACCOUNT_ACCESS_CATEGORY,
   AUDIO_ANALYSIS_CATEGORY,
@@ -13,7 +14,11 @@ import {
   coreOwner,
   isKnownOwner,
   LOG_LEVEL_KEY,
+  providerOwner,
+  providerPageEntries,
+  providerSettingsPage,
   SETTINGS_PAGES,
+  settingsPageProviderDomain,
   settingsSectionLinks,
   sourceIncludesEntry,
   STREAMS_DOMAIN,
@@ -206,6 +211,15 @@ describe("the page of each setting", () => {
     ).toEqual(["diagnostics"]);
   });
 
+  it("shows the player controls of Home Assistant on its page", () => {
+    expect(
+      pagesShowing(
+        providerOwner(HASS_DOMAIN),
+        entry("power_controls", "player_controls"),
+      ),
+    ).toEqual(["home_assistant"]);
+  });
+
   it("shows no log level on any page", () => {
     for (const source of ALL_SOURCES) {
       expect(
@@ -307,6 +321,49 @@ describe("settingsSectionLinks", () => {
   });
 });
 
+describe("providerSettingsPage", () => {
+  it("gives Home Assistant a page of its own", () => {
+    expect(providerSettingsPage(HASS_DOMAIN)).toBe(
+      SETTINGS_PAGES.home_assistant,
+    );
+  });
+
+  it("gives any other provider none", () => {
+    expect(providerSettingsPage("hass_players")).toBeUndefined();
+  });
+});
+
+describe("providerPageEntries", () => {
+  const entries = [
+    entry("power_controls", "player_controls"),
+    entry("some_option", "generic"),
+    entry(LOG_LEVEL_KEY, "generic"),
+  ];
+
+  it("gives the settings the page of the provider shows", () => {
+    expect(
+      providerPageEntries(HASS_DOMAIN, entries).map(({ key }) => key),
+    ).toEqual(["power_controls"]);
+  });
+
+  it("gives none for a provider without a page of its own", () => {
+    expect(providerPageEntries("spotify", entries)).toEqual([]);
+  });
+});
+
+describe("settingsPageProviderDomain", () => {
+  it("names the provider of a page showing only its settings", () => {
+    expect(settingsPageProviderDomain("home_assistant")).toBe(HASS_DOMAIN);
+  });
+
+  it.each<SettingsPageId>(["metadata", "network"])(
+    "names none for the %s page of core settings",
+    (pageId) => {
+      expect(settingsPageProviderDomain(pageId)).toBeUndefined();
+    },
+  );
+});
+
 describe("canEditSettingsPage", () => {
   it("needs the core write scope for core settings", () => {
     expect(
@@ -319,6 +376,21 @@ describe("canEditSettingsPage", () => {
       canEditSettingsPage(
         "audio_analysis",
         scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      ),
+    ).toBe(false);
+  });
+
+  it("needs the provider write scope for provider settings", () => {
+    expect(
+      canEditSettingsPage(
+        "home_assistant",
+        scopeChecker([Scope.CONFIG_PROVIDERS_WRITE]),
+      ),
+    ).toBe(true);
+    expect(
+      canEditSettingsPage(
+        "home_assistant",
+        scopeChecker([Scope.CONFIG_CORE_WRITE]),
       ),
     ).toBe(false);
   });

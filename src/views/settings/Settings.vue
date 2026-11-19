@@ -97,7 +97,7 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { coreModuleName } from "@/helpers/core_modules";
-import { SETTINGS_PAGES } from "@/helpers/settings_pages";
+import { providerSettingsPage, SETTINGS_PAGES } from "@/helpers/settings_pages";
 import {
   availableSettingsSections,
   providerSettingsSectionName,
@@ -354,7 +354,8 @@ const activeTab = computed(() => {
     name === "tasksettings" ||
     name === "diagnostics" ||
     name === "networksettings" ||
-    name === "remoteaccesssettings"
+    name === "remoteaccesssettings" ||
+    name === "homeassistantsettings"
   ) {
     return "system";
   }
@@ -380,6 +381,10 @@ const activeTab = computed(() => {
 
   if (name === "editprovider") {
     const instanceId = router.currentRoute.value.params.instanceId as string;
+    // the providers with a settings page of their own have it under System
+    if (providerSettingsPage(embeddedProviderDomain(instanceId))) {
+      return "system";
+    }
     // disabled instances are not loaded, so fall back to the manifest type
     const providerType =
       api.getProvider(instanceId)?.type ||
@@ -500,6 +505,15 @@ const breadcrumbItems = computed(() => {
       items.push({ title: t("settings.playerproviders"), disabled: true });
     })
     .with("editprovider", () => {
+      const instanceId = route.params.instanceId as string;
+      const ownPage = providerSettingsPage(embeddedProviderDomain(instanceId));
+      if (ownPage) {
+        items.push({
+          title: t(ownPage.title),
+          disabled: false,
+          to: ownPage.route,
+        });
+      }
       if (activeTab.value === "players") {
         items.push({
           title: t("settings.playerproviders"),
@@ -511,9 +525,7 @@ const breadcrumbItems = computed(() => {
         });
       }
       items.push({
-        title:
-          editedProviderName.value ||
-          api.getProviderName(route.params.instanceId as string),
+        title: editedProviderName.value || api.getProviderName(instanceId),
         disabled: true,
       });
     })
@@ -603,6 +615,12 @@ const breadcrumbItems = computed(() => {
       const { title, route: pageRoute } = SETTINGS_PAGES.network;
       items.push({ title: t(title), disabled: false, to: pageRoute });
       items.push({ title: t("settings.remote_access"), disabled: true });
+    })
+    .with("homeassistantsettings", () => {
+      items.push({
+        title: t(SETTINGS_PAGES.home_assistant.title),
+        disabled: true,
+      });
     })
     .with("audioanalysissettings", () => {
       items.push({

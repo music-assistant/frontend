@@ -23,7 +23,7 @@
 import ConfiguredProviderItem from "@/components/onboarding/ConfiguredProviderItem.vue";
 import { Button } from "@/components/ui/button";
 import { configuredProviders } from "@/composables/useOnboarding";
-import { HASS_DOMAIN } from "@/helpers/hass_controls";
+import { HASS_DOMAIN } from "@/helpers/home_assistant";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";

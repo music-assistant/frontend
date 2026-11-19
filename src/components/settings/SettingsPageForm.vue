@@ -11,6 +11,7 @@
         ref="editConfig"
         :config-entries="entries"
         :disabled="false"
+        :provider-domain="settingsPageProviderDomain(page)"
         inline-save
         @submit="onSubmit"
         @action="onAction"
@@ -44,7 +45,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { useSettingsPage } from "@/composables/settings/useSettingsPage";
 import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
 import type { SettingsField } from "@/helpers/settings_form";
-import type { SettingsPageId } from "@/helpers/settings_pages";
+import {
+  settingsPageProviderDomain,
+  type SettingsPageId,
+} from "@/helpers/settings_pages";
 import type { ConfigEntry, ConfigValueType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import EditConfig from "@/views/settings/EditConfig.vue";

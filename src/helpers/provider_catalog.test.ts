@@ -24,6 +24,7 @@ import {
   getCatalogTab,
   getCatalogTabQuery,
   getEntryMaintainers,
+  getInstanceSettingsRoute,
   getManageRoute,
   getMaintainerProfileUrl,
   groupInstalledProviders,
@@ -538,6 +539,44 @@ describe("getManageRoute", () => {
     expect(
       getManageRoute(entry(buildCatalogEntries(MANIFESTS, configs), "spotify")),
     ).toEqual({ name: "providersettings", query: { types: "music" } });
+  });
+
+  it("leads to the settings page of a provider that has one of its own", () => {
+    const manifests = [
+      ...MANIFESTS,
+      manifest("hass", "Home Assistant", ProviderType.PLUGIN),
+    ];
+    const configs = [
+      providerConfig({
+        domain: "hass",
+        type: ProviderType.PLUGIN,
+        instance_id: "hass",
+      }),
+    ];
+    expect(
+      getManageRoute(entry(buildCatalogEntries(manifests, configs), "hass")),
+    ).toEqual({ name: "homeassistantsettings" });
+  });
+});
+
+describe("getInstanceSettingsRoute", () => {
+  it("leads to the settings of the instance", () => {
+    expect(getInstanceSettingsRoute(CONFIGS[2])).toEqual({
+      name: "editprovider",
+      params: { instanceId: "party--a" },
+    });
+  });
+
+  it("leads to the settings page of a provider that has one of its own", () => {
+    expect(
+      getInstanceSettingsRoute(
+        providerConfig({
+          domain: "hass",
+          type: ProviderType.PLUGIN,
+          instance_id: "hass",
+        }),
+      ),
+    ).toEqual({ name: "homeassistantsettings" });
   });
 });
 

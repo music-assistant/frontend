@@ -745,6 +745,32 @@ describe("Providers", () => {
     expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(1);
   });
 
+  it("leaves out a provider with a settings page of its own, and lists the other plugins", async () => {
+    routeMock.query.types = "plugin";
+
+    const wrapper = await mountWithConfigs([
+      providerConfig({
+        domain: "hass",
+        instance_id: "hass",
+        status: ProviderStatus.LOADED,
+        type: ProviderType.PLUGIN,
+      }),
+      providerConfig({
+        domain: "spotify_connect",
+        instance_id: "spotify_connect--1",
+        name: "Spotify Connect",
+        status: ProviderStatus.LOADED,
+        type: ProviderType.PLUGIN,
+      }),
+    ]);
+
+    expect(
+      wrapper
+        .findAllComponents(ProviderRowStub)
+        .map((row) => row.props("config").domain),
+    ).toEqual(["spotify_connect"]);
+  });
+
   it("lists every source in a single untitled section", async () => {
     const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
 

@@ -322,7 +322,7 @@ import {
   HASS_CONTROL_KEYS,
   isHassControlPickerEntry,
 } from "@/helpers/config_entry_ui";
-import { HASS_DOMAIN } from "@/helpers/hass_controls";
+import { HASS_DOMAIN } from "@/helpers/home_assistant";
 import { isEmbeddedImage } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";

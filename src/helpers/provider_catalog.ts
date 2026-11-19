@@ -10,6 +10,7 @@ import {
   isAudioSourcePlugin,
   isBuiltinProvider,
 } from "@/helpers/provider_config";
+import { providerSettingsPage } from "@/helpers/settings_pages";
 import {
   type CommunityProvider,
   CommunityProviderState,
@@ -367,13 +368,17 @@ export const getTypeSettingsRoute = (type: ProviderType): RouteLocationRaw => ({
   query: { types: type },
 });
 
-/** The settings page of a provider instance. */
+/**
+ * Where a provider instance is managed: the settings page of its provider when
+ * that has one of its own, else the settings of the instance.
+ */
 export const getInstanceSettingsRoute = (
   config: ProviderConfig,
-): RouteLocationRaw => ({
-  name: "editprovider",
-  params: { instanceId: config.instance_id },
-});
+): RouteLocationRaw =>
+  providerSettingsPage(config.domain)?.route ?? {
+    name: "editprovider",
+    params: { instanceId: config.instance_id },
+  };
 
 /**
  * Where an entry that is set up is managed: the settings of its one instance,

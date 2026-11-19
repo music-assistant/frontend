@@ -1,11 +1,13 @@
+import { HASS_DOMAIN } from "@/helpers/home_assistant";
 import { type ConfigEntry, Scope } from "@/plugins/api/interfaces";
 import { Activity, CirclePlay, Library, Tags } from "@lucide/vue";
 import type { Component } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
-export type SettingsOwnerKind = "core";
+export type SettingsOwnerKind = "core" | "provider";
 
-// what defines config entries; for a core owner the id is the controller domain
+// what defines config entries; for a core owner the id is the controller
+// domain, for a provider owner the domain of a provider with a single instance
 export interface SettingsOwner {
   kind: SettingsOwnerKind;
   id: string;
@@ -34,12 +36,16 @@ export interface SettingsPage {
   title: string;
   route: RouteLocationRaw;
   link?: SettingsPageLink;
+  // the domain of the provider the page is about: the page manages it, so the
+  // lists of providers leave it out
+  provider?: string;
   sources: readonly SettingsSource[];
 }
 
 export type SettingsPageId =
   | "audio_analysis"
   | "diagnostics"
+  | "home_assistant"
   | "library"
   | "metadata"
   | "network"
@@ -74,6 +80,7 @@ const GENERIC_CATEGORY = "generic";
 // the scope needed to change the settings of each kind of owner
 const OWNER_WRITE_SCOPES: Readonly<Record<SettingsOwnerKind, Scope>> = {
   core: Scope.CONFIG_CORE_WRITE,
+  provider: Scope.CONFIG_PROVIDERS_WRITE,
 };
 
 // the settings pages and the config entries each of them shows
@@ -107,6 +114,17 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
       {
         owner: coreOwner(STATISTICS_DOMAIN),
         title: "settings.core_module.statistics.name",
+      },
+    ],
+  },
+  home_assistant: {
+    title: "settings.home_assistant.title",
+    route: { name: "homeassistantsettings" },
+    provider: HASS_DOMAIN,
+    sources: [
+      {
+        owner: providerOwner(HASS_DOMAIN),
+        categories: ["player_controls"],
       },
     ],
   },
@@ -206,9 +224,14 @@ export function coreOwner(domain: string): SettingsOwner {
   return { kind: "core", id: domain };
 }
 
+export function providerOwner(domain: string): SettingsOwner {
+  return { kind: "provider", id: domain };
+}
+
 /**
  * Whether a source shows the given entry of its owner. No source shows the log
- * level of its owner: Diagnostics sets the log level of every module.
+ * level of its owner: Diagnostics sets the log level of every module, and the
+ * page of a provider instance its own.
  */
 export function sourceIncludesEntry(
   source: SettingsSource,
@@ -265,6 +288,51 @@ export function canEditSettingsPage(
   return SETTINGS_PAGES[pageId].sources.every((source) =>
     hasScope(OWNER_WRITE_SCOPES[source.owner.kind]),
   );
+}
+
+/**
+ * The page of a provider that has a settings page of its own.
+ *
+ * @param domain - The domain of the provider.
+ */
+export function providerSettingsPage(domain: string): SettingsPage | undefined {
+  return pageIds()
+    .map((id) => SETTINGS_PAGES[id])
+    .find((page) => page.provider === domain);
+}
+
+/**
+ * The settings of a provider that its own settings page shows, in their given
+ * order: the page of the provider instance leaves them out.
+ *
+ * @param domain - The domain of the provider.
+ * @param entries - The settings of the provider instance.
+ */
+export function providerPageEntries<T extends ConfigEntry>(
+  domain: string,
+  entries: readonly T[],
+): T[] {
+  const owner = providerOwner(domain);
+  const sources = (providerSettingsPage(domain)?.sources ?? []).filter(
+    (source) => isSameOwner(source.owner, owner),
+  );
+  return entries.filter((entry) =>
+    sources.some((source) => sourceIncludesEntry(source, entry)),
+  );
+}
+
+/**
+ * The domain of the provider a page shows the settings of, when it shows no
+ * other settings: the form of such a page keys them as the provider does.
+ *
+ * @param pageId - The settings page.
+ */
+export function settingsPageProviderDomain(
+  pageId: SettingsPageId,
+): string | undefined {
+  const { sources } = SETTINGS_PAGES[pageId];
+  const owner = sources.length === 1 ? sources[0].owner : undefined;
+  return owner?.kind === "provider" ? owner.id : undefined;
 }
 
 /**

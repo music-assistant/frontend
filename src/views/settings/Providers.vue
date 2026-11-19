@@ -147,6 +147,7 @@ import { getCatalogRoute } from "@/helpers/provider_catalog";
 import {
   getProviderStatusTranslationKey,
   isCommunityProvider,
+  isProviderErrorStatus,
   providerDisplayName,
   providerRequiresReconfiguration,
 } from "@/helpers/provider_config";
@@ -216,14 +217,7 @@ const getProviderName = function (config: ProviderConfig) {
 };
 
 // an error status carries a (user-relevant) reason in last_error
-const isErrorStatus = function (status?: ProviderStatus | null) {
-  return (
-    status === ProviderStatus.AUTH_REQUIRED ||
-    status === ProviderStatus.INCOMPATIBLE ||
-    status === ProviderStatus.ERROR ||
-    status === ProviderStatus.UNAVAILABLE
-  );
-};
+const isErrorStatus = isProviderErrorStatus;
 
 // the provider of the entry is not on this server: it cannot be opened, only removed
 const isUnavailable = function (config: ProviderConfig) {

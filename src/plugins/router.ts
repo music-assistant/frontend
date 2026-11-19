@@ -660,6 +660,16 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
+            path: "home-assistant",
+            name: "homeassistantsettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "homeassistantsettings" */ "@/views/settings/HomeAssistantSettings.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
+          },
+          {
             path: "frontend",
             name: "frontendsettings",
             component: () =>

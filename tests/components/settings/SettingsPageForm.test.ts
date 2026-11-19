@@ -4,12 +4,14 @@ import { coreOwner } from "@/helpers/settings_pages";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   ConfigEntryType,
+  ProviderType,
   Scope,
   type ConfigEntry,
   type CoreConfig,
 } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { providerConfig } from "../../fixtures/providerConfig";
 
 const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -17,6 +19,8 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
     invokeCoreConfigAction:
       vi.fn<MusicAssistantApi["invokeCoreConfigAction"]>(),
     saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
+    getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
+    getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { error: vi.fn(), success: vi.fn() },
@@ -51,6 +55,7 @@ const editConfigStub = {
     disabled: Boolean,
     inlineSave: Boolean,
     hideHeader: Boolean,
+    providerDomain: String,
   },
   emits: ["submit", "action", "immediateApply"],
   setup() {
@@ -121,6 +126,43 @@ describe("SettingsPageForm", () => {
     ).toEqual(["background_scan_concurrency"]);
     expect(form.props("inlineSave")).toBe(true);
     expect(form.props("hideHeader")).toBe(false);
+    expect(form.props("providerDomain")).toBeUndefined();
+  });
+
+  it("names the provider to the form of a page showing its settings", async () => {
+    const config = providerConfig({
+      domain: "hass",
+      type: ProviderType.PLUGIN,
+      values: {
+        power_controls: {
+          key: "power_controls",
+          category: "player_controls",
+          type: ConfigEntryType.STRING,
+          multi_value: true,
+          label: "power_controls",
+          default_value: [],
+          required: true,
+          options: [],
+          value: [],
+        },
+      },
+    });
+    // the list of provider configs comes without their entries
+    apiMock.getProviderConfigs.mockResolvedValue([{ ...config, values: {} }]);
+    apiMock.getProviderConfig.mockResolvedValue(config);
+
+    const wrapper = mount(SettingsPageForm, {
+      props: { page: "home_assistant" },
+      global: { stubs: { EditConfig: editConfigStub } },
+    });
+    await flushPromises();
+
+    const form = wrapper.getComponent(editConfigStub);
+    expect(form.props("providerDomain")).toBe("hass");
+    // the entity pickers match on the keys the provider has
+    expect(
+      (form.props("configEntries") as ConfigEntry[]).map((e) => e.key),
+    ).toEqual(["power_controls"]);
   });
 
   it("saves the changes and keeps the form on screen", async () => {
