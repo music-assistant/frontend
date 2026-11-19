@@ -31,6 +31,8 @@ export interface ActiveTiming {
    * to every source, because the player is playing that same item.
    */
   playbackSpeed: number;
+  /** Whether the position stands still even though the state reads playing. */
+  positionHeld?: boolean;
 }
 
 /**
@@ -115,6 +117,9 @@ export function resolveQueueTiming(
     lastUpdated: queueTime.elapsed_time_last_updated,
     playbackState: queue.state,
     playbackSpeed: queueItemPlaybackSpeed(queue.current_item),
+    // While an announcement interrupts the queue, the server pins its position
+    // at the point the music resumes from.
+    positionHeld: queue.extra_attributes?.announcement_in_progress === true,
   };
 }
 
@@ -149,6 +154,7 @@ export function toElapsedTime(
   timing: ActiveTiming | undefined,
 ): number | undefined {
   if (!timing) return undefined;
+  if (timing.positionHeld) return timing.elapsedTime;
 
   return computeElapsedTime(
     timing.elapsedTime,

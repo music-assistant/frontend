@@ -7,8 +7,20 @@ import {
 import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
   getProviderMaintainers,
+  isAIServicePlugin,
+  isAudioSourcePlugin,
   isBuiltinProvider,
 } from "@/helpers/provider_config";
+import {
+  getProviderLabels,
+  isProviderLabel,
+  type ProviderLabel,
+} from "@/helpers/provider_labels";
+import { providerListType } from "@/helpers/settings_pages";
+import {
+  providerListRoute,
+  providerOwnPage,
+} from "@/helpers/settings_sections";
 import {
   type CommunityProvider,
   CommunityProviderState,
@@ -87,6 +99,10 @@ export interface AddRestrictions {
   multiInstanceOnly?: boolean;
   // only providers that a member may set up itself
   selfServiceOnly?: boolean;
+  // only the plugins that let an app play to Music Assistant
+  audioSourceOnly?: boolean;
+  // only the plugins that bring AI or speech
+  aiServiceOnly?: boolean;
 }
 
 /** What a user who does not manage every provider may add: a music source of its own. */
@@ -117,6 +133,8 @@ export interface CatalogFilter {
   query?: string;
   types?: readonly string[];
   stages?: readonly string[];
+  // what a provider offers, by its manifest
+  label?: ProviderLabel | null;
 }
 
 /**
@@ -130,6 +148,29 @@ export const isCatalogType = (type: unknown): type is ProviderType =>
 /** The Catalog type of a provider type, or undefined for one the Catalog does not offer. */
 export const getCatalogType = (type: string): CatalogType | undefined =>
   CATALOG_TYPES.find((item) => item.type === type);
+
+/**
+ * The Catalog type a provider is listed under, or undefined for one the
+ * Catalog does not offer.
+ */
+export const getManifestCatalogType = (
+  manifest: ProviderManifest,
+): CatalogType | undefined =>
+  getCatalogType(providerListType(manifest.type, manifest.provides));
+
+/**
+ * The entries the tab of a Catalog type lists.
+ *
+ * @param entries - The Catalog entries.
+ * @param type - The Catalog type.
+ */
+export const catalogEntriesOfType = (
+  entries: readonly CatalogEntry[],
+  type: ProviderType,
+): CatalogEntry[] =>
+  entries.filter(
+    (entry) => getManifestCatalogType(entry.manifest)?.type === type,
+  );
 
 /**
  * Whether a provider can be set up at all within the given restrictions. A
@@ -150,7 +191,9 @@ export const isOfferable = (
   isCatalogType(manifest.type) &&
   (!restrictions.types || restrictions.types.includes(manifest.type)) &&
   (!restrictions.multiInstanceOnly || manifest.multi_instance) &&
-  (!restrictions.selfServiceOnly || isSelfServiceProvider(manifest));
+  (!restrictions.selfServiceOnly || isSelfServiceProvider(manifest)) &&
+  (!restrictions.audioSourceOnly || isAudioSourcePlugin(manifest)) &&
+  (!restrictions.aiServiceOnly || isAIServicePlugin(manifest));
 
 /**
  * The Catalog entries for the offerable providers, alphabetically by name: one
@@ -236,11 +279,11 @@ export const needsInstall = (
   entry.community?.state === CommunityProviderState.AVAILABLE;
 
 /**
- * The entries that match the search text, the types and the stages; an empty
- * or missing criterion matches everything.
+ * The entries that match the search text, the provider types, the stages and
+ * the label; an empty or missing criterion matches everything.
  *
  * @param entries - The entries to narrow down.
- * @param filter - The search text (on name and description), types and stages.
+ * @param filter - The search text (on name and description), provider types, stages and label.
  */
 export const filterCatalogEntries = (
   entries: readonly CatalogEntry[],
@@ -253,7 +296,8 @@ export const filterCatalogEntries = (
         manifest.name.toLowerCase().includes(query) ||
         manifest.description.toLowerCase().includes(query)) &&
       (!filter.types?.length || filter.types.includes(manifest.type)) &&
-      (!filter.stages?.length || filter.stages.includes(manifest.stage)),
+      (!filter.stages?.length || filter.stages.includes(manifest.stage)) &&
+      (!filter.label || getProviderLabels(manifest).includes(filter.label)),
   );
 };
 
@@ -268,7 +312,7 @@ export const countCatalogTypes = (
 ): CatalogTypeCount[] =>
   CATALOG_TYPES.map((type) => ({
     type,
-    count: entries.filter((entry) => entry.manifest.type === type.type).length,
+    count: catalogEntriesOfType(entries, type.type).length,
   })).filter(({ count }) => count > 0);
 
 /**
@@ -302,6 +346,8 @@ export const CATALOG_DISCOVER_TAB = "discover";
 export const CATALOG_INSTALLED_TAB = "installed";
 /** The route query that opens the details of an entry, by its domain. */
 export const CATALOG_DETAIL_QUERY = "detail";
+/** The route query that picks a label on the tab a Catalog link opens. */
+export const CATALOG_LABEL_QUERY = "label";
 
 /** A view of the Catalog: the Discover tab, the tab of one type, or what is set up. */
 export type CatalogTab =
@@ -332,13 +378,33 @@ export const getCatalogTabQuery = (tab: CatalogTab): LocationQueryRaw => {
 };
 
 /**
- * The Catalog, opened on the tab of the given type when the Catalog offers it.
+ * The label a Catalog route query picks, or null for All.
+ *
+ * @param query - The query of the Catalog route.
+ */
+export const getCatalogLabel = (query: LocationQuery): ProviderLabel | null => {
+  const label = query[CATALOG_LABEL_QUERY];
+  return isProviderLabel(label) ? label : null;
+};
+
+/**
+ * The Catalog, opened on the tab of the given type when the Catalog offers it,
+ * with the given label picked on that tab.
  *
  * @param type - A provider type, as a settings page reads it from its route.
+ * @param label - The label to pick; All when left out.
  */
-export const getCatalogRoute = (type?: string): RouteLocationRaw => ({
+export const getCatalogRoute = (
+  type?: string,
+  label?: ProviderLabel,
+): RouteLocationRaw => ({
   name: "catalog",
-  query: isCatalogType(type) ? getCatalogTabQuery(type) : {},
+  query: isCatalogType(type)
+    ? {
+        ...getCatalogTabQuery(type),
+        ...(label && { [CATALOG_LABEL_QUERY]: label }),
+      }
+    : {},
 });
 
 /**
@@ -357,19 +423,21 @@ export const getCatalogInstalledRoute = (): RouteLocationRaw => ({
   query: getCatalogTabQuery(CATALOG_INSTALLED_TAB),
 });
 
-/** The settings page of a provider type. */
-export const getTypeSettingsRoute = (type: ProviderType): RouteLocationRaw => ({
-  name: "providersettings",
-  query: { types: type },
-});
+/** The settings page listing the providers of a Catalog type. */
+export const getTypeSettingsRoute = (type: ProviderType): RouteLocationRaw =>
+  providerListRoute(type);
 
-/** The settings page of a provider instance. */
+/**
+ * Where a provider instance is managed: the settings page of its provider when
+ * that has one of its own, else the settings of the instance.
+ */
 export const getInstanceSettingsRoute = (
-  config: ProviderConfig,
-): RouteLocationRaw => ({
-  name: "editprovider",
-  params: { instanceId: config.instance_id },
-});
+  config: Pick<ProviderConfig, "domain" | "instance_id">,
+): RouteLocationRaw =>
+  providerOwnPage(config.domain)?.route ?? {
+    name: "editprovider",
+    params: { instanceId: config.instance_id },
+  };
 
 /**
  * Where an entry that is set up is managed: the settings of its one instance,
@@ -378,7 +446,9 @@ export const getInstanceSettingsRoute = (
 export const getManageRoute = (entry: CatalogEntry): RouteLocationRaw =>
   entry.instances.length === 1
     ? getInstanceSettingsRoute(entry.instances[0])
-    : getTypeSettingsRoute(entry.manifest.type);
+    : getTypeSettingsRoute(
+        providerListType(entry.manifest.type, entry.manifest.provides),
+      );
 
 export interface InstalledProvider {
   config: ProviderConfig;
@@ -414,7 +484,8 @@ export const groupInstalledProviders = (
     items: configs
       .filter(
         (config) =>
-          config.type === type.type &&
+          providerListType(config.type, manifests[config.domain]?.provides) ===
+            type.type &&
           (includeBuiltin || !isBuiltinProvider(manifests[config.domain])),
       )
       .map((config) => ({

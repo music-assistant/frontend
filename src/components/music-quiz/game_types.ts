@@ -18,6 +18,7 @@ import TriviaHostRound from "@/components/music-quiz/game-types/trivia/TriviaHos
 import TriviaPlayerRound from "@/components/music-quiz/game-types/trivia/TriviaPlayerRound.vue";
 import TriviaPresentRound from "@/components/music-quiz/game-types/trivia/TriviaPresentRound.vue";
 import TriviaSetup from "@/components/music-quiz/game-types/trivia/TriviaSetup.vue";
+import TitleRevealSetup from "@/components/music-quiz/game-types/title-reveal/TitleRevealSetup.vue";
 import type {
   MusicQuizGameAnswerTypeMap,
   MusicQuizPhase,
@@ -25,7 +26,12 @@ import type {
   MusicQuizSupportedPublicState,
   MusicQuizType,
 } from "@/composables/music-quiz/useMusicQuiz";
-import { CalendarClock, Disc3, WandSparkles } from "@lucide/vue";
+import {
+  CalendarClock,
+  Disc3,
+  TextCursorInput,
+  WandSparkles,
+} from "@lucide/vue";
 import { markRaw, type Component } from "vue";
 
 export const DEFAULT_MUSIC_QUIZ_GAME_TYPE: MusicQuizType = "guess_the_song";
@@ -127,6 +133,26 @@ const MUSIC_QUIZ_GAME_TYPE_REGISTRY = {
       hostPanel: markRaw(TriviaHostPanel),
       host: markRaw(TriviaHostRound),
       present: markRaw(TriviaPresentRound),
+    },
+  },
+  title_reveal: {
+    id: "title_reveal",
+    answerType: "hint_text",
+    labelKey: "providers.music_quiz.game_type_title_reveal",
+    descriptionKey: "providers.music_quiz.game_type_title_reveal_description",
+    howToPlayDescriptionKey:
+      "providers.music_quiz.how_to_play_title_reveal_description",
+    icon: markRaw(TextCursorInput),
+    requiresBackendAvailability: false,
+    supportsListenIn: true,
+    revealPhaseLabelKey: "providers.music_quiz.phase_enjoy_track",
+    // the round views only render the reveal, so they are shared with Guess the Song
+    adapters: {
+      setup: markRaw(TitleRevealSetup),
+      player: markRaw(GuessTheSongPlayerRound),
+      hostPanel: markRaw(GuessTheSongHostPanel),
+      host: markRaw(GuessTheSongHostRound),
+      present: markRaw(GuessTheSongPresentRound),
     },
   },
 } satisfies MusicQuizGameRegistry;

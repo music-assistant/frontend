@@ -1,8 +1,7 @@
 import type { HassControlKey } from "@/helpers/config_entry_ui";
+import { HASS_DOMAIN } from "@/helpers/home_assistant";
 import { api } from "@/plugins/api";
 import type { ProviderInstance } from "@/plugins/api/interfaces";
-
-export const HASS_DOMAIN = "hass";
 
 const SEARCH_CONTROL_ENTITIES_COMMAND = `${HASS_DOMAIN}/search_control_entities`;
 

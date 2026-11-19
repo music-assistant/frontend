@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6 p-6">
-    <GenreManagementHeader />
+    <SettingsPageHeader page="genres" />
 
     <!-- Genre Library Administration -->
     <Card>
@@ -84,10 +84,10 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
-import GenreManagementHeader from "@/components/genre/GenreManagementHeader.vue";
 import GenreRestoreDialogs from "@/components/genre/GenreRestoreDialogs.vue";
 import GenreRestorePanel from "@/components/genre/GenreRestorePanel.vue";
 import GenreTable from "@/components/genre/GenreTable.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import {
   Card,
   CardContent,

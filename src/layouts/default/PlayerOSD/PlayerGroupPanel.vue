@@ -37,14 +37,12 @@
           <DropdownMenuRadioItem value="all">
             {{ $t("genre_content_type.all") }}
           </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="players">
-            {{ $t("players") }}
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem v-if="hasLights" value="lights">
-            {{ $t("lights") }}
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem v-if="hasScreens" value="screens">
-            {{ $t("screens") }}
+          <DropdownMenuRadioItem
+            v-for="section in filterOptions"
+            :key="section.key"
+            :value="section.key"
+          >
+            {{ $t(section.label) }}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
@@ -80,6 +78,7 @@ import {
   isPlayerGroupFilter,
   type PlayerGroupFilter,
 } from "@/helpers/player_group";
+import type { PlayerSectionKind } from "@/helpers/player_sections";
 import { getPlayerName } from "@/helpers/players";
 import type { Player } from "@/plugins/api/interfaces";
 import { EllipsisVertical } from "@lucide/vue";
@@ -88,8 +87,8 @@ defineProps<{
   player: Player;
   members: Player[];
   filter: PlayerGroupFilter;
-  hasLights: boolean;
-  hasScreens: boolean;
+  // the kinds of players the list can be narrowed down to, in display order
+  filterOptions: readonly PlayerSectionKind[];
 }>();
 
 const emit = defineEmits<{

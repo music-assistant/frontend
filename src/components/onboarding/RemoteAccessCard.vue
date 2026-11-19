@@ -8,11 +8,6 @@
       <CardDescription>
         {{ $t("onboarding.steps.core_settings.remote.builtin.description") }}
       </CardDescription>
-      <CardAction>
-        <Badge variant="secondary">
-          {{ $t("onboarding.steps.core_settings.remote.builtin.easiest") }}
-        </Badge>
-      </CardAction>
     </CardHeader>
     <CardContent class="flex flex-col gap-3">
       <div class="flex items-center gap-2">
@@ -62,6 +57,8 @@
         <p class="text-muted-foreground text-xs">
           {{
             $t("onboarding.steps.core_settings.remote.builtin.hint", {
+              system: $t("settings.system"),
+              network: $t("settings.network.title"),
               remote_access: $t("settings.remote_access"),
             })
           }}
@@ -72,11 +69,9 @@
 </template>
 
 <script setup lang="ts">
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,

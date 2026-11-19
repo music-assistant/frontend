@@ -1,20 +1,6 @@
 <template>
-  <header class="flex items-start gap-4">
-    <span
-      class="flex size-12 shrink-0 items-center justify-center rounded-(--radius-lg) bg-primary/10 text-primary max-md:hidden"
-    >
-      <Blocks class="size-6" aria-hidden="true" />
-    </span>
-    <div class="min-w-0 flex-1 self-center">
-      <h1 class="m-0 text-2xl leading-tight font-semibold">
-        {{ $t("settings.catalog.title") }}
-      </h1>
-      <!-- a phone keeps the header to the title and its buttons -->
-      <p class="m-0 mt-1 text-sm text-muted-foreground max-md:hidden">
-        {{ $t("settings.catalog.description") }}
-      </p>
-    </div>
-    <div class="flex shrink-0 items-center gap-1">
+  <SettingsPageHeader page="catalog">
+    <template #actions>
       <Button
         :variant="installedOpen ? 'secondary' : 'outline'"
         size="sm"
@@ -54,17 +40,18 @@
       >
         <MoreVertical class="size-4" />
       </Button>
-    </div>
-  </header>
+    </template>
+  </SettingsPageHeader>
 </template>
 
 <script setup lang="ts">
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
-import { Blocks, MoreVertical } from "@lucide/vue";
+import { MoreVertical } from "@lucide/vue";
 
 interface Props {
   // what is set up, or null while it is not known

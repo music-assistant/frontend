@@ -115,8 +115,10 @@
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
 import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
+import AIStep from "@/components/onboarding/steps/AIStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
 import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
+import HomeAssistantStep from "@/components/onboarding/steps/HomeAssistantStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
@@ -178,6 +180,8 @@ const STEP_VIEWS: Record<
     props: { providerType: ProviderType.PLUGIN },
   },
   core_settings: { component: markRaw(CoreSettingsStep) },
+  home_assistant: { component: markRaw(HomeAssistantStep) },
+  ai: { component: markRaw(AIStep) },
   invite_members: { component: markRaw(InviteMembersStep) },
   finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
   welcome: { component: markRaw(WelcomeStep) },
@@ -203,8 +207,8 @@ const stepHeading = ref<HTMLHeadingElement | null>(null);
 const finishing = ref(false);
 // whether this open's data is in and its opening step is settled
 const ready = ref(false);
-// a step can take a moment to let go of the user — the server settings save on
-// their way out — and a second click must not set off from where the first one
+// a step can take a moment to let go of the user — an answer saves on its way
+// out — and a second click must not set off from where the first one
 // has already arrived
 const moving = ref(false);
 // what stops the players being followed once the wizard is gone

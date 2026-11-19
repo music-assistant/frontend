@@ -53,6 +53,21 @@ const {
   mockLoadArtistAppearsOnCount: vi.fn(),
 }));
 
+const { route, mockRouterReplace } = vi.hoisted(() => ({
+  route: { name: "artist", params: {}, query: {} } as {
+    name: string;
+    params: Record<string, string>;
+    query: Record<string, string>;
+  },
+  mockRouterReplace: vi.fn(),
+}));
+
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRoute: () => route,
+  useRouter: () => ({ replace: mockRouterReplace }),
+}));
+
 vi.mock("@/plugins/api", () => ({
   api: {
     getArtist: mockGetArtist,
@@ -137,6 +152,9 @@ vi.mock("@/components/ProviderDetails.vue", () => ({
 vi.mock("@/components/MediaItemImages.vue", () => ({
   default: { name: "MediaItemImages", template: '<div data-row="artwork" />' },
 }));
+vi.mock("@/composables/useHistoryScrollRestore", () => ({
+  useHistoryScrollRestore: () => ({ returning: () => false }),
+}));
 // the stub renders path/itemtype so tests can read which preference key
 // (see userPreferences.ts's getItemsListingPreferences) each row was given
 vi.mock("@/components/ItemsListing.vue", () => ({
@@ -199,6 +217,8 @@ function pathFor(wrapper: VueWrapper, itemtype: string) {
 
 describe("ArtistDetails", () => {
   beforeEach(() => {
+    route.name = "artist";
+    mockRouterReplace.mockReset();
     mockGetArtist.mockReset();
     mockGetArtistAudiobooks.mockReset().mockResolvedValue([]);
     mockSubscribe.mockReset().mockReturnValue(() => {});
@@ -436,6 +456,40 @@ describe("ArtistDetails", () => {
     expect(shelf?.props("emptyMessage")).toBe("discography_types_empty");
   });
 
+  it.each([
+    [ArtistType.AUTHOR, "artist", "authors"],
+    [ArtistType.NARRATOR, "artist", "narrators"],
+    [ArtistType.AUTHOR, "audiobookartist", undefined],
+    [ArtistType.SINGER, "artist", undefined],
+  ])(
+    "moves a %s opened on the %s route to the audiobooks section as %s",
+    async (artistType, routeName, role) => {
+      route.name = routeName;
+      route.params = { provider: "deezer", itemId: "author_1" };
+      await mountDetails(
+        artist({
+          item_id: "author_1",
+          provider: "deezer",
+          artist_type: artistType,
+        }),
+      );
+
+      expect(mockRouterReplace.mock.calls).toEqual(
+        role
+          ? [
+              [
+                {
+                  name: "audiobookartist",
+                  params: { provider: "deezer", itemId: "author_1", role },
+                  query: {},
+                },
+              ],
+            ]
+          : [],
+      );
+    },
+  );
+
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {
     const wrapperA = await mountDetails(
       artist({
@@ -488,7 +542,7 @@ describe("ArtistDetails", () => {
       "author-1",
       "library",
       ArtistType.AUTHOR,
-      undefined,
+      true,
       true,
       "story",
       20,
@@ -527,7 +581,7 @@ describe("ArtistDetails", () => {
       "provider-author",
       "qobuz_1",
       ArtistType.AUTHOR,
-      undefined,
+      true,
       undefined,
       "",
       20,

@@ -1,177 +1,28 @@
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
-import type { MusicAssistantApi } from "@/plugins/api";
-import {
-  ConfigEntryType,
-  Scope,
-  type ConfigEntry,
-  type CoreConfig,
-  type ServerInfoMessage,
-} from "@/plugins/api/interfaces";
-import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { Scope } from "@/plugins/api/interfaces";
+import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ref, type Ref } from "vue";
 
-const { apiMock, authMock, toastMock } = vi.hoisted(() => ({
-  apiMock: {
-    getCoreConfig: vi.fn<MusicAssistantApi["getCoreConfig"]>(),
-    getStreamServerInfo: vi.fn<MusicAssistantApi["getStreamServerInfo"]>(),
-    saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
-    // replaced with a real ref by the api mock factory below, so the step
-    // follows a server info update the way it follows the real one
-    serverInfo: { value: undefined } as Ref<ServerInfoMessage | undefined>,
-  },
+const { authMock, onboardingState } = vi.hoisted(() => ({
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
-  toastMock: { error: vi.fn(), success: vi.fn() },
+  // the part of the onboarding context this step reads
+  onboardingState: {
+    homeAssistantAddon: false,
+    homeAssistantConfigured: false,
+    homeAssistantConnected: false,
+  },
 }));
-
-vi.mock("@/plugins/api", async () => {
-  const { ref } = await vi.importActual<typeof import("vue")>("vue");
-  apiMock.serverInfo = ref<ServerInfoMessage | undefined>(undefined);
-  return { api: apiMock, default: apiMock };
-});
 
 vi.mock("@/plugins/auth", () => ({ authManager: authMock, default: authMock }));
 
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-
-vi.mock("vue-sonner", () => ({ toast: toastMock }));
-
-enableAutoUnmount(afterEach);
-
-let warnSpy: ReturnType<typeof vi.spyOn>;
-
-const SERVER_ID = "server-1";
-const INTERNAL_URL = "http://192.168.1.10:8095";
-const STREAM_URL = "http://192.168.1.10:8097";
-const MOVED_STREAM_URL = "http://10.0.0.5:8097";
-
-/**
- * What the form hands over on a save: every entry it shows, the ones the user
- * typed in and the ones they left alone alike.
- */
-function formValues(edits: Record<string, string> = {}) {
+vi.mock("@/composables/useOnboarding", async () => {
+  const { computed } = await vi.importActual<typeof import("vue")>("vue");
   return {
-    server_name: "server_name value",
-    base_url: "base_url value",
-    external_url: "external_url value",
-    publish_ip: "publish_ip value",
-    ...edits,
+    useOnboarding: () => ({ ctx: computed(() => ({ ...onboardingState })) }),
   };
-}
-
-/** What the user typed, as the form hands it over. */
-const EDITED_VALUES = formValues({ server_name: "Living room" });
-/** The one setting of those the server does not have yet. */
-const EDITED_CHANGE = { server_name: "Living room" };
-// what the form hands over on its next submit: a test that types on after a
-// save changes this
-const formPayload = ref<Record<string, string>>(EDITED_VALUES);
-
-// the edits the form is holding on to, and whether they validate: a form that
-// does not hand its values over is one showing the user what is wrong with them
-const hasUnsavedChanges = ref(false);
-const valuesValidate = ref(true);
-
-// the form guards its pending edits again when a save does not land
-const saveFailed = vi.fn();
-// and takes the values that were saved over as its baseline when one does, so
-// they stop counting as unsaved
-const saveSucceeded = vi.fn((_values: Record<string, unknown>) => {
-  hasUnsavedChanges.value = false;
 });
 
-/**
- * The form is covered where it lives; here it only has to be reachable, and to
- * answer the step the way the real one does.
- */
-const editConfigStub = {
-  name: "EditConfig",
-  props: [
-    "configEntries",
-    "disabled",
-    "inlineSave",
-    "showAdvancedSettings",
-    "hideHeader",
-  ],
-  emits: ["submit"],
-  setup(
-    _props: unknown,
-    {
-      emit,
-    }: { emit: (event: "submit", values: Record<string, string>) => void },
-  ) {
-    return {
-      hasUnsavedChanges,
-      saveFailed,
-      saveSucceeded,
-      submit: async () => {
-        if (valuesValidate.value) emit("submit", formPayload.value);
-      },
-    };
-  },
-  template: "<div />",
-};
-
-function serverInfo(
-  overrides: Partial<ServerInfoMessage> = {},
-): ServerInfoMessage {
-  return {
-    server_id: SERVER_ID,
-    internal_url: INTERNAL_URL,
-    external_url: null,
-    has_remote_access: false,
-    ...overrides,
-  } as ServerInfoMessage;
-}
-
-function entry(key: string, overrides: Partial<ConfigEntry> = {}): ConfigEntry {
-  return {
-    category: "generic",
-    default_value: null,
-    key,
-    label: key,
-    options: [],
-    required: false,
-    type: ConfigEntryType.STRING,
-    value: `${key} value`,
-    ...overrides,
-  };
-}
-
-/** The webserver configuration, with more in it than this step is about. */
-function webserverConfig(values?: Record<string, ConfigEntry>): CoreConfig {
-  return {
-    domain: "webserver",
-    last_error: null,
-    values: values ?? {
-      bind_port: entry("bind_port"),
-      // in another order than the step asks for them, and one of them advanced
-      external_url: entry("external_url", { advanced: true }),
-      server_name: entry("server_name"),
-      base_url: entry("base_url"),
-    },
-  };
-}
-
-/** The stream server configuration, likewise. */
-function streamsConfig(values?: Record<string, ConfigEntry>): CoreConfig {
-  return {
-    domain: "streams",
-    last_error: null,
-    values: values ?? {
-      bind_port: entry("bind_port"),
-      publish_ip: entry("publish_ip", { advanced: true }),
-    },
-  };
-}
-
-/** A fetch answering every probe as this server. */
-function answeringAsThisServer() {
-  return vi.fn(
-    async () =>
-      new Response(JSON.stringify({ server_id: SERVER_ID }), { status: 200 }),
-  );
-}
+enableAutoUnmount(afterEach);
 
 /** The scopes this admin holds; everything, unless a test takes one away. */
 function grantAllBut(...withheld: Scope[]) {
@@ -181,891 +32,132 @@ function grantAllBut(...withheld: Scope[]) {
 function mountStep() {
   return mount(CoreSettingsStep, {
     global: {
+      mocks: { $t: (key: string) => key },
       // the card is covered where it lives; here it only has to be reachable
-      stubs: { EditConfig: editConfigStub, RemoteAccessCard: true },
+      stubs: { RemoteAccessCard: true },
     },
   });
 }
 
-/** Mount the loaded step with network details open. */
-async function mountLoadedStep() {
-  const wrapper = mountStep();
-  await flushPromises();
-  const trigger = networkDetailsTrigger(wrapper);
-  if (trigger.attributes("aria-expanded") !== "true") {
-    await trigger.trigger("click");
-    await flushPromises();
-  }
-  return wrapper;
-}
-
 type Wrapper = ReturnType<typeof mountStep>;
 
-function form(wrapper: Wrapper) {
-  return wrapper.findComponent({ name: "EditConfig" });
+function card(wrapper: Wrapper) {
+  return wrapper.findComponent({ name: "RemoteAccessCard" });
 }
 
-function networkDetailsTrigger(wrapper: Wrapper) {
-  return wrapper.find(
-    "[data-testid=onboarding-network-details] button[aria-expanded]",
-  );
+function intro(wrapper: Wrapper) {
+  return wrapper.find("[data-testid=onboarding-remote-access-intro]").text();
 }
 
-type AddressId = "internal" | "external" | "stream";
-
-function addressRow(wrapper: Wrapper, id: AddressId) {
-  return wrapper.find(`[data-testid=onboarding-address-${id}]`);
+function homeAssistantLine(wrapper: Wrapper) {
+  return wrapper.find("[data-testid=onboarding-remote-access-home-assistant]");
 }
 
-function addressUrl(wrapper: Wrapper, id: AddressId) {
-  return addressRow(wrapper, id).find("[data-testid=onboarding-address-url]");
-}
-
-function addressCheck(wrapper: Wrapper, id: AddressId) {
-  return addressRow(wrapper, id).find("[data-testid=onboarding-address-check]");
-}
-
-function unreachableHint(wrapper: Wrapper) {
-  return wrapper.find("[data-testid=onboarding-address-unreachable-hint]");
-}
-
-function editSection(wrapper: Wrapper) {
-  return wrapper.find("[data-testid=onboarding-network-edit-form]");
-}
-
-function editButton(wrapper: Wrapper) {
-  return wrapper.find("[data-testid=onboarding-network-edit]");
-}
-
-/** Whether the form is closed, as `v-show` closes it. */
-function editClosed(wrapper: Wrapper): boolean {
-  return (
-    editSection(wrapper).attributes("style")?.includes("display: none") ?? false
-  );
-}
-
-function probedUrls(): string[] {
-  return (fetch as ReturnType<typeof vi.fn>).mock.calls.map(
-    ([url]: unknown[]) => String(url),
-  );
+function networkHint(wrapper: Wrapper) {
+  return wrapper.find("[data-testid=onboarding-network-hint]");
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  hasUnsavedChanges.value = false;
-  valuesValidate.value = true;
-  formPayload.value = EDITED_VALUES;
   grantAllBut();
-  apiMock.serverInfo.value = serverInfo();
-  apiMock.getCoreConfig.mockImplementation(async (domain) =>
-    domain === "webserver" ? webserverConfig() : streamsConfig(),
-  );
-  apiMock.saveCoreConfig.mockResolvedValue(webserverConfig());
-  apiMock.getStreamServerInfo.mockResolvedValue({ base_url: STREAM_URL });
-  vi.stubGlobal("fetch", answeringAsThisServer());
-  warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.useRealTimers();
-  warnSpy.mockRestore();
+  onboardingState.homeAssistantAddon = false;
+  onboardingState.homeAssistantConfigured = false;
+  onboardingState.homeAssistantConnected = false;
 });
 
 describe("CoreSettingsStep", () => {
-  describe("the addresses in use", () => {
-    it("puts one disclosure for the details below the remote access choices", async () => {
-      const wrapper = await mountLoadedStep();
-
-      const disclosures = wrapper.findAll(
-        "[data-testid=onboarding-network-details]",
-      );
-      expect(disclosures).toHaveLength(1);
-      const proxy = wrapper.find("[data-testid=onboarding-reverse-proxy]");
-      expect(
-        proxy.element.compareDocumentPosition(disclosures[0].element) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-      // the form lives in it, with no second switch for it elsewhere
-      expect(
-        disclosures[0]
-          .find("[data-testid=onboarding-network-edit-form]")
-          .exists(),
-      ).toBe(true);
-      expect(wrapper.find("[role=switch]").exists()).toBe(false);
-    });
-
-    it("shows the server name, and the external address once there is one", async () => {
-      apiMock.serverInfo.value = serverInfo({
-        name: "Living room",
-        external_url: "https://music.example.com",
-      });
-
-      const wrapper = await mountLoadedStep();
-
-      expect(
-        wrapper.find("[data-testid=onboarding-server-name]").text(),
-      ).toContain("Living room");
-      expect(addressUrl(wrapper, "external").text()).toBe(
-        "https://music.example.com",
-      );
-      // players never use it, so it is not checked from here
-      expect(addressCheck(wrapper, "external").exists()).toBe(false);
-      expect(probedUrls()).not.toContain("https://music.example.com/info");
-    });
-
-    it("leaves the external address out when there is none", async () => {
-      const wrapper = await mountLoadedStep();
-
-      expect(addressRow(wrapper, "external").exists()).toBe(false);
-    });
-
-    it("shows the addresses the server is using right now", async () => {
-      const wrapper = await mountLoadedStep();
-
-      expect(addressUrl(wrapper, "internal").text()).toBe(INTERNAL_URL);
-      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledOnce();
-      // best effort: a row saying so is enough, not an error on top
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledWith({
-        suppressGlobalError: true,
-      });
-    });
-
-    it("shows no stream server address until the server has answered", async () => {
-      apiMock.getStreamServerInfo.mockImplementation(
-        () => new Promise(() => {}),
-      );
-
-      const wrapper = await mountLoadedStep();
-
-      // an address still being asked for is not one that is missing
-      const row = addressRow(wrapper, "stream");
-      expect(addressUrl(wrapper, "stream").exists()).toBe(false);
-      expect(
-        row.find("[data-testid=onboarding-address-unknown]").exists(),
-      ).toBe(false);
-      expect(addressCheck(wrapper, "stream").exists()).toBe(false);
-    });
-
-    it("says so when the stream server address is not available", async () => {
-      apiMock.getStreamServerInfo.mockRejectedValue(new Error("boom"));
-
-      const wrapper = await mountLoadedStep();
-
-      // the row shows no address it cannot stand behind, and nothing is
-      // checked that is not there
-      const row = addressRow(wrapper, "stream");
-      expect(addressUrl(wrapper, "stream").exists()).toBe(false);
-      expect(
-        row.find("[data-testid=onboarding-address-unknown]").exists(),
-      ).toBe(true);
-      expect(addressCheck(wrapper, "stream").exists()).toBe(false);
-      expect(probedUrls()).toEqual([`${INTERNAL_URL}/info`]);
-      expect(warnSpy).toHaveBeenCalledOnce();
-    });
-
-    it("does not ask for the stream server address without leave to read settings", async () => {
-      grantAllBut(Scope.CONFIG_CORE_READ);
-
-      const wrapper = await mountLoadedStep();
-
-      expect(apiMock.getStreamServerInfo).not.toHaveBeenCalled();
-      expect(
-        addressRow(wrapper, "stream")
-          .find("[data-testid=onboarding-address-unknown]")
-          .exists(),
-      ).toBe(true);
-    });
-
-    it("checks each address from this browser", async () => {
-      const wrapper = await mountLoadedStep();
-
-      expect(probedUrls()).toEqual([
-        `${INTERNAL_URL}/info`,
-        `${STREAM_URL}/info`,
-      ]);
-      expect(addressCheck(wrapper, "internal").attributes("data-check")).toBe(
-        "reachable",
-      );
-      expect(addressCheck(wrapper, "stream").attributes("data-check")).toBe(
-        "reachable",
-      );
-      expect(unreachableHint(wrapper).exists()).toBe(false);
-    });
-
-    it("keeps healthy network details folded and lets them be opened", async () => {
+  describe("the intro", () => {
+    it("is about listening away from home", () => {
       const wrapper = mountStep();
-      await flushPromises();
 
-      const trigger = networkDetailsTrigger(wrapper);
-      expect(trigger.exists()).toBe(true);
-      expect(trigger.attributes("aria-expanded")).toBe("false");
-      expect(
-        wrapper.find("[data-testid=onboarding-reverse-proxy]").isVisible(),
-      ).toBe(true);
-
-      await trigger.trigger("click");
-      expect(trigger.attributes("aria-expanded")).toBe("true");
-      expect(addressUrl(wrapper, "internal").text()).toBe(INTERNAL_URL);
-      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
+      expect(intro(wrapper)).toBe("onboarding.steps.core_settings.away_intro");
     });
 
-    it("flags an address this browser could not reach, with one word of advice", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => {
-          throw new TypeError("Failed to fetch");
-        }),
-      );
+    it("says the add-on is reached wherever Home Assistant is", () => {
+      onboardingState.homeAssistantAddon = true;
+      onboardingState.homeAssistantConfigured = true;
+      onboardingState.homeAssistantConnected = true;
 
       const wrapper = mountStep();
-      await flushPromises();
 
-      const trigger = networkDetailsTrigger(wrapper);
-      expect(trigger.attributes("aria-expanded")).toBe("true");
-      expect(addressCheck(wrapper, "internal").attributes("data-check")).toBe(
-        "unreachable",
-      );
-      expect(addressCheck(wrapper, "stream").attributes("data-check")).toBe(
-        "unreachable",
-      );
-      // the advice is the same for both, so it is given once
-      expect(
-        wrapper.findAll("[data-testid=onboarding-address-unreachable-hint]"),
-      ).toHaveLength(1);
-      expect(unreachableHint(wrapper).isVisible()).toBe(true);
-
-      await trigger.trigger("click");
-      expect(trigger.attributes("aria-expanded")).toBe("false");
-      expect(unreachableHint(wrapper).isVisible()).toBe(true);
-    });
-
-    it("does not fold the details away once an address answers again", async () => {
-      // the old internal address does not answer; everything else does
-      const answering = answeringAsThisServer();
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async (url: string) => {
-          if (url.startsWith(INTERNAL_URL)) {
-            throw new TypeError("Failed to fetch");
-          }
-          return answering();
-        }),
-      );
-      const wrapper = mountStep();
-      await flushPromises();
-      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
-        "true",
-      );
-
-      // a fixed address is checked afresh while the user may still be editing
-      apiMock.serverInfo.value = serverInfo({
-        internal_url: "http://10.0.0.5:8095",
-      });
-      await flushPromises();
-
-      expect(unreachableHint(wrapper).exists()).toBe(false);
-      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
-        "true",
-      );
-    });
-
-    it("says when an address could not be checked from this page", async () => {
-      // an https page may not fetch a plain http address: nothing is known
-      vi.stubGlobal("location", { protocol: "https:" });
-
-      const wrapper = await mountLoadedStep();
-
-      expect(addressCheck(wrapper, "internal").attributes("data-check")).toBe(
-        "unchecked",
-      );
-      expect(probedUrls()).toEqual([]);
-      expect(unreachableHint(wrapper).exists()).toBe(false);
-    });
-
-    it("checks the internal address again once the server advertises another", async () => {
-      const wrapper = await mountLoadedStep();
-
-      // the server pushes fresh server info after its settings changed
-      apiMock.serverInfo.value = serverInfo({
-        internal_url: "http://10.0.0.5:8095",
-      });
-      await flushPromises();
-
-      expect(addressUrl(wrapper, "internal").text()).toBe(
-        "http://10.0.0.5:8095",
-      );
-      expect(probedUrls()).toContain("http://10.0.0.5:8095/info");
-      expect(addressCheck(wrapper, "internal").attributes("data-check")).toBe(
-        "reachable",
-      );
+      expect(intro(wrapper)).toBe("onboarding.steps.core_settings.intro_addon");
     });
   });
 
-  describe("reaching the server from outside", () => {
-    it("offers Music Assistant's own remote access to whoever may switch it", async () => {
-      const wrapper = await mountLoadedStep();
+  describe("remote access", () => {
+    it("is offered to whoever may switch it", () => {
+      const wrapper = mountStep();
 
-      expect(wrapper.findComponent({ name: "RemoteAccessCard" }).exists()).toBe(
-        true,
-      );
-      expect(
-        wrapper.find("[data-testid=onboarding-reverse-proxy]").exists(),
-      ).toBe(true);
+      expect(card(wrapper).exists()).toBe(true);
     });
 
-    it("keeps remote access from whoever may not switch it", async () => {
+    it("is kept from whoever may not switch it", () => {
       grantAllBut(Scope.SYSTEM_MANAGE);
-
-      const wrapper = await mountLoadedStep();
-
-      // the request would only fail at them; the reverse proxy is still theirs
-      expect(wrapper.findComponent({ name: "RemoteAccessCard" }).exists()).toBe(
-        false,
-      );
-      expect(
-        wrapper.find("[data-testid=onboarding-reverse-proxy]").exists(),
-      ).toBe(true);
-    });
-  });
-
-  describe("changing the details", () => {
-    it("keeps the form closed, with it ready underneath", async () => {
-      const wrapper = await mountLoadedStep();
-
-      expect(editClosed(wrapper)).toBe(true);
-      expect(apiMock.getCoreConfig).toHaveBeenCalledWith("webserver");
-      expect(apiMock.getCoreConfig).toHaveBeenCalledWith("streams");
-      // the settings of both modules, in one form
-      expect(
-        form(wrapper)
-          .props("configEntries")
-          .map((configEntry: ConfigEntry) => configEntry.key),
-      ).toEqual(["server_name", "base_url", "external_url", "publish_ip"]);
-      // whether the form is open is what hides the entries, not the form's
-      // own advanced toggle, which its hidden header leaves out
-      expect(form(wrapper).props("showAdvancedSettings")).toBe(true);
-      expect(form(wrapper).props("hideHeader")).toBe(true);
-      // inside the wizard's dialog the form's save button stays with the form
-      expect(form(wrapper).props("inlineSave")).toBe(true);
-    });
-
-    it("opens the form from the pencil, and closes it again", async () => {
-      const wrapper = await mountLoadedStep();
-
-      expect(editButton(wrapper).attributes("aria-expanded")).toBe("false");
-      expect(editButton(wrapper).attributes("aria-controls")).toBe(
-        editSection(wrapper).attributes("id"),
-      );
-      await editButton(wrapper).trigger("click");
-      await flushPromises();
-
-      expect(editClosed(wrapper)).toBe(false);
-      expect(editButton(wrapper).attributes("aria-expanded")).toBe("true");
-
-      await editButton(wrapper).trigger("click");
-      expect(editClosed(wrapper)).toBe(true);
-    });
-
-    it("unfolds the details with the form open for the external address", async () => {
-      const wrapper = mountStep();
-      await flushPromises();
-      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
-        "false",
-      );
-
-      await wrapper
-        .find("[data-testid=onboarding-set-external-address]")
-        .trigger("click");
-      await flushPromises();
-
-      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
-        "true",
-      );
-      expect(editClosed(wrapper)).toBe(false);
-    });
-
-    it("keeps what was typed when the details are folded", async () => {
-      hasUnsavedChanges.value = true;
-      const wrapper = await mountLoadedStep();
-      await editButton(wrapper).trigger("click");
-      await flushPromises();
-      const typedInto = form(wrapper).vm.$.uid;
-
-      await networkDetailsTrigger(wrapper).trigger("click");
-      await flushPromises();
-
-      // the same form, still holding the edits, which Next then saves
-      expect(networkDetailsTrigger(wrapper).attributes("aria-expanded")).toBe(
-        "false",
-      );
-      expect(form(wrapper).exists()).toBe(true);
-      expect(form(wrapper).vm.$.uid).toBe(typedInto);
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
-        "webserver",
-        EDITED_CHANGE,
-      );
-    });
-
-    it("keeps them from whoever may not change the settings", async () => {
-      grantAllBut(Scope.CONFIG_CORE_WRITE);
-
-      const wrapper = await mountLoadedStep();
-
-      // nothing to open, nothing to fetch for it, and nothing to point at
-      expect(editSection(wrapper).exists()).toBe(false);
-      expect(editButton(wrapper).exists()).toBe(false);
-      expect(
-        wrapper.find("[data-testid=onboarding-set-external-address]").exists(),
-      ).toBe(false);
-      expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-    });
-
-    it("leaves out a setting this server does not carry", async () => {
-      apiMock.getCoreConfig.mockImplementation(async (domain) =>
-        domain === "webserver"
-          ? webserverConfig({ server_name: entry("server_name") })
-          : streamsConfig({ bind_port: entry("bind_port") }),
-      );
-
-      const wrapper = await mountLoadedStep();
-
-      expect(
-        form(wrapper)
-          .props("configEntries")
-          .map((configEntry: ConfigEntry) => configEntry.key),
-      ).toEqual(["server_name"]);
-    });
-
-    it("keeps the room and says it is busy while the settings load", async () => {
-      apiMock.getCoreConfig.mockImplementation(() => new Promise(() => {}));
-
-      const wrapper = await mountLoadedStep();
-
-      expect(editSection(wrapper).find("[role=status]").exists()).toBe(true);
-      expect(form(wrapper).exists()).toBe(false);
-      expect(wrapper.text()).not.toContain(
-        "onboarding.steps.core_settings.load_failed",
-      );
-    });
-
-    it("says so when the settings cannot be loaded", async () => {
-      apiMock.getCoreConfig.mockRejectedValue(new Error("boom"));
-
-      const wrapper = await mountLoadedStep();
-
-      // the api toasts its own failures; nothing here is filled in with values
-      // nobody stands behind
-      expect(form(wrapper).exists()).toBe(false);
-      expect(editSection(wrapper).find("[role=status]").exists()).toBe(false);
-      expect(wrapper.text()).toContain(
-        "onboarding.steps.core_settings.load_failed",
-      );
-      expect(warnSpy).toHaveBeenCalledOnce();
-    });
-  });
-
-  describe("saving", () => {
-    it("saves what changed to its own module, and says so once", async () => {
-      const values = formValues({
-        server_name: "Living room",
-        publish_ip: "10.0.0.5",
-      });
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit("submit", values);
-      await flushPromises();
-
-      // the form hands everything over; each module gets what changed of its
-      // own and merges that in, so the rest keeps its value
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("webserver", {
-        server_name: "Living room",
-      });
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
-        publish_ip: "10.0.0.5",
-      });
-      expect(toastMock.success).toHaveBeenCalledOnce();
-      expect(toastMock.success).toHaveBeenCalledWith("settings.settings_saved");
-      expect(toastMock.error).not.toHaveBeenCalled();
-      expect(saveFailed).not.toHaveBeenCalled();
-      // the step stays on screen, so the form is told which values the server
-      // now has — and only those
-      expect(saveSucceeded).toHaveBeenCalledWith(values);
-    });
-
-    it("hands a module nothing when none of its settings changed", async () => {
-      vi.useFakeTimers({ toFake: ["setTimeout"] });
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
-      await flushPromises();
-
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
-        "webserver",
-        EDITED_CHANGE,
-      );
-      // nothing moved, so nothing is asked again either
-      await vi.advanceTimersByTimeAsync(30_000);
-      await flushPromises();
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledOnce();
-    });
-
-    it("does not take an untouched default for a change", async () => {
-      apiMock.getCoreConfig.mockImplementation(async (domain) =>
-        domain === "webserver"
-          ? webserverConfig({
-              server_name: entry("server_name"),
-              // never set: the form fills it in with the default and hands
-              // that over, which is no change
-              base_url: entry("base_url", {
-                value: undefined,
-                default_value: "auto",
-              }),
-            })
-          : streamsConfig(),
-      );
-      const wrapper = await mountLoadedStep();
-
-      // the form only hands over what it shows
-      await form(wrapper).vm.$emit("submit", {
-        server_name: "Living room",
-        base_url: "auto",
-        publish_ip: "publish_ip value",
-      });
-      await flushPromises();
-
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
-        "webserver",
-        EDITED_CHANGE,
-      );
-    });
-
-    it("runs quick saves one after the other, the last one winning", async () => {
-      let landFirst: (config: CoreConfig) => void = () => {};
-      apiMock.saveCoreConfig.mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            landFirst = resolve;
-          }),
-      );
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
-      await form(wrapper).vm.$emit(
-        "submit",
-        formValues({ server_name: "Kitchen" }),
-      );
-      await flushPromises();
-
-      // the second waits for the first, so the server is told in this order
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
-      landFirst(webserverConfig());
-      await flushPromises();
-
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
-      expect(apiMock.saveCoreConfig).toHaveBeenLastCalledWith("webserver", {
-        server_name: "Kitchen",
-      });
-    });
-
-    it("saves a setting changed back and forth only when it differs from the server's", async () => {
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
-      await flushPromises();
-      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
-      await flushPromises();
-
-      // the second save carries nothing the server does not have already
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
-    });
-
-    it("shows and checks the stream server's new address once it has moved", async () => {
-      vi.useFakeTimers({ toFake: ["setTimeout"] });
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit(
-        "submit",
-        formValues({ publish_ip: "10.0.0.5" }),
-      );
-      await flushPromises();
-
-      // the save has answered, but the stream server restarts only a moment
-      // later and says nothing once it is back, so the address is asked again
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledOnce();
-      await vi.advanceTimersByTimeAsync(1500);
-      await flushPromises();
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(2);
-      // still the old address: not moved yet, so it is asked once more
-      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
-
-      apiMock.getStreamServerInfo.mockResolvedValue({
-        base_url: MOVED_STREAM_URL,
-      });
-      await vi.advanceTimersByTimeAsync(3000);
-      await flushPromises();
-
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(3);
-      expect(addressUrl(wrapper, "stream").text()).toBe(MOVED_STREAM_URL);
-      expect(probedUrls()).toContain(`${MOVED_STREAM_URL}/info`);
-
-      // moved, so it is left alone from here on
-      await vi.advanceTimersByTimeAsync(10_000);
-      await flushPromises();
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(3);
-    });
-
-    it("keeps asking when a lookup fails while the server restarts", async () => {
-      vi.useFakeTimers({ toFake: ["setTimeout"] });
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit(
-        "submit",
-        formValues({ publish_ip: "10.0.0.5" }),
-      );
-      await flushPromises();
-
-      // the first lookup lands while the stream server is down: the address
-      // shown stays, and the lookup is not the last word
-      apiMock.getStreamServerInfo.mockRejectedValueOnce(
-        new Error("restarting"),
-      );
-      await vi.advanceTimersByTimeAsync(1500);
-      await flushPromises();
-      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
-
-      apiMock.getStreamServerInfo.mockResolvedValue({
-        base_url: MOVED_STREAM_URL,
-      });
-      await vi.advanceTimersByTimeAsync(3000);
-      await flushPromises();
-
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(3);
-      expect(addressUrl(wrapper, "stream").text()).toBe(MOVED_STREAM_URL);
-      expect(warnSpy).toHaveBeenCalledOnce();
-    });
-
-    it("stops asking for the stream server's address after a while", async () => {
-      vi.useFakeTimers({ toFake: ["setTimeout"] });
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit(
-        "submit",
-        formValues({ publish_ip: "10.0.0.5" }),
-      );
-      await flushPromises();
-
-      // an address that never moves — the same one saved again, say — is not
-      // asked for forever
-      await vi.advanceTimersByTimeAsync(30_000);
-      await flushPromises();
-
-      expect(apiMock.getStreamServerInfo).toHaveBeenCalledTimes(4);
-      expect(addressUrl(wrapper, "stream").text()).toBe(STREAM_URL);
-    });
-
-    it("has nothing left to save once the form was saved", async () => {
-      hasUnsavedChanges.value = true;
-
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
-      await flushPromises();
-
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-
-      // moving on after a Save does not send the same settings a second time
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
-      expect(toastMock.success).toHaveBeenCalledOnce();
-    });
-
-    it("waits for the save the form's own button started", async () => {
-      let landSave: (config: CoreConfig) => void = () => {};
-      apiMock.saveCoreConfig.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            landSave = resolve;
-          }),
-      );
-      hasUnsavedChanges.value = true;
-
-      const wrapper = await mountLoadedStep();
-      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
-
-      const leaving = wrapper.vm.beforeLeave();
-      landSave(webserverConfig());
-
-      await expect(leaving).resolves.toBe(true);
-      // one save, whichever of the two asked for it
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
-    });
-
-    it("answers only once every module has, whichever failed first", async () => {
-      let landStreams: (config: CoreConfig) => void = () => {};
-      apiMock.saveCoreConfig.mockImplementation((domain) =>
-        domain === "webserver"
-          ? Promise.reject(new Error("no such address"))
-          : new Promise((resolve) => {
-              landStreams = resolve;
-            }),
-      );
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit(
-        "submit",
-        formValues({ server_name: "Living room", publish_ip: "10.0.0.5" }),
-      );
-      await flushPromises();
-
-      // one module refused, the other has not answered yet: nothing is settled,
-      // so the form is not handed its edits back while a save is still out
-      expect(saveFailed).not.toHaveBeenCalled();
-      hasUnsavedChanges.value = true;
-      let answered = false;
-      const leaving = wrapper.vm.beforeLeave().then((mayLeave) => {
-        answered = true;
-        return mayLeave;
-      });
-      await flushPromises();
-      expect(answered).toBe(false);
-
-      landStreams(streamsConfig());
-      await expect(leaving).resolves.toBe(false);
-      expect(saveFailed).toHaveBeenCalledOnce();
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
-    });
-
-    it("saves what was typed while a save was out before the wizard moves on", async () => {
-      let landSave: (config: CoreConfig) => void = () => {};
-      apiMock.saveCoreConfig.mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            landSave = resolve;
-          }),
-      );
-      hasUnsavedChanges.value = true;
-      const wrapper = await mountLoadedStep();
-      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
-      // the user kept typing while the first save was out, so the form is
-      // still holding edits once that save has been taken over
-      formPayload.value = formValues({ server_name: "Kitchen" });
-      saveSucceeded.mockImplementationOnce(() => {
-        hasUnsavedChanges.value = true;
-      });
-
-      const leaving = wrapper.vm.beforeLeave();
-      landSave(webserverConfig());
-
-      await expect(leaving).resolves.toBe(true);
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
-      expect(apiMock.saveCoreConfig).toHaveBeenLastCalledWith("webserver", {
-        server_name: "Kitchen",
-      });
-    });
-
-    it("leaves the edits guarded when a save did not land, and says it once", async () => {
-      apiMock.saveCoreConfig.mockRejectedValue(new Error("no such address"));
-
-      const wrapper = await mountLoadedStep();
-
-      await form(wrapper).vm.$emit("submit", EDITED_VALUES);
-      await flushPromises();
-
-      // the api tells the user itself, so the step does not say it a second time
-      expect(toastMock.error).not.toHaveBeenCalled();
-      expect(toastMock.success).not.toHaveBeenCalled();
-      expect(saveFailed).toHaveBeenCalledOnce();
-    });
-  });
-
-  describe("leaving the step", () => {
-    it("waits for the settings before it answers the wizard", async () => {
-      const handOverConfigs: (() => void)[] = [];
-      apiMock.getCoreConfig.mockImplementation(
-        (domain) =>
-          new Promise((resolve) => {
-            handOverConfigs.push(() =>
-              resolve(
-                domain === "webserver" ? webserverConfig() : streamsConfig(),
-              ),
-            );
-          }),
-      );
+      onboardingState.homeAssistantConfigured = true;
+      onboardingState.homeAssistantConnected = true;
 
       const wrapper = mountStep();
-      let answered = false;
-      const leaving = wrapper.vm.beforeLeave().then((mayLeave) => {
-        answered = true;
-        return mayLeave;
-      });
-      await flushPromises();
 
-      // settings the user never saw are not settings they left alone
-      expect(answered).toBe(false);
+      // the request would only fail at them, and the line about Home
+      // Assistant goes with the switch it is about
+      expect(card(wrapper).exists()).toBe(false);
+      expect(homeAssistantLine(wrapper).exists()).toBe(false);
+    });
+  });
 
-      for (const handOver of handOverConfigs) handOver();
-      await expect(leaving).resolves.toBe(true);
+  describe("the line about Home Assistant", () => {
+    it("is left out without Home Assistant", () => {
+      const wrapper = mountStep();
+
+      expect(homeAssistantLine(wrapper).exists()).toBe(false);
     });
 
-    it("lets the wizard move on when there is nothing to save", async () => {
-      const wrapper = await mountLoadedStep();
+    it("shows with Home Assistant connected", () => {
+      onboardingState.homeAssistantConfigured = true;
+      onboardingState.homeAssistantConnected = true;
 
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
+      const wrapper = mountStep();
 
-      expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
-    });
-
-    it("saves the pending edits before the wizard moves on", async () => {
-      hasUnsavedChanges.value = true;
-
-      const wrapper = await mountLoadedStep();
-
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-
-      expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
-        "webserver",
-        EDITED_CHANGE,
+      expect(homeAssistantLine(wrapper).text()).toBe(
+        "onboarding.steps.core_settings.remote.home_assistant",
       );
-      expect(toastMock.success).toHaveBeenCalledWith("settings.settings_saved");
     });
 
-    it("keeps the wizard here when the save does not land", async () => {
-      hasUnsavedChanges.value = true;
-      apiMock.saveCoreConfig.mockRejectedValue(new Error("no such address"));
+    it("is left out while the Home Assistant connection does not work", () => {
+      // set up, but switched off or failed: the server only goes through
+      // Home Assistant Link with a connection that is up
+      onboardingState.homeAssistantConfigured = true;
 
-      const wrapper = await mountLoadedStep();
+      const wrapper = mountStep();
 
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
-
-      expect(saveFailed).toHaveBeenCalledOnce();
+      expect(homeAssistantLine(wrapper).exists()).toBe(false);
     });
 
-    it("keeps the wizard here when the form has something to say", async () => {
-      hasUnsavedChanges.value = true;
-      valuesValidate.value = false;
+    it("shows on the add-on, which connects Home Assistant by itself", () => {
+      onboardingState.homeAssistantAddon = true;
 
-      const wrapper = await mountLoadedStep();
+      const wrapper = mountStep();
 
-      // the form holds its values back and shows what is wrong with them, so
-      // there is nothing to save and nowhere to go
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
-
-      expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
+      expect(homeAssistantLine(wrapper).exists()).toBe(true);
     });
+  });
 
-    it("lets the wizard move on when there is no form at all", async () => {
-      apiMock.getCoreConfig.mockRejectedValue(new Error("boom"));
+  it("points to the network settings for anything else", () => {
+    grantAllBut(Scope.SYSTEM_MANAGE);
 
-      const wrapper = await mountLoadedStep();
+    const wrapper = mountStep();
 
-      // settings that could not be loaded are nothing to hold anyone up over
-      await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-    });
+    expect(networkHint(wrapper).text()).toBe(
+      "onboarding.steps.core_settings.network_hint",
+    );
+  });
+
+  it("has nothing to hold the wizard up over", () => {
+    const wrapper = mountStep();
+
+    // with no say in leaving, the wizard's Next moves on at once
+    expect(
+      (wrapper.vm as { beforeLeave?: unknown }).beforeLeave,
+    ).toBeUndefined();
   });
 });

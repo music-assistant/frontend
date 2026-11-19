@@ -14,6 +14,7 @@ import {
   type MediaItemType,
   MediaType,
   type ProviderMenuAction,
+  ProviderTier,
   ProviderType,
   QueueOption,
   Scope,
@@ -34,9 +35,12 @@ const { apiMock, emittedMenus, hasScope, storeMock, toastMock } = vi.hoisted(
       providers: {} as Record<string, unknown>,
       providerManifests: {} as Record<string, unknown>,
       players: {},
+      baseUrl: "",
+      serverInfo: { value: null },
       getCoreConfigValue: vi.fn(),
       getLibraryItem: vi.fn(),
       getProvider: vi.fn(),
+      getProviderManifest: vi.fn(),
       invokeProviderMenuAction: vi.fn(),
       playMedia: vi.fn(),
     },
@@ -46,7 +50,7 @@ const { apiMock, emittedMenus, hasScope, storeMock, toastMock } = vi.hoisted(
       activePlayerId: undefined as string | undefined,
       enabledPlugins: new Set<string>(),
     },
-    toastMock: { success: vi.fn(), error: vi.fn() },
+    toastMock: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
   }),
 );
 
@@ -183,6 +187,23 @@ describe("the menu of a media item", () => {
         subItems: [expect.objectContaining({ text: ASK.label })],
       }),
     ]);
+  });
+
+  it("names the instance that answered, so its own links can be checked", async () => {
+    apiMock.getProviderManifest.mockReturnValue({
+      ...manifest([ASK]),
+      tier: ProviderTier.COMMUNITY,
+    });
+    apiMock.invokeProviderMenuAction.mockResolvedValue({
+      message: null,
+      open_url: `${window.location.origin}/raw_route`,
+    });
+
+    await choose(await itemMenu([song]), ASK.label);
+
+    expect(apiMock.getProviderManifest).toHaveBeenCalledWith("demo");
+    expect(toastMock.warning).toHaveBeenCalledOnce();
+    expect(toastMock.success).not.toHaveBeenCalled();
   });
 
   it("says the action is done when the provider answers nothing", async () => {

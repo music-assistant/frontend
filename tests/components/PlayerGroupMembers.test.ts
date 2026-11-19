@@ -237,6 +237,34 @@ describe("PlayerGroupMembers", () => {
     ).toEqual(["screens"]);
   });
 
+  it("lists a controller under controllers", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    const remote = createPlayer({
+      player_id: "remote",
+      name: "Kitchen remote",
+      type: PlayerType.CONTROLLER,
+    });
+    const parent = createPlayer({
+      can_group_with: [speaker.player_id, remote.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [remote.player_id]: remote,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".player-group-section > p")
+        .map((section) => section.text()),
+    ).toEqual(["players", "controllers"]);
+  });
+
   it("keeps only screens when filtering on screens", () => {
     const speaker = createPlayer({
       player_id: "speaker",
@@ -373,6 +401,54 @@ describe("PlayerGroupMembers", () => {
         .findAll(".member-checkbox")
         .map((checkbox) => checkbox.attributes("aria-label")),
     ).toEqual(["Kitchen", "Office"]);
+  });
+
+  it("lists an offline member as unavailable and lets it be removed", async () => {
+    vi.useFakeTimers();
+    const offlineMember = createPlayer({
+      player_id: "office",
+      name: "Office",
+      available: false,
+    });
+    const offlinePlayer = createPlayer({
+      player_id: "bedroom",
+      name: "Bedroom",
+      available: false,
+    });
+    const parent = createPlayer({
+      can_group_with: [offlineMember.player_id, offlinePlayer.player_id],
+      group_members: ["parent", offlineMember.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [offlineMember.player_id]: offlineMember,
+      [offlinePlayer.player_id]: offlinePlayer,
+    };
+
+    const wrapper = mountGroupMembers(parent, [parent, offlineMember], {
+      groupHeading: "Players in group",
+    });
+
+    // the offline player that is not a member is not offered to add
+    expect(
+      wrapper
+        .findAll(".member-checkbox")
+        .map((checkbox) => checkbox.attributes("aria-label")),
+    ).toEqual(["Kitchen", "Office"]);
+    const [kitchenRow, officeRow] = wrapper.findAll(".player-group-member");
+    expect(kitchenRow.find("[title]").exists()).toBe(false);
+    expect(officeRow.get("[title]").attributes("title")).toBe(
+      "This player is not (yet) available",
+    );
+
+    await wrapper.get('[aria-label="Office"]').trigger("click");
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(api.playerCommandSetMembers).toHaveBeenCalledWith(
+      parent.player_id,
+      undefined,
+      [offlineMember.player_id],
+    );
   });
 
   it("optimistically joins a player and sends the grouped update", async () => {
