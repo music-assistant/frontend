@@ -221,6 +221,41 @@ describe("mergeConfigEntries", () => {
     expect(merged.name.read_only).toBe(true);
   });
 
+  it("takes the value of an entry the user can not edit from the server", () => {
+    const current = {
+      state: entry({
+        key: "state",
+        type: ConfigEntryType.LABEL,
+        value: "online",
+      }),
+    };
+    const incoming = {
+      state: entry({
+        key: "state",
+        type: ConfigEntryType.LABEL,
+        value: "offline",
+      }),
+    };
+
+    expect(mergeConfigEntries(current, incoming).state.value).toBe("offline");
+  });
+
+  it("takes the value of an entry just saved from the server, and keeps the other drafts", () => {
+    const current = {
+      delay: entry({ key: "delay", value: 40 }),
+      channel: entry({ key: "channel", value: "front_right" }),
+    };
+    const incoming = {
+      delay: entry({ key: "delay", value: 45 }),
+      channel: entry({ key: "channel", value: "front_left" }),
+    };
+
+    const merged = mergeConfigEntries(current, incoming, ["delay"]);
+
+    expect(merged.delay.value).toBe(45);
+    expect(merged.channel.value).toBe("front_right");
+  });
+
   it("drops a key that no longer exists in the incoming entries", () => {
     const current = { stale: entry({ key: "stale" }) };
     const incoming = {};

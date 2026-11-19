@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import { coreModuleName } from "@/helpers/core_modules";
 import { LOG_LEVEL_KEY } from "@/helpers/settings_pages";
 import { getExternalLinkUrl } from "@/helpers/utils";
@@ -130,9 +131,12 @@ const onImmediateApply = async function (
   // Immediately apply a config value change to the backend
   // and refresh the local config with the server response
   const updatedConfig = await api.saveCoreConfig(config.value!.domain, values);
-  for (const [key, entry] of Object.entries(updatedConfig.values)) {
-    config.value!.values[key] = entry;
-  }
+  // the other values the user changed are still waiting for a save
+  config.value!.values = mergeConfigEntries(
+    config.value!.values,
+    updatedConfig.values,
+    Object.keys(values),
+  );
 };
 
 const { onAction } = useConfigAction({

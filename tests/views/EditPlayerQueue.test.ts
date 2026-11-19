@@ -79,6 +79,46 @@ describe("EditPlayerQueue", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it("keeps the other changes when one applies at once", async () => {
+    const entry = (key: string, value: string) => ({
+      key,
+      type: "string",
+      label: key,
+      category: "generic",
+      options: [],
+      required: false,
+      default_value: null,
+      value,
+    });
+    apiMock.getPlayerQueueConfig.mockResolvedValueOnce({
+      values: {
+        crossfade: entry("crossfade", "off"),
+        flow: entry("flow", "a"),
+      },
+    });
+    apiMock.savePlayerQueueConfig.mockResolvedValueOnce({
+      values: {
+        crossfade: entry("crossfade", "off"),
+        flow: entry("flow", "b"),
+      },
+    });
+    const wrapper = mountWithForm();
+    await flushPromises();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    const formEntry = (key: string) =>
+      (
+        editConfig.props("configEntries") as { key: string; value: unknown }[]
+      ).find((configEntry) => configEntry.key === key)!;
+    formEntry("crossfade").value = "smart_crossfade";
+    formEntry("flow").value = "b";
+
+    editConfig.vm.$emit("immediateApply", { flow: "b" });
+    await flushPromises();
+
+    expect(formEntry("crossfade").value).toBe("smart_crossfade");
+    expect(formEntry("flow").value).toBe("b");
+  });
+
   it("leaves reporting a refused immediate change to the api", async () => {
     apiMock.savePlayerQueueConfig.mockRejectedValueOnce(
       new ApiCommandError(REASON, 1, REASON),
@@ -107,6 +147,7 @@ function mountWithForm(saveFailed = vi.fn()) {
       stubs: {
         EditConfig: {
           name: "EditConfig",
+          props: ["configEntries"],
           template: "<div />",
           methods: { saveFailed },
         },

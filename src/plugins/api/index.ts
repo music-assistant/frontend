@@ -107,6 +107,7 @@ import {
   SortField,
   SmartPlaylistRules,
   SoundEffect,
+  SpeakerChannel,
   StatisticsTopItemResult,
   StatisticsUsers,
   SourceFolder,
@@ -2874,6 +2875,44 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Combine speakers into one new multi-channel player, and return that player.
+   * The output of each speaker on the provider moves into it.
+   *
+   * @param provider The instance id of the provider whose speakers to combine.
+   * @param name The name of the new player.
+   * @param members The channel each speaker plays, by the player id of the speaker.
+   */
+  public createMultiChannelPlayer(
+    provider: string,
+    name: string,
+    members: Record<string, SpeakerChannel>,
+  ): Promise<Player> {
+    return this.sendCommand("players/create_multi_channel_player", {
+      provider,
+      name,
+      members,
+    });
+  }
+
+  /**
+   * Return the ids of the players whose output on a provider can be a speaker of a new
+   * multi-channel player.
+   *
+   * @param provider The instance id of the provider that combines the speakers.
+   * @param options Options for the command, such as keeping a failure quiet.
+   */
+  public getMultiChannelCandidates(
+    provider: string,
+    options?: CommandOptions,
+  ): Promise<string[]> {
+    return this.sendCommand(
+      "players/multi_channel_candidates",
+      { provider },
+      options,
+    );
+  }
+
   public playerCommandGroupSelectSource(
     playerId: string,
     source: string,
@@ -3133,9 +3172,12 @@ export class MusicAssistantApi {
     });
   }
 
-  public async getPlayerConfig(player_id: string): Promise<PlayerConfig> {
+  public async getPlayerConfig(
+    player_id: string,
+    options?: CommandOptions,
+  ): Promise<PlayerConfig> {
     // Return configuration for a single player.
-    return this.sendCommand("config/players/get", { player_id });
+    return this.sendCommand("config/players/get", { player_id }, options);
   }
 
   public async getPlayerConfigEntries(
