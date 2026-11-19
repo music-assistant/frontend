@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
@@ -61,6 +62,14 @@ beforeEach(() => {
 });
 
 describe("NetworkSettings", () => {
+  it("heads the page with the header of the network settings", async () => {
+    const wrapper = await mountPage();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "network",
+    );
+  });
+
   it("leads to remote access, saying whether it is on", async () => {
     const wrapper = await mountPage();
 

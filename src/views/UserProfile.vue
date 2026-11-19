@@ -1,8 +1,6 @@
 <template>
-  <div
-    class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 max-sm:p-3"
-  >
-    <ProfileIdentityCard />
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <ProfileHeader />
     <ThemeLanguageCard />
     <SettingsLinkRows :rows="rows" test-id-prefix="profile" />
   </div>
@@ -11,7 +9,7 @@
 <script setup lang="ts">
 import { computed, markRaw } from "vue";
 
-import ProfileIdentityCard from "@/components/profile/ProfileIdentityCard.vue";
+import ProfileHeader from "@/components/profile/ProfileHeader.vue";
 import ThemeLanguageCard from "@/components/profile/ThemeLanguageCard.vue";
 import SettingsLinkRows, {
   type SettingsRow,

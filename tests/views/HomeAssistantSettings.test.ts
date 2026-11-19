@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   EventType,
@@ -82,6 +83,15 @@ beforeEach(() => {
 });
 
 describe("HomeAssistantSettings while Home Assistant is not set up", () => {
+  it("heads the page with the header of Home Assistant", async () => {
+    configs = {};
+    const wrapper = await mountPage();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "home_assistant",
+    );
+  });
+
   beforeEach(() => {
     configs = {};
   });

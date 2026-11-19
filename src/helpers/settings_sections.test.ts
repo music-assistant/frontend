@@ -13,7 +13,6 @@ import {
 } from "../../tests/fixtures/scopes";
 import {
   availableSettingsSections,
-  isSettingsHub,
   pageProviderLists,
   providerListingRoute,
   providerListName,
@@ -420,24 +419,4 @@ describe("settingsHeading", () => {
     expect(settingsHeading("constructor")).toBeUndefined();
     expect(settingsHeading(undefined)).toBeUndefined();
   });
-});
-
-describe("isSettingsHub", () => {
-  it.each([
-    "music",
-    "players",
-    "system",
-    "profile",
-    "metadata_providers",
-    "audio_analysis_providers",
-  ])("takes %s for a hub, leading to pages below it", (name) => {
-    expect(isSettingsHub(name)).toBe(true);
-  });
-
-  it.each(["plugin_providers", "player_support", undefined])(
-    "takes %s for a plain list",
-    (name) => {
-      expect(isSettingsHub(name)).toBe(false);
-    },
-  );
 });

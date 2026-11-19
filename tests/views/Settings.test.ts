@@ -2,9 +2,10 @@
  * The breadcrumb trail of the settings pages links only to the pages the role
  * of the user may open.
  */
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
-import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import {
   ProviderFeature,
   ProviderType,
@@ -16,7 +17,7 @@ import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { defineComponent, nextTick, type Component } from "vue";
+import { defineComponent, h, nextTick, type Component } from "vue";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
@@ -763,29 +764,35 @@ describe("the link back into onboarding", () => {
   });
 });
 
-describe("Settings toolbar menu", () => {
+describe("Settings page menu", () => {
   afterEach(() => {
     routeState.name = "editplayeroptions";
   });
 
-  it("offers in its overflow menu what the page below it publishes", async () => {
+  it("hands what the page below it publishes to the header of that page, not to the toolbar", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     routeState.name = "playersettings";
     const ToolbarStub = {
       props: ["menuItems", "enforceOverflowMenu", "menuActive"],
       template: '<div><slot name="title" /><slot name="append" /></div>',
     };
+    const OverflowMenuStub = {
+      name: "OverflowMenu",
+      props: ["items"],
+      template: "<div><slot /></div>",
+    };
     const page = defineComponent({
       setup() {
-        useSettingsToolbarMenu().value = [
+        useSettingsPageMenu().value = [
           { label: "settings.hide_unavailable_players", active: true },
         ];
-        return () => null;
+        return () => h(SettingsPageHeader, { page: "players" });
       },
     });
     const wrapper = mount(Settings, {
       global: {
         stubs: {
+          OverflowMenu: OverflowMenuStub,
           Toolbar: ToolbarStub,
           ToolbarHeading: ToolbarHeadingStub,
           RouterView: page,
@@ -796,13 +803,16 @@ describe("Settings toolbar menu", () => {
     });
     await nextTick();
 
-    const toolbar = wrapper.getComponent(ToolbarStub);
-    expect(toolbar.props("menuItems")).toEqual([
+    expect(
+      wrapper.getComponent(ToolbarStub).props("menuItems"),
+    ).toBeUndefined();
+    expect(wrapper.getComponent(OverflowMenuStub).props("items")).toEqual([
       { label: "settings.hide_unavailable_players", active: true },
     ]);
-    expect(toolbar.props("enforceOverflowMenu")).toBe(true);
     // an option that is on shows on the menu button
-    expect(toolbar.props("menuActive")).toBe(true);
+    expect(
+      wrapper.find('[data-testid="settings-page-menu-active"]').exists(),
+    ).toBe(true);
 
     wrapper.unmount();
   });

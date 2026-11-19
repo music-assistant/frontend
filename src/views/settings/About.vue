@@ -1,5 +1,6 @@
 <template>
-  <div class="space-y-6 px-4 py-6">
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="about" />
     <UnsupportedInstallBanner />
 
     <!-- Server Information -->
@@ -411,6 +412,7 @@
 <script setup lang="ts">
 import openHomeFoundationLogo from "@/assets/open-home-foundation-logo.svg";
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

@@ -1,4 +1,4 @@
-import ProfileIdentityCard from "@/components/profile/ProfileIdentityCard.vue";
+import ProfileHeader from "@/components/profile/ProfileHeader.vue";
 import { type Role, type User, UserRole } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -27,8 +27,8 @@ const EditProfileDialogStub = {
 
 enableAutoUnmount(afterEach);
 
-function mountCard() {
-  return mount(ProfileIdentityCard, {
+function mountHeader() {
+  return mount(ProfileHeader, {
     global: {
       mocks: { $t: (key: string) => key },
       stubs: { EditProfileDialog: EditProfileDialogStub },
@@ -36,7 +36,7 @@ function mountCard() {
   });
 }
 
-describe("ProfileIdentityCard", () => {
+describe("ProfileHeader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storeMock.isIngressSession = false;
@@ -48,20 +48,37 @@ describe("ProfileIdentityCard", () => {
   });
 
   it("shows the name and the role of the signed-in user", () => {
-    const wrapper = mountCard();
+    const wrapper = mountHeader();
 
-    expect(wrapper.get("h2").text()).toBe("Sam");
+    expect(wrapper.get("h1").text()).toBe("Sam");
     expect(wrapper.get("p").text()).toBe("auth.admin_role");
+  });
+
+  it("shows the avatar of the user in place of the icon of the page, hidden on a phone", () => {
+    storeMock.currentUser = user({
+      username: "sam",
+      display_name: "Sam",
+      avatar_url: "https://example.com/sam.png",
+    });
+
+    const wrapper = mountHeader();
+
+    const avatar = wrapper.get('[data-slot="avatar"]');
+    expect(avatar.classes()).toContain("size-12");
+    expect(avatar.element.parentElement!.classList).toContain("max-md:hidden");
+    expect(wrapper.find('[data-testid="settings-page-icon"]').exists()).toBe(
+      false,
+    );
   });
 
   it("names a user without a display name by the username", () => {
     storeMock.currentUser = user({ username: "sam", display_name: null });
 
-    expect(mountCard().get("h2").text()).toBe("sam");
+    expect(mountHeader().get("h1").text()).toBe("sam");
   });
 
   it("opens the account form in a dialog", async () => {
-    const wrapper = mountCard();
+    const wrapper = mountHeader();
     const dialog = wrapper.getComponent(EditProfileDialogStub);
 
     expect(dialog.props("open")).toBe(false);
@@ -72,7 +89,7 @@ describe("ProfileIdentityCard", () => {
   });
 
   it("signs the user out", async () => {
-    const wrapper = mountCard();
+    const wrapper = mountHeader();
 
     await wrapper.get('[data-testid="profile-sign-out"]').trigger("click");
 
@@ -82,9 +99,9 @@ describe("ProfileIdentityCard", () => {
   it("leaves the account and the sign-in to Home Assistant in an ingress session", () => {
     storeMock.isIngressSession = true;
 
-    const wrapper = mountCard();
+    const wrapper = mountHeader();
 
-    expect(wrapper.get("h2").text()).toBe("Sam");
+    expect(wrapper.get("h1").text()).toBe("Sam");
     expect(wrapper.find('[data-testid="profile-edit"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="profile-sign-out"]').exists()).toBe(
       false,

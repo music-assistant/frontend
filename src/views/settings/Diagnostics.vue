@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-col gap-6 p-6 pb-40">
+    <SettingsPageHeader page="diagnostics" />
     <UnsupportedInstallBanner />
     <Card class="gap-0 overflow-hidden py-0">
       <CardHeader class="shrink-0 border-b px-6 py-4">
@@ -81,6 +82,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
 import CoreLogLevelsForm from "@/components/settings/CoreLogLevelsForm.vue";
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";

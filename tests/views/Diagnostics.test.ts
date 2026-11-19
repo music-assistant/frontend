@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CoreLogLevelsForm from "@/components/settings/CoreLogLevelsForm.vue";
@@ -116,12 +117,21 @@ describe("Diagnostics log refresh", () => {
 });
 
 describe("Diagnostics settings", () => {
+  it("heads the page with the header of the diagnostics", () => {
+    const wrapper = mountView();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "diagnostics",
+    );
+    wrapper.unmount();
+  });
+
   it("sets the log levels of the modules and holds the cache settings below the log", async () => {
     const wrapper = mountView();
     await flushPromises();
 
     expect(wrapper.findComponent(CoreLogLevelsForm).exists()).toBe(true);
-    // the log viewer is what the page is about, so the toolbar menu stays its own
+    // the log viewer is what the page is about, so the page menu stays its own
     expect(wrapper.findComponent(SettingsPageForm).props()).toMatchObject({
       page: "diagnostics",
       embedded: true,

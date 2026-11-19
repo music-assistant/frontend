@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
   ConfigEntryType,
@@ -94,6 +95,14 @@ async function mountView() {
 }
 
 describe("UserManagement", () => {
+  it("heads the page with the header of the users", async () => {
+    const wrapper = await mountView();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "users",
+    );
+  });
+
   beforeEach(() => {
     hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     apiMock.getCoreConfig.mockResolvedValue(webserverConfig());

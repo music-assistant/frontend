@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-6 p-6">
+    <SettingsPageHeader page="home_assistant" />
     <template v-if="loaded">
       <Empty
         v-if="state === 'not_set_up'"
@@ -52,6 +53,7 @@ import SettingsLinkRows, {
   type SettingsRow,
 } from "@/components/settings/SettingsLinkRows.vue";
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,

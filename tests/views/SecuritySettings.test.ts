@@ -48,6 +48,7 @@ describe("SecuritySettings", () => {
         .map((child) => child.element.tagName.toLowerCase())
         .filter((tag) => tag.endsWith("-stub") && !tag.startsWith("dialog")),
     ).toEqual([
+      "settings-page-header-stub",
       "password-settings-stub",
       "session-tokens-list-stub",
       "long-lived-tokens-list-stub",

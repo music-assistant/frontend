@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-col gap-6 p-6 pb-40">
+    <SettingsPageHeader page="storage" />
     <section class="space-y-3" data-testid="storage-music-locations">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h2 class="text-muted-foreground text-sm font-medium">
@@ -166,6 +167,7 @@ import LocalFolderDialog from "@/components/settings/storage/LocalFolderDialog.v
 import NetworkShareDialog from "@/components/settings/storage/NetworkShareDialog.vue";
 import RemoveLocationDialog from "@/components/settings/storage/RemoveLocationDialog.vue";
 import StorageLocationRow from "@/components/settings/storage/StorageLocationRow.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {

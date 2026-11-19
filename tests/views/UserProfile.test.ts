@@ -17,7 +17,7 @@ describe("UserProfile", () => {
         .map((child) => child.element.tagName.toLowerCase())
         .filter((tag) => tag.endsWith("-stub")),
     ).toEqual([
-      "profile-identity-card-stub",
+      "profile-header-stub",
       "theme-language-card-stub",
       "settings-link-rows-stub",
     ]);

@@ -1,76 +1,79 @@
 <template>
-  <div>
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="background_tasks" />
     <SettingsLinkRows
-      class="mx-5 mt-5"
       :rows="taskSettingsRows"
       test-id-prefix="background-tasks"
     />
 
-    <div class="tasks-header w-100">
-      <BackgroundTaskFilters @update:search="searchQuery = $event" />
+    <!-- the filters, the count and the tasks stay together as one block -->
+    <div>
+      <div class="tasks-header w-100">
+        <BackgroundTaskFilters @update:search="searchQuery = $event" />
 
-      <Button
-        v-if="canManageTasks"
-        class="clear-finished-btn"
-        variant="outline"
-        @click="clearFinishedTasks"
-      >
-        <Trash2 class="size-4" />
-        {{ t("background_tasks.clear_finished") }}
-      </Button>
-    </div>
-
-    <div class="pl-5 font-weight-medium">
-      {{
-        t("background_tasks.total", filteredTasks.length, {
-          named: { count: filteredTasks.length },
-        })
-      }}
-    </div>
-
-    <div
-      class="mt-4 px-5 py-2.5"
-      :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
-    >
-      <div v-if="showInitialLoading" class="flex justify-center py-16">
-        <Spinner class="size-12" />
+        <Button
+          v-if="canManageTasks"
+          class="clear-finished-btn"
+          variant="outline"
+          @click="clearFinishedTasks"
+        >
+          <Trash2 class="size-4" />
+          {{ t("background_tasks.clear_finished") }}
+        </Button>
       </div>
 
-      <ItemGroup
-        v-else-if="viewMode === 'list' && filteredTasks.length"
-        class="gap-2"
-      >
-        <BackgroundTaskItem
-          v-for="task in filteredTasks"
-          :key="task.id"
-          :task="task"
-          variant="list"
-          @click="showTaskDetails"
-          @menu="onMenu"
-        />
-      </ItemGroup>
+      <div class="font-weight-medium">
+        {{
+          t("background_tasks.total", filteredTasks.length, {
+            named: { count: filteredTasks.length },
+          })
+        }}
+      </div>
 
       <div
-        v-else-if="filteredTasks.length"
-        class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        class="mt-4 py-2.5"
+        :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
       >
-        <BackgroundTaskItem
-          v-for="task in filteredTasks"
-          :key="task.id"
-          :task="task"
-          variant="card"
-          @click="showTaskDetails"
-          @menu="onMenu"
-        />
-      </div>
+        <div v-if="showInitialLoading" class="flex justify-center py-16">
+          <Spinner class="size-12" />
+        </div>
 
-      <Empty v-else class="border">
-        <EmptyMedia variant="icon">
-          <ListChecks />
-        </EmptyMedia>
-        <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
-        <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
-      </Empty>
+        <ItemGroup
+          v-else-if="viewMode === 'list' && filteredTasks.length"
+          class="gap-2"
+        >
+          <BackgroundTaskItem
+            v-for="task in filteredTasks"
+            :key="task.id"
+            :task="task"
+            variant="list"
+            @click="showTaskDetails"
+            @menu="onMenu"
+          />
+        </ItemGroup>
+
+        <div
+          v-else-if="filteredTasks.length"
+          class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        >
+          <BackgroundTaskItem
+            v-for="task in filteredTasks"
+            :key="task.id"
+            :task="task"
+            variant="card"
+            @click="showTaskDetails"
+            @menu="onMenu"
+          />
+        </div>
+
+        <Empty v-else class="border">
+          <EmptyMedia variant="icon">
+            <ListChecks />
+          </EmptyMedia>
+          <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
+          <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
+        </Empty>
+      </div>
     </div>
 
     <BackgroundTaskDetailsDialog
@@ -100,6 +103,7 @@ import BackgroundTaskScheduleDialog from "@/components/settings/background-tasks
 import SettingsLinkRows, {
   type SettingsRow,
 } from "@/components/settings/SettingsLinkRows.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -589,7 +593,7 @@ const getPriority = (task: BackgroundTask) => {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 20px 20px 6px 20px;
+  padding-bottom: 6px;
 }
 
 .clear-finished-btn {

@@ -1,7 +1,6 @@
 <template>
-  <div
-    class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 max-sm:p-3"
-  >
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="security" />
     <PasswordSettings />
     <SessionTokensList :tokens="sessionTokens" @revoke="confirmRevokeToken" />
     <LongLivedTokensList
@@ -54,6 +53,7 @@
 import LongLivedTokensList from "@/components/profile/LongLivedTokensList.vue";
 import PasswordSettings from "@/components/profile/PasswordSettings.vue";
 import SessionTokensList from "@/components/profile/SessionTokensList.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

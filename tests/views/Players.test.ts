@@ -33,7 +33,7 @@ const {
   removeUnavailablePlayers,
   routerPush,
   setPreference,
-  toolbarMenu,
+  pageMenu,
 } = vi.hoisted(() => ({
   apiMock: {
     getPlayerConfigs: vi.fn<MusicAssistantApi["getPlayerConfigs"]>(),
@@ -61,8 +61,8 @@ const {
   removeUnavailablePlayers: vi.fn<typeof removeUnavailable>(),
   routerPush: vi.fn(),
   setPreference: vi.fn(),
-  // what the page publishes into the menu of the settings toolbar
-  toolbarMenu: { value: [] as ToolBarMenuItem[] },
+  // what the page publishes into the menu in the header of the page
+  pageMenu: { value: [] as ToolBarMenuItem[] },
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -91,8 +91,8 @@ vi.mock("@/helpers/player_settings_actions", () => ({
   removeUnavailablePlayers,
 }));
 
-vi.mock("@/composables/useSettingsToolbarMenu", () => ({
-  useSettingsToolbarMenu: () => toolbarMenu,
+vi.mock("@/composables/useSettingsPageMenu", () => ({
+  useSettingsPageMenu: () => pageMenu,
 }));
 
 vi.mock("@/composables/userPreferences", async () => {
@@ -167,7 +167,7 @@ describe("Players", () => {
     vi.clearAllMocks();
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
     for (const key of Object.keys(preferences)) delete preferences[key];
-    toolbarMenu.value = [];
+    pageMenu.value = [];
     playerConfig.enabled = true;
     webPlayer.player_id = null;
     apiMock.players = {
@@ -249,7 +249,7 @@ describe("Players", () => {
   it("heads the page as the Players hub", async () => {
     const wrapper = await mountPlayers("list");
 
-    const header = wrapper.get('[data-testid="settings-hub-header"]');
+    const header = wrapper.get('[data-testid="settings-page-header"]');
     expect(header.get("h1").text()).toBe("Players");
     expect(header.get("p").text()).toBe(
       "Your players, lights, screens and audio inputs, and how they play",
@@ -491,10 +491,10 @@ describe("Players", () => {
     expect(wrapper.find(".player-row").exists()).toBe(false);
   });
 
-  it("offers to remove the unavailable players in the toolbar menu to who may change player settings", async () => {
+  it("offers to remove the unavailable players in the page menu to who may change player settings", async () => {
     const offersRemoval = async () => {
       const wrapper = await mountPlayers("list");
-      const offered = !!toolbarMenuItem(REMOVE_UNAVAILABLE);
+      const offered = !!pageMenuItem(REMOVE_UNAVAILABLE);
       wrapper.unmount();
       return offered;
     };
@@ -508,7 +508,7 @@ describe("Players", () => {
   it("drops the players the server removed from the list", async () => {
     const wrapper = await mountPlayers("list");
 
-    toolbarMenuItem(REMOVE_UNAVAILABLE)!.action!();
+    pageMenuItem(REMOVE_UNAVAILABLE)!.action!();
     expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
 
     removeUnavailablePlayers.mock.calls[0][1]!(["kitchen"]);
@@ -516,13 +516,13 @@ describe("Players", () => {
     expect(wrapper.find(".player-row").exists()).toBe(false);
   });
 
-  it("takes its items out of the toolbar menu when it closes", async () => {
+  it("takes its items out of the page menu when it closes", async () => {
     const wrapper = await mountPlayers("list");
-    expect(toolbarMenu.value).not.toEqual([]);
+    expect(pageMenu.value).not.toEqual([]);
 
     wrapper.unmount();
 
-    expect(toolbarMenu.value).toEqual([]);
+    expect(pageMenu.value).toEqual([]);
   });
 
   it("shows every player until unavailable players are hidden", async () => {
@@ -544,22 +544,22 @@ describe("Players", () => {
     const listed = () =>
       wrapper.findAll('[data-testid="player-open"]').map((name) => name.text());
 
-    expect(toolbarMenuItem(HIDE_UNAVAILABLE)!.active).toBe(false);
+    expect(pageMenuItem(HIDE_UNAVAILABLE)!.active).toBe(false);
     expect(listed()).toHaveLength(4);
 
-    toolbarMenuItem(HIDE_UNAVAILABLE)!.action!();
+    pageMenuItem(HIDE_UNAVAILABLE)!.action!();
     await flushPromises();
 
     expect(setPreference).toHaveBeenCalledWith(
       "settings.players.hideUnavailable",
       true,
     );
-    expect(toolbarMenuItem(HIDE_UNAVAILABLE)!.active).toBe(true);
+    expect(pageMenuItem(HIDE_UNAVAILABLE)!.active).toBe(true);
     expect(listed()).toEqual(["attic", "garden", "office"]);
 
     // the server decides what goes, so the hidden players are not left out,
     // and the confirmation names them as the list does, in its order
-    toolbarMenuItem(REMOVE_UNAVAILABLE)!.action!();
+    pageMenuItem(REMOVE_UNAVAILABLE)!.action!();
     expect(removeUnavailablePlayers).toHaveBeenCalledOnce();
     expect(
       removeUnavailablePlayers.mock.calls[0][0].map((config) => config.name),
@@ -619,9 +619,9 @@ const PLAYER_SELECTORS = {
 const REMOVE_UNAVAILABLE = "settings.remove_unavailable_players";
 const HIDE_UNAVAILABLE = "settings.hide_unavailable_players";
 
-/** The item with this label in what the page publishes into the toolbar menu. */
-function toolbarMenuItem(label: string): ToolBarMenuItem | undefined {
-  return toolbarMenu.value.find((item) => item.label === label);
+/** The item with this label in what the page publishes into the page menu. */
+function pageMenuItem(label: string): ToolBarMenuItem | undefined {
+  return pageMenu.value.find((item) => item.label === label);
 }
 
 function linkRowKeys(wrapper: Awaited<ReturnType<typeof mountPlayers>>) {
