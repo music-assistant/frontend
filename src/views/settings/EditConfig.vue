@@ -313,14 +313,17 @@ const hasVisibleSections = computed(
 );
 
 // what the save button can store: a visible entry holding a value, or the enable
-// switch of an optional protocol; actions and labels alone leave nothing to save
+// switch of an optional protocol; actions and labels alone leave nothing to save,
+// and neither do entries that are saved the moment they change
 const hasEditableEntries = computed(
   () =>
     Object.values(visibleEntriesByCategory.value)
       .flat()
       .some(
         (entry) =>
-          !VALUELESS_ENTRY_TYPES.includes(entry.type) && !isInjected(entry),
+          !VALUELESS_ENTRY_TYPES.includes(entry.type) &&
+          !isInjected(entry) &&
+          !entry.immediate_apply,
       ) ||
     (entries.value ?? []).some((entry) =>
       entry.key.endsWith("||protocol||enabled"),
