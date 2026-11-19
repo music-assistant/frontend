@@ -68,7 +68,7 @@ describe("CoreSettingsStep", () => {
     it("is about listening away from home", () => {
       const wrapper = mountStep();
 
-      expect(intro(wrapper)).toBe("onboarding.steps.core_settings.intro");
+      expect(intro(wrapper)).toBe("onboarding.steps.core_settings.away_intro");
     });
 
     it("says the add-on is reached wherever Home Assistant is", () => {

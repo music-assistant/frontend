@@ -3283,7 +3283,7 @@
             },
             "core_settings": {
                 "title": "Access Music Assistant",
-                "intro": "Remote access lets you listen with the Music Assistant app when you're away from home.",
+                "away_intro": "Remote access lets you listen with the Music Assistant app when you're away from home.",
                 "intro_addon": "Music Assistant runs as a Home Assistant app: wherever you can open Home Assistant, you can open Music Assistant too. Turn on remote access if you'd also like to use the Music Assistant app away from home.",
                 "network_hint": "Using your own reverse proxy, or a more complex network? You can set that up later under Settings › {system} › {network}.",
                 "remote": {

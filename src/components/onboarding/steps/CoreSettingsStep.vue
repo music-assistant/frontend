@@ -58,7 +58,7 @@ const canManageRemoteAccess = authManager.hasScope(Scope.SYSTEM_MANAGE);
 const introKey = computed(() =>
   ctx.value.homeAssistantAddon
     ? "onboarding.steps.core_settings.intro_addon"
-    : "onboarding.steps.core_settings.intro",
+    : "onboarding.steps.core_settings.away_intro",
 );
 // the server routes remote access through Home Assistant Link by itself
 // whenever the Home Assistant it is connected to has it
