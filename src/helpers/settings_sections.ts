@@ -19,7 +19,6 @@ import {
   FileCode,
   Info,
   Music,
-  Palette,
   Puzzle,
   Server,
   SlidersHorizontal,
@@ -107,14 +106,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     icon: UserCog,
     color: "indigo",
     route: { name: "profile" },
-  },
-  {
-    name: "frontend",
-    label: "settings.frontend",
-    description: "settings.frontend_description",
-    icon: Palette,
-    color: "orange",
-    route: { name: "frontendsettings" },
   },
   {
     name: "users",

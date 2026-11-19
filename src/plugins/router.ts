@@ -545,6 +545,32 @@ export const routes: RouteRecordRaw[] = [
             props: true,
           },
           {
+            path: "profile/interface",
+            name: "profileinterface",
+            component: () =>
+              import(
+                /* webpackChunkName: "profileinterface" */ "@/views/profile/InterfaceSettings.vue"
+              ),
+            props: { storage: "account" },
+          },
+          {
+            path: "profile/device",
+            name: "profiledevice",
+            component: () =>
+              import(
+                /* webpackChunkName: "profileinterface" */ "@/views/profile/InterfaceSettings.vue"
+              ),
+            props: { storage: "device" },
+          },
+          {
+            path: "profile/security",
+            name: "profilesecurity",
+            component: () =>
+              import(
+                /* webpackChunkName: "profilesecurity" */ "@/views/profile/SecuritySettings.vue"
+              ),
+          },
+          {
             path: "providers",
             name: "providersettings",
             component: () =>
@@ -668,15 +694,6 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
-          },
-          {
-            path: "frontend",
-            name: "frontendsettings",
-            component: () =>
-              import(
-                /* webpackChunkName: "frontendsettings" */ "@/views/settings/FrontendConfig.vue"
-              ),
-            props: true,
           },
           {
             path: "users",

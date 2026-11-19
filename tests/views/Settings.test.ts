@@ -523,6 +523,34 @@ describe("Settings breadcrumbs on the pages below the players", () => {
   });
 });
 
+describe("Settings breadcrumbs on the profile pages", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.guest));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it("name the profile on its own page", () => {
+    expect(pageTrail("profile")).toEqual([
+      { title: "auth.profile", disabled: true, to: { name: "profile" } },
+    ]);
+  });
+
+  it.each([
+    ["profileinterface", "auth.profile_pages.interface"],
+    ["profiledevice", "auth.profile_pages.device"],
+    ["profilesecurity", "auth.profile_pages.security"],
+  ])("hang %s under the profile", (name, title) => {
+    expect(pageTrail(name)).toEqual([
+      { title: "auth.profile", disabled: false, to: { name: "profile" } },
+      { title, disabled: true },
+    ]);
+  });
+});
+
 describe("Settings breadcrumbs on the settings of a provider that is not loaded", () => {
   beforeEach(() => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));

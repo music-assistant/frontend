@@ -261,7 +261,7 @@ const listedType = computed(() => {
 
 const activeTab = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
-  if (name === "profile") {
+  if (name.startsWith("profile")) {
     return "profile";
   }
   if (MUSIC_ROUTE_NAMES.includes(name)) {
@@ -288,9 +288,6 @@ const activeTab = computed(() => {
     name === "storagesettings"
   ) {
     return "system";
-  }
-  if (name.includes("frontend")) {
-    return "frontend";
   }
   if (name.includes("user")) {
     return "users";
@@ -380,12 +377,6 @@ const breadcrumbItems = computed(() => {
           to: { name: "systemsettings" },
         });
       }
-    } else if (currentTab === "frontend") {
-      items.push({
-        title: t("settings.frontend"),
-        disabled: name === "frontendsettings",
-        to: { name: "frontendsettings" },
-      });
     } else if (currentTab === "users") {
       items.push({
         title: t("settings.users"),
@@ -536,6 +527,15 @@ const breadcrumbItems = computed(() => {
         title: t(SETTINGS_PAGES.audio_analysis.title),
         disabled: true,
       });
+    })
+    .with("profileinterface", () => {
+      items.push({ title: t("auth.profile_pages.interface"), disabled: true });
+    })
+    .with("profiledevice", () => {
+      items.push({ title: t("auth.profile_pages.device"), disabled: true });
+    })
+    .with("profilesecurity", () => {
+      items.push({ title: t("auth.profile_pages.security"), disabled: true });
     })
     .otherwise(() => {
       return;
