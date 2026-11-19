@@ -88,7 +88,8 @@ export const getPlayerSettingsMenuItems = (
   const player = api.players[playerId];
   const provider = api.getProvider(config.provider);
   const manifest = api.getProviderManifest(config.provider);
-  // a multi-channel player its provider composed is taken apart rather than deleted
+  // a multi-channel player its provider composed is taken apart rather than deleted,
+  // and is no device that shows up as two players
   const composedSet =
     player?.type === PlayerType.MULTI_CHANNEL &&
     canCombineSpeakers(config.provider);
@@ -160,7 +161,7 @@ export const getPlayerSettingsMenuItems = (
           onMerged: options.onMerged,
         }),
       icon: markRaw(Merge),
-      hide: config.player_type === PlayerType.GROUP,
+      hide: config.player_type === PlayerType.GROUP || composedSet,
     },
     {
       label: config.enabled ? "settings.disable" : "settings.enable",

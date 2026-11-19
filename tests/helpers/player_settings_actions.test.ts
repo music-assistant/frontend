@@ -955,28 +955,33 @@ describe("getPlayerSettingsMenuItems taking a multi-channel player apart", () =>
     apiMock.getProviderManifest.mockReturnValue(providerManifest());
   });
 
-  it("takes apart a player its provider combined, rather than deleting it", () => {
+  it("takes apart a player its provider combined, rather than deleting or merging it", () => {
     const labels = visibleLabels(getPlayerSettingsMenuItems(playerConfig()));
 
     expect(labels).toContain("settings.multi_channel.take_apart");
     expect(labels).not.toContain("settings.delete");
+    expect(labels).not.toContain("settings.merge_player");
   });
 
-  it("deletes a player that is no multi-channel player, or that came that way", () => {
+  it("deletes and merges a player that is no multi-channel player, or that came that way", () => {
     expect(visibleLabels(getPlayerSettingsMenuItems(playerConfig()))).toContain(
       "settings.multi_channel.take_apart",
     );
 
     registerPlayer({ type: PlayerType.PLAYER });
     let labels = visibleLabels(getPlayerSettingsMenuItems(playerConfig()));
-    expect(labels).toContain("settings.delete");
+    expect(labels).toEqual(
+      expect.arrayContaining(["settings.delete", "settings.merge_player"]),
+    );
     expect(labels).not.toContain("settings.multi_channel.take_apart");
 
     // a set the device delivers (a Sonos pair) is not one the provider can combine
     registerPlayer({ type: PlayerType.MULTI_CHANNEL });
     apiMock.getProvider.mockReturnValue(providerInstance());
     labels = visibleLabels(getPlayerSettingsMenuItems(playerConfig()));
-    expect(labels).toContain("settings.delete");
+    expect(labels).toEqual(
+      expect.arrayContaining(["settings.delete", "settings.merge_player"]),
+    );
     expect(labels).not.toContain("settings.multi_channel.take_apart");
   });
 
