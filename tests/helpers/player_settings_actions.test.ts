@@ -986,6 +986,27 @@ describe("getPlayerSettingsMenuItems taking a multi-channel player apart", () =>
     expect(labels).not.toContain("settings.multi_channel.take_apart");
   });
 
+  it("takes apart a disabled set as well, which has no live state", () => {
+    apiMock.players = {};
+    const disabledSet = playerConfig({
+      enabled: false,
+      player_type: PlayerType.MULTI_CHANNEL,
+    });
+
+    let labels = visibleLabels(getPlayerSettingsMenuItems(disabledSet));
+    expect(labels).toContain("settings.multi_channel.take_apart");
+    expect(labels).not.toContain("settings.delete");
+    expect(labels).not.toContain("settings.merge_player");
+
+    // a disabled set the device delivers keeps what it has
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    labels = visibleLabels(getPlayerSettingsMenuItems(disabledSet));
+    expect(labels).toEqual(
+      expect.arrayContaining(["settings.delete", "settings.merge_player"]),
+    );
+    expect(labels).not.toContain("settings.multi_channel.take_apart");
+  });
+
   it("removes the player after asking and reports it taken apart", async () => {
     const onDeleted = vi.fn();
     apiMock.removePlayer.mockResolvedValue(undefined);

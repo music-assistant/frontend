@@ -93,9 +93,9 @@ export const getPlayerSettingsMenuItems = (
   const provider = api.getProvider(config.provider);
   const manifest = api.getProviderManifest(config.provider);
   // a multi-channel player its provider composed is taken apart rather than deleted,
-  // and is no device that shows up as two players
+  // and is no device that shows up as two players; a disabled one has no live state
   const composedSet =
-    player?.type === PlayerType.MULTI_CHANNEL &&
+    (player?.type ?? config.player_type) === PlayerType.MULTI_CHANNEL &&
     canCombineSpeakers(config.provider);
   const menuItems: ContextMenuItem[] = [];
 
