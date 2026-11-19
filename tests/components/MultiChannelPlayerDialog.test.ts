@@ -2,17 +2,16 @@ import MultiChannelPlayerDialog from "@/components/MultiChannelPlayerDialog.vue"
 import {
   type Player,
   type PlayerProtocolInfo,
-  PlayerType,
   ProtocolRole,
   SpeakerChannel,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { outputProtocol } from "../fixtures/outputProtocol";
 
 const { apiMock, createMultiChannelPlayer, storeMock } = vi.hoisted(() => ({
   apiMock: {
+    getMultiChannelCandidates: vi.fn(),
     players: {} as Record<string, Player>,
   },
   createMultiChannelPlayer: vi.fn(),
@@ -110,21 +109,20 @@ describe("MultiChannelPlayerDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storeMock.dialogActive = false;
+    // the office speaker is available, but the server does not list it
     apiMock.players = Object.fromEntries(
       [
         speaker("studio-left", "Studio left"),
         speaker("studio-right", "Studio right"),
         speaker("attic", "Attic"),
-        speaker("away", "Away", { available: false }),
-        speaker("web", "Web player", { private: true }),
-        speaker("airplay", "AirPlay speaker", {
-          protocols: [
-            sendspinProtocol({ domain: "airplay", provider: "airplay" }),
-          ],
-          output_protocols: [outputProtocol({ protocol_domain: "airplay" })],
-        }),
+        speaker("office", "Office"),
       ].map((player) => [player.player_id, player]),
     );
+    apiMock.getMultiChannelCandidates.mockResolvedValue([
+      "studio-right",
+      "studio-left",
+      "attic",
+    ]);
     createMultiChannelPlayer.mockResolvedValue({ player_id: "studio" });
   });
 
@@ -136,17 +134,55 @@ describe("MultiChannelPlayerDialog", () => {
 
     expect(wrapper.find(".multi-channel-dialog").exists()).toBe(true);
     expect(storeMock.dialogActive).toBe(true);
+    expect(apiMock.getMultiChannelCandidates).toHaveBeenCalledWith("sendspin");
     expect(channelRows(wrapper)).toEqual([
       "settings.multi_channel.channels.front_left",
       "settings.multi_channel.this_speaker(Studio left)",
       "settings.multi_channel.channels.front_right",
       "select",
     ]);
+    // only what the server lists, without this speaker, in the order of their names
     expect(offeredSpeakers(wrapper)).toEqual(["attic", "studio-right"]);
     expect(
       wrapper.find('[data-testid="multi-channel-no-speakers"]').exists(),
     ).toBe(false);
     expect(createButton(wrapper).attributes("disabled")).toBeDefined();
+  });
+
+  it("offers nothing and says nothing while the list loads", async () => {
+    let answer: (ids: string[]) => void = () => undefined;
+    apiMock.getMultiChannelCandidates.mockReturnValueOnce(
+      new Promise((resolve) => (answer = resolve)),
+    );
+    const wrapper = mountDialog();
+    await openDialog();
+
+    expect(offeredSpeakers(wrapper)).toEqual([]);
+    expect(
+      wrapper.find('[data-testid="multi-channel-no-speakers"]').exists(),
+    ).toBe(false);
+    expect(wrapper.get(".speaker-select").attributes("data-disabled")).toBe(
+      "true",
+    );
+
+    answer(["attic"]);
+    await flushPromises();
+    expect(offeredSpeakers(wrapper)).toEqual(["attic"]);
+  });
+
+  it("offers the list of the latest opening when an earlier one answers late", async () => {
+    let answerFirst: (ids: string[]) => void = () => undefined;
+    apiMock.getMultiChannelCandidates
+      .mockReturnValueOnce(new Promise((resolve) => (answerFirst = resolve)))
+      .mockResolvedValueOnce(["attic"]);
+    const wrapper = mountDialog();
+    await openDialog();
+    await openDialog();
+
+    answerFirst(["studio-right", "attic"]);
+    await flushPromises();
+
+    expect(offeredSpeakers(wrapper)).toEqual(["attic"]);
   });
 
   it("names the player after both speakers and creates it with a channel for each", async () => {
@@ -244,22 +280,25 @@ describe("MultiChannelPlayerDialog", () => {
     expect(createButton(wrapper).attributes("disabled")).toBeUndefined();
   });
 
-  it("says so when no other speaker can join", async () => {
-    apiMock.players = {
-      "studio-left": speaker("studio-left", "Studio left"),
-      away: speaker("away", "Away", { available: false }),
-    };
-    const wrapper = mountDialog();
-    await openDialog();
+  it.each([
+    ["lists only this speaker", () => Promise.resolve(["studio-left"])],
+    ["can not answer", () => Promise.reject(new Error("Refused"))],
+  ])(
+    "says so when no other speaker can join, as the server %s",
+    async (_, answer) => {
+      apiMock.getMultiChannelCandidates.mockImplementationOnce(answer);
+      const wrapper = mountDialog();
+      await openDialog();
 
-    expect(offeredSpeakers(wrapper)).toEqual([]);
-    expect(
-      wrapper.find('[data-testid="multi-channel-no-speakers"]').exists(),
-    ).toBe(true);
-    expect(wrapper.get(".speaker-select").attributes("data-disabled")).toBe(
-      "true",
-    );
-  });
+      expect(offeredSpeakers(wrapper)).toEqual([]);
+      expect(
+        wrapper.find('[data-testid="multi-channel-no-speakers"]').exists(),
+      ).toBe(true);
+      expect(wrapper.get(".speaker-select").attributes("data-disabled")).toBe(
+        "true",
+      );
+    },
+  );
 
   function openDialog() {
     eventbus.emit("multiChannelPlayerDialog", {
@@ -316,26 +355,7 @@ function sendspinProtocol(
   };
 }
 
-function speaker(
-  playerId: string,
-  name: string,
-  overrides: Partial<Player> = {},
-): Player {
-  return {
-    player_id: playerId,
-    name,
-    type: PlayerType.PLAYER,
-    available: true,
-    needs_setup: false,
-    private: false,
-    protocols: [sendspinProtocol({ protocol_id: `${playerId}-client` })],
-    output_protocols: [
-      outputProtocol({
-        output_protocol_id: "native",
-        protocol_domain: "sendspin",
-        is_native: true,
-      }),
-    ],
-    ...overrides,
-  } as Player;
+// the dialog names the speakers the server lists, so a name is all a player needs here
+function speaker(playerId: string, name: string): Player {
+  return { player_id: playerId, name } as Player;
 }

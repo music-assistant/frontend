@@ -248,6 +248,7 @@ import {
 import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { useMultiChannelCandidates } from "@/composables/settings/players/useMultiChannelCandidates";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import {
@@ -299,6 +300,8 @@ onBeforeUnmount(unsubConfigUpdated);
 const player = computed(() =>
   config.value ? api.players[config.value.player_id] : undefined,
 );
+
+const multiChannelCandidates = useMultiChannelCandidates(player);
 
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
@@ -439,6 +442,7 @@ const openPlayerMenu = function (evt: MouseEvent) {
 const getOutputMenu = function (output: OutputProtocol) {
   if (!config.value) return [];
   return getOutputMenuItems(config.value, output, {
+    multiChannelCandidates: multiChannelCandidates.value,
     // the server reset the choices that named the output that went, so the
     // form starts over from what is stored
     onSplitOff: () => {

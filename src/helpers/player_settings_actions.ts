@@ -7,6 +7,7 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   canCombineSpeakers,
   getComposableProtocol,
+  type MultiChannelCandidates,
 } from "@/helpers/multi_channel";
 import { getPlayerName } from "@/helpers/player_config";
 import { getSplittableProtocols } from "@/helpers/player_merge";
@@ -61,6 +62,9 @@ export interface PlayerSettingsMenuOptions {
 export interface OutputMenuOptions {
   // called once the output is split off as a player of its own
   onSplitOff?: () => void;
+  // the speakers the server lists as candidates of a new multi-channel player; an output
+  // offers to start one only when its player is among them
+  multiChannelCandidates?: MultiChannelCandidates;
   // called with the id of the multi-channel player the output moved into
   onMultiChannelCreated?: (playerId: string) => void;
 }
@@ -228,7 +232,9 @@ export const getOutputMenuItems = (
     });
   }
 
-  const composableProtocol = player && getComposableProtocol(player, output);
+  const composableProtocol =
+    player &&
+    getComposableProtocol(player, output, options.multiChannelCandidates ?? {});
   if (composableProtocol) {
     menuItems.push({
       label: "settings.multi_channel.make",

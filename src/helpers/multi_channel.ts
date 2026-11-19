@@ -1,7 +1,6 @@
-// Which speakers the settings offer to combine into a multi-channel player, and how the
-// settings page of such a player shows each of its speakers. The server decides whether
-// speakers can be combined and says why when they can not; these only leave out what can
-// never apply.
+// Where the settings offer to combine speakers into a multi-channel player, and how the
+// settings page of such a player shows each of its speakers. Which speakers can be
+// combined is the server's call: it lists them per provider.
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import { api } from "@/plugins/api";
 import {
@@ -9,8 +8,6 @@ import {
   type OutputProtocol,
   type Player,
   type PlayerProtocolInfo,
-  PlayerType,
-  ProtocolRole,
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 
@@ -42,6 +39,9 @@ export interface ChannelChange {
   value: ConfigValueType;
 }
 
+// the player ids that can be a speaker of a new multi-channel player, by provider (instance)
+export type MultiChannelCandidates = Record<string, readonly string[]>;
+
 /** Whether a provider (instance) can combine its speakers into a multi-channel player. */
 export const canCombineSpeakers = function (
   providerInstanceId: string,
@@ -51,50 +51,39 @@ export const canCombineSpeakers = function (
     ?.supported_features.includes(ProviderFeature.CREATE_MULTI_CHANNEL_PLAYER);
 };
 
-/**
- * The protocol behind an output of a player that can start a multi-channel player: an
- * output of its own, on a provider that combines speakers. Undefined for any other output.
- */
-export const getComposableProtocol = function (
-  player: Pick<Player, "type" | "private" | "protocols">,
-  output: Pick<OutputProtocol, "protocol_domain" | "derived_from">,
-): PlayerProtocolInfo | undefined {
-  const protocol = getOwnProtocol(player, output);
-  return protocol && canCombineSpeakers(protocol.provider)
-    ? protocol
-    : undefined;
+/** The providers (instances) of the protocols of a player that can combine speakers. */
+export const getCombiningProviders = function (
+  player: Pick<Player, "protocols">,
+): string[] {
+  return [
+    ...new Set(player.protocols.map((protocol) => protocol.provider)),
+  ].filter(canCombineSpeakers);
 };
 
 /**
- * The players that can join a player in a multi-channel player of a provider: every
- * other player that is available and has an output of its own on that provider.
+ * The protocol behind an output of a player that can start a multi-channel player: one of
+ * a provider that combines speakers and lists the player as a candidate speaker. Undefined
+ * for any other output.
  *
- * @param playerId The player the multi-channel player starts from.
- * @param providerInstanceId The provider (instance) that combines the speakers.
- * @param players The players to pick from.
+ * @param player The player the output belongs to.
+ * @param output The output.
+ * @param candidates The candidate speakers the server listed.
  */
-export const getSpeakerCandidates = function <
-  T extends Pick<
-    Player,
-    | "player_id"
-    | "type"
-    | "private"
-    | "available"
-    | "needs_setup"
-    | "protocols"
-    | "output_protocols"
-  >,
->(playerId: string, providerInstanceId: string, players: T[]): T[] {
-  return players.filter(
-    (player) =>
-      player.player_id !== playerId &&
-      player.available &&
-      !player.needs_setup &&
-      player.output_protocols.some((output) => {
-        const protocol = getOwnProtocol(player, output);
-        return protocol?.provider === providerInstanceId && protocol.available;
-      }),
+export const getComposableProtocol = function (
+  player: Pick<Player, "player_id" | "protocols">,
+  output: Pick<OutputProtocol, "protocol_domain">,
+  candidates: MultiChannelCandidates,
+): PlayerProtocolInfo | undefined {
+  // a player holds one protocol of each domain; the domain also finds the protocol of
+  // the native output, whose id is "native" rather than that of its protocol
+  const protocol = player.protocols.find(
+    (candidate) => candidate.domain === output.protocol_domain,
   );
+  return protocol &&
+    canCombineSpeakers(protocol.provider) &&
+    candidates[protocol.provider]?.includes(player.player_id)
+    ? protocol
+    : undefined;
 };
 
 /**
@@ -206,29 +195,4 @@ function channelOrder(speaker: MultiChannelSpeaker): number {
     channel?.options.findIndex((option) => option.value === channel.value) ??
     -1;
   return index === -1 ? Number.MAX_SAFE_INTEGER : index;
-}
-
-/**
- * The protocol behind an output of a player that is a speaker of its own: not a
- * multi-channel player, not a session of one device such as a web player, and not riding
- * on another protocol such as a Sendspin bridge over AirPlay.
- */
-function getOwnProtocol(
-  player: Pick<Player, "type" | "private" | "protocols">,
-  output: Pick<OutputProtocol, "protocol_domain" | "derived_from">,
-): PlayerProtocolInfo | undefined {
-  if (
-    player.type === PlayerType.MULTI_CHANNEL ||
-    player.type === PlayerType.GROUP ||
-    player.private ||
-    output.derived_from
-  ) {
-    return undefined;
-  }
-  // a player holds one protocol of each domain; the domain also finds the protocol of
-  // the native output, whose id is "native" rather than that of its protocol
-  const protocol = player.protocols.find(
-    (candidate) => candidate.domain === output.protocol_domain,
-  );
-  return protocol?.role === ProtocolRole.VIRTUAL ? undefined : protocol;
 }

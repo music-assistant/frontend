@@ -1,8 +1,9 @@
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import {
   getChannelSwap,
+  getCombiningProviders,
   getComposableProtocol,
-  getSpeakerCandidates,
+  getSpeakerField,
   groupSpeakerEntries,
   suggestMultiChannelName,
 } from "@/helpers/multi_channel";
@@ -38,104 +39,63 @@ beforeEach(() => {
   }));
 });
 
+describe("getCombiningProviders", () => {
+  it("lists each provider of the player that combines speakers once", () => {
+    expect(
+      getCombiningProviders(
+        speaker({
+          protocols: [
+            protocol("sendspin"),
+            protocol("airplay"),
+            protocol("sendspin", { protocol_id: "second" }),
+          ],
+        }),
+      ),
+    ).toEqual(["sendspin"]);
+  });
+});
+
 describe("getComposableProtocol", () => {
-  it("offers the protocol behind an output of a provider that combines speakers", () => {
+  const native = () =>
+    output("sendspin", { output_protocol_id: "native", is_native: true });
+
+  it("offers the protocol behind an output when the server lists the player", () => {
     const sendspin = protocol("sendspin", { role: ProtocolRole.NATIVE });
 
     expect(
-      getComposableProtocol(
-        speaker({ protocols: [sendspin] }),
-        output("sendspin", { output_protocol_id: "native", is_native: true }),
-      ),
+      getComposableProtocol(speaker({ protocols: [sendspin] }), native(), {
+        sendspin: ["studio-right", "studio-left"],
+      }),
     ).toBe(sendspin);
   });
 
-  it("offers nothing for an output of a provider that can not combine speakers", () => {
+  it("offers nothing when the server does not list the player for that provider", () => {
+    const player = speaker();
+
+    expect(
+      getComposableProtocol(player, native(), { sendspin: ["studio-right"] }),
+    ).toBeUndefined();
+    expect(
+      getComposableProtocol(player, native(), { airplay: ["studio-left"] }),
+    ).toBeUndefined();
+    expect(getComposableProtocol(player, native(), {})).toBeUndefined();
+  });
+
+  it("offers nothing on a provider that can not combine speakers, whatever is listed", () => {
     expect(
       getComposableProtocol(
         speaker({ protocols: [protocol("airplay")] }),
         output("airplay"),
-      ),
-    ).toBeUndefined();
-  });
-
-  it("offers nothing for an output that rides on another protocol", () => {
-    expect(
-      getComposableProtocol(
-        speaker({ protocols: [protocol("airplay"), protocol("sendspin")] }),
-        output("sendspin", { derived_from: "airplay" }),
-      ),
-    ).toBeUndefined();
-  });
-
-  it("offers nothing for the output of a multi-channel player", () => {
-    expect(
-      getComposableProtocol(
-        speaker({
-          type: PlayerType.MULTI_CHANNEL,
-          protocols: [protocol("sendspin")],
-        }),
-        output("sendspin"),
-      ),
-    ).toBeUndefined();
-  });
-
-  it("offers nothing for a web player or a protocol without a device", () => {
-    expect(
-      getComposableProtocol(
-        speaker({ private: true, protocols: [protocol("sendspin")] }),
-        output("sendspin"),
-      ),
-    ).toBeUndefined();
-    expect(
-      getComposableProtocol(
-        speaker({
-          protocols: [protocol("sendspin", { role: ProtocolRole.VIRTUAL })],
-        }),
-        output("sendspin"),
+        { airplay: ["studio-left"] },
       ),
     ).toBeUndefined();
   });
 });
 
-describe("getSpeakerCandidates", () => {
-  it("offers the other available speakers with an output of their own on the provider", () => {
-    const players = [
-      speaker({ player_id: "studio-left" }),
-      speaker({ player_id: "studio-right" }),
-      speaker({ player_id: "office" }),
-      speaker({ player_id: "away", available: false }),
-      speaker({ player_id: "pairing", needs_setup: true }),
-      speaker({
-        player_id: "output-away",
-        protocols: [protocol("sendspin", { available: false })],
-      }),
-      speaker({ player_id: "web", private: true }),
-      speaker({ player_id: "set", type: PlayerType.MULTI_CHANNEL }),
-      speaker({
-        player_id: "airplay-only",
-        protocols: [protocol("airplay")],
-        output_protocols: [output("airplay")],
-      }),
-      speaker({
-        player_id: "bridge",
-        protocols: [protocol("airplay"), protocol("sendspin")],
-        output_protocols: [
-          output("airplay"),
-          output("sendspin", { derived_from: "airplay" }),
-        ],
-      }),
-      speaker({
-        player_id: "other-instance",
-        protocols: [protocol("sendspin", { provider: "sendspin--2" })],
-      }),
-    ];
-
-    expect(
-      getSpeakerCandidates("studio-left", "sendspin", players).map(
-        (player) => player.player_id,
-      ),
-    ).toEqual(["studio-right", "office"]);
+describe("getSpeakerField", () => {
+  it("names the field a speaker entry holds", () => {
+    expect(getSpeakerField("speaker_2_output_delay")).toBe("output_delay");
+    expect(getSpeakerField("multi_channel_group_id")).toBeUndefined();
   });
 });
 

@@ -2895,6 +2895,24 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Return the ids of the players whose output on a provider can be a speaker of a new
+   * multi-channel player.
+   *
+   * @param provider The instance id of the provider that combines the speakers.
+   * @param options Options for the command, such as keeping a failure quiet.
+   */
+  public getMultiChannelCandidates(
+    provider: string,
+    options?: CommandOptions,
+  ): Promise<string[]> {
+    return this.sendCommand(
+      "players/multi_channel_candidates",
+      { provider },
+      options,
+    );
+  }
+
   public playerCommandGroupSelectSource(
     playerId: string,
     source: string,

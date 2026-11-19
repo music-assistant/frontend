@@ -11,6 +11,8 @@ import {
   ConfigEntryType,
   EventType,
   PlayerType,
+  ProtocolRole,
+  ProviderFeature,
   ProviderType,
   type ConfigEntry,
   type OutputProtocol,
@@ -41,6 +43,8 @@ const {
   toastMock,
 } = vi.hoisted(() => ({
   apiMock: {
+    getMultiChannelCandidates:
+      vi.fn<MusicAssistantApi["getMultiChannelCandidates"]>(),
     getPlayerConfig: vi.fn<MusicAssistantApi["getPlayerConfig"]>(),
     getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
     getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
@@ -399,6 +403,52 @@ describe("EditPlayer", () => {
     );
   });
 
+  it("hands the speakers the server lists to the output menus", async () => {
+    apiMock.players = {
+      "player-1": {
+        ...playerState(),
+        protocols: [
+          {
+            protocol_id: "client-1",
+            domain: "sendspin",
+            provider: "sendspin",
+            role: ProtocolRole.NATIVE,
+            available: true,
+            active: false,
+          },
+        ],
+      },
+    };
+    apiMock.getProvider.mockReturnValue({
+      ...providerInstance(),
+      supported_features: [ProviderFeature.CREATE_MULTI_CHANNEL_PLAYER],
+    });
+    apiMock.getMultiChannelCandidates.mockResolvedValue(["player-1"]);
+    const wrapper = await mountPlayerPage();
+
+    outputMenuItems(wrapper, outputProtocol());
+
+    expect(apiMock.getMultiChannelCandidates).toHaveBeenCalledWith("sendspin", {
+      suppressGlobalError: true,
+    });
+    expect(getOutputMenuItems.mock.lastCall?.[2]).toMatchObject({
+      multiChannelCandidates: { sendspin: ["player-1"] },
+    });
+  });
+
+  it("goes to the multi-channel player an output moved into", async () => {
+    const wrapper = await mountPlayerPage();
+    outputMenuItems(wrapper, outputProtocol());
+
+    getOutputMenuItems.mock.calls[0][2]!.onMultiChannelCreated!("studio");
+
+    // this player may be gone, so its pending edits have nothing to go to
+    expect(editConfigDiscardMock).toHaveBeenCalledOnce();
+    expect(routerMock.replace).toHaveBeenCalledWith(
+      "/settings/editplayer/studio",
+    );
+  });
+
   it("starts the form over from what is stored once an output is split off", async () => {
     const wrapper = await mountPlayerPage();
     outputMenuItems(wrapper, outputProtocol());
@@ -626,6 +676,7 @@ function playerState({
     options: [],
     output_protocols: [],
     player_id: playerId,
+    protocols: [],
     setup_reason: setupReason,
     supported_features: [],
     type: PlayerType.PLAYER,

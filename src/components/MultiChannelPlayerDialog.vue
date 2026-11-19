@@ -68,7 +68,7 @@
           </template>
         </div>
         <p
-          v-if="candidates.length === 0"
+          v-if="noSpeakers"
           data-testid="multi-channel-no-speakers"
           class="text-sm text-muted-foreground"
         >
@@ -127,10 +127,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  getSpeakerCandidates,
-  suggestMultiChannelName,
-} from "@/helpers/multi_channel";
+import { suggestMultiChannelName } from "@/helpers/multi_channel";
 import {
   createMultiChannelPlayer,
   getOutputName,
@@ -163,23 +160,28 @@ const speakerId = ref<string>();
 const name = ref("");
 // a name the user typed is theirs; until then it follows the speakers picked
 const nameEdited = ref(false);
+// the players the server lists as candidate speakers; undefined while they load
+const candidateIds = ref<string[]>();
+let candidatesRequestId = 0;
 let onCreated: MultiChannelPlayerDialogEvent["onCreated"];
 
-const candidates = computed(() => {
-  if (!protocol.value) return [];
-  return getSpeakerCandidates(
-    playerId.value,
-    protocol.value.provider,
-    Object.values(api.players),
-  )
-    .map((player) => ({
-      player_id: player.player_id,
-      name: getPlayerDisplayName(player),
-    }))
+const candidates = computed(() =>
+  (candidateIds.value ?? [])
+    .filter((id) => id !== playerId.value)
+    .flatMap((id) => {
+      const player = api.players[id];
+      return player
+        ? [{ player_id: id, name: getPlayerDisplayName(player) }]
+        : [];
+    })
     .sort((left, right) =>
       left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
-    );
-});
+    ),
+);
+
+const noSpeakers = computed(
+  () => candidateIds.value !== undefined && candidates.value.length === 0,
+);
 
 // undefined as well when the speaker picked went away meanwhile
 const speakerName = computed(
@@ -217,7 +219,9 @@ const onDialogRequested = (evt: MultiChannelPlayerDialogEvent) => {
   name.value = "";
   nameEdited.value = false;
   creating.value = false;
+  candidateIds.value = undefined;
   open.value = true;
+  void loadCandidates(evt.protocol.provider);
 };
 
 onMounted(() => {
@@ -229,6 +233,19 @@ onBeforeUnmount(() => {
   eventbus.off("multiChannelPlayerDialog", onDialogRequested);
   if (open.value) store.dialogActive = false;
 });
+
+async function loadCandidates(provider: string) {
+  const request = ++candidatesRequestId;
+  let ids: string[];
+  try {
+    ids = await api.getMultiChannelCandidates(provider);
+  } catch {
+    // a failed command is already reported by the api layer
+    ids = [];
+  }
+  // a dialog opened again meanwhile asked for the speakers of another player
+  if (request === candidatesRequestId) candidateIds.value = ids;
+}
 
 function swapChannels() {
   playerChannel.value = otherChannel(playerChannel.value);

@@ -869,6 +869,8 @@ describe("getOutputMenuItems multi-channel player", () => {
   });
   const native = () =>
     output("sendspin", { output_protocol_id: "native", is_native: true });
+  // the server lists this player as a candidate speaker on Sendspin
+  const multiChannelCandidates = { sendspin: ["studio-right", "kitchen"] };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -892,7 +894,10 @@ describe("getOutputMenuItems multi-channel player", () => {
     const onMultiChannelCreated = vi.fn();
 
     menuItem(
-      getOutputMenuItems(playerConfig(), native(), { onMultiChannelCreated }),
+      getOutputMenuItems(playerConfig(), native(), {
+        multiChannelCandidates,
+        onMultiChannelCreated,
+      }),
       "settings.multi_channel.make",
     ).action?.();
 
@@ -910,34 +915,30 @@ describe("getOutputMenuItems multi-channel player", () => {
       output_protocols: [native(), output("airplay")],
     });
 
-    expect(visibleLabels(getOutputMenuItems(playerConfig(), native()))).toEqual(
-      ["settings.split_off_output", "settings.multi_channel.make"],
-    );
+    expect(
+      visibleLabels(
+        getOutputMenuItems(playerConfig(), native(), {
+          multiChannelCandidates,
+        }),
+      ),
+    ).toEqual(["settings.split_off_output", "settings.multi_channel.make"]);
     // AirPlay can not combine speakers
     expect(
-      visibleLabels(getOutputMenuItems(playerConfig(), output("airplay"))),
+      visibleLabels(
+        getOutputMenuItems(playerConfig(), output("airplay"), {
+          multiChannelCandidates: { airplay: ["kitchen"] },
+        }),
+      ),
     ).toEqual(["settings.split_off_output"]);
   });
 
-  it("offers nothing on an output that rides on another protocol", () => {
-    const bridge = output("sendspin", { derived_from: "airplay" });
-    registerPlayer({
-      protocols: [protocol("airplay"), protocol("sendspin")],
-      output_protocols: [output("airplay"), bridge],
-    });
-
-    expect(visibleLabels(getOutputMenuItems(playerConfig(), bridge))).toEqual(
-      [],
-    );
-  });
-
-  it("offers nothing on the output of a multi-channel player", () => {
-    registerPlayer({
-      type: PlayerType.MULTI_CHANNEL,
-      protocols: [sendspin()],
-      output_protocols: [native()],
-    });
-
+  it("offers nothing for a player the server does not list", () => {
+    expect(
+      getOutputMenuItems(playerConfig(), native(), {
+        multiChannelCandidates: { sendspin: ["studio-right"] },
+      }),
+    ).toEqual([]);
+    // before the list is there
     expect(getOutputMenuItems(playerConfig(), native())).toEqual([]);
   });
 });
