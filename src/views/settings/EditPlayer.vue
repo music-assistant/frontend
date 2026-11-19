@@ -562,8 +562,14 @@ async function loadConfig(playerId: string) {
 async function refreshPlayerConfig(playerId: string) {
   if (config.value?.player_id !== playerId) return;
   const requestId = ++configRefreshRequestId;
+  // a player can go with its config while the refresh is on its way, such as a speaker
+  // that went up in a multi-channel player; the page leaves it then, so that is no error
+  const wasLive = playerId in api.players;
+  const isGone = () => wasLive && !(playerId in api.players);
   try {
-    const updatedConfig = await api.getPlayerConfig(playerId);
+    const updatedConfig = await api.getPlayerConfig(playerId, {
+      suppressGlobalError: isGone,
+    });
     if (
       requestId === configRefreshRequestId &&
       props.playerId === playerId &&
@@ -575,7 +581,8 @@ async function refreshPlayerConfig(playerId: string) {
     if (
       requestId === configRefreshRequestId &&
       props.playerId === playerId &&
-      config.value?.player_id === playerId
+      config.value?.player_id === playerId &&
+      !isGone()
     ) {
       toast.error(String(err));
     }

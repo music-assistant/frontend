@@ -449,6 +449,39 @@ describe("EditPlayer", () => {
     );
   });
 
+  it("stays quiet when the player goes with its config while that refreshes", async () => {
+    const wrapper = await mountPlayerPage();
+    apiMock.getPlayerConfig.mockImplementationOnce(async () => {
+      // the server removed the player before it answered
+      delete apiMock.players["player-1"];
+      throw new Error("No config found for player id player-1");
+    });
+
+    playerConfigUpdated("player-1");
+    await flushPromises();
+
+    const options = apiMock.getPlayerConfig.mock.lastCall?.[1];
+    expect(
+      (options?.suppressGlobalError as (() => boolean) | undefined)?.(),
+    ).toBe(true);
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
+  });
+
+  it("reports a refresh that fails while the player is still there", async () => {
+    await mountPlayerPage();
+    apiMock.getPlayerConfig.mockRejectedValueOnce(new Error("Server error"));
+
+    playerConfigUpdated("player-1");
+    await flushPromises();
+
+    const options = apiMock.getPlayerConfig.mock.lastCall?.[1];
+    expect(
+      (options?.suppressGlobalError as (() => boolean) | undefined)?.(),
+    ).toBe(false);
+    expect(toastMock.error).toHaveBeenCalledWith("Error: Server error");
+  });
+
   it("starts the form over from what is stored once an output is split off", async () => {
     const wrapper = await mountPlayerPage();
     outputMenuItems(wrapper, outputProtocol());

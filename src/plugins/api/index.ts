@@ -3172,9 +3172,12 @@ export class MusicAssistantApi {
     });
   }
 
-  public async getPlayerConfig(player_id: string): Promise<PlayerConfig> {
+  public async getPlayerConfig(
+    player_id: string,
+    options?: CommandOptions,
+  ): Promise<PlayerConfig> {
     // Return configuration for a single player.
-    return this.sendCommand("config/players/get", { player_id });
+    return this.sendCommand("config/players/get", { player_id }, options);
   }
 
   public async getPlayerConfigEntries(
