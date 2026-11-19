@@ -25,6 +25,7 @@ enableAutoUnmount(afterEach);
 
 // the core modules the server offers settings of, which settings pages show
 const KNOWN_MODULES = [
+  "ai",
   "cache",
   "discovery",
   "metadata",

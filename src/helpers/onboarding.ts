@@ -20,8 +20,8 @@ export type OnboardingStepId =
   | "music_sources"
   | "players"
   | "plugins"
-  | "core_settings"
   | "home_assistant"
+  | "core_settings"
   | "invite_members"
   | "finish"
   // the member track: being welcomed into a server someone else set up
@@ -103,6 +103,8 @@ export interface OnboardingContext {
   homeAssistantAddon: boolean;
   // a connection with Home Assistant is set up, working or not
   homeAssistantConfigured: boolean;
+  // that connection is up and running
+  homeAssistantConnected: boolean;
   // the household members: everyone with an account of their own, so neither
   // the Home Assistant system account nor a guest or service one. `null` until
   // the users are in, so nothing is decided on a household nobody asked for
@@ -202,6 +204,13 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
       ),
   },
   {
+    id: "home_assistant",
+    kind: "step",
+    optional: true,
+    appliesTo: (ctx) => onAdminTrack(ctx) && !ctx.homeAssistantAddon,
+    isDone: (ctx) => ctx.homeAssistantConfigured,
+  },
+  {
     id: "core_settings",
     kind: "review",
     appliesTo: onFullSetup,
@@ -209,13 +218,6 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     // is never anything missing here. What keeps the wizard from walking past
     // this step is its kind, not this answer.
     isDone: () => false,
-  },
-  {
-    id: "home_assistant",
-    kind: "step",
-    optional: true,
-    appliesTo: (ctx) => onAdminTrack(ctx) && !ctx.homeAssistantAddon,
-    isDone: (ctx) => ctx.homeAssistantConfigured,
   },
   {
     id: "invite_members",

@@ -504,7 +504,7 @@
             "connect": "Connect",
             "connection": "Connection",
             "connection_description": "Reconfigure, disable or remove the connection",
-            "connection_addon": "Music Assistant runs as a Home Assistant add-on, which connects it",
+            "connection_addon": "Music Assistant runs as a Home Assistant app, which connects it",
             "state_connected": "Connected",
             "state_connecting": "Connecting",
             "state_disabled": "Disabled",
@@ -512,11 +512,41 @@
             "players": "Home Assistant players",
             "players_description": "Play on the media players of Home Assistant",
             "players_add": "Add",
+            "ai": "AI from Home Assistant",
+            "ai_description": "AI tasks and voices from Home Assistant",
+            "ai_none": "None",
             "sign_in": "Sign in with Home Assistant",
             "sign_in_description": "Home Assistant users sign in to Music Assistant with their account",
-            "remote_access_description": "Home Assistant Cloud makes remote access work in any network",
-            "remote_access_ha_cloud": "Home Assistant Cloud",
-            "remote_access_without_ha_cloud": "Without Home Assistant Cloud"
+            "remote_access_description": "Home Assistant Link makes remote access work in any network",
+            "remote_access_ha_cloud": "Home Assistant Link",
+            "remote_access_without_ha_cloud": "Without Home Assistant Link"
+        },
+        "ai": {
+            "title": "AI",
+            "description": "The AI engines Music Assistant uses, what uses them and access for AI assistants",
+            "no_engines": "No AI engines yet",
+            "no_engines_description": "Add an AI service to write playlist descriptions, speak announcements, host AI Radio and more.",
+            "add_service": "Add an AI service",
+            "usage": "What uses AI",
+            "services": "AI services",
+            "kind": {
+                "text": "AI engine",
+                "speech": "Text-to-speech engine",
+                "image": "Image engine"
+            },
+            "engine_count": {
+                "text": "{count} text | {count} text",
+                "speech": "{count} speech | {count} speech",
+                "image": "{count} image | {count} images"
+            },
+            "follows_default": "Default · {engine}",
+            "not_available": "Not available",
+            "choose_models": "Choose the models to use",
+            "assistant_access": "Access for AI assistants",
+            "assistant_access_label": "Allow AI assistants",
+            "assistant_access_description": "AI assistants such as Home Assistant Assist, Claude and ChatGPT can search your music and control playback through the MCP server built into Music Assistant",
+            "assistant_access_enabled": "The built-in MCP server is on",
+            "assistant_access_disabled": "The built-in MCP server is off"
         },
         "playback": {
             "title": "Playback",
@@ -573,14 +603,14 @@
         "remote_access": "Remote Access",
         "remote_access_description": "Securely access Music Assistant from anywhere",
         "remote_access_explanation_intro": "Remote Access allows you to securely connect to your Music Assistant server from anywhere in the world.",
-        "remote_access_explanation_ha_cloud": "For the best experience and reliability, a Home Assistant Cloud subscription is required.",
+        "remote_access_explanation_ha_cloud": "For the best experience and reliability, a Home Assistant Link subscription is required.",
         "remote_access_feature_webrtc": "Based on WebRTC technology for peer-to-peer connections",
         "remote_access_feature_encrypted": "End-to-end encrypted - your data stays private",
         "remote_access_feature_no_port_forwarding": "No port forwarding or VPN required",
-        "remote_access_mode_optimized": "Optimized Mode (HA Cloud)",
+        "remote_access_mode_optimized": "Optimized Mode (HA Link)",
         "remote_access_mode_basic": "Running in Basic Mode",
-        "remote_access_mode_basic_description": "Using public STUN servers. This may not work in complex network setups. Upgrade to Home Assistant Cloud for the best experience.",
-        "remote_access_upgrade_to_optimized": "Upgrade to Home Assistant Cloud",
+        "remote_access_mode_basic_description": "Using public STUN servers. This may not work in complex network setups. Upgrade to Home Assistant Link for the best experience.",
+        "remote_access_upgrade_to_optimized": "Upgrade to Home Assistant Link",
         "remote_access_status": "Remote Access Status",
         "remote_access_enabled": "Remote Access is enabled",
         "remote_access_disabled": "Remote Access is disabled",
@@ -606,7 +636,7 @@
         "remote_access_disabled_success": "Remote Access has been disabled",
         "remote_access_signaling_server_description": "Signaling server in the cloud, hosted by the Open Home Foundation.",
         "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
-        "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
+        "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Link (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
@@ -3285,46 +3315,24 @@
             },
             "core_settings": {
                 "title": "Access Music Assistant",
-                "intro": "Music Assistant works on your home network automatically. Set up remote access if you'd also like to listen when you're away.",
-                "network_details": "Server and network details",
-                "internal_address": "Internal address",
-                "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
-                "external_address": "External address",
-                "external_address_hint": "Where you reach Music Assistant from outside your home, through your reverse proxy.",
-                "stream_address": "Stream server address",
-                "stream_address_hint": "Where your players fetch the audio from.",
-                "address_unknown": "Not available",
-                "check": {
-                    "checking": "Checking...",
-                    "reachable": "Reachable from this device",
-                    "unreachable": "Not reachable from this device",
-                    "unchecked": "Could not check from this device"
-                },
-                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, change it with Edit below.",
-                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system} › {network}.",
+                "away_intro": "Remote access lets you listen with the Music Assistant app when you're away from home.",
+                "intro_addon": "Music Assistant runs as a Home Assistant app: wherever you can open Home Assistant, you can open Music Assistant too. Turn on remote access if you'd also like to use the Music Assistant app away from home.",
+                "network_hint": "Using your own reverse proxy, or a more complex network? You can set that up later under Settings › {system} › {network}.",
                 "remote": {
-                    "title": "Listen from outside your home",
-                    "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",
+                    "home_assistant": "When your Home Assistant has Home Assistant Link, remote access uses it automatically, so it works on any network.",
                     "builtin": {
-                        "title": "Built-in remote access",
-                        "easiest": "Easiest",
+                        "title": "Remote access",
                         "description": "Secure and encrypted, with no port forwarding or VPN. Turn it on and connect from anywhere with your remote access ID.",
                         "switch": "Remote access",
                         "id": "Your remote access ID",
                         "copy": "Copy the remote access ID",
                         "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {system} › {network} › {remote_access}."
-                    },
-                    "proxy": {
-                        "title": "Your own reverse proxy",
-                        "description": "Run a reverse proxy in front of the server and enter the address it is reached on from outside as the external address.",
-                        "set_external": "Set the external address"
                     }
-                },
-                "load_failed": "The server settings could not be loaded. You can change them later from the settings."
+                }
             },
             "home_assistant": {
                 "title": "Connect Home Assistant",
-                "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Cloud.",
+                "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Link.",
                 "connect": "Connect to Home Assistant"
             },
             "invite_members": {

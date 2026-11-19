@@ -1,0 +1,139 @@
+<template>
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="ai" />
+    <template v-if="loaded">
+      <Empty
+        v-if="engines.length === 0"
+        class="rounded-xl border"
+        data-testid="ai-no-engines"
+      >
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Sparkles />
+          </EmptyMedia>
+          <EmptyTitle>{{ $t("settings.ai.no_engines") }}</EmptyTitle>
+          <EmptyDescription>
+            {{ $t("settings.ai.no_engines_description") }}
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button as-child data-testid="ai-no-engines-add">
+            <RouterLink :to="ADD_SERVICE_ROUTE" class="no-underline">
+              <Plus />
+              {{ $t("settings.ai.add_service") }}
+            </RouterLink>
+          </Button>
+        </EmptyContent>
+      </Empty>
+      <!-- the form loads the engines to pick from once, so other engines get a
+           form of their own -->
+      <SettingsPageForm v-else :key="engineKey" page="ai" @saved="refresh" />
+
+      <section v-if="usageRows.length" class="space-y-3">
+        <h2 class="text-muted-foreground text-sm font-medium">
+          {{ $t("settings.ai.usage") }}
+        </h2>
+        <SettingsLinkRows :rows="usageRows" test-id-prefix="ai-usage" />
+      </section>
+
+      <section v-if="serviceRows.length" class="space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-muted-foreground text-sm font-medium">
+            {{ $t("settings.ai.services") }}
+          </h2>
+          <!-- without engines, the empty state above offers it -->
+          <Button
+            v-if="engines.length"
+            as-child
+            variant="outline"
+            size="sm"
+            data-testid="ai-services-add"
+          >
+            <RouterLink :to="ADD_SERVICE_ROUTE" class="no-underline">
+              <Plus />
+              {{ $t("settings.ai.add_service") }}
+            </RouterLink>
+          </Button>
+        </div>
+        <SettingsLinkRows :rows="serviceRows" test-id-prefix="ai-services" />
+      </section>
+    </template>
+
+    <Empty v-else-if="loadFailed" class="rounded-xl border border-dashed py-6">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Sparkles />
+        </EmptyMedia>
+        <EmptyTitle>{{ $t("settings.settings_load_failed") }}</EmptyTitle>
+      </EmptyHeader>
+    </Empty>
+
+    <div v-else class="flex min-h-24 items-center justify-center">
+      <Spinner class="size-6" />
+    </div>
+
+    <AIAssistantAccess />
+  </div>
+</template>
+
+<script setup lang="ts">
+import AIAssistantAccess from "@/components/settings/ai/AIAssistantAccess.vue";
+import SettingsLinkRows from "@/components/settings/SettingsLinkRows.vue";
+import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
+import { useAIEngines } from "@/composables/settings/useAIEngines";
+import { aiServiceRows, engineUsageRows } from "@/helpers/ai_settings";
+import { getCatalogRoute } from "@/helpers/provider_catalog";
+import { api } from "@/plugins/api";
+import { type AIEngineUsage, ProviderType } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
+import { Plus, Sparkles } from "@lucide/vue";
+import { computed } from "vue";
+import { RouterLink } from "vue-router";
+
+/**
+ * The AI engines Music Assistant uses: the default engine of each kind, what
+ * uses which engine, the services providing them, and access for AI
+ * assistants.
+ */
+
+// the AI services are plugins
+const ADD_SERVICE_ROUTE = getCatalogRoute(ProviderType.PLUGIN);
+
+const { engines, usage, loaded, loadFailed, refresh } = useAIEngines();
+
+const engineKey = computed(() =>
+  engines.value.map((engine) => engine.uid).join(),
+);
+
+const usageRows = computed(() =>
+  engineUsageRows(usage.value, engines.value, reconfigure),
+);
+
+const serviceRows = computed(() =>
+  aiServiceRows(Object.values(api.providers), engines.value),
+);
+
+// the setting is changed through the setup flow of its provider
+function reconfigure(setting: AIEngineUsage) {
+  eventbus.emit("setupFlowDialog", {
+    kind: "reconfigure",
+    instanceId: setting.owner,
+    name: setting.name,
+    onFlowEnded: () => {
+      void refresh();
+    },
+  });
+}
+</script>
