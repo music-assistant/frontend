@@ -48,7 +48,11 @@ const RouterLinkStub = {
 const GPT = engine("gpt", AIEngineKind.TEXT);
 const NOVA = engine("nova", AIEngineKind.SPEECH);
 
-const MARKETPLACE_PLUGINS = { name: "catalog", query: { types: "plugin" } };
+// the plugins tab of the Marketplace, on its AI chip
+const MARKETPLACE_AI_SERVICES = {
+  name: "catalog",
+  query: { types: "plugin", label: "ai" },
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -97,7 +101,7 @@ describe("AISettings", () => {
     );
     const empty = wrapper.get('[data-testid="ai-no-engines"]');
     expect(empty.text()).toContain("settings.ai.no_engines");
-    expect(linkOf(empty.get("a"))).toEqual(MARKETPLACE_PLUGINS);
+    expect(linkOf(empty.get("a"))).toEqual(MARKETPLACE_AI_SERVICES);
     // a service without models still asks for them, without a second offer
     expect(rowKeys(wrapper, "ai-services")).toEqual(["openai_compatible--1"]);
     expect(wrapper.find('[data-testid="ai-services-add"]').exists()).toBe(
@@ -180,7 +184,7 @@ describe("AISettings", () => {
       "settings.ai.engine_count.text · settings.ai.engine_count.speech",
     );
     expect(linkOf(wrapper.get('[data-testid="ai-services-add"]'))).toEqual(
-      MARKETPLACE_PLUGINS,
+      MARKETPLACE_AI_SERVICES,
     );
   });
 

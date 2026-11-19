@@ -470,6 +470,35 @@ describe("Catalog", () => {
       expect(cardNames("[data-testid='catalog-list']")).toHaveLength(3);
       expect(tabLabels()).toContain("settings.plugins3");
     });
+
+    it("opens on the chip the route picks", async () => {
+      routeMock.query = { types: "plugin", label: "fun" };
+
+      await mountCatalog();
+
+      expect(chipStates()).toEqual([
+        ["all", "false"],
+        ["scrobble", "false"],
+        ["fun", "true"],
+        ["other", "false"],
+      ]);
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
+      expect(tabLabels()).toContain("settings.plugins1");
+    });
+
+    it("keeps the chip the route picks while the plugins come in", async () => {
+      routeMock.query = { types: "plugin", label: "fun" };
+      const manifests = { ...apiMock.providerManifests };
+      for (const domain of Object.keys(manifests)) {
+        delete apiMock.providerManifests[domain];
+      }
+
+      await mountCatalog();
+      Object.assign(apiMock.providerManifests, manifests);
+      await flushPromises();
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
+    });
   });
 
   it("counts what is set up on the Installed button, and opens the Installed view with it", async () => {

@@ -1,7 +1,11 @@
 import { ProviderOffering, ProviderType } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
-import { getFilterLabels, getProviderLabels } from "./provider_labels";
+import {
+  getFilterLabels,
+  getProviderLabels,
+  isProviderLabel,
+} from "./provider_labels";
 
 describe("what a provider offers", () => {
   it("labels a music source with what it offers as a source", () => {
@@ -73,5 +77,15 @@ describe("the labels to filter a list on", () => {
     expect(getFilterLabels([["other"], ["other"]])).toEqual([]);
     expect(getFilterLabels([[], []])).toEqual([]);
     expect(getFilterLabels([])).toEqual([]);
+  });
+});
+
+describe("whether a value is a label", () => {
+  it.each(["library", "live", "ai", "tts", "other"])("is for %s", (value) => {
+    expect(isProviderLabel(value)).toBe(true);
+  });
+
+  it.each(["bogus", "", null, undefined, ["ai"]])("is not for %o", (value) => {
+    expect(isProviderLabel(value)).toBe(false);
   });
 });

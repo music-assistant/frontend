@@ -21,6 +21,7 @@ import {
   filterCatalogEntries,
   getCatalogDetailRoute,
   getCatalogInstalledRoute,
+  getCatalogLabel,
   getCatalogRoute,
   getCatalogTab,
   getCatalogTabQuery,
@@ -779,6 +780,30 @@ describe("catalog tabs", () => {
   it("opens the Catalog on everything for a page without a known type", () => {
     expect(getCatalogRoute(undefined)).toEqual({ name: "catalog", query: {} });
     expect(getCatalogRoute("core")).toEqual({ name: "catalog", query: {} });
+  });
+
+  it("opens the tab of a type with a label picked", () => {
+    expect(getCatalogRoute("plugin", "ai")).toEqual({
+      name: "catalog",
+      query: { types: "plugin", label: "ai" },
+    });
+  });
+
+  it("picks no label for a page without a known type", () => {
+    expect(getCatalogRoute("core", "ai")).toEqual({
+      name: "catalog",
+      query: {},
+    });
+  });
+
+  it.each([
+    [{}, null],
+    [{ types: "plugin", label: "tts" }, "tts"],
+    [{ types: "music", label: "podcasts" }, "podcasts"],
+    [{ label: "bogus" }, null],
+    [{ label: ["ai", "tts"] }, null],
+  ])("picks from %o the label %s", (query, label) => {
+    expect(getCatalogLabel(query)).toBe(label);
   });
 });
 
