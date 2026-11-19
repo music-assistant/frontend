@@ -1,6 +1,5 @@
 import SendspinSyncWalk from "@/components/sendspin-sync/SendspinSyncWalk.vue";
 import type { Measurement } from "@/composables/sendspin-sync/useCalibrationRun";
-import { CHIRP_PERIOD_SECONDS } from "@/helpers/sendspin-sync/chirp";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 
@@ -25,7 +24,6 @@ function reading(overrides: Partial<Measurement> = {}): Measurement {
     medianSnr: 40,
     dropouts: 0,
     lostFraction: 0,
-    spacingSeconds: CHIRP_PERIOD_SECONDS,
     ...overrides,
   };
 }

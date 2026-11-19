@@ -10,7 +10,6 @@
  * with a run is the thing the user is told about.
  */
 
-import { spacingMatchesPeriod } from "./chirpSpacing";
 import {
   MAX_OFFSET_SPAN_MS,
   MAX_PLAUSIBLE_RATE_PPM,
@@ -18,8 +17,6 @@ import {
 } from "./latencyFit";
 
 export type RunVerdict =
-  /** The chirps did not arrive at the rate this build is built to expect. */
-  | "mismatched"
   /** The phone's recording had too much missing from it to read. */
   | "lossy"
   /** The speakers are further apart than one chirp train can place them. */
@@ -98,30 +95,13 @@ export interface CaptureLoss {
   worstFraction: number;
 }
 
-/**
- * Judge a finished fit against the speakers the run set out to measure.
- *
- * `spacingSeconds` is the chirp spacing the run's recordings actually showed, or
- * `null` when none of them could read one — which is not the same as agreeing
- * with this build and must not be judged as disagreeing with it either.
- */
+/** Judge a finished fit against the speakers the run set out to measure. */
 export function runVerdict(
   fit: LatencyFit,
   selected: string[],
   loss: CaptureLoss,
-  spacingSeconds: number | null,
 ): RunVerdict {
-  // First of all, because the fault is not in this run but in the instrument that
-  // took it: while the two sides disagree about the chirp rate there is no
-  // measurement to be had at all, from this walk or from any other. Every verdict
-  // below would send the reader to the phone, the speakers or the walk, and none
-  // of those is at fault. The spacing is read off the whole chirp train's
-  // repetition rather than off any one arrival, so a recording with the odd hole in
-  // it still reports it faithfully.
-  if (spacingSeconds !== null && !spacingMatchesPeriod(spacingSeconds))
-    return "mismatched";
-
-  // Then the recording, ahead of anything the recording was of. A run this lossy
+  // The recording first, ahead of anything the recording was of. A run this lossy
   // will usually also read as scattered or as speakers that cannot be placed, and
   // every one of those would send the user to the speakers or to how they walked —
   // when what needs fixing is the phone.

@@ -1,5 +1,4 @@
 import SendspinSyncResults from "@/components/sendspin-sync/SendspinSyncResults.vue";
-import { CHIRP_PERIOD_SECONDS } from "@/helpers/sendspin-sync/chirp";
 import type { LatencyFit } from "@/helpers/sendspin-sync/latencyFit";
 import { runVerdict, type CaptureLoss } from "@/helpers/sendspin-sync/verdict";
 import { mount } from "@vue/test-utils";
@@ -54,16 +53,12 @@ function mountResults(
       selected: ["living", "kitchen"],
       fit: fitFixture(),
       loss: CLEAN,
-      spacingSeconds: CHIRP_PERIOD_SECONDS,
       // Derived rather than hand-set, so a test cannot describe a run the verdict
       // helper would never actually produce.
       verdict: runVerdict(
         (props.fit as LatencyFit | undefined) ?? fitFixture(),
         ["living", "kitchen"],
         (props.loss as CaptureLoss | undefined) ?? CLEAN,
-        "spacingSeconds" in props
-          ? (props.spacingSeconds as number | null)
-          : CHIRP_PERIOD_SECONDS,
       ),
       applyResult: null,
       trustworthy: true,
@@ -247,23 +242,6 @@ describe("SendspinSyncResults", () => {
     // shown at all: alongside the reason they cannot be believed they would only
     // invite someone to copy them onto a speaker by hand.
     expect(wrapper.text()).toContain(`${BASE}.check.irreconcilable.title`);
-    expect(wrapper.findAll("li")).toHaveLength(0);
-    expect(applyButton(wrapper)).toBeUndefined();
-    expect(finishButton(wrapper).exists()).toBe(true);
-  });
-
-  it("names a server out of step with this build, and shows nothing to apply", () => {
-    const wrapper = mountResults({
-      spacingSeconds: CHIRP_PERIOD_SECONDS / 2,
-      trustworthy: false,
-    });
-
-    // Both rates, because the reader has to see which two disagree — and no
-    // offsets, since every one of them was counted against the wrong chirp.
-    expect(wrapper.text()).toContain(`${BASE}.check.mismatched.title`);
-    expect(wrapper.text()).toContain(
-      `${BASE}.check.mismatched.description 500 1000`,
-    );
     expect(wrapper.findAll("li")).toHaveLength(0);
     expect(applyButton(wrapper)).toBeUndefined();
     expect(finishButton(wrapper).exists()).toBe(true);

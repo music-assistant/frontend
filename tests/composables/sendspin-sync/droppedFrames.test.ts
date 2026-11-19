@@ -152,9 +152,7 @@ describe("a walk that dropped frames", () => {
     expect(fit.residualMs).toBeLessThan(0.1);
 
     // And the run is offered for applying, which is the whole point of it.
-    expect(
-      isApplicable(runVerdict(fit, SELECTED, clean(), CHIRP_PERIOD_SECONDS)),
-    ).toBe(true);
+    expect(isApplicable(runVerdict(fit, SELECTED, clean()))).toBe(true);
   });
 
   it("counts the stall against nothing, because it fell between speakers", () => {
@@ -183,9 +181,7 @@ describe("a walk that dropped frames", () => {
     // well as into the rate — this is the "13-15 ms of scatter" run, where every
     // speaker came back wrong by far more than the millisecond being measured.
     expect(Math.abs(fit.offsetsMs.kitchen - 12)).toBeGreaterThan(50);
-    expect(
-      isApplicable(runVerdict(fit, SELECTED, clean(), CHIRP_PERIOD_SECONDS)),
-    ).toBe(false);
+    expect(isApplicable(runVerdict(fit, SELECTED, clean()))).toBe(false);
   });
 });
 
@@ -268,9 +264,6 @@ function fitWalk(
     // Enough chirps for the visit to be placed by its own median rather than by
     // whichever arrival happened to be found first.
     expect(scan.arrivals.length).toBeGreaterThanOrEqual(5);
-    // And this server is the one this build expects, so the walk is judged on the
-    // numbering rather than refused for a rate it does not share.
-    expect(scan.spacingSeconds!).toBeCloseTo(CHIRP_PERIOD_SECONDS, 2);
 
     return scan.arrivals.map((arrival) => ({
       visit: index,
@@ -317,8 +310,8 @@ function heard(frame: number, playerId: string): number {
 /**
  * Room noise, keyed on the frame so it does not depend on how it is chopped up.
  *
- * Hashed rather than scaled: the spacing measurement reads how much a recording
- * repeats, and a value that is merely a linear function of the frame repeats.
+ * Hashed rather than scaled: a value that is merely a linear function of the
+ * frame repeats, and noise must not.
  */
 function noise(frame: number): number {
   let state = Math.imul(frame + 1, 1103515245) + 12345;

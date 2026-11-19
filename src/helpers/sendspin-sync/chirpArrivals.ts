@@ -16,7 +16,6 @@
  */
 
 import { buildReferenceChirp, CHIRP_PERIOD_SECONDS } from "./chirp";
-import { observedSpacing } from "./chirpSpacing";
 import {
   correlationEnvelope,
   findFirstArrival,
@@ -37,16 +36,6 @@ export interface ArrivalScan {
   expected: number;
   /** Typical peak-to-noise ratio of what was found; zero when nothing was. */
   medianSnr: number;
-  /**
-   * The spacing the chirps in this recording actually had, in seconds, or `null`
-   * when the recording could not say.
-   *
-   * Reported rather than acted on here: the windows above are placed on the
-   * period this build expects, and a recording that disagrees with it has been
-   * read against the wrong grid. Nothing in the arrivals themselves shows that,
-   * which is why the spacing travels alongside them.
-   */
-  spacingSeconds: number | null;
 }
 
 export interface ScanOptions {
@@ -79,8 +68,7 @@ export function scanArrivals(
   const { sampleRate, firstFrame } = options;
   const reference = buildReferenceChirp(sampleRate);
   const envelope = correlationEnvelope(samples, reference);
-  if (!envelope.length)
-    return { arrivals: [], expected: 0, medianSnr: 0, spacingSeconds: null };
+  if (!envelope.length) return { arrivals: [], expected: 0, medianSnr: 0 };
 
   const floor = noiseFloor(envelope);
   const period = CHIRP_PERIOD_SECONDS * sampleRate;
@@ -110,7 +98,6 @@ export function scanArrivals(
     arrivals,
     expected,
     medianSnr: median(arrivals.map((a) => a.snr)),
-    spacingSeconds: observedSpacing(envelope, sampleRate),
   };
 }
 

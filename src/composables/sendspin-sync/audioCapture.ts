@@ -2,21 +2,21 @@
  * Opening a microphone for Sendspin calibration, and keeping the screen awake
  * while it is open.
  *
- * Both the capability probe and the calibration run itself need a capture with
- * the browser's voice processing switched off, and both need the screen to stay
- * on for minutes at a time. Each check reports what the browser actually did
+ * A calibration run needs a capture with the browser's voice processing
+ * switched off, and needs the screen to stay on for minutes at a time. Each
+ * check reports what the browser actually did
  * rather than what was asked for, so a caller can tell a refusal apart from a
  * device that is simply not there.
  */
 
 /** The voice processing a calibration capture needs switched off. */
-export const VOICE_PROCESSING = [
+const VOICE_PROCESSING = [
   "echoCancellation",
   "noiseSuppression",
   "autoGainControl",
 ] as const;
 
-export type VoiceProcessing = (typeof VOICE_PROCESSING)[number];
+type VoiceProcessing = (typeof VOICE_PROCESSING)[number];
 
 /** A failure kept whole: the name is what tells the reader which one it was. */
 export interface ProbeError {
@@ -50,7 +50,7 @@ export interface WakeLockCheck {
 }
 
 /** A capture attempt: the stream when there is one, and what the browser did. */
-export interface MicrophoneCapture {
+interface MicrophoneCapture {
   stream: MediaStream | null;
   constraints: ConstraintCheck;
 }

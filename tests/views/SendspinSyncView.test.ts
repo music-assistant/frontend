@@ -1,6 +1,5 @@
 import SendspinSyncResults from "@/components/sendspin-sync/SendspinSyncResults.vue";
 import SendspinSyncWalk from "@/components/sendspin-sync/SendspinSyncWalk.vue";
-import { CHIRP_PERIOD_SECONDS } from "@/helpers/sendspin-sync/chirp";
 import type { CalibrationApplyResult } from "@/plugins/api/interfaces";
 import SendspinSyncView from "@/views/SendspinSyncView.vue";
 import { mount } from "@vue/test-utils";
@@ -36,12 +35,6 @@ vi.mock("@/composables/sendspin-sync/useCalibrationRun", () => ({
   BRACKET_LIMIT_MS: 1,
   SCATTER_LIMIT_MS: 1,
   useCalibrationRun: () => state,
-}));
-
-// The probe owns a microphone and thirty seconds of capture; none of that is what
-// these tests are about.
-vi.mock("@/components/sendspin-sync/SendspinSyncProbe.vue", () => ({
-  default: { name: "SendspinSyncProbe", template: "<div />" },
 }));
 
 const PLAYERS = [
@@ -100,7 +93,6 @@ function makeState() {
     needsCheck: ref(false),
     fit: ref<unknown>(null),
     loss: ref({ dropouts: 0, worstFraction: 0 }),
-    spacingSeconds: ref<number | null>(CHIRP_PERIOD_SECONDS),
     verdict: ref<string | null>(null),
     trustworthy: ref(false),
     crossChecked: ref(false),
@@ -379,23 +371,6 @@ describe("SendspinSyncView", () => {
     expect(run.endAdopted).toHaveBeenCalledOnce();
     // And looks again at what the server holds, so the picker opens up.
     expect(run.refresh).toHaveBeenCalledTimes(2);
-  });
-
-  it("keeps the diagnostics reachable without putting them in the way", () => {
-    const wrapper = mountView();
-
-    expect(wrapper.text()).toContain("Microphone diagnostics");
-  });
-
-  it("puts the diagnostics away for the length of a walk", async () => {
-    state.phase.value = "walking";
-    state.selected.value = ["living", "kitchen"];
-    const wrapper = mountView();
-    await wrapper.vm.$nextTick();
-
-    // They open a microphone of their own, and a second one can take the first
-    // away mid-reading.
-    expect(wrapper.text()).not.toContain("Microphone diagnostics");
   });
 
   it("holds the results back until the walk has nothing left to ask for", async () => {

@@ -2349,7 +2349,6 @@
             "calibration": {
                 "open": "Even out speaker timing",
                 "subtitle": "Carry this phone from speaker to speaker. Its microphone listens for a short test sound from each one, works out how far apart their timing is, and evens them out.",
-                "diagnostics": "Microphone diagnostics",
                 "toast": {
                     "started": "Calibration started. Stand where you listen to your first speaker.",
                     "applied": "Speaker delays updated.",
@@ -2378,7 +2377,17 @@
                     },
                     "other": {
                         "title": "The microphone could not be opened",
-                        "description": "Calibration needs to hear each speaker, so it cannot start. Open the microphone diagnostics below to find out why. Nothing was done to your speakers."
+                        "description": "Calibration needs to hear each speaker, so it cannot start. Close anything else that may be using the microphone, reload this page and start again. Nothing was done to your speakers."
+                    }
+                },
+                "microphone_blocked": {
+                    "insecure": {
+                        "title": "Open Music Assistant over a secure connection",
+                        "description": "Browsers only offer microphone access on a secure origin, with no exception for local networks. Reach Music Assistant through the Home Assistant ingress, enable TLS in Music Assistant's own settings, or put a reverse proxy with a valid certificate in front of it."
+                    },
+                    "no_api": {
+                        "title": "This browser has no microphone API",
+                        "description": "The browser does not offer getUserMedia, so no audio can be captured. Try a current version of Chrome, Safari or Firefox."
                     }
                 },
                 "problem": {
@@ -2496,10 +2505,6 @@
                     "apply": "Apply these delays",
                     "finish": "Stop and give the speakers back",
                     "check": {
-                        "mismatched": {
-                            "title": "This app and the server disagree about the chirps",
-                            "description": "The chirps arrived every {0} ms, and this app is built to expect one every {1} ms. Every arrival is counted against the rate it expects, so nothing measured here means anything — and nothing here is a fault of the speakers, of this phone, or of the way you walked. The two sides set the chirp rate between them, so they have to be updated together: bring the server and this app to matching versions, then run the calibration again."
-                        },
                         "lossy": {
                             "title": "This phone's recording had gaps in it",
                             "description": "{0}% of one reading never reached the browser, more than the {1}% its chirps can be read through. This is about the recording and nothing else — the speakers are fine, and so is the way you walked. There is no need to hurry between speakers; the time spent walking costs the measurement nothing. A phone drops audio when it is busy elsewhere, so close other apps, leave the screen on, keep this tab in front of you, then use \"Start the walk over\" above."
@@ -2510,7 +2515,7 @@
                         },
                         "irreconcilable": {
                             "title": "These readings could not be reconciled",
-                            "description": "The chirps only fit if this phone's clock were {0} ppm off the server, and no clock is — {1} ppm is already far outside anything real. Either this phone's recording is not what it appears to be, or one speaker sits further behind the others than the chirps can place; nothing measured here can be trusted either way. Open the microphone diagnostics below to rule the phone out, and try again without the speaker you know to be slowest."
+                            "description": "The chirps only fit if this phone's clock were {0} ppm off the server, and no clock is — {1} ppm is already far outside anything real. Either this phone's recording is not what it appears to be, or one speaker sits further behind the others than the chirps can place; nothing measured here can be trusted either way. Try again without the speaker you know to be slowest, and with another phone or browser if that changes nothing."
                         },
                     "unmeasured": {
                         "title": "One speaker was never heard",
@@ -2557,108 +2562,6 @@
             "toast": {
                 "unavailable": "Sendspin Sync is not enabled on this server.",
                 "admin_only": "Speaker calibration is an administrator tool. Ask an administrator to run it."
-            },
-            "probe": {
-                "subtitle": "Check whether this phone can hear a calibration chirp accurately enough to sync your speakers.",
-                "idle": {
-                    "title": "Microphone check",
-                    "description": "Run this on the phone you will carry to each speaker. It listens for 30 seconds, so keep the screen on and stay still while it runs."
-                },
-                "start": "Start check",
-                "restart": "Run again",
-                "capturing": "Listening...",
-                "remaining": "{0} seconds left",
-                "copy": "Copy results as JSON",
-                "copied": "Results copied.",
-                "copy_failed": "Could not copy the results.",
-                "raw": "Raw results",
-                "verdict": {
-                    "ready": {
-                        "title": "This phone can measure",
-                        "description": "The microphone delivered unprocessed audio on a steady clock. Nothing here stands in the way of calibration."
-                    },
-                    "degraded": {
-                        "title": "Usable, with caveats",
-                        "description": "The microphone worked, but something below is worth a look before you trust a measurement. Copy the results and check the flagged rows."
-                    },
-                    "unsupported": {
-                        "title": "This phone cannot measure reliably",
-                        "description": "The browser altered or interrupted the audio it captured, which would move the measured arrival time. Try another phone or browser, and send the results along."
-                    },
-                    "blocked": {
-                        "title": "The check could not run",
-                        "description": "The browser refused microphone access before anything could be measured. That is about how Music Assistant is being served, not about this phone."
-                    }
-                },
-                "blocked": {
-                    "insecure": {
-                        "title": "Open Music Assistant over a secure connection",
-                        "description": "Browsers only offer microphone access on a secure origin, with no exception for local networks. Reach Music Assistant through the Home Assistant ingress, enable TLS in Music Assistant's own settings, or put a reverse proxy with a valid certificate in front of it."
-                    },
-                    "no_api": {
-                        "title": "This browser has no microphone API",
-                        "description": "The browser does not offer getUserMedia, so no audio can be captured. Try a current version of Chrome, Safari or Firefox."
-                    },
-                    "refused": {
-                        "title": "Microphone access was refused",
-                        "description": "The browser did not grant the microphone, so nothing could be measured. Allow microphone access for this site and run the check again. The exact reason is on the Voice processing row below."
-                    },
-                    "no_device": {
-                        "title": "No usable microphone was found",
-                        "description": "Access was allowed, but no microphone could be opened. Check that one is connected and not held by another app, then run the check again. The exact reason is on the Voice processing row below."
-                    },
-                    "no_audio_pipeline": {
-                        "title": "The audio engine would not start",
-                        "description": "The browser never got as far as capturing, so this says nothing about the microphone. Reload the page and try again. The exact reason is on the Capture continuity row below."
-                    }
-                },
-                "status": {
-                    "pass": "Pass",
-                    "warn": "Check",
-                    "fail": "Fail",
-                    "not_evaluated": "Not run"
-                },
-                "values": {
-                    "yes": "yes",
-                    "no": "no",
-                    "on": "on",
-                    "off": "off",
-                    "available": "available",
-                    "unavailable": "unavailable",
-                    "not_reported": "not reported",
-                    "stayed_running": "stayed running"
-                },
-                "checks": {
-                    "secure_context": {
-                        "title": "Secure connection",
-                        "hint": "Microphone access is only offered on a secure origin."
-                    },
-                    "media_api": {
-                        "title": "Microphone API",
-                        "hint": "Whether this browser exposes audio capture at all."
-                    },
-                    "voice_processing": {
-                        "title": "Voice processing",
-                        "hint": "Echo cancellation, noise suppression and gain control were all asked to stay off. These are the values the browser actually applied."
-                    },
-                    "audio_context": {
-                        "title": "Audio pipeline",
-                        "hint": "The sample rate and the latencies this device reports for its audio path."
-                    },
-                    "capture": {
-                        "title": "Capture continuity",
-                        "hint": "Thirty seconds of audio, checked for gaps, for a steady clock, and for any signal at all.",
-                        "silent": "The microphone delivered nothing but digital silence, so it heard nothing at all. Check that it is not muted or covered and that no other app is holding it."
-                    },
-                    "wake_lock": {
-                        "title": "Screen wake lock",
-                        "hint": "Calibration needs the screen awake while you walk between speakers, so this also records whether the lock survived the capture."
-                    },
-                    "context_state": {
-                        "title": "Uninterrupted recording",
-                        "hint": "Whether the audio engine kept running for the whole capture."
-                    }
-                }
             }
         },
         "ai_radio": {

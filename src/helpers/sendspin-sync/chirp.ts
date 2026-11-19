@@ -17,9 +17,8 @@
  *
  * Shared with the server by hand rather than negotiated, and half of it is the
  * window within which two speakers can be told apart — so it is the one constant
- * here that both sides have to be rebuilt together to change. A recording whose
- * chirps show a different spacing is refused rather than measured, which
- * `chirpSpacing.ts` is there to notice.
+ * here that both sides have to be rebuilt together to change. This page ships
+ * with the server, so the two cannot disagree on it.
  */
 export const CHIRP_PERIOD_SECONDS = 1;
 

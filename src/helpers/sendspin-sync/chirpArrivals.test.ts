@@ -31,8 +31,7 @@ function placeChirp(buffer: Float32Array, at: number, gain: number): void {
  *
  * The multiply is `Math.imul` because the generator has to produce noise and not
  * merely irregular numbers: a 31-bit product rounded through a double loses its
- * low bits, and the sequence that comes back is periodic — which the spacing
- * measurement would read as a chirp train of its own.
+ * low bits, and the sequence that comes back is periodic, which is not noise.
  */
 function addNoise(buffer: Float32Array, seed: number, level: number): void {
   let state = seed;
@@ -46,23 +45,18 @@ function addNoise(buffer: Float32Array, seed: number, level: number): void {
  * A recording of one speaker.
  *
  * `firstChirpAt` is where the first chirp lands, `drift` stretches the spacing the
- * way a phone clock running at its own rate does, `spacing` is the rate the server
- * emitted at where that is the point of the case, and every chirp is followed by
+ * way a phone clock running at its own rate does, and every chirp is followed by
  * a louder reflection so the direct arrival is never the tallest peak.
  */
 function record(options: {
   seconds: number;
   firstChirpAt: number;
   drift?: number;
-  spacingSeconds?: number;
   reflection?: { delaySeconds: number; gain: number };
   noise?: number;
 }): Float32Array {
   const buffer = new Float32Array(Math.round(options.seconds * RATE));
-  const spacing =
-    (options.spacingSeconds ?? CHIRP_PERIOD_SECONDS) *
-    RATE *
-    (1 + (options.drift ?? 0));
+  const spacing = CHIRP_PERIOD_SECONDS * RATE * (1 + (options.drift ?? 0));
 
   for (let at = options.firstChirpAt; at < buffer.length; at += spacing) {
     placeChirp(buffer, at, 0.5);
@@ -133,28 +127,6 @@ describe("scanArrivals", () => {
     });
   });
 
-  it("reports the spacing the chirps in the recording actually had", () => {
-    const buffer = record({ seconds: RECORDING_SECONDS, firstChirpAt: 3000 });
-    const scan = scanArrivals(buffer, { sampleRate: RATE, firstFrame: 0 });
-
-    expect(scan.spacingSeconds!).toBeCloseTo(CHIRP_PERIOD_SECONDS, 2);
-  });
-
-  it("reports half a period from a server still emitting twice as often", () => {
-    // The windows are placed on the period this build expects, so they land on
-    // every other chirp and each one holds an arrival: the reading looks perfectly
-    // healthy, and only the spacing says the two sides are out of step.
-    const buffer = record({
-      seconds: RECORDING_SECONDS,
-      firstChirpAt: 3000,
-      spacingSeconds: CHIRP_PERIOD_SECONDS / 2,
-    });
-    const scan = scanArrivals(buffer, { sampleRate: RATE, firstFrame: 0 });
-
-    expect(scan.arrivals.length).toBeGreaterThanOrEqual(CHIRPS_HELD);
-    expect(scan.spacingSeconds!).toBeCloseTo(CHIRP_PERIOD_SECONDS / 2, 2);
-  });
-
   it("reports nothing when the speaker was never audible", () => {
     const buffer = new Float32Array(Math.round(RECORDING_SECONDS * RATE));
     addNoise(buffer, 41, 0.05);
@@ -162,9 +134,6 @@ describe("scanArrivals", () => {
     const scan = scanArrivals(buffer, { sampleRate: RATE, firstFrame: 0 });
     expect(scan.arrivals).toHaveLength(0);
     expect(scan.medianSnr).toBe(0);
-    // And no spacing either: a speaker nobody heard is not a server emitting at
-    // the wrong rate, and reporting one for it would say so.
-    expect(scan.spacingSeconds).toBeNull();
   });
 
   it("has nothing to say about a recording shorter than one chirp", () => {
@@ -176,7 +145,6 @@ describe("scanArrivals", () => {
       arrivals: [],
       expected: 0,
       medianSnr: 0,
-      spacingSeconds: null,
     });
   });
 });

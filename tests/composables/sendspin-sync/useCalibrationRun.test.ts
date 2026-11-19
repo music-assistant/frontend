@@ -97,19 +97,15 @@ function withScope<T>(factory: () => T): T {
  * server's metronome lands at `(n * period + offset) / (1 - drift)` on the phone's
  * clock. Building the audio itself rather than the arrival times means the real
  * detector and the real fit both run here.
- *
- * `spacingSeconds` is the rate the server emitted at, which is the period this
- * build expects unless a case is about the two disagreeing.
  */
 function recordingAt(options: {
   startSeconds: number;
   offsetSeconds: number;
   drift: number;
   seconds?: number;
-  spacingSeconds?: number;
 }): Recording {
   const { startSeconds, offsetSeconds, drift } = options;
-  const spacing = options.spacingSeconds ?? CHIRP_PERIOD_SECONDS;
+  const spacing = CHIRP_PERIOD_SECONDS;
   const length = Math.round((options.seconds ?? RECORD_SECONDS) * RATE);
   const samples = new Float32Array(length);
   const firstFrame = Math.round(startSeconds * RATE);
@@ -124,9 +120,8 @@ function recordingAt(options: {
     if (index >= 0) placeChirp(samples, index);
   }
 
-  // `Math.imul`, because the spacing measurement reads how much a recording
-  // repeats: a 31-bit product rounded through a double loses its low bits and
-  // comes back periodic, which is a chirp train as far as that is concerned.
+  // `Math.imul`, because a 31-bit product rounded through a double loses its
+  // low bits and comes back periodic, which is not noise.
   let state = 5;
   for (let index = 0; index < length; index++) {
     state = (Math.imul(state, 1103515245) + 12345) >>> 0;
@@ -366,40 +361,6 @@ describe("useCalibrationRun", () => {
     // Otherwise a clean-looking run: the fit has nothing to complain about, which
     // is exactly why the recording has to be judged separately from it.
     expect(run.verdict.value).toBe("lossy");
-    expect(run.trustworthy.value).toBe(false);
-    expect(await run.apply()).toBe(false);
-    expect(fakes.session.apply).not.toHaveBeenCalled();
-  });
-
-  it("refuses a run whose server is emitting at a rate this build does not expect", async () => {
-    const run = await started();
-    for (const visit of [
-      { startSeconds: 0, offsetSeconds: 0, player: "living" },
-      { startSeconds: 30, offsetSeconds: 0.012, player: "kitchen" },
-      { startSeconds: 60, offsetSeconds: 0, player: "living" },
-    ]) {
-      fakes.capture.record.mockResolvedValue(
-        // A server still on the old half-second rate. Nothing else about the walk
-        // is wrong, and the recordings look healthy: the windows the detector
-        // searches land on every other chirp and each one holds an arrival.
-        recordingAt({
-          ...visit,
-          drift: 0,
-          spacingSeconds: CHIRP_PERIOD_SECONDS / 2,
-        }),
-      );
-      await measure(run, visit.player);
-    }
-
-    for (const reading of run.visits.value) {
-      expect(reading.found).toBeGreaterThanOrEqual(CHIRPS_HELD);
-      expect(reading.spacingSeconds!).toBeCloseTo(CHIRP_PERIOD_SECONDS / 2, 2);
-    }
-    expect(run.spacingSeconds.value!).toBeCloseTo(CHIRP_PERIOD_SECONDS / 2, 2);
-
-    // The fit itself has nothing to complain about — which is exactly why the
-    // spacing has to be checked separately from it.
-    expect(run.verdict.value).toBe("mismatched");
     expect(run.trustworthy.value).toBe(false);
     expect(await run.apply()).toBe(false);
     expect(fakes.session.apply).not.toHaveBeenCalled();

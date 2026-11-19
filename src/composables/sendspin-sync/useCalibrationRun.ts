@@ -79,8 +79,6 @@ export interface Measurement {
   dropouts: number;
   /** The share of this recording those quanta cover, 0 to 1. */
   lostFraction: number;
-  /** The chirp spacing this recording showed, or `null` when it could not say. */
-  spacingSeconds: number | null;
 }
 
 export type RunPhase = "picking" | "walking" | "measuring" | "voided";
@@ -178,27 +176,9 @@ export function useCalibrationRun() {
     ),
   }));
 
-  /**
-   * The chirp spacing the run's recordings showed, or `null` while none could
-   * read one.
-   *
-   * The middle reading rather than the worst of them: the server's rate is the
-   * same for every recording, so a genuine mismatch shows in all of them, and
-   * taking the extreme would let one poorly heard speaker accuse the build.
-   */
-  const spacingSeconds = computed<number | null>(() => {
-    const readings = visits.value
-      .map((visit) => visit.spacingSeconds)
-      .filter((spacing): spacing is number => spacing !== null)
-      .sort((left, right) => left - right);
-    return readings.length ? readings[readings.length >> 1] : null;
-  });
-
   /** What this run can honestly say about itself, or `null` before it can. */
   const verdict = computed(() =>
-    fit.value
-      ? runVerdict(fit.value, selected.value, loss.value, spacingSeconds.value)
-      : null,
+    fit.value ? runVerdict(fit.value, selected.value, loss.value) : null,
   );
 
   /** Whether the offsets may be applied. */
@@ -305,7 +285,6 @@ export function useCalibrationRun() {
           lostFraction: recording.samples.length
             ? recording.lostFrames / recording.samples.length
             : 0,
-          spacingSeconds: scan.spacingSeconds,
         },
       ];
       // The user is looking at the room, not the screen.
@@ -456,7 +435,6 @@ export function useCalibrationRun() {
     needsCheck,
     fit,
     loss,
-    spacingSeconds,
     verdict,
     trustworthy,
     applyResult,

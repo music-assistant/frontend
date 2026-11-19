@@ -1,5 +1,3 @@
-import { CHIRP_PERIOD_SECONDS } from "@/helpers/sendspin-sync/chirp";
-import { MAX_SPACING_ERROR } from "@/helpers/sendspin-sync/chirpSpacing";
 import {
   MAX_OFFSET_SPAN_MS,
   type LatencyFit,
@@ -19,9 +17,6 @@ const SELECTED = ["living", "kitchen"];
 
 /** A run whose recordings heard everything, which one case below spoils. */
 const CLEAN: CaptureLoss = { dropouts: 0, worstFraction: 0 };
-
-/** The spacing a server in step with this build emits at. */
-const IN_STEP = CHIRP_PERIOD_SECONDS;
 
 function visit(overrides: Partial<VisitFit> = {}): VisitFit {
   return {
@@ -55,73 +50,10 @@ function fitFixture(overrides: Partial<LatencyFit> = {}): LatencyFit {
 
 describe("runVerdict", () => {
   it("says the rate is pinned when one repeat set it and nothing is wrong", () => {
-    const verdict = runVerdict(fitFixture(), SELECTED, CLEAN, IN_STEP);
+    const verdict = runVerdict(fitFixture(), SELECTED, CLEAN);
 
     expect(verdict).toBe("pinned");
     expect(isApplicable(verdict)).toBe(true);
-  });
-
-  it("names a server out of step with this build, ahead of everything", () => {
-    // A server still emitting twice as often as this build expects. Every arrival
-    // is then counted against the wrong chirp, and the readings that come out are
-    // exactly the ones below: an impossible clock, speakers that cannot be placed,
-    // arrivals nowhere near the line. All of those would send the reader to the
-    // phone, the speakers or the walk, and the fault is in none of them.
-    const verdict = runVerdict(
-      fitFixture({
-        offsetsMs: { living: 0, kitchen: 600 },
-        rateErrorPpm: -6637.4,
-        residualMs: 17.03,
-      }),
-      SELECTED,
-      { dropouts: 96, worstFraction: 0.045 },
-      CHIRP_PERIOD_SECONDS / 2,
-    );
-
-    expect(verdict).toBe("mismatched");
-    expect(isApplicable(verdict)).toBe(false);
-  });
-
-  it("names a server emitting slower than this build expects just the same", () => {
-    expect(
-      runVerdict(fitFixture(), SELECTED, CLEAN, CHIRP_PERIOD_SECONDS * 2),
-    ).toBe("mismatched");
-  });
-
-  it("lets the stretch a phone's own clock puts on the spacing through", () => {
-    // The worst clock the flow admits reads the spacing a thousandth long, and
-    // refusing that would refuse every run on a merely poor phone.
-    expect(
-      runVerdict(
-        fitFixture(),
-        SELECTED,
-        CLEAN,
-        CHIRP_PERIOD_SECONDS * (1 + 1e-3),
-      ),
-    ).toBe("pinned");
-    expect(
-      runVerdict(
-        fitFixture(),
-        SELECTED,
-        CLEAN,
-        CHIRP_PERIOD_SECONDS * (1 + MAX_SPACING_ERROR * 2),
-      ),
-    ).toBe("mismatched");
-  });
-
-  it("holds nothing against a run whose spacing could not be read", () => {
-    // No recording could make out a chirp train — every speaker was silent, or too
-    // faint. That is not agreement with this build, but it is not evidence against
-    // it either, and the run has to be judged on what it does show.
-    expect(runVerdict(fitFixture(), SELECTED, CLEAN, null)).toBe("pinned");
-    expect(
-      runVerdict(
-        fitFixture({ offsetsMs: { living: 0 } }),
-        SELECTED,
-        CLEAN,
-        null,
-      ),
-    ).toBe("unmeasured");
   });
 
   it("blames the recording before anything the recording was of", () => {
@@ -137,7 +69,6 @@ describe("runVerdict", () => {
       }),
       SELECTED,
       { dropouts: 96, worstFraction: 0.045 },
-      IN_STEP,
     );
 
     expect(verdict).toBe("lossy");
@@ -149,26 +80,16 @@ describe("runVerdict", () => {
     // cost nothing but the chirps that fell in them. These two sit either side of
     // where enough have gone missing for that to stop being true.
     expect(
-      runVerdict(
-        fitFixture(),
-        SELECTED,
-        {
-          dropouts: 15,
-          worstFraction: MAX_LOST_FRACTION,
-        },
-        IN_STEP,
-      ),
+      runVerdict(fitFixture(), SELECTED, {
+        dropouts: 15,
+        worstFraction: MAX_LOST_FRACTION,
+      }),
     ).toBe("pinned");
     expect(
-      runVerdict(
-        fitFixture(),
-        SELECTED,
-        {
-          dropouts: 25,
-          worstFraction: MAX_LOST_FRACTION * 1.5,
-        },
-        IN_STEP,
-      ),
+      runVerdict(fitFixture(), SELECTED, {
+        dropouts: 25,
+        worstFraction: MAX_LOST_FRACTION * 1.5,
+      }),
     ).toBe("lossy");
   });
 
@@ -177,15 +98,10 @@ describe("runVerdict", () => {
     // recordings surround it — so the count says a lot happened and the fraction
     // is what decides.
     expect(
-      runVerdict(
-        fitFixture(),
-        SELECTED,
-        {
-          dropouts: 400,
-          worstFraction: 0.004,
-        },
-        IN_STEP,
-      ),
+      runVerdict(fitFixture(), SELECTED, {
+        dropouts: 400,
+        worstFraction: 0.004,
+      }),
     ).toBe("pinned");
   });
 
@@ -200,7 +116,6 @@ describe("runVerdict", () => {
       }),
       SELECTED,
       CLEAN,
-      IN_STEP,
     );
 
     expect(verdict).toBe("unindexable");
@@ -215,7 +130,6 @@ describe("runVerdict", () => {
         fitFixture({ offsetsMs: { living: 0, kitchen: 490 } }),
         SELECTED,
         CLEAN,
-        IN_STEP,
       ),
     ).toBe("pinned");
     expect(
@@ -223,7 +137,6 @@ describe("runVerdict", () => {
         fitFixture({ offsetsMs: { living: 0, kitchen: 510 } }),
         SELECTED,
         CLEAN,
-        IN_STEP,
       ),
     ).toBe("unindexable");
   });
@@ -239,7 +152,6 @@ describe("runVerdict", () => {
         }),
         SELECTED,
         CLEAN,
-        IN_STEP,
       ),
     ).toBe("unindexable");
   });
@@ -257,7 +169,6 @@ describe("runVerdict", () => {
       }),
       SELECTED,
       CLEAN,
-      IN_STEP,
     );
 
     expect(verdict).toBe("irreconcilable");
@@ -268,7 +179,7 @@ describe("runVerdict", () => {
     // The microphone probe calls 1000 ppm degraded and still lets the run go
     // ahead, so the refusal has to sit above it rather than duplicate it.
     expect(
-      runVerdict(fitFixture({ rateErrorPpm: 1000 }), SELECTED, CLEAN, IN_STEP),
+      runVerdict(fitFixture({ rateErrorPpm: 1000 }), SELECTED, CLEAN),
     ).toBe("pinned");
   });
 
@@ -283,7 +194,6 @@ describe("runVerdict", () => {
       }),
       SELECTED,
       CLEAN,
-      IN_STEP,
     );
 
     expect(verdict).toBe("unmeasured");
@@ -292,12 +202,7 @@ describe("runVerdict", () => {
 
   it("refuses a run where nothing was measured twice", () => {
     expect(
-      runVerdict(
-        fitFixture({ bracketSpanSeconds: null }),
-        SELECTED,
-        CLEAN,
-        IN_STEP,
-      ),
+      runVerdict(fitFixture({ bracketSpanSeconds: null }), SELECTED, CLEAN),
     ).toBe("unbracketed");
   });
 
@@ -308,7 +213,6 @@ describe("runVerdict", () => {
         fitFixture({ bracketSpanSeconds: 40, runSpanSeconds: 100 }),
         SELECTED,
         CLEAN,
-        IN_STEP,
       ),
     ).toBe("short_bracket");
     expect(
@@ -316,15 +220,14 @@ describe("runVerdict", () => {
         fitFixture({ bracketSpanSeconds: 60, runSpanSeconds: 100 }),
         SELECTED,
         CLEAN,
-        IN_STEP,
       ),
     ).toBe("pinned");
   });
 
   it("refuses a run whose arrivals do not sit on the line", () => {
-    expect(
-      runVerdict(fitFixture({ residualMs: 1.5 }), SELECTED, CLEAN, IN_STEP),
-    ).toBe("scattered");
+    expect(runVerdict(fitFixture({ residualMs: 1.5 }), SELECTED, CLEAN)).toBe(
+      "scattered",
+    );
   });
 
   it("catches one spoiled reading the run-wide figure cannot see", () => {
@@ -340,7 +243,6 @@ describe("runVerdict", () => {
       }),
       SELECTED,
       CLEAN,
-      IN_STEP,
     );
 
     expect(verdict).toBe("scattered");
@@ -349,20 +251,10 @@ describe("runVerdict", () => {
 
   it("reports a genuine cross-check, in both directions", () => {
     expect(
-      runVerdict(
-        fitFixture({ bracketResidualMs: 0.4 }),
-        SELECTED,
-        CLEAN,
-        IN_STEP,
-      ),
+      runVerdict(fitFixture({ bracketResidualMs: 0.4 }), SELECTED, CLEAN),
     ).toBe("checked");
     expect(
-      runVerdict(
-        fitFixture({ bracketResidualMs: 2 }),
-        SELECTED,
-        CLEAN,
-        IN_STEP,
-      ),
+      runVerdict(fitFixture({ bracketResidualMs: 2 }), SELECTED, CLEAN),
     ).toBe("disagrees");
   });
 
@@ -374,7 +266,6 @@ describe("runVerdict", () => {
         fitFixture({ bracketResidualMs: 3, residualMs: 2 }),
         SELECTED,
         CLEAN,
-        IN_STEP,
       ),
     ).toBe("disagrees");
   });
@@ -383,7 +274,6 @@ describe("runVerdict", () => {
     expect(isApplicable("pinned")).toBe(true);
     expect(isApplicable("checked")).toBe(true);
     for (const verdict of [
-      "mismatched",
       "lossy",
       "unindexable",
       "irreconcilable",

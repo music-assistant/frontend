@@ -36,10 +36,10 @@
       <Alert v-if="microphoneBlock" variant="destructive">
         <TriangleAlert class="h-4 w-4" aria-hidden="true" />
         <AlertTitle>
-          {{ $t(`${PROBE_KEYS}.blocked.${microphoneBlock}.title`) }}
+          {{ $t(`${KEYS}.microphone_blocked.${microphoneBlock}.title`) }}
         </AlertTitle>
         <AlertDescription>
-          {{ $t(`${PROBE_KEYS}.blocked.${microphoneBlock}.description`) }}
+          {{ $t(`${KEYS}.microphone_blocked.${microphoneBlock}.description`) }}
         </AlertDescription>
       </Alert>
 
@@ -127,7 +127,6 @@
           :selected="selected"
           :fit="fit"
           :loss="loss"
-          :spacing-seconds="spacingSeconds"
           :verdict="verdict"
           :apply-result="applyResult"
           :trustworthy="trustworthy"
@@ -140,37 +139,13 @@
         />
       </template>
     </template>
-
-    <!-- The full continuity capture takes thirty seconds and is only wanted when
-         a measurement looks wrong, so it stays reachable rather than in the way.
-         Not during a walk: it opens a microphone of its own, and a second one
-         can take the first away. -->
-    <Accordion
-      v-if="phase === 'picking' || phase === 'voided'"
-      type="single"
-      collapsible
-    >
-      <AccordionItem value="probe">
-        <AccordionTrigger>{{ $t(`${KEYS}.diagnostics`) }}</AccordionTrigger>
-        <AccordionContent>
-          <SendspinSyncProbe />
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
   </section>
 </template>
 
 <script setup lang="ts">
 import SendspinSyncPlayerPicker from "@/components/sendspin-sync/SendspinSyncPlayerPicker.vue";
-import SendspinSyncProbe from "@/components/sendspin-sync/SendspinSyncProbe.vue";
 import SendspinSyncResults from "@/components/sendspin-sync/SendspinSyncResults.vue";
 import SendspinSyncWalk from "@/components/sendspin-sync/SendspinSyncWalk.vue";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -188,7 +163,6 @@ import { onBeforeRouteLeave } from "vue-router";
 import { toast } from "vue-sonner";
 
 const KEYS = "providers.sendspin_sync.calibration";
-const PROBE_KEYS = "providers.sendspin_sync.probe";
 
 const {
   players,
@@ -209,7 +183,6 @@ const {
   remaining,
   fit,
   loss,
-  spacingSeconds,
   verdict,
   trustworthy,
   applyResult,

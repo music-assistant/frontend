@@ -182,7 +182,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { CHIRP_PERIOD_SECONDS } from "@/helpers/sendspin-sync/chirp";
 import {
   MAX_OFFSET_SPAN_MS,
   MAX_PLAUSIBLE_RATE_PPM,
@@ -211,7 +210,6 @@ const {
   selected,
   fit,
   loss,
-  spacingSeconds,
   verdict,
   applyResult,
   trustworthy,
@@ -225,12 +223,6 @@ const {
   fit: LatencyFit;
   /** What the run's recordings lost, which the fit itself cannot show. */
   loss: CaptureLoss;
-  /**
-   * The chirp spacing the recordings showed, which the fit cannot show either: it
-   * assumes the spacing this build expects. `null` when no recording could read
-   * one.
-   */
-  spacingSeconds: number | null;
   verdict: RunVerdict;
   /** The delays the server worked out, split by whether it could write them. */
   applyResult: CalibrationApplyResult | null;
@@ -296,10 +288,7 @@ const anchorName = computed(() => (anchor ? nameOf(anchor) : ""));
 
 /** Whether this run's offsets are readings at all, however far they can be trusted. */
 const usable = computed(
-  () =>
-    verdict !== "irreconcilable" &&
-    verdict !== "unindexable" &&
-    verdict !== "mismatched",
+  () => verdict !== "irreconcilable" && verdict !== "unindexable",
 );
 
 /** Every measured speaker's own scatter, worst first, so the odd one out leads. */
@@ -319,13 +308,6 @@ const lostPercent = computed(() => (loss.worstFraction * 100).toFixed(1));
 /** The readings the verdict's wording needs filled in. */
 const verdictValues = computed(() => {
   switch (verdict) {
-    case "mismatched":
-      // Both rates in milliseconds, because the difference between them is what
-      // the reader has to see and one of the two is the wrong one.
-      return [
-        ((spacingSeconds ?? 0) * 1000).toFixed(0),
-        CHIRP_PERIOD_SECONDS * 1000,
-      ];
     case "lossy":
       return [lostPercent.value, MAX_LOST_FRACTION * 100];
     case "unindexable":

@@ -163,10 +163,9 @@ const MIN_SAMPLES_TO_JUDGE = 5;
 /**
  * The furthest a phone's audio clock can plausibly sit from the server's.
  *
- * Consumer crystals are specified inside ±100 ppm, and the microphone probe
- * already calls 1000 ppm degraded while still letting the run proceed — so the
- * line past which a rate stops being a reading has to sit above what the rest of
- * the flow tolerates. Twice that, and twenty times a healthy clock, refuses
+ * Consumer crystals are specified inside ±100 ppm, and a run on a clock as far
+ * out as 1000 ppm is still let through — so the line past which a rate stops
+ * being a reading has to sit above what the rest of the flow tolerates. Twice that, and twenty times a healthy clock, refuses
  * nothing real while still catching a fit that has swallowed a whole chirp
  * period: one second misassigned across a two-and-a-half-minute walk implies some
  * 6600 ppm.
@@ -255,14 +254,13 @@ interface FitRow {
  * itself. Only drift grows with the walk, and on a healthy clock it is nothing:
  * 6 ms per minute of silence at 100 ppm, against a 500 ms budget. So there is
  * nothing here to choose between, which is why no search follows. The exception is
- * a clock as bad as the 1000 ppm the microphone probe still admits, where a silence
+ * a clock as bad as the 1000 ppm the flow still admits, where a silence
  * spends 60 ms a minute and a long enough one could reach the budget on its own.
  *
  * Placing each visit against its neighbour rather than against the run's first
  * arrival is what keeps that budget per silence. Measured against one fixed
- * arrival the drift accumulates instead, and a phone 1000 ppm out — which the
- * microphone probe still calls merely degraded — spends the whole budget on drift
- * alone after eight minutes of walking.
+ * arrival the drift accumulates instead, and a phone 1000 ppm out spends the
+ * whole budget on drift alone after eight minutes of walking.
  *
  * A visit is placed by the median of its arrivals rather than by its first, so a
  * reflection heard in place of the direct sound cannot shift every chirp number
