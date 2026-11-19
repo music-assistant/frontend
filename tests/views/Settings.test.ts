@@ -2,6 +2,7 @@
  * The breadcrumb trail of the settings pages links only to the pages the role
  * of the user may open.
  */
+import SettingsOverview from "@/components/settings/SettingsOverview.vue";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
@@ -821,6 +822,51 @@ describe("Settings page menu", () => {
     expect(
       wrapper.find('[data-testid="settings-page-menu-active"]').exists(),
     ).toBe(true);
+
+    wrapper.unmount();
+  });
+});
+
+describe("the settings column", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+  });
+
+  it("holds the overview", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+
+    const wrapper = mountOverview();
+
+    expect(
+      wrapper
+        .get("[data-testid=settings-column]")
+        .findComponent(SettingsOverview)
+        .exists(),
+    ).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it("holds the page on screen, while the toolbar spans the whole width", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routeState.name = "playersettings";
+
+    const wrapper = mount(Settings, {
+      global: {
+        stubs: {
+          Toolbar: { template: '<header data-testid="toolbar" />' },
+          ToolbarHeading: ToolbarHeadingStub,
+          RouterView: { template: '<main data-testid="page" />' },
+          VBtn: true,
+          VDivider: true,
+        },
+      },
+    });
+    const column = wrapper.get("[data-testid=settings-column]");
+
+    expect(column.find("[data-testid=page]").exists()).toBe(true);
+    expect(wrapper.find("[data-testid=toolbar]").exists()).toBe(true);
+    expect(column.find("[data-testid=toolbar]").exists()).toBe(false);
 
     wrapper.unmount();
   });

@@ -687,7 +687,12 @@ const unsetsOnReset = function (entry: ConfigEntryUI) {
   position: fixed;
   /* A landscape phone is wide enough to count as the desktop layout, so this
      rule is what keeps the button clear of a side cutout. */
-  right: calc(24px + var(--device-inset-right));
+  /* 100cqw is the width of the settings page, its query container: on a page
+     wider than the settings column, the button moves in to the column's edge. */
+  right: calc(
+    24px + var(--device-inset-right) +
+      max(0px, (100cqw - var(--settings-column-width)) / 2)
+  );
   bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
   z-index: 20;
 }
