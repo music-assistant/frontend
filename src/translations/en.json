@@ -543,8 +543,8 @@
             "not_available": "Not available",
             "choose_models": "Choose the models to use",
             "assistant_access": "Access for AI assistants",
-            "assistant_access_label": "Allow AI assistants",
-            "assistant_access_description": "AI assistants such as Home Assistant Assist, Claude and ChatGPT can search your music and control playback through the MCP server built into Music Assistant",
+            "mcp_server": "Enable the built-in MCP server",
+            "mcp_server_description": "Lets AI assistants such as Home Assistant Assist, Claude and ChatGPT search your music and control playback.",
             "assistant_access_enabled": "The built-in MCP server is on",
             "assistant_access_disabled": "The built-in MCP server is off"
         },
