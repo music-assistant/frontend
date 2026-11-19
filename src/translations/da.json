@@ -705,7 +705,6 @@
     "artist_all_tracks": "Alle numre",
     "player_select": {
         "active_player_volume_only": "Vis kun lydstyrkeskydere for aktive afspillere",
-        "and_more": "...og {0} mere",
         "disable_player_confirmation": "Denne afspiller vil være skjult, indtil den aktiveres igen i afspillerindstillingerne.",
         "disable_player_title": "Deaktiver {0}?",
         "display_options": "Visningsindstillinger",

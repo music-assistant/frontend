@@ -355,6 +355,102 @@ describe("EditConfig", () => {
     });
   });
 
+  it("saves an entry reset to its default as null, so the server unsets it", async () => {
+    const wrapper = mountForSave([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "elsewhere",
+      }),
+      entry({
+        key: "token",
+        type: ConfigEntryType.STRING,
+        default_value: "",
+        value: "secret",
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    // an entry edited after the reset is a value the user chose
+    wrapper
+      .findAllComponents({ name: "ConfigEntryRow" })[1]
+      .vm.$emit("update:value", "other");
+    await wrapper.vm.submit();
+
+    expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      server: null,
+      token: "other",
+    });
+  });
+
+  it("keeps the channel of each speaker of a multi-channel player through a reset", async () => {
+    const wrapper = mountForSave(stereoPairEntries(), { multiChannel: true });
+
+    wrapper.vm.resetToDefaults();
+    await wrapper.vm.submit();
+
+    // the channel takes its default as a value, and the rest is unset
+    expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      server: null,
+      speaker_1_state: "online",
+      speaker_1_channel_setting: "front_left",
+      speaker_1_output_delay: null,
+    });
+  });
+
+  it("unsets the same keys on the config of any other player", async () => {
+    const wrapper = mountForSave(stereoPairEntries());
+
+    wrapper.vm.resetToDefaults();
+    await wrapper.vm.submit();
+
+    expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      server: null,
+      speaker_1_state: "online",
+      speaker_1_channel_setting: null,
+      speaker_1_output_delay: null,
+    });
+  });
+
+  it("keeps sending the value of a switch that turns an output on after a reset", async () => {
+    const wrapper = mountForSave([
+      entry({
+        key: "airplay_1||protocol||enabled",
+        type: ConfigEntryType.BOOLEAN,
+        default_value: true,
+        value: false,
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    await wrapper.vm.submit();
+
+    expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      "airplay_1||protocol||enabled": true,
+    });
+  });
+
+  it("offers saving a reset that leaves every value as it shows", async () => {
+    // the server may still store the default as a value the user chose
+    const wrapper = mountEntries([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "localhost",
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(false);
+
+    wrapper.vm.saveSucceeded({ server: null });
+    await nextTick();
+    expect(saveDisabled(wrapper)).toBe(true);
+  });
+
   it("stops offering to save the values the server took", async () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
@@ -608,6 +704,30 @@ describe("EditConfig", () => {
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
   });
 
+  it("hands the menu of each output on to the protocol section", () => {
+    const outputMenuItems = () => [];
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({
+            key: "airplay-output||protocol||enabled",
+            type: ConfigEntryType.BOOLEAN,
+            category: "protocol_airplay",
+          }),
+        ],
+        disabled: false,
+        outputMenuItems,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(
+      wrapper
+        .findComponent({ name: "ProtocolConfigSection" })
+        .props("outputMenuItems"),
+    ).toBe(outputMenuItems);
+  });
+
   it("leaves room below the last row for the floating save action", () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
@@ -812,6 +932,65 @@ function mountEntries(
   return shallowMount(EditConfig, {
     props: { configEntries, disabled, inlineSave },
     global: { renderStubDefaultSlot: true },
+  });
+}
+
+// the real form validates through Vuetify, which this bare mount leaves out
+// the entries of a stereo pair whose first speaker is on the right, with a delay
+function stereoPairEntries(): ConfigEntry[] {
+  const category = "protocol_sendspin";
+  return [
+    entry({
+      key: "server",
+      type: ConfigEntryType.STRING,
+      default_value: "localhost",
+      value: "elsewhere",
+    }),
+    // the server sends the state as the default of the label as well
+    entry({
+      key: "speaker_1_state",
+      type: ConfigEntryType.LABEL,
+      category,
+      default_value: "online",
+      value: "online",
+    }),
+    // the server makes the channel stored the default of the entry
+    entry({
+      key: "speaker_1_channel_setting",
+      type: ConfigEntryType.STRING,
+      category,
+      options: [
+        { title: "Left", value: "front_left" },
+        { title: "Right", value: "front_right" },
+      ],
+      default_value: "front_left",
+      value: "front_right",
+    }),
+    entry({
+      key: "speaker_1_output_delay",
+      type: ConfigEntryType.INTEGER,
+      category,
+      default_value: 0,
+      value: 40,
+    }),
+  ];
+}
+
+function mountForSave(
+  configEntries: ConfigEntry[],
+  extraProps: { multiChannel?: boolean } = {},
+) {
+  return shallowMount(EditConfig, {
+    props: { configEntries, disabled: false, ...extraProps },
+    global: {
+      renderStubDefaultSlot: true,
+      stubs: {
+        VForm: {
+          template: "<form><slot /></form>",
+          methods: { validate: async () => ({ valid: true }) },
+        },
+      },
+    },
   });
 }
 

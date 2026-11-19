@@ -219,6 +219,29 @@ describe("ProviderAccessDialog", () => {
     ]);
   });
 
+  it("shares a source with Party Guest without changing its owner", async () => {
+    const wrapper = await openDialog(
+      providerConfig({
+        ...ownedSource,
+        access: {
+          owner: "owner-id",
+          sharing: ProviderSharing.SELECTED,
+          shared_users: [],
+        },
+      }),
+      users,
+    );
+    await openMemberPicker();
+    await pickMember("guest");
+    await submit(wrapper);
+
+    expect(apiMock.setProviderAccess).toHaveBeenCalledWith("spotify--owned", {
+      owner: "owner-id",
+      sharing: ProviderSharing.SELECTED,
+      shared_users: ["guest-id"],
+    });
+  });
+
   it("saves the picked owner, sharing and members", async () => {
     const wrapper = await openDialog(ownedSource, users);
 
@@ -259,7 +282,7 @@ describe("ProviderAccessDialog", () => {
     await pickOption("Member");
     await openMemberPicker();
 
-    expect(memberOptionLabels()).toEqual(["Owner"]);
+    expect(memberOptionLabels()).toEqual(["Owner", "guest"]);
   });
 
   it("saves a household source without an owner", async () => {

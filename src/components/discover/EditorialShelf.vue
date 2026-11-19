@@ -5,6 +5,10 @@
     @mouseenter="hovering = canHover"
     @mouseleave="hovering = false"
   >
+    <!-- above the title line, e.g. a heading shared by several shelves -->
+    <div v-if="$slots.heading" class="mb-[10px] px-[var(--ed-gutter)]">
+      <slot name="heading"></slot>
+    </div>
     <div class="ed-shelf__head">
       <slot name="header">
         <div class="ed-shelf__titles">
@@ -15,15 +19,19 @@
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
       </slot>
-      <div v-if="provider || $slots.actions" class="ed-shelf__aside">
+      <div
+        v-if="provider || $slots.actions || viewAllTo"
+        class="ed-shelf__aside"
+      >
         <ProviderIcon
           v-if="provider"
           class="ed-shelf__provider"
           :domain="provider"
           :size="20"
         />
-        <div v-if="$slots.actions" class="ed-shelf__actions">
+        <div v-if="$slots.actions || viewAllTo" class="ed-shelf__actions">
           <slot name="actions"></slot>
+          <ViewAllLink v-if="viewAllTo" :to="viewAllTo" :name="title" />
         </div>
       </div>
     </div>
@@ -94,6 +102,8 @@ import { useDragScroll } from "@/composables/useDragScroll";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import ViewAllLink from "@/components/ViewAllLink.vue";
+import type { RouteLocationRaw } from "vue-router";
 
 interface Props {
   title?: string;
@@ -103,6 +113,8 @@ interface Props {
   navCenter?: number;
   dimmed?: boolean;
   tilesPerView?: number;
+  // adds a "View all" link, e.g. to the full listing of the shelf's items
+  viewAllTo?: RouteLocationRaw;
 }
 const props = withDefaults(defineProps<Props>(), {
   title: "",
@@ -112,6 +124,7 @@ const props = withDefaults(defineProps<Props>(), {
   navCenter: 92,
   dimmed: false,
   tilesPerView: 0,
+  viewAllTo: undefined,
 });
 
 const CARD_PAD = 16;

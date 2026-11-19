@@ -28,12 +28,24 @@
               :icon="candidate.icon"
               :size="18"
               class="text-muted-foreground"
-              :class="{ 'opacity-50': candidate.powered === false }"
+              :class="{
+                'opacity-50':
+                  candidate.powered === false || !candidate.available,
+              }"
             />
           </span>
-          <span class="min-w-0 flex-1 truncate text-xs font-medium">
+          <span
+            class="min-w-0 flex-1 truncate text-xs font-medium"
+            :class="{ 'text-muted-foreground': !candidate.available }"
+          >
             {{ getPlayerDisplayName(candidate) }}
           </span>
+          <PlayerStatusIcon
+            :enabled="true"
+            :unavailable="!candidate.available"
+            :reason="getPlayerSetupReason(candidate)"
+            class="size-4"
+          />
           <Checkbox
             :id="getCheckboxId(candidate)"
             :model-value="isGroupMember(candidate)"
@@ -52,15 +64,17 @@
 
 <script setup lang="ts">
 import PlayerIcon from "@/components/PlayerIcon.vue";
+import PlayerStatusIcon from "@/components/settings/players/PlayerStatusIcon.vue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { requestGroupPlaybackConfirmation } from "@/helpers/player_group_playback";
+import { playerSectionOf, playerSections } from "@/helpers/player_sections";
 import {
   canBeGroupMember,
   getPlayerDisplayName,
+  getPlayerSetupReason,
   groupMemberPickerVisible,
-  isScreenPlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import {
@@ -69,6 +83,13 @@ import {
   PlayerType,
 } from "@/plugins/api/interfaces";
 import { computed, onUnmounted, ref } from "vue";
+
+interface CandidateSection {
+  type: string;
+  label: string;
+  translateLabel: boolean;
+  players: Player[];
+}
 
 const props = withDefaults(
   defineProps<{
@@ -126,30 +147,15 @@ const candidateSections = computed(() => {
   const availableCandidates = props.groupHeading
     ? filteredCandidates.filter((player) => !isGroupMember(player))
     : filteredCandidates;
-  const sections = [
-    {
-      type: "players",
-      label: "players",
-      translateLabel: true,
-      players: availableCandidates.filter(
-        (player) => player.type !== PlayerType.LIGHT && !isScreenPlayer(player),
-      ),
-    },
-    {
-      type: "lights",
-      label: "lights",
-      translateLabel: true,
-      players: availableCandidates.filter(
-        (player) => player.type === PlayerType.LIGHT,
-      ),
-    },
-    {
-      type: "screens",
-      label: "screens",
-      translateLabel: true,
-      players: availableCandidates.filter((player) => isScreenPlayer(player)),
-    },
-  ];
+  const sections: CandidateSection[] = playerSections(
+    availableCandidates,
+    (player) => player.type,
+  ).map(({ key, label, items }) => ({
+    type: key,
+    label,
+    translateLabel: true,
+    players: items,
+  }));
   if (groupedPlayers.length > 0) {
     sections.unshift({
       type: "group",
@@ -158,7 +164,7 @@ const candidateSections = computed(() => {
       players: groupedPlayers,
     });
   }
-  return sections.filter((section) => section.players.length > 0);
+  return sections;
 });
 
 function getCheckboxId(player: Player) {
@@ -190,10 +196,9 @@ function canGroupWithPlayer(player: Player) {
 }
 
 function matchesFilter(player: Player) {
-  if (props.filter === "all") return true;
-  if (props.filter === "lights") return player.type === PlayerType.LIGHT;
-  if (props.filter === "screens") return isScreenPlayer(player);
-  return player.type !== PlayerType.LIGHT && !isScreenPlayer(player);
+  return (
+    props.filter === "all" || playerSectionOf(player.type) === props.filter
+  );
 }
 
 function sortPlayers(players: Player[]) {

@@ -1,6 +1,7 @@
 <!--
   Visualizer popout for the player overflow menus: per-player on/off switch,
-  preset picker, blur and opacity sliders; persisted as user preferences.
+  preset picker, blur, opacity and palette ramp sliders; persisted as user
+  preferences.
 -->
 <template>
   <div ref="menuEl" class="visualizer-menu" @pointerdown.stop @click.stop>
@@ -16,32 +17,37 @@
         @update:model-value="toggleVisualizer"
       />
     </div>
-    <div class="visualizer-menu__row">
-      <Focus :size="20" class="visualizer-menu__icon" />
-      <Slider
-        :model-value="[blurDraft]"
-        :min="0"
-        :max="30"
-        :step="1"
-        class="visualizer-menu__slider"
-        @update:model-value="onBlurChange"
-        @value-commit="onBlurCommit"
-      />
-      <span class="visualizer-menu__value">{{ blurDraft }}px</span>
-    </div>
-    <div class="visualizer-menu__row">
-      <Contrast :size="20" class="visualizer-menu__icon" />
-      <Slider
-        :model-value="[opacityDraft]"
-        :min="10"
-        :max="100"
-        :step="5"
-        class="visualizer-menu__slider"
-        @update:model-value="onOpacityChange"
-        @value-commit="onOpacityCommit"
-      />
-      <span class="visualizer-menu__value">{{ opacityDraft }}%</span>
-    </div>
+    <VisualizerMenuSliderRow
+      :icon="Focus"
+      :value="blurPref"
+      :default-value="VISUALIZER_BLUR_DEFAULT"
+      :min="0"
+      :max="30"
+      :step="1"
+      unit="px"
+      @commit="(v) => setPreference('visualizer_blur', v)"
+    />
+    <VisualizerMenuSliderRow
+      :icon="Contrast"
+      :value="opacityPref"
+      :default-value="VISUALIZER_OPACITY_DEFAULT"
+      :min="10"
+      :max="100"
+      :step="5"
+      unit="%"
+      @commit="(v) => setPreference('visualizer_opacity', v)"
+    />
+    <VisualizerMenuSliderRow
+      :icon="Palette"
+      :value="paletteRampPref"
+      :default-value="VISUALIZER_PALETTE_RAMP_DEFAULT"
+      :aria-label="$t('visualizer.palette_ramp')"
+      :min="0"
+      :max="100"
+      :step="VISUALIZER_PALETTE_RAMP_STEP"
+      unit="%"
+      @commit="(v) => setPreference('visualizer_palette_ramp', v)"
+    />
     <!-- preset packs only load while enabled, so the list would be empty -->
     <template v-if="enabledPref">
       <DropdownMenuSeparator />
@@ -91,7 +97,7 @@
           <Check v-if="selectValue === RANDOM_VALUE" class="ml-auto size-4" />
         </DropdownMenuItem>
         <DropdownMenuItem
-          v-if="favoritesPref.length > 0"
+          v-if="usableFavorites.length > 0"
           @select.prevent="onPresetChange(RANDOM_FAVORITES_VALUE)"
         >
           <span class="flex-1 truncate min-w-0">
@@ -126,6 +132,7 @@ import {
   Contrast,
   Droplet,
   Focus,
+  Palette,
   Star,
   SwatchBook,
 } from "@lucide/vue";
@@ -133,18 +140,23 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   currentVisualizerPreset,
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
+  VISUALIZER_PALETTE_RAMP_DEFAULT,
+  VISUALIZER_PALETTE_RAMP_STEP,
 } from "@/composables/visualizer/state";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
-import { listPresetNames } from "@/helpers/visualizer/presetLibrary";
+import {
+  availableFavorites,
+  listPresetNames,
+} from "@/helpers/visualizer/presetLibrary";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import VisualizerMenuSliderRow from "./VisualizerMenuSliderRow.vue";
 
 // Sentinels so the random modes can't collide with real preset names.
 const RANDOM_VALUE = "__random__";
@@ -161,6 +173,10 @@ const { visualizerEnabledPref: enabledPref, toggleVisualizer } = useVisualizer(
 );
 const presetPref = getPreference("visualizer_preset", "");
 const blurPref = getPreference("visualizer_blur", VISUALIZER_BLUR_DEFAULT);
+const paletteRampPref = getPreference(
+  "visualizer_palette_ramp",
+  VISUALIZER_PALETTE_RAMP_DEFAULT,
+);
 const opacityPref = getPreference(
   "visualizer_opacity",
   VISUALIZER_OPACITY_DEFAULT,
@@ -194,6 +210,11 @@ const toggleExpanded = () => {
   }
   presetsExpanded.value = !presetsExpanded.value;
 };
+
+// The stored list can name presets the library no longer has.
+const usableFavorites = computed(() =>
+  availableFavorites(favoritesPref.value, presetNames.value),
+);
 
 // Favourites float to the top of the picker.
 const sortedPresetNames = computed(() => {
@@ -276,35 +297,6 @@ const onPresetChange = (value: unknown) => {
   void setPreference("visualizer_preset", String(value ?? ""));
   void setPreference("visualizer_preset_mode", "fixed");
 };
-
-// Track drags locally so the labels stay live; the preference is persisted
-// only on commit (drag end) — every write is a full api.updateUser round-trip
-// that replaces the whole preferences object.
-const blurDraft = ref(blurPref.value);
-watch(blurPref, (value) => (blurDraft.value = value));
-const opacityDraft = ref(opacityPref.value);
-watch(opacityPref, (value) => (opacityDraft.value = value));
-
-const onBlurChange = (value: number[] | undefined) => {
-  if (!value) return;
-  blurDraft.value = value[0] ?? VISUALIZER_BLUR_DEFAULT;
-};
-
-const onBlurCommit = (value: number[]) => {
-  void setPreference("visualizer_blur", value[0] ?? VISUALIZER_BLUR_DEFAULT);
-};
-
-const onOpacityChange = (value: number[] | undefined) => {
-  if (!value) return;
-  opacityDraft.value = value[0] ?? VISUALIZER_OPACITY_DEFAULT;
-};
-
-const onOpacityCommit = (value: number[]) => {
-  void setPreference(
-    "visualizer_opacity",
-    value[0] ?? VISUALIZER_OPACITY_DEFAULT,
-  );
-};
 </script>
 
 <style scoped>
@@ -383,15 +375,5 @@ const onOpacityCommit = (value: number[]) => {
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: left;
-}
-
-.visualizer-menu__slider {
-  flex: 1 1 auto;
-}
-
-.visualizer-menu__value {
-  min-width: 4ch;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 </style>

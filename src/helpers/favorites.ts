@@ -1,4 +1,5 @@
 import { api } from "@/plugins/api";
+import { isExternalItem } from "@/plugins/api/helpers";
 import {
   EventType,
   MediaType,
@@ -78,7 +79,8 @@ export function favoriteState(item: unknown): boolean | null {
  * Whether an item can hold a favorite state of its own.
  *
  * :param item: The item to check; a type the server keeps no state for, an item
- *   mapping or a browse folder holds none.
+ *   mapping, a browse folder or an item known only by an external id holds
+ *   none.
  */
 export function canHoldFavorite(
   item: MediaItemTypeOrItemMapping,
@@ -87,7 +89,9 @@ export function canHoldFavorite(
   // provider mappings are what an item mapping or a browse folder lacks; the
   // favorite key itself is absent whenever there is no state
   return (
-    FAVORITABLE_MEDIA_TYPES.has(item.media_type) && "provider_mappings" in item
+    FAVORITABLE_MEDIA_TYPES.has(item.media_type) &&
+    "provider_mappings" in item &&
+    !isExternalItem(item)
   );
 }
 

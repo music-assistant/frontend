@@ -1,8 +1,10 @@
 import {
+  ProviderOffering,
   type ProviderInstance,
   ProviderStage,
   ProviderStatus,
   ProviderTier,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { providerConfig } from "../../tests/fixtures/providerConfig";
@@ -14,8 +16,11 @@ import {
   getProviderStageTranslationKey,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isAIServicePlugin,
+  isAudioSourcePlugin,
   isBuiltinProvider,
   isCommunityProvider,
+  isProviderErrorStatus,
   providerDisplayName,
   providerRequiresReconfiguration,
   shouldShowStageBadge,
@@ -61,9 +66,23 @@ describe("provider configuration state", () => {
     [ProviderStatus.AUTH_REQUIRED, "settings.provider_status_auth_required"],
     [ProviderStatus.INCOMPATIBLE, "settings.provider_status_incompatible"],
     [ProviderStatus.ERROR, "settings.provider_status_error"],
+    [ProviderStatus.UNAVAILABLE, "settings.provider_status_unavailable"],
     [undefined, "settings.provider_status_unknown"],
   ])("maps provider status %s to %s", (status, expected) => {
     expect(getProviderStatusTranslationKey(status)).toBe(expected);
+  });
+
+  it.each([
+    [ProviderStatus.AUTH_REQUIRED, true],
+    [ProviderStatus.INCOMPATIBLE, true],
+    [ProviderStatus.ERROR, true],
+    [ProviderStatus.UNAVAILABLE, true],
+    [ProviderStatus.LOADED, false],
+    [ProviderStatus.LOADING, false],
+    [ProviderStatus.DISABLED, false],
+    [null, false],
+  ])("tells whether status %s needs attention", (status, expected) => {
+    expect(isProviderErrorStatus(status)).toBe(expected);
   });
 
   it.each([
@@ -210,6 +229,84 @@ describe("a provider that ships with the server", () => {
   });
 });
 
+describe("a plugin that lets an app play to Music Assistant", () => {
+  it("is a plugin whose manifest says it provides audio sources", () => {
+    expect(
+      isAudioSourcePlugin(
+        providerManifest({
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.AUDIO_SOURCE],
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("is no provider of another type that says so", () => {
+    expect(
+      isAudioSourcePlugin(
+        providerManifest({
+          type: ProviderType.PLAYER,
+          provides: [ProviderOffering.AUDIO_SOURCE],
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is no plugin without it, or providing nothing at all", () => {
+    expect(
+      isAudioSourcePlugin(
+        providerManifest({
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.RADIO],
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isAudioSourcePlugin(providerManifest({ type: ProviderType.PLUGIN })),
+    ).toBe(false);
+    expect(isAudioSourcePlugin(undefined)).toBe(false);
+  });
+});
+
+describe("a plugin that brings AI or speech", () => {
+  it.each([ProviderOffering.AI, ProviderOffering.TTS])(
+    "is a plugin whose manifest says it provides %s",
+    (offering) => {
+      expect(
+        isAIServicePlugin(
+          providerManifest({ type: ProviderType.PLUGIN, provides: [offering] }),
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("is no provider of another type that says so", () => {
+    expect(
+      isAIServicePlugin(
+        providerManifest({
+          type: ProviderType.MUSIC,
+          provides: [ProviderOffering.AI],
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is no plugin without either, or providing nothing at all", () => {
+    expect(
+      isAIServicePlugin(
+        providerManifest({
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.SCROBBLE],
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isAIServicePlugin(providerManifest({ type: ProviderType.PLUGIN })),
+    ).toBe(false);
+    expect(isAIServicePlugin(undefined)).toBe(false);
+  });
+});
+
 describe("who maintains a provider", () => {
   it.each([
     [ProviderTier.COMMUNITY, true],
@@ -252,6 +349,24 @@ describe("who maintains a provider", () => {
         }),
       ),
     ).toBe("https://github.com/jane/spotify/issues");
+  });
+
+  it("sends help for one from the community catalog to its repository without a support link", () => {
+    expect(
+      getProviderHelpUrl(
+        providerManifest({ domain: "radio" }),
+        "https://github.com/jane/radio",
+      ),
+    ).toBe("https://github.com/jane/radio");
+    expect(
+      getProviderHelpUrl(
+        providerManifest({
+          domain: "radio",
+          support_url: "https://example.org/help",
+        }),
+        "https://github.com/jane/radio",
+      ),
+    ).toBe("https://example.org/help");
   });
 
   it.each([null, "", "javascript:alert(1)"])(

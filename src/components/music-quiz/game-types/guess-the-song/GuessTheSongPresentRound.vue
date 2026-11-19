@@ -14,6 +14,8 @@ import GuessTheSongReveal from "@/components/music-quiz/game-types/guess-the-son
 import type {
   MusicQuizGuessTheSongPublicState,
   MusicQuizGuessTheSongRound,
+  MusicQuizTitleRevealPublicState,
+  MusicQuizTitleRevealRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import { getMediaImageUrl } from "@/helpers/utils";
 import { computed } from "vue";
@@ -21,8 +23,8 @@ import { computed } from "vue";
 const props =
   defineProps<
     MusicQuizPresentGameAdapterProps<
-      MusicQuizGuessTheSongPublicState,
-      MusicQuizGuessTheSongRound
+      MusicQuizGuessTheSongPublicState | MusicQuizTitleRevealPublicState,
+      MusicQuizGuessTheSongRound | MusicQuizTitleRevealRound
     >
   >();
 

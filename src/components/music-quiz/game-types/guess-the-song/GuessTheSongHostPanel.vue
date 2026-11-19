@@ -71,6 +71,8 @@ import { Card } from "@/components/ui/card";
 import type {
   MusicQuizGuessTheSongHostState,
   MusicQuizGuessTheSongRound,
+  MusicQuizTitleRevealHostState,
+  MusicQuizTitleRevealRound,
 } from "@/composables/music-quiz/useMusicQuiz";
 import {
   getMusicQuizSourceSummary,
@@ -83,8 +85,8 @@ import { computed } from "vue";
 const props =
   defineProps<
     MusicQuizHostPanelGameAdapterProps<
-      MusicQuizGuessTheSongHostState,
-      MusicQuizGuessTheSongRound
+      MusicQuizGuessTheSongHostState | MusicQuizTitleRevealHostState,
+      MusicQuizGuessTheSongRound | MusicQuizTitleRevealRound
     >
   >();
 

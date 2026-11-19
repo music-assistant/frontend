@@ -436,6 +436,46 @@ describe("ProviderRow", () => {
     },
   );
 
+  it.each(VARIANTS)(
+    "says what the source offers, setting the live sources apart (%s)",
+    (variant) => {
+      const wrapper = mountRow({ variant, labels: ["library", "live"] });
+
+      const labels = wrapper.findAll(
+        '[data-testid="provider-labels"] [data-label]',
+      );
+      expect(labels.map((label) => label.text())).toEqual([
+        "settings.source_labels.library",
+        "settings.source_labels.live",
+      ]);
+      expect(labels[0].classes()).not.toContain("bg-orange-500/15");
+      expect(labels[1].classes()).toContain("bg-orange-500/15");
+    },
+  );
+
+  it.each(VARIANTS)("says what the plugin delivers (%s)", (variant) => {
+    const wrapper = mountRow({ variant, labels: ["ai", "fun"] });
+
+    expect(
+      wrapper
+        .findAll('[data-testid="provider-labels"] [data-label]')
+        .map((label) => label.text()),
+    ).toEqual(["settings.plugin_labels.ai", "settings.plugin_labels.fun"]);
+  });
+
+  it.each(VARIANTS)(
+    "shows no labels for a provider that offers none, or only other (%s)",
+    (variant) => {
+      for (const labels of [[], undefined, ["other" as const]]) {
+        const wrapper = mountRow({ variant, labels });
+
+        expect(wrapper.find('[data-testid="provider-labels"]').exists()).toBe(
+          false,
+        );
+      }
+    },
+  );
+
   it("renders an outline item as the list root", () => {
     const wrapper = mountRow({ variant: "list" });
 
@@ -472,20 +512,48 @@ describe("ProviderRow", () => {
     expect(wrapper.text().split("Authentication required")).toHaveLength(2);
   });
 
+  it.each(VARIANTS)(
+    "offers to remove an entry that cannot be opened (%s)",
+    async (variant) => {
+      const wrapper = mountRow({
+        variant,
+        manageable: false,
+        removable: true,
+        isError: true,
+        errorText: "This provider is no longer available.",
+      });
+
+      expect(wrapper.find('[data-testid="provider-open"]').exists()).toBe(
+        false,
+      );
+      expect(wrapper.text()).toContain("This provider is no longer available.");
+      await wrapper.get('[data-testid="provider-remove"]').trigger("click");
+
+      expect(wrapper.emitted("remove")).toHaveLength(1);
+      expect(wrapper.emitted("open")).toBeUndefined();
+    },
+  );
+
+  it.each(VARIANTS)("offers no remove by default (%s)", (variant) => {
+    const wrapper = mountRow({ variant, isError: true });
+
+    expect(wrapper.find('[data-testid="provider-remove"]').exists()).toBe(
+      false,
+    );
+  });
+
   it("adds interactive hover styling to the card root when manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: true });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).toContain("cursor-pointer");
-    expect(root.classes()).toContain("hover:-translate-y-0.5");
+    expect(root.classes()).toContain("card-hover");
   });
 
   it("leaves the card root static when not manageable", () => {
     const wrapper = mountRow({ variant: "card", manageable: false });
 
     const root = wrapper.get('[data-testid="provider-row"]');
-    expect(root.classes()).not.toContain("cursor-pointer");
-    expect(root.classes()).not.toContain("hover:-translate-y-0.5");
+    expect(root.classes()).not.toContain("card-hover");
   });
 });
 

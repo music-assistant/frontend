@@ -1,14 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeMock, mockSetUserPreference, providersMock, manifestsMock } =
-  vi.hoisted(() => ({
-    storeMock: {
-      currentUser: null as { preferences?: Record<string, unknown> } | null,
-    },
-    mockSetUserPreference: vi.fn(),
-    providersMock: {} as Record<string, unknown>,
-    manifestsMock: {} as Record<string, { name: string }>,
-  }));
+const {
+  storeMock,
+  mockSetUserPreference,
+  mockSetUserPreferences,
+  providersMock,
+  manifestsMock,
+} = vi.hoisted(() => ({
+  storeMock: {
+    currentUser: null as { preferences?: Record<string, unknown> } | null,
+  },
+  mockSetUserPreference: vi.fn(),
+  mockSetUserPreferences: vi.fn(),
+  providersMock: {} as Record<string, unknown>,
+  manifestsMock: {} as Record<string, { name: string }>,
+}));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
@@ -21,6 +27,7 @@ vi.mock("@/plugins/api", () => {
 
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreference: mockSetUserPreference,
+  setUserPreferences: mockSetUserPreferences,
 }));
 
 import {
@@ -30,6 +37,7 @@ import {
   availableArtistRowIds,
   type ArtistRowId,
 } from "@/components/artist/artistRows";
+import { DISCOGRAPHY_TYPES_PREFERENCE_KEY } from "@/components/artist/discographyRows";
 import {
   ArtistType,
   ProviderFeature,
@@ -45,6 +53,7 @@ const MUSIC_ROWS: ArtistRowId[] = [
   "singles_eps",
   "appears_on",
   "discography",
+  "discography_second",
   "similar_artists",
 ];
 
@@ -80,6 +89,7 @@ function addProvider(
 describe("artistRows", () => {
   beforeEach(() => {
     mockSetUserPreference.mockReset();
+    mockSetUserPreferences.mockReset();
     setPreferences({});
     for (const key of Object.keys(providersMock)) delete providersMock[key];
     for (const key of Object.keys(manifestsMock)) delete manifestsMock[key];
@@ -109,12 +119,19 @@ describe("artistRows", () => {
   });
 
   describe("sources", () => {
-    it("lists the library and the capable providers for a release row, never every provider at once", () => {
+    it("lists automatic, the library and the capable providers for a release row, never every provider at once", () => {
       addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS]);
       addProvider("tidal--def", []);
       expect(
         artistRows.sources("albums", mappedTo("spotify--abc", "tidal--def")),
-      ).toEqual(["library", "spotify--abc"]);
+      ).toEqual(["auto", "library", "spotify--abc"]);
+    });
+
+    it("lists only the library for a release row no provider can supply", () => {
+      addProvider("tidal--def", []);
+      expect(artistRows.sources("albums", mappedTo("tidal--def"))).toEqual([
+        "library",
+      ]);
     });
 
     it("adds capable metadata providers to the aggregated rows, without the library", () => {
@@ -204,6 +221,7 @@ describe("artistRows", () => {
         "singles_eps",
         "appears_on",
         "discography",
+        "discography_second",
         "similar_artists",
         "bio",
         "top_tracks",
@@ -221,6 +239,31 @@ describe("artistRows", () => {
       const { order, hidden } = artistRows.resolve(MUSIC_ROWS);
       expect(order).not.toContain("audiobooks");
       expect(hidden.size).toBe(0);
+    });
+
+    it("keeps the second discography row hidden for whoever hid the discography", () => {
+      setPreferences({
+        [ARTIST_ROWS_PREFERENCE_KEY]: { hidden: ["discography"] },
+      });
+      const { hidden } = artistRows.resolve(MUSIC_ROWS);
+      expect(hidden).toEqual(new Set(["discography", "discography_second"]));
+    });
+
+    it("puts the second discography row right after a moved first one", () => {
+      setPreferences({
+        [ARTIST_ROWS_PREFERENCE_KEY]: {
+          order: [
+            "discography",
+            ...MUSIC_ROWS.filter((id) => !id.startsWith("discography")),
+          ],
+        },
+      });
+      const { order } = artistRows.resolve(MUSIC_ROWS);
+      expect(order.slice(0, 3)).toEqual([
+        "discography",
+        "discography_second",
+        "bio",
+      ]);
     });
   });
 
@@ -241,6 +284,7 @@ describe("artistRows", () => {
         "singles_eps",
         "appears_on",
         "discography",
+        "discography_second",
         "similar_artists",
       ];
       await artistRows.setOrder(reordered, MUSIC_ROWS);
@@ -255,16 +299,14 @@ describe("artistRows", () => {
       expect(mockSetUserPreference).not.toHaveBeenCalled();
     });
 
-    it("clears both preferences", async () => {
+    it("clears the row preferences and the discography types", async () => {
       await artistRows.reset();
-      expect(mockSetUserPreference).toHaveBeenCalledWith(
-        ARTIST_ROWS_PREFERENCE_KEY,
-        { hidden: [], shown: [], order: [] },
-      );
-      expect(mockSetUserPreference).toHaveBeenLastCalledWith(
-        ARTIST_ROW_SOURCES_PREFERENCE_KEY,
-        {},
-      );
+      expect(mockSetUserPreferences).toHaveBeenCalledOnce();
+      expect(mockSetUserPreferences).toHaveBeenCalledWith({
+        [ARTIST_ROWS_PREFERENCE_KEY]: { hidden: [], shown: [], order: [] },
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: {},
+        [DISCOGRAPHY_TYPES_PREFERENCE_KEY]: null,
+      });
     });
   });
 
@@ -360,6 +402,99 @@ describe("artistRows", () => {
       expect(artistRows.effectiveSource("albums", providerArtist)).toBe(
         "spotify--abc",
       );
+    });
+  });
+
+  // the release rows of a library artist a provider can list albums for
+  describe("resolveSource of a release row", () => {
+    const ROWS = ["albums", "singles_eps"] as const;
+
+    beforeEach(() => {
+      addProvider("tidal--def", [ProviderFeature.ARTIST_ALBUMS], undefined, {
+        name: "Tidal",
+      });
+      addProvider("spotify--abc", [ProviderFeature.ARTIST_ALBUMS], undefined, {
+        name: "Spotify",
+      });
+    });
+
+    it.each(ROWS)("defaults %s to automatic", (rowId) => {
+      expect(artistRows.effectiveSource(rowId, mappedTo("spotify--abc"))).toBe(
+        "auto",
+      );
+    });
+
+    it.each(ROWS)(
+      "shows the library for %s when it holds releases for the row",
+      (rowId) => {
+        expect(
+          artistRows.resolveSource(rowId, mappedTo("spotify--abc"), true),
+        ).toBe("library");
+      },
+    );
+
+    it.each(ROWS)(
+      "turns %s to the first provider in picker order when the library holds none",
+      (rowId) => {
+        const mapped = mappedTo("tidal--def", "spotify--abc");
+        expect(artistRows.resolveSource(rowId, mapped, false)).toBe(
+          "spotify--abc",
+        );
+      },
+    );
+
+    it.each(ROWS)(
+      "keeps %s on the library for an artist no provider can list albums for",
+      (rowId) => {
+        const unmapped = artist();
+        expect(artistRows.effectiveSource(rowId, unmapped)).toBe("library");
+        expect(artistRows.resolveSource(rowId, unmapped, false)).toBe(
+          "library",
+        );
+        expect(artistRows.resolveSource(rowId, unmapped)).toBe("library");
+      },
+    );
+
+    it.each(ROWS)("waits with %s until the library count is known", (rowId) => {
+      expect(
+        artistRows.resolveSource(rowId, mappedTo("spotify--abc")),
+      ).toBeUndefined();
+    });
+
+    it.each(ROWS)("keeps an explicit choice for %s in every case", (rowId) => {
+      const mapped = mappedTo("spotify--abc");
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { [rowId]: "library" },
+      });
+      expect(artistRows.resolveSource(rowId, mapped, false)).toBe("library");
+      expect(artistRows.resolveSource(rowId, mapped)).toBe("library");
+
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { [rowId]: "spotify--abc" },
+      });
+      expect(artistRows.resolveSource(rowId, mapped, true)).toBe(
+        "spotify--abc",
+      );
+      expect(artistRows.resolveSource(rowId, artist(), false)).toBe("library");
+    });
+
+    it.each(ROWS)("goes back to automatic for %s", async (rowId) => {
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]: { [rowId]: "library" },
+      });
+      await artistRows.setSource(rowId, "auto");
+      expect(mockSetUserPreference).toHaveBeenLastCalledWith(
+        ARTIST_ROW_SOURCES_PREFERENCE_KEY,
+        {},
+      );
+
+      setPreferences({
+        [ARTIST_ROW_SOURCES_PREFERENCE_KEY]:
+          mockSetUserPreference.mock.lastCall![1],
+      });
+      expect(
+        artistRows.resolveSource(rowId, mappedTo("spotify--abc"), false),
+      ).toBe("spotify--abc");
     });
   });
 });

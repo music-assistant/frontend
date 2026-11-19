@@ -280,8 +280,10 @@ export class AccountApi {
       const args: Record<string, unknown> = { user_id: userId };
 
       if (updates.username) args.username = updates.username;
-      if (updates.displayName) args.display_name = updates.displayName;
-      if (updates.avatarUrl) args.avatar_url = updates.avatarUrl;
+      // an empty display name or avatar url clears it on the account
+      if (updates.displayName !== undefined)
+        args.display_name = updates.displayName;
+      if (updates.avatarUrl !== undefined) args.avatar_url = updates.avatarUrl;
       if (updates.role) args.role = updates.role;
       if (updates.password) args.password = updates.password;
       if (updates.preferences != undefined)

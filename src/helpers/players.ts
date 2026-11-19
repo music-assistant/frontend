@@ -1,20 +1,54 @@
 // Shared helpers that decide which players this device owns, how players are
 // named and which of them may be shown in the UI.
+import {
+  DEVICE_TYPE_ICONS,
+  getLucideIcon,
+  PLAYER_ICON_FALLBACK,
+} from "@/helpers/icon";
 import { truncateString } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { getDeviceInfo, getDeviceName } from "@/plugins/api/helpers";
 import {
+  ChannelLayout,
   PlaybackState,
   Player,
   PlayerFeature,
+  PlayerSource,
   PlayerType,
+  ProtocolRole,
   User,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { webPlayer } from "@/plugins/web_player";
+import type { Component } from "vue";
 
 export { isPlayerGrouped } from "@/helpers/player_grouping";
+
+// the active output of a player that plays through its own protocol
+const NATIVE_OUTPUT_PROTOCOL = "native";
+
+// the translation of every setup reason the server can give
+const SETUP_REASON_LABELS: Record<string, string> = {
+  pairing_required: "settings.setup_reason.pairing_required",
+  password_required: "settings.setup_reason.password_required",
+  // a player whose provider is not there is described like any other unavailable one
+  provider_not_installed: "settings.player_not_available",
+};
+
+/**
+ * Return the player that goes by the given id: the player with that id, or else
+ * the player that was known under it before, such as one another player was
+ * merged into.
+ */
+export const resolvePlayer = function (playerId: string): Player | undefined {
+  return (
+    api.players[playerId] ??
+    Object.values(api.players).find((player) =>
+      player.legacy_ids.includes(playerId),
+    )
+  );
+};
 
 /**
  * Check if the player is (or streams to) the built-in player of this device.
@@ -43,6 +77,24 @@ export const getPlayerDisplayName = function (
   player: Pick<Player, "player_id" | "name" | "output_protocols">,
 ): string {
   return isBuiltinPlayer(player) ? $t("this_device") : player.name;
+};
+
+/**
+ * Return the icon to show for the player in menus.
+ *
+ * The built-in player of this device keeps its form-factor icon until the user
+ * picks another one.
+ */
+export const getPlayerIcon = function (
+  player: Pick<Player, "player_id" | "icon" | "output_protocols">,
+): Component | undefined {
+  if (
+    isBuiltinPlayer(player) &&
+    (!player.icon || player.icon === PLAYER_ICON_FALLBACK)
+  ) {
+    return DEVICE_TYPE_ICONS[store.deviceType];
+  }
+  return getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK);
 };
 
 /**
@@ -135,7 +187,11 @@ export const playerVisible = function (
   if (
     store.currentUser &&
     store.currentUser.player_filter.length > 0 &&
-    !store.currentUser.player_filter.includes(player.player_id)
+    // the filter of this session can still name an id the player had before a merge
+    !store.currentUser.player_filter.some(
+      (playerId) =>
+        playerId === player.player_id || player.legacy_ids.includes(playerId),
+    )
   ) {
     // for non-admin users, the playerfilter is applied in the backend
     // but for admin users we need to filter here as well
@@ -158,6 +214,19 @@ export const isPlayerUnavailable = function (
 };
 
 /**
+ * Return why the player needs setup or can not play at all, such as "Pairing
+ * required", or undefined when it gave no reason this frontend knows.
+ */
+export const getPlayerSetupReason = function (
+  player: Pick<Player, "setup_reason"> | null | undefined,
+): string | undefined {
+  const label = player?.setup_reason
+    ? SETUP_REASON_LABELS[player.setup_reason]
+    : undefined;
+  return label ? $t(label) : undefined;
+};
+
+/**
  * Check if the player may become the active playback target.
  *
  * Capture-only audio inputs are listed for discoverability but never render
@@ -172,6 +241,44 @@ export const isSelectablePlayer = function (
     !player.needs_setup &&
     player.type !== PlayerType.SOURCE,
   );
+};
+
+/**
+ * Return the name of the protocol an app Music Assistant did not start plays on
+ * the player, such as "Chromecast", or undefined when no such app plays or the
+ * name of its source already says so.
+ */
+export const getAppProtocolName = function (
+  player: Player,
+): string | undefined {
+  const source = player.source_list.find(
+    (x) => x.id === player.active_source && x.passive,
+  );
+  if (!source) return undefined;
+  if (
+    player.active_output_protocol &&
+    player.active_output_protocol !== NATIVE_OUTPUT_PROTOCOL
+  )
+    return undefined;
+  // native playback marks the own protocol active; an app always plays on an audio protocol
+  const protocol = player.protocols.find(
+    (x) => x.active && x.role === ProtocolRole.AUDIO,
+  );
+  const name = protocol && api.providerManifests[protocol.domain]?.name;
+  return name && name !== source.name ? name : undefined;
+};
+
+/**
+ * Return the name to show for a source of the player: its own name, followed by
+ * the protocol it plays on when an app Music Assistant did not start plays it.
+ */
+export const getSourceLabel = function (
+  player: Player,
+  source: PlayerSource,
+): string {
+  const protocolName =
+    source.id === player.active_source ? getAppProtocolName(player) : undefined;
+  return protocolName ? `${source.name} • ${protocolName}` : source.name;
 };
 
 /**
@@ -203,10 +310,34 @@ export const canBeGroupMember = function (player: Player): boolean {
  * Visualizers and metadata-only displays are both screens to the user, so the
  * group pickers offer them as one category.
  */
-export const isScreenPlayer = function (player: Player): boolean {
+export const isScreenPlayer = function (player: Pick<Player, "type">): boolean {
   return (
     player.type === PlayerType.VISUALIZER || player.type === PlayerType.DISPLAY
   );
+};
+
+/**
+ * Whether the player is a speaker, or a set of speakers that plays as one.
+ *
+ * Both lead a sync group of other players the same way.
+ */
+export const isSpeakerPlayer = function (player?: Player): boolean {
+  return (
+    player?.type === PlayerType.PLAYER ||
+    player?.type === PlayerType.MULTI_CHANNEL
+  );
+};
+
+/**
+ * The type of a player as text, with the layout of its speakers when it has one.
+ */
+export const getPlayerTypeLabel = function (player: Player): string {
+  const typeLabel = $t(`player_type.${player.type}`);
+  const layout = player.channel_layout;
+  if (!layout || layout === ChannelLayout.UNKNOWN) return typeLabel;
+  const layoutLabel =
+    layout === ChannelLayout.STEREO ? $t("channel_layout.stereo") : layout;
+  return `${typeLabel} · ${layoutLabel}`;
 };
 
 export const canEditPlayerGroup = function (player: Player): boolean {

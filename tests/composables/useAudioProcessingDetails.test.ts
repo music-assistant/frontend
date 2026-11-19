@@ -16,6 +16,8 @@ import {
   AudioQuality,
   ContentType,
   CrossfadeMode,
+  type DSPFilter,
+  DSPFilterType,
   DSPState,
   type ItemMapping,
   MediaType,
@@ -72,6 +74,7 @@ const dependencies: AudioProcessingDetailsDependencies = {
   getPlayerName: (player) => player.name,
   players: makePlayers(),
   canOpenSettings: true,
+  loadDSPConfig: vi.fn(),
 };
 
 beforeEach(() => {
@@ -80,6 +83,7 @@ beforeEach(() => {
   dependencies.players = makePlayers();
   dependencies.getPlayerName = (player) => player.name;
   dependencies.canOpenSettings = true;
+  vi.mocked(dependencies.loadDSPConfig).mockReset();
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
   irNames.clear();
@@ -503,6 +507,108 @@ describe("buildAudioProcessingDetailsDisplay", () => {
         label: "Open DSP settings",
       });
     }
+  });
+
+  it("links the gain rows to their own DSP stages", () => {
+    const display = buildDisplay({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["airplay-kitchen"],
+          dsp: audioDSPDetails({
+            state: DSPState.ENABLED,
+            input_gain: -3,
+            output_gain: 2,
+          }),
+          output_format: makeFormat(),
+        }),
+      ],
+    });
+    const linkOf = (key: string) =>
+      display.outputPaths[0].stages.find((stage) => stage.key === key)?.link
+        ?.to;
+
+    expect(linkOf("dsp-input-gain-0")).toEqual({
+      name: "editplayerdsp",
+      params: { playerId: "kitchen" },
+      query: { stage: "input" },
+    });
+    expect(linkOf("dsp-output-gain-0")).toEqual({
+      name: "editplayerdsp",
+      params: { playerId: "kitchen" },
+      query: { stage: "output" },
+    });
+  });
+
+  describe("a filter row's link", () => {
+    const peq = (preamp: number): DSPFilter => ({
+      type: DSPFilterType.PARAMETRIC_EQ,
+      enabled: true,
+      preamp,
+      per_channel_preamp: {},
+      bands: [],
+    });
+    const hiddenFilters: DSPFilter[] = [
+      { type: DSPFilterType.BALANCE, enabled: true, balance: 0 },
+      { type: DSPFilterType.GAIN, enabled: false, gain: 3 },
+    ];
+    const dspPage = (stage?: string) => ({
+      name: "editplayerdsp",
+      params: { playerId: "kitchen" },
+      ...(stage === undefined ? {} : { query: { stage } }),
+    });
+
+    // the link of each shown filter, with the player's config holding `config`
+    function filterLinks(shown: DSPFilter[], config: DSPFilter[]) {
+      vi.mocked(dependencies.loadDSPConfig).mockResolvedValue({
+        enabled: true,
+        filters: config,
+        input_gain: 0,
+        output_gain: 0,
+      });
+      const display = buildDisplay({
+        outputs: [
+          audioOutputDetails({
+            player_ids: ["airplay-kitchen"],
+            dsp: audioDSPDetails({ state: DSPState.ENABLED, filters: shown }),
+            output_format: makeFormat(),
+          }),
+        ],
+      });
+      return display.outputPaths[0].stages
+        .filter((stage) => stage.key.startsWith("dsp-filter-"))
+        .map((stage) => stage.link!);
+    }
+
+    it("opens the filter past the ones the signal path leaves out", async () => {
+      const [link] = filterLinks([peq(-2)], [...hiddenFilters, peq(-2)]);
+
+      expect(link.to).toEqual(dspPage());
+      expect(await link.resolve?.()).toEqual(dspPage("2"));
+      expect(dependencies.loadDSPConfig).toHaveBeenCalledWith("kitchen");
+    });
+
+    it("opens the same occurrence of identical filters", async () => {
+      const links = filterLinks(
+        [peq(-2), peq(-2)],
+        [peq(-2), ...hiddenFilters, peq(-2)],
+      );
+
+      expect(await links[0].resolve?.()).toEqual(dspPage("0"));
+      expect(await links[1].resolve?.()).toEqual(dspPage("3"));
+    });
+
+    it("opens the default stage when the filter has changed", async () => {
+      const [link] = filterLinks([peq(-2)], [peq(-5)]);
+
+      expect(await link.resolve?.()).toEqual(dspPage());
+    });
+
+    it("opens the default stage when the config fails to load", async () => {
+      const [link] = filterLinks([peq(-2)], [peq(-2)]);
+      vi.mocked(dependencies.loadDSPConfig).mockRejectedValue(new Error());
+
+      expect(await link.resolve?.()).toEqual(dspPage());
+    });
   });
 
   it("does not link the DSP rows of an output to several speakers", () => {

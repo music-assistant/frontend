@@ -143,7 +143,7 @@ describe("PlayerTrackDetails chapters", () => {
     ).active_source = undefined;
   });
 
-  it("updates the chapter subtitle when the preference is enabled after mount", async () => {
+  it("names the playing chapter with chapter progress off", async () => {
     const details = mountDetails(false);
     const testStore = store as typeof store & {
       currentUser?: { preferences?: Record<string, unknown> };
@@ -167,7 +167,7 @@ describe("PlayerTrackDetails chapters", () => {
       username: "test-user",
       role: "user",
       enabled: true,
-      preferences: { audiobook_chapter_progress: true },
+      preferences: { audiobook_chapter_progress: false },
     } as never;
     testStore.activePlayerQueue = {
       queue_id: "q1",
@@ -319,6 +319,8 @@ describe("PlayerTrackDetails source badge", () => {
       player_id: "player-1",
       active_source: "player-1",
       source_list: [],
+      active_output_protocol: null,
+      protocols: [],
     });
   });
 

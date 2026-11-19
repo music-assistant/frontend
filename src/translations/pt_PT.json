@@ -788,7 +788,6 @@
     "remove_provider_mapping_confirm": "Tem a certeza de que pretende remover este mapeamento de fornecedor? Irá desvincular o item dos detalhes do item atual. Pode voltar a aparecer se efetuar um novo varrimento por todas as correspondências de fornecedores.",
     "map_provider_mapping": "Mapear esta entrada do fornecedor para o item atual",
     "player_tip": {
-        "selected_player": "Leitor selecionado",
         "currently_playing": "A tocar em",
         "click_to_change": "Clique abaixo para alterar o dispositivo de saída"
     },

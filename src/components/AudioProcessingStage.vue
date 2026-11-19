@@ -133,11 +133,11 @@ const detailsId = useId();
 const detailsFocusTarget = ref<HTMLElement>();
 
 // the page would otherwise open behind the fullscreen player or players menu
-function openLink(link: AudioProcessingStageLink): void {
+async function openLink(link: AudioProcessingStageLink): Promise<void> {
   store.showFullscreenPlayer = false;
   store.showPlayersMenu = false;
   emit("navigate");
-  router.push(link.to);
+  router.push(link.resolve ? await link.resolve() : link.to);
 }
 
 function focusDetails(event: Event): void {

@@ -7,14 +7,7 @@
         align="baseline"
         @edit-rows="emit('edit-rows')"
       />
-      <RouterLink
-        v-if="viewAllTo"
-        :to="viewAllTo"
-        class="media-rows__more"
-        :aria-label="$t('tooltip.view_all', { name: title })"
-      >
-        {{ $t("view_all") }}
-      </RouterLink>
+      <ViewAllLink v-if="viewAllTo" :to="viewAllTo" :name="title" />
     </div>
 
     <div class="media-rows__list">
@@ -117,6 +110,7 @@ import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import RowPlayButton from "@/components/RowPlayButton.vue";
 import { Skeleton } from "@/components/ui/skeleton";
+import ViewAllLink from "@/components/ViewAllLink.vue";
 import {
   getEventPosition,
   useHoldToOpenMenu,
@@ -142,7 +136,7 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { EllipsisVertical } from "@lucide/vue";
 import { computed } from "vue";
-import { RouterLink, type RouteLocationRaw } from "vue-router";
+import type { RouteLocationRaw } from "vue-router";
 
 type RowItem = MediaItemType | ItemMapping;
 
@@ -276,18 +270,6 @@ function itemDuration(item: RowItem): number | undefined {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 8px;
-}
-.media-rows__more {
-  flex: none;
-  font-size: 13px;
-  font-weight: 500;
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-  white-space: nowrap;
-}
-.media-rows__more:hover,
-.media-rows__more:focus-visible {
-  text-decoration: underline;
 }
 
 /* the rows' hover area extends past the text, so they line up with the title */

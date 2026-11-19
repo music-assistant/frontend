@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
@@ -88,6 +89,27 @@ afterEach(() => {
 });
 
 describe("RemoteAccessSettings status poll", () => {
+  it("heads the page with the header of remote access, which the explanation leaves to it", async () => {
+    const wrapper = shallowMount(RemoteAccessSettings, {
+      global: {
+        plugins: [vuetify],
+        mocks: { $t: (key: string) => key },
+        // the explanation sits in the slots of the cards
+        renderStubDefaultSlot: true,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "remote_access",
+    );
+    expect(wrapper.text()).toContain(
+      "settings.remote_access_explanation_intro",
+    );
+    expect(wrapper.text()).not.toContain("settings.remote_access_title");
+    wrapper.unmount();
+  });
+
   it("polls the remote access status every five seconds until the page is closed", async () => {
     const wrapper = mountView();
     await flushPromises();

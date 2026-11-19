@@ -115,6 +115,31 @@ describe("DialogDeleteConfirmation", () => {
     expect(event.onConfirm).toHaveBeenCalledOnce();
   });
 
+  it("lists the items below the message", async () => {
+    const wrapper = mountDialog();
+    await openDialog({ items: ["Kitchen", "Garage"] });
+
+    const list = wrapper.get('[data-testid="delete-confirmation-items"]');
+    expect(list.findAll("li").map((item) => item.text())).toEqual([
+      "Kitchen",
+      "Garage",
+    ]);
+    // a long list scrolls, which the keyboard only does for an element it can focus
+    expect(list.attributes("tabindex")).toBe("0");
+  });
+
+  it("shows no list without items, also after a confirmation with them", async () => {
+    const wrapper = mountDialog();
+    await openDialog({ items: ["Kitchen"] });
+
+    await openDialog();
+
+    expect(wrapper.text()).toContain("Remove it?");
+    expect(
+      wrapper.find('[data-testid="delete-confirmation-items"]').exists(),
+    ).toBe(false);
+  });
+
   it("starts a later acknowledgement unticked", async () => {
     vi.useFakeTimers();
     const wrapper = mountDialog();

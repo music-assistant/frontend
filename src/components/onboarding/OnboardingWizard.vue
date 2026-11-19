@@ -30,20 +30,21 @@
             {{ stepTitle }}
           </h1>
         </div>
-        <div class="flex items-center gap-3">
+        <div v-if="progressIndex >= 0" class="flex items-center gap-3">
           <OnboardingProgress
             class="min-w-0 flex-1"
             :steps="progressSteps"
-            :current="currentIndex"
+            :current="progressIndex"
             @navigate="jumpTo"
           />
           <span
             class="text-muted-foreground sr-only shrink-0 text-sm sm:not-sr-only"
+            data-testid="onboarding-step-counter"
           >
             {{
               $t("onboarding.step_counter", {
-                current: stepNumber,
-                total: steps.length,
+                current: progressIndex + 1,
+                total: progressSteps.length,
               })
             }}
           </span>
@@ -68,14 +69,25 @@
         v-bind="stepView.props"
         @advance="next"
         @navigate="goTo"
-        @finish="finishOnboarding"
+        @finish="finishOnboarding()"
       />
     </ScrollFade>
 
     <footer
       v-if="ready && showForwardAction"
-      class="flex shrink-0 items-center justify-end gap-2"
+      class="flex shrink-0 flex-col items-center justify-end gap-2 sm:flex-row"
     >
+      <Button
+        v-if="offerTour"
+        variant="outline"
+        class="w-full sm:w-auto"
+        :disabled="finishing"
+        data-testid="onboarding-tour"
+        @click="finishOnboarding(true)"
+      >
+        <Route class="size-4" aria-hidden="true" />
+        {{ $t("tour.start") }}
+      </Button>
       <Button
         v-if="isSummary"
         class="w-full sm:w-auto"
@@ -103,10 +115,10 @@
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
 import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
+import AIStep from "@/components/onboarding/steps/AIStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
-import FinishStep, {
-  type FinishOptions,
-} from "@/components/onboarding/steps/FinishStep.vue";
+import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
+import HomeAssistantStep from "@/components/onboarding/steps/HomeAssistantStep.vue";
 import IntentStep from "@/components/onboarding/steps/IntentStep.vue";
 import InviteMembersStep from "@/components/onboarding/steps/InviteMembersStep.vue";
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
@@ -121,12 +133,13 @@ import { useOnboarding } from "@/composables/useOnboarding";
 import { useTour } from "@/composables/useTour";
 import {
   firstStep,
+  stepTitleKey,
   type OnboardingStepId,
   type StepLeaveOptions,
 } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft } from "@lucide/vue";
+import { ArrowLeft, Route } from "@lucide/vue";
 import {
   computed,
   markRaw,
@@ -167,6 +180,8 @@ const STEP_VIEWS: Record<
     props: { providerType: ProviderType.PLUGIN },
   },
   core_settings: { component: markRaw(CoreSettingsStep) },
+  home_assistant: { component: markRaw(HomeAssistantStep) },
+  ai: { component: markRaw(AIStep) },
   invite_members: { component: markRaw(InviteMembersStep) },
   finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
   welcome: { component: markRaw(WelcomeStep) },
@@ -177,6 +192,12 @@ const STEP_VIEWS: Record<
   all_set: { component: markRaw(FinishStep), props: { stepId: "all_set" } },
 };
 
+// Do not announce a setup length before the user confirms their choice.
+const PRE_SETUP_STEPS: ReadonlySet<OnboardingStepId> = new Set([
+  "account",
+  "intent",
+]);
+
 // The step being shown is page state: the wizard never moves by itself while
 // providers arrive, only when the user (or the step it opens on) says so. It
 // stays unresolved until the onboarding data lands, so the wizard never opens
@@ -186,8 +207,8 @@ const stepHeading = ref<HTMLHeadingElement | null>(null);
 const finishing = ref(false);
 // whether this open's data is in and its opening step is settled
 const ready = ref(false);
-// a step can take a moment to let go of the user — the server settings save on
-// their way out — and a second click must not set off from where the first one
+// a step can take a moment to let go of the user — an answer saves on its way
+// out — and a second click must not set off from where the first one
 // has already arrived
 const moving = ref(false);
 // what stops the players being followed once the wizard is gone
@@ -210,8 +231,7 @@ const stepRef = ref<StepInstance | null>(null);
 const leaveStep = async (options?: StepLeaveOptions) =>
   (await stepRef.value?.beforeLeave?.(options)) ?? true;
 
-// whether the step on screen is saving a choice of its own; the wizard's Next
-// stands aside while it is, so a choice and a Next cannot both move on
+// Next waits for the selected answer to reach the server.
 const stepBusy = computed(() => stepRef.value?.busy ?? false);
 
 // steps the user has been past, so a review stays ticked after going back
@@ -222,20 +242,26 @@ const currentIndex = computed(() =>
 );
 const currentStep = computed(() => steps.value[currentIndex.value]);
 const canGoBack = computed(() => currentIndex.value > 0);
-const stepNumber = computed(() => Math.max(currentIndex.value + 1, 1));
 // the progress list, done state and all, in the same order the wizard walks
 // a review has nothing to tick off, so one the user has been past counts as
 // looked over
 const progressSteps = computed(() =>
-  steps.value.map((step) => ({
-    id: step.id,
-    done:
-      step.isDone(ctx.value) ||
-      (step.kind === "review" && passedSteps.value.has(step.id)),
-  })),
+  steps.value
+    .filter((step) => !PRE_SETUP_STEPS.has(step.id))
+    .map((step) => ({
+      id: step.id,
+      titleKey: stepTitleKey(step.id, ctx.value.answers),
+      done:
+        step.isDone(ctx.value) ||
+        (step.kind === "review" && passedSteps.value.has(step.id)),
+    })),
+);
+// Navigation includes the introductory screens; numbered progress does not.
+const progressIndex = computed(() =>
+  progressSteps.value.findIndex((step) => step.id === currentId.value),
 );
 const stepTitle = computed(() =>
-  currentId.value ? $t(`onboarding.steps.${currentId.value}.title`) : "",
+  currentId.value ? $t(stepTitleKey(currentId.value, ctx.value.answers)) : "",
 );
 // the eyebrow above the step says which wizard this is: the server's setup, or
 // the welcome someone who lives here is being given
@@ -244,6 +270,11 @@ const trackTitleKey = computed(() =>
 );
 
 const isSummary = computed(() => currentStep.value?.kind === "summary");
+const offerTour = computed(
+  () =>
+    isSummary.value &&
+    (ctx.value.isMember || ctx.value.answers.intent !== "phone_apps"),
+);
 
 const stepView = computed(() => {
   const id = currentId.value;
@@ -264,14 +295,19 @@ const stepView = computed(() => {
 const showForwardAction = computed(
   () => currentStep.value != null && !stepRef.value?.ownsForwardAction,
 );
-// a step that does not hold the wizard up is skipped rather than moved on from,
-// whether it is optional by nature or one the answers deferred
+// an optional step that is not set up yet offers a skip instead of Next
 const skipping = computed(() => {
   const step = currentStep.value;
-  return !!(step?.optional || step?.deferred) && !step.isDone(ctx.value);
+  return !!step?.optional && !step.isDone(ctx.value);
 });
 const forwardLabel = computed(() =>
-  skipping.value ? $t("onboarding.skip") : $t("onboarding.next"),
+  skipping.value
+    ? $t("onboarding.skip")
+    : $t(
+        currentId.value === "intent" || currentId.value === "welcome"
+          ? "onboarding.continue"
+          : "onboarding.next",
+      ),
 );
 
 const goTo = function (id: OnboardingStepId) {
@@ -305,8 +341,7 @@ const jumpTo = async function (id: OnboardingStepId) {
 // user sees is the order they move through. A question walked past answers
 // itself with its recommended option, which the step does on its way out.
 const next = async function () {
-  // a choice being saved on the step owns the move: standing aside keeps Next
-  // from advancing a second step or waving a default over the answer
+  // a choice being saved must land before Next can leave the question
   if (moving.value || stepBusy.value) return;
   moving.value = true;
   try {
@@ -320,11 +355,11 @@ const next = async function () {
 
 // The tour is only given once onboarding has let go: a finish that did not
 // land keeps the wizard up, and the tour waits with it.
-const finishOnboarding = async function (options?: FinishOptions) {
+const finishOnboarding = async function (tour = false) {
   if (finishing.value) return;
   finishing.value = true;
   try {
-    if ((await finish()) && options?.tour) startTour();
+    if ((await finish()) && tour) startTour();
   } finally {
     finishing.value = false;
   }

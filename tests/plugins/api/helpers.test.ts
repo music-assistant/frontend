@@ -32,6 +32,7 @@ import {
   getProviderRootDomain,
   mappedServices,
   isAudioSource,
+  isExternalItem,
   isQueueInfiniteStream,
   queueSourceCrossfadeProvider,
   resolvePlayerQueue,
@@ -51,10 +52,13 @@ import type {
   ProviderMapping,
   QueueItem,
 } from "@/plugins/api/interfaces";
+import { album } from "../../fixtures/album";
+import { itemMapping } from "../../fixtures/itemMapping";
 import { playerQueue } from "../../fixtures/playerQueue";
 import { playlist } from "../../fixtures/playlist";
 import { providerMapping } from "../../fixtures/providerMapping";
 import { queueItem } from "../../fixtures/queueItem";
+import { track } from "../../fixtures/track";
 
 describe("isAudioSource", () => {
   it("returns true for AUDIO_SOURCE media type", () => {
@@ -77,6 +81,30 @@ describe("isAudioSource", () => {
 
   it("returns false for undefined", () => {
     expect(isAudioSource(undefined)).toBe(false);
+  });
+});
+
+describe("isExternalItem", () => {
+  it("is true for an item known only by an external id", () => {
+    expect(
+      isExternalItem(
+        track({
+          item_id: "musicbrainz_recordingid:rec-1",
+          provider: "external",
+        }),
+      ),
+    ).toBe(true);
+    // a track's album, as an item mapping in the same form
+    expect(
+      isExternalItem(
+        itemMapping({ item_id: "isrc:USRC17607839", provider: "external" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("is false for items of the library and of a music service", () => {
+    expect(isExternalItem(album({ provider: "library" }))).toBe(false);
+    expect(isExternalItem(track({ provider: "spotify" }))).toBe(false);
   });
 });
 
@@ -276,6 +304,7 @@ describe("getPlaylistMigrationProviders", () => {
     ],
     available: true,
     is_streaming_provider: true,
+    supported_artist_types: [],
     ...overrides,
   });
 

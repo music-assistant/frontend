@@ -48,6 +48,10 @@ interface ListingFilterFlags {
   showHideEmptyFilter?: boolean;
   showGenreFilter?: boolean;
   showAlbumTypeFilter?: boolean;
+  // the album types the album type filter offers (default: every type)
+  albumTypeFilterOptions?: string[];
+  // the source is a required pick of exactly one, not a narrowing
+  requireProviderSelection?: boolean;
 }
 
 interface ListingFilterState {
@@ -162,7 +166,10 @@ export function useListingFilters(
         // hiding empty genres is where the listing starts, so only a change
         // from it shows as a filter
         unfiltered: GENRES_SHOWN.hideEmpty,
-        select: (value) => actions.setHideEmpty(hideEmptyFor(value)),
+        select: (value) => {
+          if (value === genresShown(params.hideEmptyFilter)) return;
+          actions.setHideEmpty(hideEmptyFor(value));
+        },
       });
     }
     const pickedGenres = genreIdsOf(params.genreIds).map(String);
@@ -195,16 +202,30 @@ export function useListingFilters(
         label: t("listing_filters.album_type"),
         placeholder: t("listing_filters.any_album_type"),
         layout: "dropdown",
-        options: ALBUM_TYPE_FILTER_KEYS.map((key) => ({
-          label: t(`album_type.${key}`),
-          value: key,
-        })),
+        options: (flags.albumTypeFilterOptions ?? ALBUM_TYPE_FILTER_KEYS).map(
+          (key) => ({
+            label: t(`album_type.${key}`),
+            value: key,
+          }),
+        ),
         selected: params.albumType ?? [],
         toggle: actions.toggleAlbumType,
         set: actions.setAlbumTypes,
       });
     }
-    if (state.providerOptions.value.length) {
+    if (state.providerOptions.value.length && flags.requireProviderSelection) {
+      // exactly one source is always picked, so it never counts as a filter
+      // and Clear all leaves it be; picking the current one keeps a source
+      // carried in by a link
+      filters.push({
+        kind: "choice",
+        id: "required_source",
+        label: t("listing_filters.source"),
+        options: state.providerOptions.value,
+        selected: params.provider?.[0] ?? "",
+        select: actions.toggleProvider,
+      });
+    } else if (state.providerOptions.value.length) {
       filters.push({
         kind: "multi",
         id: "provider",

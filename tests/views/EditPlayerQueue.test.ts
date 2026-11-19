@@ -44,6 +44,22 @@ describe("EditPlayerQueue", () => {
     );
   });
 
+  it("leads to the playback defaults every queue follows", async () => {
+    const wrapper = shallowMount(EditPlayerQueue, {
+      props: { queueId: "kitchen" },
+      global: {
+        mocks: { $t: (key: string) => key },
+        // the link sits in the slot of its button
+        renderStubDefaultSlot: true,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: "RouterLink" }).props("to")).toEqual({
+      name: "playbacksettings",
+    });
+  });
+
   it("stays on the form when the server refuses the save", async () => {
     apiMock.savePlayerQueueConfig.mockRejectedValueOnce(
       new ApiCommandError(REASON, 1, REASON),
@@ -61,6 +77,46 @@ describe("EditPlayerQueue", () => {
     expect(routerMock.push).not.toHaveBeenCalled();
     // the api toasts a refused save itself
     expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("keeps the other changes when one applies at once", async () => {
+    const entry = (key: string, value: string) => ({
+      key,
+      type: "string",
+      label: key,
+      category: "generic",
+      options: [],
+      required: false,
+      default_value: null,
+      value,
+    });
+    apiMock.getPlayerQueueConfig.mockResolvedValueOnce({
+      values: {
+        crossfade: entry("crossfade", "off"),
+        flow: entry("flow", "a"),
+      },
+    });
+    apiMock.savePlayerQueueConfig.mockResolvedValueOnce({
+      values: {
+        crossfade: entry("crossfade", "off"),
+        flow: entry("flow", "b"),
+      },
+    });
+    const wrapper = mountWithForm();
+    await flushPromises();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    const formEntry = (key: string) =>
+      (
+        editConfig.props("configEntries") as { key: string; value: unknown }[]
+      ).find((configEntry) => configEntry.key === key)!;
+    formEntry("crossfade").value = "smart_crossfade";
+    formEntry("flow").value = "b";
+
+    editConfig.vm.$emit("immediateApply", { flow: "b" });
+    await flushPromises();
+
+    expect(formEntry("crossfade").value).toBe("smart_crossfade");
+    expect(formEntry("flow").value).toBe("b");
   });
 
   it("leaves reporting a refused immediate change to the api", async () => {
@@ -91,6 +147,7 @@ function mountWithForm(saveFailed = vi.fn()) {
       stubs: {
         EditConfig: {
           name: "EditConfig",
+          props: ["configEntries"],
           template: "<div />",
           methods: { saveFailed },
         },

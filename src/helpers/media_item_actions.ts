@@ -1,13 +1,14 @@
 // Shared handlers for the click/play/menu interactions on a media item,
 // dispatching to the details views and the item context menu.
-import { openMusicBrainzItem } from "@/helpers/open_musicbrainz_item";
+import { detailRoute } from "@/helpers/author_narrator";
+import { openExternalItem } from "@/helpers/open_external_item";
 import {
   showContextMenuForMediaItem,
   showPlayMenuForMediaItem,
 } from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
-import { isMusicBrainzItem, itemIsAvailable } from "@/plugins/api/helpers";
+import { isExternalItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   BrowseFolder,
   MediaItemType,
@@ -136,14 +137,9 @@ export const handleMediaItemClick = async function (
   posY: number,
   parentItem?: MediaItemType,
 ) {
-  // a MusicBrainz release has nothing to play: the server resolves it to the
-  // same album on one of the user's music services, whose page then opens
-  if (isMusicBrainzItem(item)) {
-    return openMusicBrainzItem(item);
-  }
-
   // open menu when item is unavailable so the user has a way to remove/refresh the item
-  if (!itemIsAvailable(item)) {
+  // (an external item is looked up when it is opened or played)
+  if (!itemIsAvailable(item) && !isExternalItem(item)) {
     handleMenuBtnClick(item, posX, posY, undefined, false);
     return;
   }
@@ -187,13 +183,8 @@ export const handleMediaItemClick = async function (
   }
 
   // all other: go to details view
-  router.push({
-    name: item.media_type,
-    params: {
-      itemId: item.item_id,
-      provider: item.provider,
-    },
-  });
+  if (isExternalItem(item)) return openExternalItem(item);
+  router.push(detailRoute(item));
 };
 
 /**

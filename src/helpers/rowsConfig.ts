@@ -35,12 +35,16 @@ export async function writeRowsConfig(
   preferenceKey: string,
   cfg: RowsConfig,
 ): Promise<void> {
-  const pref: RowsConfig = {
+  await setUserPreference(preferenceKey, storedRowsConfig(cfg));
+}
+
+/** The config as it is stored: all three arrays present. */
+export function storedRowsConfig(cfg: RowsConfig): RowsConfig {
+  return {
     hidden: cfg.hidden ?? [],
     shown: cfg.shown ?? [],
     order: cfg.order ?? [],
   };
-  await setUserPreference(preferenceKey, pref);
 }
 
 /**

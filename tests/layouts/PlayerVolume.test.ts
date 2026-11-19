@@ -97,6 +97,9 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     mute_control: "mute",
     needs_setup: false,
     has_setup_flow: false,
+    setup_reason: null,
+    legacy_ids: [],
+    protocols: [],
     output_protocols: [],
     active_output_protocol: null,
     elapsed_time: null,
@@ -107,6 +110,7 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     active_group: null,
     synced_to: null,
     sleep_timer_expires_at: null,
+    sleep_timer_mode: null,
     active_source_audio: null,
     ...overrides,
   };
@@ -153,6 +157,38 @@ function mountPopoutVolume(player: Player, allowWheel = false) {
     },
   });
 }
+
+describe("PlayerVolume input routing", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.players = {};
+  });
+
+  // on a touchscreen PC the mouse must still drive the slider, while touch
+  // stays with the container's touch handlers
+  it.each([
+    ["mouse", true],
+    ["pen", true],
+    ["touch", false],
+  ])("enables the slider for a hovering %s", async (pointerType, enabled) => {
+    const player = createPlayer();
+    api.players = { [player.player_id]: player };
+    const wrapper = mount(PlayerVolume, {
+      props: { player },
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: sliderStub,
+      },
+    });
+    const container = wrapper.find(".player-volume-container");
+
+    await container.trigger("pointerenter", { pointerType });
+    expect(container.classes("pointer-hover")).toBe(enabled);
+
+    await container.trigger("pointerleave", { pointerType });
+    expect(container.classes("pointer-hover")).toBe(false);
+  });
+});
 
 describe("PlayerVolume group expansion", () => {
   beforeEach(() => {

@@ -7,6 +7,7 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  PlayerProtocolInfo,
   Playlist,
   Radio,
   Track,
@@ -15,6 +16,8 @@ import {
 export type PlaylistDialogEvent = {
   items: MediaItemType[];
   parentItem?: MediaItemType;
+  // add the items of this queue instead of items
+  queueId?: string;
 };
 
 export type ContextMenuDialogEvent = {
@@ -25,7 +28,6 @@ export type ContextMenuDialogEvent = {
 };
 
 export type CreatePlaylistEvent = {
-  queueId?: string;
   providerId?: string;
 };
 
@@ -54,6 +56,8 @@ export type DeleteConfirmationDialogEvent = {
   // when set, a checkbox with this label has to be ticked before the confirm
   // button is enabled
   acknowledgement?: string;
+  // shown as a list below the message, such as the names of what is removed
+  items?: string[];
   onConfirm: () => void | Promise<void>;
 };
 
@@ -111,6 +115,24 @@ export type PlayerRenameDialogEvent = {
   defaultName?: string | null;
 };
 
+export type PlayerMergeDialogEvent = {
+  // the player that goes into the one the user picks
+  playerId: string;
+  playerName: string;
+  // called with the id of the player that stays
+  onMerged?: (targetPlayerId: string) => void;
+};
+
+export type MultiChannelPlayerDialogEvent = {
+  // the speaker the multi-channel player starts from
+  playerId: string;
+  playerName: string;
+  // the protocol of that speaker that moves into the multi-channel player
+  protocol: PlayerProtocolInfo;
+  // called with the id of the new player
+  onCreated?: (playerId: string) => void;
+};
+
 // finished: the flow ended on a FINISH step rather than an ABORT
 export type SetupFlowEndedCallback = (finished: boolean) => void;
 
@@ -151,6 +173,8 @@ export type Events = {
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;
   playerRenameDialog: PlayerRenameDialogEvent;
+  playerMergeDialog: PlayerMergeDialogEvent;
+  multiChannelPlayerDialog: MultiChannelPlayerDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

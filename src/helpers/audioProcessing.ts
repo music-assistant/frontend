@@ -61,6 +61,52 @@ export function areDSPSettingsEqual(
   );
 }
 
+// The address query that opens the DSP settings page on a stage.
+export const DSP_STAGE_QUERY_KEY = "stage";
+
+// A stage of the DSP settings page: the input gain, a filter's position or
+// the output gain.
+export type DSPStage = "input" | "output" | number;
+
+/**
+ * The position in a DSP config of a filter shown in the signal path, matched
+ * by its settings, since the signal path leaves out filters that do nothing.
+ *
+ * :param filters: The filters of the player's DSP config.
+ * :param filter: The filter the signal path shows.
+ * :param occurrence: How many identical filters the signal path shows before it.
+ * Returns undefined when the config holds no such filter, e.g. after an edit.
+ */
+export function dspFilterPosition(
+  filters: DSPFilter[],
+  filter: DSPFilter,
+  occurrence: number,
+): number | undefined {
+  let seen = 0;
+  for (const [position, candidate] of filters.entries()) {
+    if (!areDspFilterEqual(candidate, filter)) continue;
+    if (seen === occurrence) return position;
+    seen += 1;
+  }
+  return undefined;
+}
+
+/**
+ * The stage an address query names, when the DSP config has it.
+ *
+ * :param value: The query value.
+ * :param filterCount: The number of filters in the DSP config.
+ */
+export function parseDSPStage(
+  value: unknown,
+  filterCount: number,
+): DSPStage | undefined {
+  if (value === "input" || value === "output") return value;
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return undefined;
+  const position = Number(value);
+  return position < filterCount ? position : undefined;
+}
+
 // Display label for a filter type. A high/low-pass edits as itself, so it
 // reads its stored mode ("High-pass" / "Low-pass") rather than the generic
 // type name used in the add-filter menu.
@@ -108,14 +154,8 @@ export function dspFilterText(filter: DSPFilter): string {
   return text;
 }
 
-function areDspFiltersEqual(left: DSPFilter[], right: DSPFilter[]): boolean {
-  return (
-    left.length === right.length &&
-    left.every((filter, index) => areDspFilterEqual(filter, right[index]))
-  );
-}
-
-function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
+// Whether two filters have the same type and settings, on/off included.
+export function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
   if (left.type !== right.type || left.enabled !== right.enabled) {
     return false;
   }
@@ -184,6 +224,13 @@ function areDspFilterEqual(left: DSPFilter, right: DSPFilter): boolean {
     return areCrossfeedFiltersEqual(left, right);
   }
   return false;
+}
+
+function areDspFiltersEqual(left: DSPFilter[], right: DSPFilter[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((filter, index) => areDspFilterEqual(filter, right[index]))
+  );
 }
 
 function areToneControlFiltersEqual(

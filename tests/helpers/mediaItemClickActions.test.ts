@@ -75,8 +75,7 @@ vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
 vi.mock("@/plugins/api/helpers", () => ({
   itemIsAvailable: mockItemIsAvailable,
   // what the real helper does, which this module-wide mock would otherwise hide
-  isMusicBrainzItem: (item: { provider: string }) =>
-    item.provider === "musicbrainz",
+  isExternalItem: (item: { provider: string }) => item.provider === "external",
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -309,12 +308,18 @@ describe("handleMediaItemClick on a podcast episode", () => {
   });
 });
 
-describe("handleMediaItemClick on a MusicBrainz release", () => {
-  // the discography lists releases that are on none of the user's music
-  // services: no provider mappings, so nothing is available to play
+describe("handleMediaItemClick on an external item", () => {
+  // the server lists items it knows only by an external id without provider
+  // mappings, so nothing is available on a music service yet
   const release = album({
-    item_id: "rg-1",
-    provider: "musicbrainz",
+    item_id: "musicbrainz_releasegroupid:rg-1",
+    provider: "external",
+    provider_mappings: [],
+    is_playable: false,
+  });
+  const topTrack = track({
+    item_id: "musicbrainz_recordingid:rec-1",
+    provider: "external",
     provider_mappings: [],
   });
   // the same album on one of the user's music services
@@ -324,15 +329,15 @@ describe("handleMediaItemClick on a MusicBrainz release", () => {
     mockItemIsAvailable.mockReturnValue(false);
   });
 
-  it("opens the page of the album it resolves to instead of the menu an unavailable item gets", async () => {
+  it("opens the page of the album it is found as instead of the menu an unavailable item gets", async () => {
     mockGetItem.mockResolvedValue(resolvedAlbum);
 
     await handleMediaItemClick(release, 0, 0);
 
     expect(mockGetItem).toHaveBeenCalledWith(
       release.media_type,
-      "rg-1",
-      "musicbrainz",
+      "musicbrainz_releasegroupid:rg-1",
+      "external",
     );
     expect(mockRouterPush).toHaveBeenCalledWith({
       name: resolvedAlbum.media_type,
@@ -342,7 +347,7 @@ describe("handleMediaItemClick on a MusicBrainz release", () => {
     expect(mockPlayMedia).not.toHaveBeenCalled();
   });
 
-  it("never plays it, whatever the click-action setting says", async () => {
+  it("never plays an album, whatever the click-action setting says", async () => {
     mockGetCoreConfigValue.mockResolvedValue("play");
     mockGetItem.mockResolvedValue(resolvedAlbum);
 
@@ -350,6 +355,39 @@ describe("handleMediaItemClick on a MusicBrainz release", () => {
 
     expect(mockPlayMedia).not.toHaveBeenCalled();
     expect(mockRouterPush).toHaveBeenCalledTimes(1);
+  });
+
+  it("plays a track when the click-action setting says play", async () => {
+    mockGetCoreConfigValue.mockResolvedValue("play");
+
+    await handleMediaItemClick(topTrack, 0, 0);
+
+    expect(mockGetCoreConfigValue).toHaveBeenCalledWith(
+      "player_queues",
+      "default_click_action_track",
+    );
+    expect(mockPlayMedia).toHaveBeenCalledWith(topTrack);
+    expect(mockGetItem).not.toHaveBeenCalled();
+    expect(showContextMenuForMediaItem).not.toHaveBeenCalled();
+  });
+
+  it("opens the page of the track it is found as by default", async () => {
+    mockGetCoreConfigValue.mockResolvedValue("browse");
+    mockGetItem.mockResolvedValue(track({ item_id: "5", provider: "library" }));
+
+    await handleMediaItemClick(topTrack, 0, 0);
+
+    expect(mockGetItem).toHaveBeenCalledWith(
+      topTrack.media_type,
+      "musicbrainz_recordingid:rec-1",
+      "external",
+    );
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: topTrack.media_type,
+      params: { itemId: "5", provider: "library" },
+    });
+    expect(mockPlayMedia).not.toHaveBeenCalled();
+    expect(showContextMenuForMediaItem).not.toHaveBeenCalled();
   });
 });
 

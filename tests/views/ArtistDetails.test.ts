@@ -25,11 +25,15 @@ const {
   mockResolveArtistRows,
   mockArtistRowSources,
   mockLoadArtistReleases,
+  mockArtistAlbumsCountBySource,
   mockLoadArtistDiscography,
+  mockLoadArtistDiscographyCount,
   mockLoadArtistTracks,
+  mockLoadArtistTracksCount,
   mockLoadArtistTopTracks,
   mockLoadSimilarArtists,
   mockLoadArtistAppearsOn,
+  mockLoadArtistAppearsOnCount,
 } = vi.hoisted(() => ({
   mockGetArtist: vi.fn<MusicAssistantApi["getArtist"]>(),
   mockGetArtistAudiobooks: vi.fn<MusicAssistantApi["getArtistAudiobooks"]>(),
@@ -38,11 +42,30 @@ const {
   mockResolveArtistRows: vi.fn(),
   mockArtistRowSources: vi.fn(),
   mockLoadArtistReleases: vi.fn(),
+  mockArtistAlbumsCountBySource: vi.fn(),
   mockLoadArtistDiscography: vi.fn(),
+  mockLoadArtistDiscographyCount: vi.fn(),
   mockLoadArtistTracks: vi.fn(),
+  mockLoadArtistTracksCount: vi.fn(),
   mockLoadArtistTopTracks: vi.fn(),
   mockLoadSimilarArtists: vi.fn(),
   mockLoadArtistAppearsOn: vi.fn(),
+  mockLoadArtistAppearsOnCount: vi.fn(),
+}));
+
+const { route, mockRouterReplace } = vi.hoisted(() => ({
+  route: { name: "artist", params: {}, query: {} } as {
+    name: string;
+    params: Record<string, string>;
+    query: Record<string, string>;
+  },
+  mockRouterReplace: vi.fn(),
+}));
+
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRoute: () => route,
+  useRouter: () => ({ replace: mockRouterReplace }),
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -69,6 +92,7 @@ vi.mock("@/components/artist/artistRows", () => ({
     resolve: mockResolveArtistRows,
     definition: (id: string) => ({ id, labelKey: id }),
     effectiveSource: () => "all",
+    resolveSource: () => "all",
     sources: mockArtistRowSources,
   },
 }));
@@ -78,11 +102,15 @@ vi.mock("@/components/artist/artistRows", () => ({
 vi.mock("@/components/artist/artistData", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/artist/artistData")>()),
   loadArtistReleases: mockLoadArtistReleases,
+  artistAlbumsCountBySource: mockArtistAlbumsCountBySource,
   loadArtistDiscography: mockLoadArtistDiscography,
+  loadArtistDiscographyCount: mockLoadArtistDiscographyCount,
   loadArtistTracks: mockLoadArtistTracks,
+  loadArtistTracksCount: mockLoadArtistTracksCount,
   loadArtistTopTracks: mockLoadArtistTopTracks,
   loadSimilarArtists: mockLoadSimilarArtists,
   loadArtistAppearsOn: mockLoadArtistAppearsOn,
+  loadArtistAppearsOnCount: mockLoadArtistAppearsOnCount,
 }));
 
 vi.mock("@/components/artist/ArtistHero.vue", () => ({
@@ -105,7 +133,7 @@ vi.mock("@/components/artist/ArtistTopTracksRow.vue", () => ({
 vi.mock("@/components/details/ReleaseShelf.vue", () => ({
   default: {
     name: "ReleaseShelf",
-    props: ["title", "items"],
+    props: ["title", "items", "itemCount", "viewAllTo", "emptyMessage"],
     template: '<div :data-row="title" />',
   },
 }));
@@ -123,6 +151,9 @@ vi.mock("@/components/ProviderDetails.vue", () => ({
 }));
 vi.mock("@/components/MediaItemImages.vue", () => ({
   default: { name: "MediaItemImages", template: '<div data-row="artwork" />' },
+}));
+vi.mock("@/composables/useHistoryScrollRestore", () => ({
+  useHistoryScrollRestore: () => ({ returning: () => false }),
 }));
 // the stub renders path/itemtype so tests can read which preference key
 // (see userPreferences.ts's getItemsListingPreferences) each row was given
@@ -186,6 +217,8 @@ function pathFor(wrapper: VueWrapper, itemtype: string) {
 
 describe("ArtistDetails", () => {
   beforeEach(() => {
+    route.name = "artist";
+    mockRouterReplace.mockReset();
     mockGetArtist.mockReset();
     mockGetArtistAudiobooks.mockReset().mockResolvedValue([]);
     mockSubscribe.mockReset().mockReturnValue(() => {});
@@ -203,13 +236,17 @@ describe("ArtistDetails", () => {
     // a library artist mapped to a provider that can supply the row
     mockArtistRowSources.mockReset().mockReturnValue(["library", "all"]);
     mockLoadArtistReleases.mockReset().mockResolvedValue(RELEASES);
+    mockArtistAlbumsCountBySource.mockReset().mockResolvedValue(4);
     mockLoadArtistDiscography.mockReset().mockResolvedValue([album()]);
+    mockLoadArtistDiscographyCount.mockReset().mockResolvedValue(1);
     mockLoadArtistTracks.mockReset().mockResolvedValue([track()]);
+    mockLoadArtistTracksCount.mockReset().mockResolvedValue(1);
     mockLoadArtistTopTracks.mockReset().mockResolvedValue([track()]);
     mockLoadSimilarArtists.mockReset().mockResolvedValue([artist()]);
     mockLoadArtistAppearsOn
       .mockReset()
       .mockResolvedValue([album({ item_id: "3" })]);
+    mockLoadArtistAppearsOnCount.mockReset().mockResolvedValue(1);
   });
 
   it("renders the rows in the resolved order", async () => {
@@ -321,16 +358,137 @@ describe("ArtistDetails", () => {
       .findAllComponents({ name: "ReleaseShelf" })
       .find((component) => component.props("title") === "discography");
     expect(shelf?.props("items")).toHaveLength(50);
+    expect(shelf?.props("itemCount")).toBe(1);
   });
 
-  // MusicBrainz is not loaded, or does not know the artist
-  it("hides the discography once it comes up empty", async () => {
+  // the listing opens on what the shelf shows, an automatic row's provider included
+  it("opens a release shelf's listing on the shelf's source", async () => {
+    const wrapper = await mountDetails(artist({ item_id: "7" }));
+
+    const viewAll = (title: string) =>
+      wrapper
+        .findAllComponents({ name: "ReleaseShelf" })
+        .find((component) => component.props("title") === title)
+        ?.props("viewAllTo");
+    expect(viewAll("albums")).toEqual({
+      name: "artistlisting",
+      params: { provider: "library", itemId: "7", listing: "albums" },
+      query: { source: "all" },
+    });
+    expect(viewAll("singles_eps")).toMatchObject({
+      params: { listing: "singles" },
+      query: { source: "all" },
+    });
+  });
+
+  describe("discography heading", () => {
+    // which discography rows render, and whether each shows the heading
+    function discographyHeadings(wrapper: VueWrapper) {
+      return wrapper
+        .findAllComponents({ name: "ArtistDiscographyRow" })
+        .map((row) => [row.props("rowId"), row.props("showHeading")]);
+    }
+
+    function showRows(rows: string[]) {
+      mockAvailableArtistRowIds.mockReturnValue(rows);
+    }
+
+    it("shows once above discography rows next to each other", async () => {
+      showRows(["albums", "discography", "discography_second", "appears_on"]);
+
+      const wrapper = await mountDetails(artist());
+
+      expect(discographyHeadings(wrapper)).toEqual([
+        ["discography", true],
+        ["discography_second", false],
+      ]);
+    });
+
+    it("tightens the gap above a continuing discography row", async () => {
+      showRows(["discography", "discography_second", "appears_on"]);
+
+      const wrapper = await mountDetails(artist());
+
+      const [first, second] = wrapper.findAllComponents({
+        name: "ArtistDiscographyRow",
+      });
+      expect(first.classes()).toContain("mb-[16px]");
+      expect(second.classes()).not.toContain("mb-[16px]");
+    });
+
+    it("shows above each discography row once they are apart", async () => {
+      showRows(["discography", "appears_on", "discography_second"]);
+
+      const wrapper = await mountDetails(artist());
+
+      expect(discographyHeadings(wrapper)).toEqual([
+        ["discography", true],
+        ["discography_second", true],
+      ]);
+    });
+
+    it("stays above the first row when it comes up empty", async () => {
+      showRows(["discography", "discography_second"]);
+      mockLoadArtistDiscography.mockImplementation(
+        async (_artist: Artist, types: AlbumType[]) =>
+          types.includes(AlbumType.LIVE) ? [album()] : [],
+      );
+
+      const wrapper = await mountDetails(artist());
+
+      expect(discographyHeadings(wrapper)).toEqual([
+        ["discography", true],
+        ["discography_second", false],
+      ]);
+    });
+  });
+
+  // its type picker stays, so other release types can still be picked
+  it("keeps a discography row that comes up empty, with an empty message", async () => {
     mockLoadArtistDiscography.mockResolvedValue([]);
 
     const wrapper = await mountDetails(artist());
 
-    expect(renderedRows(wrapper)).not.toContain("discography");
+    const shelf = wrapper
+      .findAllComponents({ name: "ReleaseShelf" })
+      .find((component) => component.props("title") === "discography");
+    expect(shelf?.props("items")).toEqual([]);
+    expect(shelf?.props("emptyMessage")).toBe("discography_types_empty");
   });
+
+  it.each([
+    [ArtistType.AUTHOR, "artist", "authors"],
+    [ArtistType.NARRATOR, "artist", "narrators"],
+    [ArtistType.AUTHOR, "audiobookartist", undefined],
+    [ArtistType.SINGER, "artist", undefined],
+  ])(
+    "moves a %s opened on the %s route to the audiobooks section as %s",
+    async (artistType, routeName, role) => {
+      route.name = routeName;
+      route.params = { provider: "deezer", itemId: "author_1" };
+      await mountDetails(
+        artist({
+          item_id: "author_1",
+          provider: "deezer",
+          artist_type: artistType,
+        }),
+      );
+
+      expect(mockRouterReplace.mock.calls).toEqual(
+        role
+          ? [
+              [
+                {
+                  name: "audiobookartist",
+                  params: { provider: "deezer", itemId: "author_1", role },
+                  query: {},
+                },
+              ],
+            ]
+          : [],
+      );
+    },
+  );
 
   it("uses the same audiobooks listing path for every library author/narrator artist", async () => {
     const wrapperA = await mountDetails(
@@ -384,7 +542,7 @@ describe("ArtistDetails", () => {
       "author-1",
       "library",
       ArtistType.AUTHOR,
-      undefined,
+      true,
       true,
       "story",
       20,
@@ -423,7 +581,7 @@ describe("ArtistDetails", () => {
       "provider-author",
       "qobuz_1",
       ArtistType.AUTHOR,
-      undefined,
+      true,
       undefined,
       "",
       20,

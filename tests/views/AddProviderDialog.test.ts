@@ -7,6 +7,8 @@ import {
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  CatalogRecommendationReason,
+  ProviderOffering,
   ProviderStage,
   ProviderTier,
   ProviderType,
@@ -22,6 +24,7 @@ const { apiMock, i18nMock, routeMock, storeMock } = vi.hoisted(() => ({
     providerManifests: {} as Record<string, unknown>,
     providers: {},
     getProviderConfigs: vi.fn(),
+    getCatalogRecommendations: vi.fn(),
     getProvider: vi.fn(),
     getProviderName: vi.fn(),
   },
@@ -68,13 +71,73 @@ beforeEach(() => {
   storeMock.isTouchscreen = false;
   storeMock.dialogActive = false;
   apiMock.getProviderConfigs.mockResolvedValue([]);
+  apiMock.getCatalogRecommendations.mockResolvedValue([]);
   apiMock.providerManifests = {
     spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
   };
   document.body.innerHTML = "";
 });
 
+const PLUGIN_MANIFESTS = {
+  party: providerManifest({
+    domain: "party",
+    name: "Party",
+    type: ProviderType.PLUGIN,
+  }),
+  spotify_connect: providerManifest({
+    domain: "spotify_connect",
+    name: "Spotify Connect",
+    type: ProviderType.PLUGIN,
+    stage: ProviderStage.BETA,
+  }),
+  airplay_receiver: providerManifest({
+    domain: "airplay_receiver",
+    name: "AirPlay Receiver",
+    type: ProviderType.PLUGIN,
+    stage: ProviderStage.ALPHA,
+  }),
+  spotify: providerManifest({ domain: "spotify", name: "Spotify" }),
+};
+
 describe("AddProviderDialog", () => {
+  it("lists the providers by name when the server suggests nothing", async () => {
+    apiMock.providerManifests = PLUGIN_MANIFESTS;
+    apiMock.getCatalogRecommendations.mockRejectedValue(new Error("refused"));
+    routeMock.query = { types: ProviderType.PLUGIN };
+
+    await openDialog();
+
+    expect(providerNames()).toEqual([
+      "AirPlay Receiver",
+      "Party",
+      "Spotify Connect",
+    ]);
+  });
+
+  it("lists the providers the server calls popular first, in its order, without hiding the others", async () => {
+    apiMock.getCatalogRecommendations.mockResolvedValue([
+      { domain: "party", reason: CatalogRecommendationReason.DISCOVERED },
+      {
+        domain: "airplay_receiver",
+        reason: CatalogRecommendationReason.POPULAR,
+      },
+      {
+        domain: "spotify_connect",
+        reason: CatalogRecommendationReason.POPULAR,
+      },
+    ]);
+    apiMock.providerManifests = PLUGIN_MANIFESTS;
+    routeMock.query = { types: ProviderType.PLUGIN };
+
+    await openDialog();
+
+    expect(providerNames()).toEqual([
+      "AirPlay Receiver",
+      "Spotify Connect",
+      "Party",
+    ]);
+  });
+
   it("focuses the search field on a non-touch device", async () => {
     await openDialog();
 
@@ -144,7 +207,7 @@ describe("AddProviderDialog", () => {
 
     // nothing on screen would explain a list that stays filtered
     expect(document.querySelector("faceted-filter-stub")).toBeNull();
-    expect(providerNames()).toEqual(["Spotify", "SoundCloud"]);
+    expect(providerNames()).toEqual(["SoundCloud", "Spotify"]);
   });
 
   it("starts the setup flow once when the provider name is activated", async () => {
@@ -235,7 +298,9 @@ describe("AddProviderDialog", () => {
     ).toBeNull();
     expect(
       document
-        .querySelector("[data-testid='community-marker'] [data-slot='badge']")
+        .querySelector(
+          "[data-testid='provider-maintainers'] [data-slot='badge']",
+        )
         ?.textContent?.trim(),
     ).toBe("settings.provider_community");
     expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_maintained_by", {
@@ -243,7 +308,7 @@ describe("AddProviderDialog", () => {
     });
   });
 
-  it("adds no community line to a core provider", async () => {
+  it("names the maintainers of a core provider without the Community badge", async () => {
     apiMock.providerManifests = {
       spotify: providerManifest({
         domain: "spotify",
@@ -254,8 +319,27 @@ describe("AddProviderDialog", () => {
 
     await openDialog();
 
+    const line = document.querySelector("[data-testid='provider-maintainers']");
+    expect(line?.textContent?.trim()).toBe("settings.provider_maintained_by");
+    expect(line?.querySelector("[data-slot='badge']")).toBeNull();
+    expect(i18nMock.t).toHaveBeenCalledWith("settings.provider_maintained_by", {
+      maintainers: "@jane",
+    });
+  });
+
+  it("adds no maintainer line to a provider only the project owns", async () => {
+    apiMock.providerManifests = {
+      spotify: providerManifest({
+        domain: "spotify",
+        name: "Spotify",
+        codeowners: ["@music-assistant"],
+      }),
+    };
+
+    await openDialog();
+
     expect(
-      document.querySelector("[data-testid='community-marker']"),
+      document.querySelector("[data-testid='provider-maintainers']"),
     ).toBeNull();
   });
 
@@ -314,6 +398,34 @@ describe("AddProviderDialog", () => {
     await openDialog({ multiInstanceOnly: true, selfServiceOnly: true });
 
     expect(providerNames()).toEqual(["Spotify"]);
+  });
+
+  it("offers only the plugins that bring AI or speech when restricted", async () => {
+    apiMock.providerManifests = {
+      ...PLUGIN_MANIFESTS,
+      openai_compatible: providerManifest({
+        domain: "openai_compatible",
+        name: "OpenAI Compatible",
+        type: ProviderType.PLUGIN,
+        provides: [ProviderOffering.AI],
+      }),
+      openai_tts: providerManifest({
+        domain: "openai_tts",
+        name: "OpenAI TTS",
+        type: ProviderType.PLUGIN,
+        provides: [ProviderOffering.TTS],
+      }),
+    };
+
+    await openDialog({
+      providerType: ProviderType.PLUGIN,
+      aiServiceOnly: true,
+    });
+
+    expect(
+      document.querySelector("[data-slot='dialog-title']")?.textContent,
+    ).toBe("settings.ai.add_service");
+    expect(providerNames()).toEqual(["OpenAI Compatible", "OpenAI TTS"]);
   });
 
   it("does not fetch the provider configs while hidden", async () => {
@@ -413,6 +525,7 @@ async function openDialog(
     providerType?: ProviderType;
     multiInstanceOnly?: boolean;
     selfServiceOnly?: boolean;
+    aiServiceOnly?: boolean;
   } = {},
 ): Promise<VueWrapper> {
   const wrapper = mount(AddProviderDialog, {
