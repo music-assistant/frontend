@@ -447,6 +447,7 @@ export enum PlayerType {
   VISUALIZER = "visualizer",
   LIGHT = "light",
   SOURCE = "source", // A capture-only device that provides audio input.
+  CONTROLLER = "controller", // A device that only controls playback, such as a remote.
   UNKNOWN = "unknown",
 }
 
@@ -1363,6 +1364,7 @@ export interface RecommendationFolder extends BrowseFolder {
   enabled_by_default: boolean;
   type: RecommendationFolderType;
   supports_provider_filter: boolean;
+  supports_hide_played: boolean;
 }
 
 // computed over all items of a collection, also when it holds a filtered subset

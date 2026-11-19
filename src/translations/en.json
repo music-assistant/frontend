@@ -107,6 +107,7 @@
         "visualizer": "Visualizer",
         "light": "Light",
         "source": "Audio input",
+        "controller": "Controller",
         "unknown": "Unknown"
     },
     "channel_layout": {
@@ -3111,6 +3112,7 @@
     "artist_all_audiobooks": "All audiobooks",
     "lights": "Lights",
     "audio_inputs": "Audio inputs",
+    "controllers": "Controllers",
     "players_in_group": "Players in group",
     "volume": "Volume",
     "grouped_volume": "Grouped volume",

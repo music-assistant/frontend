@@ -19,6 +19,7 @@ describe("playerSections", () => {
   it("lists each kind of device in a section of its own, in a fixed order", () => {
     expect(
       sectionsOf([
+        player("remote", PlayerType.CONTROLLER),
         player("mic", PlayerType.SOURCE),
         player("tv", PlayerType.DISPLAY),
         player("lamp", PlayerType.LIGHT),
@@ -29,6 +30,7 @@ describe("playerSections", () => {
       { key: "lights", label: "lights", ids: ["lamp"] },
       { key: "screens", label: "screens", ids: ["tv"] },
       { key: "inputs", label: "audio_inputs", ids: ["mic"] },
+      { key: "controllers", label: "controllers", ids: ["remote"] },
     ]);
   });
 

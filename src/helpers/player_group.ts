@@ -1,17 +1,12 @@
-export type PlayerGroupFilter = "all" | "players" | "lights" | "screens";
+import {
+  PLAYER_SECTIONS,
+  type PlayerSectionKey,
+} from "@/helpers/player_sections";
 
-const PLAYER_GROUP_FILTERS: PlayerGroupFilter[] = [
-  "all",
-  "players",
-  "lights",
-  "screens",
-];
+export type PlayerGroupFilter = "all" | PlayerSectionKey;
 
 export function isPlayerGroupFilter(
   value: unknown,
 ): value is PlayerGroupFilter {
-  return (
-    typeof value === "string" &&
-    PLAYER_GROUP_FILTERS.includes(value as PlayerGroupFilter)
-  );
+  return value === "all" || PLAYER_SECTIONS.some(({ key }) => key === value);
 }
