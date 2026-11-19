@@ -422,6 +422,9 @@ describe("AddProviderDialog", () => {
       aiServiceOnly: true,
     });
 
+    expect(
+      document.querySelector("[data-slot='dialog-title']")?.textContent,
+    ).toBe("settings.ai.add_service");
     expect(providerNames()).toEqual(["OpenAI Compatible", "OpenAI TTS"]);
   });
 
