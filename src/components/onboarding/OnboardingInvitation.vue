@@ -1,6 +1,7 @@
 <template>
   <div class="flex flex-col items-center gap-4">
     <div
+      v-if="$slots.partner"
       class="flex items-center"
       aria-hidden="true"
       data-testid="onboarding-invitation-visual"
@@ -84,11 +85,8 @@ import { Check, Link } from "@lucide/vue";
 import { computed } from "vue";
 
 /**
- * The layout of a setup wizard step that invites to set up something
- * optional: Music Assistant's logo linked to the `partner` slot, an intro, what
- * it brings, then the default slot for the action or what is set up, the
- * optional line and the `footer` slot. Once it is set up, what it brings and
- * the optional line make way for the slot.
+ * The layout of a setup wizard step that invites to set something up; once it
+ * is set up, what it brings and the optional line make way for the slot.
  */
 const props = defineProps<{
   intro: string;

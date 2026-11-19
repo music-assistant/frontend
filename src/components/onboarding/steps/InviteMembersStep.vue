@@ -1,13 +1,18 @@
 <template>
-  <section class="flex min-h-0 flex-col gap-4">
-    <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.invite_members.description") }}
-    </p>
+  <OnboardingInvitation
+    :intro="$t('onboarding.steps.invite_members.intro')"
+    :features="FEATURES"
+    :set-up="hasHousehold"
+    :linked="hasHousehold"
+    :optional="optionalLine"
+  >
+    <template #partner>
+      <Users />
+    </template>
 
-    <!-- fixed minimum height so the step does not jump once the users load, and
-         a live region so a member who was just added is announced -->
-    <ScrollFade class="flex min-h-24 flex-col gap-2" aria-live="polite">
-      <ItemGroup v-if="members.length > 0" class="gap-2">
+    <!-- a live region so a member who was just added is announced -->
+    <div class="flex flex-col gap-2" aria-live="polite">
+      <ItemGroup v-if="hasHousehold" class="gap-2">
         <Item
           v-for="member in members"
           :key="member.user_id"
@@ -27,15 +32,6 @@
         </Item>
       </ItemGroup>
 
-      <!-- only once the users are in: an unknown household is not a small one -->
-      <p
-        v-if="onlyYou"
-        class="text-muted-foreground text-sm"
-        data-testid="onboarding-only-you"
-      >
-        {{ $t("onboarding.just_you_so_far") }}
-      </p>
-
       <!-- the household stayed unknown: the step says so rather than passing a
            load that failed off as an empty house -->
       <Empty
@@ -51,27 +47,28 @@
           </EmptyTitle>
         </EmptyHeader>
       </Empty>
-    </ScrollFade>
-
-    <div>
-      <Button
-        :variant="
-          memberCount != null && memberCount > 1 ? 'secondary' : 'default'
-        "
-        data-testid="onboarding-add-member"
-        @click="showCreateUserDialog = true"
-      >
-        <UserPlus class="size-4" />
-        {{ $t("onboarding.add_member") }}
-      </Button>
     </div>
 
+    <!-- the invitation while it is just the admin, a way to add another after -->
+    <Button
+      :variant="hasHousehold ? 'secondary' : 'default'"
+      :size="hasHousehold ? 'default' : 'lg'"
+      class="self-center"
+      data-testid="onboarding-add-member"
+      @click="showCreateUserDialog = true"
+    >
+      <UserPlus class="size-4" />
+      {{ $t("onboarding.add_member") }}
+    </Button>
+
     <CreateUserDialog v-model="showCreateUserDialog" @created="loadUsers" />
-  </section>
+  </OnboardingInvitation>
 </template>
 
 <script setup lang="ts">
-import ScrollFade from "@/components/onboarding/ScrollFade.vue";
+import OnboardingInvitation, {
+  type InvitationFeature,
+} from "@/components/onboarding/OnboardingInvitation.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -91,8 +88,9 @@ import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
 import { householdMembers, useOnboarding } from "@/composables/useOnboarding";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { roleDisplayName } from "@/helpers/roles";
+import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { UserPlus, UserRound } from "@lucide/vue";
+import { LogIn, Music, Speaker, UserPlus, UserRound, Users } from "@lucide/vue";
 import { computed, ref } from "vue";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
@@ -113,12 +111,27 @@ const memberCount = computed(() => ctx.value.memberCount);
 const members = computed(() => householdMembers());
 // the admin running the wizard is a household member themselves, so a
 // household of one is the admin on their own
-const onlyYou = computed(
-  () => memberCount.value != null && memberCount.value <= 1,
+const hasHousehold = computed(
+  () => memberCount.value != null && memberCount.value > 1,
 );
 // the users answered, but with nothing to go on: the wizard only ever opens
 // this step once they have, so anything else is a load that did not land
 const loadFailed = computed(
   () => dataLoaded.value && memberCount.value == null,
+);
+
+const FEATURES: readonly InvitationFeature[] = [
+  { icon: LogIn, labelKey: "onboarding.steps.invite_members.features.sign_in" },
+  {
+    icon: Speaker,
+    labelKey: "onboarding.steps.invite_members.features.players",
+  },
+  { icon: Music, labelKey: "onboarding.steps.invite_members.features.music" },
+];
+
+const optionalLine = computed(() =>
+  $t("onboarding.steps.invite_members.optional", {
+    users: $t("auth.user_management"),
+  }),
 );
 </script>

@@ -119,17 +119,24 @@ describe("PlayersStep", () => {
     setPlayerEnabled.mockResolvedValue(true);
   });
 
-  it("explains what finds players when nothing is set up", () => {
+  it("invites to add player support when nothing is set up", () => {
     const wrapper = mountStep();
 
-    // with nothing to act on, the description says what finds players
-    expect(wrapper.text()).toContain(
-      "onboarding.steps.players.description_empty",
-    );
-    expect(wrapper.text()).toContain("onboarding.steps.players.empty");
-    expect(wrapper.text()).toContain(
-      "onboarding.steps.players.no_provider_hint",
-    );
+    // with nothing to act on, the intro says what finds players
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-intro]").text(),
+    ).toBe("onboarding.steps.players.description_empty");
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-invitation-features]")
+        .findAll("li")
+        .map((item) => item.text()),
+    ).toEqual([
+      "onboarding.steps.players.features.found",
+      "onboarding.steps.players.features.one_place",
+      "onboarding.steps.players.features.groups",
+    ]);
+    expect(wrapper.text()).not.toContain("onboarding.steps.players.empty");
     // nothing is looking yet, so there is nothing to wait for
     expect(
       wrapper.find("[data-testid=onboarding-players-discovering]").exists(),
@@ -137,9 +144,15 @@ describe("PlayersStep", () => {
     expect(
       wrapper.findAll("[data-testid=onboarding-player-provider]"),
     ).toHaveLength(0);
-    // adding one is the thing to do, so it is the button that stands out
+    // adding one is the thing to do, so it is the step's centred action; the
+    // step is not optional, so nothing says it can wait
     expect(addButton(wrapper).text()).toBe("settings.add_player_provider");
-    expect(addButton(wrapper).classes()).toContain("bg-primary");
+    expect(addButton(wrapper).classes()).toEqual(
+      expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
+    );
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-optional]").exists(),
+    ).toBe(false);
 
     wrapper.unmount();
   });
@@ -169,6 +182,10 @@ describe("PlayersStep", () => {
     expect(providers[0].text()).toContain("Sonos");
     expect(addButton(wrapper).text()).toBe("onboarding.steps.players.add_more");
     expect(addButton(wrapper).classes()).toContain("bg-accent");
+    // with something set up, the step follows what turns up instead of inviting
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-intro]").exists(),
+    ).toBe(false);
 
     wrapper.unmount();
   });

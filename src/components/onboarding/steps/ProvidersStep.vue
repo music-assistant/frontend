@@ -1,56 +1,49 @@
 <template>
-  <section class="flex min-h-0 flex-col gap-4">
-    <p class="text-muted-foreground text-sm">{{ $t(descriptionKey) }}</p>
+  <OnboardingInvitation
+    :intro="$t(descriptionKey)"
+    :features="features"
+    :set-up="configured.length > 0"
+    :linked="linked"
+  >
+    <template #partner>
+      <component :is="icon" />
+    </template>
 
-    <ScrollFade>
-      <ItemGroup v-if="configured.length > 0" class="gap-2">
-        <ConfiguredProviderItem
-          v-for="provider in configured"
-          :key="provider.instance_id"
-          :provider="provider"
-          data-testid="onboarding-configured-provider"
-        />
-      </ItemGroup>
+    <ItemGroup v-if="configured.length > 0" class="gap-2">
+      <ConfiguredProviderItem
+        v-for="provider in configured"
+        :key="provider.instance_id"
+        :provider="provider"
+        data-testid="onboarding-configured-provider"
+      />
+    </ItemGroup>
 
-      <Empty v-else class="border-border rounded-md border border-dashed py-6">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <component :is="icon" />
-          </EmptyMedia>
-          <EmptyTitle>{{ $t("onboarding.nothing_configured") }}</EmptyTitle>
-        </EmptyHeader>
-      </Empty>
-    </ScrollFade>
-
-    <div>
-      <Button
-        :variant="configured.length > 0 ? 'secondary' : 'default'"
-        data-testid="onboarding-add-provider"
-        @click="showAddProviderDialog = true"
-      >
-        <Plus class="size-4" />
-        {{ $t(addLabelKey) }}
-      </Button>
-    </div>
+    <!-- the invitation while nothing is set up, a way to add another after -->
+    <Button
+      :variant="configured.length > 0 ? 'secondary' : 'default'"
+      :size="configured.length > 0 ? 'default' : 'lg'"
+      class="self-center"
+      data-testid="onboarding-add-provider"
+      @click="showAddProviderDialog = true"
+    >
+      <Plus class="size-4" />
+      {{ $t(addLabelKey) }}
+    </Button>
 
     <AddProviderDialog
       v-model:show="showAddProviderDialog"
       :provider-type="providerType"
       :audio-source-only="connectingApps"
     />
-  </section>
+  </OnboardingInvitation>
 </template>
 
 <script setup lang="ts">
 import ConfiguredProviderItem from "@/components/onboarding/ConfiguredProviderItem.vue";
-import ScrollFade from "@/components/onboarding/ScrollFade.vue";
+import OnboardingInvitation, {
+  type InvitationFeature,
+} from "@/components/onboarding/OnboardingInvitation.vue";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { ItemGroup } from "@/components/ui/item";
 import {
   configuredAudioSourcePlugins,
@@ -59,7 +52,17 @@ import {
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
-import { Music, Plus, Smartphone } from "@lucide/vue";
+import {
+  Airplay,
+  AudioLines,
+  HardDrive,
+  Headphones,
+  Music,
+  Music2,
+  Plus,
+  Radio,
+  Smartphone,
+} from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 
 const props = defineProps<{
@@ -100,4 +103,31 @@ const addLabelKey = computed(() =>
 );
 
 const icon = computed(() => markRaw(connectingApps.value ? Smartphone : Music));
+
+const MUSIC_SOURCE_FEATURES: readonly InvitationFeature[] = [
+  {
+    icon: Headphones,
+    labelKey: "onboarding.steps.music_sources.features.streaming",
+  },
+  {
+    icon: HardDrive,
+    labelKey: "onboarding.steps.music_sources.features.files",
+  },
+  { icon: Radio, labelKey: "onboarding.steps.music_sources.features.radio" },
+];
+const MUSIC_APP_FEATURES: readonly InvitationFeature[] = [
+  { icon: Music2, labelKey: "onboarding.steps.plugins.features.apps" },
+  {
+    icon: AudioLines,
+    labelKey: "onboarding.steps.plugins.features.spotify_connect",
+  },
+  { icon: Airplay, labelKey: "onboarding.steps.plugins.features.airplay" },
+];
+
+const features = computed(() =>
+  connectingApps.value ? MUSIC_APP_FEATURES : MUSIC_SOURCE_FEATURES,
+);
+const linked = computed(() =>
+  configured.value.some((provider) => !provider.needsAttention),
+);
 </script>
