@@ -1,5 +1,6 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
+  createMultiChannelPlayer,
   getOutputMenuItems,
   getPlayerSettingsMenuItems,
   getSetupRequiredPlayerMenuItems,
@@ -14,6 +15,7 @@ import {
   ProviderFeature,
   ProviderType,
   Scope,
+  SpeakerChannel,
   type OutputProtocol,
   type Player,
   type PlayerOption,
@@ -37,6 +39,7 @@ const {
   toastMock,
 } = vi.hoisted(() => ({
   apiMock: {
+    createMultiChannelPlayer: vi.fn(),
     getProvider: vi.fn(),
     getPlayerConfig: vi.fn(),
     getProviderManifest: vi.fn(),
@@ -855,6 +858,221 @@ describe("getOutputMenuItems", () => {
     // the api layer reports the server's reason, so this must not toast a second time
     expect(toastMock.error).not.toHaveBeenCalled();
     expect(toastMock.success).not.toHaveBeenCalled();
+  });
+});
+
+describe("getOutputMenuItems multi-channel player", () => {
+  const sendspin = (): PlayerProtocolInfo => ({
+    ...protocol("sendspin"),
+    protocol_id: "studio-left-client",
+    role: ProtocolRole.NATIVE,
+  });
+  const native = () =>
+    output("sendspin", { output_protocol_id: "native", is_native: true });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registerPlayer({ protocols: [sendspin()], output_protocols: [native()] });
+    apiMock.getProvider.mockImplementation((instanceId: string) =>
+      providerInstance({
+        domain: instanceId,
+        instance_id: instanceId,
+        supported_features:
+          instanceId === "sendspin"
+            ? [ProviderFeature.CREATE_MULTI_CHANNEL_PLAYER]
+            : [],
+      }),
+    );
+    apiMock.getProviderManifest.mockImplementation((domain: string) =>
+      providerManifest({ domain, name: domain }),
+    );
+  });
+
+  it("offers it on an output of a provider that combines speakers", () => {
+    const onMultiChannelCreated = vi.fn();
+
+    menuItem(
+      getOutputMenuItems(playerConfig(), native(), { onMultiChannelCreated }),
+      "settings.multi_channel.make",
+    ).action?.();
+
+    expect(emitEvent).toHaveBeenCalledWith("multiChannelPlayerDialog", {
+      playerId: "kitchen",
+      playerName: "Kitchen",
+      protocol: sendspin(),
+      onCreated: onMultiChannelCreated,
+    });
+  });
+
+  it("offers it after splitting off, on a player with more than one output", () => {
+    registerPlayer({
+      protocols: [sendspin(), protocol("airplay")],
+      output_protocols: [native(), output("airplay")],
+    });
+
+    expect(visibleLabels(getOutputMenuItems(playerConfig(), native()))).toEqual(
+      ["settings.split_off_output", "settings.multi_channel.make"],
+    );
+    // AirPlay can not combine speakers
+    expect(
+      visibleLabels(getOutputMenuItems(playerConfig(), output("airplay"))),
+    ).toEqual(["settings.split_off_output"]);
+  });
+
+  it("offers nothing on an output that rides on another protocol", () => {
+    const bridge = output("sendspin", { derived_from: "airplay" });
+    registerPlayer({
+      protocols: [protocol("airplay"), protocol("sendspin")],
+      output_protocols: [output("airplay"), bridge],
+    });
+
+    expect(visibleLabels(getOutputMenuItems(playerConfig(), bridge))).toEqual(
+      [],
+    );
+  });
+
+  it("offers nothing on the output of a multi-channel player", () => {
+    registerPlayer({
+      type: PlayerType.MULTI_CHANNEL,
+      protocols: [sendspin()],
+      output_protocols: [native()],
+    });
+
+    expect(getOutputMenuItems(playerConfig(), native())).toEqual([]);
+  });
+});
+
+describe("getPlayerSettingsMenuItems taking a multi-channel player apart", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    storeMock.activePlayerId = undefined;
+    registerPlayer({ type: PlayerType.MULTI_CHANNEL });
+    apiMock.getProvider.mockReturnValue(
+      providerInstance({
+        supported_features: [ProviderFeature.CREATE_MULTI_CHANNEL_PLAYER],
+      }),
+    );
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  it("takes apart a player its provider combined, rather than deleting it", () => {
+    const labels = visibleLabels(getPlayerSettingsMenuItems(playerConfig()));
+
+    expect(labels).toContain("settings.multi_channel.take_apart");
+    expect(labels).not.toContain("settings.delete");
+  });
+
+  it("deletes a player that is no multi-channel player, or that came that way", () => {
+    expect(visibleLabels(getPlayerSettingsMenuItems(playerConfig()))).toContain(
+      "settings.multi_channel.take_apart",
+    );
+
+    registerPlayer({ type: PlayerType.PLAYER });
+    let labels = visibleLabels(getPlayerSettingsMenuItems(playerConfig()));
+    expect(labels).toContain("settings.delete");
+    expect(labels).not.toContain("settings.multi_channel.take_apart");
+
+    // a set the device delivers (a Sonos pair) is not one the provider can combine
+    registerPlayer({ type: PlayerType.MULTI_CHANNEL });
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    labels = visibleLabels(getPlayerSettingsMenuItems(playerConfig()));
+    expect(labels).toContain("settings.delete");
+    expect(labels).not.toContain("settings.multi_channel.take_apart");
+  });
+
+  it("removes the player after asking and reports it taken apart", async () => {
+    const onDeleted = vi.fn();
+    apiMock.removePlayer.mockResolvedValue(undefined);
+    storeMock.activePlayerId = "kitchen";
+
+    menuItem(
+      getPlayerSettingsMenuItems(playerConfig(), { onDeleted }),
+      "settings.multi_channel.take_apart",
+    ).action?.();
+
+    expect(apiMock.removePlayer).not.toHaveBeenCalled();
+    await confirmation().onConfirm();
+    expect(apiMock.removePlayer).toHaveBeenCalledWith("kitchen");
+    expect(onDeleted).toHaveBeenCalledOnce();
+    expect(toastMock.success).toHaveBeenCalledOnce();
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", null);
+  });
+
+  it("keeps the player when the server refuses to take it apart", async () => {
+    const onDeleted = vi.fn();
+    apiMock.removePlayer.mockRejectedValueOnce(new Error("Refused"));
+
+    menuItem(
+      getPlayerSettingsMenuItems(playerConfig(), { onDeleted }),
+      "settings.multi_channel.take_apart",
+    ).action?.();
+    await confirmation().onConfirm();
+
+    expect(onDeleted).not.toHaveBeenCalled();
+    // the api layer reports the server's reason, so this must not toast a second time
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+  });
+});
+
+describe("createMultiChannelPlayer", () => {
+  const members = {
+    "studio-left": SpeakerChannel.FRONT_LEFT,
+    "studio-right": SpeakerChannel.FRONT_RIGHT,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("returns the new player and hands it the player bar of a speaker", async () => {
+    const studio = player({
+      player_id: "studio",
+      type: PlayerType.MULTI_CHANNEL,
+    });
+    apiMock.createMultiChannelPlayer.mockResolvedValue(studio);
+    storeMock.activePlayerId = "studio-right";
+
+    expect(await createMultiChannelPlayer("sendspin", "Studio", members)).toBe(
+      studio,
+    );
+
+    expect(apiMock.createMultiChannelPlayer).toHaveBeenCalledWith(
+      "sendspin",
+      "Studio",
+      members,
+    );
+    expect(storeMock.activePlayerId).toBe("studio");
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", "studio");
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("leaves the player bar on a player that is no speaker of it", async () => {
+    apiMock.createMultiChannelPlayer.mockResolvedValue(
+      player({ player_id: "studio" }),
+    );
+    storeMock.activePlayerId = "office";
+
+    await createMultiChannelPlayer("sendspin", "Studio", members);
+
+    expect(storeMock.activePlayerId).toBe("office");
+    expect(setPreference).not.toHaveBeenCalled();
+  });
+
+  it("returns nothing when the server refuses, and leaves its reason to the api", async () => {
+    apiMock.createMultiChannelPlayer.mockRejectedValueOnce(
+      new Error("Studio right is not available"),
+    );
+    storeMock.activePlayerId = "studio-right";
+
+    expect(
+      await createMultiChannelPlayer("sendspin", "Studio", members),
+    ).toBeUndefined();
+
+    expect(storeMock.activePlayerId).toBe("studio-right");
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 });
 

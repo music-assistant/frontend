@@ -448,6 +448,11 @@ const getOutputMenu = function (output: OutputProtocol) {
       config.value = undefined;
       void loadConfig(playerId);
     },
+    // the output moved into the new player, and this player may be gone with it
+    onMultiChannelCreated: (playerId) => {
+      editConfig.value?.discardChanges();
+      router.replace(`/settings/editplayer/${playerId}`);
+    },
   });
 };
 

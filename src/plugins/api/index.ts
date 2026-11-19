@@ -107,6 +107,7 @@ import {
   SortField,
   SmartPlaylistRules,
   SoundEffect,
+  SpeakerChannel,
   StatisticsTopItemResult,
   StatisticsUsers,
   SourceFolder,
@@ -2871,6 +2872,26 @@ export class MusicAssistantApi {
       name,
       members,
       dynamic,
+    });
+  }
+
+  /**
+   * Combine speakers into one new multi-channel player, and return that player.
+   * The output of each speaker on the provider moves into it.
+   *
+   * @param provider The instance id of the provider whose speakers to combine.
+   * @param name The name of the new player.
+   * @param members The channel each speaker plays, by the player id of the speaker.
+   */
+  public createMultiChannelPlayer(
+    provider: string,
+    name: string,
+    members: Record<string, SpeakerChannel>,
+  ): Promise<Player> {
+    return this.sendCommand("players/create_multi_channel_player", {
+      provider,
+      name,
+      members,
     });
   }
 

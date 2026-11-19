@@ -7,6 +7,7 @@ import {
   type ConfigEntry,
   type OutputProtocol,
 } from "@/plugins/api/interfaces";
+import MultiChannelSpeakers from "@/views/settings/MultiChannelSpeakers.vue";
 import ProtocolConfigSection from "@/views/settings/ProtocolConfigSection.vue";
 
 const { apiMock, emitEvent } = vi.hoisted(() => ({
@@ -230,6 +231,57 @@ describe("ProtocolConfigSection", () => {
     // the trigger beside it still opens the panel
     await panel.get('[data-slot="accordion-trigger"]').trigger("click");
     expect(panel.attributes("data-state")).toBe("open");
+  });
+
+  it("shows the speakers of a multi-channel player as rows of their own", () => {
+    const category = "protocol_sendspin";
+    const entries = [
+      entry("multi_channel_group_id", category, { hidden: true }),
+      entry("note", category, { type: ConfigEntryType.LABEL }),
+      entry("speaker_1_client_id", category, { hidden: true, value: "c1" }),
+      entry("speaker_1_name", category, { hidden: true, value: "Studio left" }),
+      entry("speaker_1_channel", category, { value: "front_left" }),
+      entry("speaker_2_client_id", category, { hidden: true, value: "c2" }),
+      entry("speaker_2_name", category, {
+        hidden: true,
+        value: "Studio right",
+      }),
+      entry("speaker_2_channel", category, { value: "front_right" }),
+    ];
+    const wrapper = shallowMount(ProtocolConfigSection, {
+      props: {
+        ...sectionProps(entries, [outputProtocol("native", "sendspin", true)]),
+        visibleEntriesByCategory: {
+          [category]: entries.filter((configEntry) => !configEntry.hidden),
+        },
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    // the entries of no speaker keep the generic rows
+    expect(renderedKeys(wrapper)).toEqual(["note"]);
+    const speakers = wrapper.getComponent(MultiChannelSpeakers);
+    expect(
+      (speakers.props("speakers") as { name: string }[]).map(
+        (speaker) => speaker.name,
+      ),
+    ).toEqual(["Studio left", "Studio right"]);
+
+    speakers.vm.$emit("update:value", entries[4], "front_right");
+    expect(wrapper.emitted("update:value")?.[0]).toEqual([
+      entries[4],
+      "front_right",
+    ]);
+  });
+
+  it("shows no speaker rows for the protocol of any other player", () => {
+    const wrapper = mountSection(
+      [entry("speaker_1_channel", "protocol_sendspin", { value: "x" })],
+      [outputProtocol("native", "sendspin", true)],
+    );
+
+    expect(wrapper.findComponent(MultiChannelSpeakers).exists()).toBe(false);
+    expect(renderedKeys(wrapper)).toEqual(["speaker_1_channel"]);
   });
 
   it("offers the menu of a single output too", () => {
