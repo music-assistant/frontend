@@ -32,6 +32,14 @@ const PROVIDER_LABELS: readonly ProviderLabel[] = [
 const MIN_FILTER_LABELS = 2;
 
 /**
+ * Whether a value, such as one read from a route, is a label.
+ *
+ * @param value - The value to check.
+ */
+export const isProviderLabel = (value: unknown): value is ProviderLabel =>
+  (PROVIDER_LABELS as readonly unknown[]).includes(value);
+
+/**
  * What a provider offers as its manifest says, as the labels of the list it
  * shows in: those of a music source, those of a plugin, and none for any other
  * provider.

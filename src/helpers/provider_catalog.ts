@@ -12,6 +12,7 @@ import {
 } from "@/helpers/provider_config";
 import {
   getProviderLabels,
+  isProviderLabel,
   type ProviderLabel,
 } from "@/helpers/provider_labels";
 import { providerListType } from "@/helpers/settings_pages";
@@ -341,6 +342,8 @@ export const CATALOG_DISCOVER_TAB = "discover";
 export const CATALOG_INSTALLED_TAB = "installed";
 /** The route query that opens the details of an entry, by its domain. */
 export const CATALOG_DETAIL_QUERY = "detail";
+/** The route query that picks a label on the tab a Catalog link opens. */
+export const CATALOG_LABEL_QUERY = "label";
 
 /** A view of the Catalog: the Discover tab, the tab of one type, or what is set up. */
 export type CatalogTab =
@@ -371,13 +374,33 @@ export const getCatalogTabQuery = (tab: CatalogTab): LocationQueryRaw => {
 };
 
 /**
- * The Catalog, opened on the tab of the given type when the Catalog offers it.
+ * The label a Catalog route query picks, or null for All.
+ *
+ * @param query - The query of the Catalog route.
+ */
+export const getCatalogLabel = (query: LocationQuery): ProviderLabel | null => {
+  const label = query[CATALOG_LABEL_QUERY];
+  return isProviderLabel(label) ? label : null;
+};
+
+/**
+ * The Catalog, opened on the tab of the given type when the Catalog offers it,
+ * with the given label picked on that tab.
  *
  * @param type - A provider type, as a settings page reads it from its route.
+ * @param label - The label to pick; All when left out.
  */
-export const getCatalogRoute = (type?: string): RouteLocationRaw => ({
+export const getCatalogRoute = (
+  type?: string,
+  label?: ProviderLabel,
+): RouteLocationRaw => ({
   name: "catalog",
-  query: isCatalogType(type) ? getCatalogTabQuery(type) : {},
+  query: isCatalogType(type)
+    ? {
+        ...getCatalogTabQuery(type),
+        ...(label && { [CATALOG_LABEL_QUERY]: label }),
+      }
+    : {},
 });
 
 /**

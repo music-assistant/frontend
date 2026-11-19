@@ -108,8 +108,8 @@ import { RouterLink } from "vue-router";
  * assistants.
  */
 
-// the AI services are plugins
-const ADD_SERVICE_ROUTE = getCatalogRoute(ProviderType.PLUGIN);
+// the AI services are plugins, found under the AI label
+const ADD_SERVICE_ROUTE = getCatalogRoute(ProviderType.PLUGIN, "ai");
 
 const { engines, usage, loaded, loadFailed, refresh } = useAIEngines();
 
