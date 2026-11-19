@@ -9,6 +9,11 @@
     :empty-text="$t('statistics_listening_time_empty')"
     min-height-class="min-h-[280px]"
   >
+    <template #title-info>
+      <StatisticsLibraryInfo
+        :explanation="$t('statistics_library_based_listening_time')"
+      />
+    </template>
     <ul
       class="m-0 flex list-none flex-col gap-2 p-0"
       :aria-label="$t('statistics_artist_time')"
@@ -48,6 +53,7 @@
 
 <script setup lang="ts">
 import StatisticsCard from "@/components/statistics/StatisticsCard.vue";
+import StatisticsLibraryInfo from "@/components/statistics/StatisticsLibraryInfo.vue";
 import { useCanonicalLocale } from "@/composables/useCanonicalLocale";
 import { handleMediaItemClick } from "@/helpers/media_item_actions";
 import { formatCount } from "@/helpers/statistics_format";

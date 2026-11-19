@@ -249,6 +249,24 @@ describe("ProviderRow", () => {
     },
   );
 
+  it.each(VARIANTS)(
+    "does not open the provider when its status icon is tapped (%s)",
+    async (variant) => {
+      const wrapper = mountRow({
+        variant,
+        manageable: true,
+        statusIcon: "disabled",
+        statusLabel: "Disabled",
+      });
+
+      await wrapper
+        .get('[data-testid="provider-status-icon"]')
+        .trigger("click");
+
+      expect(wrapper.emitted("open")).toBeUndefined();
+    },
+  );
+
   it.each(VARIANTS)("shows no status icon by default (%s)", (variant) => {
     const wrapper = mountRow({ variant });
 
