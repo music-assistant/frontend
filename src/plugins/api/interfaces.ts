@@ -467,6 +467,30 @@ export enum ChannelLayout {
   UNKNOWN = "unknown",
 }
 
+export enum SpeakerChannel {
+  // The channel a speaker of a multi-channel player plays: a speaker position
+  // of the FLAC channel mask, as the Sendspin specification names them.
+  FRONT_LEFT = "front_left",
+  FRONT_RIGHT = "front_right",
+  FRONT_CENTER = "front_center",
+  LFE = "lfe",
+  BACK_LEFT = "back_left",
+  BACK_RIGHT = "back_right",
+  FRONT_LEFT_OF_CENTER = "front_left_of_center",
+  FRONT_RIGHT_OF_CENTER = "front_right_of_center",
+  BACK_CENTER = "back_center",
+  SIDE_LEFT = "side_left",
+  SIDE_RIGHT = "side_right",
+  TOP_CENTER = "top_center",
+  TOP_FRONT_LEFT = "top_front_left",
+  TOP_FRONT_CENTER = "top_front_center",
+  TOP_FRONT_RIGHT = "top_front_right",
+  TOP_REAR_LEFT = "top_rear_left",
+  TOP_REAR_CENTER = "top_rear_center",
+  TOP_REAR_RIGHT = "top_rear_right",
+  UNKNOWN = "unknown",
+}
+
 export enum PlayerOptionType {
   BOOLEAN = "boolean",
   INTEGER = "integer",
@@ -602,6 +626,7 @@ export enum ProviderFeature {
   REMOVE_PLAYER = "remove_player",
   REMOVE_GROUP_PLAYER = "remove_group_player",
   CREATE_GROUP_PLAYER = "create_group_player",
+  CREATE_MULTI_CHANNEL_PLAYER = "create_multi_channel_player",
   // metadata provider specific features
   ARTIST_METADATA = "artist_metadata",
   ALBUM_METADATA = "album_metadata",
@@ -1858,10 +1883,11 @@ export interface ProviderManifest {
   // menu_actions: entries this provider adds to the menu of a media item;
   // absent from an older server
   menu_actions?: ProviderMenuAction[];
-  // media_types: the media types the provider offers whatever its config
-  // (audio_source for a provider that plays audio into Music Assistant);
-  // optional metadata for discovery
-  media_types?: MediaType[];
+  // provides: what the provider offers whatever its config, for discovery only:
+  // the media types of a music provider, audio_source for one that plays audio
+  // into Music Assistant, or the main features of a plugin; absent from an
+  // older server
+  provides?: ProviderOffering[];
   // page: a page this provider serves, listed in the app's menu; an older
   // server declares none
   page?: ProviderPage | null;
@@ -1891,6 +1917,30 @@ export interface ProviderMenuAction {
   icon: string | null;
   // requires_player: whether the action acts on a player, which the app then passes
   requires_player: boolean;
+}
+
+export enum ProviderOffering {
+  // what a music provider offers
+  ARTIST = "artist",
+  ALBUM = "album",
+  TRACK = "track",
+  PLAYLIST = "playlist",
+  RADIO = "radio",
+  PODCAST = "podcast",
+  AUDIOBOOK = "audiobook",
+  SOUND_EFFECT = "sound_effect",
+  // live audio played into Music Assistant
+  AUDIO_SOURCE = "audio_source",
+  // what a plugin delivers
+  AI = "ai",
+  TTS = "tts",
+  SCROBBLE = "scrobble",
+  ASSISTANT = "assistant",
+  VISUALIZER = "visualizer",
+  RECOMMENDATIONS = "recommendations",
+  FUN = "fun",
+  // the fallback for a value that is not known
+  UNKNOWN = "unknown",
 }
 
 export enum ProviderStage {

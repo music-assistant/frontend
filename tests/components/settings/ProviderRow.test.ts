@@ -424,7 +424,7 @@ describe("ProviderRow", () => {
       const wrapper = mountRow({ variant, labels: ["library", "live"] });
 
       const labels = wrapper.findAll(
-        '[data-testid="source-labels"] [data-label]',
+        '[data-testid="provider-labels"] [data-label]',
       );
       expect(labels.map((label) => label.text())).toEqual([
         "settings.source_labels.library",
@@ -435,13 +435,23 @@ describe("ProviderRow", () => {
     },
   );
 
+  it.each(VARIANTS)("says what the plugin delivers (%s)", (variant) => {
+    const wrapper = mountRow({ variant, labels: ["ai", "fun"] });
+
+    expect(
+      wrapper
+        .findAll('[data-testid="provider-labels"] [data-label]')
+        .map((label) => label.text()),
+    ).toEqual(["settings.plugin_labels.ai", "settings.plugin_labels.fun"]);
+  });
+
   it.each(VARIANTS)(
-    "shows no labels for a source that offers none (%s)",
+    "shows no labels for a provider that offers none, or only other (%s)",
     (variant) => {
-      for (const labels of [[], undefined]) {
+      for (const labels of [[], undefined, ["other" as const]]) {
         const wrapper = mountRow({ variant, labels });
 
-        expect(wrapper.find('[data-testid="source-labels"]').exists()).toBe(
+        expect(wrapper.find('[data-testid="provider-labels"]').exists()).toBe(
           false,
         );
       }

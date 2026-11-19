@@ -7,7 +7,7 @@ import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import {
-  MediaType,
+  ProviderOffering,
   ProviderType,
   UserRole,
   type ProviderManifest,
@@ -27,7 +27,7 @@ const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
       players: { kitchen: { name: "Kitchen" } },
       providerManifests: {} as Record<
         string,
-        Pick<ProviderManifest, "name" | "type" | "media_types">
+        Pick<ProviderManifest, "name" | "type" | "provides">
       >,
       getProvider: vi.fn(),
       // resolves an instance id to a name, falling back to the manifest name
@@ -54,6 +54,7 @@ const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
 apiMock.providerManifests.spotify = {
   name: "Spotify",
   type: ProviderType.MUSIC,
+  provides: [],
 };
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -381,6 +382,7 @@ describe("Settings breadcrumbs on the System pages", () => {
       name: "Radio tuner",
       // the manifest of a core module has a type the provider types leave out
       type: "core" as ProviderType,
+      provides: [],
     };
 
     expect(pageTrail("editcore", { domain: "radio_tuner" })).toEqual([
@@ -472,6 +474,7 @@ describe("Settings breadcrumbs on the Home Assistant pages", () => {
     apiMock.providerManifests.hass = {
       name: "Home Assistant",
       type: ProviderType.PLUGIN,
+      provides: [],
     };
   });
 
@@ -545,6 +548,7 @@ describe("Settings breadcrumbs on the pages below the players", () => {
     apiMock.providerManifests.sonos = {
       name: "Sonos",
       type: ProviderType.PLAYER,
+      provides: [],
     };
 
     expect(await providerTrail(true, "sonos--kitchen")).toEqual([
@@ -607,6 +611,7 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
     apiMock.providerManifests.fanarttv = {
       name: "fanart.tv",
       type: ProviderType.METADATA,
+      provides: [],
     };
 
     expect(await providerTrail(true, "fanarttv--kitchen")).toEqual([
@@ -628,6 +633,7 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
     apiMock.providerManifests.essentia = {
       name: "Essentia",
       type: ProviderType.AUDIO_ANALYSIS,
+      provides: [],
     };
 
     const trail = await providerTrail(true, "essentia--kitchen");
@@ -643,7 +649,7 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
     apiMock.providerManifests.airplay_receiver = {
       name: "AirPlay Receiver",
       type: ProviderType.PLUGIN,
-      media_types: [MediaType.AUDIO_SOURCE],
+      provides: [ProviderOffering.AUDIO_SOURCE],
     };
 
     const trail = await providerTrail(true, "airplay_receiver--kitchen");
@@ -662,6 +668,7 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
     apiMock.providerManifests.lastfm = {
       name: "Last.fm",
       type: ProviderType.PLUGIN,
+      provides: [],
     };
 
     expect(await providerTrail(true, "lastfm--kitchen")).toEqual([
@@ -679,6 +686,7 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
     apiMock.providerManifests.filesystem_local = {
       name: "Local files",
       type: ProviderType.MUSIC,
+      provides: [],
     };
 
     const trail = await providerTrail(true, "filesystem_nfs--k2Lm9xQa");

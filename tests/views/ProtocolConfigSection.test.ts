@@ -7,6 +7,7 @@ import {
   type ConfigEntry,
   type OutputProtocol,
 } from "@/plugins/api/interfaces";
+import MultiChannelSpeakers from "@/views/settings/MultiChannelSpeakers.vue";
 import ProtocolConfigSection from "@/views/settings/ProtocolConfigSection.vue";
 
 const { apiMock, emitEvent } = vi.hoisted(() => ({
@@ -232,6 +233,47 @@ describe("ProtocolConfigSection", () => {
     expect(panel.attributes("data-state")).toBe("open");
   });
 
+  it("shows the speakers of a multi-channel player as rows of their own", () => {
+    const entries = stereoPairEntries();
+    const wrapper = mountStereoPair(entries, true);
+
+    // the entries of no speaker keep the generic rows
+    expect(renderedKeys(wrapper)).toEqual(["note"]);
+    const speakers = wrapper.getComponent(MultiChannelSpeakers);
+    expect(
+      (speakers.props("speakers") as { name: string }[]).map(
+        (speaker) => speaker.name,
+      ),
+    ).toEqual(["Studio left", "Studio right"]);
+
+    const channel = entries.find(
+      (configEntry) => configEntry.key === "speaker_1_channel_setting",
+    )!;
+    speakers.vm.$emit("update:value", channel, "front_right");
+    expect(wrapper.emitted("update:value")?.[0]).toEqual([
+      channel,
+      "front_right",
+    ]);
+  });
+
+  it("shows no speaker rows for the protocol of any other player", () => {
+    const wrapper = mountStereoPair(stereoPairEntries(), false);
+
+    expect(wrapper.findComponent(MultiChannelSpeakers).exists()).toBe(false);
+    expect(renderedKeys(wrapper)).toContain("speaker_1_channel_setting");
+  });
+
+  it("shows no speaker rows for keys without both the state and the channel", () => {
+    const entries = stereoPairEntries().filter(
+      (configEntry) =>
+        configEntry.key !== "speaker_1_state" &&
+        configEntry.key !== "speaker_2_channel_setting",
+    );
+    const wrapper = mountStereoPair(entries, true);
+
+    expect(wrapper.findComponent(MultiChannelSpeakers).exists()).toBe(false);
+  });
+
   it("offers the menu of a single output too", () => {
     const wrapper = mountSection(
       [entry("native_buffer", "protocol_sonos")],
@@ -350,6 +392,39 @@ function sectionProps(
     showPasswordValues: false,
     visibleEntriesByCategory,
   };
+}
+
+// the Sendspin protocol of a stereo pair: two speakers and one entry of its own
+function stereoPairEntries(): ConfigEntry[] {
+  const category = "protocol_sendspin";
+  return [
+    entry("note", category, { type: ConfigEntryType.LABEL }),
+    ...[
+      [1, "Studio left", "front_left"],
+      [2, "Studio right", "front_right"],
+    ].flatMap(([number, name, channel]) => [
+      entry(`speaker_${number}_state`, category, {
+        type: ConfigEntryType.LABEL,
+        value: "online",
+      }),
+      entry(`speaker_${number}_display_name`, category, {
+        type: ConfigEntryType.LABEL,
+        label: "Speaker",
+        value: name,
+      }),
+      entry(`speaker_${number}_channel_setting`, category, { value: channel }),
+    ]),
+  ];
+}
+
+function mountStereoPair(entries: ConfigEntry[], multiChannel: boolean) {
+  return shallowMount(ProtocolConfigSection, {
+    props: {
+      ...sectionProps(entries, [outputProtocol("native", "sendspin", true)]),
+      multiChannel,
+    },
+    global: { renderStubDefaultSlot: true },
+  });
 }
 
 function mountSection(

@@ -271,6 +271,43 @@ describe("EditCoreConfig", () => {
     ]);
   });
 
+  it("keeps the other changes when one applies at once", async () => {
+    const config = coreConfig();
+    config.values.log_level = {
+      ...config.values.clear_on_start,
+      key: "log_level",
+      type: ConfigEntryType.STRING,
+      immediate_apply: true,
+      value: "info",
+    };
+    apiMock.getCoreConfig.mockResolvedValueOnce(structuredClone(config));
+    apiMock.saveCoreConfig.mockResolvedValueOnce({
+      ...structuredClone(config),
+      values: {
+        ...structuredClone(config.values),
+        log_level: { ...config.values.log_level, value: "debug" },
+      },
+    });
+    const wrapper = shallowMount(EditCoreConfig, {
+      props: { domain: "cache" },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+    await flushPromises();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    const formEntry = (key: string) =>
+      (editConfig.props("configEntries") as ConfigEntry[]).find(
+        (entry) => entry.key === key,
+      )!;
+    formEntry("clear_on_start").value = "a draft";
+    formEntry("log_level").value = "debug";
+
+    editConfig.vm.$emit("immediateApply", { log_level: "debug" });
+    await flushPromises();
+
+    expect(formEntry("clear_on_start").value).toBe("a draft");
+    expect(formEntry("log_level").value).toBe("debug");
+  });
+
   it("saves the kept values, not the empty ones, on an immediate_apply action", async () => {
     apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
     apiMock.invokeCoreConfigAction.mockResolvedValueOnce([

@@ -1,6 +1,6 @@
 import {
   CommunityProviderState,
-  MediaType,
+  ProviderOffering,
   type ProviderConfig,
   type ProviderManifest,
   ProviderStage,
@@ -21,6 +21,7 @@ import {
   filterCatalogEntries,
   getCatalogDetailRoute,
   getCatalogInstalledRoute,
+  getCatalogLabel,
   getCatalogRoute,
   getCatalogTab,
   getCatalogTabQuery,
@@ -61,21 +62,21 @@ const MANIFESTS: ProviderManifest[] = [
   manifest("spotify_connect", "Spotify Connect", ProviderType.PLUGIN, {
     multi_instance: true,
     depends_on: "spotify",
-    media_types: [MediaType.AUDIO_SOURCE],
+    provides: [ProviderOffering.AUDIO_SOURCE],
   }),
   manifest("airplay_receiver", "AirPlay Receiver", ProviderType.PLUGIN, {
     stage: ProviderStage.ALPHA,
-    media_types: [MediaType.AUDIO_SOURCE],
+    provides: [ProviderOffering.AUDIO_SOURCE],
   }),
   manifest("party", "Party", ProviderType.PLUGIN),
   manifest("cast", "Cast", "core" as ProviderType),
   manifest("essentia", "Essentia", ProviderType.AUDIO_ANALYSIS),
 ];
 
-// what a server sends whose manifests name no media types
-const MANIFESTS_WITHOUT_MEDIA_TYPES = MANIFESTS.map((item) => ({
+// what a server sends whose manifests say they provide nothing
+const MANIFESTS_PROVIDING_NOTHING = MANIFESTS.map((item) => ({
   ...item,
-  media_types: undefined,
+  provides: [],
 }));
 
 const CONFIGS: ProviderConfig[] = [
@@ -194,7 +195,32 @@ describe("what can be added", () => {
     expect(
       isOfferable(
         manifest("sendspin", "Sendspin", ProviderType.PLAYER, {
-          media_types: [MediaType.AUDIO_SOURCE],
+          provides: [ProviderOffering.AUDIO_SOURCE],
+        }),
+        restrictions,
+      ),
+    ).toBe(false);
+  });
+
+  it("offers only the plugins that bring AI or speech when restricted", () => {
+    const restrictions = { aiServiceOnly: true };
+    for (const offering of [ProviderOffering.AI, ProviderOffering.TTS]) {
+      expect(
+        isOfferable(
+          manifest("openai", "OpenAI", ProviderType.PLUGIN, {
+            provides: [offering],
+          }),
+          restrictions,
+        ),
+      ).toBe(true);
+    }
+    // the other plugins bring neither
+    expect(addable([], restrictions)).toEqual([]);
+    // a provider of another type that says so is no AI service
+    expect(
+      isOfferable(
+        manifest("ai_music", "AI Music", ProviderType.MUSIC, {
+          provides: [ProviderOffering.AI],
         }),
         restrictions,
       ),
@@ -509,34 +535,34 @@ describe("filterCatalogEntries", () => {
   });
 
   it("narrows to the sources offering the label picked, by their manifest", () => {
-    const withMediaTypes = buildCatalogEntries(
-      MANIFESTS_WITHOUT_MEDIA_TYPES.map((item) =>
+    const withOfferings = buildCatalogEntries(
+      MANIFESTS_PROVIDING_NOTHING.map((item) =>
         item.domain === "tidal"
-          ? { ...item, media_types: [MediaType.PODCAST] }
+          ? { ...item, provides: [ProviderOffering.PODCAST] }
           : item.domain === "airplay_receiver"
-            ? { ...item, media_types: [MediaType.AUDIO_SOURCE] }
+            ? { ...item, provides: [ProviderOffering.AUDIO_SOURCE] }
             : item,
       ),
       [],
     );
 
     expect(
-      names(filterCatalogEntries(withMediaTypes, { label: "podcasts" })),
+      names(filterCatalogEntries(withOfferings, { label: "podcasts" })),
     ).toEqual(["Tidal"]);
     expect(
-      names(filterCatalogEntries(withMediaTypes, { label: "live" })),
+      names(filterCatalogEntries(withOfferings, { label: "live" })),
     ).toEqual(["AirPlay Receiver"]);
     // a label combines with the search
     expect(
       names(
-        filterCatalogEntries(withMediaTypes, {
+        filterCatalogEntries(withOfferings, {
           query: "spotify",
           label: "live",
         }),
       ),
     ).toEqual([]);
-    expect(filterCatalogEntries(withMediaTypes, { label: null })).toEqual(
-      withMediaTypes,
+    expect(filterCatalogEntries(withOfferings, { label: null })).toEqual(
+      withOfferings,
     );
   });
 
@@ -548,7 +574,7 @@ describe("filterCatalogEntries", () => {
 describe("countCatalogTypes", () => {
   it("counts the entries per type, in tab order, leaving out a type without any", () => {
     const counts = countCatalogTypes(
-      buildCatalogEntries(MANIFESTS_WITHOUT_MEDIA_TYPES, CONFIGS),
+      buildCatalogEntries(MANIFESTS_PROVIDING_NOTHING, CONFIGS),
     );
 
     expect(counts.map(({ type, count }) => [type.type, count])).toEqual([
@@ -570,7 +596,7 @@ describe("the audio sources", () => {
   // the plugins through which apps play to Music Assistant say so in their manifest
   const AUDIO_SOURCE_MANIFESTS = MANIFESTS.map((item) =>
     ["spotify_connect", "airplay_receiver"].includes(item.domain)
-      ? { ...item, media_types: [MediaType.AUDIO_SOURCE] }
+      ? { ...item, provides: [ProviderOffering.AUDIO_SOURCE] }
       : item,
   );
 
@@ -612,7 +638,7 @@ describe("the audio sources", () => {
   it("stay with the player support for a player provider offering audio sources", () => {
     // the Sendspin player provider declares audio sources for its line-ins
     const sendspin = manifest("sendspin", "Sendspin", ProviderType.PLAYER, {
-      media_types: [MediaType.AUDIO_SOURCE],
+      provides: [ProviderOffering.AUDIO_SOURCE],
     });
 
     expect(getManifestCatalogType(sendspin)?.type).toBe(ProviderType.PLAYER);
@@ -630,11 +656,11 @@ describe("the audio sources", () => {
     ).not.toContain("AirPlay Receiver");
   });
 
-  it("stay plugins on a server whose manifests name no media types", () => {
+  it("stay plugins when their manifests provide nothing", () => {
     expect(
       names(
         catalogEntriesOfType(
-          buildCatalogEntries(MANIFESTS_WITHOUT_MEDIA_TYPES, CONFIGS),
+          buildCatalogEntries(MANIFESTS_PROVIDING_NOTHING, CONFIGS),
           ProviderType.PLUGIN,
         ),
       ),
@@ -779,6 +805,30 @@ describe("catalog tabs", () => {
   it("opens the Catalog on everything for a page without a known type", () => {
     expect(getCatalogRoute(undefined)).toEqual({ name: "catalog", query: {} });
     expect(getCatalogRoute("core")).toEqual({ name: "catalog", query: {} });
+  });
+
+  it("opens the tab of a type with a label picked", () => {
+    expect(getCatalogRoute("plugin", "ai")).toEqual({
+      name: "catalog",
+      query: { types: "plugin", label: "ai" },
+    });
+  });
+
+  it("picks no label for a page without a known type", () => {
+    expect(getCatalogRoute("core", "ai")).toEqual({
+      name: "catalog",
+      query: {},
+    });
+  });
+
+  it.each([
+    [{}, null],
+    [{ types: "plugin", label: "tts" }, "tts"],
+    [{ types: "music", label: "podcasts" }, "podcasts"],
+    [{ label: "bogus" }, null],
+    [{ label: ["ai", "tts"] }, null],
+  ])("picks from %o the label %s", (query, label) => {
+    expect(getCatalogLabel(query)).toBe(label);
   });
 });
 

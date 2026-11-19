@@ -218,12 +218,13 @@ import {
   countCatalogTypes,
   FEATURE_REQUESTS_URL,
   filterCatalogEntries,
+  getCatalogLabel,
   getCatalogTab,
   getCatalogTabQuery,
   getCatalogType,
   needsInstall,
 } from "@/helpers/provider_catalog";
-import type { SourceLabel } from "@/helpers/source_labels";
+import type { ProviderLabel } from "@/helpers/provider_labels";
 import { CircleAlert, RefreshCw } from "@lucide/vue";
 import { computed, nextTick, reactive, ref, useTemplateRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -280,8 +281,8 @@ const noteOpen = ref(false);
 const searchQuery = ref("");
 // the stage filter belongs to the list of one tab, and starts empty on each
 const selectedStages = ref<string[]>([]);
-// the same goes for the label filter of the music sources
-const selectedLabel = ref<SourceLabel | null>(null);
+// the same goes for the label filter, which a link can pick for the tab it opens
+const selectedLabel = ref<ProviderLabel | null>(getCatalogLabel(route.query));
 
 const { selectedEntry, detailOpen, openDetail, closeDetail } =
   useCatalogDetail(entries);
@@ -330,7 +331,7 @@ const getMenuItems = () => getCommunityCatalogMenuItems(community);
 
 watch(activeTab, () => {
   selectedStages.value = [];
-  selectedLabel.value = null;
+  selectedLabel.value = getCatalogLabel(route.query);
 });
 
 const selectTab = (tab: string | number) => {

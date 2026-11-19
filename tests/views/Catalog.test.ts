@@ -9,7 +9,7 @@ import {
   CommunityProviderState,
   type CoreConfig,
   EventType,
-  MediaType,
+  ProviderOffering,
   type ProviderConfig,
   ProviderIconVariant,
   type ProviderManifest,
@@ -283,7 +283,7 @@ describe("Catalog", () => {
           domain: "airplay_receiver",
           name: "AirPlay Receiver",
           type: ProviderType.PLUGIN,
-          media_types: [MediaType.AUDIO_SOURCE],
+          provides: [ProviderOffering.AUDIO_SOURCE],
         }),
         providerManifest({
           domain: "party",
@@ -328,26 +328,29 @@ describe("Catalog", () => {
       await mountList(ProviderType.MUSIC);
 
       expect(
-        document.querySelector("[data-testid='source-label-filter']"),
+        document.querySelector("[data-testid='provider-label-filter']"),
       ).toBeNull();
     });
   });
 
   describe("with music sources saying in their manifest what they offer", () => {
     beforeEach(() => {
-      const withMediaTypes = (domain: string, mediaTypes: MediaType[]) => {
+      const withOfferings = (domain: string, provides: ProviderOffering[]) => {
         apiMock.providerManifests[domain] = {
           ...apiMock.providerManifests[domain],
-          media_types: mediaTypes,
+          provides,
         };
       };
-      withMediaTypes("spotify", [MediaType.TRACK, MediaType.PODCAST]);
-      withMediaTypes("soundcloud", [MediaType.TRACK]);
+      withOfferings("spotify", [
+        ProviderOffering.TRACK,
+        ProviderOffering.PODCAST,
+      ]);
+      withOfferings("soundcloud", [ProviderOffering.TRACK]);
       apiMock.providerManifests.airplay_receiver = providerManifest({
         domain: "airplay_receiver",
         name: "AirPlay Receiver",
         type: ProviderType.PLUGIN,
-        media_types: [MediaType.AUDIO_SOURCE],
+        provides: [ProviderOffering.AUDIO_SOURCE],
       });
     });
 
@@ -404,8 +407,97 @@ describe("Catalog", () => {
         0,
       );
       expect(
-        document.querySelector("[data-testid='source-label-filter']"),
+        document.querySelector("[data-testid='provider-label-filter']"),
       ).toBeNull();
+    });
+  });
+
+  describe("with plugins saying in their manifest what they deliver", () => {
+    beforeEach(() => {
+      for (const manifest of [
+        providerManifest({
+          domain: "lastfm",
+          name: "Last.fm",
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.SCROBBLE],
+        }),
+        providerManifest({
+          domain: "party",
+          name: "Party",
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.FUN],
+        }),
+        // a plugin naming nothing it delivers
+        providerManifest({
+          domain: "mystery",
+          name: "Mystery",
+          type: ProviderType.PLUGIN,
+        }),
+      ]) {
+        apiMock.providerManifests[manifest.domain] = manifest;
+      }
+    });
+
+    it("labels each card with what it delivers, and none with other", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      expect(cardLabels("lastfm")).toEqual(["scrobble"]);
+      expect(cardLabels("party")).toEqual(["fun"]);
+      expect(cardLabels("mystery")).toEqual([]);
+    });
+
+    it("offers a chip for every label of the plugins, after All and with Other last", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      expect(chipStates()).toEqual([
+        ["all", "true"],
+        ["scrobble", "false"],
+        ["fun", "false"],
+        ["other", "false"],
+      ]);
+    });
+
+    it("narrows the tab down to the chip picked, and counts that on the tab", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      await pickChip("other");
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Mystery"]);
+      expect(tabLabels()).toContain("settings.plugins1");
+
+      await pickChip("all");
+
+      expect(cardNames("[data-testid='catalog-list']")).toHaveLength(3);
+      expect(tabLabels()).toContain("settings.plugins3");
+    });
+
+    it("opens on the chip the route picks", async () => {
+      routeMock.query = { types: "plugin", label: "fun" };
+
+      await mountCatalog();
+
+      expect(chipStates()).toEqual([
+        ["all", "false"],
+        ["scrobble", "false"],
+        ["fun", "true"],
+        ["other", "false"],
+      ]);
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
+      expect(tabLabels()).toContain("settings.plugins1");
+    });
+
+    it("keeps the chip the route picks while the plugins come in", async () => {
+      routeMock.query = { types: "plugin", label: "fun" };
+      const manifests = { ...apiMock.providerManifests };
+      for (const domain of Object.keys(manifests)) {
+        delete apiMock.providerManifests[domain];
+      }
+
+      await mountCatalog();
+      Object.assign(apiMock.providerManifests, manifests);
+      await flushPromises();
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
     });
   });
 
@@ -3515,7 +3607,7 @@ function cardNames(container: string) {
 function cardLabels(domain: string) {
   return [
     ...cardFor(domain).querySelectorAll(
-      "[data-testid='source-labels'] [data-label]",
+      "[data-testid='provider-labels'] [data-label]",
     ),
   ].map((label) => label.getAttribute("data-label"));
 }
@@ -3524,7 +3616,7 @@ function cardLabels(domain: string) {
 function chipStates() {
   return [
     ...document.querySelectorAll(
-      "[data-testid='source-label-filter'] [data-label]",
+      "[data-testid='provider-label-filter'] [data-label]",
     ),
   ].map((chip) => [
     chip.getAttribute("data-label"),
@@ -3535,7 +3627,7 @@ function chipStates() {
 async function pickChip(label: string) {
   document
     .querySelector<HTMLElement>(
-      `[data-testid='source-label-filter'] [data-label='${label}']`,
+      `[data-testid='provider-label-filter'] [data-label='${label}']`,
     )!
     .click();
   await flushPromises();

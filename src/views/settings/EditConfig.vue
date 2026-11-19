@@ -60,6 +60,7 @@
           :is-disabled="isRowDisabled"
           :output-protocols="outputProtocols"
           :output-menu-items="outputMenuItems"
+          :multi-channel="multiChannel"
           @update:value="onValueUpdate"
           @action="onEntryAction"
           @toggle-password="showPasswordValues = !showPasswordValues"
@@ -162,6 +163,7 @@ import {
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
 import { Button } from "@/components/ui/button";
+import { isSpeakerChannelEntry } from "@/helpers/multi_channel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
@@ -201,6 +203,8 @@ export interface Props {
   // The menu entries of an output of the player being configured; an output without any
   // gets no menu button. Omitted for provider/core configs.
   outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
+  // The config is that of a multi-channel player, whose speakers show as rows of their own.
+  multiChannel?: boolean;
   // Domain of the provider being configured; lets a field recognise the entries of the
   // provider it belongs to. Omitted for player/core configs.
   providerDomain?: string;
@@ -658,10 +662,14 @@ const getSaveValues = function () {
 /**
  * Whether a save unsets an entry that was reset, rather than send its default. The
  * name and the switches that turn a provider, an output or a plugin on keep sending
- * their value, as does an entry that is not saved as a value at all.
+ * their value, as does an entry that is not saved as a value at all, and the channel
+ * of a speaker of a multi-channel player, which always plays one.
  */
 const unsetsOnReset = function (entry: ConfigEntryUI) {
   if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
+    return false;
+  }
+  if (props.multiChannel && isSpeakerChannelEntry(entry, entries.value ?? [])) {
     return false;
   }
   const { key } = entry;

@@ -155,6 +155,34 @@ describe("ConfigEntryField", () => {
     expect(wrapper.find(".v-select").exists()).toBe(true);
   });
 
+  it("leaves out the clear button of a dropdown that must keep its value", () => {
+    const dropdown = entry({
+      key: "speaker_1_channel",
+      type: ConfigEntryType.STRING,
+      options: [
+        { title: "Left", value: "front_left" },
+        { title: "Right", value: "front_right" },
+      ],
+      value: "front_left",
+    });
+    const clearable = (wrapper: VueWrapper) =>
+      wrapper.getComponent({ name: "VSelect" }).props("clearable");
+
+    expect(clearable(mountField(dropdown))).toBe(true);
+    expect(
+      clearable(
+        mount(ConfigEntryField, {
+          props: {
+            confEntry: dropdown,
+            showPasswordValues: false,
+            clearable: false,
+          },
+          global: { plugins: [vuetify] },
+        }),
+      ),
+    ).toBe(false);
+  });
+
   it("shows a value the options do not list yet", () => {
     const wrapper = mountField(
       entry({

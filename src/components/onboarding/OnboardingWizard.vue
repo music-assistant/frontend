@@ -115,6 +115,7 @@
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
 import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
+import AIStep from "@/components/onboarding/steps/AIStep.vue";
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
 import FinishStep from "@/components/onboarding/steps/FinishStep.vue";
 import HomeAssistantStep from "@/components/onboarding/steps/HomeAssistantStep.vue";
@@ -180,6 +181,7 @@ const STEP_VIEWS: Record<
   },
   core_settings: { component: markRaw(CoreSettingsStep) },
   home_assistant: { component: markRaw(HomeAssistantStep) },
+  ai: { component: markRaw(AIStep) },
   invite_members: { component: markRaw(InviteMembersStep) },
   finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
   welcome: { component: markRaw(WelcomeStep) },

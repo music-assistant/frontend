@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CommunityProviderState,
   type CoreConfig,
-  MediaType,
+  ProviderOffering,
   type ProviderConfig,
   ProviderFeature,
   type ProviderInstance,
@@ -68,9 +68,11 @@ const {
         documentation: "https://example.com",
         has_setup_flow: true,
         name: "Spotify",
+        provides: [] as string[],
         self_service: true,
         stage: "stable",
         tier: "core",
+        type: "music",
       },
       builtin: {
         allow_disable: false,
@@ -969,8 +971,9 @@ describe("Providers on a hub", () => {
   function withAirplayReceiver() {
     (apiMock.providerManifests as Record<string, unknown>).airplay_receiver = {
       ...apiMock.providerManifests.spotify,
-      media_types: [MediaType.AUDIO_SOURCE],
+      provides: [ProviderOffering.AUDIO_SOURCE],
       name: "AirPlay Receiver",
+      type: ProviderType.PLUGIN,
     };
     return providerConfig({
       domain: "airplay_receiver",
@@ -1068,25 +1071,31 @@ describe("Providers on a hub", () => {
 
 describe("Providers labelled with what they offer", () => {
   afterEach(() => {
+    apiMock.providerManifests.spotify.provides = [];
     delete (apiMock.providerManifests as Record<string, unknown>)
       .airplay_receiver;
     delete (apiMock.providerManifests as Record<string, unknown>).podcastfeed;
+    delete (apiMock.providerManifests as Record<string, unknown>).radio_browser;
   });
 
-  // a running Spotify reports a library and podcasts, a podcast feed that is
-  // not running says in its manifest that it offers podcasts, and the AirPlay
-  // receiver says in its manifest that apps play through it
+  // Spotify and a podcast feed that is not running say in their manifest what
+  // they offer, and the AirPlay receiver that apps play through it; the running
+  // Spotify also reports audiobooks, which its manifest leaves out
   function labelledSources(): ProviderConfig[] {
     const manifests = apiMock.providerManifests as Record<string, unknown>;
+    apiMock.providerManifests.spotify.provides = [
+      ProviderOffering.TRACK,
+      ProviderOffering.PODCAST,
+    ];
     manifests.airplay_receiver = {
       ...apiMock.providerManifests.spotify,
-      media_types: [MediaType.AUDIO_SOURCE],
+      provides: [ProviderOffering.AUDIO_SOURCE],
       name: "AirPlay Receiver",
       type: ProviderType.PLUGIN,
     };
     manifests.podcastfeed = {
       ...apiMock.providerManifests.spotify,
-      media_types: [MediaType.PODCAST],
+      provides: [ProviderOffering.PODCAST],
       name: "Podcast feed",
       type: ProviderType.MUSIC,
     };
@@ -1096,7 +1105,7 @@ describe("Providers labelled with what they offer", () => {
         instance_id: "spotify--own",
         supported_features: [
           ProviderFeature.LIBRARY_TRACKS,
-          ProviderFeature.LIBRARY_PODCASTS,
+          ProviderFeature.LIBRARY_AUDIOBOOKS,
         ],
       }),
     };
@@ -1128,7 +1137,7 @@ describe("Providers labelled with what they offer", () => {
 
   function chips(wrapper: Awaited<ReturnType<typeof mountWithConfigs>>) {
     return wrapper
-      .findAll('[data-testid="source-label-filter"] button')
+      .findAll('[data-testid="provider-label-filter"] button')
       .map((chip) => ({
         label: chip.attributes("data-label"),
         pressed: chip.attributes("aria-pressed"),
@@ -1140,11 +1149,11 @@ describe("Providers labelled with what they offer", () => {
     label: string,
   ) {
     await wrapper
-      .get(`[data-testid="source-label-filter"] [data-label="${label}"]`)
+      .get(`[data-testid="provider-label-filter"] [data-label="${label}"]`)
       .trigger("click");
   }
 
-  it("hands each row what its source offers, from the running source or else its manifest", async () => {
+  it("hands each row what its manifest says it offers, whatever a running source reports", async () => {
     const wrapper = await mountWithConfigs(labelledSources());
 
     expect(rowFor(wrapper, "spotify--own").props("labels")).toEqual([
@@ -1212,20 +1221,14 @@ describe("Providers labelled with what they offer", () => {
   });
 
   it("offers no chips while the listed sources have a single label between them", async () => {
-    apiMock.providers = {
-      "spotify--own": providerInstance({
-        domain: "spotify",
-        instance_id: "spotify--own",
-        supported_features: [ProviderFeature.LIBRARY_TRACKS],
-      }),
-    };
+    apiMock.providerManifests.spotify.provides = [ProviderOffering.TRACK];
 
     const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
 
     expect(rowFor(wrapper, "spotify--own").props("labels")).toEqual([
       "library",
     ]);
-    expect(wrapper.find('[data-testid="source-label-filter"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="provider-label-filter"]').exists()).toBe(
       false,
     );
   });
@@ -1234,27 +1237,16 @@ describe("Providers labelled with what they offer", () => {
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),
     );
-    apiMock.providers = {
-      "spotify--own": providerInstance({
-        domain: "spotify",
-        instance_id: "spotify--own",
-        supported_features: [ProviderFeature.LIBRARY_TRACKS],
-      }),
-      "spotify--other": providerInstance({
-        domain: "spotify",
-        instance_id: "spotify--other",
-        supported_features: [ProviderFeature.LIBRARY_RADIOS],
-      }),
-      "spotify--household": providerInstance({
-        domain: "spotify",
-        instance_id: "spotify--household",
-        supported_features: [ProviderFeature.LIBRARY_TRACKS],
-      }),
+    apiMock.providerManifests.spotify.provides = [ProviderOffering.TRACK];
+    (apiMock.providerManifests as Record<string, unknown>).radio_browser = {
+      ...apiMock.providerManifests.spotify,
+      name: "Radio Browser",
+      provides: [ProviderOffering.RADIO],
     };
 
     const wrapper = await mountWithConfigs([
       ownSource(),
-      otherSource(),
+      { ...otherSource(), domain: "radio_browser" },
       householdSource(),
     ]);
     await pickChip(wrapper, "library");
@@ -1270,6 +1262,89 @@ describe("Providers labelled with what they offer", () => {
       ["own", ["Own Spotify"]],
       ["shared", ["Household Spotify"]],
     ]);
+  });
+
+  describe("on the Plugins page", () => {
+    const PLUGINS: Record<string, ProviderOffering[]> = {
+      lastfm: [ProviderOffering.SCROBBLE],
+      openai: [ProviderOffering.AI, ProviderOffering.TTS],
+      party: [ProviderOffering.FUN],
+      // a plugin naming nothing it delivers
+      mystery: [],
+    };
+
+    beforeEach(() => {
+      pageType = ProviderType.PLUGIN;
+    });
+
+    afterEach(() => {
+      for (const domain of Object.keys(PLUGINS)) {
+        delete (apiMock.providerManifests as Record<string, unknown>)[domain];
+      }
+    });
+
+    function labelledPlugins(domains = Object.keys(PLUGINS)): ProviderConfig[] {
+      const manifests = apiMock.providerManifests as Record<string, unknown>;
+      return domains.map((domain) => {
+        manifests[domain] = {
+          ...apiMock.providerManifests.spotify,
+          name: domain,
+          provides: PLUGINS[domain],
+          type: ProviderType.PLUGIN,
+        };
+        return providerConfig({
+          domain,
+          instance_id: `${domain}--1`,
+          name: domain,
+          status: ProviderStatus.LOADED,
+          type: ProviderType.PLUGIN,
+        });
+      });
+    }
+
+    it("hands each row what its plugin delivers, other when it names nothing", async () => {
+      const wrapper = await mountWithConfigs(labelledPlugins());
+
+      expect(rowFor(wrapper, "openai--1").props("labels")).toEqual([
+        "ai",
+        "tts",
+      ]);
+      expect(rowFor(wrapper, "mystery--1").props("labels")).toEqual(["other"]);
+    });
+
+    it("offers a chip for every label a listed plugin has, after All and with Other last", async () => {
+      const wrapper = await mountWithConfigs(labelledPlugins());
+
+      expect(chips(wrapper).map((chip) => chip.label)).toEqual([
+        "all",
+        "ai",
+        "tts",
+        "scrobble",
+        "fun",
+        "other",
+      ]);
+    });
+
+    it("narrows the list down to the plugins offering the chip picked", async () => {
+      const wrapper = await mountWithConfigs(labelledPlugins());
+
+      await pickChip(wrapper, "tts");
+      expect(rowIds(wrapper)).toEqual(["openai--1"]);
+
+      await pickChip(wrapper, "other");
+      expect(rowIds(wrapper)).toEqual(["mystery--1"]);
+
+      await pickChip(wrapper, "all");
+      expect(rowIds(wrapper)).toHaveLength(4);
+    });
+
+    it("offers no chips while the listed plugins have a single label between them", async () => {
+      const wrapper = await mountWithConfigs(labelledPlugins(["lastfm"]));
+
+      expect(
+        wrapper.find('[data-testid="provider-label-filter"]').exists(),
+      ).toBe(false);
+    });
   });
 });
 
@@ -2098,7 +2173,7 @@ async function mountWithConfigs(
         ProviderRow: ProviderRowStub,
         // the panel holds the list, its heading and its add button
         SettingsListPanel: false,
-        SourceLabelFilter: false,
+        ProviderLabelFilter: false,
         "v-icon": true,
       },
     },

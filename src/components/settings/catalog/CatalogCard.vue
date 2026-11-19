@@ -58,7 +58,7 @@
     >
       {{ entry.manifest.description }}
     </p>
-    <SourceLabels :labels="labels" class="mt-3" />
+    <ProviderLabels :labels="labels" class="mt-3" />
     <template #footer>
       <span
         v-if="pairedWith"
@@ -115,8 +115,8 @@
 
 <script setup lang="ts">
 import CatalogBannerCard from "@/components/settings/catalog/CatalogBannerCard.vue";
+import ProviderLabels from "@/components/settings/providers/ProviderLabels.vue";
 import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
-import SourceLabels from "@/components/settings/providers/SourceLabels.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCatalogEntryDetails } from "@/composables/settings/catalog/useCatalogEntryDetails";

@@ -1,7 +1,7 @@
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
 import {
-  MediaType,
+  ProviderOffering,
   ProviderStage,
   ProviderType,
 } from "@/plugins/api/interfaces";
@@ -129,21 +129,29 @@ describe("CatalogCard", () => {
   it("says what it offers, as its manifest says", () => {
     const labels = (manifest: Parameters<typeof providerManifest>[0]) =>
       mountCard(entry({ manifest: providerManifest(manifest) }))
-        .findAll("[data-testid='source-labels'] [data-label]")
+        .findAll("[data-testid='provider-labels'] [data-label]")
         .map((label) => label.attributes("data-label"));
 
     expect(
       labels({
-        media_types: [MediaType.ALBUM, MediaType.AUDIOBOOK],
+        provides: [ProviderOffering.ALBUM, ProviderOffering.AUDIOBOOK],
       }),
     ).toEqual(["library", "audiobooks"]);
     expect(
       labels({
         type: ProviderType.PLUGIN,
-        media_types: [MediaType.AUDIO_SOURCE],
+        provides: [ProviderOffering.AUDIO_SOURCE],
       }),
     ).toEqual(["live"]);
+    expect(
+      labels({
+        type: ProviderType.PLUGIN,
+        provides: [ProviderOffering.AI, ProviderOffering.TTS],
+      }),
+    ).toEqual(["ai", "tts"]);
     expect(labels({})).toEqual([]);
+    // other only gathers the plugins without a label for the filter
+    expect(labels({ type: ProviderType.PLUGIN })).toEqual([]);
   });
 
   it("says what it goes well with in place of who maintains it", () => {

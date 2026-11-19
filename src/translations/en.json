@@ -1078,6 +1078,31 @@
         "split_off_output_confirmation": "{0} is no longer part of {1} and shows up as a new player of its own, with default settings. {1} keeps its name, settings and queue.",
         "split_off": "Split off",
         "output_split_off": "{0} is now a player of its own",
+        "multi_channel": {
+            "make": "Make multi-channel player…",
+            "make_title": "Make multi-channel player",
+            "make_description": "{0} and another speaker play as one player, each on its own channel.",
+            "channels": {
+                "front_left": "Left",
+                "front_right": "Right"
+            },
+            "this_speaker": "{0} (this speaker)",
+            "channel": "Channel",
+            "output_delay": "Output delay (ms)",
+            "pick_speaker": "Pick a speaker",
+            "swap": "Swap the channels",
+            "no_speakers": "There is no other speaker to add. A speaker shows up here while it is switched on and connected.",
+            "name": "Name",
+            "make_note": "The {0} output of each speaker moves to the new player. A player without another output disappears, with its settings.",
+            "created": "{0} created",
+            "speaker_online": "Online",
+            "speaker_offline": "Offline",
+            "take_apart": "Take apart",
+            "take_apart_title": "Take {0} apart?",
+            "take_apart_confirmation": "{0} disappears, with its settings. Its speakers come back as players of their own, with default settings.",
+            "take_apart_confirm": "Take apart",
+            "taken_apart": "{0} taken apart"
+        },
         "hide_unavailable_players": "Hide unavailable players",
         "remove_unavailable_players": "Remove unavailable players",
         "remove_unavailable_players_title": "Remove unavailable players?",
@@ -1090,14 +1115,26 @@
         "music_sources_own": "Your sources",
         "music_sources_shared": "Shared with you",
         "music_sources_shared_empty": "No music sources have been shared with you yet.",
+        "provider_labels": {
+            "filter": "Filter on what they offer",
+            "all": "All"
+        },
         "source_labels": {
-            "filter": "Filter on what the sources offer",
-            "all": "All",
             "library": "Library",
             "radio": "Radio",
             "podcasts": "Podcasts",
             "audiobooks": "Audiobooks",
             "live": "Live sources"
+        },
+        "plugin_labels": {
+            "ai": "AI",
+            "tts": "Text-to-speech",
+            "scrobble": "Scrobbling",
+            "assistant": "Assistants",
+            "visualizer": "Lights & visuals",
+            "recommendations": "Mixes & recommendations",
+            "fun": "Fun & games",
+            "other": "Other"
         },
         "storage": {
             "title": "Storage",
@@ -3334,6 +3371,10 @@
                 "title": "Connect Home Assistant",
                 "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Link.",
                 "connect": "Connect to Home Assistant"
+            },
+            "ai": {
+                "title": "Add AI",
+                "description": "With AI, Music Assistant can speak announcements, host AI Radio, build smart playlists, run the music quiz and create playlist covers."
             },
             "invite_members": {
                 "title": "Add users",

@@ -1,8 +1,10 @@
+import { isAIServicePlugin } from "@/helpers/provider_config";
 import {
   type AIEngine,
   AIEngineKind,
   ProviderFeature,
   type ProviderInstance,
+  type ProviderManifest,
   ProviderType,
 } from "@/plugins/api/interfaces";
 
@@ -36,6 +38,24 @@ export function providesAIEngines(
     ENGINE_FEATURES.some((feature) =>
       provider.supported_features.includes(feature),
     )
+  );
+}
+
+/**
+ * Whether a provider is an AI service: a plugin that brings AI or speech by its
+ * manifest, whether it works or not, or one that provides engines right now,
+ * as Home Assistant does with its AI tasks and voices.
+ *
+ * @param manifest - The manifest of the provider.
+ * @param instance - The running instance of the provider, if any.
+ */
+export function isAIService(
+  manifest?: ProviderManifest,
+  instance?: ProviderInstance,
+): boolean {
+  return (
+    isAIServicePlugin(manifest) ||
+    (instance !== undefined && providesAIEngines(instance))
   );
 }
 

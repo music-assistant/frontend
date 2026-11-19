@@ -1,8 +1,8 @@
 import {
-  MediaType,
   type ProviderConfig,
   type ProviderInstance,
   type ProviderManifest,
+  ProviderOffering,
   ProviderStage,
   ProviderStatus,
   ProviderTier,
@@ -163,16 +163,35 @@ export const isBuiltinProvider = (manifest?: ProviderManifest): boolean =>
 
 /**
  * A plugin that lets an app play to Music Assistant, such as Spotify Connect or
- * the AirPlay receiver: its manifest names the audio source media type. A
- * provider of another type that names it, such as a player provider for the
- * line-ins of its devices, is no such app.
+ * the AirPlay receiver: its manifest says it provides audio sources. A provider
+ * of another type that says so, such as a player provider for the line-ins of
+ * its devices, is no such app.
  */
 export const isAudioSourcePlugin = (manifest?: {
   type: ProviderType;
-  media_types?: readonly MediaType[];
+  provides?: readonly ProviderOffering[];
 }): boolean =>
   manifest?.type === ProviderType.PLUGIN &&
-  (manifest.media_types?.includes(MediaType.AUDIO_SOURCE) ?? false);
+  (manifest.provides?.includes(ProviderOffering.AUDIO_SOURCE) ?? false);
+
+// what a plugin's manifest provides to be an AI service
+const AI_SERVICE_OFFERINGS: readonly ProviderOffering[] = [
+  ProviderOffering.AI,
+  ProviderOffering.TTS,
+];
+
+/**
+ * A plugin that brings AI or speech to Music Assistant, such as OpenAI
+ * Compatible or OpenAI TTS: its manifest says it provides either.
+ */
+export const isAIServicePlugin = (manifest?: {
+  type: ProviderType;
+  provides?: readonly ProviderOffering[];
+}): boolean =>
+  manifest?.type === ProviderType.PLUGIN &&
+  AI_SERVICE_OFFERINGS.some(
+    (offering) => manifest.provides?.includes(offering) ?? false,
+  );
 
 /**
  * The name a provider instance goes by: the custom name set on its configuration,

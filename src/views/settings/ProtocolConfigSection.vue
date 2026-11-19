@@ -99,7 +99,7 @@
               {{ $t("settings.protocol_provider_unavailable") }}
             </div>
             <ConfigEntryRow
-              v-for="conf_entry of protocolEntriesForCategory(panel)"
+              v-for="conf_entry of speakerEntriesByPanel[panel].others"
               :key="conf_entry.key"
               :conf-entry="conf_entry"
               :show-password-values="showPasswordValues"
@@ -107,6 +107,18 @@
               @update:value="emit('update:value', conf_entry, $event)"
               @toggle-password="emit('toggle-password')"
               @action="emit('action', conf_entry)"
+            />
+            <!-- the protocol of a multi-channel player shows a row per speaker -->
+            <MultiChannelSpeakers
+              v-if="speakerEntriesByPanel[panel].speakers.length > 0"
+              :speakers="speakerEntriesByPanel[panel].speakers"
+              :show-password-values="showPasswordValues"
+              :is-disabled="(entry) => isProtocolEntryDisabled(panel, entry)"
+              @update:value="
+                (entry, value) => emit('update:value', entry, value)
+              "
+              @toggle-password="emit('toggle-password')"
+              @action="(entry) => emit('action', entry)"
             />
             <div
               v-if="
@@ -136,6 +148,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { groupSpeakerEntries } from "@/helpers/multi_channel";
 import { api } from "@/plugins/api";
 import { ConfigValueType, OutputProtocol } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -143,6 +156,7 @@ import { $t } from "@/plugins/i18n";
 import { MoreVertical } from "@lucide/vue";
 import { computed } from "vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
+import MultiChannelSpeakers from "./MultiChannelSpeakers.vue";
 
 const props = defineProps<{
   entries: ConfigEntryUI[];
@@ -155,6 +169,8 @@ const props = defineProps<{
   outputProtocols?: OutputProtocol[];
   // The menu entries of an output of the player; an output without any gets no menu button.
   outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
+  // The config is that of a multi-channel player, whose speakers show as rows of their own.
+  multiChannel?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -205,6 +221,22 @@ const protocolEntriesForCategory = function (
   const enabledEntry = getProtocolEnabledEntry(category);
   return enabledEntry ? [enabledEntry, ...entries] : entries;
 };
+
+// The entries of each protocol panel, split into those of the speakers of a multi-channel
+// player and the rest.
+const speakerEntriesByPanel = computed(() =>
+  Object.fromEntries(
+    props.protocolPanels.map((panel) => [
+      panel,
+      props.multiChannel
+        ? groupSpeakerEntries(
+            props.entries.filter((entry) => entry.category === panel),
+            protocolEntriesForCategory(panel),
+          )
+        : { speakers: [], others: protocolEntriesForCategory(panel) },
+    ]),
+  ),
+);
 
 // A protocol's backing provider can be disabled/unavailable independently. Only
 // optional protocols (those with an enabled entry) are served by a separate,

@@ -7,6 +7,7 @@ import {
   MediaItemType,
   MediaItemTypeOrItemMapping,
   MediaType,
+  PlayerProtocolInfo,
   Playlist,
   Radio,
   Track,
@@ -122,6 +123,16 @@ export type PlayerMergeDialogEvent = {
   onMerged?: (targetPlayerId: string) => void;
 };
 
+export type MultiChannelPlayerDialogEvent = {
+  // the speaker the multi-channel player starts from
+  playerId: string;
+  playerName: string;
+  // the protocol of that speaker that moves into the multi-channel player
+  protocol: PlayerProtocolInfo;
+  // called with the id of the new player
+  onCreated?: (playerId: string) => void;
+};
+
 // finished: the flow ended on a FINISH step rather than an ABORT
 export type SetupFlowEndedCallback = (finished: boolean) => void;
 
@@ -163,6 +174,7 @@ export type Events = {
   playAnnouncementDialog: PlayAnnouncementDialogEvent;
   playerRenameDialog: PlayerRenameDialogEvent;
   playerMergeDialog: PlayerMergeDialogEvent;
+  multiChannelPlayerDialog: MultiChannelPlayerDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

@@ -48,6 +48,7 @@ import { api } from "@/plugins/api";
 import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import { goBack } from "@/helpers/navigation";
 import { settingsPageRoute } from "@/helpers/settings_sections";
 import { getExternalLinkUrl } from "@/helpers/utils";
@@ -123,9 +124,12 @@ const onImmediateApply = async function (
   await api
     .savePlayerQueueConfig(props.queueId!, values)
     .then((updatedConfig) => {
-      for (const [key, entry] of Object.entries(updatedConfig.values)) {
-        config.value!.values[key] = entry;
-      }
+      // the other values the user changed are still waiting for a save
+      config.value!.values = mergeConfigEntries(
+        config.value!.values,
+        updatedConfig.values,
+        Object.keys(values),
+      );
     })
     // the api reports the failure itself
     .catch(() => {});
