@@ -83,8 +83,7 @@
           v-model:filter="filter"
           :player="player"
           :members="groupMembers"
-          :has-lights="hasLights"
-          :has-screens="hasScreens"
+          :filter-options="filterOptions"
           @dismiss="handleOpenChange(false)"
         />
       </PopoverContent>
@@ -108,13 +107,13 @@ import {
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
+import { PLAYER_SECTIONS, playerSectionOf } from "@/helpers/player_sections";
 import {
   canBeGroupMember,
   canEditPlayerGroup,
   getPlayerDisplayName,
   getPlayerGroupMemberCount,
   groupMemberPickerVisible,
-  isScreenPlayer,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";
 import { type Player, PlayerType } from "@/plugins/api/interfaces";
@@ -192,24 +191,25 @@ const groupCandidates = computed(() => {
   );
 });
 
-const hasLights = computed(() =>
-  groupCandidates.value.some(
-    (candidate) => candidate.type === PlayerType.LIGHT,
-  ),
-);
-const hasScreens = computed(() =>
-  groupCandidates.value.some((candidate) => isScreenPlayer(candidate)),
-);
+// the players are always offered, every other kind only when one can be picked
+const filterOptions = computed(() => {
+  const kinds = new Set(
+    groupCandidates.value.map((candidate) => playerSectionOf(candidate.type)),
+  );
+  return PLAYER_SECTIONS.filter(
+    ({ key }) => key === "players" || kinds.has(key),
+  );
+});
 
 watch(
   () => store.activePlayerId,
   () => handleOpenChange(false),
 );
 
-watch([hasLights, hasScreens], () => {
+watch(filterOptions, () => {
   if (
-    (filter.value === "lights" && !hasLights.value) ||
-    (filter.value === "screens" && !hasScreens.value)
+    filter.value !== "all" &&
+    !filterOptions.value.some(({ key }) => key === filter.value)
   ) {
     filter.value = "all";
   }

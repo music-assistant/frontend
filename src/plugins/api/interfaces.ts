@@ -447,6 +447,7 @@ export enum PlayerType {
   VISUALIZER = "visualizer",
   LIGHT = "light",
   SOURCE = "source", // A capture-only device that provides audio input.
+  CONTROLLER = "controller", // A device that only controls playback, such as a remote.
   UNKNOWN = "unknown",
 }
 
