@@ -232,8 +232,6 @@ const logoSrc = computed(() =>
 // the steps that move on under a label of their own instead of Next
 const FORWARD_LABEL_KEYS: Partial<Record<OnboardingStepId, string>> = {
   get_started: "onboarding.steps.get_started.start",
-  intent: "onboarding.continue",
-  welcome: "onboarding.continue",
 };
 
 // The step being shown is page state: the wizard never moves by itself while
@@ -383,8 +381,7 @@ const jumpTo = async function (id: OnboardingStepId) {
 
 // Next moves one step along the visible order and no further: a step that is
 // already done is walked through, not skipped over, so the running order the
-// user sees is the order they move through. A question walked past answers
-// itself with its recommended option, which the step does on its way out.
+// user sees is the order they move through.
 const next = async function () {
   // a choice being saved must land before Next can leave the question
   if (moving.value || stepBusy.value) return;

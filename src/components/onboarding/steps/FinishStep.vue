@@ -44,7 +44,7 @@
             <ItemDescription
               v-else-if="step.id === 'intent' && ctx.answers.intent"
             >
-              {{ $t(`onboarding.steps.intent.${ctx.answers.intent}.label`) }}
+              {{ $t(`onboarding.steps.intent.${ctx.answers.intent}.title`) }}
             </ItemDescription>
             <!-- the welcome asked one thing; the summary says what came of it -->
             <ItemDescription

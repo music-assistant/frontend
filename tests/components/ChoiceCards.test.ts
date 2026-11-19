@@ -12,6 +12,7 @@ const OPTIONS = [
     icon,
     labelKey: "first.label",
     descriptionKey: "first.description",
+    recommended: true,
   },
   {
     value: "second",
@@ -52,6 +53,18 @@ describe("ChoiceCards", () => {
     wrapper.unmount();
   });
 
+  it("shows nothing as chosen before an answer is given", () => {
+    const wrapper = mountCards();
+
+    // the recommended answer is only a hint: the user still has to pick
+    expect(card(wrapper, "first").attributes("aria-pressed")).toBe("false");
+    expect(card(wrapper, "second").attributes("aria-pressed")).toBe("false");
+    expect(card(wrapper, "first").text()).toContain("recommended");
+    expect(card(wrapper, "second").text()).not.toContain("recommended");
+
+    wrapper.unmount();
+  });
+
   it("shows which answer is the one on the account", () => {
     const wrapper = mountCards({ selected: "second" });
 
@@ -72,12 +85,17 @@ describe("ChoiceCards", () => {
   });
 
   it("stays inert while an answer is on its way to the server", async () => {
-    const wrapper = mountCards({ busy: true });
+    const wrapper = mountCards({ busy: true, selected: "second" });
 
     expect(card(wrapper, "first").attributes("disabled")).toBeDefined();
     await card(wrapper, "first").trigger("click");
 
     expect(wrapper.emitted("select")).toBeUndefined();
+    // the card being saved says so; the other one only waits
+    expect(card(wrapper, "second").attributes("aria-busy")).toBe("true");
+    expect(card(wrapper, "second").find("[role=status]").exists()).toBe(true);
+    expect(card(wrapper, "first").attributes("aria-busy")).toBeUndefined();
+    expect(card(wrapper, "first").find("[role=status]").exists()).toBe(false);
 
     wrapper.unmount();
   });

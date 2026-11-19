@@ -3275,7 +3275,6 @@
         "step_counter": "Step {current} of {total}",
         "step_completed": "{step}, completed",
         "next": "Next",
-        "continue": "Continue",
         "skip": "Skip for now",
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
@@ -3325,18 +3324,16 @@
                 "ready": "Signed in as {name}."
             },
             "intent": {
-                "title": "How would you like to use Music Assistant?",
-                "description": "Choose your starting point. You can use every feature with either option.",
+                "question": "How would you primarily like to use Music Assistant?",
+                "starting_point": "Choose your starting point. You can use every feature with either option.",
                 "summary_title": "Your setup choice",
                 "phone_apps": {
-                    "label": "Connect my music apps to my speakers",
-                    "description": "Keep choosing music in apps like Spotify, or use AirPlay. Music Assistant works in the background to connect them to your speakers, without setting up a music library.",
-                    "preview": "Next, we'll add your speakers, connect your music apps and show you how to start listening."
+                    "title": "Connect my music apps to my speakers",
+                    "details": "Keep choosing music in apps like Spotify, or use AirPlay. Music Assistant works in the background to connect them to your speakers, without setting up a music library."
                 },
                 "music_hub": {
-                    "label": "The full Music Assistant experience",
-                    "description": "Bring your music services, local music and speakers together in one place. Browse, search and build playlists in Music Assistant. You can still play from Spotify Connect and AirPlay.",
-                    "preview": "Next, we'll connect your music services and add your speakers, then explore more features."
+                    "title": "The full Music Assistant experience",
+                    "details": "Bring your music services, local music and speakers together in one place. Browse, search and build playlists in Music Assistant. You can still play from Spotify Connect and AirPlay."
                 }
             },
             "music_sources": {

@@ -155,7 +155,7 @@ describe("WelcomeStep", () => {
     wrapper.unmount();
   });
 
-  it("persists the answer without moving the wizard on", async () => {
+  it("persists the answer and moves the wizard on", async () => {
     const wrapper = await mountStep();
 
     await card(wrapper, "expert").trigger("click");
@@ -166,7 +166,7 @@ describe("WelcomeStep", () => {
       // the step's own message is the only one the member should get
       { suppressGlobalError: true },
     );
-    expect(wrapper.emitted("advance")).toBeUndefined();
+    expect(wrapper.emitted("advance")).toHaveLength(1);
 
     wrapper.unmount();
   });
@@ -225,8 +225,8 @@ describe("WelcomeStep", () => {
     const wrapper = await mountStep();
     await card(wrapper, "standard").trigger("click");
 
-    // Next while the answer is still on its way waits for it here, instead of
-    // walking the member on and telling them about it from the next step
+    // leaving while the answer is still on its way waits for it here, instead
+    // of walking the member on and telling them about it from the next step
     const leaving = wrapper.vm.beforeLeave();
     landAnswer(true);
 
@@ -259,66 +259,44 @@ describe("WelcomeStep", () => {
     wrapper.unmount();
   });
 
-  it("shows the recommended answer as chosen before the member picks", async () => {
+  it("shows nothing as chosen before the member picks", async () => {
     const wrapper = await mountStep();
 
-    // the recommended option reads as chosen, and is the only one badged, while
-    // nothing is written until the member picks or moves on
-    expect(card(wrapper, "standard").attributes("aria-pressed")).toBe("true");
+    // the recommended option is only badged, so the question is the member's
+    // to answer
+    expect(card(wrapper, "standard").attributes("aria-pressed")).toBe("false");
     expect(card(wrapper, "expert").attributes("aria-pressed")).toBe("false");
     expect(card(wrapper, "standard").text()).toContain("recommended");
     expect(card(wrapper, "expert").text()).not.toContain("recommended");
+
+    wrapper.unmount();
+  });
+
+  it("answers nothing when the member leaves without picking", async () => {
+    const wrapper = await mountStep();
+
+    await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
     expect(setUserPreferencesMock).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });
 
-  it("walks on with the recommended answer when none was given", async () => {
-    const wrapper = await mountStep();
-
-    // the card that was showing as chosen is what moving on answers with, so
-    // the account holds it like any other answer
-    await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-    expect(setUserPreferencesMock).toHaveBeenCalledWith(
-      { expert_mode: false },
-      { suppressGlobalError: true },
-    );
-
-    wrapper.unmount();
-  });
-
-  it("stays put when the recommended answer could not be saved", async () => {
-    setUserPreferencesMock.mockResolvedValue(false);
-
-    const wrapper = await mountStep();
-
-    // told on the step that asked, the same as for an answer they clicked
-    await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
-    expect(toastMock.error).toHaveBeenCalledWith(
-      "onboarding.steps.welcome.save_failed",
-    );
-
-    wrapper.unmount();
-  });
-
-  it("keeps the answer the member gave when the account did not take it", async () => {
+  it("lets the member try again when the account did not take the answer", async () => {
     setUserPreferencesMock.mockResolvedValueOnce(false);
 
     const wrapper = await mountStep();
     await card(wrapper, "expert").trigger("click");
     await flushPromises();
 
-    // their pick stays the chosen card, not the recommended one
-    expect(card(wrapper, "expert").attributes("aria-pressed")).toBe("true");
-    expect(card(wrapper, "standard").attributes("aria-pressed")).toBe("false");
+    // the cards show what the account holds, which is still nothing
+    expect(card(wrapper, "expert").attributes("aria-pressed")).toBe("false");
+    expect(wrapper.emitted("advance")).toBeUndefined();
 
-    // and moving on tries their pick again, never the recommended answer
-    setUserPreferencesMock.mockClear();
-    await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-    expect(setUserPreferencesMock).toHaveBeenCalledWith(
-      { expert_mode: true },
-      { suppressGlobalError: true },
-    );
+    await card(wrapper, "expert").trigger("click");
+    await flushPromises();
+
+    expect(setUserPreferencesMock).toHaveBeenCalledTimes(2);
+    expect(wrapper.emitted("advance")).toHaveLength(1);
 
     wrapper.unmount();
   });
@@ -331,6 +309,7 @@ describe("WelcomeStep", () => {
     // coming back through the welcome is not answering it again
     await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
     expect(setUserPreferencesMock).not.toHaveBeenCalled();
+    expect(wrapper.emitted("advance")).toBeUndefined();
 
     wrapper.unmount();
   });
@@ -356,7 +335,15 @@ describe("WelcomeStep", () => {
     await flushPromises();
 
     expect(setUserPreferencesMock).toHaveBeenCalledOnce();
-    expect(wrapper.emitted("advance")).toBeUndefined();
+    expect(wrapper.emitted("advance")).toHaveLength(1);
+
+    wrapper.unmount();
+  });
+
+  it("holds the way on itself, so the wizard shows no Next", async () => {
+    const wrapper = await mountStep();
+
+    expect(wrapper.vm.ownsForwardAction).toBe(true);
 
     wrapper.unmount();
   });
