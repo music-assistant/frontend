@@ -27,9 +27,41 @@
       </Empty>
 
       <template v-else>
-        <SettingsLinkRows :rows="rows" test-id-prefix="home-assistant" />
-        <!-- the provider only has these settings while it is connected -->
-        <SettingsPageForm v-if="state === 'connected'" page="home_assistant" />
+        <SettingsLinkRows :rows="rows" test-id-prefix="home-assistant">
+          <template #control="{ row }">
+            <HassConnectionControl
+              v-if="row.key === 'connection' && connectionAction"
+              :action="connectionAction"
+              :busy="connectionBusy"
+              @run="runConnectionAction"
+            />
+            <!-- a provider that is not running has no players to choose, and
+                 its page says why -->
+            <HassPlayersControl
+              v-else-if="row.key === 'players' && runningPlayersId"
+              v-model:open="choosingPlayers"
+              :instance-id="runningPlayersId"
+            />
+            <HassSignInControl
+              v-else-if="row.key === 'sign_in'"
+              :label="row.label"
+            />
+            <HassRemoteAccessControl
+              v-else-if="row.key === 'remote_access'"
+              :enabled="remoteAccessEnabled"
+              :busy="remoteAccessBusy"
+              :label="row.label"
+              @update:enabled="setRemoteAccess"
+            />
+          </template>
+        </SettingsLinkRows>
+        <!-- the provider only has these settings while it is connected; the
+             page's menu acts on the connection -->
+        <SettingsPageForm
+          v-if="state === 'connected'"
+          page="home_assistant"
+          embedded
+        />
       </template>
     </template>
 
@@ -49,6 +81,10 @@
 </template>
 
 <script setup lang="ts">
+import HassConnectionControl from "@/components/settings/home-assistant/HassConnectionControl.vue";
+import HassPlayersControl from "@/components/settings/home-assistant/HassPlayersControl.vue";
+import HassRemoteAccessControl from "@/components/settings/home-assistant/HassRemoteAccessControl.vue";
+import HassSignInControl from "@/components/settings/home-assistant/HassSignInControl.vue";
 import SettingsLinkRows, {
   type SettingsRow,
 } from "@/components/settings/SettingsLinkRows.vue";
@@ -65,6 +101,7 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { useAIEngines } from "@/composables/settings/useAIEngines";
+import { useHassConnectionActions } from "@/composables/settings/useHassConnectionActions";
 import { useHomeAssistantConnection } from "@/composables/settings/useHomeAssistantConnection";
 import { enginesOf } from "@/helpers/ai_engines";
 import { engineSummary } from "@/helpers/ai_settings";
@@ -98,8 +135,8 @@ import { computed, markRaw } from "vue";
 
 /**
  * The connection with Home Assistant and what it brings: its players, its AI
- * tasks and voices, signing in with it, remote access through its cloud and
- * its devices as player controls.
+ * tasks and voices, signing in with it, remote access through Home Assistant
+ * Link and its devices as player controls, each managed on the spot.
  */
 
 const CONNECTION_STATE_KEYS: Readonly<Record<HassConnectionState, string>> = {
@@ -117,10 +154,28 @@ const {
   loaded,
   loadFailed,
   state,
+  choosingPlayers,
   connect,
   addPlayers,
 } = useHomeAssistantConnection();
+const {
+  enabled: remoteAccessEnabled,
+  usingHaCloud,
+  busy: remoteAccessBusy,
+  setEnabled: setRemoteAccess,
+} = remoteAccess;
+const {
+  action: connectionAction,
+  busy: connectionBusy,
+  runAction: runConnectionAction,
+} = useHassConnectionActions(hassConfig);
 const { engines, loaded: enginesLoaded } = useAIEngines();
+
+const runningPlayersId = computed(() =>
+  playersConfig.value?.status === ProviderStatus.LOADED
+    ? playersConfig.value.instance_id
+    : undefined,
+);
 
 const rows = computed<SettingsRow[]>(() => {
   const hass = hassConfig.value;
@@ -136,13 +191,15 @@ const rows = computed<SettingsRow[]>(() => {
     items.push(aiRow(hass));
   }
   // Home Assistant only signs users in while it is connected
-  if (state.value === "connected" && authManager.hasScope(Scope.USERS_READ)) {
+  if (
+    state.value === "connected" &&
+    authManager.hasScope(Scope.CONFIG_CORE_WRITE)
+  ) {
     items.push({
       key: "sign_in",
       icon: markRaw(LogIn),
       label: $t("settings.home_assistant.sign_in"),
-      description: $t("settings.home_assistant.sign_in_description"),
-      to: { name: "usersettings" },
+      description: $t("settings.home_assistant.sign_in_new_users"),
     });
   }
   if (authManager.hasScope(Scope.SYSTEM_MANAGE)) {
@@ -151,15 +208,17 @@ const rows = computed<SettingsRow[]>(() => {
       icon: markRaw(CloudCog),
       label: $t("settings.remote_access"),
       description: $t("settings.home_assistant.remote_access_description"),
-      state: remoteAccess.value && $t(remoteAccessStateKey(remoteAccess.value)),
-      to: { name: "remoteaccesssettings" },
+      // how it runs is only known once its details are in
+      state:
+        remoteAccessEnabled.value && usingHaCloud.value !== undefined
+          ? $t(remoteAccessStateKey(usingHaCloud.value))
+          : undefined,
     });
   }
   return items;
 });
 
-// the page of the provider manages the connection, which the add-on makes by
-// itself
+// the add-on makes the connection by itself
 function connectionRow(hass: ProviderConfig): SettingsRow {
   const attention = state.value === "needs_attention";
   return {
@@ -175,12 +234,12 @@ function connectionRow(hass: ProviderConfig): SettingsRow {
         ),
     state: $t(CONNECTION_STATE_KEYS[state.value]),
     error: attention,
-    to: providerRoute(hass),
   };
 }
 
-// the provider of the players leads to its page once it is set up, and is
-// offered while Home Assistant is connected
+// the provider of the players has its players chosen on the spot while it
+// runs, else leads to its page, and is offered while Home Assistant is
+// connected
 function playersRow(): SettingsRow | undefined {
   const players = playersConfig.value;
   const base = {

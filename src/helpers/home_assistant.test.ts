@@ -1,8 +1,4 @@
-import {
-  ProviderStatus,
-  ProviderType,
-  type RemoteAccessInfo,
-} from "@/plugins/api/interfaces";
+import { ProviderStatus, ProviderType } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import { providerConfig } from "../../tests/fixtures/providerConfig";
 import {
@@ -39,28 +35,14 @@ describe("hassConnectionState", () => {
 });
 
 describe("remoteAccessStateKey", () => {
-  const info = (overrides: Partial<RemoteAccessInfo>): RemoteAccessInfo => ({
-    enabled: true,
-    running: true,
-    connected: true,
-    remote_id: "MA-TEST",
-    using_ha_cloud: false,
-    signaling_url: "wss://signaling.example",
-    ...overrides,
-  });
-
-  it("says remote access is off", () => {
-    expect(remoteAccessStateKey(info({ enabled: false }))).toBe("off");
-  });
-
-  it("says it runs through Home Assistant Cloud", () => {
-    expect(remoteAccessStateKey(info({ using_ha_cloud: true }))).toBe(
+  it("says it runs through Home Assistant Link", () => {
+    expect(remoteAccessStateKey(true)).toBe(
       "settings.home_assistant.remote_access_ha_cloud",
     );
   });
 
-  it("says it runs without Home Assistant Cloud", () => {
-    expect(remoteAccessStateKey(info({ using_ha_cloud: false }))).toBe(
+  it("says it runs without Home Assistant Link", () => {
+    expect(remoteAccessStateKey(false)).toBe(
       "settings.home_assistant.remote_access_without_ha_cloud",
     );
   });

@@ -4,14 +4,17 @@ import {
   hassConnectionState,
 } from "@/helpers/home_assistant";
 import { startAddProvider } from "@/helpers/provider_add";
+import { isProviderErrorStatus } from "@/helpers/provider_config";
+import { useRemoteAccess } from "@/composables/useRemoteAccess";
 import { api } from "@/plugins/api";
 import {
   EventType,
   type ProviderConfig,
-  type RemoteAccessInfo,
+  ProviderStatus,
   Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import type { SetupFlowEndedCallback } from "@/plugins/eventbus";
 import { useDebounceFn } from "@vueuse/core";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 
@@ -20,16 +23,21 @@ const RELOAD_DELAY_MS = 300;
 
 /**
  * The connection with Home Assistant and what it provides, kept in step with
- * the server: the Home Assistant provider, the provider of its players and how
- * remote access runs.
+ * the server: the Home Assistant provider, the provider of its players and
+ * remote access.
  */
 export function useHomeAssistantConnection() {
   const hassConfig = ref<ProviderConfig>();
   const playersConfig = ref<ProviderConfig>();
-  // unknown until it loads, and for a user who may not manage remote access
-  const remoteAccess = ref<RemoteAccessInfo>();
+  // its details are read only for a user who may manage remote access
+  const remoteAccess = useRemoteAccess();
   const loaded = ref(false);
   const loadFailed = ref(false);
+  // whether the players of Home Assistant are being chosen
+  const choosingPlayers = ref(false);
+  // a provider of players that was just added offers its players to choose
+  // once it runs
+  let chooseOnceRunning = false;
   let requestId = 0;
 
   const state = computed(() => hassConnectionState(hassConfig.value));
@@ -42,10 +50,18 @@ export function useHomeAssistantConnection() {
   };
 
   /**
-   * Start setting up the provider of the Home Assistant players.
+   * Start setting up the provider of the Home Assistant players, and offer its
+   * players to choose once it runs.
    */
   const addPlayers = function () {
-    addProvider(HASS_PLAYERS_DOMAIN);
+    addProvider(HASS_PLAYERS_DOMAIN, (finished) => {
+      if (!finished) return;
+      if (playersConfig.value?.status === ProviderStatus.LOADED) {
+        choosingPlayers.value = true;
+      } else {
+        chooseOnceRunning = true;
+      }
+    });
   };
 
   const load = async function () {
@@ -66,17 +82,12 @@ export function useHomeAssistantConnection() {
     }
   };
 
-  const loadRemoteAccess = async function () {
-    try {
-      remoteAccess.value = await api.getRemoteAccessInfo();
-    } catch {
-      // the api reports the failure itself
-    }
-  };
-
-  const addProvider = function (domain: string) {
+  const addProvider = function (
+    domain: string,
+    onFlowEnded?: SetupFlowEndedCallback,
+  ) {
     const manifest = api.providerManifests[domain];
-    if (manifest) startAddProvider(manifest);
+    if (manifest) startAddProvider(manifest, undefined, onFlowEnded);
   };
 
   void load();
@@ -88,12 +99,22 @@ export function useHomeAssistantConnection() {
 
   // only a connection that is set up has remote access to show
   watch(
-    () =>
-      !!hassConfig.value &&
-      !remoteAccess.value &&
-      authManager.hasScope(Scope.SYSTEM_MANAGE),
-    (needed) => {
-      if (needed) void loadRemoteAccess();
+    () => !!hassConfig.value && authManager.hasScope(Scope.SYSTEM_MANAGE),
+    (needed, wasNeeded) => {
+      if (needed && !wasNeeded) void remoteAccess.load();
+    },
+  );
+
+  watch(
+    () => playersConfig.value?.status,
+    (status) => {
+      if (!chooseOnceRunning || !status) return;
+      if (status === ProviderStatus.LOADED) {
+        chooseOnceRunning = false;
+        choosingPlayers.value = true;
+      } else if (isProviderErrorStatus(status)) {
+        chooseOnceRunning = false;
+      }
     },
   );
 
@@ -104,6 +125,7 @@ export function useHomeAssistantConnection() {
     loaded,
     loadFailed,
     state,
+    choosingPlayers,
     connect,
     addPlayers,
   };

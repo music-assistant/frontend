@@ -512,14 +512,16 @@
             "players": "Home Assistant players",
             "players_description": "Play on the media players of Home Assistant",
             "players_add": "Add",
+      "players_choose": "Choose",
             "ai": "AI from Home Assistant",
             "ai_description": "AI tasks and voices from Home Assistant",
             "ai_none": "None",
             "sign_in": "Sign in with Home Assistant",
-            "sign_in_description": "Home Assistant users sign in to Music Assistant with their account",
+            "sign_in_new_users": "Home Assistant users without an account get one when they first sign in",
             "remote_access_description": "Home Assistant Link makes remote access work in any network",
             "remote_access_ha_cloud": "Home Assistant Link",
-            "remote_access_without_ha_cloud": "Without Home Assistant Link"
+            "remote_access_without_ha_cloud": "Without Home Assistant Link",
+      "remote_access_details": "Remote ID and QR code"
         },
         "ai": {
             "title": "AI",

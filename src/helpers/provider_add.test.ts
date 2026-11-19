@@ -50,6 +50,35 @@ describe("startAddProvider", () => {
     ]);
   });
 
+  it("tells when the setup flow of the provider ends", () => {
+    const onFlowEnded = vi.fn();
+
+    startAddProvider(
+      providerManifest({ domain: "sonos" }),
+      undefined,
+      onFlowEnded,
+    );
+
+    expect(eventbusMock.emit).toHaveBeenCalledExactlyOnceWith(
+      "setupFlowDialog",
+      { kind: "provider", domain: "sonos", onFlowEnded },
+    );
+  });
+
+  it("does not tell about the setup flow of the provider it depends on", () => {
+    const onFlowEnded = vi.fn();
+
+    startAddProvider(connect, undefined, onFlowEnded);
+    const [, request] = eventbusMock.emit.mock.calls[0] as [
+      string,
+      DeleteConfirmationDialogEvent,
+    ];
+    request.onConfirm();
+
+    const [, flow] = eventbusMock.emit.mock.lastCall!;
+    expect(flow).toStrictEqual({ kind: "provider", domain: "spotify" });
+  });
+
   it("offers to set up the provider it depends on first", () => {
     const onStart = vi.fn();
 
