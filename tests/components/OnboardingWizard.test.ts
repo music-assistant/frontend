@@ -1,7 +1,8 @@
 import {
-  ConfigEntryType,
   EventType,
+  ProviderOffering,
   ProviderType,
+  ProviderStatus,
   UserRole,
   type EventMessage,
   type Scope,
@@ -21,7 +22,6 @@ import { user } from "../fixtures/user";
 const {
   apiMock,
   authMock,
-  coreForm,
   preferenceState,
   providerConfigs,
   routerMock,
@@ -36,17 +36,21 @@ const {
     providers: {} as Record<string, { name: string }>,
     providerManifests: {} as Record<
       string,
-      { builtin: boolean; name?: string }
+      {
+        builtin: boolean;
+        name?: string;
+        type?: ProviderType;
+        provides?: ProviderOffering[];
+      }
     >,
     getAllUsers: vi.fn(),
+    getAIEngines: vi.fn(async () => []),
+    getAIUsage: vi.fn(async () => []),
     configureRemoteAccess: vi.fn(),
-    getCoreConfig: vi.fn(),
     getPlayerConfig: vi.fn(),
     getPlayerConfigs: vi.fn(),
     getProviderConfigs: vi.fn(),
     getRemoteAccessInfo: vi.fn(),
-    getStreamServerInfo: vi.fn(),
-    saveCoreConfig: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
     subscribe_multi:
       vi.fn<
@@ -62,18 +66,11 @@ const {
         server_id: "server-1",
         internal_url: "http://192.168.1.10:8095",
         has_remote_access: false,
+        homeassistant_addon: true,
       },
     },
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>(), setToken: vi.fn() },
-  // the settings form as the server settings step drives it: what it is holding
-  // on to when it comes up, whether those values validate, and what the user
-  // typed, as the form hands it over
-  coreForm: {
-    hasUnsavedChanges: false,
-    valuesValidate: true,
-    values: { server_name: "Living room" },
-  },
   // replaced with real refs by the userPreferences mock factory below
   preferenceState: {
     intent: { value: undefined } as { value?: string },
@@ -121,10 +118,13 @@ vi.mock("@/composables/useTour", async () => {
   };
 });
 
-// the dialogs and the config form are covered where they live; here they only
-// have to be reachable
+// the dialogs are covered where they live; here they only have to be reachable
 vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
-  default: { template: "<div />" },
+  default: {
+    name: "AddProviderDialog",
+    props: ["show", "providerType", "audioSourceOnly"],
+    template: "<div />",
+  },
 }));
 
 // the player actions are covered where they live, and pulling them in would
@@ -136,29 +136,6 @@ vi.mock("@/helpers/player_settings_actions", () => ({
 
 vi.mock("@/components/users/CreateUserDialog.vue", () => ({
   default: { props: ["modelValue"], template: "<div />" },
-}));
-
-vi.mock("@/views/settings/EditConfig.vue", () => ({
-  default: {
-    props: ["configEntries", "disabled", "showAdvancedSettings"],
-    emits: ["submit"],
-    setup(
-      _props: unknown,
-      {
-        emit,
-      }: { emit: (event: "submit", values: Record<string, string>) => void },
-    ) {
-      return {
-        hasUnsavedChanges: coreForm.hasUnsavedChanges,
-        saveFailed: () => {},
-        saveSucceeded: () => {},
-        submit: async () => {
-          if (coreForm.valuesValidate) emit("submit", coreForm.values);
-        },
-      };
-    },
-    template: "<div data-testid='onboarding-core-config' />",
-  },
 }));
 
 // the icon reaches for a Vuetify theme this bare mount does not set up
@@ -220,7 +197,8 @@ await import("@/components/onboarding/OnboardingWizard.vue");
 async function mountWizard({
   fresh = true,
   step,
-}: { fresh?: boolean; step?: OnboardingStepId } = {}) {
+  attach = false,
+}: { fresh?: boolean; step?: OnboardingStepId; attach?: boolean } = {}) {
   if (fresh) vi.resetModules();
   // the wizard reads the requested step from the same composable instance it
   // imports, so it has to be set on that instance before the wizard mounts
@@ -232,6 +210,8 @@ async function mountWizard({
     await import("@/components/onboarding/OnboardingWizard.vue");
   return mount(component.default, {
     global: { mocks: { $t: (key: string) => key } },
+    // in the document, for a button that submits a form by its id
+    attachTo: attach ? document.body : undefined,
   });
 }
 
@@ -252,6 +232,26 @@ function addProvider(
   apiMock.providerManifests[domain] = { builtin: false };
 }
 
+/** A plugin that lets an app play to Music Assistant. */
+function addAudioSourcePlugin(instanceId: string, domain: string) {
+  addProvider(instanceId, domain, ProviderType.PLUGIN);
+  apiMock.providerManifests[domain] = {
+    builtin: false,
+    type: ProviderType.PLUGIN,
+    provides: [ProviderOffering.AUDIO_SOURCE],
+  };
+}
+
+/** A plugin that brings AI or speech. */
+function addAIService(instanceId: string, domain: string) {
+  addProvider(instanceId, domain, ProviderType.PLUGIN);
+  apiMock.providerManifests[domain] = {
+    builtin: false,
+    type: ProviderType.PLUGIN,
+    provides: [ProviderOffering.AI],
+  };
+}
+
 function addMusicProvider() {
   addProvider("spotify--1", "spotify", ProviderType.MUSIC, "Spotify");
 }
@@ -261,6 +261,7 @@ function addEveryProvider() {
   addMusicProvider();
   addProvider("sonos--1", "sonos", ProviderType.PLAYER);
   addProvider("party--1", "party", ProviderType.PLUGIN);
+  addAIService("openai--1", "openai_compatible");
 }
 
 function addMember(userId: string) {
@@ -307,14 +308,21 @@ function stepCount(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
  * The wizard as a fresh server opens it: sent to the server's setup page,
  * before there is an account to sign in with, let alone permissions.
  */
-async function mountFirstRunWizard() {
+async function mountFirstRunWizard({ attach = false } = {}) {
   vi.resetModules();
   window.history.replaceState({}, "", "/setup");
   const { enterFirstRunSetup } = await import("@/composables/useFirstRunSetup");
   expect(enterFirstRunSetup()).toBe(true);
   storeState.store.currentUser = undefined;
   authMock.hasScope.mockReturnValue(false);
-  return await mountWizard({ fresh: false });
+  return await mountWizard({ fresh: false, attach });
+}
+
+/** Past the first run's welcome, onto the account step. */
+async function getStarted(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
+  await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+  await flushPromises();
+  expect(heading(wrapper)).toBe("onboarding.steps.account.title");
 }
 
 /** The app signing in with the admin account the first run made. */
@@ -352,10 +360,8 @@ beforeEach(() => {
 
 // every test mounts the wizard on a fresh module registry, which is its whole
 // step graph evaluated again and can take seconds under load
-// hand the network guard back after every test, and the address bar a first
-// run rewrote
+// hand back the address bar a first run rewrote
 afterEach(() => {
-  vi.unstubAllGlobals();
   window.history.replaceState({}, "", originalUrl);
 });
 
@@ -375,42 +381,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     apiMock.getPlayerConfig.mockReset();
     apiMock.getAllUsers.mockReset();
     apiMock.getAllUsers.mockImplementation(async () => [...users.list]);
-    apiMock.getCoreConfig.mockReset();
-    apiMock.getCoreConfig.mockResolvedValue({
-      domain: "webserver",
-      last_error: null,
-      values: {
-        server_name: {
-          category: "generic",
-          default_value: null,
-          key: "server_name",
-          label: "Server name",
-          options: [],
-          required: false,
-          type: ConfigEntryType.STRING,
-          value: "Music Assistant",
-        },
-      },
-    });
-    apiMock.saveCoreConfig.mockReset();
-    apiMock.saveCoreConfig.mockResolvedValue(undefined);
-    apiMock.getStreamServerInfo.mockReset();
-    apiMock.getStreamServerInfo.mockResolvedValue({
-      base_url: "http://192.168.1.10:8097",
-    });
     apiMock.getRemoteAccessInfo.mockReset();
     apiMock.configureRemoteAccess.mockReset();
-    // the server settings step probes the addresses from the browser
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ server_id: "server-1" }), {
-            status: 200,
-          }),
-      ),
-    );
     apiMock.sendCommand.mockReset();
+    // the add-on connects Home Assistant by itself, so only the tests of the
+    // Home Assistant step run on a server that is not the add-on
+    apiMock.serverInfo.value.homeassistant_addon = true;
     apiMock.subscribe.mockClear();
     apiMock.subscribe_multi.mockReset();
     apiMock.subscribe_multi.mockImplementation(() => vi.fn());
@@ -422,8 +398,6 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       username: "admin",
       role: UserRole.ADMIN,
     });
-    coreForm.hasUnsavedChanges = false;
-    coreForm.valuesValidate = true;
     preferenceState.intent.value = undefined;
     preferenceState.expertMode.value = undefined;
     preferenceState.welcomedAt.value = undefined;
@@ -499,10 +473,53 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
+  it("lists and offers only the plugins that let an app play when connecting music apps", async () => {
+    preferenceState.intent.value = "phone_apps";
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
+    addProvider("party--1", "party", ProviderType.PLUGIN);
+    const wrapper = await mountWizard({ step: "plugins" });
+    try {
+      await flushPromises();
+
+      expect(
+        wrapper
+          .findAll("[data-testid=onboarding-configured-provider]")
+          .map((item) =>
+            item.findComponent({ name: "ProviderIcon" }).props("domain"),
+          ),
+      ).toEqual(["spotify_connect"]);
+      expect(
+        wrapper.findComponent({ name: "AddProviderDialog" }).props(),
+      ).toMatchObject({
+        providerType: ProviderType.PLUGIN,
+        audioSourceOnly: true,
+      });
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it("offers every music source in the full setup", async () => {
+    preferenceState.intent.value = "music_hub";
+    const wrapper = await mountWizard({ step: "music_sources" });
+    try {
+      await flushPromises();
+
+      expect(
+        wrapper.findComponent({ name: "AddProviderDialog" }).props(),
+      ).toMatchObject({
+        providerType: ProviderType.MUSIC,
+        audioSourceOnly: false,
+      });
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
   it("finishes existing-app setup without library, user setup or a tour offer", async () => {
     preferenceState.intent.value = "phone_apps";
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
-    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
     const wrapper = await mountWizard({ step: "finish" });
     await flushPromises();
 
@@ -529,7 +546,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
   it("walks existing-app setup from the choice through speakers and apps to the finish", async () => {
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
-    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
     const wrapper = await mountWizard({ step: "intent" });
     await flushPromises();
 
@@ -552,8 +569,6 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(stepCount(wrapper)).toBe(count);
     }
 
-    expect(apiMock.getCoreConfig).not.toHaveBeenCalled();
-    expect(apiMock.getStreamServerInfo).not.toHaveBeenCalled();
     expect(apiMock.getRemoteAccessInfo).not.toHaveBeenCalled();
     await wrapper.find("[data-testid=onboarding-back]").trigger("click");
     await flushPromises();
@@ -573,8 +588,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
   it("does not show app playback instructions after full-experience setup", async () => {
     preferenceState.intent.value = "music_hub";
-    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
-    addProvider("airplay--1", "airplay_receiver", ProviderType.PLUGIN);
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
+    addAudioSourcePlugin("airplay--1", "airplay_receiver");
     const wrapper = await mountWizard({ step: "finish" });
     try {
       await flushPromises();
@@ -590,8 +605,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
   it("gives app-setup listening instructions only for configured, enabled receivers without errors", async () => {
     preferenceState.intent.value = "phone_apps";
-    addProvider("spotify-connect--1", "spotify_connect", ProviderType.PLUGIN);
-    addProvider("airplay--1", "airplay_receiver", ProviderType.PLUGIN);
+    addAudioSourcePlugin("spotify-connect--1", "spotify_connect");
+    addAudioSourcePlugin("airplay--1", "airplay_receiver");
     addProvider("party--1", "party", ProviderType.PLUGIN);
     const wrapper = await mountWizard({ step: "finish" });
     await flushPromises();
@@ -614,32 +629,241 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
-  describe("on a fresh server's first run", () => {
-    it("opens on the unnumbered account step", async () => {
-      const wrapper = await mountFirstRunWizard();
+  it("offers to connect Home Assistant before the finish on a server that is not the add-on", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = false;
+    preferenceState.intent.value = "phone_apps";
+    const wrapper = await mountWizard({ step: "plugins" });
+    try {
       await flushPromises();
 
-      expect(heading(wrapper)).toBe("onboarding.steps.account.title");
-      expect(wrapper.find("form#form-onboarding-account").exists()).toBe(true);
-      // the form submits itself, so the wizard's own Next stands down
-      expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
-        false,
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.home_assistant.title");
+      expect(stepCount(wrapper)).toBe("3/4");
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-home-assistant-connect]")
+          .exists(),
+      ).toBe(true);
+      // optional, so it can be skipped on the way to the finish
+      expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+        "onboarding.skip",
       );
-      // making the account comes before the setup it opens, so it is not
-      // counted as part of it
-      expect(stepCount(wrapper)).toBeNull();
-      // nothing was asked of a server nobody is signed in to
-      expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
-      expect(apiMock.getAllUsers).not.toHaveBeenCalled();
-      expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
 
+      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await flushPromises();
+      expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
+    } finally {
       wrapper.unmount();
+    }
+  });
+
+  it("connects Home Assistant before remote access in the full setup on a server that is not the add-on", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = false;
+    preferenceState.intent.value = "music_hub";
+    addEveryProvider();
+    addProvider("hass--1", "hass", ProviderType.PLUGIN, "Home Assistant");
+    providerConfigs.list.at(-1)!.status = ProviderStatus.LOADED;
+    const wrapper = await mountWizard({ step: "players" });
+    try {
+      await flushPromises();
+      expect(stepCount(wrapper)).toBe("2/7");
+
+      for (const [title, count] of [
+        ["onboarding.steps.home_assistant.title", "3/7"],
+        ["onboarding.steps.core_settings.title", "4/7"],
+      ]) {
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe(title);
+        expect(stepCount(wrapper)).toBe(count);
+      }
+      // connected one step earlier, so remote access can say it goes through
+      // Home Assistant Link
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-remote-access-home-assistant]")
+          .exists(),
+      ).toBe(true);
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it("shows a Home Assistant connection that is set up instead of the connect button", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = false;
+    preferenceState.intent.value = "music_hub";
+    addProvider("hass--1", "hass", ProviderType.PLUGIN, "Home Assistant");
+    const wrapper = await mountWizard({ step: "home_assistant" });
+    try {
+      await flushPromises();
+
+      expect(heading(wrapper)).toBe("onboarding.steps.home_assistant.title");
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-home-assistant-connection]")
+          .text(),
+      ).toBe("Home Assistant");
+      expect(
+        wrapper
+          .find("[data-testid=onboarding-home-assistant-connect]")
+          .exists(),
+      ).toBe(false);
+      expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+        "onboarding.next",
+      );
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  describe("on a fresh server's first run", () => {
+    it("opens on an unnumbered welcome, with the account step behind it", async () => {
+      const wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+
+        expect(heading(wrapper)).toBe("onboarding.steps.get_started.title");
+        expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
+          true,
+        );
+        expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
+          false,
+        );
+        expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+          "onboarding.steps.get_started.start",
+        );
+        expect(stepCount(wrapper)).toBeNull();
+
+        await getStarted(wrapper);
+
+        // the logo belongs to the welcome alone
+        expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
+          false,
+        );
+
+        expect(wrapper.find("form#form-onboarding-account").exists()).toBe(
+          true,
+        );
+        // the wizard's forward button is the form's submit button
+        const submit = wrapper.find("[data-testid=onboarding-next]");
+        expect(submit.text()).toBe("onboarding.steps.account.create");
+        expect(submit.attributes("type")).toBe("submit");
+        expect(submit.attributes("form")).toBe("form-onboarding-account");
+        // making the account comes before the setup it opens, so it is not
+        // counted as part of it
+        expect(stepCount(wrapper)).toBeNull();
+        // nothing was asked of a server nobody is signed in to
+        expect(apiMock.getProviderConfigs).not.toHaveBeenCalled();
+        expect(apiMock.getAllUsers).not.toHaveBeenCalled();
+        expect(apiMock.subscribe_multi).not.toHaveBeenCalled();
+      } finally {
+        wrapper.unmount();
+      }
+    });
+
+    it("goes back from the account step to the welcome", async () => {
+      const wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+        await getStarted(wrapper);
+
+        await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+        await flushPromises();
+
+        expect(heading(wrapper)).toBe("onboarding.steps.get_started.title");
+      } finally {
+        wrapper.unmount();
+      }
+    });
+
+    it("creates the account through the wizard's forward button", async () => {
+      let answerSetup: (response: Response) => void = () => {};
+      const fetchMock = vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            answerSetup = resolve;
+          }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const wrapper = await mountFirstRunWizard({ attach: true });
+      try {
+        await flushPromises();
+        await getStarted(wrapper);
+        await wrapper.get('input[name="username"]').setValue("admin");
+        await wrapper
+          .get('input[name="password"]')
+          .setValue("correct horse battery");
+        await wrapper
+          .get('input[name="confirmPassword"]')
+          .setValue("correct horse battery");
+
+        const submit = wrapper.find("[data-testid=onboarding-next]");
+        await submit.trigger("click");
+        await flushPromises();
+
+        expect(fetchMock).toHaveBeenCalledOnce();
+        // the account is on its way: the forward button shows it, and Back
+        // holds still
+        expect(submit.attributes("aria-busy")).toBe("true");
+        expect(submit.attributes("disabled")).toBeDefined();
+        expect(
+          wrapper.find("[data-testid=onboarding-back]").attributes("disabled"),
+        ).toBeDefined();
+
+        answerSetup(
+          new Response(JSON.stringify({ success: true, token: "token-1" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+        await flushPromises();
+        expect(authMock.setToken).toHaveBeenCalledWith("token-1");
+        // still busy while the app signs in with it
+        expect(submit.attributes("aria-busy")).toBe("true");
+
+        signInAsNewAdmin();
+        await flushPromises();
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+      } finally {
+        wrapper.unmount();
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("shows no Back to the account step once it is done", async () => {
+      const wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+        await getStarted(wrapper);
+        signInAsNewAdmin();
+        await flushPromises();
+
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+        expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
+          false,
+        );
+
+        // the steps after it still go back as far as the first one
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+        await wrapper.find("[data-testid=onboarding-back]").trigger("click");
+        await flushPromises();
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+        expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
+          false,
+        );
+      } finally {
+        wrapper.unmount();
+      }
     });
 
     it("loads the setup for the admin once they are signed in, and moves on", async () => {
       addMusicProvider();
       const wrapper = await mountFirstRunWizard();
       await flushPromises();
+      await getStarted(wrapper);
 
       signInAsNewAdmin();
       await flushPromises();
@@ -675,6 +899,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       const wrapper = await mountFirstRunWizard();
       try {
         await flushPromises();
+        await getStarted(wrapper);
         signInAsNewAdmin();
         await flushPromises();
         expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
@@ -700,10 +925,69 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       }
     });
 
+    it("stays on the question when its answer did not land", async () => {
+      const wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+        await getStarted(wrapper);
+        signInAsNewAdmin();
+        await flushPromises();
+        // the write is rolled back, so nothing is on the account
+        setUserPreferenceMock.mockResolvedValue(false);
+
+        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await flushPromises();
+        expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+      } finally {
+        wrapper.unmount();
+      }
+    });
+
+    it("moves one step however often Next is clicked", async () => {
+      let landIntent: () => void = () => {};
+      setUserPreferenceMock.mockImplementationOnce(
+        (key: string, value: string) =>
+          new Promise<boolean>((resolve) => {
+            landIntent = () => {
+              if (key === "onboarding.intent")
+                preferenceState.intent.value = value;
+              resolve(true);
+            };
+          }),
+      );
+      const wrapper = await mountFirstRunWizard();
+      try {
+        await flushPromises();
+        await getStarted(wrapper);
+        signInAsNewAdmin();
+        await flushPromises();
+
+        // an impatient second click, landing before the button can even grey out
+        const next = wrapper.find("[data-testid=onboarding-next]");
+        void next.trigger("click");
+        await next.trigger("click");
+        await flushPromises();
+
+        // the answer is still on its way out, and the footer says so
+        expect(next.attributes("disabled")).toBeDefined();
+
+        landIntent();
+        await flushPromises();
+
+        // one save, and one step: an impatient second click is not a second move
+        expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+        expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
+      } finally {
+        wrapper.unmount();
+      }
+    });
+
     it("does not reopen account creation from the first-run recap", async () => {
       let wrapper = await mountFirstRunWizard();
       try {
         await flushPromises();
+        await getStarted(wrapper);
         signInAsNewAdmin();
         await flushPromises();
         wrapper.unmount();
@@ -757,11 +1041,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
   });
 
   it("follows a deep link and offers to skip an optional step", async () => {
-    const wrapper = await mountWizard({ step: "plugins" });
+    const wrapper = await mountWizard({ step: "invite_members" });
     await flushPromises();
 
-    expect(heading(wrapper)).toBe("onboarding.steps.plugins.title");
-    expect(wrapper.find("[data-testid=onboarding-add-provider]").exists()).toBe(
+    expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
+    expect(wrapper.find("[data-testid=onboarding-add-member]").exists()).toBe(
       true,
     );
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
@@ -1172,12 +1456,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     async (intent) => {
       preferenceState.intent.value = intent;
       addEveryProvider();
-      addProvider("connect--1", "spotify_connect", ProviderType.PLUGIN);
+      addAudioSourcePlugin("connect--1", "spotify_connect");
       addMember("alex");
       const targets =
         intent === "phone_apps"
           ? ["intent", "players", "plugins"]
-          : ["intent", "music_sources", "players", "plugins", "invite_members"];
+          : ["intent", "music_sources", "players", "ai", "invite_members"];
 
       for (const id of targets) {
         const wrapper = await mountWizard({ step: "finish" });
@@ -1370,7 +1654,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     expect(stopFollowing).toHaveBeenCalledOnce();
   });
 
-  it("walks past the server settings on its way to the summary", async () => {
+  it("walks past the remote access step on its way to the summary", async () => {
     addEveryProvider();
     addMember("sam-1");
     preferenceState.intent.value = "music_hub";
@@ -1381,14 +1665,19 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // a review is nothing to set up, so it is shown rather than skipped, and
     // moving on from it is all the footer offers
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
-    expect(
-      wrapper.find("[data-testid=onboarding-network-details]").exists(),
-    ).toBe(true);
+    expect(wrapper.find("[data-testid=onboarding-network-hint]").exists()).toBe(
+      true,
+    );
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
       "onboarding.next",
     );
 
-    // the household is done, but a done step is still walked through
+    // the AI and the household are done, but a done step is still walked
+    // through
+    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.ai.title");
+
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
@@ -1400,12 +1689,12 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
-  it("moves on from the plugins to the server settings", async () => {
+  it("moves on from the players to the server settings", async () => {
     addMusicProvider();
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
     preferenceState.intent.value = "music_hub";
 
-    const wrapper = await mountWizard({ step: "plugins" });
+    const wrapper = await mountWizard({ step: "players" });
     await flushPromises();
 
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
@@ -1449,90 +1738,14 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     wrapper.unmount();
   });
 
-  it("follows a deep link to the server settings", async () => {
+  it("follows a deep link to the remote access step", async () => {
     const wrapper = await mountWizard({ step: "core_settings" });
     await flushPromises();
 
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
-    expect(apiMock.getCoreConfig).toHaveBeenCalledWith("webserver");
-
-    wrapper.unmount();
-  });
-
-  it("saves the server settings before it moves on", async () => {
-    coreForm.hasUnsavedChanges = true;
-
-    const wrapper = await mountWizard({ step: "core_settings" });
-    await flushPromises();
-
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
-    await flushPromises();
-
-    // Next takes the settings the user typed with it instead of leaving them
-    // behind, then moves one step on
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
-      "webserver",
-      coreForm.values,
-    );
-    expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
-
-    wrapper.unmount();
-  });
-
-  it("stays on a step that is not done with the user yet", async () => {
-    coreForm.hasUnsavedChanges = true;
-    coreForm.valuesValidate = false;
-
-    const wrapper = await mountWizard({ step: "core_settings" });
-    await flushPromises();
-
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
-    await flushPromises();
-
-    // the form is showing what is wrong with what they typed, so there is
-    // nothing to save and neither way out of the step moves
-    expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
-    expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
-
-    await wrapper.find("[data-testid=onboarding-back]").trigger("click");
-    await flushPromises();
-
-    expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
-
-    wrapper.unmount();
-  });
-
-  it("moves one step however often Next is clicked", async () => {
-    coreForm.hasUnsavedChanges = true;
-    let landSave: () => void = () => {};
-    apiMock.saveCoreConfig.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          landSave = () => resolve();
-        }),
-    );
-
-    const wrapper = await mountWizard({ step: "core_settings" });
-    await flushPromises();
-
-    // an impatient second click, landing before the button can even grey out
-    const next = wrapper.find("[data-testid=onboarding-next]");
-    void next.trigger("click");
-    await next.trigger("click");
-    await flushPromises();
-
-    // the settings are still on their way out, and the footer says so
-    expect(next.attributes("disabled")).toBeDefined();
     expect(
-      wrapper.find("[data-testid=onboarding-back]").attributes("disabled"),
-    ).toBeDefined();
-
-    landSave();
-    await flushPromises();
-
-    // one save, and one step: an impatient second click is not a second move
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
-    expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
+      wrapper.find("[data-testid=onboarding-remote-access]").exists(),
+    ).toBe(true);
 
     wrapper.unmount();
   });

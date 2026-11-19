@@ -1,5 +1,6 @@
 <template>
-  <div class="space-y-6 px-4 py-6">
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="about" />
     <UnsupportedInstallBanner />
 
     <!-- Server Information -->
@@ -10,12 +11,12 @@
           <Button
             variant="ghost"
             size="icon-sm"
-            :title="$t('settings.core_module.webserver.name')"
-            @click="editWebserverConfig"
+            :title="$t('settings.network.title')"
+            @click="openNetworkSettings"
           >
             <Pencil class="size-4" />
             <span class="sr-only">
-              {{ $t("settings.core_module.webserver.name") }}
+              {{ $t("settings.network.title") }}
             </span>
           </Button>
         </CardAction>
@@ -411,6 +412,7 @@
 <script setup lang="ts">
 import openHomeFoundationLogo from "@/assets/open-home-foundation-logo.svg";
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -422,6 +424,7 @@ import {
 } from "@/components/ui/card";
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 import { useServerTime } from "@/composables/useServerTime";
+import { settingsPageRoute } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -445,8 +448,8 @@ const canEditServerConfig = computed(() =>
 
 const internalUrl = computed(() => api.serverInfo.value?.internal_url || "");
 
-const editWebserverConfig = () => {
-  router.push({ name: "editcore", params: { domain: "webserver" } });
+const openNetworkSettings = () => {
+  router.push(settingsPageRoute("network"));
 };
 
 const clockOffsetIsLarge = computed(

@@ -58,6 +58,7 @@
     >
       {{ entry.manifest.description }}
     </p>
+    <ProviderLabels :labels="labels" class="mt-3" />
     <template #footer>
       <span
         v-if="pairedWith"
@@ -114,6 +115,7 @@
 
 <script setup lang="ts">
 import CatalogBannerCard from "@/components/settings/catalog/CatalogBannerCard.vue";
+import ProviderLabels from "@/components/settings/providers/ProviderLabels.vue";
 import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -144,7 +146,7 @@ const emit = defineEmits<{
   (e: "dismiss"): void;
 }>();
 
-const { typeLabel, community, isSetUp, manageRoute, maintainers } =
+const { typeLabel, community, labels, isSetUp, manageRoute, maintainers } =
   useCatalogEntryDetails(() => props.entry);
 
 const credit = computed(() =>

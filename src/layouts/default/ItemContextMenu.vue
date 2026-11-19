@@ -1779,6 +1779,7 @@ const runProviderMenuAction = async function (
         uri,
         choice.requiresPlayer ? store.activePlayer?.player_id : undefined,
       ),
+      choice.instanceId,
     );
   } catch {
     // the api reports the failure itself

@@ -115,6 +115,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useOnboarding } from "@/composables/useOnboarding";
+import { providerListingRoute } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -128,13 +129,14 @@ import {
   X,
 } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { type RouteLocationRaw, useRouter } from "vue-router";
 
 const router = useRouter();
 const editMode = ref(false);
 const hasProviderErrors = ref(false);
 const showProviderWarning = ref(true);
-const erroredProviderType = ref<string | null>(null);
+// where the first provider with an error is listed
+const erroredProviderRoute = ref<RouteLocationRaw | null>(null);
 const canConfigurePlayers = computed(() =>
   authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
 );
@@ -156,14 +158,7 @@ const handleHomescreenEditToggle = () => {
 };
 
 const navigateToProviders = () => {
-  if (erroredProviderType.value) {
-    router.push({
-      name: "providersettings",
-      query: { types: erroredProviderType.value },
-    });
-  } else {
-    router.push({ name: "settings" });
-  }
+  router.push(erroredProviderRoute.value ?? { name: "settings" });
 };
 
 onMounted(async () => {
@@ -175,7 +170,12 @@ onMounted(async () => {
         (config) => config.enabled && config.last_error,
       );
       hasProviderErrors.value = !!firstError;
-      erroredProviderType.value = firstError?.type ?? null;
+      erroredProviderRoute.value = firstError
+        ? providerListingRoute(
+            firstError,
+            api.providerManifests[firstError.domain]?.provides,
+          )
+        : null;
     } catch {
       // Ignore errors - this is a best-effort feature
     }

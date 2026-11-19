@@ -727,7 +727,7 @@ describe("SetupFlowDialog launched with initial values", () => {
   it.each([
     [
       "ends the flow when a link takes the user to another page",
-      "/settings/storage",
+      "/settings/system/storage",
       true,
     ],
     ["stays open while the page stays the same", "/discover", false],

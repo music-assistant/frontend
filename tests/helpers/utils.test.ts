@@ -3,6 +3,7 @@ import {
   formatAliasName,
   formatDuration,
   formatRelativeTime,
+  getAudiobookCollectionArtists,
   getExternalLinkUrl,
   hexToRgb,
   kebabize,
@@ -13,7 +14,13 @@ import {
   sleep,
   truncateString,
 } from "@/helpers/utils";
-import type { MediaItemPalette } from "@/plugins/api/interfaces";
+import type {
+  Audiobook,
+  MediaCollection,
+  MediaItemPalette,
+} from "@/plugins/api/interfaces";
+import { artist } from "../fixtures/artist";
+import { audiobook } from "../fixtures/audiobook";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock } = vi.hoisted(() => ({
@@ -398,5 +405,22 @@ describe("utility functions", () => {
     it("handles single number range", () => {
       expect(numberRange(5, 5)).toEqual([5]);
     });
+  });
+});
+
+describe("getAudiobookCollectionArtists", () => {
+  it("lists each name once, preferring the linkable artist", () => {
+    const writer = artist({ item_id: "author_1", name: "Writer" });
+    const collection = {
+      items: [
+        audiobook({ narrators: ["Writer", "Reader"] }),
+        audiobook({ narrators: [writer] }),
+        audiobook({ narrators: ["Reader"] }),
+      ],
+    } as MediaCollection<Audiobook>;
+
+    expect(
+      getAudiobookCollectionArtists(collection, (book) => book.narrators),
+    ).toEqual([writer, "Reader"]);
   });
 });

@@ -207,7 +207,7 @@ describe("OnboardingDialog", () => {
     onbState.isMember = false;
     mountDialog();
 
-    navigate("/settings/storage", "/settings");
+    navigate("/settings/system/storage", "/settings");
 
     expect(pauseMock).toHaveBeenCalledWith({ force: true });
   });

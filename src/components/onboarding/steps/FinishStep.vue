@@ -29,7 +29,7 @@
           variant="outline"
           size="sm"
           class="enabled:hover:bg-accent/50 w-full text-left transition-colors enabled:cursor-pointer"
-          :disabled="busy || step.id === 'account'"
+          :disabled="busy || step.oneWay"
           data-testid="onboarding-summary-done"
           @click="emit('navigate', step.id)"
         >
@@ -55,7 +55,7 @@
               }}
             </ItemDescription>
           </ItemContent>
-          <ItemActions v-if="step.id !== 'account'">
+          <ItemActions v-if="!step.oneWay">
             <ChevronRight
               class="text-muted-foreground size-4"
               aria-hidden="true"
@@ -126,6 +126,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import {
+  configuredAudioSourcePlugins,
   configuredProviders,
   useOnboarding,
 } from "@/composables/useOnboarding";
@@ -187,7 +188,7 @@ const pendingGroups = computed(() =>
 const receiverInstructions = computed(() =>
   !appFirst.value
     ? []
-    : configuredProviders(ProviderType.PLUGIN)
+    : configuredAudioSourcePlugins()
         .filter((provider) => !provider.needsAttention)
         .flatMap((provider) => {
           const key = APP_RECEIVER_INSTRUCTIONS[provider.domain];
@@ -225,7 +226,7 @@ const countLabels = computed<Partial<Record<OnboardingStepId, string>>>(() => ({
   ),
   plugins: countLabel(
     "onboarding.plugins_count",
-    configuredProviders(ProviderType.PLUGIN).length,
+    configuredAudioSourcePlugins().length,
   ),
 }));
 
