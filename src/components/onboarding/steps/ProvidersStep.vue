@@ -89,7 +89,7 @@ const configured = computed(() =>
 
 const descriptionKey = computed(() =>
   connectingApps.value
-    ? "onboarding.steps.plugins.phone_apps_description"
+    ? "onboarding.steps.plugins.phone_apps_instructions"
     : "onboarding.steps.music_sources.description",
 );
 

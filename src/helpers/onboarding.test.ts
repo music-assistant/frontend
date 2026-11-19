@@ -129,6 +129,10 @@ describe("onboarding step order", () => {
     expect(stepTitleKey("ai")).toBe("onboarding.steps.ai.enrich_title");
   });
 
+  it("titles the intent step with the question it asks", () => {
+    expect(stepTitleKey("intent")).toBe("onboarding.steps.intent.question");
+  });
+
   it("runs the admin track in its base order without an answer", () => {
     expect(stepIds(applicableSteps(context()))).toEqual([...BASE_ORDER]);
   });

@@ -314,6 +314,7 @@ export function applicableSteps(ctx: OnboardingContext): OnboardingStep[] {
 
 // the steps whose title is not under `onboarding.steps.<id>.title`
 const STEP_TITLE_KEYS: Partial<Record<OnboardingStepId, string>> = {
+  intent: "onboarding.steps.intent.question",
   core_settings: "onboarding.steps.core_settings.away_title",
   ai: "onboarding.steps.ai.enrich_title",
 };
