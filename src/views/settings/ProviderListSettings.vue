@@ -3,7 +3,7 @@
     <SettingsPageHeader :page="page" />
     <SettingsPageLinks :section="page" />
     <CommunityMovedTypeNotice :type="type" />
-    <ProviderList :type="type" />
+    <ProviderList :key="type" :type="type" />
   </div>
 </template>
 

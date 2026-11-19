@@ -1319,6 +1319,34 @@ describe("Providers on the page of a type", () => {
     ]);
   });
 
+  it("starts the list of another type without the search of the previous one", async () => {
+    // enough of each type for the list to offer its search
+    const tenOf = (type: ProviderType) =>
+      Array.from({ length: 10 }, (_, index) =>
+        providerConfig({
+          domain: `${type}_provider`,
+          instance_id: `${type}_provider--${index}`,
+          status: ProviderStatus.LOADED,
+          type,
+        }),
+      );
+    pageType = ProviderType.PLUGIN;
+    const wrapper = await mountWithConfigs([
+      ...tenOf(ProviderType.PLUGIN),
+      ...tenOf(ProviderType.PLAYER),
+    ]);
+    wrapper
+      .findComponent({ name: "ProviderFilters" })
+      .vm.$emit("update:search", "nothing matches this");
+    await flushPromises();
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(0);
+
+    await wrapper.setProps({ type: ProviderType.PLAYER });
+    await flushPromises();
+
+    expect(wrapper.findAllComponents(ProviderRowStub)).toHaveLength(10);
+  });
+
   it("tells an admin about the ones of its type that moved to the community catalog", async () => {
     pageType = ProviderType.PLAYER;
     apiMock.getCommunityProviders.mockResolvedValue([
