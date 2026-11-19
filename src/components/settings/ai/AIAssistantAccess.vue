@@ -9,10 +9,10 @@
       <Bot class="text-primary size-5 shrink-0" aria-hidden="true" />
       <div class="min-w-0 flex-1">
         <Label :for="switchId" class="text-foreground text-sm font-medium">
-          {{ $t("settings.ai.assistant_access_label") }}
+          {{ $t("settings.ai.mcp_server") }}
         </Label>
         <p class="text-muted-foreground m-0 text-sm">
-          {{ $t("settings.ai.assistant_access_description") }}
+          {{ $t("settings.ai.mcp_server_description") }}
         </p>
       </div>
       <Switch

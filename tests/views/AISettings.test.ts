@@ -13,6 +13,7 @@ import {
 import AISettings from "@/views/settings/AISettings.vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { reactive } from "vue";
 import { providerInstance } from "../fixtures/providerInstance";
 
 const { apiMock, eventbusMock, hasScope } = vi.hoisted(() => ({
@@ -44,15 +45,15 @@ const RouterLinkStub = {
   props: ["to"],
   template: '<a :href="JSON.stringify(to)"><slot /></a>',
 };
+const addProviderDialogStub = {
+  name: "AddProviderDialog",
+  props: { show: Boolean, providerType: String, aiServiceOnly: Boolean },
+  emits: ["update:show"],
+  template: "<div />",
+};
 
 const GPT = engine("gpt", AIEngineKind.TEXT);
 const NOVA = engine("nova", AIEngineKind.SPEECH);
-
-// the plugins tab of the Marketplace, on its AI chip
-const MARKETPLACE_AI_SERVICES = {
-  name: "catalog",
-  query: { types: "plugin", label: "ai" },
-};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -63,7 +64,8 @@ beforeEach(() => {
     usage({ owner: "smart_playlist--1", name: "Smart playlists" }),
   ]);
   apiMock.subscribe.mockReturnValue(vi.fn());
-  apiMock.providers = {
+  // reactive, as the api keeps them
+  apiMock.providers = reactive({
     "openai_compatible--1": providerInstance({
       type: ProviderType.PLUGIN,
       domain: "openai_compatible",
@@ -74,7 +76,7 @@ beforeEach(() => {
       type: ProviderType.PLUGIN,
       domain: "party",
     }),
-  };
+  });
 });
 
 describe("AISettings", () => {
@@ -101,7 +103,7 @@ describe("AISettings", () => {
     );
     const empty = wrapper.get('[data-testid="ai-no-engines"]');
     expect(empty.text()).toContain("settings.ai.no_engines");
-    expect(linkOf(empty.get("a"))).toEqual(MARKETPLACE_AI_SERVICES);
+    await expectAddsAIService(wrapper, '[data-testid="ai-no-engines-add"]');
     // a service without models still asks for them, without a second offer
     expect(rowKeys(wrapper, "ai-services")).toEqual(["openai_compatible--1"]);
     expect(wrapper.find('[data-testid="ai-services-add"]').exists()).toBe(
@@ -183,9 +185,38 @@ describe("AISettings", () => {
     ).toContain(
       "settings.ai.engine_count.text · settings.ai.engine_count.speech",
     );
-    expect(linkOf(wrapper.get('[data-testid="ai-services-add"]'))).toEqual(
-      MARKETPLACE_AI_SERVICES,
-    );
+    await expectAddsAIService(wrapper, '[data-testid="ai-services-add"]');
+  });
+
+  it("lists a service once it is added, without leaving the page", async () => {
+    vi.useFakeTimers();
+    try {
+      apiMock.getAIEngines.mockResolvedValue([]);
+      const wrapper = await mountPage();
+      const [, onProvidersUpdated] = apiMock.subscribe.mock.calls[0];
+
+      apiMock.providers["openai_compatible--2"] = providerInstance({
+        instance_id: "openai_compatible--2",
+        type: ProviderType.PLUGIN,
+        domain: "openai_compatible",
+        name: "OpenRouter",
+        supported_features: [ProviderFeature.AI_QUERY],
+      });
+      apiMock.getAIEngines.mockResolvedValue([GPT]);
+      onProvidersUpdated();
+      await vi.runAllTimersAsync();
+      await flushPromises();
+
+      expect(rowKeys(wrapper, "ai-services")).toEqual([
+        "openai_compatible--1",
+        "openai_compatible--2",
+      ]);
+      expect(wrapper.find('[data-testid="ai-no-engines"]').exists()).toBe(
+        false,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("says so when the engines could not be loaded", async () => {
@@ -210,6 +241,7 @@ describe("AISettings", () => {
 
 const STUBS = {
   AIAssistantAccess: true,
+  AddProviderDialog: addProviderDialogStub,
   SettingsPageForm: settingsPageFormStub,
   RouterLink: RouterLinkStub,
 };
@@ -231,6 +263,20 @@ function rowKeys(wrapper: Wrapper, prefix: string) {
 
 function row(wrapper: Wrapper, prefix: string, key: string) {
   return wrapper.get(`[data-testid="${prefix}-link-${key}"]`);
+}
+
+// the button opens the dialog adding an AI service, on the page itself
+async function expectAddsAIService(wrapper: Wrapper, button: string) {
+  const dialog = wrapper.getComponent(addProviderDialogStub);
+  expect(dialog.props()).toEqual({
+    show: false,
+    providerType: ProviderType.PLUGIN,
+    aiServiceOnly: true,
+  });
+
+  await wrapper.get(button).trigger("click");
+
+  expect(dialog.props("show")).toBe(true);
 }
 
 function linkOf(found: ReturnType<Wrapper["get"]>) {

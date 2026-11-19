@@ -17,11 +17,9 @@
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button as-child data-testid="ai-no-engines-add">
-            <RouterLink :to="ADD_SERVICE_ROUTE" class="no-underline">
-              <Plus />
-              {{ $t("settings.ai.add_service") }}
-            </RouterLink>
+          <Button data-testid="ai-no-engines-add" @click="showAddDialog = true">
+            <Plus />
+            {{ $t("settings.ai.add_service") }}
           </Button>
         </EmptyContent>
       </Empty>
@@ -44,15 +42,13 @@
           <!-- without engines, the empty state above offers it -->
           <Button
             v-if="engines.length"
-            as-child
             variant="outline"
             size="sm"
             data-testid="ai-services-add"
+            @click="showAddDialog = true"
           >
-            <RouterLink :to="ADD_SERVICE_ROUTE" class="no-underline">
-              <Plus />
-              {{ $t("settings.ai.add_service") }}
-            </RouterLink>
+            <Plus />
+            {{ $t("settings.ai.add_service") }}
           </Button>
         </div>
         <SettingsLinkRows :rows="serviceRows" test-id-prefix="ai-services" />
@@ -73,6 +69,12 @@
     </div>
 
     <AIAssistantAccess />
+
+    <AddProviderDialog
+      v-model:show="showAddDialog"
+      :provider-type="ProviderType.PLUGIN"
+      ai-service-only
+    />
   </div>
 </template>
 
@@ -93,14 +95,13 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useAIEngines } from "@/composables/settings/useAIEngines";
 import { aiServiceRows, engineUsageRows } from "@/helpers/ai_settings";
-import { getCatalogRoute } from "@/helpers/provider_catalog";
 import { api } from "@/plugins/api";
 import { type AIEngineUsage, ProviderType } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
+import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
 import { Plus, Sparkles } from "@lucide/vue";
-import { computed } from "vue";
-import { RouterLink } from "vue-router";
+import { computed, ref } from "vue";
 
 /**
  * The AI engines Music Assistant uses: the default engine of each kind, what
@@ -108,8 +109,7 @@ import { RouterLink } from "vue-router";
  * assistants.
  */
 
-// the AI services are plugins, found under the AI label
-const ADD_SERVICE_ROUTE = getCatalogRoute(ProviderType.PLUGIN, "ai");
+const showAddDialog = ref(false);
 
 const { engines, usage, loaded, loadFailed, refresh } = useAIEngines();
 
