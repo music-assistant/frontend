@@ -26,7 +26,7 @@
   <g>
     <rect x="320" y="50" width="160" height="140" rx="12" fill="#2196F3" opacity="0.12" stroke="#2196F3" stroke-width="2.5"/>
     <text x="400" y="88" text-anchor="middle" font-size="15" font-weight="600" fill="currentColor">Signaling Server</text>
-    <text x="400" y="118" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">HA Cloud</text>
+    <text x="400" y="118" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">HA Link</text>
     <text x="400" y="140" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">STUN/TURN</text>
     <text x="400" y="162" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">WebRTC</text>
   </g>

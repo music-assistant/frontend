@@ -504,7 +504,7 @@
             "connect": "Connect",
             "connection": "Connection",
             "connection_description": "Reconfigure, disable or remove the connection",
-            "connection_addon": "Music Assistant runs as a Home Assistant add-on, which connects it",
+            "connection_addon": "Music Assistant runs as a Home Assistant app, which connects it",
             "state_connected": "Connected",
             "state_connecting": "Connecting",
             "state_disabled": "Disabled",
@@ -517,9 +517,9 @@
             "ai_none": "None",
             "sign_in": "Sign in with Home Assistant",
             "sign_in_description": "Home Assistant users sign in to Music Assistant with their account",
-            "remote_access_description": "Home Assistant Cloud makes remote access work in any network",
-            "remote_access_ha_cloud": "Home Assistant Cloud",
-            "remote_access_without_ha_cloud": "Without Home Assistant Cloud"
+            "remote_access_description": "Home Assistant Link makes remote access work in any network",
+            "remote_access_ha_cloud": "Home Assistant Link",
+            "remote_access_without_ha_cloud": "Without Home Assistant Link"
         },
         "ai": {
             "title": "AI",
@@ -603,14 +603,14 @@
         "remote_access": "Remote Access",
         "remote_access_description": "Securely access Music Assistant from anywhere",
         "remote_access_explanation_intro": "Remote Access allows you to securely connect to your Music Assistant server from anywhere in the world.",
-        "remote_access_explanation_ha_cloud": "For the best experience and reliability, a Home Assistant Cloud subscription is required.",
+        "remote_access_explanation_ha_cloud": "For the best experience and reliability, a Home Assistant Link subscription is required.",
         "remote_access_feature_webrtc": "Based on WebRTC technology for peer-to-peer connections",
         "remote_access_feature_encrypted": "End-to-end encrypted - your data stays private",
         "remote_access_feature_no_port_forwarding": "No port forwarding or VPN required",
-        "remote_access_mode_optimized": "Optimized Mode (HA Cloud)",
+        "remote_access_mode_optimized": "Optimized Mode (HA Link)",
         "remote_access_mode_basic": "Running in Basic Mode",
-        "remote_access_mode_basic_description": "Using public STUN servers. This may not work in complex network setups. Upgrade to Home Assistant Cloud for the best experience.",
-        "remote_access_upgrade_to_optimized": "Upgrade to Home Assistant Cloud",
+        "remote_access_mode_basic_description": "Using public STUN servers. This may not work in complex network setups. Upgrade to Home Assistant Link for the best experience.",
+        "remote_access_upgrade_to_optimized": "Upgrade to Home Assistant Link",
         "remote_access_status": "Remote Access Status",
         "remote_access_enabled": "Remote Access is enabled",
         "remote_access_disabled": "Remote Access is disabled",
@@ -636,7 +636,7 @@
         "remote_access_disabled_success": "Remote Access has been disabled",
         "remote_access_signaling_server_description": "Signaling server in the cloud, hosted by the Open Home Foundation.",
         "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
-        "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
+        "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Link (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
@@ -3332,7 +3332,7 @@
             },
             "home_assistant": {
                 "title": "Connect Home Assistant",
-                "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Cloud.",
+                "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Link.",
                 "connect": "Connect to Home Assistant"
             },
             "invite_members": {
