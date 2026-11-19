@@ -144,12 +144,15 @@ describe("InviteMembersStep", () => {
 
   it("names a role the server made up here", async () => {
     storeMock.roles = [role({ role_id: "dj", name: "House DJ" })];
-    users.list = [user({ user_id: "sam-1", username: "sam", role: "dj" })];
+    users.list = [
+      user({ user_id: "admin-1", username: "admin", display_name: "Marcel" }),
+      user({ user_id: "sam-1", username: "sam", role: "dj" }),
+    ];
 
     const wrapper = await mountStep();
 
     // a role this frontend has no name for is shown by the name it was given
-    expect(members(wrapper)[0].text()).toContain("House DJ");
+    expect(members(wrapper)[1].text()).toContain("House DJ");
 
     wrapper.unmount();
   });
@@ -161,9 +164,6 @@ describe("InviteMembersStep", () => {
 
     // the api toasts its own failures; an unknown household is not an empty one
     expect(members(wrapper)).toHaveLength(0);
-    expect(wrapper.find("[data-testid=onboarding-only-you]").exists()).toBe(
-      false,
-    );
     expect(wrapper.text()).toContain(
       "onboarding.steps.invite_members.load_failed",
     );
@@ -184,13 +184,52 @@ describe("InviteMembersStep", () => {
     wrapper.unmount();
   });
 
-  it("says so while the household is still only the admin setting it up", async () => {
+  it("invites to add someone while the household is only the admin", async () => {
     const wrapper = await mountStep();
 
-    expect(members(wrapper)).toHaveLength(1);
-    expect(wrapper.find("[data-testid=onboarding-only-you]").exists()).toBe(
-      true,
+    // the admin alone is no household to list yet
+    expect(members(wrapper)).toHaveLength(0);
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-invitation-features]")
+        .findAll("li")
+        .map((item) => item.text()),
+    ).toEqual([
+      "onboarding.steps.invite_members.features.sign_in",
+      "onboarding.steps.invite_members.features.players",
+      "onboarding.steps.invite_members.features.music",
+    ]);
+    expect(addButton(wrapper).classes()).toEqual(
+      expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
     );
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-optional]").text(),
+    ).toBe("onboarding.steps.invite_members.optional");
+
+    wrapper.unmount();
+  });
+
+  it("lists the household once someone is added, with a way to add another", async () => {
+    users.list = [
+      user({ user_id: "admin-1", username: "admin", display_name: "Marcel" }),
+      user({ user_id: "sam-1", username: "sam" }),
+    ];
+
+    const wrapper = await mountStep();
+
+    expect(members(wrapper)).toHaveLength(2);
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-features]").exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-optional]").exists(),
+    ).toBe(false);
+    expect(addButton(wrapper).classes()).toContain("bg-accent");
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-invitation-visual]")
+        .attributes("data-linked"),
+    ).toBe("true");
 
     wrapper.unmount();
   });
@@ -199,9 +238,11 @@ describe("InviteMembersStep", () => {
     const wrapper = await mountStep({ load: false });
 
     expect(members(wrapper)).toHaveLength(0);
-    expect(wrapper.find("[data-testid=onboarding-only-you]").exists()).toBe(
-      false,
-    );
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-invitation-visual]")
+        .attributes("data-linked"),
+    ).toBeUndefined();
 
     wrapper.unmount();
   });

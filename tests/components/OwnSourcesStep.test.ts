@@ -26,6 +26,8 @@ const { apiMock, onboardingState } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+
 vi.mock("@/composables/useOnboarding", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
   onboardingState.ownedMusicSources = ref<ProviderConfig[]>([]);
@@ -79,6 +81,12 @@ function mountStep() {
   });
 }
 
+type Wrapper = ReturnType<typeof mountStep>;
+
+function testId(wrapper: Wrapper, id: string) {
+  return wrapper.find(`[data-testid=${id}]`);
+}
+
 describe("OwnSourcesStep", () => {
   beforeEach(() => {
     apiMock.providers = {};
@@ -89,13 +97,27 @@ describe("OwnSourcesStep", () => {
   it("invites the member to connect a source when they own none", () => {
     const wrapper = mountStep();
 
-    expect(wrapper.text()).toContain("onboarding.steps.own_sources.empty");
+    expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
+      "onboarding.steps.own_sources.intro",
+    );
+    expect(
+      testId(wrapper, "onboarding-invitation-features")
+        .findAll("li")
+        .map((item) => item.text()),
+    ).toEqual([
+      "onboarding.steps.own_sources.features.accounts",
+      "onboarding.steps.own_sources.features.library",
+    ]);
     expect(wrapper.findAll("[data-testid=onboarding-own-source]")).toHaveLength(
       0,
     );
-    // the add button is still there to act on the invitation
-    expect(wrapper.find("[data-testid=onboarding-add-provider]").exists()).toBe(
-      true,
+    // adding one is the step's centred action, and it can wait
+    const add = testId(wrapper, "onboarding-add-provider");
+    expect(add.classes()).toEqual(
+      expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
+    );
+    expect(testId(wrapper, "onboarding-invitation-optional").text()).toBe(
+      "onboarding.steps.own_sources.optional",
     );
 
     wrapper.unmount();
@@ -114,7 +136,16 @@ describe("OwnSourcesStep", () => {
         .map((row) => row.text()),
     ).toEqual(["Sam's Spotify", "tidal manifest"]);
     expect(wrapper.text()).toContain("onboarding.steps.own_sources.connected");
-    expect(wrapper.text()).not.toContain("onboarding.steps.own_sources.empty");
+    // set up: the invitation makes way, and adding another stays at hand
+    expect(testId(wrapper, "onboarding-invitation-features").exists()).toBe(
+      false,
+    );
+    expect(testId(wrapper, "onboarding-invitation-optional").exists()).toBe(
+      false,
+    );
+    expect(testId(wrapper, "onboarding-add-provider").classes()).toContain(
+      "bg-accent",
+    );
 
     wrapper.unmount();
   });

@@ -1,55 +1,48 @@
 <template>
-  <section class="flex min-h-0 flex-col gap-4">
-    <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.own_sources.description") }}
-    </p>
+  <OnboardingInvitation
+    :intro="$t('onboarding.steps.own_sources.intro')"
+    :features="FEATURES"
+    :set-up="hasSources"
+    :linked="hasSources"
+    :optional="optionalLine"
+  >
+    <template #partner>
+      <Music />
+    </template>
 
-    <!-- fixed minimum height so the step does not jump once configs load -->
-    <ScrollFade class="min-h-24">
-      <div v-if="ownedMusicSources.length > 0" class="flex flex-col gap-2">
-        <h3 class="text-sm font-semibold">
-          {{ $t("onboarding.steps.own_sources.connected") }}
-        </h3>
-        <ItemGroup class="gap-2">
-          <Item
-            v-for="source in ownedMusicSources"
-            :key="source.instance_id"
-            variant="outline"
-            size="sm"
-            data-testid="onboarding-own-source"
-          >
-            <ItemMedia variant="icon">
-              <ProviderIcon :domain="source.domain" :size="20" />
-            </ItemMedia>
-            <ItemContent>
-              <ItemTitle>{{ sourceName(source) }}</ItemTitle>
-            </ItemContent>
-          </Item>
-        </ItemGroup>
-      </div>
-
-      <Empty v-else class="border-border rounded-md border border-dashed py-6">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Music />
-          </EmptyMedia>
-          <EmptyTitle>{{
-            $t("onboarding.steps.own_sources.empty")
-          }}</EmptyTitle>
-        </EmptyHeader>
-      </Empty>
-    </ScrollFade>
-
-    <div>
-      <Button
-        :variant="ownedMusicSources.length > 0 ? 'secondary' : 'default'"
-        data-testid="onboarding-add-provider"
-        @click="showAddProviderDialog = true"
-      >
-        <Plus class="size-4" />
-        {{ $t("onboarding.steps.own_sources.add") }}
-      </Button>
+    <div v-if="hasSources" class="flex flex-col gap-2">
+      <h3 class="text-sm font-semibold">
+        {{ $t("onboarding.steps.own_sources.connected") }}
+      </h3>
+      <ItemGroup class="gap-2">
+        <Item
+          v-for="source in ownedMusicSources"
+          :key="source.instance_id"
+          variant="outline"
+          size="sm"
+          data-testid="onboarding-own-source"
+        >
+          <ItemMedia variant="icon">
+            <ProviderIcon :domain="source.domain" :size="20" />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>{{ sourceName(source) }}</ItemTitle>
+          </ItemContent>
+        </Item>
+      </ItemGroup>
     </div>
+
+    <!-- the invitation while they own none, a way to add another after -->
+    <Button
+      :variant="hasSources ? 'secondary' : 'default'"
+      :size="hasSources ? 'default' : 'lg'"
+      class="self-center"
+      data-testid="onboarding-add-provider"
+      @click="showAddProviderDialog = true"
+    >
+      <Plus class="size-4" />
+      {{ $t("onboarding.steps.own_sources.add") }}
+    </Button>
 
     <AddProviderDialog
       v-model:show="showAddProviderDialog"
@@ -57,19 +50,15 @@
       :multi-instance-only="true"
       :self-service-only="true"
     />
-  </section>
+  </OnboardingInvitation>
 </template>
 
 <script setup lang="ts">
-import ScrollFade from "@/components/onboarding/ScrollFade.vue";
+import OnboardingInvitation, {
+  type InvitationFeature,
+} from "@/components/onboarding/OnboardingInvitation.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Item,
   ItemContent,
@@ -82,9 +71,10 @@ import type { OnboardingStepId } from "@/helpers/onboarding";
 import { providerDisplayName } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";
 import { ProviderType, type ProviderConfig } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
-import { Music, Plus } from "@lucide/vue";
-import { ref } from "vue";
+import { Headphones, ListMusic, Music, Plus } from "@lucide/vue";
+import { computed, ref } from "vue";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
@@ -99,6 +89,24 @@ defineEmits<{
 const { ownedMusicSources } = useOnboarding();
 
 const showAddProviderDialog = ref(false);
+
+const FEATURES: readonly InvitationFeature[] = [
+  {
+    icon: Headphones,
+    labelKey: "onboarding.steps.own_sources.features.accounts",
+  },
+  {
+    icon: ListMusic,
+    labelKey: "onboarding.steps.own_sources.features.library",
+  },
+];
+
+const hasSources = computed(() => ownedMusicSources.value.length > 0);
+const optionalLine = computed(() =>
+  $t("onboarding.steps.own_sources.optional", {
+    music: $t("settings.music"),
+  }),
+);
 
 const sourceName = (config: ProviderConfig) =>
   providerDisplayName(

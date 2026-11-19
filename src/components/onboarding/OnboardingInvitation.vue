@@ -1,7 +1,8 @@
 <template>
   <div class="flex flex-col items-center gap-4">
     <div
-      class="flex items-center"
+      v-if="$slots.partner"
+      class="mt-4 flex items-center"
       aria-hidden="true"
       data-testid="onboarding-invitation-visual"
       :data-linked="linked || undefined"
@@ -27,7 +28,7 @@
       {{ intro }}
     </p>
 
-    <div v-if="!setUp" class="flex w-fit max-w-md flex-col gap-2">
+    <div v-if="!setUp" class="flex w-fit max-w-md flex-col gap-1.5">
       <p
         v-if="featuresTitle"
         class="text-muted-foreground text-xs"
@@ -36,7 +37,7 @@
         {{ featuresTitle }}
       </p>
       <ul
-        class="flex flex-col gap-2"
+        class="flex flex-col gap-1.5"
         data-testid="onboarding-invitation-features"
       >
         <li
@@ -45,7 +46,7 @@
           class="flex items-center gap-3 text-sm"
         >
           <span
-            class="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-md"
+            class="bg-primary/10 text-primary flex size-7 shrink-0 items-center justify-center rounded-md"
           >
             <component :is="feature.icon" class="size-4" aria-hidden="true" />
           </span>
@@ -84,11 +85,8 @@ import { Check, Link } from "@lucide/vue";
 import { computed } from "vue";
 
 /**
- * The layout of a setup wizard step that invites to set up something
- * optional: Music Assistant's logo linked to the `partner` slot, an intro, what
- * it brings, then the default slot for the action or what is set up, the
- * optional line and the `footer` slot. Once it is set up, what it brings and
- * the optional line make way for the slot.
+ * The layout of a setup wizard step that invites to set something up; once it
+ * is set up, what it brings and the optional line make way for the slot.
  */
 const props = defineProps<{
   intro: string;

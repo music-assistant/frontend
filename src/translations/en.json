@@ -3276,7 +3276,6 @@
         "skip": "Skip for now",
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
-        "nothing_configured": "Nothing set up yet",
         "needs_attention": "Needs attention",
         "set_up": "Done",
         "still_to_do": "Still to do",
@@ -3295,7 +3294,6 @@
         "pause": "Pause setup",
         "dismiss": "Dismiss",
         "add_member": "Add a user",
-        "just_you_so_far": "Just you so far.",
         "welcome_title": "Welcome to Music Assistant",
         "welcome_description": "A quick look around Music Assistant.",
         "welcome_again": "Show the welcome again",
@@ -3304,7 +3302,13 @@
         "steps": {
             "get_started": {
                 "title": "Welcome to Music Assistant",
-                "description": "Let's set you up. First you create your account, then we go through the rest one step at a time.",
+                "intro": "Let's set you up, one step at a time.",
+                "features": {
+                    "account": "Create your account",
+                    "intent": "Choose how you'd like to use Music Assistant",
+                    "music": "Add your music and your speakers",
+                    "extras": "Add extras such as Home Assistant, if you like"
+                },
                 "start": "Get started"
             },
             "account": {
@@ -3336,7 +3340,12 @@
             },
             "music_sources": {
                 "title": "Add your music sources",
-                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play."
+                "description": "Connect a streaming service or your local music files, so Music Assistant has something to play.",
+                "features": {
+                    "streaming": "Streaming services, such as Spotify or Tidal",
+                    "files": "Your own music files, on this server or a network share",
+                    "radio": "Radio stations and podcasts"
+                }
             },
             "players": {
                 "title": "Add your players",
@@ -3347,13 +3356,23 @@
                 "discovering_hint": "Finding players can take a moment. Make sure your speakers are switched on and on the same network as Music Assistant.",
                 "add_more": "Add more players",
                 "discovered_by": "Discovered by",
-                "rename": "Rename {name}"
+                "rename": "Rename {name}",
+                "features": {
+                    "found_automatically": "Found on your network automatically",
+                    "one_place": "Play on all of them from one place",
+                    "groups": "Group them to play together"
+                }
             },
             "plugins": {
                 "title": "Add plugins",
                 "phone_apps_title": "Connect your music apps",
                 "phone_apps_instructions": "Add Spotify Connect or the AirPlay receiver, then select it to choose the speakers it plays on.",
-                "connect": "Connect a music app"
+                "connect": "Connect a music app",
+                "features": {
+                    "apps": "Keep choosing music in the apps you know",
+                    "spotify_connect": "Play from Spotify with Spotify Connect",
+                    "airplay": "Play from your Apple devices with AirPlay"
+                }
             },
             "core_settings": {
                 "away_title": "Listen away from home",
@@ -3404,7 +3423,13 @@
             },
             "invite_members": {
                 "title": "Add users",
-                "description": "Everyone in your home gets an account of their own, with the players and music sources you give them access to.",
+                "intro": "Give everyone in your home an account of their own.",
+                "features": {
+                    "sign_in": "Their own sign-in",
+                    "players": "The players you give them access to",
+                    "music": "Their own music services, next to yours"
+                },
+                "optional": "Optional: you can also add users later under Settings › {users}.",
                 "load_failed": "The users could not be loaded. You can add them later from the settings."
             },
             "finish": {
@@ -3438,9 +3463,13 @@
             },
             "own_sources": {
                 "title": "Connect your own accounts",
-                "description": "Add your own music services so your playlists and library turn up alongside everyone else's. You can always do this later from your settings.",
+                "intro": "Add the music services you use yourself.",
+                "features": {
+                    "accounts": "Your own streaming accounts, such as Spotify",
+                    "library": "Your playlists and library, alongside everyone else's"
+                },
+                "optional": "Optional: you can also add them later under Settings › {music}.",
                 "add": "Add a music source",
-                "empty": "You have not connected any music sources of your own yet.",
                 "connected": "Your music sources"
             },
             "all_set": {
