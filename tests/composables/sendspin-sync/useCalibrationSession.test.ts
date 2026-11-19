@@ -330,18 +330,27 @@ describe("useCalibrationSession", () => {
     expect(session.problem.value?.kind).toBe("refused");
   });
 
-  it("gives the speakers back, and does not report a stop that failed", async () => {
+  it("says so when the server could not be told to give the speakers back", async () => {
     const session = withScope(() => useCalibrationSession());
     sendCommand.mockResolvedValueOnce(sessionState());
     await session.start(["living", "kitchen"]);
 
-    sendCommand.mockRejectedValueOnce(new Error("already gone"));
-    await session.stop();
+    sendCommand.mockRejectedValueOnce(new Error("no answer"));
+    // Not thrown, since this also runs as the page goes away, but answered: the
+    // server still holds the speakers, and the caller must not say otherwise.
+    expect(await session.stop()).toBe(false);
 
     expect(callsTo("sendspin_sync/stop_session")).toHaveLength(1);
     expect(session.state.value).toBeNull();
-    // A session the server has already dropped is the outcome wanted here.
     expect(session.lost.value).toBeNull();
+  });
+
+  it("says the speakers are back once the server has been told", async () => {
+    const session = withScope(() => useCalibrationSession());
+    sendCommand.mockResolvedValueOnce(sessionState());
+    await session.start(["living", "kitchen"]);
+
+    expect(await session.stop()).toBe(true);
   });
 
   it("does not stop a session it never started", async () => {

@@ -112,7 +112,7 @@
           :measuring="measuringPlayerId"
           :seconds-left="secondsLeft"
           :closed="applyResult !== null"
-          @measure="(playerId, replace) => measure(playerId, replace)"
+          @measure="measureSpeaker"
           @clear="clearReadings"
           @stop="startOver"
         />
@@ -249,23 +249,57 @@ function onPageHide(): void {
   void restart();
 }
 
+/**
+ * Say in a toast why the command just sent did nothing.
+ *
+ * The alert at the top of the page stays as the standing account of it, but a
+ * button far down the page that failed must not look like one that did nothing.
+ */
+function reportProblem(): void {
+  const problem = sessionProblem.value;
+  if (!problem) return;
+  toast.error(
+    problem.kind === "refused"
+      ? problem.message
+      : $t(`${KEYS}.problem.unreachable.title`),
+  );
+}
+
 async function start(force: boolean): Promise<void> {
   if (await begin(force)) toast.success($t(`${KEYS}.toast.started`));
+  else reportProblem();
+}
+
+async function measureSpeaker(
+  playerId: string,
+  replace: boolean,
+): Promise<void> {
+  await measure(playerId, replace);
+  reportProblem();
 }
 
 /** Hand the run to the server, saying plainly whether anything was written. */
 async function applyDelays(): Promise<void> {
-  if (!(await apply())) return;
+  if (!(await apply())) {
+    reportProblem();
+    return;
+  }
   const wrote = Object.keys(applyResult.value?.applied ?? {}).length > 0;
   toast.success($t(`${KEYS}.toast.${wrote ? "applied" : "manual"}`));
 }
 
+/** Say whether the speakers were given back, which only the server can do. */
+function reportRelease(released: boolean): void {
+  if (released) toast.success($t(`${KEYS}.toast.released`));
+  else toast.error($t(`${KEYS}.toast.release_failed`));
+}
+
 /** Give the speakers back, clear the run, and offer the picker again. */
 async function startOver(): Promise<void> {
-  await restart();
+  const released = await restart();
   await refresh();
   await loadPlayers();
-  toast.success($t(`${KEYS}.toast.released`));
+  reportRelease(released);
 }
 
 /** End a run this page did not start, on the second of two taps. */
@@ -275,8 +309,9 @@ async function endRunning(): Promise<void> {
     return;
   }
   confirmingEnd.value = false;
-  await endAdopted();
+  const released = await endAdopted();
   await refresh();
   await loadPlayers();
+  reportRelease(released);
 }
 </script>

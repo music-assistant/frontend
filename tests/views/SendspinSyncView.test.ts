@@ -1,3 +1,4 @@
+import SendspinSyncPlayerPicker from "@/components/sendspin-sync/SendspinSyncPlayerPicker.vue";
 import SendspinSyncResults from "@/components/sendspin-sync/SendspinSyncResults.vue";
 import SendspinSyncWalk from "@/components/sendspin-sync/SendspinSyncWalk.vue";
 import type { CalibrationApplyResult } from "@/plugins/api/interfaces";
@@ -6,7 +7,8 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { routeLeaveGuards, run, toastSuccess } = vi.hoisted(() => ({
+const { routeLeaveGuards, run, toastSuccess, toastError } = vi.hoisted(() => ({
+  toastError: vi.fn(),
   routeLeaveGuards: [] as (() => unknown)[],
   toastSuccess: vi.fn(),
   run: {
@@ -28,7 +30,7 @@ vi.mock("vue-router", () => ({
 }));
 
 vi.mock("vue-sonner", () => ({
-  toast: { success: toastSuccess, error: vi.fn() },
+  toast: { success: toastSuccess, error: toastError },
 }));
 
 vi.mock("@/composables/sendspin-sync/useCalibrationRun", () => ({
@@ -146,17 +148,15 @@ beforeEach(() => {
   state = makeState();
   browserWith({ secure: true, microphone: true });
   toastSuccess.mockReset();
+  toastError.mockReset();
   for (const fake of Object.values(run)) fake.mockReset();
   run.begin.mockResolvedValue(true);
   run.apply.mockResolvedValue(true);
-  for (const name of [
-    "loadPlayers",
-    "refresh",
-    "finish",
-    "restart",
-    "endAdopted",
-  ] as const)
+  for (const name of ["loadPlayers", "refresh"] as const)
     run[name].mockResolvedValue(undefined);
+  // each answers whether the server was told to give the speakers back
+  for (const name of ["finish", "restart", "endAdopted"] as const)
+    run[name].mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -371,6 +371,82 @@ describe("SendspinSyncView", () => {
     expect(run.endAdopted).toHaveBeenCalledOnce();
     // And looks again at what the server holds, so the picker opens up.
     expect(run.refresh).toHaveBeenCalledTimes(2);
+    expect(toastSuccess).toHaveBeenCalledWith(
+      "Your speakers have been given back.",
+    );
+  });
+
+  it("does not say a run was ended when the server could not be told", async () => {
+    state.sessionState.value = { anchor_player_id: "living" };
+    run.endAdopted.mockResolvedValue(false);
+    const wrapper = mountView();
+    await wrapper.vm.$nextTick();
+    const button = (text: string) =>
+      wrapper.findAll("button").find((found) => found.text().includes(text))!;
+
+    await button("End the running calibration").trigger("click");
+    await button("Tap again to end it").trigger("click");
+    await settled();
+
+    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith(
+      expect.stringContaining("your speakers are still held"),
+    );
+  });
+
+  it("says in a toast why a start was refused", async () => {
+    state.selected.value = ["living", "kitchen"];
+    run.begin.mockImplementation(async () => {
+      state.sessionProblem.value = {
+        kind: "refused",
+        message: "Kitchen is muted or turned all the way down.",
+      };
+      return false;
+    });
+    const wrapper = mountView();
+    await wrapper.vm.$nextTick();
+
+    wrapper.findComponent(SendspinSyncPlayerPicker).vm.$emit("start", false);
+    await settled();
+
+    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith(
+      "Kitchen is muted or turned all the way down.",
+    );
+  });
+
+  it("says nothing more about a start the microphone stopped", async () => {
+    // Not a command that failed: the page says why above the picker, and there
+    // is no reason from the server to put in a toast.
+    state.selected.value = ["living", "kitchen"];
+    run.begin.mockResolvedValue(false);
+    const wrapper = mountView();
+    await wrapper.vm.$nextTick();
+
+    wrapper.findComponent(SendspinSyncPlayerPicker).vm.$emit("start", false);
+    await settled();
+
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("says in a toast that a reading did not get through", async () => {
+    state.phase.value = "walking";
+    state.selected.value = ["living", "kitchen"];
+    run.measure.mockImplementation(async () => {
+      state.sessionProblem.value = { kind: "unreachable" };
+      return false;
+    });
+    const wrapper = mountView();
+    await wrapper.vm.$nextTick();
+
+    wrapper
+      .findComponent(SendspinSyncWalk)
+      .vm.$emit("measure", "kitchen", false);
+    await settled();
+
+    expect(toastError).toHaveBeenCalledWith(
+      "Music Assistant could not be reached",
+    );
   });
 
   it("holds the results back until the walk has nothing left to ask for", async () => {
@@ -419,6 +495,36 @@ describe("SendspinSyncView", () => {
     expect(run.restart).toHaveBeenCalledOnce();
     expect(toastSuccess).toHaveBeenCalledWith(
       "Your speakers have been given back.",
+    );
+  });
+
+  it("does not say the speakers are back when the server could not be told", async () => {
+    state.phase.value = "walking";
+    state.selected.value = ["living", "kitchen"];
+    run.restart.mockResolvedValue(false);
+    const wrapper = mountView();
+    await wrapper.vm.$nextTick();
+
+    wrapper.findComponent(SendspinSyncWalk).vm.$emit("stop");
+    await settled();
+
+    // The server holds them until it is told or until its own timeout, and a
+    // user told otherwise would walk away from a silent house.
+    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith(
+      expect.stringContaining("your speakers are still held"),
+    );
+  });
+
+  it("says in a toast why the delays were not applied", async () => {
+    await applyFrom(null, {
+      kind: "refused",
+      message: "Kitchen switched to another connection during the calibration.",
+    });
+
+    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith(
+      "Kitchen switched to another connection during the calibration.",
     );
   });
 
@@ -473,16 +579,21 @@ describe("SendspinSyncView", () => {
 });
 
 /** Walk the view as far as the results panel and press Apply. */
-async function applyFrom(result: CalibrationApplyResult) {
+async function applyFrom(
+  result: CalibrationApplyResult | null,
+  problem: { kind: "refused"; message: string } | null = null,
+) {
   state.phase.value = "walking";
   state.selected.value = ["living", "kitchen"];
   state.anchor.value = "living";
   state.trustworthy.value = true;
   state.verdict.value = "pinned";
   state.fit.value = FIT;
+  // A null result is an apply the server refused, for the reason given.
   run.apply.mockImplementation(async () => {
     state.applyResult.value = result;
-    return true;
+    state.sessionProblem.value = problem;
+    return result !== null;
   });
 
   const wrapper = mountView();

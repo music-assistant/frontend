@@ -2353,7 +2353,8 @@
                     "started": "Calibration started. Stand where you listen to your first speaker.",
                     "applied": "Speaker delays updated.",
                     "manual": "Delays worked out. Add each one to the speaker's current delay.",
-                    "released": "Your speakers have been given back."
+                    "released": "Your speakers have been given back.",
+                    "release_failed": "Music Assistant could not be reached, so your speakers are still held. Try again, or wait: they are given back on their own within a few minutes."
                 },
                 "manual": {
                     "badge": "Set by hand",

@@ -355,14 +355,15 @@ export function useCalibrationRun() {
   }
 
   /** End the run: stop the session, release the microphone. */
-  async function finish(): Promise<void> {
-    await session.stop();
+  async function finish(): Promise<boolean> {
+    const released = await session.stop();
     await capture.close();
+    return released;
   }
 
   /** End a session found running that was not started from this page. */
-  async function endAdopted(): Promise<void> {
-    await session.stop(true);
+  function endAdopted(): Promise<boolean> {
+    return session.stop(true);
   }
 
   /**
@@ -371,9 +372,11 @@ export function useCalibrationRun() {
    * Used after a void, where nothing measured so far can be salvaged: the
    * arrivals either side of the gap have no common time base, so keeping any of
    * them would only make the next fit wrong in a way nothing would show.
+   *
+   * Returns whether the speakers were given back, see `stop` of the session.
    */
-  async function restart(): Promise<void> {
-    await finish();
+  async function restart(): Promise<boolean> {
+    const released = await finish();
     capture.reset();
     session.reset();
     visits.value = [];
@@ -383,6 +386,7 @@ export function useCalibrationRun() {
     openError.value = null;
     verifying.value = false;
     phase.value = "picking";
+    return released;
   }
 
   function settle(): Promise<void> {

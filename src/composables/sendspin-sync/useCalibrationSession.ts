@@ -174,21 +174,29 @@ export function useCalibrationSession() {
    *
    * Only a session started from here is ended, unless `adopted` says the user
    * asked for the one found running to be ended.
+   *
+   * Returns false when there was a session to end and the server could not be
+   * told to end it.
    */
-  async function stop(adopted = false): Promise<void> {
+  async function stop(adopted = false): Promise<boolean> {
     stops++;
     stopKeepalive();
-    if (!state.value) return;
-    if (!owned.value && !adopted) return;
+    if (!state.value) return true;
+    if (!owned.value && !adopted) return true;
     state.value = null;
     owned.value = false;
-    // Best effort: a session the server has already dropped is the outcome
-    // wanted here, so a failure to stop it is not worth reporting.
-    await api
-      .sendCommand("sendspin_sync/stop_session", undefined, {
+    // Never thrown: this also runs as the page goes away, with nobody to catch
+    // it. The answer says whether the server was told, because until it is the
+    // speakers stay held and the user must not be told otherwise.
+    try {
+      await api.sendCommand("sendspin_sync/stop_session", undefined, {
         suppressGlobalError: true,
-      })
-      .catch(() => undefined);
+      });
+      return true;
+    } catch (error) {
+      console.error("[Sendspin Sync] stop_session failed", error);
+      return false;
+    }
   }
 
   /** Clear the fault from a run that has been thrown away. */
