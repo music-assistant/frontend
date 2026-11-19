@@ -22,9 +22,13 @@
     </ItemContent>
     <ItemActions>
       <!-- a provider that is set up but switched off or broken is no tick -->
-      <template v-if="opensSettings">
+      <template v-if="working">
         <Check class="text-primary size-4" aria-hidden="true" />
-        <ChevronRight class="text-muted-foreground size-4" aria-hidden="true" />
+        <ChevronRight
+          v-if="opensSettings"
+          class="text-muted-foreground size-4"
+          aria-hidden="true"
+        />
       </template>
       <template v-else>
         <Button
@@ -76,13 +80,16 @@ import { computed, ref } from "vue";
 
 /**
  * A provider set up in the setup wizard: ticked when it works, and then the
- * way into its settings; otherwise flagged with what is wrong, with a
- * Reconfigure button when signing in again fixes it.
+ * way into its settings unless it is shown for its status only; otherwise
+ * flagged with what is wrong, with a Reconfigure button when signing in again
+ * fixes it.
  */
 const props = defineProps<{
   provider: ConfiguredProvider;
   // what it brings, such as the engines it provides
   description?: string;
+  // a working provider's row does not open its settings
+  statusOnly?: boolean;
 }>();
 
 // the row and its settings dialog are siblings, so what the step hands the
@@ -90,7 +97,8 @@ const props = defineProps<{
 defineOptions({ inheritAttrs: false });
 
 const showSettings = ref(false);
-const opensSettings = computed(() => !props.provider.needsAttention);
+const working = computed(() => !props.provider.needsAttention);
+const opensSettings = computed(() => working.value && !props.statusOnly);
 
 const openSettings = function () {
   if (opensSettings.value) showSettings.value = true;

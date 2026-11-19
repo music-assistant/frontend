@@ -53,6 +53,16 @@ vi.mock("@/components/ProviderIcon.vue", () => ({
   },
 }));
 
+// the settings dialog is covered where it lives; here it only has to say
+// whether the row opened it
+vi.mock("@/components/settings/providers/ProviderSettingsDialog.vue", () => ({
+  default: {
+    name: "ProviderSettingsDialog",
+    props: { open: Boolean, instanceId: String },
+    template: "<div />",
+  },
+}));
+
 function configured(
   domain: string,
   overrides: Partial<ConfiguredProvider> = {},
@@ -92,6 +102,7 @@ describe("AIStep", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     onboardingState.services.value = [];
+    apiMock.providerManifests = {};
     apiMock.getAIEngines.mockResolvedValue([]);
     apiMock.getAIUsage.mockResolvedValue([]);
   });
@@ -154,6 +165,21 @@ describe("AIStep", () => {
     expect(add.classes()).toContain("bg-accent");
   });
 
+  it("shows a working service for its status, without opening its settings", async () => {
+    onboardingState.services.value = [
+      configured("hass", { name: "Home Assistant" }),
+    ];
+
+    const wrapper = await mountStep();
+
+    const service = wrapper.get("[data-testid=onboarding-ai-service]");
+    expect(service.element.tagName).not.toBe("BUTTON");
+    await service.trigger("click");
+    expect(
+      wrapper.findComponent({ name: "ProviderSettingsDialog" }).exists(),
+    ).toBe(false);
+  });
+
   it("flags a service that is set up but does not work", async () => {
     onboardingState.services.value = [
       configured("openai_compatible", {
@@ -171,6 +197,26 @@ describe("AIStep", () => {
       "settings.provider_status_auth_required",
     );
     expect(linked(wrapper)).toBeUndefined();
+  });
+
+  it("keeps Reconfigure on a service that has to sign in again", async () => {
+    apiMock.providerManifests = { openai_compatible: { has_setup_flow: true } };
+    onboardingState.services.value = [
+      configured("openai_compatible", {
+        name: "OpenAI",
+        needsAttention: true,
+        status: ProviderStatus.AUTH_REQUIRED,
+      }),
+    ];
+
+    const wrapper = await mountStep();
+
+    expect(
+      wrapper
+        .get("[data-testid=onboarding-ai-service]")
+        .find("[data-testid=onboarding-provider-reconfigure]")
+        .exists(),
+    ).toBe(true);
   });
 
   it("invites to add an AI service while none is set up, as optional", async () => {
