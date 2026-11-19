@@ -5,6 +5,7 @@ import {
   getComposableProtocol,
   getSpeakerField,
   groupSpeakerEntries,
+  isMultiChannelRecordEntry,
   suggestMultiChannelName,
 } from "@/helpers/multi_channel";
 import {
@@ -89,6 +90,29 @@ describe("getComposableProtocol", () => {
         { airplay: ["studio-left"] },
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("isMultiChannelRecordEntry", () => {
+  it("knows the entries of the record of a multi-channel player", () => {
+    const record = setRecord().entries;
+    const keys = record
+      .filter((e) => isMultiChannelRecordEntry(e, record))
+      .map((e) => e.key);
+
+    expect(keys).toContain("multi_channel_group_id");
+    expect(keys).toContain("speaker_2_channel");
+    expect(keys).not.toContain("note");
+  });
+
+  it("knows no speaker entry outside the record", () => {
+    const record = setRecord().entries;
+    const elsewhere = entry("speaker_1_channel", {
+      category: "protocol_other",
+    });
+
+    expect(isMultiChannelRecordEntry(elsewhere, record)).toBe(false);
+    expect(isMultiChannelRecordEntry(elsewhere, [elsewhere])).toBe(false);
   });
 });
 

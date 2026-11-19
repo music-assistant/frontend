@@ -87,6 +87,27 @@ export const getComposableProtocol = function (
 };
 
 /**
+ * Whether an entry belongs to the record of a multi-channel player: its group id, or an
+ * entry of one of its speakers.
+ *
+ * @param entry The entry.
+ * @param entries Every entry of the form it is on.
+ */
+export const isMultiChannelRecordEntry = function (
+  entry: Pick<ConfigEntryUI, "key" | "category">,
+  entries: Pick<ConfigEntryUI, "key" | "category">[],
+): boolean {
+  if (entry.key === GROUP_ID_KEY) return true;
+  return (
+    SPEAKER_KEY.test(entry.key) &&
+    entries.some(
+      (other) =>
+        other.key === GROUP_ID_KEY && other.category === entry.category,
+    )
+  );
+};
+
+/**
  * The field of a speaker an entry of a multi-channel player holds, such as "channel" for
  * `speaker_1_channel`. Undefined for an entry of no speaker.
  */

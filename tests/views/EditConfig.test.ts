@@ -384,6 +384,63 @@ describe("EditConfig", () => {
     });
   });
 
+  it("keeps the speakers of a multi-channel player through a reset", async () => {
+    const category = "protocol_sendspin";
+    const wrapper = mountForSave([
+      entry({
+        key: "server",
+        type: ConfigEntryType.STRING,
+        default_value: "localhost",
+        value: "elsewhere",
+      }),
+      entry({
+        key: "multi_channel_group_id",
+        type: ConfigEntryType.STRING,
+        category,
+        hidden: true,
+        value: "group",
+      }),
+      entry({
+        key: "speaker_1_client_id",
+        type: ConfigEntryType.STRING,
+        category,
+        hidden: true,
+        value: "client-1",
+      }),
+      // the server makes the channel stored the default of the entry
+      entry({
+        key: "speaker_1_channel",
+        type: ConfigEntryType.STRING,
+        category,
+        options: [
+          { title: "Left", value: "front_left" },
+          { title: "Right", value: "front_right" },
+        ],
+        default_value: "front_left",
+        value: "front_right",
+      }),
+      entry({
+        key: "speaker_1_output_delay",
+        type: ConfigEntryType.INTEGER,
+        category,
+        default_value: 0,
+        value: 40,
+      }),
+    ]);
+
+    wrapper.vm.resetToDefaults();
+    await wrapper.vm.submit();
+
+    // the speakers take their defaults as values, and the rest is unset
+    expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      server: null,
+      multi_channel_group_id: "group",
+      speaker_1_client_id: "client-1",
+      speaker_1_channel: "front_left",
+      speaker_1_output_delay: 0,
+    });
+  });
+
   it("keeps sending the value of a switch that turns an output on after a reset", async () => {
     const wrapper = mountForSave([
       entry({

@@ -162,6 +162,7 @@ import {
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
 import { Button } from "@/components/ui/button";
+import { isMultiChannelRecordEntry } from "@/helpers/multi_channel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
@@ -658,12 +659,14 @@ const getSaveValues = function () {
 /**
  * Whether a save unsets an entry that was reset, rather than send its default. The
  * name and the switches that turn a provider, an output or a plugin on keep sending
- * their value, as does an entry that is not saved as a value at all.
+ * their value, as does an entry that is not saved as a value at all, and an entry of
+ * the record of a multi-channel player, which would lose its speakers.
  */
 const unsetsOnReset = function (entry: ConfigEntryUI) {
   if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
     return false;
   }
+  if (isMultiChannelRecordEntry(entry, entries.value ?? [])) return false;
   const { key } = entry;
   return key !== "enabled" && key !== "name" && !key.endsWith("||enabled");
 };
