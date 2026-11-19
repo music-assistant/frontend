@@ -6,6 +6,14 @@
     <header class="flex shrink-0 flex-col gap-3">
       <p class="text-muted-foreground text-sm">{{ $t(trackTitleKey) }}</p>
       <template v-if="ready && currentStep">
+        <!-- decorative: the title below names the app -->
+        <img
+          v-if="currentId === 'get_started'"
+          :src="logoSrc"
+          alt=""
+          class="mx-auto my-4 h-10 w-auto max-w-full"
+          data-testid="onboarding-logo"
+        />
         <!-- as tall as the back button, so the title stays put without it -->
         <div class="flex min-h-9 min-w-0 items-center gap-2">
           <Button
@@ -142,6 +150,7 @@ import YourPlayersStep from "@/components/onboarding/steps/YourPlayersStep.vue";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useOnboarding } from "@/composables/useOnboarding";
+import { isDark } from "@/composables/useThemePreference";
 import { useTour } from "@/composables/useTour";
 import {
   firstStep,
@@ -212,6 +221,13 @@ const PRE_SETUP_STEPS: ReadonlySet<OnboardingStepId> = new Set([
   "account",
   "intent",
 ]);
+
+// the logo with light lettering is the one for a dark theme
+const logoSrc = computed(() =>
+  isDark.value
+    ? new URL("@/assets/logo/logo.svg", import.meta.url).href
+    : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
+);
 
 // the steps that move on under a label of their own instead of Next
 const FORWARD_LABEL_KEYS: Partial<Record<OnboardingStepId, string>> = {

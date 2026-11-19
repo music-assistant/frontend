@@ -724,6 +724,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         await flushPromises();
 
         expect(heading(wrapper)).toBe("onboarding.steps.get_started.title");
+        expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
+          true,
+        );
         expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
           false,
         );
@@ -733,6 +736,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         expect(stepCount(wrapper)).toBeNull();
 
         await getStarted(wrapper);
+
+        // the logo belongs to the welcome alone
+        expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
+          false,
+        );
 
         expect(wrapper.find("form#form-onboarding-account").exists()).toBe(
           true,
