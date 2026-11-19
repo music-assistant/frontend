@@ -614,20 +614,12 @@ describe("EditPlayer", () => {
     );
   });
 
-  it("shows the speakers of a multi-channel player as rows, also while it is disabled", async () => {
+  it("shows the speakers of a multi-channel player as rows", async () => {
     apiMock.getPlayerConfig.mockResolvedValue(stereoPairConfig());
     apiMock.players = {
       "player-1": { ...playerState(), type: PlayerType.MULTI_CHANNEL },
     };
-    let wrapper = await mountPlayerPage();
-    expect(
-      wrapper.findComponent({ name: "EditConfig" }).props("multiChannel"),
-    ).toBe(true);
-
-    // a disabled player has no live state
-    apiMock.players = {};
-    wrapper.unmount();
-    wrapper = await mountPlayerPage();
+    const wrapper = await mountPlayerPage();
     expect(
       wrapper.findComponent({ name: "EditConfig" }).props("multiChannel"),
     ).toBe(true);

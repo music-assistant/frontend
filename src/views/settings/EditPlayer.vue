@@ -315,11 +315,8 @@ const player = computed(() =>
 
 const multiChannelCandidates = useMultiChannelCandidates(player);
 
-// a disabled player has no live state, so its stored config tells
 const isMultiChannel = computed(
-  () =>
-    (player.value?.type ?? config.value?.player_type) ===
-    PlayerType.MULTI_CHANNEL,
+  () => player.value?.type === PlayerType.MULTI_CHANNEL,
 );
 
 const playerSetupLabel = computed(() =>
