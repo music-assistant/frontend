@@ -56,8 +56,8 @@ export interface ProviderList {
 
 interface UseProviderSourcesOptions {
   managesAllSources: MaybeRefOrGetter<boolean>;
-  // the list types the page shows, in display order
-  listTypes: MaybeRefOrGetter<readonly string[]>;
+  // the list type, as providerListType gives it
+  listType: MaybeRefOrGetter<string>;
   getProviderName: (config: ProviderConfig) => string;
   // what a source offers
   getSourceLabels: (config: ProviderConfig) => SourceLabel[];
@@ -65,9 +65,9 @@ interface UseProviderSourcesOptions {
 }
 
 /**
- * The provider configs of the lists of a settings page, kept in sync with the
- * server and shaped for each list: searched, filtered on what the sources
- * offer, sorted and split into sections.
+ * The provider configs of a list on a settings page, kept in sync with the
+ * server and shaped for the list: searched, filtered on what the sources offer,
+ * sorted and split into sections.
  */
 export function useProviderSources(options: UseProviderSourcesOptions) {
   const { getProviderName, getSourceLabels, isErrorStatus } = options;
@@ -75,26 +75,26 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
   const providerConfigs = ref<ProviderConfig[]>([]);
   // the empty states wait for the first load, so they never flash before the list
   const loaded = ref(false);
-  // the search of each list, by its type
-  const searchQueries = ref<Record<string, string>>({});
-  // the label picked on each list, by its type
-  const labelFilters = ref<Record<string, SourceLabel | null>>({});
+  // the search and label as last set, which the list only applies while it
+  // offers them
+  const search = ref("");
+  const pickedLabel = ref<SourceLabel | null>(null);
 
-  const lists = computed((): ProviderList[] =>
-    toValue(options.listTypes).map((type) => buildList(type)),
+  const list = computed((): ProviderList =>
+    buildList(toValue(options.listType)),
   );
 
-  /** Narrow the list of the given type down to what matches the query. */
-  const setSearchQuery = function (type: string, query: string) {
-    searchQueries.value = { ...searchQueries.value, [type]: query };
+  /** Narrow the list down to what matches the query. */
+  const setSearchQuery = function (query: string) {
+    search.value = query;
   };
 
   /**
-   * Narrow the list of the given type down to the sources offering the label;
-   * null shows them all again.
+   * Narrow the list down to the sources offering the label; null shows them
+   * all again.
    */
-  const setLabelFilter = function (type: string, label: SourceLabel | null) {
-    labelFilters.value = { ...labelFilters.value, [type]: label };
+  const setLabelFilter = function (label: SourceLabel | null) {
+    pickedLabel.value = label;
   };
 
   const loadItems = async function () {
@@ -176,10 +176,10 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
     const showSearch = listed.length >= MIN_PROVIDERS_FOR_SEARCH;
     // a search typed before the list shrank below the threshold would keep
     // narrowing it down unseen
-    const searchQuery = showSearch ? (searchQueries.value[type] ?? "") : "";
+    const searchQuery = showSearch ? search.value : "";
     const labels = getFilterLabels(listed.map(getSourceLabels));
     // the same goes for a label no source in the list offers any more
-    const picked = labelFilters.value[type];
+    const picked = pickedLabel.value;
     const labelFilter = picked && labels.includes(picked) ? picked : null;
     const filteredProviders = sortProviders(
       searchProviders(listed, searchQuery, getProviderName).filter(
@@ -226,7 +226,7 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
 
   return {
     loaded,
-    lists,
+    list,
     setSearchQuery,
     setLabelFilter,
     loadItems,

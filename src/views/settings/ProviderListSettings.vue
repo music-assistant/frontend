@@ -2,14 +2,14 @@
   <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
     <SettingsPageHeader :page="page" />
     <SettingsPageLinks :section="page" />
-    <CommunityMovedTypeNotice :types="listTypes" />
-    <ProviderLists :types="listTypes" />
+    <CommunityMovedTypeNotice :type="type" />
+    <ProviderList :key="type" :type="type" />
   </div>
 </template>
 
 <script setup lang="ts">
 import CommunityMovedTypeNotice from "@/components/settings/catalog/CommunityMovedTypeNotice.vue";
-import ProviderLists from "@/components/settings/providers/ProviderLists.vue";
+import ProviderList from "@/components/settings/providers/ProviderList.vue";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import SettingsPageLinks from "@/components/settings/SettingsPageLinks.vue";
 import { providerListName } from "@/helpers/settings_sections";
@@ -26,5 +26,4 @@ const props = defineProps<{
 
 // the key of the page in the settings menu, which lists every provider type
 const page = computed(() => providerListName(props.type)!);
-const listTypes = computed(() => [props.type]);
 </script>
