@@ -195,6 +195,31 @@ describe("hint-text adapters", () => {
     wrapper.unmount();
   });
 
+  it("tells a player who joined mid-round to wait for the next round", async () => {
+    const wrapper = mount(HintTextPlayerAnswer, {
+      props: {
+        state: playerState({ active_from_round: 1 }),
+        currentRound,
+        busy: false,
+      },
+    });
+
+    expect(wrapper.find("[data-testid='hint-text-input']").exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).toContain("providers.music_quiz.waiting_for_next");
+
+    await wrapper.setProps({
+      state: { ...playerState({ active_from_round: 1 }), phase: "reveal" },
+    });
+
+    expect(wrapper.text()).not.toContain(
+      "providers.music_quiz.title_reveal_not_solved",
+    );
+    expect(wrapper.text()).toContain("providers.music_quiz.waiting_for_next");
+    wrapper.unmount();
+  });
+
   it("shows the mask and who already guessed on the dashboard", () => {
     const { you: _you, ...publicState } = playerState();
     const wrapper = mount(HintTextPresentAnswer, {

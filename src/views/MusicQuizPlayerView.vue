@@ -350,9 +350,17 @@ const playerRoundResults = computed<MusicQuizRoundResult[]>(() => {
   if (!currentState || currentState.phase !== "reveal") return [];
   // hint-text players have no single locked answer, only whether they solved it
   if (currentState.answer_type === "hint_text") {
-    const { solved, title_points, first_bonus, artist_bonus } =
-      currentState.you;
+    const {
+      solved,
+      title_points,
+      first_bonus,
+      artist_bonus,
+      active_from_round,
+    } = currentState.you;
     if (solved === undefined) return [];
+    // late joiners only play from the next round, so this one is not theirs to fail
+    const round = currentState.current_round;
+    if (!round || active_from_round > round.round_index) return [];
     const results: MusicQuizRoundResult[] = [
       {
         key: "answer",

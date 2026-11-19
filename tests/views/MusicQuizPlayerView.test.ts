@@ -708,6 +708,43 @@ describe("MusicQuizPlayerView routing", () => {
     wrapper.unmount();
   });
 
+  it("passes no round results during title reveal to a player who joined mid-round", () => {
+    mockResolveMusicQuizDefinition.mockReturnValue(createDefinition(true));
+    mockUseMusicQuizPlayer.mockReturnValue({
+      info: ref(null),
+      state: ref({
+        ...playerState,
+        quiz_type: "title_reveal",
+        answer_type: "hint_text",
+        phase: "reveal",
+        you: {
+          ...playerState.you,
+          active_from_round: 1,
+          guesses: [],
+          attempts_left: 30,
+          solved: false,
+        },
+      }),
+      playerId: ref("player-id"),
+      landingSeen: ref(true),
+      gameRemoved: ref(false),
+      busy: ref(false),
+      loading: ref(false),
+      currentRound: ref(musicTimelineRound),
+      join: vi.fn(),
+      submitAnswer: vi.fn(),
+      ready: vi.fn(),
+      markLandingSeen: vi.fn(),
+    });
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper.findComponent(MusicQuizPlayerHeader).props("roundResults"),
+    ).toEqual([]);
+    wrapper.unmount();
+  });
+
   it("hides the mode label before joining Trivia", () => {
     mockResolveMusicQuizDefinition.mockReturnValue(
       createDefinition(triviaListenInCapability),

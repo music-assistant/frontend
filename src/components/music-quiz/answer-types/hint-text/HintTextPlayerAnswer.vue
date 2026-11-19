@@ -29,7 +29,11 @@
       </Badge>
     </div>
 
-    <form v-else class="flex flex-col gap-2" @submit.prevent="submit">
+    <form
+      v-else-if="canAnswerRound"
+      class="flex flex-col gap-2"
+      @submit.prevent="submit"
+    >
       <Label for="hint-text-guess">
         {{ $t("providers.music_quiz.title_reveal_guess_label") }}
       </Label>
@@ -71,6 +75,10 @@
       </p>
     </form>
 
+    <p v-else class="text-muted-foreground text-center" role="status">
+      {{ $t("providers.music_quiz.waiting_for_next") }}
+    </p>
+
     <HintTextArtistBonus
       v-if="state.you.solved && state.you.artist_bonus"
       :bonus="state.you.artist_bonus"
@@ -103,7 +111,14 @@
 
   <template v-else-if="state.phase === 'reveal'">
     <p
-      v-if="!state.you.solved"
+      v-if="!canAnswerRound"
+      class="text-muted-foreground text-center"
+      role="status"
+    >
+      {{ $t("providers.music_quiz.waiting_for_next") }}
+    </p>
+    <p
+      v-else-if="!state.you.solved"
       class="text-destructive text-center font-semibold"
       role="status"
     >
@@ -157,6 +172,9 @@ watch(
 );
 const inputRef = ref<InstanceType<typeof Input> | null>(null);
 
+const canAnswerRound = computed(
+  () => props.state.you.active_from_round <= props.currentRound.round_index,
+);
 const roundPlayerStatuses = computed(() =>
   getMusicQuizRoundPlayers(props.state.players, props.currentRound.round_index),
 );
