@@ -1223,7 +1223,6 @@
         },
         "folder_picker": {
             "selected": "Selected folder",
-            "none_selected": "No folder selected",
             "outside_locations": "This folder is not in any of the storage locations. It stays selected unless you pick another one.",
             "locations": "Storage locations",
             "all_locations": "All locations",
@@ -1231,8 +1230,7 @@
             "open_folder": "Open {name}",
             "no_subfolders": "This folder has no subfolders.",
             "use_folder": "Use this folder",
-            "folder_selected": "Selected",
-            "holds_selection": "Selected folder is here",
+            "chosen_hint": "This folder is used, including the folders inside it.",
             "browse_failed": "Could not open the folder",
             "empty_title": "Nothing to pick from yet",
             "empty_text_add": "There is no folder, drive or network share to pick from yet. Add the one that holds your files.",
