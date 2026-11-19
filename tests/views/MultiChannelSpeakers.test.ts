@@ -3,7 +3,12 @@ import type { MultiChannelSpeaker } from "@/helpers/multi_channel";
 import { ConfigEntryType } from "@/plugins/api/interfaces";
 import MultiChannelSpeakers from "@/views/settings/MultiChannelSpeakers.vue";
 import { mount, type VueWrapper } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { toRaw } from "vue";
+
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
 
 const CHANNEL_OPTIONS = [
   { title: "Left", value: "front_left" },
@@ -40,6 +45,33 @@ describe("MultiChannelSpeakers", () => {
     ).toEqual(["speaker_2_channel", "speaker_2_output_delay"]);
   });
 
+  it("names the fields of a speaker plainly, and only for these rows", async () => {
+    const speakers = [speaker(1, "Studio left", "front_left", false)];
+    const state = entry("speaker_1_state", {
+      type: ConfigEntryType.LABEL,
+      label: "Studio left is offline.",
+    });
+    speakers[0].entries.unshift(state);
+    const wrapper = mountSpeakers(speakers);
+    await wrapper.get('[data-slot="accordion-trigger"]').trigger("click");
+
+    expect(
+      wrapper.findAllComponents({ name: "ConfigEntryRow" }).map((entryRow) => {
+        const shown = entryRow.props("confEntry") as ConfigEntryUI;
+        return [shown.label, shown.default_value];
+      }),
+    ).toEqual([
+      ["Studio left is offline.", null],
+      ["settings.multi_channel.channel", null],
+      ["settings.multi_channel.output_delay", 0],
+    ]);
+    // every other form shows the entries as the server sent them
+    expect(speakers[0].channel).toMatchObject({
+      label: "speaker_1_channel",
+      default_value: "front_left",
+    });
+  });
+
   it("follows a channel picked but not saved yet", async () => {
     const speakers = [speaker(1, "Studio left", "front_left", true)];
     const wrapper = mountSpeakers(speakers);
@@ -64,10 +96,19 @@ describe("MultiChannelSpeakers", () => {
     );
     entryRow(wrapper, "speaker_1_output_delay").vm.$emit("update:value", 40);
 
-    expect(wrapper.emitted("update:value")).toEqual([
-      [speakers[0].channel, "front_right"],
-      [speakers[1].channel, "front_left"],
-      [speakers[0].entries[1], 40],
+    // the changes go to the entries of the form, not to what the rows show
+    const changes = wrapper.emitted("update:value")!;
+    expect(changes.map(([changed]) => changed)).toEqual([
+      speakers[0].channel,
+      speakers[1].channel,
+      speakers[0].entries[1],
+    ]);
+    expect(toRaw(changes[0][0])).toBe(speakers[0].channel);
+    expect(toRaw(changes[2][0])).toBe(speakers[0].entries[1]);
+    expect(changes.map(([, value]) => value)).toEqual([
+      "front_right",
+      "front_left",
+      40,
     ]);
   });
 });
@@ -114,8 +155,10 @@ function speaker(
   channel: string,
   online: boolean,
 ): MultiChannelSpeaker {
+  // the server makes the channel stored the default of the entry
   const channelEntry = entry(`speaker_${number}_channel`, {
     value: channel,
+    default_value: channel,
     options: CHANNEL_OPTIONS,
   });
   return {
@@ -128,6 +171,7 @@ function speaker(
       entry(`speaker_${number}_output_delay`, {
         type: ConfigEntryType.INTEGER,
         value: 0,
+        default_value: 0,
       }),
     ],
   };

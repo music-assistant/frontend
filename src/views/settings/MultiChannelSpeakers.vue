@@ -1,7 +1,7 @@
 <template>
   <Accordion type="multiple" class="space-y-2">
     <AccordionItem
-      v-for="speaker of speakers"
+      v-for="{ speaker, fields } of rows"
       :key="speaker.number"
       :value="String(speaker.number)"
       data-testid="multi-channel-speaker-row"
@@ -36,14 +36,14 @@
       </AccordionTrigger>
       <AccordionContent class="border-t pt-4">
         <ConfigEntryRow
-          v-for="conf_entry of speaker.entries"
-          :key="conf_entry.key"
-          :conf-entry="conf_entry"
+          v-for="{ entry, shown } of fields"
+          :key="entry.key"
+          :conf-entry="shown"
           :show-password-values="showPasswordValues"
-          :disabled="isDisabled(conf_entry)"
-          @update:value="setValue(conf_entry, $event)"
+          :disabled="isDisabled(entry)"
+          @update:value="setValue(entry, $event)"
           @toggle-password="emit('toggle-password')"
-          @action="emit('action', conf_entry)"
+          @action="emit('action', entry)"
         />
       </AccordionContent>
     </AccordionItem>
@@ -60,10 +60,19 @@ import {
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import {
   getChannelSwap,
+  getSpeakerField,
   type MultiChannelSpeaker,
 } from "@/helpers/multi_channel";
 import type { ConfigValueType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
+import { computed } from "vue";
 import ConfigEntryRow from "./ConfigEntryRow.vue";
+
+// the row names the speaker already, so these fields go by a plain label
+const FIELD_LABELS: Record<string, string> = {
+  channel: "settings.multi_channel.channel",
+  output_delay: "settings.multi_channel.output_delay",
+};
 
 const props = defineProps<{
   speakers: MultiChannelSpeaker[];
@@ -76,6 +85,31 @@ const emit = defineEmits<{
   (e: "action", entry: ConfigEntryUI): void;
   (e: "toggle-password"): void;
 }>();
+
+// each speaker with its entries as the row shows them; a change goes to the entry itself
+const rows = computed(() =>
+  props.speakers.map((speaker) => ({
+    speaker,
+    fields: speaker.entries.map((entry) => ({
+      entry,
+      shown: getShownEntry(speaker, entry),
+    })),
+  })),
+);
+
+const getShownEntry = function (
+  speaker: MultiChannelSpeaker,
+  entry: ConfigEntryUI,
+): ConfigEntryUI {
+  const label = FIELD_LABELS[getSpeakerField(entry.key) ?? ""];
+  if (!label) return entry;
+  return {
+    ...entry,
+    label: $t(label),
+    // the default of a channel is the one stored, which tells the user nothing
+    ...(entry === speaker.channel ? { default_value: null } : {}),
+  };
+};
 
 // the channel as the server names it, following the choice not saved yet
 const getChannelTitle = function (speaker: MultiChannelSpeaker): string {

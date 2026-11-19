@@ -1087,6 +1087,8 @@
                 "front_right": "Right"
             },
             "this_speaker": "{0} (this speaker)",
+            "channel": "Channel",
+            "output_delay": "Output delay (ms)",
             "pick_speaker": "Pick a speaker",
             "swap": "Swap the channels",
             "no_speakers": "There is no other speaker to add. A speaker shows up here while it is switched on and connected.",

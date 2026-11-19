@@ -98,6 +98,14 @@ export const getSpeakerCandidates = function <
 };
 
 /**
+ * The field of a speaker an entry of a multi-channel player holds, such as "channel" for
+ * `speaker_1_channel`. Undefined for an entry of no speaker.
+ */
+export const getSpeakerField = function (key: string): string | undefined {
+  return SPEAKER_KEY.exec(key)?.[2];
+};
+
+/**
  * A name for a player made of two speakers: the words both their names start with, such
  * as "Studio" for "Studio left" and "Studio right". Empty when they share none.
  */
