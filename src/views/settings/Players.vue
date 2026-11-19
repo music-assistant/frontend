@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
-    <SettingsHubHeader name="players" />
+    <SettingsPageHeader page="players" />
     <SettingsPageLinks section="players" />
 
     <SettingsListPanel
@@ -91,7 +91,7 @@
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import PlayerFilters from "@/components/PlayerFilters.vue";
 import SettingsPlayerRow from "@/components/settings/players/SettingsPlayerRow.vue";
-import SettingsHubHeader from "@/components/settings/SettingsHubHeader.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import SettingsListPanel, {
   type SettingsPanelAction,
 } from "@/components/settings/SettingsListPanel.vue";
@@ -102,7 +102,7 @@ import { ItemGroup } from "@/components/ui/item";
 import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useSettingsPlayerList } from "@/composables/settings/players/useSettingsPlayerList";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
-import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import {
   getPlayerSettingsMenuItems,
   removeUnavailablePlayers,
@@ -192,8 +192,8 @@ const canRemovePlayers = computed(() =>
   authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
 );
 
-const toolbarMenu = useSettingsToolbarMenu();
-const toolbarMenuItems = computed<ToolBarMenuItem[]>(() => {
+const pageMenu = useSettingsPageMenu();
+const pageMenuItems = computed<ToolBarMenuItem[]>(() => {
   const items: ToolBarMenuItem[] = [
     {
       label: "settings.hide_unavailable_players",
@@ -214,14 +214,14 @@ const toolbarMenuItems = computed<ToolBarMenuItem[]>(() => {
   return items;
 });
 watch(
-  toolbarMenuItems,
+  pageMenuItems,
   (items) => {
-    toolbarMenu.value = items;
+    pageMenu.value = items;
   },
   { immediate: true },
 );
 onBeforeUnmount(() => {
-  toolbarMenu.value = [];
+  pageMenu.value = [];
 });
 
 // methods

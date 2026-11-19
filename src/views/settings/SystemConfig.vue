@@ -1,13 +1,13 @@
 <template>
   <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
-    <SettingsHubHeader name="system" />
+    <SettingsPageHeader page="system" />
     <UnsupportedInstallBanner />
     <SettingsTiles :tiles="tiles" test-id-prefix="system" />
   </div>
 </template>
 
 <script setup lang="ts">
-import SettingsHubHeader from "@/components/settings/SettingsHubHeader.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import SettingsTiles, {
   type SettingsTile,
 } from "@/components/settings/SettingsTiles.vue";

@@ -504,16 +504,6 @@ export function settingsHeading(
   return settingsMenuPage(key);
 }
 
-/**
- * Whether a page of the settings menu is a hub: a page leading to pages below
- * it, whichever of them the current user may open.
- *
- * @param key - The key of the page.
- */
-export function isSettingsHub(key: string | undefined): boolean {
-  return SECTION_PAGES.some((page) => page.parent === key);
-}
-
 function menuPages(): readonly SettingsMenuPage[] {
   return [...SETTINGS_SECTIONS, ...SECTION_PAGES];
 }

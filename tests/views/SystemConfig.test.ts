@@ -52,9 +52,12 @@ describe("SystemConfig", () => {
   it("heads the page as the System hub", async () => {
     const wrapper = await mountPage();
 
-    const header = wrapper.get('[data-testid="settings-hub-header"]');
+    const header = wrapper.get('[data-testid="settings-page-header"]');
     expect(header.get("h1").text()).toBe("settings.system");
     expect(header.get("p").text()).toBe("settings.system_description");
+    expect(
+      header.get('[data-testid="settings-page-icon"]').attributes("style"),
+    ).toContain("rgb(168, 85, 247)");
   });
 
   it("gives each page its own tile, a module no settings page shows a plain one", async () => {

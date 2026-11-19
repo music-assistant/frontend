@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import type { SettingsPageId } from "@/helpers/settings_pages";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
@@ -44,6 +45,19 @@ beforeEach(() => {
 });
 
 describe("SettingsPageFormView on the playback defaults", () => {
+  it.each(["library", "metadata", "playback", "task_settings"] as const)(
+    "heads the %s settings with the header of their page",
+    async (page) => {
+      apiMock.getCoreConfig.mockImplementation(async (domain) =>
+        playbackConfig(domain, STREAMS_ENTRIES),
+      );
+
+      const wrapper = await mountPage(page);
+
+      expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(page);
+    },
+  );
+
   it("shows the playback defaults of each module in one form, by category, without their log levels", async () => {
     apiMock.getCoreConfig.mockImplementation(async (domain) =>
       playbackConfig(domain, STREAMS_ENTRIES),

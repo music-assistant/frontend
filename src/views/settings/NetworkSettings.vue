@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-6 p-6">
+    <SettingsPageHeader page="network" />
     <SettingsLinkRows :rows="rows" test-id-prefix="network" />
     <SettingsPageForm
       page="network"
@@ -23,6 +24,7 @@ import SettingsLinkRows, {
   type SettingsRow,
 } from "@/components/settings/SettingsLinkRows.vue";
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import type { SettingsField } from "@/helpers/settings_form";
 import { coreOwner, WEBSERVER_DOMAIN } from "@/helpers/settings_pages";
 import { sectionPages } from "@/helpers/settings_sections";

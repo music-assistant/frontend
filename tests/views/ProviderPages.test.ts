@@ -819,7 +819,7 @@ describe("Providers", () => {
     },
   );
 
-  it("lists the plugins under their Marketplace name, without a page header", async () => {
+  it("lists the plugins under their Marketplace name, below the header of their page", async () => {
     pageType = ProviderType.PLUGIN;
 
     const wrapper = await mountWithConfigs([
@@ -836,9 +836,9 @@ describe("Providers", () => {
     ]);
     expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(1);
     expect(wrapper.find("h3").exists()).toBe(false);
-    expect(wrapper.findComponent({ name: "SettingsHubHeader" }).exists()).toBe(
-      false,
-    );
+    expect(
+      wrapper.findComponent({ name: "SettingsPageHeader" }).props("page"),
+    ).toBe("plugin_providers");
   });
 
   it("reports a failing user lookup", async () => {
@@ -987,7 +987,7 @@ describe("Providers on a hub", () => {
     ]);
 
     expect(
-      wrapper.findComponent({ name: "SettingsHubHeader" }).props("name"),
+      wrapper.findComponent({ name: "SettingsPageHeader" }).props("page"),
     ).toBe("music");
     expect(panels(wrapper)).toEqual([
       { list: ProviderType.MUSIC, title: "settings.music_sources", count: 1 },
@@ -1058,24 +1058,15 @@ describe("Providers on a hub", () => {
   it.each([
     [ProviderType.METADATA, "metadata_providers"],
     [ProviderType.AUDIO_ANALYSIS, "audio_analysis_providers"],
-  ])("heads the %s providers as a hub below Music", async (type, name) => {
+    [ProviderType.PLAYER, "player_support"],
+  ])("heads the %s providers as their page", async (type, name) => {
     pageType = type;
 
     const wrapper = await mountWithConfigs([]);
 
     expect(
-      wrapper.findComponent({ name: "SettingsHubHeader" }).props("name"),
+      wrapper.findComponent({ name: "SettingsPageHeader" }).props("page"),
     ).toBe(name);
-  });
-
-  it("gives the player support no header, as it leads to no pages", async () => {
-    pageType = ProviderType.PLAYER;
-
-    const wrapper = await mountWithConfigs([]);
-
-    expect(wrapper.findComponent({ name: "SettingsHubHeader" }).exists()).toBe(
-      false,
-    );
   });
 
   it("switches the view from the header of a list", async () => {

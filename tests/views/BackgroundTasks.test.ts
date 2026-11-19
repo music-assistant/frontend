@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Scope } from "@/plugins/api/interfaces";
 import BackgroundTasks from "@/views/settings/BackgroundTasks.vue";
 import {
@@ -40,6 +41,16 @@ beforeEach(() => {
 });
 
 describe("BackgroundTasks", () => {
+  it("heads the page with the header of the background tasks", async () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+
+    const wrapper = await mountPage();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "background_tasks",
+    );
+  });
+
   it("leads who may change the core settings to the task settings", async () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
 

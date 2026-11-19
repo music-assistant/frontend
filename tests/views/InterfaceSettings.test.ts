@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { InterfaceSettingsStorage } from "@/composables/useInterfaceSettings";
@@ -16,7 +17,7 @@ const {
   storeMock,
   setUserPreferences,
   toastMock,
-  toolbarMenu,
+  pageMenu,
   formMock,
 } = vi.hoisted(() => ({
   apiMock: { players: {}, providers: {}, serverInfo: { value: undefined } },
@@ -29,7 +30,7 @@ const {
   },
   setUserPreferences: vi.fn(() => Promise.resolve(true)),
   toastMock: { success: vi.fn(), error: vi.fn() },
-  toolbarMenu: { value: [] as ContextMenuItem[] },
+  pageMenu: { value: [] as ContextMenuItem[] },
   formMock: {
     resetToDefaults: vi.fn(),
     saveFailed: vi.fn(),
@@ -43,8 +44,8 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/composables/userPreferences", () => ({
   setUserPreferences,
 }));
-vi.mock("@/composables/useSettingsToolbarMenu", () => ({
-  useSettingsToolbarMenu: () => toolbarMenu,
+vi.mock("@/composables/useSettingsPageMenu", () => ({
+  useSettingsPageMenu: () => pageMenu,
 }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
@@ -124,13 +125,25 @@ async function submitAll(
 }
 
 describe("InterfaceSettings", () => {
+  it.each([
+    ["account", "interface"],
+    ["device", "device"],
+  ] as const)(
+    "heads the settings kept on the %s with the header of their page",
+    (storage, page) => {
+      const wrapper = mountSettings(storage);
+
+      expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(page);
+    },
+  );
+
   let reload: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     storeMock.isIngressSession = false;
     storeMock.currentUser.preferences = {};
-    toolbarMenu.value = [];
+    pageMenu.value = [];
     vi.stubGlobal("localStorage", createLocalStorageMock());
     reload = vi.spyOn(window.location, "reload").mockImplementation(() => {});
   });
@@ -321,16 +334,16 @@ describe("InterfaceSettings", () => {
     },
   );
 
-  it("resets the form from the toolbar's menu while it is on screen", () => {
+  it("resets the form from the page's menu while it is on screen", () => {
     const wrapper = mountSettings();
 
-    expect(toolbarMenu.value.map(({ label }) => label)).toEqual([
+    expect(pageMenu.value.map(({ label }) => label)).toEqual([
       "settings.reset_to_defaults",
     ]);
-    toolbarMenu.value[0].action?.();
+    pageMenu.value[0].action?.();
     expect(formMock.resetToDefaults).toHaveBeenCalled();
 
     wrapper.unmount();
-    expect(toolbarMenu.value).toEqual([]);
+    expect(pageMenu.value).toEqual([]);
   });
 });

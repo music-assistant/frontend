@@ -1,11 +1,6 @@
 <template>
   <div>
-    <Toolbar
-      :icon="Settings"
-      :menu-items="toolbarMenuItems"
-      :enforce-overflow-menu="true"
-      :menu-active="toolbarMenuActive"
-    >
+    <Toolbar :icon="Settings">
       <template #title>
         <ToolbarHeading
           :title="t('settings.settings')"
@@ -58,7 +53,7 @@ import ToolbarHeading, {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
-import { provideSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { provideSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
@@ -92,12 +87,8 @@ const { getPreference, setPreference } = useUserPreferences();
 // it cannot disagree with its heading
 const editedProviderName = provideEditedProviderName();
 
-// the page on screen puts what it offers in the toolbar's overflow menu
-const toolbarMenuItems = provideSettingsToolbarMenu();
-// an option that is on shows on the menu button
-const toolbarMenuActive = computed(() =>
-  toolbarMenuItems.value.some((item) => item.active),
-);
+// the page on screen puts what it offers in the menu of its header
+provideSettingsPageMenu();
 
 const settingsViewMode = ref<"list" | "card">("card");
 const savedSettingsViewMode = getPreference<"list" | "card">(

@@ -1,5 +1,6 @@
 <template>
-  <div class="mx-auto w-full max-w-2xl px-5 py-6 max-sm:p-3">
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader :page="page" />
     <EditConfig
       ref="editConfig"
       :config-entries="entries"
@@ -24,15 +25,16 @@
 
 <script setup lang="ts">
 import { RotateCcw } from "@lucide/vue";
-import { markRaw, onBeforeUnmount, ref } from "vue";
+import { computed, markRaw, onBeforeUnmount, ref } from "vue";
 import { toast } from "vue-sonner";
 
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Spinner } from "@/components/ui/spinner";
 import {
   type InterfaceSettingsStorage,
   useInterfaceSettings,
 } from "@/composables/useInterfaceSettings";
-import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import { ConfigValueType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import EditConfig from "@/views/settings/EditConfig.vue";
@@ -46,6 +48,11 @@ const props = defineProps<{
   storage: InterfaceSettingsStorage;
 }>();
 
+// the settings kept on the account are the Interface page, the others This device
+const page = computed(() =>
+  props.storage === "account" ? "interface" : "device",
+);
+
 const editConfig = ref<InstanceType<typeof EditConfig>>();
 const saving = ref(false);
 
@@ -53,9 +60,9 @@ const { entries, save, onAction, applyImmediately } = useInterfaceSettings(
   props.storage,
 );
 
-// the toolbar's menu resets the form while it is on screen
-const toolbarMenu = useSettingsToolbarMenu();
-toolbarMenu.value = [
+// the page's menu resets the form while it is on screen
+const pageMenu = useSettingsPageMenu();
+pageMenu.value = [
   {
     label: "settings.reset_to_defaults",
     icon: markRaw(RotateCcw),
@@ -63,7 +70,7 @@ toolbarMenu.value = [
   },
 ];
 onBeforeUnmount(() => {
-  toolbarMenu.value = [];
+  pageMenu.value = [];
 });
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {

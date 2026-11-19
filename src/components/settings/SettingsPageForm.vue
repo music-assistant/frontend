@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { useSettingsPage } from "@/composables/settings/useSettingsPage";
-import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import type { SettingsField } from "@/helpers/settings_form";
 import {
   settingsPageProviderDomain,
@@ -64,7 +64,7 @@ const props = defineProps<{
   page: SettingsPageId;
   // settings the page edits with controls of its own, in the custom slot
   customSettings?: readonly SettingsField[];
-  // the form is a part of a page about something else, so the toolbar's menu
+  // the form is a part of a page about something else, so the page's menu
   // does not offer to reset it
   embedded?: boolean;
 }>();
@@ -129,12 +129,12 @@ const resetToDefaults = function () {
   emit("reset");
 };
 
-// the toolbar's menu resets the form while it is on screen
-const toolbarMenu = useSettingsToolbarMenu();
+// the page's menu resets the form while it is on screen
+const pageMenu = useSettingsPageMenu();
 watch(
   () => !props.embedded && showForm.value && loaded.value,
   (resettable) => {
-    toolbarMenu.value = resettable
+    pageMenu.value = resettable
       ? [
           {
             label: "settings.reset_to_defaults",
@@ -147,7 +147,7 @@ watch(
   { immediate: true },
 );
 onBeforeUnmount(() => {
-  toolbarMenu.value = [];
+  pageMenu.value = [];
 });
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {

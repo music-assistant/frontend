@@ -1,3 +1,5 @@
+import { SETTINGS_COLORS } from "@/helpers/settings_colors";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { AUDIO_SOURCES } from "@/helpers/settings_pages";
 import Catalog from "@/views/settings/Catalog.vue";
 import { ApiCommandError } from "@/plugins/api/errors";
@@ -251,6 +253,20 @@ afterEach(() => {
 });
 
 describe("Catalog", () => {
+  it("heads the Marketplace with its own header, in the orange of its banner, with Installed beside the title", async () => {
+    const wrapper = await mountCatalog();
+
+    const header = wrapper.getComponent(SettingsPageHeader);
+    expect(header.props("page")).toBe("catalog");
+    expect(header.get("h1").text()).toBe("settings.catalog.title");
+    expect(
+      header.get('[data-testid="settings-page-icon"]').attributes("style"),
+    ).toContain(`color: ${SETTINGS_COLORS.orange}`);
+    expect(
+      header.find('[data-testid="catalog-installed-button"]').exists(),
+    ).toBe(true);
+  });
+
   it("offers Discover and a tab per type with something to add, with its count", async () => {
     await mountCatalog();
 

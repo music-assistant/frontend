@@ -571,7 +571,6 @@
         },
         "remote_access": "Remote Access",
         "remote_access_description": "Securely access Music Assistant from anywhere",
-        "remote_access_title": "Secure Remote Access",
         "remote_access_explanation_intro": "Remote Access allows you to securely connect to your Music Assistant server from anywhere in the world.",
         "remote_access_explanation_ha_cloud": "For the best experience and reliability, a Home Assistant Cloud subscription is required.",
         "remote_access_feature_webrtc": "Based on WebRTC technology for peer-to-peer connections",
