@@ -1090,14 +1090,26 @@
         "music_sources_own": "Your sources",
         "music_sources_shared": "Shared with you",
         "music_sources_shared_empty": "No music sources have been shared with you yet.",
+        "provider_labels": {
+            "filter": "Filter on what they offer",
+            "all": "All"
+        },
         "source_labels": {
-            "filter": "Filter on what the sources offer",
-            "all": "All",
             "library": "Library",
             "radio": "Radio",
             "podcasts": "Podcasts",
             "audiobooks": "Audiobooks",
             "live": "Live sources"
+        },
+        "plugin_labels": {
+            "ai": "AI",
+            "tts": "Text-to-speech",
+            "scrobble": "Scrobbling",
+            "assistant": "Assistants",
+            "visualizer": "Lights & visuals",
+            "recommendations": "Mixes & recommendations",
+            "fun": "Fun & games",
+            "other": "Other"
         },
         "storage": {
             "title": "Storage",

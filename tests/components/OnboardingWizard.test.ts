@@ -1,6 +1,6 @@
 import {
   EventType,
-  MediaType,
+  ProviderOffering,
   ProviderType,
   ProviderStatus,
   UserRole,
@@ -40,7 +40,7 @@ const {
         builtin: boolean;
         name?: string;
         type?: ProviderType;
-        media_types?: MediaType[];
+        provides?: ProviderOffering[];
       }
     >,
     getAllUsers: vi.fn(),
@@ -233,7 +233,7 @@ function addAudioSourcePlugin(instanceId: string, domain: string) {
   apiMock.providerManifests[domain] = {
     builtin: false,
     type: ProviderType.PLUGIN,
-    media_types: [MediaType.AUDIO_SOURCE],
+    provides: [ProviderOffering.AUDIO_SOURCE],
   };
 }
 

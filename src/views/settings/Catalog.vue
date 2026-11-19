@@ -223,7 +223,7 @@ import {
   getCatalogType,
   needsInstall,
 } from "@/helpers/provider_catalog";
-import type { SourceLabel } from "@/helpers/source_labels";
+import type { ProviderLabel } from "@/helpers/provider_labels";
 import { CircleAlert, RefreshCw } from "@lucide/vue";
 import { computed, nextTick, reactive, ref, useTemplateRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -280,8 +280,8 @@ const noteOpen = ref(false);
 const searchQuery = ref("");
 // the stage filter belongs to the list of one tab, and starts empty on each
 const selectedStages = ref<string[]>([]);
-// the same goes for the label filter of the music sources
-const selectedLabel = ref<SourceLabel | null>(null);
+// the same goes for the label filter
+const selectedLabel = ref<ProviderLabel | null>(null);
 
 const { selectedEntry, detailOpen, openDetail, closeDetail } =
   useCatalogDetail(entries);

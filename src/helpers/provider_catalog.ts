@@ -10,8 +10,11 @@ import {
   isAudioSourcePlugin,
   isBuiltinProvider,
 } from "@/helpers/provider_config";
+import {
+  getProviderLabels,
+  type ProviderLabel,
+} from "@/helpers/provider_labels";
 import { providerListType } from "@/helpers/settings_pages";
-import { getSourceLabels, type SourceLabel } from "@/helpers/source_labels";
 import {
   providerListRoute,
   providerOwnPage,
@@ -126,8 +129,8 @@ export interface CatalogFilter {
   query?: string;
   types?: readonly string[];
   stages?: readonly string[];
-  // what a source offers, by its manifest
-  label?: SourceLabel | null;
+  // what a provider offers, by its manifest
+  label?: ProviderLabel | null;
 }
 
 /**
@@ -149,7 +152,7 @@ export const getCatalogType = (type: string): CatalogType | undefined =>
 export const getManifestCatalogType = (
   manifest: ProviderManifest,
 ): CatalogType | undefined =>
-  getCatalogType(providerListType(manifest.type, manifest.media_types));
+  getCatalogType(providerListType(manifest.type, manifest.provides));
 
 /**
  * The entries the tab of a Catalog type lists.
@@ -289,7 +292,7 @@ export const filterCatalogEntries = (
         manifest.description.toLowerCase().includes(query)) &&
       (!filter.types?.length || filter.types.includes(manifest.type)) &&
       (!filter.stages?.length || filter.stages.includes(manifest.stage)) &&
-      (!filter.label || getSourceLabels(manifest).includes(filter.label)),
+      (!filter.label || getProviderLabels(manifest).includes(filter.label)),
   );
 };
 
@@ -417,7 +420,7 @@ export const getManageRoute = (entry: CatalogEntry): RouteLocationRaw =>
   entry.instances.length === 1
     ? getInstanceSettingsRoute(entry.instances[0])
     : getTypeSettingsRoute(
-        providerListType(entry.manifest.type, entry.manifest.media_types),
+        providerListType(entry.manifest.type, entry.manifest.provides),
       );
 
 export interface InstalledProvider {
@@ -454,10 +457,8 @@ export const groupInstalledProviders = (
     items: configs
       .filter(
         (config) =>
-          providerListType(
-            config.type,
-            manifests[config.domain]?.media_types,
-          ) === type.type &&
+          providerListType(config.type, manifests[config.domain]?.provides) ===
+            type.type &&
           (includeBuiltin || !isBuiltinProvider(manifests[config.domain])),
       )
       .map((config) => ({

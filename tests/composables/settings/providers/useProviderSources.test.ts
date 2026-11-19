@@ -1,8 +1,8 @@
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
-import type { SourceLabel } from "@/helpers/source_labels";
+import type { ProviderLabel } from "@/helpers/provider_labels";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
-  MediaType,
+  ProviderOffering,
   type ProviderConfig,
   ProviderSharing,
   ProviderStatus,
@@ -21,7 +21,7 @@ const { apiMock, eventbusMock, i18nMock, storeMock, toastMock } = vi.hoisted(
       getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
       providerManifests: {} as Record<
         string,
-        { builtin: boolean; media_types?: MediaType[] }
+        { builtin: boolean; provides?: ProviderOffering[] }
       >,
       providers: {} as Record<string, unknown>,
       removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
@@ -61,8 +61,8 @@ const getProviderName = (config: ProviderConfig) =>
 const isErrorStatus = (status?: ProviderStatus | null) =>
   status === ProviderStatus.ERROR;
 // what each source offers, by its instance id; nothing by default
-let sourceLabels: Record<string, SourceLabel[]> = {};
-const getSourceLabels = (config: ProviderConfig) =>
+let sourceLabels: Record<string, ProviderLabel[]> = {};
+const getLabels = (config: ProviderConfig) =>
   sourceLabels[config.instance_id] ?? [];
 
 function mountSources(
@@ -72,7 +72,7 @@ function mountSources(
     useProviderSources({
       listType: () => overrides.listType ?? ProviderType.MUSIC,
       getProviderName,
-      getSourceLabels,
+      getLabels,
       isErrorStatus,
       managesAllSources: () => overrides.managesAllSources ?? true,
     }),
@@ -277,11 +277,11 @@ describe("the audio sources", () => {
     apiMock.providerManifests = {
       airplay_receiver: {
         builtin: false,
-        media_types: [MediaType.AUDIO_SOURCE],
+        provides: [ProviderOffering.AUDIO_SOURCE],
       },
       // a manifest from a server that does not say what a provider offers
       lastfm_scrobble: { builtin: false },
-      hass: { builtin: false, media_types: [MediaType.AUDIO_SOURCE] },
+      hass: { builtin: false, provides: [ProviderOffering.AUDIO_SOURCE] },
       spotify: { builtin: false },
     };
     apiMock.getProviderConfigs.mockResolvedValue([
@@ -329,7 +329,7 @@ describe("the audio sources", () => {
     // the Sendspin player provider names audio sources for its line-ins
     apiMock.providerManifests.sendspin = {
       builtin: false,
-      media_types: [MediaType.AUDIO_SOURCE],
+      provides: [ProviderOffering.AUDIO_SOURCE],
     };
     apiMock.getProviderConfigs.mockResolvedValue([
       providerConfig({

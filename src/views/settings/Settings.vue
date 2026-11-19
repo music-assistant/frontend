@@ -238,7 +238,7 @@ useEscapeBack(
 const providerListOf = function (instanceId: string) {
   const manifest = api.providerManifests[embeddedProviderDomain(instanceId)];
   const type = manifest?.type ?? api.getProvider(instanceId)?.type;
-  return type && providerListType(type, manifest?.media_types);
+  return type && providerListType(type, manifest?.provides);
 };
 
 // the page managing the provider of an instance: its own settings page, or the

@@ -6,7 +6,7 @@ import {
   getManifestCatalogType,
 } from "@/helpers/provider_catalog";
 import { isCommunityProvider } from "@/helpers/provider_config";
-import { getSourceLabels } from "@/helpers/source_labels";
+import { getProviderLabels } from "@/helpers/provider_labels";
 import { $t } from "@/plugins/i18n";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -28,7 +28,7 @@ export function useCatalogEntryDetails(entry: MaybeRefOrGetter<CatalogEntry>) {
   );
 
   // what it offers, as its manifest says
-  const labels = computed(() => getSourceLabels(manifest.value));
+  const labels = computed(() => getProviderLabels(manifest.value));
 
   // the people maintaining it; none when only the team does
   const maintainers = computed(() => getEntryMaintainers(toValue(entry)));

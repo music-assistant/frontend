@@ -1858,10 +1858,11 @@ export interface ProviderManifest {
   // menu_actions: entries this provider adds to the menu of a media item;
   // absent from an older server
   menu_actions?: ProviderMenuAction[];
-  // media_types: the media types the provider offers whatever its config
-  // (audio_source for a provider that plays audio into Music Assistant);
-  // optional metadata for discovery
-  media_types?: MediaType[];
+  // provides: what the provider offers whatever its config, for discovery only:
+  // the media types of a music provider, audio_source for one that plays audio
+  // into Music Assistant, or the main features of a plugin; absent from an
+  // older server
+  provides?: ProviderOffering[];
   // page: a page this provider serves, listed in the app's menu; an older
   // server declares none
   page?: ProviderPage | null;
@@ -1891,6 +1892,30 @@ export interface ProviderMenuAction {
   icon: string | null;
   // requires_player: whether the action acts on a player, which the app then passes
   requires_player: boolean;
+}
+
+export enum ProviderOffering {
+  // what a music provider offers
+  ARTIST = "artist",
+  ALBUM = "album",
+  TRACK = "track",
+  PLAYLIST = "playlist",
+  RADIO = "radio",
+  PODCAST = "podcast",
+  AUDIOBOOK = "audiobook",
+  SOUND_EFFECT = "sound_effect",
+  // live audio played into Music Assistant
+  AUDIO_SOURCE = "audio_source",
+  // what a plugin delivers
+  AI = "ai",
+  TTS = "tts",
+  SCROBBLE = "scrobble",
+  ASSISTANT = "assistant",
+  VISUALIZER = "visualizer",
+  RECOMMENDATIONS = "recommendations",
+  FUN = "fun",
+  // the fallback for a value that is not known
+  UNKNOWN = "unknown",
 }
 
 export enum ProviderStage {

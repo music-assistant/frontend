@@ -17,7 +17,11 @@
         <ChevronRight class="size-4" aria-hidden="true" />
       </RouterLink>
     </div>
-    <SourceLabelFilter v-if="labels.length" v-model="label" :labels="labels" />
+    <ProviderLabelFilter
+      v-if="labels.length"
+      v-model="label"
+      :labels="labels"
+    />
 
     <template v-if="matches.length">
       <CatalogGrid>
@@ -75,7 +79,7 @@
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import CatalogGrid from "@/components/settings/catalog/CatalogGrid.vue";
-import SourceLabelFilter from "@/components/settings/providers/SourceLabelFilter.vue";
+import ProviderLabelFilter from "@/components/settings/providers/ProviderLabelFilter.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -99,11 +103,10 @@ import {
 import { getProviderStageTranslationKey } from "@/helpers/provider_config";
 import {
   getFilterLabels,
-  getSourceLabels,
-  type SourceLabel,
-} from "@/helpers/source_labels";
+  getProviderLabels,
+  type ProviderLabel,
+} from "@/helpers/provider_labels";
 import { api } from "@/plugins/api";
-import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ChevronRight, SearchX } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -131,8 +134,8 @@ const emit = defineEmits<{
 
 // the stages picked in the filter, kept by the page for the number on its tab
 const stages = defineModel<string[]>("stages", { required: true });
-// the label picked on the music sources, kept by the page for the same reason
-const label = defineModel<SourceLabel | null>("label", { required: true });
+// the label picked, kept by the page for the same reason
+const label = defineModel<ProviderLabel | null>("label", { required: true });
 const limit = ref(CATALOG_PAGE_SIZE);
 
 const stageOptions = computed(() =>
@@ -142,11 +145,12 @@ const stageOptions = computed(() =>
   })),
 );
 
-// the music sources can be filtered on what they offer
+// the entries of a type can be filtered on what they offer, not a search
+// through every type
 const labels = computed(() =>
-  props.type?.type === ProviderType.MUSIC
+  props.type
     ? getFilterLabels(
-        props.entries.map((entry) => getSourceLabels(entry.manifest)),
+        props.entries.map((entry) => getProviderLabels(entry.manifest)),
       )
     : [],
 );
