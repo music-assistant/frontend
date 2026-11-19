@@ -226,6 +226,7 @@
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have {1} configured, do you want to do that now?",
         "theme": {
             "label": "Theme",
+            "automatic": "Automatic",
             "options": {
                 "auto": "Auto (follow system configuration)",
                 "light": "Light",
@@ -482,8 +483,7 @@
         "players_description": "Your players, lights, screens and audio inputs, and how they play",
         "music": "Music",
         "music_description": "Your music sources, library, metadata and audio analysis",
-        "frontend_description": "Customize the user interface theme and appearance",
-        "profile_description": "Manage your personal account settings and preferences",
+        "profile_description": "Your account, password, sessions and interface preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
         "system_description": "The network, storage, Home Assistant, background tasks and diagnostics of the server",
@@ -608,7 +608,6 @@
         "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
         "remote_access_protocol_optimized": "WebRTC with optimized STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
-        "frontend": "User Interface",
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
@@ -1309,7 +1308,6 @@
         "toggle_subplayers": "Toggle sub-players",
         "restore_genre": "Restore genre",
         "remove_rule": "Remove rule",
-        "change_avatar": "Change avatar",
         "revoke_session": "Revoke session",
         "revoke_token": "Revoke token",
         "user_options": "User options",
@@ -1632,8 +1630,16 @@
         "setup_failed": "Setup failed. Please try again.",
         "setup_error": "An error occurred during setup",
         "profile": "Profile",
-        "account_settings": "Account settings",
-        "manage_your_profile_info": "Manage your profile information and settings",
+        "profile_pages": {
+            "theme_language": "Theme and language",
+            "interface": "Interface",
+            "interface_description": "Preferences that follow your account on every device",
+            "device": "This device",
+            "device_description": "Settings that only apply on this device",
+            "security": "Security",
+            "security_description": "Password, active sessions and access tokens"
+        },
+        "edit_profile": "Edit profile",
         "change_password": "Change password",
         "update_your_password": "Update your account password",
         "old_password": "Current password",
@@ -1695,7 +1701,6 @@
         "change_role": "Change role",
         "avatar_url": "Avatar URL",
         "avatar_url_hint": "Enter URL to avatar image",
-        "change_avatar": "Change avatar",
         "profile_updated": "Profile updated successfully",
         "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in.",
         "copy_new_token_hint": "Copy your access token. It will not be shown again.",
@@ -3350,7 +3355,7 @@
             },
             "profile": {
                 "title": "Your profile",
-                "description": "Your name, avatar and password live here. This menu is also where you rearrange the menu, sign out, or take this tour again."
+                "description": "Your name, avatar, password and interface preferences live here. This menu is also where you rearrange the menu, sign out, or take this tour again."
             },
             "player_bar": {
                 "title": "The player bar",

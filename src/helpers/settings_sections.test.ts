@@ -29,7 +29,6 @@ const ALL_SECTIONS = [
   "players",
   "plugin_providers",
   "profile",
-  "frontend",
   "users",
   "system",
   "about",
@@ -55,7 +54,6 @@ describe("availableSettingsSections", () => {
       "catalog",
       "music",
       "profile",
-      "frontend",
       "about",
     ]);
   });
@@ -63,7 +61,6 @@ describe("availableSettingsSections", () => {
   it("lists a guest its personal settings only", () => {
     expect(sectionNames(BUILTIN_ROLE_SCOPES.guest)).toEqual([
       "profile",
-      "frontend",
       "about",
     ]);
   });
@@ -73,7 +70,6 @@ describe("availableSettingsSections", () => {
       "catalog",
       "music",
       "profile",
-      "frontend",
       "about",
     ]);
   });

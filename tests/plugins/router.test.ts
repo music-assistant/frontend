@@ -361,6 +361,26 @@ describe("settings pages", () => {
     },
   );
 
+  it("leaves the interface preferences to the profile page", () => {
+    expect(mocks.router?.hasRoute("frontendsettings")).toBe(false);
+  });
+
+  it.each([
+    ["/settings/profile/interface", "profileinterface", { storage: "account" }],
+    ["/settings/profile/device", "profiledevice", { storage: "device" }],
+  ])("opens %s on the interface settings kept there", (path, name, props) => {
+    const route = resolveRoute(path);
+
+    expect(route.name).toBe(name);
+    expect(route.matched.at(-1)?.props.default).toEqual(props);
+  });
+
+  it("opens the security of the account below the profile", () => {
+    expect(resolveRoute("/settings/profile/security").name).toBe(
+      "profilesecurity",
+    );
+  });
+
   it("opens the Home Assistant page for who may change provider settings", () => {
     if (!mocks.router) {
       throw new Error("The router module did not create a router");
@@ -470,7 +490,7 @@ describe("global navigation guard", () => {
   it("redirects a member when a parent route carries the requirement", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
     mocks.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
-    const to = resolveRoute("/settings/frontend");
+    const to = resolveRoute("/settings/profile");
     // The requirement counts on every matched record, not just the leaf the
     // user opened, so mark the outermost one.
     to.matched = to.matched.map((record, index) =>
@@ -643,7 +663,19 @@ describe("scope-gated routes", () => {
     ["/settings/tasks/settings", ["admin"]],
     ["/music-quiz", ["admin", "user", "reads_sources"]],
     [
-      "/settings/frontend",
+      "/settings/profile",
+      ["admin", "user", "guest", "own_sources", "reads_sources"],
+    ],
+    [
+      "/settings/profile/interface",
+      ["admin", "user", "guest", "own_sources", "reads_sources"],
+    ],
+    [
+      "/settings/profile/device",
+      ["admin", "user", "guest", "own_sources", "reads_sources"],
+    ],
+    [
+      "/settings/profile/security",
       ["admin", "user", "guest", "own_sources", "reads_sources"],
     ],
   ];
