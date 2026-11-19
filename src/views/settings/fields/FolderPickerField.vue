@@ -11,6 +11,7 @@ import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import {
   findStoragePosition,
   joinStoragePath,
+  sameStoragePath,
   storageErrorText,
   type StoragePosition,
 } from "@/helpers/storage";
@@ -20,13 +21,14 @@ import type {
   StorageLocation,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Folder, FolderCheck, RefreshCw } from "@lucide/vue";
+import { FolderCheck, RefreshCw } from "@lucide/vue";
 import { computed, onMounted, ref, useId } from "vue";
 import { toast } from "vue-sonner";
 
 /**
- * Picks a folder on one of the server's media locations; the entry value is its
- * absolute path. There is deliberately no way to type a path.
+ * Picks a folder on one of the server's media locations: the folder that is open is
+ * the one picked, and the entry value is its absolute path. There is deliberately no
+ * way to type a path.
  */
 const props = defineProps<{
   entry: ConfigEntryUI;
@@ -90,6 +92,10 @@ const openFolder = async (target: StoragePosition): Promise<FolderResult> => {
     if (request !== folderRequest) return "superseded";
     subfolders.value = names;
     position.value = target;
+    // the folder on screen is the one the entry holds; a stored path that already
+    // names it is kept the way it is written
+    const path = joinStoragePath(target.location.path, target.segments);
+    if (!sameStoragePath(path, selectedPath.value)) emit("update:value", path);
     return "opened";
   } catch (error) {
     if (request !== folderRequest) return "superseded";
@@ -114,15 +120,17 @@ const onNavigate = (target: StoragePosition | null) => {
   else showLocations();
 };
 
-const openLocation = (location: StorageLocation) =>
-  openFolder({ location, segments: [] });
-
-const useCurrentFolder = () => {
-  if (!position.value) return;
-  emit(
-    "update:value",
-    joinStoragePath(position.value.location.path, position.value.segments),
-  );
+// the location that holds the selected folder opens on that folder, or on its root
+// when that folder is gone
+const openLocation = async (location: StorageLocation) => {
+  const segments =
+    selectedPosition.value?.location.path === location.path
+      ? selectedPosition.value.segments
+      : [];
+  if (segments.length > 0) {
+    if ((await openFolder({ location, segments })) !== "failed") return;
+  }
+  await openFolder({ location, segments: [] });
 };
 
 // a location added from the picker is the one to use; it is listed once the storage is
@@ -186,30 +194,18 @@ onMounted(refresh);
       :aria-labelledby="label ? labelId : undefined"
       class="flex flex-col gap-3 rounded-md border p-3"
     >
+      <!-- a stored folder outside every location is only shown here -->
       <div
+        v-if="selectionOutsideLocations && selectedPath"
         class="bg-muted/50 flex items-start gap-2 rounded-md px-3 py-2"
-        data-testid="folder-picker-selection"
+        data-testid="folder-picker-outside"
       >
-        <FolderCheck
-          v-if="selectedPath"
-          class="text-primary mt-0.5 size-4 shrink-0"
-        />
-        <Folder v-else class="text-muted-foreground mt-0.5 size-4 shrink-0" />
+        <FolderCheck class="text-primary mt-0.5 size-4 shrink-0" />
         <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span class="text-muted-foreground text-xs">
-            {{ $t("settings.folder_picker.selected") }}
-          </span>
           <span class="text-sm font-medium">
-            <StoragePath v-if="selectedPath" :path="selectedPath" />
-            <template v-else>
-              {{ $t("settings.folder_picker.none_selected") }}
-            </template>
+            <StoragePath :path="selectedPath" />
           </span>
-          <span
-            v-if="selectionOutsideLocations"
-            class="text-muted-foreground text-xs"
-            data-testid="folder-picker-outside"
-          >
+          <span class="text-muted-foreground text-xs">
             {{ $t("settings.folder_picker.outside_locations") }}
           </span>
         </div>
@@ -240,16 +236,15 @@ onMounted(refresh);
         v-else-if="position"
         :position="position"
         :subfolders="subfolders"
-        :selected-path="selectedPath"
         :loading="loadingFolders || loading"
         :disabled="disabled"
         @navigate="onNavigate"
-        @use="useCurrentFolder"
       />
       <template v-else>
         <FolderPickerLocations
           :locations="mediaLocations"
           :selected-location-path="selectedPosition?.location.path"
+          :selected-path="selectedPath"
           :disabled="disabled || loadingFolders || loading"
           @open="openLocation"
         />

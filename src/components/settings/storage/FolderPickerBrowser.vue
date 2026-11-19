@@ -1,25 +1,21 @@
 <script setup lang="ts">
 import StoragePath from "@/components/settings/storage/StoragePath.vue";
-import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
   joinStoragePath,
-  sameStoragePath,
   storageLocationName,
   type StoragePosition,
 } from "@/helpers/storage";
-import { Check, ChevronRight, Folder } from "@lucide/vue";
+import { ChevronRight, Folder, FolderCheck } from "@lucide/vue";
 import { computed } from "vue";
 
 /**
- * One folder of a storage location in a folder picker: the trail back to the
- * locations, its subfolders to go deeper, and the button that picks it.
+ * The folder of a storage location that a folder picker has open, which is the folder
+ * it picks: the trail back to the locations and its subfolders to go deeper.
  */
 const props = defineProps<{
   position: StoragePosition;
   subfolders: string[];
-  // the path the entry holds now
-  selectedPath: string | null;
   // the subfolders of another folder are on their way
   loading?: boolean;
   disabled?: boolean;
@@ -28,15 +24,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   // null goes back to the list of locations
   navigate: [position: StoragePosition | null];
-  use: [];
 }>();
 
 const currentPath = computed(() =>
   joinStoragePath(props.position.location.path, props.position.segments),
-);
-
-const isSelected = computed(() =>
-  sameStoragePath(currentPath.value, props.selectedPath),
 );
 
 // the location itself heads the trail, followed by one crumb per subfolder
@@ -130,27 +121,16 @@ const openSubfolder = (name: string) =>
       </ul>
     </div>
 
-    <!-- the path gets a line of its own, so the button keeps one place however
-         long the path is -->
-    <p class="text-muted-foreground m-0 text-xs">
-      <StoragePath :path="currentPath" />
-    </p>
-    <div class="flex justify-end">
-      <Button
-        type="button"
-        size="sm"
-        :variant="isSelected ? 'secondary' : 'default'"
-        :disabled="disabled || loading || isSelected"
-        data-testid="folder-picker-use"
-        @click="emit('use')"
-      >
-        <Check v-if="isSelected" />
-        {{
-          isSelected
-            ? $t("settings.folder_picker.folder_selected")
-            : $t("settings.folder_picker.use_folder")
-        }}
-      </Button>
+    <div class="flex items-start gap-2" data-testid="folder-picker-chosen">
+      <FolderCheck class="text-primary mt-0.5 size-4 shrink-0" />
+      <div class="flex min-w-0 flex-col gap-0.5">
+        <span class="text-sm font-medium">
+          <StoragePath :path="currentPath" />
+        </span>
+        <span class="text-muted-foreground text-xs">
+          {{ $t("settings.folder_picker.chosen_hint") }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
