@@ -1,7 +1,5 @@
 import { isAudioSourcePlugin } from "@/helpers/provider_config";
 import {
-  ProviderFeature,
-  type ProviderInstance,
   type ProviderManifest,
   ProviderOffering,
 } from "@/plugins/api/interfaces";
@@ -42,42 +40,19 @@ const LABEL_OFFERINGS: Readonly<
   audiobooks: [ProviderOffering.AUDIOBOOK],
 };
 
-// what earns a running source a label on top of what its manifest provides,
-// such as audiobooks its account turns on
-const LABEL_FEATURES: Readonly<
-  Record<Exclude<SourceLabel, "live">, readonly ProviderFeature[]>
-> = {
-  library: [
-    ProviderFeature.LIBRARY_ARTISTS,
-    ProviderFeature.LIBRARY_ALBUMS,
-    ProviderFeature.LIBRARY_TRACKS,
-    ProviderFeature.LIBRARY_PLAYLISTS,
-  ],
-  radio: [ProviderFeature.LIBRARY_RADIOS],
-  podcasts: [ProviderFeature.LIBRARY_PODCASTS],
-  audiobooks: [ProviderFeature.LIBRARY_AUDIOBOOKS],
-};
-
 /**
- * What a source offers, in the order the labels show: the media types its
- * manifest provides, and while it runs also the library features it reports.
- * Live sources are the plugins through which audio plays into Music Assistant,
- * which only the manifest says.
+ * What a source offers, as its manifest says, in the order the labels show: the
+ * media types it provides. Live sources are the plugins through which audio
+ * plays into Music Assistant.
  *
  * @param manifest - The manifest of the provider.
- * @param instance - The running instance of the source; none while it is not running.
  */
-export function getSourceLabels(
-  manifest?: ProviderManifest,
-  instance?: ProviderInstance,
-): SourceLabel[] {
+export function getSourceLabels(manifest?: ProviderManifest): SourceLabel[] {
   const provides = manifest?.provides ?? [];
-  const features = instance?.supported_features ?? [];
   return SOURCE_LABELS.filter((label) => {
     if (label === "live") return isAudioSourcePlugin(manifest);
-    return (
-      LABEL_OFFERINGS[label].some((offering) => provides.includes(offering)) ||
-      LABEL_FEATURES[label].some((feature) => features.includes(feature))
+    return LABEL_OFFERINGS[label].some((offering) =>
+      provides.includes(offering),
     );
   });
 }

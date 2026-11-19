@@ -109,12 +109,9 @@ const getProviderName = function (config: ProviderConfig) {
   );
 };
 
-// its manifest says what a provider offers, a running source also what it reports
+// its manifest says what a provider offers
 const labelsOf = function (config: ProviderConfig) {
-  return getProviderLabels(
-    api.providerManifests[config.domain],
-    api.providers[config.instance_id],
-  );
+  return getProviderLabels(api.providerManifests[config.domain]);
 };
 
 // an error status carries a (user-relevant) reason in last_error

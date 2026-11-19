@@ -1,27 +1,17 @@
-import {
-  ProviderFeature,
-  ProviderOffering,
-  ProviderType,
-} from "@/plugins/api/interfaces";
+import { ProviderOffering, ProviderType } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
-import { providerInstance } from "../../tests/fixtures/providerInstance";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import { getFilterLabels, getProviderLabels } from "./provider_labels";
 
 describe("what a provider offers", () => {
   it("labels a music source with what it offers as a source", () => {
-    const manifest = providerManifest({
-      provides: [ProviderOffering.TRACK],
-    });
-    const instance = providerInstance({
-      supported_features: [ProviderFeature.LIBRARY_PODCASTS],
-    });
-
-    expect(getProviderLabels(manifest)).toEqual(["library"]);
-    expect(getProviderLabels(manifest, instance)).toEqual([
-      "library",
-      "podcasts",
-    ]);
+    expect(
+      getProviderLabels(
+        providerManifest({
+          provides: [ProviderOffering.TRACK, ProviderOffering.PODCAST],
+        }),
+      ),
+    ).toEqual(["library", "podcasts"]);
   });
 
   it("labels a plugin playing audio into Music Assistant as a live source", () => {
@@ -61,7 +51,7 @@ describe("what a provider offers", () => {
   });
 
   it("gives no labels without a manifest", () => {
-    expect(getProviderLabels(undefined, providerInstance())).toEqual([]);
+    expect(getProviderLabels(undefined)).toEqual([]);
   });
 });
 

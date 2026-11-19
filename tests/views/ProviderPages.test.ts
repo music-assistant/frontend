@@ -1071,16 +1071,22 @@ describe("Providers on a hub", () => {
 
 describe("Providers labelled with what they offer", () => {
   afterEach(() => {
+    apiMock.providerManifests.spotify.provides = [];
     delete (apiMock.providerManifests as Record<string, unknown>)
       .airplay_receiver;
     delete (apiMock.providerManifests as Record<string, unknown>).podcastfeed;
+    delete (apiMock.providerManifests as Record<string, unknown>).radio_browser;
   });
 
-  // a running Spotify reports a library and podcasts, a podcast feed that is
-  // not running says in its manifest that it offers podcasts, and the AirPlay
-  // receiver says in its manifest that apps play through it
+  // Spotify and a podcast feed that is not running say in their manifest what
+  // they offer, and the AirPlay receiver that apps play through it; the running
+  // Spotify also reports audiobooks, which its manifest leaves out
   function labelledSources(): ProviderConfig[] {
     const manifests = apiMock.providerManifests as Record<string, unknown>;
+    apiMock.providerManifests.spotify.provides = [
+      ProviderOffering.TRACK,
+      ProviderOffering.PODCAST,
+    ];
     manifests.airplay_receiver = {
       ...apiMock.providerManifests.spotify,
       provides: [ProviderOffering.AUDIO_SOURCE],
@@ -1099,7 +1105,7 @@ describe("Providers labelled with what they offer", () => {
         instance_id: "spotify--own",
         supported_features: [
           ProviderFeature.LIBRARY_TRACKS,
-          ProviderFeature.LIBRARY_PODCASTS,
+          ProviderFeature.LIBRARY_AUDIOBOOKS,
         ],
       }),
     };
@@ -1147,7 +1153,7 @@ describe("Providers labelled with what they offer", () => {
       .trigger("click");
   }
 
-  it("hands each row what its source offers, from the running source or else its manifest", async () => {
+  it("hands each row what its manifest says it offers, whatever a running source reports", async () => {
     const wrapper = await mountWithConfigs(labelledSources());
 
     expect(rowFor(wrapper, "spotify--own").props("labels")).toEqual([
@@ -1215,13 +1221,7 @@ describe("Providers labelled with what they offer", () => {
   });
 
   it("offers no chips while the listed sources have a single label between them", async () => {
-    apiMock.providers = {
-      "spotify--own": providerInstance({
-        domain: "spotify",
-        instance_id: "spotify--own",
-        supported_features: [ProviderFeature.LIBRARY_TRACKS],
-      }),
-    };
+    apiMock.providerManifests.spotify.provides = [ProviderOffering.TRACK];
 
     const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
 
@@ -1237,27 +1237,16 @@ describe("Providers labelled with what they offer", () => {
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),
     );
-    apiMock.providers = {
-      "spotify--own": providerInstance({
-        domain: "spotify",
-        instance_id: "spotify--own",
-        supported_features: [ProviderFeature.LIBRARY_TRACKS],
-      }),
-      "spotify--other": providerInstance({
-        domain: "spotify",
-        instance_id: "spotify--other",
-        supported_features: [ProviderFeature.LIBRARY_RADIOS],
-      }),
-      "spotify--household": providerInstance({
-        domain: "spotify",
-        instance_id: "spotify--household",
-        supported_features: [ProviderFeature.LIBRARY_TRACKS],
-      }),
+    apiMock.providerManifests.spotify.provides = [ProviderOffering.TRACK];
+    (apiMock.providerManifests as Record<string, unknown>).radio_browser = {
+      ...apiMock.providerManifests.spotify,
+      name: "Radio Browser",
+      provides: [ProviderOffering.RADIO],
     };
 
     const wrapper = await mountWithConfigs([
       ownSource(),
-      otherSource(),
+      { ...otherSource(), domain: "radio_browser" },
       householdSource(),
     ]);
     await pickChip(wrapper, "library");

@@ -11,11 +11,7 @@ import {
   SOURCE_LABELS,
   type SourceLabel,
 } from "@/helpers/source_labels";
-import {
-  type ProviderInstance,
-  type ProviderManifest,
-  ProviderType,
-} from "@/plugins/api/interfaces";
+import { type ProviderManifest, ProviderType } from "@/plugins/api/interfaces";
 
 /** What a provider offers as a label: a music source's or a plugin's. */
 export type ProviderLabel = SourceLabel | PluginLabel;
@@ -36,20 +32,19 @@ const PROVIDER_LABELS: readonly ProviderLabel[] = [
 const MIN_FILTER_LABELS = 2;
 
 /**
- * What a provider offers, as the labels of the list it shows in: those of a
- * music source, those of a plugin, and none for any other provider.
+ * What a provider offers as its manifest says, as the labels of the list it
+ * shows in: those of a music source, those of a plugin, and none for any other
+ * provider.
  *
  * @param manifest - The manifest of the provider.
- * @param instance - The running instance of the provider; none while it is not running.
  */
 export function getProviderLabels(
   manifest?: ProviderManifest,
-  instance?: ProviderInstance,
 ): ProviderLabel[] {
   if (!manifest) return [];
   switch (providerListType(manifest.type, manifest.provides)) {
     case ProviderType.MUSIC:
-      return getSourceLabels(manifest, instance);
+      return getSourceLabels(manifest);
     case ProviderType.PLUGIN:
       return getPluginLabels(manifest);
     default:
