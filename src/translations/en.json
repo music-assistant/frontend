@@ -518,6 +518,33 @@
             "remote_access_ha_cloud": "Home Assistant Cloud",
             "remote_access_without_ha_cloud": "Without Home Assistant Cloud"
         },
+        "ai": {
+            "title": "AI",
+            "description": "The AI engines Music Assistant uses, what uses them and access for AI assistants",
+            "no_engines": "No AI engines yet",
+            "no_engines_description": "Add an AI service to write playlist descriptions, speak announcements, host AI Radio and more.",
+            "add_service": "Add an AI service",
+            "usage": "What uses AI",
+            "services": "AI services",
+            "kind": {
+                "text": "AI engine",
+                "speech": "Text-to-speech engine",
+                "image": "Image engine"
+            },
+            "engine_count": {
+                "text": "{count} text | {count} text",
+                "speech": "{count} speech | {count} speech",
+                "image": "{count} image | {count} images"
+            },
+            "follows_default": "Default · {engine}",
+            "not_available": "Not available",
+            "choose_models": "Choose the models to use",
+            "assistant_access": "Access for AI assistants",
+            "assistant_access_label": "Allow AI assistants",
+            "assistant_access_description": "AI assistants such as Home Assistant Assist, Claude and ChatGPT can search your music and control playback",
+            "assistant_access_enabled": "AI assistants can now use Music Assistant",
+            "assistant_access_disabled": "AI assistants can no longer use Music Assistant"
+        },
         "playback": {
             "title": "Playback",
             "description": "Crossfade, volume normalization, autoplay and what happens when you press play"
