@@ -1367,6 +1367,7 @@ export interface RecommendationFolder extends BrowseFolder {
   enabled_by_default: boolean;
   type: RecommendationFolderType;
   supports_provider_filter: boolean;
+  supports_hide_played: boolean;
 }
 
 // computed over all items of a collection, also when it holds a filtered subset
