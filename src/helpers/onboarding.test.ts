@@ -122,6 +122,13 @@ describe("onboarding step order", () => {
     );
   });
 
+  it("titles the remote access and AI steps by what they offer", () => {
+    expect(stepTitleKey("core_settings")).toBe(
+      "onboarding.steps.core_settings.away_title",
+    );
+    expect(stepTitleKey("ai")).toBe("onboarding.steps.ai.enrich_title");
+  });
+
   it("runs the admin track in its base order without an answer", () => {
     expect(stepIds(applicableSteps(context()))).toEqual([...BASE_ORDER]);
   });

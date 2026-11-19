@@ -3361,16 +3361,21 @@
                 "connect": "Connect a music app"
             },
             "core_settings": {
-                "title": "Access Music Assistant",
-                "away_intro": "Remote access lets you listen with the Music Assistant app when you're away from home.",
-                "intro_addon": "Music Assistant runs as a Home Assistant app: wherever you can open Home Assistant, you can open Music Assistant too. Turn on remote access if you'd also like to use the Music Assistant app away from home.",
-                "network_hint": "Using your own reverse proxy, or a more complex network? You can set that up later under Settings › {system} › {network}.",
+                "away_title": "Listen away from home",
+                "home_network_intro": "Music Assistant always works securely on your home network. With remote access, you can also listen with the Music Assistant app when you're away from home.",
+                "home_network_intro_addon": "Music Assistant runs as a Home Assistant app: wherever you can open Home Assistant, you can open Music Assistant too. With remote access, you can also listen with the Music Assistant app when you're away from home.",
+                "optional": "Optional: you can also turn it on later under Settings › {system} › {network}, where you can set up your own reverse proxy too.",
                 "remote": {
                     "home_assistant": "When your Home Assistant has Home Assistant Link, remote access uses it automatically, so it works on any network.",
+                    "features": {
+                        "secure": "Secure and encrypted",
+                        "no_setup": "No port forwarding or VPN",
+                        "anywhere": "Connect from anywhere with your remote access ID"
+                    },
+                    "turn_on": "Turn on remote access",
+                    "turn_off": "Turn off",
+                    "on": "Remote access is on",
                     "builtin": {
-                        "title": "Remote access",
-                        "description": "Secure and encrypted, with no port forwarding or VPN. Turn it on and connect from anywhere with your remote access ID.",
-                        "switch": "Remote access",
                         "id": "Your remote access ID",
                         "copy": "Copy the remote access ID",
                         "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {system} › {network} › {remote_access}."
@@ -3379,12 +3384,28 @@
             },
             "home_assistant": {
                 "title": "Connect Home Assistant",
-                "description": "Connect Home Assistant to play on its media players and control your players with its entities. It also lets you sign in with your Home Assistant account and reach Music Assistant remotely through Home Assistant Link.",
-                "connect": "Connect to Home Assistant"
+                "intro": "Connect Home Assistant to get even more out of Music Assistant.",
+                "features": {
+                    "players": "Play on Home Assistant's media players",
+                    "controls": "Control your players with Home Assistant entities",
+                    "sign_in": "Sign in with your Home Assistant account",
+                    "remote_access": "Reach Music Assistant remotely through Home Assistant Link"
+                },
+                "connect": "Connect to Home Assistant",
+                "optional": "Optional: you can also connect it later under Settings › {system} › {home_assistant}."
             },
             "ai": {
-                "title": "Add AI",
-                "description": "With AI, Music Assistant can speak announcements, host AI Radio, build smart playlists, run the music quiz and create playlist covers."
+                "enrich_title": "Enrich Music Assistant with AI",
+                "intro": "Bring the power of AI to Music Assistant.",
+                "examples": "A few examples, with more to come:",
+                "features": {
+                    "announcements": "Speak announcements",
+                    "ai_radio": "Host AI Radio",
+                    "smart_playlists": "Build smart playlists",
+                    "music_quiz": "Run the music quiz",
+                    "playlist_covers": "Create playlist covers"
+                },
+                "optional": "Optional: you can also add AI services later under Settings › {ai}."
             },
             "invite_members": {
                 "title": "Add users",

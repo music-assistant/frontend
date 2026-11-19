@@ -58,6 +58,15 @@ function mountStep() {
   });
 }
 
+type Wrapper = ReturnType<typeof mountStep>;
+
+function testId(wrapper: Wrapper, id: string) {
+  return wrapper.find(`[data-testid=${id}]`);
+}
+
+const linked = (wrapper: Wrapper) =>
+  testId(wrapper, "onboarding-invitation-visual").attributes("data-linked");
+
 describe("HomeAssistantStep", () => {
   beforeEach(() => {
     onboardingState.plugins.value = [];
@@ -66,6 +75,49 @@ describe("HomeAssistantStep", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("pairs the Home Assistant mark with Music Assistant's", () => {
+    const wrapper = mountStep();
+
+    const visual = testId(wrapper, "onboarding-invitation-visual");
+    expect(visual.find("img[src*=icon]").exists()).toBe(true);
+    expect(visual.findComponent({ name: "ProviderIcon" }).props("domain")).toBe(
+      "hass",
+    );
+    expect(linked(wrapper)).toBeUndefined();
+    wrapper.unmount();
+  });
+
+  it("lists what connecting brings", () => {
+    const wrapper = mountStep();
+
+    expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
+      "onboarding.steps.home_assistant.intro",
+    );
+    expect(
+      testId(wrapper, "onboarding-invitation-features")
+        .findAll("li")
+        .map((item) => item.text()),
+    ).toEqual([
+      "onboarding.steps.home_assistant.features.players",
+      "onboarding.steps.home_assistant.features.controls",
+      "onboarding.steps.home_assistant.features.sign_in",
+      "onboarding.steps.home_assistant.features.remote_access",
+    ]);
+    wrapper.unmount();
+  });
+
+  it("offers Connect as the step's centred action, and says it is optional", () => {
+    const wrapper = mountStep();
+
+    const connect = testId(wrapper, "onboarding-home-assistant-connect");
+    expect(connect.text()).toBe("onboarding.steps.home_assistant.connect");
+    expect(connect.classes()).toContain("self-center");
+    expect(testId(wrapper, "onboarding-invitation-optional").text()).toBe(
+      "onboarding.steps.home_assistant.optional",
+    );
+    wrapper.unmount();
   });
 
   it("starts the Home Assistant setup flow from Connect", async () => {
@@ -104,6 +156,14 @@ describe("HomeAssistantStep", () => {
     expect(
       wrapper.find("[data-testid=onboarding-home-assistant-connect]").exists(),
     ).toBe(false);
+    // set up, so there is nothing left to invite to or leave for later
+    expect(testId(wrapper, "onboarding-invitation-features").exists()).toBe(
+      false,
+    );
+    expect(testId(wrapper, "onboarding-invitation-optional").exists()).toBe(
+      false,
+    );
+    expect(linked(wrapper)).toBe("true");
     wrapper.unmount();
   });
 
@@ -121,6 +181,8 @@ describe("HomeAssistantStep", () => {
         .find("[data-testid=onboarding-home-assistant-connection] [aria-label]")
         .attributes("aria-label"),
     ).toBe("settings.provider_status_auth_required");
+    // set up, but not working, so not linked
+    expect(linked(wrapper)).toBeUndefined();
     wrapper.unmount();
   });
 

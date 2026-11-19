@@ -312,6 +312,12 @@ export function applicableSteps(ctx: OnboardingContext): OnboardingStep[] {
   return ONBOARDING_STEPS.filter((step) => step.appliesTo(ctx));
 }
 
+// the steps whose title is not under `onboarding.steps.<id>.title`
+const STEP_TITLE_KEYS: Partial<Record<OnboardingStepId, string>> = {
+  core_settings: "onboarding.steps.core_settings.away_title",
+  ai: "onboarding.steps.ai.enrich_title",
+};
+
 /** The translation key for a step's title in this setup. */
 export function stepTitleKey(
   id: OnboardingStepId,
@@ -320,7 +326,7 @@ export function stepTitleKey(
   if (id === "plugins" && answers.intent === "phone_apps") {
     return "onboarding.steps.plugins.phone_apps_title";
   }
-  return `onboarding.steps.${id}.title`;
+  return STEP_TITLE_KEYS[id] ?? `onboarding.steps.${id}.title`;
 }
 
 /** The steps not set up, including optional invitations. */
