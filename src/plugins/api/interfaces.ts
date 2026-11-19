@@ -608,6 +608,9 @@ export enum ProviderFeature {
   TRACK_METADATA = "track_metadata",
   // provider delivers live audio sources, such as a receiver or a line-in
   AUDIO_SOURCE = "audio_source",
+  // plugin specific features
+  AI_QUERY = "ai_query",
+  TTS = "tts",
 }
 
 export enum ProviderType {
@@ -2231,6 +2234,42 @@ export interface SetupRequest {
   password: string;
   display_name?: string;
   device_name?: string;
+}
+
+// AI interfaces
+
+export enum AIEngineKind {
+  TEXT = "text",
+  SPEECH = "speech",
+  IMAGE = "image",
+}
+
+/** An AI engine a plugin provides. */
+export interface AIEngine {
+  uid: string;
+  // the engine name, prefixed with the name of the plugin it comes from
+  name: string;
+  kind: AIEngineKind;
+  // the instance id of the plugin providing the engine
+  provider: string;
+}
+
+/** An engine setting of a core module or provider, with the engine it selects. */
+export interface AIEngineUsage {
+  owner_type: "core" | "provider";
+  // the core module domain or provider instance id
+  owner: string;
+  domain: string;
+  // the provider instance name or the core module name
+  name: string;
+  key: string;
+  kind: AIEngineKind;
+  // the setting is changed through the setup flow of the provider
+  in_setup_data: boolean;
+  // the setting follows the default engine of its kind
+  follows_default: boolean;
+  // the uid of the selected engine, null when it selects no available engine
+  engine: string | null;
 }
 
 // Remote Access interfaces

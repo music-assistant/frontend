@@ -60,6 +60,8 @@ import {
   type SortOptionInfo,
   type User,
   type UserSummary,
+  type AIEngine,
+  type AIEngineUsage,
   AlbumType,
   Audiobook,
   AuthExchangeResult,
@@ -4052,6 +4054,18 @@ export class MusicAssistantApi {
 
   public async disableUser(userId: string): Promise<boolean> {
     return this.accountApi.disableUser(userId);
+  }
+
+  // AI methods
+
+  public async getAIEngines(): Promise<AIEngine[]> {
+    // Return the available AI engines of all kinds.
+    return this.sendCommand<AIEngine[]>("ai/engines");
+  }
+
+  public async getAIUsage(): Promise<AIEngineUsage[]> {
+    // Return each engine setting of the core modules and providers, with its engine.
+    return this.sendCommand<AIEngineUsage[]>("ai/usage");
   }
 
   // Remote Access methods

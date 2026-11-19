@@ -53,6 +53,7 @@ describe("SettingsOverview as cards", () => {
 
     expect(sectionsOf(wrapper, "card")).toEqual([
       "plugin_providers",
+      "ai",
       "profile",
       "users",
       "system",

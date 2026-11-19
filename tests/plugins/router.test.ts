@@ -453,6 +453,7 @@ describe("earlier addresses of the settings pages", () => {
     ["/settings/tasks", "backgroundtasks"],
     ["/settings/tasks/settings", "tasksettings"],
     ["/settings/diagnostics", "diagnostics"],
+    ["/settings/editcore/ai", "aisettings"],
   ])("lead %s to its page", (path, name) => {
     expect(redirectTarget(path)).toMatchObject({ name });
   });
@@ -491,6 +492,7 @@ describe("earlier addresses of the settings pages", () => {
     "/settings/providers?types=music",
     "/settings/library",
     "/settings/tasks/settings",
+    "/settings/editcore/ai",
   ])("lead %s to a route of the router", (path) => {
     if (!mocks.router) {
       throw new Error("The router module did not create a router");
@@ -754,6 +756,7 @@ describe("scope-gated routes", () => {
     ["/settings/system/storage", ["admin"]],
     ["/settings/music/metadata/settings", ["admin"]],
     ["/settings/editcore/radio_tuner", ["admin"]],
+    ["/settings/ai", ["admin"]],
     ["/settings/music/audio-analysis/status", ["admin"]],
     ["/settings/system/network/remote-access", ["admin"]],
     ["/settings/system/diagnostics", ["admin"]],
