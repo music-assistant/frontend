@@ -150,6 +150,7 @@
               rowItemsMap.get(row.id) !== undefined
             "
             :title="row.folder.name"
+            :view-all-to="editMode ? undefined : rowBrowseRoute(row.folder)"
             :provider="folderProvider(row.folder)"
             :items="rowItemsMap.get(row.id) ?? []"
             :dimmed="editMode && row.hidden"
@@ -180,6 +181,7 @@
           <EditorialShelf
             v-else-if="row.kind === 'recommendation' && row.folder"
             :title="row.folder.name"
+            :view-all-to="editMode ? undefined : rowBrowseRoute(row.folder)"
             :subtitle="row.folder.subtitle"
             :provider="folderProvider(row.folder)"
             :dimmed="editMode && row.hidden"
@@ -275,6 +277,11 @@
           >
             <div class="ed-genres__head">
               <h2 class="ed-genres__title">{{ $t("browse_by_genre") }}</h2>
+              <ViewAllLink
+                v-if="!editMode"
+                :to="{ name: 'genres' }"
+                :name="$t('genres')"
+              />
               <div v-if="editMode" class="ed-edit-controls">
                 <button
                   class="ed-drag-handle"
@@ -395,6 +402,8 @@ import {
   setDiscoverRowHidden,
   setDiscoverRowsOrder,
 } from "@/components/discover/utils/discoverRows";
+import { rowBrowseRoute } from "@/components/discover/utils/rowBrowse";
+import ViewAllLink from "@/components/ViewAllLink.vue";
 import {
   isRecommendationRowVisible,
   rowIdsNeedingItems,
