@@ -3079,13 +3079,17 @@ export class MusicAssistantApi {
     );
   }
 
-  public getShareCandidates(): Promise<UserSummary[]> {
+  public getShareCandidates(includeGuests = false): Promise<UserSummary[]> {
     // Get the users a music source or playlist can be shared with, the caller
     // included.
-    return this.sendCommand("config/providers/share_candidates", undefined, {
-      // callers show their own error toast; avoid a duplicate global one
-      suppressGlobalError: true,
-    });
+    return this.sendCommand(
+      "config/providers/share_candidates",
+      includeGuests ? { include_guests: true } : undefined,
+      {
+        // callers show their own error toast; avoid a duplicate global one
+        suppressGlobalError: true,
+      },
+    );
   }
 
   public getCatalogRecommendations(): Promise<CatalogRecommendation[]> {

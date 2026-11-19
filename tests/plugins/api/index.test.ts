@@ -1123,6 +1123,24 @@ describe("MusicAssistantApi error handling", () => {
     await expect(result).resolves.toEqual(candidates);
   });
 
+  it("opts into guest recipients for source sharing", async () => {
+    const candidates = [
+      userSummary({ user_id: "party-guest", username: "party_guest" }),
+    ];
+    const result = api.getShareCandidates(true);
+
+    expect(transport.lastCommand.command).toBe(
+      "config/providers/share_candidates",
+    );
+    expect(transport.lastCommand.args).toEqual({ include_guests: true });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: candidates,
+      partial: false,
+    });
+    await expect(result).resolves.toEqual(candidates);
+  });
+
   it("leaves a failing share candidates lookup to its caller", async () => {
     const consoleError = vi
       .spyOn(console, "error")

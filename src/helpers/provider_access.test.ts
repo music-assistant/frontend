@@ -317,8 +317,14 @@ describe("user candidates", () => {
     expect(ownerCandidates([service])).toEqual([service]);
   });
 
-  it("offers every enabled member to share with, not guests", () => {
-    expect(shareCandidates(users)).toEqual([owner, member, systemAccount]);
+  it("offers enabled guests to share with without offering them as owners", () => {
+    expect(shareCandidates(users)).toEqual([
+      owner,
+      member,
+      guest,
+      systemAccount,
+    ]);
+    expect(ownerCandidates(users)).toEqual([owner, member]);
   });
 });
 

@@ -657,7 +657,7 @@ describe("Providers", () => {
       wrapper
         .get('[data-testid="access-dialog"]')
         .attributes("data-share-candidates"),
-    ).toBe("user-marcel,user-sam");
+    ).toBe("user-marcel,user-sam,user-guest");
     expect(apiMock.getShareCandidates).not.toHaveBeenCalled();
   });
 
