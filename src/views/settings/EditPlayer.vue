@@ -192,6 +192,7 @@
       :config-entries="config_entries"
       :output-protocols="api.players[config.player_id]?.output_protocols || []"
       :output-menu-items="getOutputMenu"
+      :multi-channel="isMultiChannel"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -302,6 +303,13 @@ const player = computed(() =>
 );
 
 const multiChannelCandidates = useMultiChannelCandidates(player);
+
+// a disabled player has no live state, so its stored config tells
+const isMultiChannel = computed(
+  () =>
+    (player.value?.type ?? config.value?.player_type) ===
+    PlayerType.MULTI_CHANNEL,
+);
 
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,

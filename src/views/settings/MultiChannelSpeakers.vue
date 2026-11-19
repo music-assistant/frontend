@@ -71,7 +71,7 @@ import ConfigEntryRow from "./ConfigEntryRow.vue";
 
 // the row names the speaker already, so these fields go by a plain label
 const FIELD_LABELS: Record<string, string> = {
-  channel: "settings.multi_channel.channel",
+  channel_setting: "settings.multi_channel.channel",
   output_delay: "settings.multi_channel.output_delay",
 };
 

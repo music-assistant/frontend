@@ -169,6 +169,8 @@ const props = defineProps<{
   outputProtocols?: OutputProtocol[];
   // The menu entries of an output of the player; an output without any gets no menu button.
   outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
+  // The config is that of a multi-channel player, whose speakers show as rows of their own.
+  multiChannel?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -226,10 +228,12 @@ const speakerEntriesByPanel = computed(() =>
   Object.fromEntries(
     props.protocolPanels.map((panel) => [
       panel,
-      groupSpeakerEntries(
-        props.entries.filter((entry) => entry.category === panel),
-        protocolEntriesForCategory(panel),
-      ),
+      props.multiChannel
+        ? groupSpeakerEntries(
+            props.entries.filter((entry) => entry.category === panel),
+            protocolEntriesForCategory(panel),
+          )
+        : { speakers: [], others: protocolEntriesForCategory(panel) },
     ]),
   ),
 );

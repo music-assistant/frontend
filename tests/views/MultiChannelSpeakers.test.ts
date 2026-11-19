@@ -42,7 +42,7 @@ describe("MultiChannelSpeakers", () => {
       wrapper
         .findAllComponents({ name: "ConfigEntryRow" })
         .map((entryRow) => (entryRow.props("confEntry") as ConfigEntryUI).key),
-    ).toEqual(["speaker_2_channel", "speaker_2_output_delay"]);
+    ).toEqual(["speaker_2_channel_setting", "speaker_2_output_delay"]);
   });
 
   it("names the fields of a speaker plainly, and only for these rows", async () => {
@@ -67,7 +67,7 @@ describe("MultiChannelSpeakers", () => {
     ]);
     // every other form shows the entries as the server sent them
     expect(speakers[0].channel).toMatchObject({
-      label: "speaker_1_channel",
+      label: "speaker_1_channel_setting",
       default_value: "front_left",
     });
   });
@@ -78,17 +78,20 @@ describe("MultiChannelSpeakers", () => {
     await wrapper.get('[data-slot="accordion-trigger"]').trigger("click");
 
     // only the channel goes without a clear button
-    expect(entryRow(wrapper, "speaker_1_channel").props("clearable")).toBe(
-      false,
-    );
+    expect(
+      entryRow(wrapper, "speaker_1_channel_setting").props("clearable"),
+    ).toBe(false);
     expect(entryRow(wrapper, "speaker_1_output_delay").props("clearable")).toBe(
       true,
     );
     // and an empty choice never reaches the form, while a channel does
-    entryRow(wrapper, "speaker_1_channel").vm.$emit("update:value", null);
-    entryRow(wrapper, "speaker_1_channel").vm.$emit("update:value", "");
+    entryRow(wrapper, "speaker_1_channel_setting").vm.$emit(
+      "update:value",
+      null,
+    );
+    entryRow(wrapper, "speaker_1_channel_setting").vm.$emit("update:value", "");
     expect(wrapper.emitted("update:value")).toBeUndefined();
-    entryRow(wrapper, "speaker_1_channel").vm.$emit(
+    entryRow(wrapper, "speaker_1_channel_setting").vm.$emit(
       "update:value",
       "front_right",
     );
@@ -113,7 +116,7 @@ describe("MultiChannelSpeakers", () => {
     const wrapper = mountSpeakers(speakers);
     await wrapper.get('[data-slot="accordion-trigger"]').trigger("click");
 
-    entryRow(wrapper, "speaker_1_channel").vm.$emit(
+    entryRow(wrapper, "speaker_1_channel_setting").vm.$emit(
       "update:value",
       "front_right",
     );
@@ -179,7 +182,7 @@ function speaker(
   online: boolean,
 ): MultiChannelSpeaker {
   // the server makes the channel stored the default of the entry
-  const channelEntry = entry(`speaker_${number}_channel`, {
+  const channelEntry = entry(`speaker_${number}_channel_setting`, {
     value: channel,
     default_value: channel,
     options: CHANNEL_OPTIONS,

@@ -5,7 +5,7 @@ import {
   getComposableProtocol,
   getSpeakerField,
   groupSpeakerEntries,
-  isMultiChannelRecordEntry,
+  isSpeakerChannelEntry,
   suggestMultiChannelName,
 } from "@/helpers/multi_channel";
 import {
@@ -93,26 +93,25 @@ describe("getComposableProtocol", () => {
   });
 });
 
-describe("isMultiChannelRecordEntry", () => {
-  it("knows the entries of the record of a multi-channel player", () => {
+describe("isSpeakerChannelEntry", () => {
+  it("knows the channel of a speaker of a multi-channel player", () => {
     const record = setRecord().entries;
     const keys = record
-      .filter((e) => isMultiChannelRecordEntry(e, record))
+      .filter((e) => isSpeakerChannelEntry(e, record))
       .map((e) => e.key);
 
-    expect(keys).toContain("multi_channel_group_id");
-    expect(keys).toContain("speaker_2_channel");
-    expect(keys).not.toContain("note");
+    expect(keys).toEqual([
+      "speaker_1_channel_setting",
+      "speaker_2_channel_setting",
+    ]);
   });
 
-  it("knows no speaker entry outside the record", () => {
-    const record = setRecord().entries;
-    const elsewhere = entry("speaker_1_channel", {
-      category: "protocol_other",
-    });
+  it("knows no channel without the state of its speaker, or on another protocol", () => {
+    const channel = entry("speaker_1_channel_setting");
+    const elsewhere = entry("speaker_1_state", { category: "protocol_other" });
 
-    expect(isMultiChannelRecordEntry(elsewhere, record)).toBe(false);
-    expect(isMultiChannelRecordEntry(elsewhere, [elsewhere])).toBe(false);
+    expect(isSpeakerChannelEntry(channel, [channel])).toBe(false);
+    expect(isSpeakerChannelEntry(channel, [channel, elsewhere])).toBe(false);
   });
 });
 
@@ -139,9 +138,11 @@ describe("suggestMultiChannelName", () => {
 });
 
 describe("groupSpeakerEntries", () => {
-  it("leaves the entries of a protocol that holds no multi-channel player alone", () => {
+  it("leaves out a speaker the server sends no state or no channel for", () => {
     const entries = [
-      entry("speaker_1_channel", { value: "front_left" }),
+      entry("speaker_1_state", { type: ConfigEntryType.LABEL }),
+      entry("speaker_1_output_delay"),
+      entry("speaker_2_channel_setting", { value: "front_left" }),
       entry("buffer"),
     ];
 
@@ -166,24 +167,24 @@ describe("groupSpeakerEntries", () => {
       { number: 2, name: "Studio left", online: false },
       { number: 1, name: "Studio right", online: true },
     ]);
-    // an online speaker shows that in its row, an offline one also says what it means
+    // the row names the speaker and says it is online; an offline one says what it means
     expect(speakers[0].entries.map((e) => e.key)).toEqual([
       "speaker_2_state",
-      "speaker_2_channel",
+      "speaker_2_channel_setting",
       "speaker_2_output_delay",
     ]);
     expect(speakers[1].entries.map((e) => e.key)).toEqual([
-      "speaker_1_channel",
+      "speaker_1_channel_setting",
       "speaker_1_output_delay",
     ]);
-    expect(speakers[1].channel?.key).toBe("speaker_1_channel");
+    expect(speakers[1].channel?.key).toBe("speaker_1_channel_setting");
   });
 
   it("follows a channel picked but not saved yet", () => {
     const record = setRecord();
-    record.entries.find((e) => e.key === "speaker_1_channel")!.value =
+    record.entries.find((e) => e.key === "speaker_1_channel_setting")!.value =
       "front_left";
-    record.entries.find((e) => e.key === "speaker_2_channel")!.value =
+    record.entries.find((e) => e.key === "speaker_2_channel_setting")!.value =
       "front_right";
 
     expect(
@@ -193,13 +194,13 @@ describe("groupSpeakerEntries", () => {
     ).toEqual([1, 2]);
   });
 
-  it("names a speaker after its client id while the record has no name for it", () => {
+  it("leaves the name empty while the server sends none", () => {
     const entries = [
-      entry("multi_channel_group_id", { hidden: true }),
-      entry("speaker_1_client_id", { hidden: true, value: "client-1" }),
+      entry("speaker_1_state", { type: ConfigEntryType.LABEL }),
+      entry("speaker_1_channel_setting", { value: "front_left" }),
     ];
 
-    expect(groupSpeakerEntries(entries, []).speakers[0].name).toBe("client-1");
+    expect(groupSpeakerEntries(entries, entries).speakers[0].name).toBe("");
   });
 });
 
@@ -235,7 +236,6 @@ describe("getChannelSwap", () => {
  */
 function setRecord(): { entries: ConfigEntryUI[]; visible: ConfigEntryUI[] } {
   const entries = [
-    entry("multi_channel_group_id", { hidden: true, value: "group" }),
     entry("note", { type: ConfigEntryType.LABEL }),
     ...speakerEntries(1, "Studio right", "front_right", "online"),
     ...speakerEntries(2, "Studio left", "front_left", "offline"),
@@ -258,9 +258,16 @@ function speakerEntries(
       type: ConfigEntryType.LABEL,
       default_value: state,
     }),
-    entry(`speaker_${number}_client_id`, { hidden: true, value: `c${number}` }),
-    entry(`speaker_${number}_name`, { hidden: true, value: name }),
-    entry(`speaker_${number}_channel`, { value: channel, options }),
+    entry(`speaker_${number}_display_name`, {
+      type: ConfigEntryType.LABEL,
+      label: "Speaker",
+      value: name,
+    }),
+    entry(`speaker_${number}_channel_setting`, {
+      value: channel,
+      default_value: channel,
+      options,
+    }),
     entry(`speaker_${number}_output_delay`, {
       type: ConfigEntryType.INTEGER,
       value: 0,

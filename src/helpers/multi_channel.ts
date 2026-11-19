@@ -11,14 +11,16 @@ import {
   ProviderFeature,
 } from "@/plugins/api/interfaces";
 
-// the entry that marks the settings of a protocol as the record of a multi-channel player
-const GROUP_ID_KEY = "multi_channel_group_id";
-// the entries of a speaker in that record: speaker_<number>_<field>
+// the entries of a speaker of a multi-channel player: speaker_<number>_<field>
 const SPEAKER_KEY = /^speaker_(\d+)_([a-z_]+)$/;
+// the fields of a speaker; one with a state and a channel shows as a row of its own
+const SPEAKER_STATE = "state";
+const SPEAKER_CHANNEL = "channel_setting";
+const SPEAKER_NAME = "display_name";
 const SPEAKER_ONLINE = "online";
 
 export interface MultiChannelSpeaker {
-  // the number of the speaker in the record of its player
+  // the number of the speaker in the entries of its player
   number: number;
   name: string;
   online: boolean;
@@ -87,29 +89,24 @@ export const getComposableProtocol = function (
 };
 
 /**
- * Whether an entry belongs to the record of a multi-channel player: its group id, or an
- * entry of one of its speakers.
+ * Whether an entry is the channel of a speaker of a multi-channel player.
  *
  * @param entry The entry.
- * @param entries Every entry of the form it is on.
+ * @param entries Every entry of the settings of that player.
  */
-export const isMultiChannelRecordEntry = function (
+export const isSpeakerChannelEntry = function (
   entry: Pick<ConfigEntryUI, "key" | "category">,
   entries: Pick<ConfigEntryUI, "key" | "category">[],
 ): boolean {
-  if (entry.key === GROUP_ID_KEY) return true;
-  return (
-    SPEAKER_KEY.test(entry.key) &&
-    entries.some(
-      (other) =>
-        other.key === GROUP_ID_KEY && other.category === entry.category,
-    )
-  );
+  const match = SPEAKER_KEY.exec(entry.key);
+  if (match?.[2] !== SPEAKER_CHANNEL) return false;
+  const sameProtocol = entries.filter((e) => e.category === entry.category);
+  return getSpeakerNumbers(sameProtocol).has(Number(match[1]));
 };
 
 /**
- * The field of a speaker an entry of a multi-channel player holds, such as "channel" for
- * `speaker_1_channel`. Undefined for an entry of no speaker.
+ * The field of a speaker an entry of a multi-channel player holds, such as
+ * "output_delay" for `speaker_1_output_delay`. Undefined for an entry of no speaker.
  */
 export const getSpeakerField = function (key: string): string | undefined {
   return SPEAKER_KEY.exec(key)?.[2];
@@ -136,10 +133,9 @@ export const suggestMultiChannelName = function (
 };
 
 /**
- * The speakers of a multi-channel player in the entries of one protocol, each with the
- * entries to show for it, in the order of their channels. Without the record of a
- * multi-channel player the protocol has no speakers, and every entry belongs to no
- * speaker.
+ * The speakers of a multi-channel player in the entries of its protocol, each with the
+ * entries to show for it, in the order of their channels. A speaker is one the server
+ * sends a state and a channel for; the other entries belong to no speaker.
  *
  * @param entries Every entry of the protocol, the hidden ones too.
  * @param visible The entries of the protocol that show.
@@ -148,21 +144,14 @@ export const groupSpeakerEntries = function (
   entries: ConfigEntryUI[],
   visible: ConfigEntryUI[],
 ): SpeakerEntries {
-  if (!entries.some((entry) => entry.key === GROUP_ID_KEY)) {
-    return { speakers: [], others: visible };
-  }
   const valueOf = (number: number, field: string) =>
-    entries.find((entry) => entry.key === `speaker_${number}_${field}`)?.value;
+    entries.find((entry) => entry.key === `speaker_${number}_${field}`);
   const speakers = new Map<number, MultiChannelSpeaker>();
-  // every speaker in the record has a client id, also one whose entries do not show
-  for (const entry of entries) {
-    const match = SPEAKER_KEY.exec(entry.key);
-    if (match?.[2] !== "client_id") continue;
-    const number = Number(match[1]);
-    const state = entries.find((e) => e.key === `speaker_${number}_state`);
+  for (const number of getSpeakerNumbers(entries)) {
+    const state = valueOf(number, SPEAKER_STATE);
     speakers.set(number, {
       number,
-      name: String(valueOf(number, "name") ?? entry.value ?? ""),
+      name: String(valueOf(number, SPEAKER_NAME)?.value ?? ""),
       online: (state?.value ?? state?.default_value) === SPEAKER_ONLINE,
       entries: [],
     });
@@ -175,9 +164,12 @@ export const groupSpeakerEntries = function (
       others.push(entry);
       continue;
     }
-    if (match[2] === "channel") speaker.channel = entry;
-    // the row of the speaker says it is online, which is all its state says then
-    if (match[2] === "state" && speaker.online) continue;
+    const field = match[2];
+    if (field === SPEAKER_CHANNEL) speaker.channel = entry;
+    // the row names the speaker, and says it is online, which is all its state says then
+    if (field === SPEAKER_NAME || (field === SPEAKER_STATE && speaker.online)) {
+      continue;
+    }
     speaker.entries.push(entry);
   }
   return {
@@ -208,6 +200,27 @@ export const getChannelSwap = function (
   )?.channel;
   return other ? { entry: other, value: entry.value ?? null } : undefined;
 };
+
+/** The numbers of the speakers in entries of one protocol: each with a state and a channel. */
+function getSpeakerNumbers(entries: Pick<ConfigEntryUI, "key">[]): Set<number> {
+  const fieldsByNumber = new Map<number, Set<string>>();
+  for (const entry of entries) {
+    const match = SPEAKER_KEY.exec(entry.key);
+    if (!match) continue;
+    const number = Number(match[1]);
+    const fields = fieldsByNumber.get(number) ?? new Set<string>();
+    fields.add(match[2]);
+    fieldsByNumber.set(number, fields);
+  }
+  return new Set(
+    [...fieldsByNumber]
+      .filter(
+        ([, fields]) =>
+          fields.has(SPEAKER_STATE) && fields.has(SPEAKER_CHANNEL),
+      )
+      .map(([number]) => number),
+  );
+}
 
 /** The place of the channel of a speaker among the channels it can have, unknown ones last. */
 function channelOrder(speaker: MultiChannelSpeaker): number {

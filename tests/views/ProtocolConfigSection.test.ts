@@ -234,29 +234,8 @@ describe("ProtocolConfigSection", () => {
   });
 
   it("shows the speakers of a multi-channel player as rows of their own", () => {
-    const category = "protocol_sendspin";
-    const entries = [
-      entry("multi_channel_group_id", category, { hidden: true }),
-      entry("note", category, { type: ConfigEntryType.LABEL }),
-      entry("speaker_1_client_id", category, { hidden: true, value: "c1" }),
-      entry("speaker_1_name", category, { hidden: true, value: "Studio left" }),
-      entry("speaker_1_channel", category, { value: "front_left" }),
-      entry("speaker_2_client_id", category, { hidden: true, value: "c2" }),
-      entry("speaker_2_name", category, {
-        hidden: true,
-        value: "Studio right",
-      }),
-      entry("speaker_2_channel", category, { value: "front_right" }),
-    ];
-    const wrapper = shallowMount(ProtocolConfigSection, {
-      props: {
-        ...sectionProps(entries, [outputProtocol("native", "sendspin", true)]),
-        visibleEntriesByCategory: {
-          [category]: entries.filter((configEntry) => !configEntry.hidden),
-        },
-      },
-      global: { renderStubDefaultSlot: true },
-    });
+    const entries = stereoPairEntries();
+    const wrapper = mountStereoPair(entries, true);
 
     // the entries of no speaker keep the generic rows
     expect(renderedKeys(wrapper)).toEqual(["note"]);
@@ -267,21 +246,32 @@ describe("ProtocolConfigSection", () => {
       ),
     ).toEqual(["Studio left", "Studio right"]);
 
-    speakers.vm.$emit("update:value", entries[4], "front_right");
+    const channel = entries.find(
+      (configEntry) => configEntry.key === "speaker_1_channel_setting",
+    )!;
+    speakers.vm.$emit("update:value", channel, "front_right");
     expect(wrapper.emitted("update:value")?.[0]).toEqual([
-      entries[4],
+      channel,
       "front_right",
     ]);
   });
 
   it("shows no speaker rows for the protocol of any other player", () => {
-    const wrapper = mountSection(
-      [entry("speaker_1_channel", "protocol_sendspin", { value: "x" })],
-      [outputProtocol("native", "sendspin", true)],
-    );
+    const wrapper = mountStereoPair(stereoPairEntries(), false);
 
     expect(wrapper.findComponent(MultiChannelSpeakers).exists()).toBe(false);
-    expect(renderedKeys(wrapper)).toEqual(["speaker_1_channel"]);
+    expect(renderedKeys(wrapper)).toContain("speaker_1_channel_setting");
+  });
+
+  it("shows no speaker rows for keys without both the state and the channel", () => {
+    const entries = stereoPairEntries().filter(
+      (configEntry) =>
+        configEntry.key !== "speaker_1_state" &&
+        configEntry.key !== "speaker_2_channel_setting",
+    );
+    const wrapper = mountStereoPair(entries, true);
+
+    expect(wrapper.findComponent(MultiChannelSpeakers).exists()).toBe(false);
   });
 
   it("offers the menu of a single output too", () => {
@@ -402,6 +392,39 @@ function sectionProps(
     showPasswordValues: false,
     visibleEntriesByCategory,
   };
+}
+
+// the Sendspin protocol of a stereo pair: two speakers and one entry of its own
+function stereoPairEntries(): ConfigEntry[] {
+  const category = "protocol_sendspin";
+  return [
+    entry("note", category, { type: ConfigEntryType.LABEL }),
+    ...[
+      [1, "Studio left", "front_left"],
+      [2, "Studio right", "front_right"],
+    ].flatMap(([number, name, channel]) => [
+      entry(`speaker_${number}_state`, category, {
+        type: ConfigEntryType.LABEL,
+        value: "online",
+      }),
+      entry(`speaker_${number}_display_name`, category, {
+        type: ConfigEntryType.LABEL,
+        label: "Speaker",
+        value: name,
+      }),
+      entry(`speaker_${number}_channel_setting`, category, { value: channel }),
+    ]),
+  ];
+}
+
+function mountStereoPair(entries: ConfigEntry[], multiChannel: boolean) {
+  return shallowMount(ProtocolConfigSection, {
+    props: {
+      ...sectionProps(entries, [outputProtocol("native", "sendspin", true)]),
+      multiChannel,
+    },
+    global: { renderStubDefaultSlot: true },
+  });
 }
 
 function mountSection(

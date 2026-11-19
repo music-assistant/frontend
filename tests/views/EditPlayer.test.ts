@@ -87,6 +87,7 @@ const playerDetailsStubs = {
     props: [
       "configEntries",
       "disabled",
+      "multiChannel",
       "outputMenuItems",
       "outputProtocols",
       "showAdvancedSettings",
@@ -537,8 +538,8 @@ describe("EditPlayer", () => {
     const wrapper = await mountPlayerPage();
     const editConfig = wrapper.findComponent({ name: "EditConfig" });
     // the form holds the swap as a draft, and saves the delay at once
-    formEntry(editConfig, "speaker_1_channel").value = "front_right";
-    formEntry(editConfig, "speaker_2_channel").value = "front_left";
+    formEntry(editConfig, "speaker_1_channel_setting").value = "front_right";
+    formEntry(editConfig, "speaker_2_channel_setting").value = "front_left";
     formEntry(editConfig, "speaker_1_output_delay").value = 40;
     apiMock.savePlayerConfig.mockResolvedValueOnce(
       stereoPairConfig({ delay: 40 }),
@@ -551,8 +552,8 @@ describe("EditPlayer", () => {
       speaker_1_output_delay: 40,
     });
     expect(formValues(editConfig)).toMatchObject({
-      speaker_1_channel: "front_right",
-      speaker_2_channel: "front_left",
+      speaker_1_channel_setting: "front_right",
+      speaker_2_channel_setting: "front_left",
       speaker_1_output_delay: 40,
     });
 
@@ -562,11 +563,38 @@ describe("EditPlayer", () => {
     expect(apiMock.savePlayerConfig).toHaveBeenLastCalledWith(
       "player-1",
       expect.objectContaining({
-        speaker_1_channel: "front_right",
-        speaker_2_channel: "front_left",
+        speaker_1_channel_setting: "front_right",
+        speaker_2_channel_setting: "front_left",
         speaker_1_output_delay: 40,
       }),
     );
+  });
+
+  it("shows the speakers of a multi-channel player as rows, also while it is disabled", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(stereoPairConfig());
+    apiMock.players = {
+      "player-1": { ...playerState(), type: PlayerType.MULTI_CHANNEL },
+    };
+    let wrapper = await mountPlayerPage();
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("multiChannel"),
+    ).toBe(true);
+
+    // a disabled player has no live state
+    apiMock.players = {};
+    wrapper.unmount();
+    wrapper = await mountPlayerPage();
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("multiChannel"),
+    ).toBe(true);
+  });
+
+  it("shows no speaker rows for any other player", async () => {
+    const wrapper = await mountPlayerPage();
+
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("multiChannel"),
+    ).toBe(false);
   });
 
   it("shows the state of a speaker the server reports on a refresh", async () => {
@@ -741,7 +769,7 @@ function playerConfig({
 }
 
 /**
- * The config of a stereo pair: the record of its speakers on its Sendspin protocol,
+ * The config of a stereo pair: the entries of its speakers on its Sendspin protocol,
  * with the given state of its second speaker and output delay of its first one.
  */
 function stereoPairConfig({
@@ -749,7 +777,7 @@ function stereoPairConfig({
   delay = 0,
 }: { state?: string; delay?: number } = {}): PlayerConfig {
   const category = "protocol_sendspin";
-  const recordEntry = (
+  const speakerEntry = (
     key: string,
     overrides: Partial<ConfigEntry>,
   ): [string, ConfigEntry] => [
@@ -771,23 +799,27 @@ function stereoPairConfig({
     player_type: PlayerType.MULTI_CHANNEL,
     values: {
       ...config.values,
-      ...Object.fromEntries([
-        recordEntry("multi_channel_group_id", { hidden: true, value: "group" }),
-        ...[1, 2].flatMap((number) => [
-          recordEntry(`speaker_${number}_state`, {
+      ...Object.fromEntries(
+        [1, 2].flatMap((number) => [
+          speakerEntry(`speaker_${number}_state`, {
             type: ConfigEntryType.LABEL,
             value: number === 2 ? state : "online",
           }),
-          recordEntry(`speaker_${number}_channel`, {
+          speakerEntry(`speaker_${number}_display_name`, {
+            type: ConfigEntryType.LABEL,
+            label: "Speaker",
+            value: number === 1 ? "Studio left" : "Studio right",
+          }),
+          speakerEntry(`speaker_${number}_channel_setting`, {
             value: number === 1 ? "front_left" : "front_right",
           }),
-          recordEntry(`speaker_${number}_output_delay`, {
+          speakerEntry(`speaker_${number}_output_delay`, {
             type: ConfigEntryType.INTEGER,
             immediate_apply: true,
             value: number === 1 ? delay : 0,
           }),
         ]),
-      ]),
+      ),
     },
   };
 }
