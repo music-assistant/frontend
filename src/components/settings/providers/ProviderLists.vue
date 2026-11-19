@@ -6,6 +6,7 @@
     :loaded="loaded"
     :view-mode="viewMode"
     @search="setSearchQuery(list.type, $event)"
+    @filter-label="setLabelFilter(list.type, $event)"
     @add="openCatalog(list)"
     @toggle-view-mode="providersViewMode.toggleViewMode()"
   >
@@ -19,6 +20,7 @@
         :syncing="isProviderSyncing(item.instance_id)"
         :name="getProviderName(item)"
         :description="api.providerManifests[item.domain]?.description"
+        :labels="sourceLabelsOf(item)"
         :access-summary="
           canConfigureSourceAccess(item) ? accessSummary(item) : null
         "
@@ -74,6 +76,7 @@ import {
   maySetUpSource,
 } from "@/helpers/provider_permissions";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
+import { getSourceLabels } from "@/helpers/source_labels";
 import { api } from "@/plugins/api";
 import { type ProviderConfig, ProviderStatus } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
@@ -111,6 +114,14 @@ const getProviderName = function (config: ProviderConfig) {
   );
 };
 
+// its manifest says what a source offers, a running one also what it reports
+const sourceLabelsOf = function (config: ProviderConfig) {
+  return getSourceLabels(
+    api.providerManifests[config.domain],
+    api.providers[config.instance_id],
+  );
+};
+
 // an error status carries a (user-relevant) reason in last_error
 const isErrorStatus = isProviderErrorStatus;
 
@@ -145,13 +156,20 @@ const getErrorText = function (item: ProviderConfig) {
   return item.last_error?.message ?? "";
 };
 
-const { loaded, lists, setSearchQuery, loadItems, removeSource } =
-  useProviderSources({
-    managesAllSources,
-    listTypes: () => props.types,
-    getProviderName,
-    isErrorStatus,
-  });
+const {
+  loaded,
+  lists,
+  setSearchQuery,
+  setLabelFilter,
+  loadItems,
+  removeSource,
+} = useProviderSources({
+  managesAllSources,
+  listTypes: () => props.types,
+  getProviderName,
+  getSourceLabels: sourceLabelsOf,
+  isErrorStatus,
+});
 
 const {
   users,

@@ -523,7 +523,7 @@ onBeforeUnmount(() => {
 const backToProviders = function () {
   router.push(
     config.value
-      ? providerListingRoute(config.value, providerManifest.value?.features)
+      ? providerListingRoute(config.value, providerManifest.value?.media_types)
       : providerListRoute(ProviderType.MUSIC),
   );
 };

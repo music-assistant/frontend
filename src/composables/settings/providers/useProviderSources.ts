@@ -5,6 +5,7 @@ import {
   providerListType,
   providerSettingsPageId,
 } from "@/helpers/settings_pages";
+import { getFilterLabels, type SourceLabel } from "@/helpers/source_labels";
 import { api } from "@/plugins/api";
 import {
   EventType,
@@ -39,7 +40,12 @@ export interface ProviderList {
   type: string;
   // the search narrowing the list down; empty while the list offers none
   searchQuery: string;
-  // what the search leaves: sources needing attention first, then alphabetically
+  // the labels the list can be filtered on; none while it offers no filter
+  labels: SourceLabel[];
+  // the label narrowing the list down; null for all of them
+  labelFilter: SourceLabel | null;
+  // what the search and the label leave: sources needing attention first, then
+  // alphabetically
   filteredProviders: ProviderConfig[];
   sections: ProviderSection[];
   showSearch: boolean;
@@ -53,21 +59,26 @@ interface UseProviderSourcesOptions {
   // the list types the page shows, in display order
   listTypes: MaybeRefOrGetter<readonly string[]>;
   getProviderName: (config: ProviderConfig) => string;
+  // what a source offers
+  getSourceLabels: (config: ProviderConfig) => SourceLabel[];
   isErrorStatus: (status?: ProviderStatus | null) => boolean;
 }
 
 /**
  * The provider configs of the lists of a settings page, kept in sync with the
- * server and shaped for each list: searched, sorted and split into sections.
+ * server and shaped for each list: searched, filtered on what the sources
+ * offer, sorted and split into sections.
  */
 export function useProviderSources(options: UseProviderSourcesOptions) {
-  const { getProviderName, isErrorStatus } = options;
+  const { getProviderName, getSourceLabels, isErrorStatus } = options;
 
   const providerConfigs = ref<ProviderConfig[]>([]);
   // the empty states wait for the first load, so they never flash before the list
   const loaded = ref(false);
   // the search of each list, by its type
   const searchQueries = ref<Record<string, string>>({});
+  // the label picked on each list, by its type
+  const labelFilters = ref<Record<string, SourceLabel | null>>({});
 
   const lists = computed((): ProviderList[] =>
     toValue(options.listTypes).map((type) => buildList(type)),
@@ -76,6 +87,14 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
   /** Narrow the list of the given type down to what matches the query. */
   const setSearchQuery = function (type: string, query: string) {
     searchQueries.value = { ...searchQueries.value, [type]: query };
+  };
+
+  /**
+   * Narrow the list of the given type down to the sources offering the label;
+   * null shows them all again.
+   */
+  const setLabelFilter = function (type: string, label: SourceLabel | null) {
+    labelFilters.value = { ...labelFilters.value, [type]: label };
   };
 
   const loadItems = async function () {
@@ -158,14 +177,22 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
     // a search typed before the list shrank below the threshold would keep
     // narrowing it down unseen
     const searchQuery = showSearch ? (searchQueries.value[type] ?? "") : "";
+    const labels = getFilterLabels(listed.map(getSourceLabels));
+    // the same goes for a label no source in the list offers any more
+    const picked = labelFilters.value[type];
+    const labelFilter = picked && labels.includes(picked) ? picked : null;
     const filteredProviders = sortProviders(
-      searchProviders(listed, searchQuery, getProviderName),
+      searchProviders(listed, searchQuery, getProviderName).filter(
+        (item) => !labelFilter || getSourceLabels(item).includes(labelFilter),
+      ),
       getProviderName,
       isErrorStatus,
     );
     return {
       type,
       searchQuery,
+      labels,
+      labelFilter,
       filteredProviders,
       sections: splitSections(
         filteredProviders,
@@ -187,7 +214,7 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
     return providerConfigs.value.filter((item) => {
       const manifest = api.providerManifests[item.domain];
       return (
-        providerListType(item.type, manifest?.features) === type &&
+        providerListType(item.type, manifest?.media_types) === type &&
         // a provider with a settings page of its own is managed from that page
         !providerSettingsPageId(item.domain) &&
         // a provider that ships with the server is not a source anyone chose,
@@ -201,6 +228,7 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
     loaded,
     lists,
     setSearchQuery,
+    setLabelFilter,
     loadItems,
     removeSource,
   };

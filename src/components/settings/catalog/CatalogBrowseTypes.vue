@@ -3,7 +3,7 @@
     <h2 class="m-0 text-lg font-semibold">
       {{ $t("settings.catalog.browse_everything") }}
     </h2>
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <button
         v-for="{ type, count } in types"
         :key="type.type"
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import type { CatalogTypeCount } from "@/helpers/provider_catalog";
-import type { ProviderListType } from "@/helpers/settings_pages";
+import type { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { ChevronRight } from "@lucide/vue";
 
@@ -41,6 +41,6 @@ interface Props {
 defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: "select", type: ProviderListType): void;
+  (e: "select", type: ProviderType): void;
 }>();
 </script>

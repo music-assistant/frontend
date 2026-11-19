@@ -12,10 +12,7 @@ import CommunityMovedTypeNotice from "@/components/settings/catalog/CommunityMov
 import ProviderLists from "@/components/settings/providers/ProviderLists.vue";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import SettingsPageLinks from "@/components/settings/SettingsPageLinks.vue";
-import {
-  pageProviderLists,
-  providerListName,
-} from "@/helpers/settings_sections";
+import { providerListName } from "@/helpers/settings_sections";
 import type { ProviderType } from "@/plugins/api/interfaces";
 import { computed } from "vue";
 
@@ -29,5 +26,5 @@ const props = defineProps<{
 
 // the key of the page in the settings menu, which lists every provider type
 const page = computed(() => providerListName(props.type)!);
-const listTypes = computed(() => pageProviderLists(props.type));
+const listTypes = computed(() => [props.type]);
 </script>

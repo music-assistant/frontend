@@ -757,7 +757,6 @@
             "no_match": "Nothing matches your search or filter",
             "type": {
                 "music": "Music source",
-                "audio_source": "Audio source",
                 "player": "Player support",
                 "metadata": "Metadata source",
                 "plugin": "Plugin",
@@ -765,7 +764,6 @@
             },
             "manage_type": {
                 "music": "Manage your music sources",
-                "audio_source": "Manage audio sources",
                 "player": "Manage player support",
                 "metadata": "Manage your metadata sources",
                 "plugin": "Manage plugins",
@@ -886,10 +884,6 @@
         "missing_players_hint": "Missing players? {0}",
         "add_player_providers": "Add more player support",
         "add_audio_analysis_provider": "Add audio analysis",
-        "audio_sources": "Audio sources",
-        "audio_sources_description": "Apps such as Spotify and AirPlay play to Music Assistant through these",
-        "audio_sources_empty": "No audio sources yet",
-        "add_audio_source": "Add an audio source",
         "audio_analysis_providers": "Audio analysis",
         "audio_analysis_providers_description": "Manage providers that analyze your audio",
         "audio_analysis_status": {
@@ -1065,6 +1059,15 @@
         "music_sources_own": "Your sources",
         "music_sources_shared": "Shared with you",
         "music_sources_shared_empty": "No music sources have been shared with you yet.",
+        "source_labels": {
+            "filter": "Filter on what the sources offer",
+            "all": "All",
+            "library": "Library",
+            "radio": "Radio",
+            "podcasts": "Podcasts",
+            "audiobooks": "Audiobooks",
+            "live": "Live sources"
+        },
         "storage": {
             "title": "Storage",
             "description": "Music folders, drives, network shares and the storage of the server",

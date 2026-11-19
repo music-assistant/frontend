@@ -1,15 +1,13 @@
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import type { SettingsColor } from "@/helpers/settings_colors";
 import {
-  AUDIO_SOURCES,
-  type ProviderListType,
   providerListType,
   providerSettingsPageId,
   type SettingsPageId,
 } from "@/helpers/settings_pages";
 import {
+  type MediaType,
   type ProviderConfig,
-  type ProviderFeature,
   ProviderType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -329,15 +327,13 @@ export const SECTION_PAGES: readonly SettingsMenuPage[] = [
   },
 ];
 
-// the settings sections that show lists of providers themselves, in the order
-// of their lists; a page below a section lists the providers of any other type
-const PROVIDER_TYPE_SECTIONS: Readonly<
-  Partial<Record<ProviderListType, string>>
-> = {
-  [ProviderType.MUSIC]: "music",
-  [AUDIO_SOURCES]: "music",
-  [ProviderType.PLUGIN]: "plugin_providers",
-};
+// the settings sections that list the providers of a type themselves; a page
+// below a section lists any other type
+const PROVIDER_TYPE_SECTIONS: Readonly<Partial<Record<ProviderType, string>>> =
+  {
+    [ProviderType.MUSIC]: "music",
+    [ProviderType.PLUGIN]: "plugin_providers",
+  };
 
 // the page listing the providers of a type no page lists
 const DEFAULT_PROVIDER_LIST = "music";
@@ -439,21 +435,6 @@ export function providerListName(type: string | undefined): string | undefined {
 }
 
 /**
- * The lists of providers on the page listing the providers of a type, in
- * display order: every list of the settings section listing them, or the list
- * of the type alone on a page below a section.
- *
- * @param type - The list type of the page.
- */
-export function pageProviderLists(type: string): string[] {
-  const sectionName = typeSectionName(type);
-  if (!sectionName) return [type];
-  return Object.entries(PROVIDER_TYPE_SECTIONS)
-    .filter(([, name]) => name === sectionName)
-    .map(([listType]) => listType);
-}
-
-/**
  * The page showing a list of providers: its settings section, or the page
  * below one listing them. A type no page lists leads to the music sources.
  *
@@ -480,15 +461,15 @@ export function providerOwnPage(domain: string): SettingsMenuPage | undefined {
  * own, or the page showing its list.
  *
  * @param config - The provider instance.
- * @param features - The features its manifest says it always offers.
+ * @param mediaTypes - The media types its manifest names.
  */
 export function providerListingRoute(
   config: Pick<ProviderConfig, "domain" | "type">,
-  features?: readonly ProviderFeature[],
+  mediaTypes?: readonly MediaType[],
 ): RouteLocationRaw {
   return (
     providerOwnPage(config.domain)?.route ??
-    providerListRoute(providerListType(config.type, features))
+    providerListRoute(providerListType(config.type, mediaTypes))
   );
 }
 

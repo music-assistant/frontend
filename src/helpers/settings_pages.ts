@@ -1,7 +1,8 @@
 import { HASS_DOMAIN } from "@/helpers/home_assistant";
+import { isAudioSourcePlugin } from "@/helpers/provider_config";
 import {
   type ConfigEntry,
-  ProviderFeature,
+  type MediaType,
   ProviderType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -43,12 +44,6 @@ export type SettingsPageId =
   | "playback"
   | "task_settings"
   | "users";
-
-// the list of the plugins through which apps play audio into Music Assistant
-export const AUDIO_SOURCES = ProviderFeature.AUDIO_SOURCE;
-
-// the list a provider shows in: the providers of its type, or the audio sources
-export type ProviderListType = ProviderType | typeof AUDIO_SOURCES;
 
 export const STREAMS_DOMAIN = "streams";
 export const TASKS_DOMAIN = "tasks";
@@ -228,19 +223,19 @@ export function providerSettingsPageId(
 
 /**
  * The list a provider shows in on the settings pages and in the Marketplace: a
- * plugin through which apps play audio into Music Assistant goes with the audio
+ * plugin through which apps play audio into Music Assistant goes with the music
  * sources, any other provider with the providers of its type. A provider with a
  * settings page of its own is managed from that page instead of a list.
  *
  * @param type - The type of the provider.
- * @param features - The features its manifest says it always offers.
+ * @param mediaTypes - The media types its manifest names.
  */
 export function providerListType(
   type: ProviderType,
-  features: readonly ProviderFeature[] = [],
-): ProviderListType {
-  return type === ProviderType.PLUGIN && features.includes(AUDIO_SOURCES)
-    ? AUDIO_SOURCES
+  mediaTypes?: readonly MediaType[],
+): ProviderType {
+  return isAudioSourcePlugin({ type, media_types: mediaTypes })
+    ? ProviderType.MUSIC
     : type;
 }
 

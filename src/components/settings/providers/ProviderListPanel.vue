@@ -2,15 +2,25 @@
   <SettingsListPanel
     :title="title"
     :count="list.filteredProviders.length"
-    :description="description"
     :view-mode="viewMode"
     :actions="actions"
     data-testid="provider-list"
     :data-list="list.type"
     @toggle-view-mode="emit('toggle-view-mode')"
   >
-    <template v-if="list.showSearch" #filters>
-      <ProviderFilters @update:search="emit('search', $event)" />
+    <template v-if="list.showSearch || list.labels.length" #filters>
+      <div class="flex flex-col gap-3">
+        <ProviderFilters
+          v-if="list.showSearch"
+          @update:search="emit('search', $event)"
+        />
+        <SourceLabelFilter
+          v-if="list.labels.length"
+          :model-value="list.labelFilter"
+          :labels="list.labels"
+          @update:model-value="emit('filter-label', $event)"
+        />
+      </div>
     </template>
     <div class="space-y-6">
       <section
@@ -67,16 +77,6 @@
       </EmptyContent>
     </Empty>
 
-    <!-- the audio sources are a short list below the music sources, so an
-         empty one says so in a line -->
-    <p
-      v-else-if="loaded && isEmptyAudioSources"
-      class="text-muted-foreground m-0 text-sm"
-      data-testid="audio-sources-empty"
-    >
-      {{ $t("settings.audio_sources_empty") }}
-    </p>
-
     <FilterEmptyState
       v-else-if="loaded && list.filteredProviders.length === 0"
       :icon="Puzzle"
@@ -88,6 +88,7 @@
 <script setup lang="ts">
 import FilterEmptyState from "@/components/FilterEmptyState.vue";
 import ProviderFilters from "@/components/ProviderFilters.vue";
+import SourceLabelFilter from "@/components/settings/providers/SourceLabelFilter.vue";
 import SettingsListPanel, {
   type SettingsPanelAction,
 } from "@/components/settings/SettingsListPanel.vue";
@@ -103,7 +104,7 @@ import { ItemGroup } from "@/components/ui/item";
 import type { ProviderList } from "@/composables/settings/providers/useProviderSources";
 import { getCatalogType } from "@/helpers/provider_catalog";
 import { canOwnSources } from "@/helpers/provider_permissions";
-import { AUDIO_SOURCES } from "@/helpers/settings_pages";
+import type { SourceLabel } from "@/helpers/source_labels";
 import { type ProviderConfig, ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Music, Plus, Puzzle } from "@lucide/vue";
@@ -112,8 +113,8 @@ import { computed, markRaw } from "vue";
 
 /**
  * A list of providers on a settings page, in a panel headed by its name, with
- * its search, its add button and its empty state. The page renders the row of
- * each provider.
+ * its search, its filter on what the sources offer, its add button and its
+ * empty state. The page renders the row of each provider.
  */
 const props = defineProps<{
   list: ProviderList;
@@ -124,6 +125,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "search", query: string): void;
+  // the list should show only the sources offering the label; null for all
+  (e: "filter-label", label: SourceLabel | null): void;
   // the Marketplace should open on the type of the list
   (e: "add"): void;
   (e: "toggle-view-mode"): void;
@@ -136,12 +139,6 @@ defineSlots<{
 // a list is titled by the name the Marketplace gives its type
 const title = computed(() =>
   $t(getCatalogType(props.list.type)?.label ?? props.list.type),
-);
-
-const description = computed(() =>
-  props.list.type === AUDIO_SOURCES
-    ? $t("settings.audio_sources_description")
-    : undefined,
 );
 
 // the empty state of the music sources carries the add button while there is
@@ -159,17 +156,9 @@ const actions = computed((): SettingsPanelAction[] => {
   ];
 });
 
-const isEmptyAudioSources = computed(
-  () =>
-    props.list.type === AUDIO_SOURCES &&
-    props.list.filteredProviders.length === 0 &&
-    !props.list.searchQuery,
-);
-
 function addProviderLabel(type: string) {
   return match(type)
     .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
-    .with(AUDIO_SOURCES, () => $t("settings.add_audio_source"))
     .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
     .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
     .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))

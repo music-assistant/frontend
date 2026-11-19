@@ -10,11 +10,8 @@ import {
   isAudioSourcePlugin,
   isBuiltinProvider,
 } from "@/helpers/provider_config";
-import {
-  AUDIO_SOURCES,
-  type ProviderListType,
-  providerListType,
-} from "@/helpers/settings_pages";
+import { providerListType } from "@/helpers/settings_pages";
+import { getSourceLabels, type SourceLabel } from "@/helpers/source_labels";
 import {
   providerListRoute,
   providerOwnPage,
@@ -34,7 +31,7 @@ import type {
 } from "vue-router";
 
 export interface CatalogType {
-  type: ProviderListType;
+  type: ProviderType;
   // the plural name, as the settings page of the type is called
   label: string;
   // the name of one of them, as a card shows it
@@ -50,12 +47,6 @@ export const CATALOG_TYPES: readonly CatalogType[] = [
     label: "settings.music_sources",
     itemLabel: "settings.catalog.type.music",
     manageLabel: "settings.catalog.manage_type.music",
-  },
-  {
-    type: AUDIO_SOURCES,
-    label: "settings.audio_sources",
-    itemLabel: "settings.catalog.type.audio_source",
-    manageLabel: "settings.catalog.manage_type.audio_source",
   },
   {
     type: ProviderType.PLAYER,
@@ -135,17 +126,19 @@ export interface CatalogFilter {
   query?: string;
   types?: readonly string[];
   stages?: readonly string[];
+  // what a source offers, by its manifest
+  label?: SourceLabel | null;
 }
 
 /**
  * Whether the type is one the Catalog offers.
  *
- * @param type - A provider or list type, or any string read from a route.
+ * @param type - A provider type, or any string read from a route.
  */
-export const isCatalogType = (type: unknown): type is ProviderListType =>
+export const isCatalogType = (type: unknown): type is ProviderType =>
   CATALOG_TYPES.some((item) => item.type === type);
 
-/** The Catalog type of a list type, or undefined for one the Catalog does not offer. */
+/** The Catalog type of a provider type, or undefined for one the Catalog does not offer. */
 export const getCatalogType = (type: string): CatalogType | undefined =>
   CATALOG_TYPES.find((item) => item.type === type);
 
@@ -156,7 +149,7 @@ export const getCatalogType = (type: string): CatalogType | undefined =>
 export const getManifestCatalogType = (
   manifest: ProviderManifest,
 ): CatalogType | undefined =>
-  getCatalogType(providerListType(manifest.type, manifest.features));
+  getCatalogType(providerListType(manifest.type, manifest.media_types));
 
 /**
  * The entries the tab of a Catalog type lists.
@@ -166,7 +159,7 @@ export const getManifestCatalogType = (
  */
 export const catalogEntriesOfType = (
   entries: readonly CatalogEntry[],
-  type: ProviderListType,
+  type: ProviderType,
 ): CatalogEntry[] =>
   entries.filter(
     (entry) => getManifestCatalogType(entry.manifest)?.type === type,
@@ -278,11 +271,11 @@ export const needsInstall = (
   entry.community?.state === CommunityProviderState.AVAILABLE;
 
 /**
- * The entries that match the search text, the provider types and the stages;
- * an empty or missing criterion matches everything.
+ * The entries that match the search text, the provider types, the stages and
+ * the label; an empty or missing criterion matches everything.
  *
  * @param entries - The entries to narrow down.
- * @param filter - The search text (on name and description), provider types and stages.
+ * @param filter - The search text (on name and description), provider types, stages and label.
  */
 export const filterCatalogEntries = (
   entries: readonly CatalogEntry[],
@@ -295,7 +288,8 @@ export const filterCatalogEntries = (
         manifest.name.toLowerCase().includes(query) ||
         manifest.description.toLowerCase().includes(query)) &&
       (!filter.types?.length || filter.types.includes(manifest.type)) &&
-      (!filter.stages?.length || filter.stages.includes(manifest.stage)),
+      (!filter.stages?.length || filter.stages.includes(manifest.stage)) &&
+      (!filter.label || getSourceLabels(manifest).includes(filter.label)),
   );
 };
 
@@ -347,7 +341,7 @@ export const CATALOG_DETAIL_QUERY = "detail";
 
 /** A view of the Catalog: the Discover tab, the tab of one type, or what is set up. */
 export type CatalogTab =
-  typeof CATALOG_DISCOVER_TAB | typeof CATALOG_INSTALLED_TAB | ProviderListType;
+  typeof CATALOG_DISCOVER_TAB | typeof CATALOG_INSTALLED_TAB | ProviderType;
 
 /**
  * The Catalog view a route query opens: the Installed view for `view=installed`,
@@ -359,7 +353,7 @@ export type CatalogTab =
  */
 export const getCatalogTab = (
   query: LocationQuery,
-  types: readonly ProviderListType[],
+  types: readonly ProviderType[],
 ): CatalogTab => {
   if (query.view === CATALOG_INSTALLED_TAB) return CATALOG_INSTALLED_TAB;
   const type = String(query.types ?? "").split(",")[0];
@@ -376,7 +370,7 @@ export const getCatalogTabQuery = (tab: CatalogTab): LocationQueryRaw => {
 /**
  * The Catalog, opened on the tab of the given type when the Catalog offers it.
  *
- * @param type - A provider or list type, as a settings page reads it from its route.
+ * @param type - A provider type, as a settings page reads it from its route.
  */
 export const getCatalogRoute = (type?: string): RouteLocationRaw => ({
   name: "catalog",
@@ -400,9 +394,8 @@ export const getCatalogInstalledRoute = (): RouteLocationRaw => ({
 });
 
 /** The settings page listing the providers of a Catalog type. */
-export const getTypeSettingsRoute = (
-  type: ProviderListType,
-): RouteLocationRaw => providerListRoute(type);
+export const getTypeSettingsRoute = (type: ProviderType): RouteLocationRaw =>
+  providerListRoute(type);
 
 /**
  * Where a provider instance is managed: the settings page of its provider when
@@ -424,7 +417,7 @@ export const getManageRoute = (entry: CatalogEntry): RouteLocationRaw =>
   entry.instances.length === 1
     ? getInstanceSettingsRoute(entry.instances[0])
     : getTypeSettingsRoute(
-        providerListType(entry.manifest.type, entry.manifest.features),
+        providerListType(entry.manifest.type, entry.manifest.media_types),
       );
 
 export interface InstalledProvider {
@@ -461,8 +454,10 @@ export const groupInstalledProviders = (
     items: configs
       .filter(
         (config) =>
-          providerListType(config.type, manifests[config.domain]?.features) ===
-            type.type &&
+          providerListType(
+            config.type,
+            manifests[config.domain]?.media_types,
+          ) === type.type &&
           (includeBuiltin || !isBuiltinProvider(manifests[config.domain])),
       )
       .map((config) => ({
