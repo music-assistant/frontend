@@ -3315,42 +3315,20 @@
             },
             "core_settings": {
                 "title": "Access Music Assistant",
-                "intro": "Music Assistant works on your home network automatically. Set up remote access if you'd also like to listen when you're away.",
-                "network_details": "Server and network details",
-                "internal_address": "Internal address",
-                "internal_address_hint": "Where the apps and devices in your home reach Music Assistant.",
-                "external_address": "External address",
-                "external_address_hint": "Where you reach Music Assistant from outside your home, through your reverse proxy.",
-                "stream_address": "Stream server address",
-                "stream_address_hint": "Where your players fetch the audio from.",
-                "address_unknown": "Not available",
-                "check": {
-                    "checking": "Checking...",
-                    "reachable": "Reachable from this device",
-                    "unreachable": "Not reachable from this device",
-                    "unchecked": "Could not check from this device"
-                },
-                "unreachable_hint": "An address that does not answer here may not answer for your players either. If playback fails, change it with Edit below.",
-                "override_hint": "You only need to change these in a more complex network, for example behind a reverse proxy or across VLANs. You can find them later under Settings › {system} › {network}.",
+                "away_intro": "Remote access lets you listen with the Music Assistant app when you're away from home.",
+                "intro_addon": "Music Assistant runs as a Home Assistant app: wherever you can open Home Assistant, you can open Music Assistant too. Turn on remote access if you'd also like to use the Music Assistant app away from home.",
+                "network_hint": "Using your own reverse proxy, or a more complex network? You can set that up later under Settings › {system} › {network}.",
                 "remote": {
-                    "title": "Listen from outside your home",
-                    "description": "Two ways to reach Music Assistant when you are away. Both can also be set up later.",
+                    "home_assistant": "When your Home Assistant has Home Assistant Link, remote access uses it automatically, so it works on any network.",
                     "builtin": {
-                        "title": "Built-in remote access",
-                        "easiest": "Easiest",
+                        "title": "Remote access",
                         "description": "Secure and encrypted, with no port forwarding or VPN. Turn it on and connect from anywhere with your remote access ID.",
                         "switch": "Remote access",
                         "id": "Your remote access ID",
                         "copy": "Copy the remote access ID",
                         "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {system} › {network} › {remote_access}."
-                    },
-                    "proxy": {
-                        "title": "Your own reverse proxy",
-                        "description": "Run a reverse proxy in front of the server and enter the address it is reached on from outside as the external address.",
-                        "set_external": "Set the external address"
                     }
-                },
-                "load_failed": "The server settings could not be loaded. You can change them later from the settings."
+                }
             },
             "home_assistant": {
                 "title": "Connect Home Assistant",

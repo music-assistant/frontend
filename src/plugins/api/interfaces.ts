@@ -2283,11 +2283,6 @@ export interface RemoteAccessInfo {
   signaling_url: string;
 }
 
-/** The address the stream server hands to players, as it is in use right now. */
-export interface StreamServerInfo {
-  base_url: string;
-}
-
 // Storage interfaces
 
 export enum StorageUsage {
