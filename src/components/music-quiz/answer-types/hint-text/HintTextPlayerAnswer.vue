@@ -69,9 +69,7 @@
         class="text-muted-foreground text-sm"
         role="status"
       >
-        {{
-          $t("providers.music_quiz.title_reveal_attempts_left", [attemptsLeft])
-        }}
+        {{ attemptsLeftLabel }}
       </p>
     </form>
 
@@ -183,6 +181,11 @@ const showAttemptsLeft = computed(
   () =>
     props.state.you.attempts_left !== undefined &&
     attemptsLeft.value <= ATTEMPTS_LEFT_WARNING_THRESHOLD,
+);
+const attemptsLeftLabel = computed(() =>
+  $t("providers.music_quiz.title_reveal_attempts_left", attemptsLeft.value, {
+    named: { count: attemptsLeft.value },
+  }),
 );
 const canSubmit = computed(
   () =>

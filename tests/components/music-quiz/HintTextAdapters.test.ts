@@ -10,8 +10,8 @@ import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/i18n", () => ({
-  $t: (key: string, args?: unknown[]) =>
-    args ? `${key}:${args.join(",")}` : key,
+  $t: (key: string, args?: unknown[] | number) =>
+    args === undefined ? key : `${key}:${[args].flat().join(",")}`,
 }));
 
 const currentRound = {

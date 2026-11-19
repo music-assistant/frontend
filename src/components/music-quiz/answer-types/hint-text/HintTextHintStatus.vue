@@ -34,11 +34,12 @@ const hintLabel = computed(() =>
     props.round.hint_count,
   ]),
 );
-const typoLabel = computed(() =>
-  props.round.allowed_typos
-    ? $t("providers.music_quiz.title_reveal_typos_allowed", [
-        props.round.allowed_typos,
-      ])
-    : $t("providers.music_quiz.title_reveal_exact_spelling"),
-);
+const typoLabel = computed(() => {
+  const count = props.round.allowed_typos;
+  return count
+    ? $t("providers.music_quiz.title_reveal_typos_allowed", count, {
+        named: { count },
+      })
+    : $t("providers.music_quiz.title_reveal_exact_spelling");
+});
 </script>
