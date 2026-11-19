@@ -64,6 +64,8 @@ const {
     back: vi.fn(),
     push: vi.fn(),
     replace: vi.fn(),
+    // no page to go back to, so leaving the page takes the fallback route
+    options: { history: { state: { back: null } } },
   },
   toastMock: {
     error: vi.fn(),
@@ -530,6 +532,58 @@ describe("EditPlayer", () => {
     ).toBe(false);
   });
 
+  it("keeps the channels swapped but not saved when an output delay applies at once", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(stereoPairConfig());
+    const wrapper = await mountPlayerPage();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    // the form holds the swap as a draft, and saves the delay at once
+    formEntry(editConfig, "speaker_1_channel").value = "front_right";
+    formEntry(editConfig, "speaker_2_channel").value = "front_left";
+    formEntry(editConfig, "speaker_1_output_delay").value = 40;
+    apiMock.savePlayerConfig.mockResolvedValueOnce(
+      stereoPairConfig({ delay: 40 }),
+    );
+
+    editConfig.vm.$emit("immediateApply", { speaker_1_output_delay: 40 });
+    await flushPromises();
+
+    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("player-1", {
+      speaker_1_output_delay: 40,
+    });
+    expect(formValues(editConfig)).toMatchObject({
+      speaker_1_channel: "front_right",
+      speaker_2_channel: "front_left",
+      speaker_1_output_delay: 40,
+    });
+
+    // the save that follows still holds the swap, and the delay
+    editConfig.vm.$emit("submit", formValues(editConfig));
+    await flushPromises();
+    expect(apiMock.savePlayerConfig).toHaveBeenLastCalledWith(
+      "player-1",
+      expect.objectContaining({
+        speaker_1_channel: "front_right",
+        speaker_2_channel: "front_left",
+        speaker_1_output_delay: 40,
+      }),
+    );
+  });
+
+  it("shows the state of a speaker the server reports on a refresh", async () => {
+    apiMock.getPlayerConfig.mockResolvedValueOnce(stereoPairConfig());
+    const wrapper = await mountPlayerPage();
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    expect(formEntry(editConfig, "speaker_2_state").value).toBe("online");
+    apiMock.getPlayerConfig.mockResolvedValueOnce(
+      stereoPairConfig({ state: "offline" }),
+    );
+
+    providersUpdated();
+    await flushPromises();
+
+    expect(formEntry(editConfig, "speaker_2_state").value).toBe("offline");
+  });
+
   it("follows the player being disabled around the form", async () => {
     const wrapper = await mountPlayerPage();
     const editConfig = wrapper.findComponent({ name: "EditConfig" });
@@ -684,6 +738,80 @@ function playerConfig({
       ),
     },
   };
+}
+
+/**
+ * The config of a stereo pair: the record of its speakers on its Sendspin protocol,
+ * with the given state of its second speaker and output delay of its first one.
+ */
+function stereoPairConfig({
+  state = "online",
+  delay = 0,
+}: { state?: string; delay?: number } = {}): PlayerConfig {
+  const category = "protocol_sendspin";
+  const recordEntry = (
+    key: string,
+    overrides: Partial<ConfigEntry>,
+  ): [string, ConfigEntry] => [
+    key,
+    {
+      key,
+      type: ConfigEntryType.STRING,
+      label: key,
+      category,
+      options: [],
+      required: false,
+      default_value: null,
+      ...overrides,
+    },
+  ];
+  const config = playerConfig();
+  return {
+    ...config,
+    player_type: PlayerType.MULTI_CHANNEL,
+    values: {
+      ...config.values,
+      ...Object.fromEntries([
+        recordEntry("multi_channel_group_id", { hidden: true, value: "group" }),
+        ...[1, 2].flatMap((number) => [
+          recordEntry(`speaker_${number}_state`, {
+            type: ConfigEntryType.LABEL,
+            value: number === 2 ? state : "online",
+          }),
+          recordEntry(`speaker_${number}_channel`, {
+            value: number === 1 ? "front_left" : "front_right",
+          }),
+          recordEntry(`speaker_${number}_output_delay`, {
+            type: ConfigEntryType.INTEGER,
+            immediate_apply: true,
+            value: number === 1 ? delay : 0,
+          }),
+        ]),
+      ]),
+    },
+  };
+}
+
+// the stub of the form, whose entries the page hands it
+interface FormStub {
+  props(name: "configEntries"): unknown;
+}
+
+function formEntry(editConfig: FormStub, key: string): ConfigEntry {
+  const found = (editConfig.props("configEntries") as ConfigEntry[]).find(
+    (entry) => entry.key === key,
+  );
+  if (!found) throw new Error(`The form has no ${key} entry`);
+  return found;
+}
+
+/** The values of the form, as it hands them to a save. */
+function formValues(editConfig: FormStub): Record<string, unknown> {
+  return Object.fromEntries(
+    (editConfig.props("configEntries") as ConfigEntryUI[])
+      .filter((entry) => !entry.injected)
+      .map((entry) => [entry.key, entry.value]),
+  );
 }
 
 function playerState({

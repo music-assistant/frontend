@@ -525,10 +525,8 @@ const onImmediateApply = async function (
   api
     .savePlayerConfig(props.playerId!, values)
     .then((updatedConfig) => {
-      // update local config values with the server response
-      for (const [key, entry] of Object.entries(updatedConfig.values)) {
-        config.value!.values[key] = entry;
-      }
+      // the other values the user changed are still waiting for a save
+      applyPlayerConfig(updatedConfig, Object.keys(values));
     })
     .finally(() => {
       loading.value = false;
@@ -589,11 +587,15 @@ async function refreshPlayerConfig(playerId: string) {
   }
 }
 
-function applyPlayerConfig(updatedConfig: PlayerConfig) {
+function applyPlayerConfig(updatedConfig: PlayerConfig, saved: string[] = []) {
   if (!config.value) return;
   config.value = {
     ...updatedConfig,
-    values: mergeConfigEntries(config.value.values, updatedConfig.values),
+    values: mergeConfigEntries(
+      config.value.values,
+      updatedConfig.values,
+      saved,
+    ),
   };
 }
 
