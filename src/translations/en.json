@@ -1235,9 +1235,9 @@
             "holds_selection": "Selected folder is here",
             "browse_failed": "Could not open the folder",
             "empty_title": "Nothing to pick from yet",
-            "empty_text": "There is no folder, drive or network share to pick from yet. Select \"Manage storage\" to add one.",
-            "empty_text_member": "There is no folder, drive or network share to pick from yet. Ask an administrator to add one.",
-            "manage": "Manage storage"
+            "empty_text_add": "There is no folder, drive or network share to pick from yet. Add the one that holds your files.",
+            "empty_text_container": "There is no folder, drive or network share to pick from yet. Map the folder that holds your files into the Music Assistant container and restart it.",
+            "empty_text_member": "There is no folder, drive or network share to pick from yet. Ask an administrator to add one."
         },
         "remove_provider_confirm_music": "Remove \"{0}\"? All music that this source provides is removed from your library, along with its play history. This cannot be undone.",
         "remove_provider_confirm_player": "Remove \"{0}\"? Its players and their settings are removed too. This cannot be undone.",

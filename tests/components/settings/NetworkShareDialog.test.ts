@@ -68,6 +68,8 @@ describe("NetworkShareDialog", () => {
       "settings.storage.share_added",
     );
     expect(wrapper.emitted("saved")).toHaveLength(1);
+    // the location the share was mounted at, for the caller to use
+    expect(wrapper.emitted("added")).toEqual([[share]]);
     expect(wrapper.emitted("update:open")).toEqual([[false]]);
   });
 
@@ -199,6 +201,8 @@ describe("NetworkShareDialog", () => {
       "settings.storage.share_saved",
     );
     expect(wrapper.emitted("saved")).toHaveLength(1);
+    // an edited share was not added
+    expect(wrapper.emitted("added")).toBeUndefined();
   });
 
   it("closes without a call when nothing changed", async () => {

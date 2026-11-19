@@ -293,6 +293,8 @@ const emit = defineEmits<{
   "update:open": [open: boolean];
   // a share was added or changed
   saved: [];
+  // a share was added, at this location
+  added: [location: StorageLocation];
 }>();
 
 // reka's select cannot hold an empty value, so "automatic" gets a value of its own
@@ -311,7 +313,7 @@ const {
   shareInvalid,
   setShareType,
   save,
-} = useNetworkShareForm(props);
+} = useNetworkShareForm(props, (location) => emit("added", location));
 
 const versionField = useTemplateRef<InstanceType<typeof Field>>("versionField");
 

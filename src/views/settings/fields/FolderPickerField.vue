@@ -1,15 +1,10 @@
 <script setup lang="ts">
+import FolderPickerAddLocation from "@/components/settings/storage/FolderPickerAddLocation.vue";
 import FolderPickerBrowser from "@/components/settings/storage/FolderPickerBrowser.vue";
+import FolderPickerEmpty from "@/components/settings/storage/FolderPickerEmpty.vue";
 import FolderPickerLocations from "@/components/settings/storage/FolderPickerLocations.vue";
 import StoragePath from "@/components/settings/storage/StoragePath.vue";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { useStorageInfo } from "@/composables/useStorageInfo";
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
@@ -20,22 +15,13 @@ import {
   type StoragePosition,
 } from "@/helpers/storage";
 import { api } from "@/plugins/api";
-import {
-  type ConfigValueType,
-  Scope,
-  type StorageLocation,
+import type {
+  ConfigValueType,
+  StorageLocation,
 } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import {
-  ExternalLink,
-  Folder,
-  FolderCheck,
-  HardDrive,
-  RefreshCw,
-} from "@lucide/vue";
+import { Folder, FolderCheck, RefreshCw } from "@lucide/vue";
 import { computed, onMounted, ref, useId } from "vue";
-import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 /**
@@ -50,9 +36,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{ "update:value": [value: ConfigValueType] }>();
 
-const router = useRouter();
 const labelId = useId();
-const { info, loading, failed, mediaLocations, refresh } = useStorageInfo();
+const {
+  info,
+  loading,
+  failed,
+  mediaLocations,
+  canManageStorage,
+  canAddShare,
+  canAddFolder,
+  refresh,
+} = useStorageInfo();
 
 // the folder being browsed; null while the locations are listed
 const position = ref<StoragePosition | null>(null);
@@ -62,11 +56,7 @@ const loadingFolders = ref(false);
 // after the user has moved on to another folder
 let folderRequest = 0;
 
-// the Storage page, where locations are added, is only open to who manages them
-const canManageStorage = computed(() =>
-  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
-);
-const storageSettingsHref = router.resolve({ name: "storagesettings" }).href;
+const canAddLocation = computed(() => canAddShare.value || canAddFolder.value);
 
 const selectedPath = computed(() =>
   typeof props.entry.value === "string" && props.entry.value
@@ -135,6 +125,13 @@ const useCurrentFolder = () => {
   );
 };
 
+// a location added from the picker is the one to use; it is listed once the storage is
+// fetched again
+const pickAddedLocation = async (location: StorageLocation) => {
+  await refresh();
+  emit("update:value", location.path);
+};
+
 const reload = async () => {
   const request = folderRequest;
   await refresh();
@@ -166,9 +163,24 @@ onMounted(refresh);
 
 <template>
   <div class="flex w-full flex-col gap-2 py-1">
-    <span v-if="label" :id="labelId" class="text-muted-foreground text-sm">{{
-      label
-    }}</span>
+    <div class="flex items-center gap-2">
+      <span v-if="label" :id="labelId" class="text-muted-foreground text-sm">{{
+        label
+      }}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        class="ml-auto"
+        :disabled="disabled || loading || loadingFolders"
+        :aria-label="$t('refresh')"
+        :title="$t('refresh')"
+        data-testid="folder-picker-refresh"
+        @click="reload"
+      >
+        <RefreshCw :class="{ 'animate-spin': loading }" />
+      </Button>
+    </div>
     <div
       role="group"
       :aria-labelledby="label ? labelId : undefined"
@@ -209,27 +221,21 @@ onMounted(refresh);
         </span>
         <Spinner v-else class="size-6" />
       </div>
-      <Empty
+      <FolderPickerEmpty
         v-else-if="mediaLocations.length === 0"
-        class="border"
-        data-testid="folder-picker-empty"
+        :can-manage-storage="canManageStorage"
+        :can-add="canAddLocation"
       >
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <HardDrive />
-          </EmptyMedia>
-          <EmptyTitle>{{
-            $t("settings.folder_picker.empty_title")
-          }}</EmptyTitle>
-          <EmptyDescription>
-            {{
-              canManageStorage
-                ? $t("settings.folder_picker.empty_text")
-                : $t("settings.folder_picker.empty_text_member")
-            }}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+        <FolderPickerAddLocation
+          :can-add-share="canAddShare"
+          :can-add-folder="canAddFolder"
+          :share-types="info.supported_share_types"
+          :share-versions="info.supported_share_versions"
+          :disabled="disabled || loading"
+          class="justify-center"
+          @added="pickAddedLocation"
+        />
+      </FolderPickerEmpty>
       <FolderPickerBrowser
         v-else-if="position"
         :position="position"
@@ -240,43 +246,24 @@ onMounted(refresh);
         @navigate="onNavigate"
         @use="useCurrentFolder"
       />
-      <FolderPickerLocations
-        v-else
-        :locations="mediaLocations"
-        :selected-location-path="selectedPosition?.location.path"
-        :disabled="disabled || loadingFolders || loading"
-        @open="openLocation"
-      />
-
-      <div class="flex items-center gap-2">
-        <Button
-          v-if="canManageStorage"
-          as="a"
-          variant="link"
-          size="sm"
-          class="h-auto px-0"
-          :href="storageSettingsHref"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="folder-picker-manage"
-        >
-          {{ $t("settings.folder_picker.manage") }}
-          <ExternalLink />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          class="ml-auto"
-          :disabled="disabled || loading || loadingFolders"
-          :aria-label="$t('refresh')"
-          :title="$t('refresh')"
-          data-testid="folder-picker-refresh"
-          @click="reload"
-        >
-          <RefreshCw :class="{ 'animate-spin': loading }" />
-        </Button>
-      </div>
+      <template v-else>
+        <FolderPickerLocations
+          :locations="mediaLocations"
+          :selected-location-path="selectedPosition?.location.path"
+          :disabled="disabled || loadingFolders || loading"
+          @open="openLocation"
+        />
+        <FolderPickerAddLocation
+          v-if="canAddLocation"
+          :can-add-share="canAddShare"
+          :can-add-folder="canAddFolder"
+          :share-types="info.supported_share_types"
+          :share-versions="info.supported_share_versions"
+          :disabled="disabled || loadingFolders || loading"
+          class="border-t pt-3"
+          @added="pickAddedLocation"
+        />
+      </template>
     </div>
   </div>
 </template>
