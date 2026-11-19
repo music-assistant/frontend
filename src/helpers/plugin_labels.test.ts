@@ -35,6 +35,12 @@ describe("what a plugin delivers", () => {
     ).toEqual(["ai", "scrobble", "fun"]);
   });
 
+  it("labels a plugin from a server that sends no offerings as other", () => {
+    const manifest = providerManifest({ type: ProviderType.PLUGIN });
+    delete manifest.provides;
+    expect(getPluginLabels(manifest)).toEqual(["other"]);
+  });
+
   it("labels a plugin that provides nothing as other", () => {
     expect(getPluginLabels(plugin([]))).toEqual(["other"]);
   });

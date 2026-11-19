@@ -55,7 +55,7 @@ export function getPluginLabels(manifest: ProviderManifest): PluginLabel[] {
   const labels = PLUGIN_LABELS.filter(
     (label) =>
       label !== OTHER_PLUGIN_LABEL &&
-      manifest.provides.includes(LABEL_OFFERINGS[label]),
+      (manifest.provides ?? []).includes(LABEL_OFFERINGS[label]),
   );
   return labels.length ? labels : [OTHER_PLUGIN_LABEL];
 }

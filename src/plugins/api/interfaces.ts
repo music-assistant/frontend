@@ -1855,8 +1855,9 @@ export interface ProviderManifest {
   menu_actions?: ProviderMenuAction[];
   // provides: what the provider offers whatever its config, for discovery only:
   // the media types of a music provider, audio_source for one that plays audio
-  // into Music Assistant, or the main features of a plugin
-  provides: ProviderOffering[];
+  // into Music Assistant, or the main features of a plugin; absent from an
+  // older server
+  provides?: ProviderOffering[];
   // page: a page this provider serves, listed in the app's menu; an older
   // server declares none
   page?: ProviderPage | null;
