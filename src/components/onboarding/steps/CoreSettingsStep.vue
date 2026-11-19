@@ -101,17 +101,6 @@
       >
         {{ $t("onboarding.steps.core_settings.remote.home_assistant") }}
       </p>
-      <p
-        class="text-muted-foreground text-center text-xs"
-        data-testid="onboarding-network-hint"
-      >
-        {{
-          $t("onboarding.steps.core_settings.network_hint", {
-            system: $t("settings.system"),
-            network: $t("settings.network.title"),
-          })
-        }}
-      </p>
     </template>
   </OnboardingInvitation>
 </template>
@@ -195,7 +184,6 @@ const optionalLine = computed(() =>
     ? $t("onboarding.steps.core_settings.optional", {
         system: $t("settings.system"),
         network: $t("settings.network.title"),
-        remote_access: $t("settings.remote_access"),
       })
     : undefined,
 );

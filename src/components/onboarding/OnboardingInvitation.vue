@@ -27,7 +27,7 @@
       {{ intro }}
     </p>
 
-    <div v-if="!setUp" class="flex w-full max-w-sm flex-col gap-2">
+    <div v-if="!setUp" class="flex w-fit max-w-md flex-col gap-2">
       <p
         v-if="featuresTitle"
         class="text-muted-foreground text-xs"

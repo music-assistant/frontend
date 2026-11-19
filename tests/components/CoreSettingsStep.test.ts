@@ -178,7 +178,7 @@ describe("CoreSettingsStep", () => {
       expect(apiMock.getRemoteAccessInfo).not.toHaveBeenCalled();
     });
 
-    it("says it is optional, and where to find it later", async () => {
+    it("says it is optional, and where to find it and a reverse proxy later", async () => {
       const wrapper = await mountStep();
 
       expect(optionalLine(wrapper).text()).toBe(
@@ -443,16 +443,6 @@ describe("CoreSettingsStep", () => {
 
       expect(homeAssistantLine(wrapper).exists()).toBe(true);
     });
-  });
-
-  it("points to the network settings for anything else", async () => {
-    grantAllBut(Scope.SYSTEM_MANAGE);
-
-    const wrapper = await mountStep();
-
-    expect(testId(wrapper, "onboarding-network-hint").text()).toBe(
-      "onboarding.steps.core_settings.network_hint",
-    );
   });
 
   it("has nothing to hold the wizard up over", async () => {

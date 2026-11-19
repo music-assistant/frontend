@@ -1667,9 +1667,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // a review is nothing to set up, so it is shown rather than skipped, and
     // moving on from it is all the footer offers
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.away_title");
-    expect(wrapper.find("[data-testid=onboarding-network-hint]").exists()).toBe(
-      true,
-    );
+    expect(
+      wrapper.find("[data-testid=onboarding-remote-access-turn-on]").exists(),
+    ).toBe(true);
     expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
       "onboarding.next",
     );
