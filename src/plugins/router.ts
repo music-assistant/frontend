@@ -6,7 +6,7 @@ import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { returnedByHistory } from "@/helpers/navigation";
-import type { SettingsPageId } from "@/helpers/settings_pages";
+import { AI_DOMAIN, type SettingsPageId } from "@/helpers/settings_pages";
 import { providerListRoute } from "@/helpers/settings_sections";
 import { parseStatisticsPeriod } from "@/helpers/statistics_period";
 import { $t } from "@/plugins/i18n";
@@ -53,6 +53,7 @@ const MOVED_SETTINGS_PAGES: Readonly<Record<string, string>> = {
   tasks: "backgroundtasks",
   "tasks/settings": "tasksettings",
   diagnostics: "diagnostics",
+  [`editcore/${AI_DOMAIN}`]: "aisettings",
 };
 
 export const routes: RouteRecordRaw[] = [
@@ -709,6 +710,15 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: { type: ProviderType.PLUGIN },
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
+          },
+          {
+            path: "ai",
+            name: "aisettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "aisettings" */ "@/views/settings/AISettings.vue"
+              ),
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
             path: "system",

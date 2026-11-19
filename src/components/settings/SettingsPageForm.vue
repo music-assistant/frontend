@@ -84,6 +84,8 @@ const emit = defineEmits<{
   // the settings were reset to their defaults, for the page to reset the
   // controls of its custom settings
   reset: [];
+  // the changes of the form were saved
+  saved: [];
 }>();
 
 const editConfig = ref<InstanceType<typeof EditConfig>>();
@@ -158,5 +160,6 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   // the form stays on screen, so it takes the saved values as its baseline
   editConfig.value?.saveSucceeded(values);
   toast.success($t("settings.settings_saved"));
+  emit("saved");
 };
 </script>

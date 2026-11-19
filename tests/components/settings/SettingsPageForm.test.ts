@@ -180,6 +180,7 @@ describe("SettingsPageForm", () => {
       background_scan_concurrency: 4,
     });
     expect(toastMock.success).toHaveBeenCalledWith("settings.settings_saved");
+    expect(wrapper.emitted("saved")).toHaveLength(1);
     // the form captures its baseline once, so it keeps the same entries
     expect(wrapper.getComponent(editConfigStub).props("configEntries")).toBe(
       entries,
@@ -198,6 +199,7 @@ describe("SettingsPageForm", () => {
     expect(saveFailed).toHaveBeenCalledOnce();
     expect(saveSucceeded).not.toHaveBeenCalled();
     expect(toastMock.success).not.toHaveBeenCalled();
+    expect(wrapper.emitted("saved")).toBeUndefined();
   });
 
   it("applies an immediate change without a toast", async () => {
