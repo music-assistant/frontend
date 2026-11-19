@@ -17,7 +17,7 @@
         {{ $t("settings.queue_global_settings_hint") }}
       </p>
       <Button as-child variant="outline" size="sm">
-        <RouterLink :to="SETTINGS_PAGES.playback.route" class="no-underline">
+        <RouterLink :to="settingsPageRoute('playback')" class="no-underline">
           {{ $t("settings.queue_global_settings_link") }}
         </RouterLink>
       </Button>
@@ -49,7 +49,7 @@ import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { goBack } from "@/helpers/navigation";
-import { SETTINGS_PAGES } from "@/helpers/settings_pages";
+import { settingsPageRoute } from "@/helpers/settings_sections";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { Info, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";

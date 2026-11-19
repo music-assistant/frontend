@@ -203,7 +203,8 @@ import {
   uniqueHostName,
   type HostDraft,
 } from "@/helpers/ai_radio";
-import { Scope } from "@/plugins/api/interfaces";
+import { providerListRoute } from "@/helpers/settings_sections";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { Plus, RefreshCw, Sparkles, TriangleAlert, X } from "@lucide/vue";
@@ -261,7 +262,7 @@ function openCreateDialog(initial?: PlaylistSelection) {
 }
 
 function goToProviderSettings() {
-  router.push("/settings/providers?types=plugin");
+  router.push(providerListRoute(ProviderType.PLUGIN));
 }
 
 function onCustomize(stationId: string) {

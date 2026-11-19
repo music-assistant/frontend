@@ -134,7 +134,7 @@
           </Card>
         </div>
 
-        <SettingsPageForm page="user_management" embedded />
+        <SettingsPageForm page="users" embedded />
       </TabsContent>
       <TabsContent value="roles">
         <RoleManagement :users="users" />

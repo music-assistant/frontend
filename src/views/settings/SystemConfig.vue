@@ -13,87 +13,19 @@ import SettingsTiles, {
 } from "@/components/settings/SettingsTiles.vue";
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
 import { coreModuleName } from "@/helpers/core_modules";
-import type { SettingsColor } from "@/helpers/settings_colors";
 import { coreOwner, isKnownOwner } from "@/helpers/settings_pages";
+import { sectionPages } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
-import { Scope, type CoreConfig } from "@/plugins/api/interfaces";
+import type { CoreConfig } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import {
-  HardDrive,
-  House,
-  ListChecks,
-  Network,
-  Settings2,
-  Stethoscope,
-} from "@lucide/vue";
-import { computed, markRaw, onMounted, ref, type Component } from "vue";
-import type { RouteLocationRaw } from "vue-router";
+import { Settings2 } from "@lucide/vue";
+import { computed, markRaw, onMounted, ref } from "vue";
 
 /**
  * The hub for running the server: a tile for each page about the server, and
  * one for the settings of a core module that no settings page shows.
  */
-
-interface SystemPage {
-  key: string;
-  icon: Component;
-  color: SettingsColor;
-  label: string;
-  description: string;
-  route: RouteLocationRaw;
-  // the scope the route of the page needs
-  requiresScope: Scope;
-}
-
-// the pages of the hub, in display order
-const SYSTEM_PAGES: readonly SystemPage[] = [
-  {
-    key: "network",
-    icon: Network,
-    color: "blue",
-    label: "settings.network.title",
-    description: "settings.network.description",
-    route: { name: "networksettings" },
-    requiresScope: Scope.CONFIG_CORE_WRITE,
-  },
-  {
-    key: "storage",
-    icon: HardDrive,
-    color: "orange",
-    label: "settings.storage.title",
-    description: "settings.storage.description",
-    route: { name: "storagesettings" },
-    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-  },
-  {
-    key: "home_assistant",
-    icon: House,
-    color: "cyan",
-    label: "settings.home_assistant.title",
-    description: "settings.home_assistant.description",
-    route: { name: "homeassistantsettings" },
-    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-  },
-  {
-    key: "background_tasks",
-    icon: ListChecks,
-    color: "green",
-    label: "background_tasks.title",
-    description: "background_tasks.description",
-    route: { name: "backgroundtasks" },
-    requiresScope: Scope.SYSTEM_READ,
-  },
-  {
-    key: "diagnostics",
-    icon: Stethoscope,
-    color: "red",
-    label: "settings.diagnostics",
-    description: "settings.diagnostics_description",
-    route: { name: "diagnostics" },
-    requiresScope: Scope.SYSTEM_MANAGE,
-  },
-];
 
 const coreConfigs = ref<CoreConfig[]>([]);
 
@@ -118,16 +50,16 @@ const unknownModuleTiles = computed<SettingsTile[]>(() =>
 );
 
 const tiles = computed<SettingsTile[]>(() => [
-  ...SYSTEM_PAGES.filter((page) =>
-    authManager.hasScope(page.requiresScope),
-  ).map((page) => ({
-    key: page.key,
-    icon: markRaw(page.icon),
-    color: page.color,
-    label: $t(page.label),
-    description: $t(page.description),
-    to: page.route,
-  })),
+  ...sectionPages("system", (scope) => authManager.hasScope(scope)).map(
+    (page) => ({
+      key: page.key,
+      icon: markRaw(page.icon),
+      color: page.color,
+      label: $t(page.label),
+      description: $t(page.description),
+      to: page.route,
+    }),
+  ),
   ...unknownModuleTiles.value,
 ]);
 

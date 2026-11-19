@@ -1,14 +1,10 @@
 import { HASS_DOMAIN } from "@/helpers/home_assistant";
-import type { SettingsColor } from "@/helpers/settings_colors";
 import {
   type ConfigEntry,
   ProviderFeature,
   ProviderType,
   Scope,
 } from "@/plugins/api/interfaces";
-import { Activity, CirclePlay, Library, Tags } from "@lucide/vue";
-import type { Component } from "vue";
-import type { RouteLocationRaw } from "vue-router";
 
 export type SettingsOwnerKind = "core" | "provider";
 
@@ -28,22 +24,9 @@ export interface SettingsSource {
   title?: string;
 }
 
-// the tile a settings section shows above its lists, leading to the page
-export interface SettingsPageLink {
-  // the page showing the tile: the name of a SettingsSection, or the key of a
-  // SectionPage below one
-  section: string;
-  icon: Component;
-  color: SettingsColor;
-  label: string;
-  description: string;
-  requiresScope?: Scope;
-}
-
+// the settings a settings page shows; the page of the settings menu under the
+// same id gives its route and heading
 export interface SettingsPage {
-  title: string;
-  route: RouteLocationRaw;
-  link?: SettingsPageLink;
   // the domain of the provider the page is about: the page manages it, so the
   // lists of providers leave it out
   provider?: string;
@@ -59,20 +42,13 @@ export type SettingsPageId =
   | "network"
   | "playback"
   | "task_settings"
-  | "user_management";
+  | "users";
 
 // the list of the plugins through which apps play audio into Music Assistant
 export const AUDIO_SOURCES = ProviderFeature.AUDIO_SOURCE;
 
 // the list a provider shows in: the providers of its type, or the audio sources
 export type ProviderListType = ProviderType | typeof AUDIO_SOURCES;
-
-// a settings page with the tile leading to it
-export interface LinkedSettingsPage {
-  id: SettingsPageId;
-  route: RouteLocationRaw;
-  link: SettingsPageLink;
-}
 
 export const STREAMS_DOMAIN = "streams";
 export const TASKS_DOMAIN = "tasks";
@@ -100,16 +76,6 @@ const OWNER_WRITE_SCOPES: Readonly<Record<SettingsOwnerKind, Scope>> = {
 // the settings pages and the config entries each of them shows
 export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
   audio_analysis: {
-    title: "settings.audio_analysis_status.title",
-    route: { name: "audioanalysissettings" },
-    link: {
-      section: "audio_analysis_providers",
-      icon: Activity,
-      color: "orange",
-      label: "settings.audio_analysis_status.title",
-      description: "settings.audio_analysis_status.description",
-      requiresScope: Scope.SYSTEM_MANAGE,
-    },
     sources: [
       {
         owner: coreOwner(STREAMS_DOMAIN),
@@ -118,8 +84,6 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     ],
   },
   diagnostics: {
-    title: "settings.diagnostics",
-    route: { name: "diagnostics" },
     sources: [
       {
         owner: coreOwner(CACHE_DOMAIN),
@@ -133,8 +97,6 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     ],
   },
   home_assistant: {
-    title: "settings.home_assistant.title",
-    route: { name: "homeassistantsettings" },
     provider: HASS_DOMAIN,
     sources: [
       {
@@ -144,16 +106,6 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     ],
   },
   library: {
-    title: "settings.library.title",
-    route: { name: "librarysettings" },
-    link: {
-      section: "music",
-      icon: Library,
-      color: "indigo",
-      label: "settings.library.title",
-      description: "settings.library.description",
-      requiresScope: Scope.CONFIG_CORE_WRITE,
-    },
     // the sections follow the order of the sources: which source plays leads
     sources: [
       {
@@ -168,21 +120,9 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     ],
   },
   metadata: {
-    title: "settings.metadata.title",
-    route: { name: "metadatasettings" },
-    link: {
-      section: "metadata_providers",
-      icon: Tags,
-      color: "green",
-      label: "settings.metadata.title",
-      description: "settings.metadata.description",
-      requiresScope: Scope.CONFIG_CORE_WRITE,
-    },
     sources: [{ owner: coreOwner(METADATA_DOMAIN) }],
   },
   network: {
-    title: "settings.network.title",
-    route: { name: "networksettings" },
     sources: [
       {
         owner: coreOwner(WEBSERVER_DOMAIN),
@@ -201,16 +141,6 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     ],
   },
   playback: {
-    title: "settings.playback.title",
-    route: { name: "playbacksettings" },
-    link: {
-      section: "players",
-      icon: CirclePlay,
-      color: "blue",
-      label: "settings.playback.title",
-      description: "settings.playback.description",
-      requiresScope: Scope.CONFIG_CORE_WRITE,
-    },
     // the sections follow the order of the sources
     sources: [
       { owner: coreOwner(PLAYER_QUEUES_DOMAIN) },
@@ -222,13 +152,9 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     ],
   },
   task_settings: {
-    title: "background_tasks.settings.title",
-    route: { name: "tasksettings" },
     sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
   },
-  user_management: {
-    title: "auth.user_management",
-    route: { name: "usersettings" },
+  users: {
     sources: [
       {
         owner: coreOwner(WEBSERVER_DOMAIN),
@@ -274,26 +200,6 @@ export function isKnownOwner(owner: SettingsOwner): boolean {
 }
 
 /**
- * The settings pages a settings section links to above its lists.
- *
- * @param sectionName - The name of the settings section.
- * @param hasScope - Whether the role of the current user grants the given scope.
- */
-export function settingsSectionLinks(
-  sectionName: string | undefined,
-  hasScope: (scope: Scope) => boolean,
-): LinkedSettingsPage[] {
-  const links: LinkedSettingsPage[] = [];
-  for (const id of pageIds()) {
-    const { route, link } = SETTINGS_PAGES[id];
-    if (!link || link.section !== sectionName) continue;
-    if (link.requiresScope && !hasScope(link.requiresScope)) continue;
-    links.push({ id, route, link });
-  }
-  return links;
-}
-
-/**
  * Whether the current user may change the settings a page shows.
  *
  * @param pageId - The settings page.
@@ -309,14 +215,15 @@ export function canEditSettingsPage(
 }
 
 /**
- * The page of a provider that has a settings page of its own.
+ * The settings page of its own a provider has, which manages it instead of a
+ * list of providers.
  *
  * @param domain - The domain of the provider.
  */
-export function providerSettingsPage(domain: string): SettingsPage | undefined {
-  return pageIds()
-    .map((id) => SETTINGS_PAGES[id])
-    .find((page) => page.provider === domain);
+export function providerSettingsPageId(
+  domain: string,
+): SettingsPageId | undefined {
+  return pageIds().find((id) => SETTINGS_PAGES[id].provider === domain);
 }
 
 /**
@@ -349,7 +256,8 @@ export function providerPageEntries<T extends ConfigEntry>(
   entries: readonly T[],
 ): T[] {
   const owner = providerOwner(domain);
-  const sources = (providerSettingsPage(domain)?.sources ?? []).filter(
+  const pageId = providerSettingsPageId(domain);
+  const sources = (pageId ? SETTINGS_PAGES[pageId].sources : []).filter(
     (source) => isSameOwner(source.owner, owner),
   );
   return entries.filter((entry) =>

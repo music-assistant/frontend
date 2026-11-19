@@ -92,13 +92,13 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import type { SettingsSection } from "@/helpers/settings_sections";
+import type { SettingsMenuPage } from "@/helpers/settings_sections";
 import { ChevronRight } from "@lucide/vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
 interface Props {
-  section: SettingsSection;
+  section: SettingsMenuPage;
   // a featured card puts the icon beside the description too, a card only
   // beside the title
   variant: "featured" | "card" | "list";

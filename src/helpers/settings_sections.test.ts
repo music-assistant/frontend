@@ -1,4 +1,8 @@
-import { AUDIO_SOURCES } from "@/helpers/settings_pages";
+import {
+  AUDIO_SOURCES,
+  SETTINGS_PAGES,
+  type SettingsPageId,
+} from "@/helpers/settings_pages";
 import { ProviderFeature, ProviderType, Scope } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
 import {
@@ -15,11 +19,15 @@ import {
   providerListName,
   providerListPage,
   providerListRoute,
-  providerSettingsSectionName,
+  providerOwnPage,
+  routeSettingsPage,
   sectionPages,
   SECTION_PAGES,
   SETTINGS_SECTIONS,
   settingsHeading,
+  settingsMenuPage,
+  settingsPageRoute,
+  settingsTrail,
 } from "./settings_sections";
 
 // the menu, in display order
@@ -34,15 +42,44 @@ const ALL_SECTIONS = [
   "about",
 ];
 
+const MENU_PAGES = [...SETTINGS_SECTIONS, ...SECTION_PAGES];
+
 function sectionNames(scopes: readonly Scope[]): string[] {
   return availableSettingsSections(scopeChecker(scopes)).map(
-    (section) => section.name,
+    (section) => section.key,
   );
 }
 
-function pageKeys(section: string, scopes: readonly Scope[]): string[] {
-  return sectionPages(section, scopeChecker(scopes)).map((page) => page.key);
+function pageKeys(parent: string, scopes: readonly Scope[]): string[] {
+  return sectionPages(parent, scopeChecker(scopes)).map((page) => page.key);
 }
+
+describe("the settings menu", () => {
+  it("names each page by a key of its own", () => {
+    const keys = MENU_PAGES.map((page) => page.key);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("opens each page on a route of its own", () => {
+    const names = MENU_PAGES.map((page) => page.route.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("hangs every page below a page of the menu, down from a section", () => {
+    for (const page of SECTION_PAGES) {
+      const trail = settingsTrail(page.key);
+      expect(trail[0].parent).toBeUndefined();
+      expect(SETTINGS_SECTIONS).toContain(trail[0]);
+      expect(trail.at(-1)).toBe(page);
+    }
+  });
+
+  it("holds every settings page under its own id", () => {
+    for (const id of Object.keys(SETTINGS_PAGES) as SettingsPageId[]) {
+      expect(settingsMenuPage(id)?.key).toBe(id);
+    }
+  });
+});
 
 describe("availableSettingsSections", () => {
   it("lists every section to an admin", () => {
@@ -92,17 +129,46 @@ describe("availableSettingsSections", () => {
 });
 
 describe("sectionPages", () => {
-  it("leads Music to the genres, the metadata and the audio analysis for an admin", () => {
+  it("leads Music to the library, the genres, the metadata and the audio analysis for an admin", () => {
     expect(pageKeys("music", BUILTIN_ROLE_SCOPES.admin)).toEqual([
+      "library",
       "genres",
       "metadata_providers",
       "audio_analysis_providers",
     ]);
   });
 
-  it("leads the players to the player support for an admin", () => {
+  it("leads the players to the playback defaults and the player support for an admin", () => {
     expect(pageKeys("players", BUILTIN_ROLE_SCOPES.admin)).toEqual([
+      "playback",
       "player_support",
+    ]);
+  });
+
+  it("leads System to the pages about the server for an admin", () => {
+    expect(pageKeys("system", BUILTIN_ROLE_SCOPES.admin)).toEqual([
+      "network",
+      "storage",
+      "home_assistant",
+      "background_tasks",
+      "diagnostics",
+    ]);
+  });
+
+  it.each([
+    ["metadata_providers", "metadata"],
+    ["audio_analysis_providers", "audio_analysis"],
+    ["network", "remote_access"],
+    ["background_tasks", "task_settings"],
+  ])("leads %s to the %s page for an admin", (parent, key) => {
+    expect(pageKeys(parent, BUILTIN_ROLE_SCOPES.admin)).toEqual([key]);
+  });
+
+  it("leads anyone from the profile to the pages of its own", () => {
+    expect(pageKeys("profile", BUILTIN_ROLE_SCOPES.guest)).toEqual([
+      "interface",
+      "device",
+      "security",
     ]);
   });
 
@@ -111,6 +177,7 @@ describe("sectionPages", () => {
   });
 
   it.each([
+    [Scope.CONFIG_CORE_WRITE, ["library"]],
     [Scope.LIBRARY_MANAGE, ["genres"]],
     [
       Scope.CONFIG_PROVIDERS_WRITE,
@@ -122,11 +189,67 @@ describe("sectionPages", () => {
     );
   });
 
-  it("names an existing section for every page", () => {
-    const names = SETTINGS_SECTIONS.map((section) => section.name);
-    for (const page of SECTION_PAGES) {
-      expect(names).toContain(page.section);
-    }
+  it("leaves the playback defaults out for a role that may not change server settings", () => {
+    expect(pageKeys("players", [Scope.CONFIG_PLAYERS_WRITE])).toEqual([]);
+  });
+
+  it("leaves the analysis status out for a role without its scope", () => {
+    expect(
+      pageKeys("audio_analysis_providers", [Scope.CONFIG_PROVIDERS_WRITE]),
+    ).toEqual([]);
+  });
+
+  it("leads nowhere from a page without pages below it", () => {
+    expect(pageKeys("plugin_providers", BUILTIN_ROLE_SCOPES.admin)).toEqual([]);
+  });
+});
+
+describe("settingsTrail", () => {
+  it.each([
+    ["music", ["music"]],
+    ["library", ["music", "library"]],
+    ["metadata", ["music", "metadata_providers", "metadata"]],
+    ["audio_analysis", ["music", "audio_analysis_providers", "audio_analysis"]],
+    ["player_support", ["players", "player_support"]],
+    ["remote_access", ["system", "network", "remote_access"]],
+    ["task_settings", ["system", "background_tasks", "task_settings"]],
+    ["security", ["profile", "security"]],
+  ])("leads down to %s from its section", (key, trail) => {
+    expect(settingsTrail(key).map((page) => page.key)).toEqual(trail);
+  });
+
+  it("is empty for a page the menu does not know", () => {
+    expect(settingsTrail("constructor")).toEqual([]);
+    expect(settingsTrail(undefined)).toEqual([]);
+  });
+});
+
+describe("routeSettingsPage", () => {
+  it.each([
+    ["musicsettings", "music"],
+    ["pluginproviders", "plugin_providers"],
+    ["playerproviders", "player_support"],
+    ["audioanalysissettings", "audio_analysis"],
+    ["remoteaccesssettings", "remote_access"],
+    ["profilesecurity", "security"],
+  ])("finds the page %s shows", (routeName, key) => {
+    expect(routeSettingsPage(routeName)?.key).toBe(key);
+  });
+
+  it("finds no page for a route showing something of its own", () => {
+    expect(routeSettingsPage("editprovider")).toBeUndefined();
+    expect(routeSettingsPage(undefined)).toBeUndefined();
+  });
+});
+
+describe("settingsPageRoute", () => {
+  it.each([
+    ["playback", "playbacksettings"],
+    ["network", "networksettings"],
+    ["task_settings", "tasksettings"],
+    ["users", "usersettings"],
+  ] as const)("opens the %s settings on their own route", (id, name) => {
+    expect(settingsPageRoute(id)).toEqual({ name });
   });
 });
 
@@ -163,30 +286,11 @@ describe("providerListName", () => {
   ])("names the page listing the %s providers", (type, name) => {
     expect(providerListName(type)).toBe(name);
   });
-});
 
-describe("providerSettingsSectionName", () => {
-  it("names an existing section for every provider type", () => {
-    const sectionNames = SETTINGS_SECTIONS.map((section) => section.name);
+  it("names a page of the menu for every provider type", () => {
     for (const type of Object.values(ProviderType)) {
-      expect(sectionNames).toContain(providerSettingsSectionName(type));
+      expect(settingsMenuPage(providerListName(type))).toBeDefined();
     }
-  });
-
-  it.each([
-    [ProviderType.MUSIC, "music"],
-    [AUDIO_SOURCES, "music"],
-    [ProviderType.METADATA, "music"],
-    [ProviderType.AUDIO_ANALYSIS, "music"],
-    [ProviderType.PLAYER, "players"],
-    [ProviderType.PLUGIN, "plugin_providers"],
-  ])("puts the %s providers in the %s section", (type, section) => {
-    expect(providerSettingsSectionName(type)).toBe(section);
-  });
-
-  it("names no section for an unknown or missing type", () => {
-    expect(providerSettingsSectionName("constructor")).toBeUndefined();
-    expect(providerSettingsSectionName(undefined)).toBeUndefined();
   });
 });
 
@@ -217,17 +321,31 @@ describe("pageProviderLists", () => {
 
 describe("providerListRoute", () => {
   it.each([
-    [ProviderType.MUSIC, ProviderType.MUSIC],
-    [AUDIO_SOURCES, ProviderType.MUSIC],
-    [ProviderType.PLUGIN, ProviderType.PLUGIN],
-    [ProviderType.PLAYER, ProviderType.PLAYER],
-    [ProviderType.METADATA, ProviderType.METADATA],
-    [ProviderType.AUDIO_ANALYSIS, ProviderType.AUDIO_ANALYSIS],
-  ])("leads the %s list to the page of the %s providers", (type, page) => {
-    expect(providerListRoute(type)).toEqual({
-      name: "providersettings",
-      query: { types: page },
-    });
+    [ProviderType.MUSIC, "musicsettings"],
+    [AUDIO_SOURCES, "musicsettings"],
+    [ProviderType.PLUGIN, "pluginproviders"],
+    [ProviderType.PLAYER, "playerproviders"],
+    [ProviderType.METADATA, "metadataproviders"],
+    [ProviderType.AUDIO_ANALYSIS, "audioanalysisproviders"],
+  ])("leads the %s list to the %s page", (type, name) => {
+    expect(providerListRoute(type)).toEqual({ name });
+  });
+
+  it.each(["bogus", ""])(
+    "leads the unknown type %j to the music sources",
+    (type) => {
+      expect(providerListRoute(type)).toEqual({ name: "musicsettings" });
+    },
+  );
+});
+
+describe("providerOwnPage", () => {
+  it("leads Home Assistant to its page below System", () => {
+    expect(providerOwnPage("hass")?.key).toBe("home_assistant");
+  });
+
+  it("gives any other provider none", () => {
+    expect(providerOwnPage("hass_players")).toBeUndefined();
   });
 });
 
@@ -246,13 +364,13 @@ describe("providerListingRoute", () => {
         { domain: "airplay_receiver", type: ProviderType.PLUGIN },
         [ProviderFeature.AUDIO_SOURCE],
       ),
-    ).toEqual({ name: "providersettings", query: { types: "music" } });
+    ).toEqual({ name: "musicsettings" });
   });
 
   it("leads any other plugin to the plugins", () => {
     expect(
       providerListingRoute({ domain: "lastfm", type: ProviderType.PLUGIN }),
-    ).toEqual({ name: "providersettings", query: { types: "plugin" } });
+    ).toEqual({ name: "pluginproviders" });
   });
 });
 
@@ -271,9 +389,32 @@ describe("settingsHeading", () => {
       "settings.audio_analysis_providers",
       "settings.audio_analysis_providers_description",
     ],
+    [
+      "remote_access",
+      "settings.remote_access",
+      "settings.remote_access_description",
+    ],
+    [
+      "interface",
+      "auth.profile_pages.interface",
+      "auth.profile_pages.interface_description",
+    ],
   ])("names %s as its card or tile does", (name, label, description) => {
     expect(settingsHeading(name)).toMatchObject({ label, description });
   });
+
+  it.each([
+    ["remote_access", "network"],
+    ["task_settings", "background_tasks"],
+    ["security", "profile"],
+  ])(
+    "colours %s, which a row leads to, as the page above it",
+    (key, parent) => {
+      const parentColor = settingsHeading(parent)?.color;
+      expect(parentColor).toBeDefined();
+      expect(settingsHeading(key)?.color).toBe(parentColor);
+    },
+  );
 
   it("names nothing it does not know", () => {
     expect(settingsHeading("constructor")).toBeUndefined();
@@ -285,6 +426,8 @@ describe("isSettingsHub", () => {
   it.each([
     "music",
     "players",
+    "system",
+    "profile",
     "metadata_providers",
     "audio_analysis_providers",
   ])("takes %s for a hub, leading to pages below it", (name) => {

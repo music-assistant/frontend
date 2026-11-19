@@ -336,7 +336,10 @@ import {
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { providerPageEntries } from "@/helpers/settings_pages";
-import { providerListingRoute } from "@/helpers/settings_sections";
+import {
+  providerListingRoute,
+  providerListRoute,
+} from "@/helpers/settings_sections";
 import { getExternalLinkUrl, providerMarkdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -344,6 +347,7 @@ import {
   EventType,
   ProviderConfig,
   ProviderStatus,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import {
@@ -520,7 +524,7 @@ const backToProviders = function () {
   router.push(
     config.value
       ? providerListingRoute(config.value, providerManifest.value?.features)
-      : { name: "providersettings" },
+      : providerListRoute(ProviderType.MUSIC),
   );
 };
 
@@ -756,10 +760,7 @@ async function loadConfig(instanceId: string) {
     if (requestId === configLoadRequestId && props.instanceId === instanceId) {
       // a member only manages the music sources it owns, the rest is admin-only
       if (!canManageSource(updatedConfig)) {
-        router.replace({
-          name: "providersettings",
-          query: { types: updatedConfig.type },
-        });
+        router.replace(providerListRoute(ProviderType.MUSIC));
         return;
       }
       config.value = updatedConfig;

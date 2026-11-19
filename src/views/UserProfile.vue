@@ -9,7 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import { MonitorSmartphone, PanelsTopLeft, ShieldCheck } from "@lucide/vue";
 import { computed, markRaw } from "vue";
 
 import ProfileIdentityCard from "@/components/profile/ProfileIdentityCard.vue";
@@ -17,6 +16,8 @@ import ThemeLanguageCard from "@/components/profile/ThemeLanguageCard.vue";
 import SettingsLinkRows, {
   type SettingsRow,
 } from "@/components/settings/SettingsLinkRows.vue";
+import { sectionPages } from "@/helpers/settings_sections";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 
 /**
@@ -24,27 +25,15 @@ import { $t } from "@/plugins/i18n";
  * and the rows leading to the rest of their settings.
  */
 
-const rows = computed<SettingsRow[]>(() => [
-  {
-    key: "interface",
-    icon: markRaw(PanelsTopLeft),
-    label: $t("auth.profile_pages.interface"),
-    description: $t("auth.profile_pages.interface_description"),
-    to: { name: "profileinterface" },
-  },
-  {
-    key: "device",
-    icon: markRaw(MonitorSmartphone),
-    label: $t("auth.profile_pages.device"),
-    description: $t("auth.profile_pages.device_description"),
-    to: { name: "profiledevice" },
-  },
-  {
-    key: "security",
-    icon: markRaw(ShieldCheck),
-    label: $t("auth.profile_pages.security"),
-    description: $t("auth.profile_pages.security_description"),
-    to: { name: "profilesecurity" },
-  },
-]);
+const rows = computed<SettingsRow[]>(() =>
+  sectionPages("profile", (scope) => authManager.hasScope(scope)).map(
+    (page) => ({
+      key: page.key,
+      icon: markRaw(page.icon),
+      label: $t(page.label),
+      description: $t(page.description),
+      to: page.route,
+    }),
+  ),
+);
 </script>

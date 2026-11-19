@@ -6,7 +6,6 @@
 import SettingsTiles, {
   type SettingsTile,
 } from "@/components/settings/SettingsTiles.vue";
-import { settingsSectionLinks } from "@/helpers/settings_pages";
 import { sectionPages } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import type { ProviderType, Scope } from "@/plugins/api/interfaces";
@@ -16,26 +15,15 @@ import { computed } from "vue";
 
 /**
  * The tiles a hub shows above its lists, each leading to a page below it that
- * the current user may open: its settings pages first, then the other pages.
- * Renders nothing without tiles.
+ * the current user may open. Renders nothing without tiles.
  */
 const props = defineProps<{
-  // the name of the settings section, or the key of a page below one
+  // the key of the hub in the settings menu
   section: string | undefined;
 }>();
 
-const tiles = computed<SettingsTile[]>(() => [
-  ...settingsSectionLinks(props.section, hasScope).map(
-    ({ id, route, link }) => ({
-      key: id,
-      icon: link.icon,
-      color: link.color,
-      label: $t(link.label),
-      description: $t(link.description),
-      to: route,
-    }),
-  ),
-  ...sectionPages(props.section, hasScope).map((page) => ({
+const tiles = computed<SettingsTile[]>(() =>
+  sectionPages(props.section, hasScope).map((page) => ({
     key: page.key,
     icon: page.icon,
     color: page.color,
@@ -44,7 +32,7 @@ const tiles = computed<SettingsTile[]>(() => [
     state: page.providerType ? activeProviders(page.providerType) : undefined,
     to: page.route,
   })),
-]);
+);
 
 function hasScope(scope: Scope): boolean {
   return authManager.hasScope(scope);

@@ -606,8 +606,7 @@ describe("Catalog", () => {
       "Chromecast",
     ]);
     expect(linkTarget("[data-testid='catalog-manage-link']")).toEqual({
-      name: "providersettings",
-      query: { types: "player" },
+      name: "playerproviders",
     });
   });
 
@@ -768,7 +767,7 @@ describe("Catalog", () => {
     });
     expect(
       linkTarget("[data-testid='catalog-manage-link']", groups[1]),
-    ).toEqual({ name: "providersettings", query: { types: "player" } });
+    ).toEqual({ name: "playerproviders" });
     expect(document.querySelector("[data-testid='catalog-list']")).toBeNull();
   });
 

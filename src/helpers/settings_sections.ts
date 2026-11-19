@@ -4,8 +4,8 @@ import {
   AUDIO_SOURCES,
   type ProviderListType,
   providerListType,
-  providerSettingsPage,
-  settingsSectionLinks,
+  providerSettingsPageId,
+  type SettingsPageId,
 } from "@/helpers/settings_pages";
 import {
   type ProviderConfig,
@@ -14,53 +14,63 @@ import {
   Scope,
 } from "@/plugins/api/interfaces";
 import {
+  Activity,
   AudioWaveform,
   Blocks,
+  CirclePlay,
+  CloudCog,
   FileCode,
+  HardDrive,
+  House,
   Info,
+  Library,
+  ListChecks,
+  MonitorSmartphone,
   Music,
+  Network,
+  PanelsTopLeft,
   Puzzle,
   Server,
+  Settings2,
+  ShieldCheck,
   SlidersHorizontal,
   Speaker,
+  Stethoscope,
+  Tags,
   UserCog,
   Users,
 } from "@lucide/vue";
 import type { Component } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
-export interface SettingsSection {
-  name: string;
-  label: string;
-  description: string;
-  icon: Component;
-  color: SettingsColor;
-  route: RouteLocationRaw;
-  // only a role granting this scope sees the section
-  requiresScope?: Scope;
-}
-
-// a page below a settings section that is no settings page, with the tile
-// leading to it
-export interface SectionPage {
+// a page of the settings menu: a section of the settings overview, or a page
+// below one
+export interface SettingsMenuPage {
   key: string;
-  // the SettingsSection name of the menu item showing the tile
-  section: string;
-  icon: Component;
-  color: SettingsColor;
+  // the key of the page above it; left out on a section of the overview
+  parent?: string;
+  // the heading of the page, as its card or tile in the menu shows it
   label: string;
   description: string;
-  route: RouteLocationRaw;
-  // the scope the route of the page needs
-  requiresScope: Scope;
+  icon: Component;
+  color: SettingsColor;
+  route: { name: string };
+  // only a role granting this scope may open the page
+  requiresScope?: Scope;
   // the type of the providers the page lists, whose tile says how many run
   providerType?: ProviderType;
 }
 
+// what heads a settings page
+export type SettingsHeading = Pick<
+  SettingsMenuPage,
+  "label" | "description" | "icon" | "color"
+>;
+
 // the sections of the settings overview, in display order
-export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
+export const SETTINGS_SECTIONS: readonly SettingsMenuPage[] = [
   {
-    name: "catalog",
+    key: "catalog",
     label: "settings.catalog.title",
     description: "settings.catalog.description",
     icon: Blocks,
@@ -70,17 +80,17 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     requiresScope: Scope.CONFIG_PROVIDERS_OWN,
   },
   {
-    name: "music",
+    key: "music",
     label: "settings.music",
     description: "settings.music_description",
     icon: Music,
     color: "blue",
-    route: { name: "providersettings", query: { types: "music" } },
+    route: { name: "musicsettings" },
     // a member sees the music sources it may use here, and manages its own
     requiresScope: Scope.CONFIG_PROVIDERS_READ,
   },
   {
-    name: "players",
+    key: "players",
     label: "settings.players",
     description: "settings.players_description",
     icon: SlidersHorizontal,
@@ -89,18 +99,16 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     requiresScope: Scope.CONFIG_PLAYERS_WRITE,
   },
   {
-    name: "plugin_providers",
+    key: "plugin_providers",
     label: "settings.plugins",
     description: "settings.plugin_providers_description",
     icon: Puzzle,
     color: "deep-purple",
-    route: { name: "providersettings", query: { types: "plugin" } },
-    // the provider types share the route a member opens for its own music
-    // sources, managing any other type takes managing every provider
+    route: { name: "pluginproviders" },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
   },
   {
-    name: "profile",
+    key: "profile",
     label: "auth.profile",
     description: "settings.profile_description",
     icon: UserCog,
@@ -108,7 +116,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     route: { name: "profile" },
   },
   {
-    name: "users",
+    key: "users",
     label: "auth.user_management",
     description: "settings.users_description",
     icon: Users,
@@ -117,7 +125,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     requiresScope: Scope.USERS_READ,
   },
   {
-    name: "system",
+    key: "system",
     label: "settings.system",
     description: "settings.system_description",
     icon: Server,
@@ -126,7 +134,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     requiresScope: Scope.CONFIG_CORE_WRITE,
   },
   {
-    name: "about",
+    key: "about",
     label: "settings.about",
     description: "settings.about_description",
     icon: Info,
@@ -135,23 +143,23 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
 ];
 
-// the pages below the settings sections that are no settings page, in the
-// order of their tiles, which follow the tiles of the settings pages
-export const SECTION_PAGES: readonly SectionPage[] = [
+// the pages below the sections, in the order the page above lists them. A
+// settings page is listed under its SettingsPageId; a page the page above
+// leads to with a row instead of a tile has the colour of that page.
+export const SECTION_PAGES: readonly SettingsMenuPage[] = [
   {
-    key: "player_support",
-    section: "players",
-    icon: Speaker,
-    color: "teal",
-    label: "settings.playerproviders",
-    description: "settings.player_providers_description",
-    route: { name: "providersettings", query: { types: ProviderType.PLAYER } },
-    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
-    providerType: ProviderType.PLAYER,
+    key: "library",
+    parent: "music",
+    icon: Library,
+    color: "indigo",
+    label: "settings.library.title",
+    description: "settings.library.description",
+    route: { name: "librarysettings" },
+    requiresScope: Scope.CONFIG_CORE_WRITE,
   },
   {
     key: "genres",
-    section: "music",
+    parent: "music",
     icon: GenreIcon,
     color: "pink",
     label: "settings.genre_management",
@@ -161,31 +169,163 @@ export const SECTION_PAGES: readonly SectionPage[] = [
   },
   {
     key: "metadata_providers",
-    section: "music",
+    parent: "music",
     icon: FileCode,
     color: "green",
     label: "metadata",
     description: "settings.metadata_providers_description",
-    route: {
-      name: "providersettings",
-      query: { types: ProviderType.METADATA },
-    },
+    route: { name: "metadataproviders" },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
     providerType: ProviderType.METADATA,
   },
   {
+    key: "metadata",
+    parent: "metadata_providers",
+    icon: Tags,
+    color: "green",
+    label: "settings.metadata.title",
+    description: "settings.metadata.description",
+    route: { name: "metadatasettings" },
+    requiresScope: Scope.CONFIG_CORE_WRITE,
+  },
+  {
     key: "audio_analysis_providers",
-    section: "music",
+    parent: "music",
     icon: AudioWaveform,
     color: "orange",
     label: "settings.audio_analysis_providers",
     description: "settings.audio_analysis_providers_description",
-    route: {
-      name: "providersettings",
-      query: { types: ProviderType.AUDIO_ANALYSIS },
-    },
+    route: { name: "audioanalysisproviders" },
     requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
     providerType: ProviderType.AUDIO_ANALYSIS,
+  },
+  {
+    key: "audio_analysis",
+    parent: "audio_analysis_providers",
+    icon: Activity,
+    color: "orange",
+    label: "settings.audio_analysis_status.title",
+    description: "settings.audio_analysis_status.description",
+    route: { name: "audioanalysissettings" },
+    requiresScope: Scope.SYSTEM_MANAGE,
+  },
+  {
+    key: "playback",
+    parent: "players",
+    icon: CirclePlay,
+    color: "blue",
+    label: "settings.playback.title",
+    description: "settings.playback.description",
+    route: { name: "playbacksettings" },
+    requiresScope: Scope.CONFIG_CORE_WRITE,
+  },
+  {
+    key: "player_support",
+    parent: "players",
+    icon: Speaker,
+    color: "teal",
+    label: "settings.playerproviders",
+    description: "settings.player_providers_description",
+    route: { name: "playerproviders" },
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+    providerType: ProviderType.PLAYER,
+  },
+  {
+    key: "network",
+    parent: "system",
+    icon: Network,
+    color: "blue",
+    label: "settings.network.title",
+    description: "settings.network.description",
+    route: { name: "networksettings" },
+    requiresScope: Scope.CONFIG_CORE_WRITE,
+  },
+  {
+    key: "remote_access",
+    parent: "network",
+    icon: CloudCog,
+    color: "blue",
+    label: "settings.remote_access",
+    description: "settings.remote_access_description",
+    route: { name: "remoteaccesssettings" },
+    requiresScope: Scope.SYSTEM_MANAGE,
+  },
+  {
+    key: "storage",
+    parent: "system",
+    icon: HardDrive,
+    color: "orange",
+    label: "settings.storage.title",
+    description: "settings.storage.description",
+    route: { name: "storagesettings" },
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
+    key: "home_assistant",
+    parent: "system",
+    icon: House,
+    color: "cyan",
+    label: "settings.home_assistant.title",
+    description: "settings.home_assistant.description",
+    route: { name: "homeassistantsettings" },
+    requiresScope: Scope.CONFIG_PROVIDERS_WRITE,
+  },
+  {
+    key: "background_tasks",
+    parent: "system",
+    icon: ListChecks,
+    color: "green",
+    label: "background_tasks.title",
+    description: "background_tasks.description",
+    route: { name: "backgroundtasks" },
+    requiresScope: Scope.SYSTEM_READ,
+  },
+  {
+    key: "task_settings",
+    parent: "background_tasks",
+    icon: Settings2,
+    color: "green",
+    label: "background_tasks.settings.title",
+    description: "background_tasks.settings.description",
+    route: { name: "tasksettings" },
+    requiresScope: Scope.CONFIG_CORE_WRITE,
+  },
+  {
+    key: "diagnostics",
+    parent: "system",
+    icon: Stethoscope,
+    color: "red",
+    label: "settings.diagnostics",
+    description: "settings.diagnostics_description",
+    route: { name: "diagnostics" },
+    requiresScope: Scope.SYSTEM_MANAGE,
+  },
+  {
+    key: "interface",
+    parent: "profile",
+    icon: PanelsTopLeft,
+    color: "indigo",
+    label: "auth.profile_pages.interface",
+    description: "auth.profile_pages.interface_description",
+    route: { name: "profileinterface" },
+  },
+  {
+    key: "device",
+    parent: "profile",
+    icon: MonitorSmartphone,
+    color: "indigo",
+    label: "auth.profile_pages.device",
+    description: "auth.profile_pages.device_description",
+    route: { name: "profiledevice" },
+  },
+  {
+    key: "security",
+    parent: "profile",
+    icon: ShieldCheck,
+    color: "indigo",
+    label: "auth.profile_pages.security",
+    description: "auth.profile_pages.security_description",
+    route: { name: "profilesecurity" },
   },
 ];
 
@@ -199,6 +339,9 @@ const PROVIDER_TYPE_SECTIONS: Readonly<
   [ProviderType.PLUGIN]: "plugin_providers",
 };
 
+// the page listing the providers of a type no page lists
+const DEFAULT_PROVIDER_LIST = "music";
+
 /**
  * The settings sections the current user may open.
  *
@@ -206,26 +349,74 @@ const PROVIDER_TYPE_SECTIONS: Readonly<
  */
 export function availableSettingsSections(
   hasScope: (scope: Scope) => boolean,
-): SettingsSection[] {
-  return SETTINGS_SECTIONS.filter(
-    (section) => !section.requiresScope || hasScope(section.requiresScope),
+): SettingsMenuPage[] {
+  return SETTINGS_SECTIONS.filter((section) => mayOpen(section, hasScope));
+}
+
+/**
+ * The pages directly below a page of the settings menu that the current user
+ * may open, in the order the page lists them.
+ *
+ * @param parent - The key of the page above them.
+ * @param hasScope - Whether the role of the current user grants the given scope.
+ */
+export function sectionPages(
+  parent: string | undefined,
+  hasScope: (scope: Scope) => boolean,
+): SettingsMenuPage[] {
+  return SECTION_PAGES.filter(
+    (page) => page.parent === parent && mayOpen(page, hasScope),
   );
 }
 
 /**
- * The pages below a settings section that the current user may open, in the
- * order of their tiles.
+ * A page of the settings menu.
  *
- * @param sectionName - The name of the settings section.
- * @param hasScope - Whether the role of the current user grants the given scope.
+ * @param key - The key of the page.
  */
-export function sectionPages(
-  sectionName: string | undefined,
-  hasScope: (scope: Scope) => boolean,
-): SectionPage[] {
-  return SECTION_PAGES.filter(
-    (page) => page.section === sectionName && hasScope(page.requiresScope),
-  );
+export function settingsMenuPage(
+  key: string | undefined,
+): SettingsMenuPage | undefined {
+  return menuPages().find((page) => page.key === key);
+}
+
+/**
+ * The page of the settings menu a route shows.
+ *
+ * @param routeName - The name of the route.
+ */
+export function routeSettingsPage(
+  routeName: string | undefined,
+): SettingsMenuPage | undefined {
+  return menuPages().find((page) => page.route.name === routeName);
+}
+
+/**
+ * A page of the settings menu and every page above it, from its section of
+ * the settings overview down to the page itself.
+ *
+ * @param key - The key of the page.
+ */
+export function settingsTrail(key: string | undefined): SettingsMenuPage[] {
+  const trail: SettingsMenuPage[] = [];
+  for (
+    let page = settingsMenuPage(key);
+    page;
+    page = settingsMenuPage(page.parent)
+  ) {
+    trail.unshift(page);
+  }
+  return trail;
+}
+
+/**
+ * The route of a settings page.
+ *
+ * @param id - The settings page.
+ */
+export function settingsPageRoute(id: SettingsPageId): RouteLocationRaw {
+  // every settings page is a page of the menu under its own id
+  return settingsMenuPage(id)!.route;
 }
 
 /**
@@ -234,27 +425,17 @@ export function sectionPages(
  */
 export function providerListPage(
   type: string | undefined,
-): SectionPage | undefined {
+): SettingsMenuPage | undefined {
   if (!type) return undefined;
   return SECTION_PAGES.find((page) => page.providerType === type);
 }
 
 /**
- * The name of the page listing the providers of a type, which the tiles on it
- * name: a settings section, or the key of a page below one.
+ * The key of the page listing the providers of a type, which the tiles on it
+ * name: a settings section, or a page below one.
  */
 export function providerListName(type: string | undefined): string | undefined {
   return typeSectionName(type) ?? providerListPage(type)?.key;
-}
-
-/**
- * The name of the settings section listing the providers of a type, or holding
- * the page that lists them.
- */
-export function providerSettingsSectionName(
-  type: string | undefined,
-): string | undefined {
-  return typeSectionName(type) ?? providerListPage(type)?.section;
 }
 
 /**
@@ -262,7 +443,7 @@ export function providerSettingsSectionName(
  * display order: every list of the settings section listing them, or the list
  * of the type alone on a page below a section.
  *
- * @param type - The provider type the route of the page names.
+ * @param type - The list type of the page.
  */
 export function pageProviderLists(type: string): string[] {
   const sectionName = typeSectionName(type);
@@ -274,16 +455,24 @@ export function pageProviderLists(type: string): string[] {
 
 /**
  * The page showing a list of providers: its settings section, or the page
- * below one listing them.
+ * below one listing them. A type no page lists leads to the music sources.
  *
  * @param type - The list type, as `providerListType` gives it.
  */
-export function providerListRoute(type: string): RouteLocationRaw {
-  const name = providerListName(type);
-  const page =
-    SETTINGS_SECTIONS.find((section) => section.name === name) ??
-    SECTION_PAGES.find((sectionPage) => sectionPage.key === name);
-  return page?.route ?? { name: "providersettings", query: { types: type } };
+export function providerListRoute(type: string): SettingsMenuPage["route"] {
+  return settingsMenuPage(providerListName(type) ?? DEFAULT_PROVIDER_LIST)!
+    .route;
+}
+
+/**
+ * The settings page of its own a provider has, which manages it instead of a
+ * list of providers.
+ *
+ * @param domain - The domain of the provider.
+ */
+export function providerOwnPage(domain: string): SettingsMenuPage | undefined {
+  const pageId = providerSettingsPageId(domain);
+  return pageId ? settingsMenuPage(pageId) : undefined;
 }
 
 /**
@@ -298,37 +487,42 @@ export function providerListingRoute(
   features?: readonly ProviderFeature[],
 ): RouteLocationRaw {
   return (
-    providerSettingsPage(config.domain)?.route ??
+    providerOwnPage(config.domain)?.route ??
     providerListRoute(providerListType(config.type, features))
   );
 }
 
 /**
- * The title and description of a settings section or of a page below one, as
- * its card on the settings page or its tile gives them.
+ * The heading of a page of the settings menu, as its card on the settings
+ * overview or its tile shows it.
  *
- * @param name - The name of the settings section, or the key of the page.
+ * @param key - The key of the page.
  */
 export function settingsHeading(
-  name: string | undefined,
-): Pick<SettingsSection, "label" | "description"> | undefined {
-  return (
-    SETTINGS_SECTIONS.find((section) => section.name === name) ??
-    SECTION_PAGES.find((page) => page.key === name)
-  );
+  key: string | undefined,
+): SettingsHeading | undefined {
+  return settingsMenuPage(key);
 }
 
 /**
- * Whether a settings section or a page below one is a hub: a page leading to
- * pages below it, whichever of them the current user may open.
+ * Whether a page of the settings menu is a hub: a page leading to pages below
+ * it, whichever of them the current user may open.
  *
- * @param name - The name of the settings section, or the key of the page.
+ * @param key - The key of the page.
  */
-export function isSettingsHub(name: string | undefined): boolean {
-  return (
-    SECTION_PAGES.some((page) => page.section === name) ||
-    settingsSectionLinks(name, () => true).length > 0
-  );
+export function isSettingsHub(key: string | undefined): boolean {
+  return SECTION_PAGES.some((page) => page.parent === key);
+}
+
+function menuPages(): readonly SettingsMenuPage[] {
+  return [...SETTINGS_SECTIONS, ...SECTION_PAGES];
+}
+
+function mayOpen(
+  page: SettingsMenuPage,
+  hasScope: (scope: Scope) => boolean,
+): boolean {
+  return !page.requiresScope || hasScope(page.requiresScope);
 }
 
 function typeSectionName(type: string | undefined): string | undefined {

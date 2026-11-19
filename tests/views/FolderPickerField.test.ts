@@ -40,7 +40,7 @@ vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: hasScopeMock } }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
-  useRouter: () => ({ resolve: () => ({ href: "#/settings/storage" }) }),
+  useRouter: () => ({ resolve: () => ({ href: "#/settings/system/storage" }) }),
 }));
 
 const translate = (key: string) => key;
@@ -273,7 +273,7 @@ describe("FolderPickerField", () => {
     expect(empty.text()).toContain("settings.folder_picker.empty_text");
     expect(empty.text()).not.toContain("empty_text_member");
     const manage = wrapper.get('[data-testid="folder-picker-manage"]');
-    expect(manage.attributes("href")).toBe("#/settings/storage");
+    expect(manage.attributes("href")).toBe("#/settings/system/storage");
     // the setup dialog it is used from has to stay open
     expect(manage.attributes("target")).toBe("_blank");
   });
