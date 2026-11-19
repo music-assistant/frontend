@@ -2,7 +2,7 @@
   <section class="flex flex-col gap-4">
     <p
       :id="DESCRIPTION_ID"
-      class="text-muted-foreground text-sm"
+      class="text-muted-foreground text-center text-sm text-balance"
       data-testid="onboarding-greeting"
     >
       {{ $t("onboarding.steps.welcome.description", { name }) }}

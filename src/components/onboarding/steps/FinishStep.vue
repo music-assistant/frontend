@@ -1,6 +1,6 @@
 <template>
   <section class="flex flex-col gap-5">
-    <p class="text-muted-foreground text-sm">
+    <p class="text-muted-foreground text-center text-sm text-balance">
       {{ $t(descriptionKey) }}
     </p>
 

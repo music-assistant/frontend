@@ -25,7 +25,7 @@
     <template v-else>
       <!-- with players to act on, the description says what can be done to
            them; without, it says what finds them -->
-      <p class="text-muted-foreground text-sm">
+      <p class="text-muted-foreground text-center text-sm text-balance">
         {{
           players.length > 0
             ? $t("onboarding.steps.players.description")

@@ -3,84 +3,106 @@
     class="flex min-h-0 w-full flex-1 flex-col gap-5"
     data-testid="onboarding-wizard"
   >
-    <header class="flex shrink-0 flex-col gap-3">
-      <p class="text-muted-foreground text-sm">{{ $t(trackTitleKey) }}</p>
-      <template v-if="ready && currentStep">
-        <!-- decorative: the title below names the app -->
-        <img
-          v-if="currentId === 'get_started'"
-          :src="logoSrc"
-          alt=""
-          class="mx-auto my-4 h-10 w-auto max-w-full"
-          data-testid="onboarding-logo"
-        />
-        <!-- as tall as the back button, so the title stays put without it -->
-        <div class="flex min-h-9 min-w-0 items-center gap-2">
-          <Button
-            v-if="canGoBack"
-            variant="ghost"
-            size="icon"
-            class="-ml-2 shrink-0"
-            :disabled="moving || stepBusy"
-            :aria-label="$t('back')"
-            :title="$t('back')"
-            data-testid="onboarding-back"
-            @click="back"
+    <!-- the welcome sits as one group in the middle of the room above the
+         footer; every other step fills it from the top -->
+    <div
+      class="flex min-h-0 flex-col"
+      :class="isWelcome ? 'my-auto gap-2' : 'flex-1 gap-5'"
+    >
+      <header class="flex shrink-0 flex-col gap-3">
+        <template v-if="ready && currentStep">
+          <!-- the logo on the welcome already names the app -->
+          <p
+            v-if="!isWelcome"
+            class="text-muted-foreground text-center text-sm"
+            data-testid="onboarding-track-title"
           >
-            <ArrowLeft class="size-4" />
-          </Button>
-          <h1
-            ref="stepHeading"
-            class="text-xl font-semibold outline-none"
-            :class="{ 'mx-auto text-center': currentId === 'get_started' }"
-            tabindex="-1"
-            data-testid="onboarding-heading"
-          >
-            {{ stepTitle }}
-          </h1>
-        </div>
-        <div v-if="progressIndex >= 0" class="flex items-center gap-3">
-          <OnboardingProgress
-            class="min-w-0 flex-1"
-            :steps="progressSteps"
-            :current="progressIndex"
-            @navigate="jumpTo"
+            {{ $t(trackTitleKey) }}
+          </p>
+          <!-- decorative: the title below names the app -->
+          <img
+            v-else
+            :src="logoSrc"
+            alt=""
+            class="mx-auto mb-2 h-10 w-auto max-w-full"
+            data-testid="onboarding-logo"
           />
-          <span
-            class="text-muted-foreground sr-only shrink-0 text-sm sm:not-sr-only"
-            data-testid="onboarding-step-counter"
-          >
-            {{
-              $t("onboarding.step_counter", {
-                current: progressIndex + 1,
-                total: progressSteps.length,
-              })
-            }}
-          </span>
-        </div>
-      </template>
-    </header>
+          <!-- as tall as the back button, so the title stays put without it -->
+          <div class="flex min-h-9 min-w-0 items-center gap-2">
+            <Button
+              v-if="canGoBack"
+              variant="ghost"
+              size="icon"
+              class="-ml-2 shrink-0"
+              :disabled="moving || stepBusy"
+              :aria-label="$t('back')"
+              :title="$t('back')"
+              data-testid="onboarding-back"
+              @click="back"
+            >
+              <ArrowLeft class="size-4" />
+            </Button>
+            <h1
+              ref="stepHeading"
+              class="flex-1 text-center text-xl font-semibold text-balance outline-none"
+              tabindex="-1"
+              data-testid="onboarding-heading"
+            >
+              {{ stepTitle }}
+            </h1>
+            <!-- mirrors the back button, so the title stays centred beside it -->
+            <span
+              v-if="canGoBack"
+              class="-mr-2 size-9 shrink-0"
+              aria-hidden="true"
+            ></span>
+          </div>
+          <div v-if="progressIndex >= 0" class="flex items-center gap-3">
+            <OnboardingProgress
+              class="min-w-0 flex-1"
+              :steps="progressSteps"
+              :current="progressIndex"
+              @navigate="jumpTo"
+            />
+            <span
+              class="text-muted-foreground sr-only shrink-0 text-sm sm:not-sr-only"
+              data-testid="onboarding-step-counter"
+            >
+              {{
+                $t("onboarding.step_counter", {
+                  current: progressIndex + 1,
+                  total: progressSteps.length,
+                })
+              }}
+            </span>
+          </div>
+        </template>
+      </header>
 
-    <!-- only the step scrolls; keyed so each step starts at the top -->
-    <ScrollFade :key="currentId ?? undefined" class="-mx-1 flex flex-col px-1">
-      <div
-        v-if="!ready"
-        class="flex min-h-40 items-center justify-center"
-        data-testid="onboarding-loading"
+      <!-- only the step scrolls; keyed so each step starts at the top -->
+      <ScrollFade
+        :key="currentId ?? undefined"
+        class="-mx-1 flex flex-col px-1"
       >
-        <Spinner class="size-6" />
-      </div>
+        <div
+          v-if="!ready"
+          class="flex min-h-40 items-center justify-center"
+          data-testid="onboarding-loading"
+        >
+          <Spinner class="size-6" />
+        </div>
 
-      <component
-        :is="stepView.component"
-        v-else-if="stepView"
-        ref="stepRef"
-        v-bind="stepView.props"
-        @advance="next"
-        @navigate="goTo"
-        @finish="finishOnboarding()"
-      />
-    </ScrollFade>
+        <component
+          :is="stepView.component"
+          v-else-if="stepView"
+          ref="stepRef"
+          v-bind="stepView.props"
+          @advance="next"
+          @navigate="goTo"
+          @finish="finishOnboarding()"
+        />
+      </ScrollFade>
+    </div>
 
     <footer
       v-if="ready && showForwardAction"
@@ -282,6 +304,8 @@ const currentIndex = computed(() =>
   steps.value.findIndex((step) => step.id === currentId.value),
 );
 const currentStep = computed(() => steps.value[currentIndex.value]);
+// the welcome of a fresh server, which the logo opens instead of the eyebrow
+const isWelcome = computed(() => currentId.value === "get_started");
 const previousStep = computed(() => steps.value[currentIndex.value - 1]);
 // a step done for good is behind the user, and so is everything before it
 const canGoBack = computed(() => {

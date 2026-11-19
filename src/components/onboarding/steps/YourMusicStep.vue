@@ -1,6 +1,6 @@
 <template>
   <section class="flex flex-col gap-4">
-    <p class="text-muted-foreground text-sm">
+    <p class="text-muted-foreground text-center text-sm text-balance">
       {{ $t("onboarding.steps.your_music.description") }}
     </p>
 

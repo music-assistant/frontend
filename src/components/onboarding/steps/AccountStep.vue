@@ -1,6 +1,9 @@
 <template>
   <section class="flex flex-col gap-4">
-    <p :id="DESCRIPTION_ID" class="text-muted-foreground text-sm">
+    <p
+      :id="DESCRIPTION_ID"
+      class="text-muted-foreground text-center text-sm text-balance"
+    >
       {{ $t("onboarding.steps.account.description") }}
     </p>
 
