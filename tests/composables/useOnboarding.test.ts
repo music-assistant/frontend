@@ -2,6 +2,7 @@ import DiscoveredPlayerItem from "@/components/onboarding/DiscoveredPlayerItem.v
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
   EventType,
+  MediaType,
   PlayerType,
   ProviderSharing,
   ProviderType,
@@ -44,7 +45,15 @@ const {
     players: {} as Record<string, Partial<Player>>,
     // the instances that loaded, which name a provider that has no custom name
     providers: {} as Record<string, { name: string; domain?: string }>,
-    providerManifests: {} as Record<string, { builtin: boolean; name: string }>,
+    providerManifests: {} as Record<
+      string,
+      {
+        builtin: boolean;
+        name: string;
+        type?: ProviderType;
+        media_types?: MediaType[];
+      }
+    >,
     getAllUsers: vi.fn(),
     getPlayerConfig: vi.fn(),
     getPlayerConfigs: vi.fn(),
@@ -58,7 +67,10 @@ const {
         ) => () => void
       >(),
     sendCommand: vi.fn(),
-    serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
+    serverInfo: {
+      value: undefined as
+        { onboard_done: boolean; homeassistant_addon?: boolean } | undefined,
+    },
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // what the server hands back as the player configurations
@@ -211,6 +223,7 @@ function addProvider(
     enabled?: boolean;
     lastError?: unknown;
     name?: string;
+    mediaTypes?: MediaType[];
   } = {},
 ) {
   providerConfigs.list.push({
@@ -224,6 +237,8 @@ function addProvider(
   apiMock.providerManifests[domain] = {
     builtin: options.builtin ?? false,
     name: `${domain} manifest`,
+    type,
+    media_types: options.mediaTypes,
   };
 }
 
@@ -329,7 +344,12 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     apiMock.subscribe_multi.mockImplementation(() => vi.fn());
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
-    apiMock.serverInfo.value = { onboard_done: false };
+    // the add-on connects Home Assistant by itself, so only the tests of the
+    // Home Assistant step run on a server that is not the add-on
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: true,
+    };
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
     );
@@ -371,21 +391,82 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
         domain: "spotify",
         builtin: false,
         enabled: true,
+        audioSource: false,
       },
       {
         type: ProviderType.PLAYER,
         domain: "builtin_player",
         builtin: true,
         enabled: true,
+        audioSource: false,
       },
     ]);
     // the builtin player provider does not tick the players step off
     expect(pending.value.map((step) => step.id)).toEqual([
       "intent",
       "players",
-      "plugins",
       "invite_members",
     ]);
+  });
+
+  it("only takes a plugin whose manifest declares an audio source for an app connection", async () => {
+    const audioSource = [MediaType.AUDIO_SOURCE];
+    // a player provider declares it for the line-ins of its devices
+    addProvider("sendspin--1", "sendspin", ProviderType.PLAYER, {
+      mediaTypes: audioSource,
+    });
+    addProvider("party--1", "party", ProviderType.PLUGIN);
+    preferenceState.intent.value = "phone_apps";
+
+    let module = await loadOnboardingModule();
+    expect(
+      module.useOnboarding().ctx.value.providers.map((p) => p.audioSource),
+    ).toEqual([false, false]);
+    expect(module.configuredAudioSourcePlugins()).toEqual([]);
+    expect(module.useOnboarding().pending.value.map((step) => step.id)).toEqual(
+      ["plugins"],
+    );
+
+    addProvider("connect--1", "spotify_connect", ProviderType.PLUGIN, {
+      mediaTypes: audioSource,
+    });
+    module = await loadOnboardingModule();
+    expect(
+      module.useOnboarding().ctx.value.providers.map((p) => p.audioSource),
+    ).toEqual([false, false, true]);
+    expect(module.configuredAudioSourcePlugins().map((p) => p.domain)).toEqual([
+      "spotify_connect",
+    ]);
+    expect(module.useOnboarding().pending.value).toEqual([]);
+  });
+
+  it("offers to connect Home Assistant only on a server that is not the add-on", async () => {
+    let { steps } = await loadOnboarding();
+    expect(steps.value.map((step) => step.id)).not.toContain("home_assistant");
+
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: false,
+    };
+    ({ steps } = await loadOnboarding());
+    expect(steps.value.map((step) => step.id)).toContain("home_assistant");
+  });
+
+  it("ticks Home Assistant off once its connection is set up, working or not", async () => {
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: false,
+    };
+    let { ctx, pending } = await loadOnboarding();
+    expect(ctx.value.homeAssistantConfigured).toBe(false);
+    expect(pending.value.map((step) => step.id)).toContain("home_assistant");
+
+    addProvider("hass--1", "hass", ProviderType.PLUGIN, { enabled: false });
+    ({ ctx, pending } = await loadOnboarding());
+    expect(ctx.value.homeAssistantConfigured).toBe(true);
+    expect(pending.value.map((step) => step.id)).not.toContain(
+      "home_assistant",
+    );
   });
 
   it("asks nothing of a guest, who is only passing through", async () => {
@@ -728,11 +809,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     const { pending } = await loadOnboarding();
     preferenceState.intent.value = "music_hub";
 
-    // the plugins and the household are optional, but still pending until done
-    expect(pending.value.map((step) => step.id)).toEqual([
-      "plugins",
-      "invite_members",
-    ]);
+    // the household is optional, but still pending until done
+    expect(pending.value.map((step) => step.id)).toEqual(["invite_members"]);
   });
 
   it("asks the server to complete onboarding without a global error toast", async () => {
@@ -994,7 +1072,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "intent",
       "music_sources",
       "players",
-      "plugins",
       "core_settings",
       "invite_members",
       "finish",

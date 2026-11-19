@@ -15,7 +15,6 @@ const BASE_ORDER = [
   "intent",
   "music_sources",
   "players",
-  "plugins",
   "core_settings",
   "invite_members",
   "finish",
@@ -34,7 +33,19 @@ function provider(
   builtin = false,
   enabled = true,
 ): OnboardingProvider {
-  return { type, domain, builtin, enabled };
+  return { type, domain, builtin, enabled, audioSource: false };
+}
+
+/** A plugin that lets an app play to Music Assistant. */
+function audioSourcePlugin(
+  domain: string,
+  builtin = false,
+  enabled = true,
+): OnboardingProvider {
+  return {
+    ...provider(ProviderType.PLUGIN, domain, builtin, enabled),
+    audioSource: true,
+  };
 }
 
 function context(
@@ -50,6 +61,10 @@ function context(
     ownedMusicSourceCount: 0,
     providers: [],
     playerCount: 0,
+    // the add-on connects Home Assistant by itself, so only the tests of the
+    // Home Assistant step run on a server that is not the add-on
+    homeAssistantAddon: true,
+    homeAssistantConfigured: false,
     memberCount: null,
     answers: {},
     ...overrides,
@@ -153,13 +168,21 @@ describe("onboarding step order", () => {
     expect(
       stepIds(applicableSteps(context({ answers: { intent: "music_hub" } }))),
     ).toEqual([...BASE_ORDER]);
-    expect(step(context(), "plugins").optional).toBe(true);
     // the registry carries the account step ahead of the admin track, which
-    // only a first run is offered, and the own-sources step between the music
-    // and the summary, whether or not a given member is offered it
+    // only a first run is offered, the app connections only the existing-app
+    // path is, Home Assistant only a server that is not the add-on is, and the
+    // own-sources step between the music and the summary, whether or not a
+    // given member is offered it
     expect(stepIds([...ONBOARDING_STEPS])).toEqual([
       "account",
-      ...BASE_ORDER,
+      "intent",
+      "music_sources",
+      "players",
+      "plugins",
+      "core_settings",
+      "home_assistant",
+      "invite_members",
+      "finish",
       "welcome",
       "your_players",
       "your_music",
@@ -168,11 +191,13 @@ describe("onboarding step order", () => {
     ]);
   });
 
-  it("makes app connections essential only when listening from other apps", () => {
-    for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
+  it("asks for app connections only when listening from other apps", () => {
+    for (const intent of [undefined, "music_hub"] as const) {
       const ctx = context({ answers: intent ? { intent } : {} });
-      expect(step(ctx, "plugins").optional).toBe(intent !== "phone_apps");
+      expect(stepIds(applicableSteps(ctx))).not.toContain("plugins");
     }
+    const apps = context({ answers: { intent: "phone_apps" } });
+    expect(step(apps, "plugins").optional).toBeFalsy();
   });
 
   it("offers nothing to someone on neither track", () => {
@@ -181,21 +206,27 @@ describe("onboarding step order", () => {
 });
 
 describe("onboarding step completion", () => {
-  it("only counts an app receiver as connecting music apps", () => {
-    const party = context({
-      answers: { intent: "phone_apps" },
-      providers: [provider(ProviderType.PLUGIN, "party")],
-    });
+  /** The existing-app setup with these providers set up. */
+  function appContext(...providers: OnboardingProvider[]): OnboardingContext {
+    return context({ answers: { intent: "phone_apps" }, providers });
+  }
+
+  it("only counts a plugin that lets an app play as connecting music apps", () => {
+    const party = appContext(provider(ProviderType.PLUGIN, "party"));
     expect(step(party, "plugins").isDone(party)).toBe(false);
-    for (const domain of ["spotify_connect", "airplay_receiver"]) {
-      const connected = {
-        ...party,
-        providers: [provider(ProviderType.PLUGIN, domain)],
-      };
-      expect(step(connected, "plugins").isDone(connected)).toBe(true);
-    }
-    const hub = { ...party, answers: { intent: "music_hub" as const } };
-    expect(step(hub, "plugins").isDone(hub)).toBe(true);
+
+    const connected = appContext(audioSourcePlugin("vban_receiver"));
+    expect(step(connected, "plugins").isDone(connected)).toBe(true);
+  });
+
+  it("counts a connected app as set up even while it is switched off", () => {
+    const ctx = appContext(audioSourcePlugin("spotify_connect", false, false));
+    expect(step(ctx, "plugins").isDone(ctx)).toBe(true);
+  });
+
+  it("does not count a builtin plugin as connecting music apps", () => {
+    const ctx = appContext(audioSourcePlugin("sendspin_source", true));
+    expect(step(ctx, "plugins").isDone(ctx)).toBe(false);
   });
 
   it("marks the intent done once it is answered", () => {
@@ -208,7 +239,6 @@ describe("onboarding step completion", () => {
   it.each([
     ["music_sources", ProviderType.MUSIC],
     ["players", ProviderType.PLAYER],
-    ["plugins", ProviderType.PLUGIN],
   ])("marks %s done once one is configured", (id, type) => {
     const ctx = context({ providers: [provider(type, "some_domain")] });
     expect(step(ctx, id).isDone(ctx)).toBe(true);
@@ -217,7 +247,6 @@ describe("onboarding step completion", () => {
   it.each([
     ["music_sources", ProviderType.MUSIC],
     ["players", ProviderType.PLAYER],
-    ["plugins", ProviderType.PLUGIN],
   ])("counts %s as set up even while it is switched off", (id, type) => {
     // a disabled provider is something the user set up and can switch back on,
     // so the wizard flags it rather than asking for it again
@@ -230,7 +259,6 @@ describe("onboarding step completion", () => {
   it.each([
     ["music_sources", ProviderType.MUSIC],
     ["players", ProviderType.PLAYER],
-    ["plugins", ProviderType.PLUGIN],
   ])("does not count a builtin provider as %s being set up", (id, type) => {
     const ctx = context({
       providers: [provider(type, "builtin_domain", true)],
@@ -244,7 +272,6 @@ describe("onboarding step completion", () => {
     });
     expect(step(ctx, "music_sources").isDone(ctx)).toBe(true);
     expect(step(ctx, "players").isDone(ctx)).toBe(false);
-    expect(step(ctx, "plugins").isDone(ctx)).toBe(false);
   });
 
   it("never marks the review of the server settings done", () => {
@@ -295,7 +322,6 @@ describe("pending onboarding steps", () => {
       "intent",
       "music_sources",
       "players",
-      "plugins",
       "invite_members",
     ]);
   });
@@ -306,7 +332,7 @@ describe("pending onboarding steps", () => {
       providers: [provider(ProviderType.PLAYER, "sonos")],
       memberCount: 2,
     });
-    expect(stepIds(pendingSteps(ctx))).toEqual(["music_sources", "plugins"]);
+    expect(stepIds(pendingSteps(ctx))).toEqual(["music_sources"]);
   });
 
   it("is empty once every step is done", () => {
@@ -327,7 +353,7 @@ describe("pending onboarding steps", () => {
       answers: { intent: "phone_apps" },
       providers: [
         provider(ProviderType.PLAYER, "sonos"),
-        provider(ProviderType.PLUGIN, "spotify_connect"),
+        audioSourcePlugin("spotify_connect"),
       ],
       memberCount: 1,
     });
@@ -348,7 +374,13 @@ describe("the step the wizard opens on", () => {
   });
 
   it("honours a deep link to a step that applies", () => {
-    expect(firstStep(context(), "plugins")).toBe("plugins");
+    const ctx = context({ answers: { intent: "phone_apps" } });
+    expect(firstStep(ctx, "plugins")).toBe("plugins");
+  });
+
+  it("opens the full setup on its first step to do instead of the app connections", () => {
+    const ctx = context({ answers: { intent: "music_hub" } });
+    expect(firstStep(ctx, "plugins")).toBe("music_sources");
   });
 
   it("honours a deep link to a step that is already done", () => {
@@ -399,11 +431,67 @@ describe("the step the wizard opens on", () => {
       providers: [
         provider(ProviderType.MUSIC, "spotify"),
         provider(ProviderType.PLAYER, "sonos"),
-        provider(ProviderType.PLUGIN, "spotify_connect"),
+        audioSourcePlugin("spotify_connect"),
       ],
       memberCount: 2,
     });
     expect(firstStep(ctx)).toBe("finish");
+  });
+});
+
+describe("the Home Assistant step", () => {
+  /** A server that is not the Home Assistant add-on. */
+  function standaloneContext(
+    overrides: Partial<OnboardingContext> = {},
+  ): OnboardingContext {
+    return context({ homeAssistantAddon: false, ...overrides });
+  }
+
+  it("offers the full setup to connect Home Assistant before the household", () => {
+    const ctx = standaloneContext({ answers: { intent: "music_hub" } });
+    expect(stepIds(applicableSteps(ctx))).toEqual([
+      "intent",
+      "music_sources",
+      "players",
+      "core_settings",
+      "home_assistant",
+      "invite_members",
+      "finish",
+    ]);
+  });
+
+  it("offers the existing-app setup to connect Home Assistant before the finish", () => {
+    const ctx = standaloneContext({ answers: { intent: "phone_apps" } });
+    expect(stepIds(applicableSteps(ctx))).toEqual([
+      "intent",
+      "players",
+      "plugins",
+      "home_assistant",
+      "finish",
+    ]);
+  });
+
+  it("never asks the add-on, which connects Home Assistant by itself", () => {
+    for (const intent of [undefined, "music_hub", "phone_apps"] as const) {
+      const ctx = context({ answers: intent ? { intent } : {} });
+      expect(stepIds(applicableSteps(ctx))).not.toContain("home_assistant");
+    }
+  });
+
+  it("keeps it optional, and pending until Home Assistant is connected", () => {
+    const open = standaloneContext();
+    expect(step(open, "home_assistant").optional).toBe(true);
+    expect(stepIds(pendingSteps(open))).toContain("home_assistant");
+
+    const connected = standaloneContext({ homeAssistantConfigured: true });
+    expect(step(connected, "home_assistant").isDone(connected)).toBe(true);
+    expect(stepIds(pendingSteps(connected))).not.toContain("home_assistant");
+  });
+
+  it("keeps it off the member track", () => {
+    expect(
+      stepIds(applicableSteps(memberContext({ homeAssistantAddon: false }))),
+    ).not.toContain("home_assistant");
   });
 });
 

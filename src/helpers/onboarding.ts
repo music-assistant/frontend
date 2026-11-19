@@ -21,6 +21,7 @@ export type OnboardingStepId =
   | "players"
   | "plugins"
   | "core_settings"
+  | "home_assistant"
   | "invite_members"
   | "finish"
   // the member track: being welcomed into a server someone else set up
@@ -32,6 +33,10 @@ export type OnboardingStepId =
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
 
+/**
+ * The hint on how to start playing from an app, by the domain of the plugin
+ * that receives it. Not every such plugin has one.
+ */
 export const APP_RECEIVER_INSTRUCTIONS: Readonly<Record<string, string>> = {
   spotify_connect: "onboarding.spotify_connect_hint",
   airplay_receiver: "onboarding.airplay_receiver_hint",
@@ -62,6 +67,8 @@ export interface OnboardingProvider {
   // switched off in its configuration: set up all the same, so it still ticks
   // its step off, but the wizard flags it
   enabled: boolean;
+  // a plugin that lets an app play to Music Assistant, such as Spotify Connect
+  audioSource: boolean;
 }
 
 export interface OnboardingAnswers {
@@ -91,6 +98,11 @@ export interface OnboardingContext {
   ownedMusicSourceCount: number;
   providers: OnboardingProvider[];
   playerCount: number;
+  // Music Assistant runs as the Home Assistant add-on, which connects Home
+  // Assistant by itself
+  homeAssistantAddon: boolean;
+  // a connection with Home Assistant is set up, working or not
+  homeAssistantConfigured: boolean;
   // the household members: everyone with an account of their own, so neither
   // the Home Assistant system account nor a guest or service one. `null` until
   // the users are in, so nothing is decided on a household nobody asked for
@@ -136,6 +148,8 @@ const onAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin || ctx.firstRun;
 const onMemberTrack = (ctx: OnboardingContext) => ctx.isMember;
 const onFullSetup = (ctx: OnboardingContext) =>
   onAdminTrack(ctx) && ctx.answers.intent !== "phone_apps";
+const onAppSetup = (ctx: OnboardingContext) =>
+  onAdminTrack(ctx) && ctx.answers.intent === "phone_apps";
 
 /**
  * A step that can be ticked off. The review steps and the summary are there to
@@ -178,19 +192,14 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     isDone: (ctx) => hasConfiguredProvider(ctx, ProviderType.PLAYER),
   },
   {
+    // connecting the music apps, which only the app setup asks for
     id: "plugins",
     kind: "step",
-    optional: true,
-    appliesTo: onAdminTrack,
+    appliesTo: onAppSetup,
     isDone: (ctx) =>
-      ctx.answers.intent === "phone_apps"
-        ? ctx.providers.some(
-            (provider) =>
-              provider.type === ProviderType.PLUGIN &&
-              !provider.builtin &&
-              Object.hasOwn(APP_RECEIVER_INSTRUCTIONS, provider.domain),
-          )
-        : hasConfiguredProvider(ctx, ProviderType.PLUGIN),
+      ctx.providers.some(
+        (provider) => provider.audioSource && !provider.builtin,
+      ),
   },
   {
     id: "core_settings",
@@ -200,6 +209,13 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     // is never anything missing here. What keeps the wizard from walking past
     // this step is its kind, not this answer.
     isDone: () => false,
+  },
+  {
+    id: "home_assistant",
+    kind: "step",
+    optional: true,
+    appliesTo: (ctx) => onAdminTrack(ctx) && !ctx.homeAssistantAddon,
+    isDone: (ctx) => ctx.homeAssistantConfigured,
   },
   {
     id: "invite_members",
@@ -259,11 +275,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
 
 /** Every step this context can see, in the order it should run in. */
 export function applicableSteps(ctx: OnboardingContext): OnboardingStep[] {
-  return ONBOARDING_STEPS.filter((step) => step.appliesTo(ctx)).map((step) =>
-    step.id === "plugins" && ctx.answers.intent === "phone_apps"
-      ? { ...step, optional: false }
-      : step,
-  );
+  return ONBOARDING_STEPS.filter((step) => step.appliesTo(ctx));
 }
 
 /** The translation key for a step's title in this setup. */

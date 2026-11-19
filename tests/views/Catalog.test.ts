@@ -1,3 +1,5 @@
+import { SETTINGS_COLORS } from "@/helpers/settings_colors";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import Catalog from "@/views/settings/Catalog.vue";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
@@ -7,6 +9,7 @@ import {
   CommunityProviderState,
   type CoreConfig,
   EventType,
+  MediaType,
   type ProviderConfig,
   ProviderIconVariant,
   type ProviderManifest,
@@ -249,6 +252,20 @@ afterEach(() => {
 });
 
 describe("Catalog", () => {
+  it("heads the Marketplace with its own header, in the orange of its banner, with Installed beside the title", async () => {
+    const wrapper = await mountCatalog();
+
+    const header = wrapper.getComponent(SettingsPageHeader);
+    expect(header.props("page")).toBe("catalog");
+    expect(header.get("h1").text()).toBe("settings.catalog.title");
+    expect(
+      header.get('[data-testid="settings-page-icon"]').attributes("style"),
+    ).toContain(`color: ${SETTINGS_COLORS.orange}`);
+    expect(
+      header.find('[data-testid="catalog-installed-button"]').exists(),
+    ).toBe(true);
+  });
+
   it("offers Discover and a tab per type with something to add, with its count", async () => {
     await mountCatalog();
 
@@ -257,6 +274,139 @@ describe("Catalog", () => {
       "settings.music_sources2",
       "settings.playerproviders2",
     ]);
+  });
+
+  describe("with plugins through which apps play to Music Assistant", () => {
+    beforeEach(() => {
+      for (const manifest of [
+        providerManifest({
+          domain: "airplay_receiver",
+          name: "AirPlay Receiver",
+          type: ProviderType.PLUGIN,
+          media_types: [MediaType.AUDIO_SOURCE],
+        }),
+        providerManifest({
+          domain: "party",
+          name: "Party",
+          type: ProviderType.PLUGIN,
+        }),
+      ]) {
+        apiMock.providerManifests[manifest.domain] = manifest;
+      }
+    });
+
+    it("counts them with the music sources, with no tab of their own", async () => {
+      await mountCatalog();
+
+      expect(tabLabels()).toEqual([
+        "settings.catalog.discover",
+        "settings.music_sources3",
+        "settings.playerproviders2",
+        "settings.plugins1",
+      ]);
+    });
+
+    it("lists them on the music sources tab and labels them as live sources", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      expect(cardNames("[data-testid='catalog-list']").sort()).toEqual([
+        "AirPlay Receiver",
+        "SoundCloud",
+        "Spotify",
+      ]);
+      expect(cardLabels("airplay_receiver")).toEqual(["live"]);
+      expect(cardLabels("spotify")).toEqual([]);
+    });
+
+    it("leaves the plugins tab to the other plugins", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
+    });
+
+    it("offers no chips while the live sources are the only label", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      expect(
+        document.querySelector("[data-testid='source-label-filter']"),
+      ).toBeNull();
+    });
+  });
+
+  describe("with music sources saying in their manifest what they offer", () => {
+    beforeEach(() => {
+      const withMediaTypes = (domain: string, mediaTypes: MediaType[]) => {
+        apiMock.providerManifests[domain] = {
+          ...apiMock.providerManifests[domain],
+          media_types: mediaTypes,
+        };
+      };
+      withMediaTypes("spotify", [MediaType.TRACK, MediaType.PODCAST]);
+      withMediaTypes("soundcloud", [MediaType.TRACK]);
+      apiMock.providerManifests.airplay_receiver = providerManifest({
+        domain: "airplay_receiver",
+        name: "AirPlay Receiver",
+        type: ProviderType.PLUGIN,
+        media_types: [MediaType.AUDIO_SOURCE],
+      });
+    });
+
+    it("labels each card with what it offers", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      expect(cardLabels("spotify")).toEqual(["library", "podcasts"]);
+      expect(cardLabels("soundcloud")).toEqual(["library"]);
+      expect(cardLabels("airplay_receiver")).toEqual(["live"]);
+    });
+
+    it("offers a chip for every label of the music sources, after All", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      expect(chipStates()).toEqual([
+        ["all", "true"],
+        ["library", "false"],
+        ["podcasts", "false"],
+        ["live", "false"],
+      ]);
+    });
+
+    it("narrows the tab down to the chip picked, and counts that on the tab", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      await pickChip("live");
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual([
+        "AirPlay Receiver",
+      ]);
+      expect(tabLabels()).toContain("settings.music_sources1");
+
+      await pickChip("all");
+
+      expect(cardNames("[data-testid='catalog-list']")).toHaveLength(3);
+      expect(tabLabels()).toContain("settings.music_sources3");
+    });
+
+    it("combines the chip with the search", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      await pickChip("library");
+      await search("sound");
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["SoundCloud"]);
+    });
+
+    it("offers no chips on the search results of every type", async () => {
+      await mountCatalog();
+
+      await search("s");
+
+      expect(cardNames("[data-testid='catalog-list']").length).toBeGreaterThan(
+        0,
+      );
+      expect(
+        document.querySelector("[data-testid='source-label-filter']"),
+      ).toBeNull();
+    });
   });
 
   it("counts what is set up on the Installed button, and opens the Installed view with it", async () => {
@@ -558,8 +708,7 @@ describe("Catalog", () => {
       "Chromecast",
     ]);
     expect(linkTarget("[data-testid='catalog-manage-link']")).toEqual({
-      name: "providersettings",
-      query: { types: "player" },
+      name: "playerproviders",
     });
   });
 
@@ -720,7 +869,7 @@ describe("Catalog", () => {
     });
     expect(
       linkTarget("[data-testid='catalog-manage-link']", groups[1]),
-    ).toEqual({ name: "providersettings", query: { types: "player" } });
+    ).toEqual({ name: "playerproviders" });
     expect(document.querySelector("[data-testid='catalog-list']")).toBeNull();
   });
 
@@ -1309,9 +1458,14 @@ describe("Catalog suggestions from the server", () => {
       apiMock.updateUser.mockResolvedValue(undefined);
     });
 
+    // Vue ignores a handler attached in the same instant as the event, and
+    // the clock is frozen here
+    const settleClock = () => vi.setSystemTime(Date.now() + 1);
+
     it("stops suggesting it from its tile, and keeps it in its list", async () => {
       recommendations = [...FOUR_FOUND, GOES_WELL];
       await mountCatalog();
+      settleClock();
       const dismiss = document.querySelector<HTMLElement>(
         "[data-domain='soundcloud'] [data-testid='catalog-card-dismiss']",
       )!;
@@ -1337,6 +1491,7 @@ describe("Catalog suggestions from the server", () => {
     it("says so, names it, and brings it back with Undo", async () => {
       recommendations = [...FOUR_FOUND, GOES_WELL];
       await mountCatalog();
+      settleClock();
 
       document
         .querySelector<HTMLElement>(
@@ -1380,6 +1535,7 @@ describe("Catalog suggestions from the server", () => {
       apiMock.updateUser.mockRejectedValue(new Error("refused"));
       vi.spyOn(console, "error").mockImplementation(() => {});
       await mountCatalog();
+      settleClock();
 
       document
         .querySelector<HTMLElement>(
@@ -3353,6 +3509,36 @@ function cardNames(container: string) {
       `${container} [data-testid='catalog-card-open']`,
     ),
   ].map((name) => name.textContent?.trim());
+}
+
+// the labels on the card of an entry
+function cardLabels(domain: string) {
+  return [
+    ...cardFor(domain).querySelectorAll(
+      "[data-testid='source-labels'] [data-label]",
+    ),
+  ].map((label) => label.getAttribute("data-label"));
+}
+
+// each chip filtering on what the sources offer, with whether it is picked
+function chipStates() {
+  return [
+    ...document.querySelectorAll(
+      "[data-testid='source-label-filter'] [data-label]",
+    ),
+  ].map((chip) => [
+    chip.getAttribute("data-label"),
+    chip.getAttribute("aria-pressed"),
+  ]);
+}
+
+async function pickChip(label: string) {
+  document
+    .querySelector<HTMLElement>(
+      `[data-testid='source-label-filter'] [data-label='${label}']`,
+    )!
+    .click();
+  await flushPromises();
 }
 
 function cardFor(domain: string, container = "body"): Element {

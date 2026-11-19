@@ -418,6 +418,36 @@ describe("ProviderRow", () => {
     },
   );
 
+  it.each(VARIANTS)(
+    "says what the source offers, setting the live sources apart (%s)",
+    (variant) => {
+      const wrapper = mountRow({ variant, labels: ["library", "live"] });
+
+      const labels = wrapper.findAll(
+        '[data-testid="source-labels"] [data-label]',
+      );
+      expect(labels.map((label) => label.text())).toEqual([
+        "settings.source_labels.library",
+        "settings.source_labels.live",
+      ]);
+      expect(labels[0].classes()).not.toContain("bg-orange-500/15");
+      expect(labels[1].classes()).toContain("bg-orange-500/15");
+    },
+  );
+
+  it.each(VARIANTS)(
+    "shows no labels for a source that offers none (%s)",
+    (variant) => {
+      for (const labels of [[], undefined]) {
+        const wrapper = mountRow({ variant, labels });
+
+        expect(wrapper.find('[data-testid="source-labels"]').exists()).toBe(
+          false,
+        );
+      }
+    },
+  );
+
   it("renders an outline item as the list root", () => {
     const wrapper = mountRow({ variant: "list" });
 

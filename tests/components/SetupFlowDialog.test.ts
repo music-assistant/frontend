@@ -89,8 +89,10 @@ vi.mock("@/plugins/store", () => ({
   store: storeMock,
 }));
 
-vi.mock("@/helpers/utils", () => ({
+vi.mock("@/helpers/utils", async (importOriginal) => ({
   copyToClipboard: copyToClipboardMock,
+  isEmbeddedImage: (await importOriginal<typeof import("@/helpers/utils")>())
+    .isEmbeddedImage,
 }));
 
 vi.mock("@/views/settings/ConfigEntryRow.vue", () => ({
@@ -264,6 +266,21 @@ describe("SetupFlowDialog", () => {
       expect(body?.classes()).toEqual(
         expect.arrayContaining(["select-text", "[&_*]:select-text"]),
       );
+    },
+  );
+
+  it.each([
+    ["an embedded", "data:image/png;base64,iVBORw0KGgo=", true],
+    ["a remote", "https://example.com/qr.png", false],
+  ])(
+    "draws %s step image only when it is embedded",
+    async (_kind, image, drawn) => {
+      const wrapper = await mountHeader(
+        { kind: "reconfigure", instanceId: "spotify--test" },
+        { ...progressStep("Scan the code"), image },
+      );
+
+      expect(wrapper.find("img").exists()).toBe(drawn);
     },
   );
 
@@ -710,7 +727,7 @@ describe("SetupFlowDialog launched with initial values", () => {
   it.each([
     [
       "ends the flow when a link takes the user to another page",
-      "/settings/storage",
+      "/settings/system/storage",
       true,
     ],
     ["stays open while the page stays the same", "/discover", false],

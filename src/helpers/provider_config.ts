@@ -1,10 +1,12 @@
 import {
+  MediaType,
   type ProviderConfig,
   type ProviderInstance,
   type ProviderManifest,
   ProviderStage,
   ProviderStatus,
   ProviderTier,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 
 const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
@@ -60,6 +62,16 @@ export const providerRequiresReconfiguration = (
 ) =>
   status === ProviderStatus.AUTH_REQUIRED &&
   canReconfigureProvider(status, hasSetupFlow, enabled);
+
+/**
+ * Whether a provider status needs the attention of the user; the last error of
+ * the provider says why.
+ */
+export const isProviderErrorStatus = (status?: ProviderStatus | null) =>
+  status === ProviderStatus.AUTH_REQUIRED ||
+  status === ProviderStatus.INCOMPATIBLE ||
+  status === ProviderStatus.ERROR ||
+  status === ProviderStatus.UNAVAILABLE;
 
 // A retired provider fails to load as INCOMPATIBLE (the server reuses
 // UnsupportedSystemError), so the stage is what tells the two apart.
@@ -148,6 +160,19 @@ export const getProviderHelpUrl = (
  */
 export const isBuiltinProvider = (manifest?: ProviderManifest): boolean =>
   manifest?.builtin === true;
+
+/**
+ * A plugin that lets an app play to Music Assistant, such as Spotify Connect or
+ * the AirPlay receiver: its manifest names the audio source media type. A
+ * provider of another type that names it, such as a player provider for the
+ * line-ins of its devices, is no such app.
+ */
+export const isAudioSourcePlugin = (manifest?: {
+  type: ProviderType;
+  media_types?: readonly MediaType[];
+}): boolean =>
+  manifest?.type === ProviderType.PLUGIN &&
+  (manifest.media_types?.includes(MediaType.AUDIO_SOURCE) ?? false);
 
 /**
  * The name a provider instance goes by: the custom name set on its configuration,

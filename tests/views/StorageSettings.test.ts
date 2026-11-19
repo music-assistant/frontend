@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import NetworkShareDialog from "@/components/settings/storage/NetworkShareDialog.vue";
 import RemoveLocationDialog from "@/components/settings/storage/RemoveLocationDialog.vue";
 import StorageLocationRow from "@/components/settings/storage/StorageLocationRow.vue";
@@ -78,6 +79,14 @@ beforeEach(() => {
 });
 
 describe("StorageSettings", () => {
+  it("heads the page with the header of the storage", async () => {
+    const wrapper = await mountPage();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "storage",
+    );
+  });
+
   it("offers to add a network share where the install can mount one", async () => {
     const wrapper = await mountPage();
 
