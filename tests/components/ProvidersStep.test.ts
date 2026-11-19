@@ -34,6 +34,16 @@ vi.mock("@/components/ProviderIcon.vue", () => ({
   },
 }));
 
+// the settings dialog is covered where it lives; here it only has to say
+// whether the row opened it
+vi.mock("@/components/settings/providers/ProviderSettingsDialog.vue", () => ({
+  default: {
+    name: "ProviderSettingsDialog",
+    props: { open: Boolean, instanceId: String },
+    template: "<div />",
+  },
+}));
+
 // the dialog is covered where it lives; here it only has to be reachable and
 // to report the props the step hands it
 vi.mock("@/views/settings/AddProviderDialog.vue", () => ({
@@ -197,6 +207,23 @@ describe("ProvidersStep", () => {
           .findAll("[data-testid=onboarding-configured-provider]")
           .map((row) => row.text()),
       ).toEqual(["Spotify Connect"]);
+
+      wrapper.unmount();
+    });
+
+    it("opens a connected app's settings from its row", async () => {
+      onboardingState.apps = [
+        configured("spotify_connect", { name: "Spotify Connect" }),
+      ];
+
+      const wrapper = mountStep(ProviderType.PLUGIN);
+
+      const row = wrapper.get("[data-testid=onboarding-configured-provider]");
+      expect(row.element.tagName).toBe("BUTTON");
+      await row.trigger("click");
+      expect(
+        wrapper.findComponent({ name: "ProviderSettingsDialog" }).props(),
+      ).toMatchObject({ open: true, instanceId: "spotify_connect--1" });
 
       wrapper.unmount();
     });

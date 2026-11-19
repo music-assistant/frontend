@@ -12,11 +12,14 @@
     </template>
 
     <ItemGroup v-if="hasServices" class="gap-2">
+      <!-- what a service does for AI is set on the AI settings page, so its
+           row here only shows how it is doing -->
       <ConfiguredProviderItem
         v-for="service in services"
         :key="service.provider.instance_id"
         :provider="service.provider"
         :description="service.provides"
+        status-only
         data-testid="onboarding-ai-service"
       />
     </ItemGroup>
