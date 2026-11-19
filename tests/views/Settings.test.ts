@@ -3,6 +3,7 @@
  * of the user may open.
  */
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
+import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
 import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
@@ -275,36 +276,6 @@ describe("Settings breadcrumbs on the Music pages", () => {
   ])("hang the %s list under Music", (name, title) => {
     expect(pageTrail(name)).toEqual([MUSIC, { title, disabled: true }]);
   });
-
-  it("hang the metadata settings under the metadata providers", () => {
-    expect(pageTrail("metadatasettings")).toEqual([
-      MUSIC,
-      METADATA,
-      { title: "settings.metadata.title", disabled: true },
-    ]);
-  });
-
-  it("hang the analysis status under the audio analysis providers", () => {
-    expect(pageTrail("audioanalysissettings")).toEqual([
-      MUSIC,
-      AUDIO_ANALYSIS,
-      { title: "settings.audio_analysis_status.title", disabled: true },
-    ]);
-  });
-
-  it.each([
-    ["metadatasettings", METADATA],
-    ["audioanalysissettings", AUDIO_ANALYSIS],
-  ])(
-    "name the providers above %s as plain text for who may not manage them",
-    (name, crumb) => {
-      hasScope.mockImplementation(
-        (scope) => scope !== Scope.CONFIG_PROVIDERS_WRITE,
-      );
-
-      expect(pageTrail(name)[1]).toEqual({ ...crumb, to: undefined });
-    },
-  );
 });
 
 /** The trail the settings page hands its heading on the given page. */
@@ -770,6 +741,42 @@ describe("the link back into onboarding", () => {
 
     wrapper.unmount();
   });
+});
+
+describe("the toolbar's view mode toggle", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+  });
+
+  function toolbarToggle(routeName: string) {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routeState.name = routeName;
+    const wrapper = mount(Settings, {
+      global: {
+        stubs: {
+          Toolbar: { template: '<div><slot name="append" /></div>' },
+          ToolbarHeading: ToolbarHeadingStub,
+          RouterView: true,
+          VBtn: true,
+          VDivider: true,
+        },
+      },
+    });
+    const shows = wrapper.findComponent(SettingsViewModeToggle).exists();
+    wrapper.unmount();
+    return shows;
+  }
+
+  it("switches the view of the overview", () => {
+    expect(toolbarToggle("settings")).toBe(true);
+  });
+
+  it.each(["backgroundtasks", "playersettings"])(
+    "leaves the view of the list on %s to the header of that list",
+    (routeName) => {
+      expect(toolbarToggle(routeName)).toBe(false);
+    },
+  );
 });
 
 describe("Settings page menu", () => {

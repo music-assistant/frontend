@@ -1,6 +1,6 @@
 <template>
   <SettingsListPanel
-    :title="title"
+    :title="heading"
     :count="list.filteredProviders.length"
     :view-mode="viewMode"
     :actions="actions"
@@ -121,6 +121,8 @@ const props = defineProps<{
   // whether the providers have loaded, before which no empty state shows
   loaded: boolean;
   viewMode: "list" | "card";
+  // in place of the name the Marketplace gives the type of the list
+  title?: string;
 }>();
 
 const emit = defineEmits<{
@@ -136,9 +138,12 @@ defineSlots<{
   row(props: { item: ProviderConfig }): unknown;
 }>();
 
-// a list is titled by the name the Marketplace gives its type
-const title = computed(() =>
-  $t(getCatalogType(props.list.type)?.label ?? props.list.type),
+// a list is titled by the name the Marketplace gives its type, unless its page
+// names it
+const heading = computed(
+  () =>
+    props.title ??
+    $t(getCatalogType(props.list.type)?.label ?? props.list.type),
 );
 
 // the empty state of the music sources carries the add button while there is

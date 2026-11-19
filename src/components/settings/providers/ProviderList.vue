@@ -3,6 +3,7 @@
     :list="list"
     :loaded="loaded"
     :view-mode="viewMode"
+    :title="title"
     @search="setSearchQuery"
     @filter-label="setLabelFilter"
     @add="openCatalog"
@@ -86,6 +87,8 @@ import { useRouter } from "vue-router";
 const props = defineProps<{
   // the list type, as providerListType gives it
   type: string;
+  // in place of the name the Marketplace gives the type
+  title?: string;
 }>();
 
 const router = useRouter();

@@ -167,9 +167,6 @@ provide("providersViewMode", {
 });
 
 const tasksViewMode = ref<"list" | "card">("list");
-const isTasksPage = computed(
-  () => router.currentRoute.value.name?.toString() === "backgroundtasks",
-);
 
 const savedTasksViewMode = getPreference<"list" | "card">(
   "settings.tasks.viewMode",
@@ -196,15 +193,13 @@ provide("tasksViewMode", {
   toggleViewMode: toggleTasksViewMode,
 });
 
-// the page on screen owns the toolbar's view mode toggle, if it has one; the
-// lists of a hub have the toggle in their panel
-const viewModeToggle = computed(() => {
-  if (isOverview.value)
-    return { mode: settingsViewMode.value, toggle: toggleSettingsViewMode };
-  if (isTasksPage.value)
-    return { mode: tasksViewMode.value, toggle: toggleTasksViewMode };
-  return undefined;
-});
+// the overview has the toolbar's view mode toggle; the lists of the pages below
+// it have theirs in their own header
+const viewModeToggle = computed(() =>
+  isOverview.value
+    ? { mode: settingsViewMode.value, toggle: toggleSettingsViewMode }
+    : undefined,
+);
 
 // Onboarding is reachable again from here: the setup wizard for the admin who
 // sets every kind of provider up, and the welcome for everyone else who lives

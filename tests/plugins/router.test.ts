@@ -368,9 +368,7 @@ describe("settings pages", () => {
     ["/settings/music/library", "librarysettings"],
     ["/settings/music/genres", "genremanagement"],
     ["/settings/music/metadata", "metadataproviders"],
-    ["/settings/music/metadata/settings", "metadatasettings"],
     ["/settings/music/audio-analysis", "audioanalysisproviders"],
-    ["/settings/music/audio-analysis/status", "audioanalysissettings"],
     ["/settings/players/playback", "playbacksettings"],
     ["/settings/players/support", "playerproviders"],
     ["/settings/plugins", "pluginproviders"],
@@ -386,8 +384,6 @@ describe("settings pages", () => {
   });
 
   it.each([
-    ["/settings/music/metadata", ProviderType.METADATA],
-    ["/settings/music/audio-analysis", ProviderType.AUDIO_ANALYSIS],
     ["/settings/players/support", ProviderType.PLAYER],
     ["/settings/plugins", ProviderType.PLUGIN],
   ])("hands %s the type of the providers it lists", (path, type) => {
@@ -426,7 +422,7 @@ describe("settings pages", () => {
     expect(route.meta.requiresScope).toBe(Scope.CONFIG_PROVIDERS_WRITE);
   });
 
-  it.each(["library", "playback", "metadata", "task_settings"] as const)(
+  it.each(["library", "playback", "task_settings"] as const)(
     "hands the %s page to the view showing its form",
     (id) => {
       if (!mocks.router) {
@@ -443,8 +439,10 @@ describe("earlier addresses of the settings pages", () => {
   it.each([
     ["/settings/library", "librarysettings"],
     ["/settings/genremanagement", "genremanagement"],
-    ["/settings/metadata", "metadatasettings"],
-    ["/settings/audio-analysis", "audioanalysissettings"],
+    ["/settings/metadata", "metadataproviders"],
+    ["/settings/music/metadata/settings", "metadataproviders"],
+    ["/settings/audio-analysis", "audioanalysisproviders"],
+    ["/settings/music/audio-analysis/status", "audioanalysisproviders"],
     ["/settings/playback", "playbacksettings"],
     ["/settings/network", "networksettings"],
     ["/settings/remote-access", "remoteaccesssettings"],
@@ -492,6 +490,7 @@ describe("earlier addresses of the settings pages", () => {
     "/settings/providers?types=music",
     "/settings/library",
     "/settings/tasks/settings",
+    "/settings/music/audio-analysis/status",
     "/settings/editcore/ai",
   ])("lead %s to a route of the router", (path) => {
     if (!mocks.router) {
@@ -754,10 +753,8 @@ describe("scope-gated routes", () => {
     ["/settings/system/network", ["admin"]],
     ["/settings/music/library", ["admin"]],
     ["/settings/system/storage", ["admin"]],
-    ["/settings/music/metadata/settings", ["admin"]],
     ["/settings/editcore/radio_tuner", ["admin"]],
     ["/settings/ai", ["admin"]],
-    ["/settings/music/audio-analysis/status", ["admin"]],
     ["/settings/system/network/remote-access", ["admin"]],
     ["/settings/system/diagnostics", ["admin"]],
     ["/settings/music/genres", ["admin"]],

@@ -132,8 +132,8 @@ describe("sectionPages", () => {
     expect(pageKeys("music", BUILTIN_ROLE_SCOPES.admin)).toEqual([
       "library",
       "genres",
-      "metadata_providers",
-      "audio_analysis_providers",
+      "metadata",
+      "audio_analysis",
     ]);
   });
 
@@ -155,8 +155,6 @@ describe("sectionPages", () => {
   });
 
   it.each([
-    ["metadata_providers", "metadata"],
-    ["audio_analysis_providers", "audio_analysis"],
     ["network", "remote_access"],
     ["background_tasks", "task_settings"],
   ])("leads %s to the %s page for an admin", (parent, key) => {
@@ -178,10 +176,7 @@ describe("sectionPages", () => {
   it.each([
     [Scope.CONFIG_CORE_WRITE, ["library"]],
     [Scope.LIBRARY_MANAGE, ["genres"]],
-    [
-      Scope.CONFIG_PROVIDERS_WRITE,
-      ["metadata_providers", "audio_analysis_providers"],
-    ],
+    [Scope.CONFIG_PROVIDERS_WRITE, ["metadata", "audio_analysis"]],
   ])("leads a role granting %s to the pages it needs", (scope, keys) => {
     expect(pageKeys("music", [...BUILTIN_ROLE_SCOPES.user, scope])).toEqual(
       keys,
@@ -192,23 +187,20 @@ describe("sectionPages", () => {
     expect(pageKeys("players", [Scope.CONFIG_PLAYERS_WRITE])).toEqual([]);
   });
 
-  it("leaves the analysis status out for a role without its scope", () => {
-    expect(
-      pageKeys("audio_analysis_providers", [Scope.CONFIG_PROVIDERS_WRITE]),
-    ).toEqual([]);
-  });
-
-  it("leads nowhere from a page without pages below it", () => {
-    expect(pageKeys("plugin_providers", BUILTIN_ROLE_SCOPES.admin)).toEqual([]);
-  });
+  it.each(["plugin_providers", "metadata", "audio_analysis"])(
+    "leads nowhere from %s, which has no pages below it",
+    (parent) => {
+      expect(pageKeys(parent, BUILTIN_ROLE_SCOPES.admin)).toEqual([]);
+    },
+  );
 });
 
 describe("settingsTrail", () => {
   it.each([
     ["music", ["music"]],
     ["library", ["music", "library"]],
-    ["metadata", ["music", "metadata_providers", "metadata"]],
-    ["audio_analysis", ["music", "audio_analysis_providers", "audio_analysis"]],
+    ["metadata", ["music", "metadata"]],
+    ["audio_analysis", ["music", "audio_analysis"]],
     ["player_support", ["players", "player_support"]],
     ["remote_access", ["system", "network", "remote_access"]],
     ["task_settings", ["system", "background_tasks", "task_settings"]],
@@ -228,7 +220,7 @@ describe("routeSettingsPage", () => {
     ["musicsettings", "music"],
     ["pluginproviders", "plugin_providers"],
     ["playerproviders", "player_support"],
-    ["audioanalysissettings", "audio_analysis"],
+    ["audioanalysisproviders", "audio_analysis"],
     ["remoteaccesssettings", "remote_access"],
     ["profilesecurity", "security"],
   ])("finds the page %s shows", (routeName, key) => {
@@ -250,13 +242,23 @@ describe("settingsPageRoute", () => {
   ] as const)("opens the %s settings on their own route", (id, name) => {
     expect(settingsPageRoute(id)).toEqual({ name });
   });
+
+  it.each([
+    ["metadata", "metadataproviders"],
+    ["audio_analysis", "audioanalysisproviders"],
+  ] as const)(
+    "opens the %s settings on the page of the providers they go with",
+    (id, name) => {
+      expect(settingsPageRoute(id)).toEqual({ name });
+    },
+  );
 });
 
 describe("providerListPage", () => {
   it.each([
     [ProviderType.PLAYER, "player_support"],
-    [ProviderType.METADATA, "metadata_providers"],
-    [ProviderType.AUDIO_ANALYSIS, "audio_analysis_providers"],
+    [ProviderType.METADATA, "metadata"],
+    [ProviderType.AUDIO_ANALYSIS, "audio_analysis"],
   ])("lists the %s providers on a page below a section", (type, key) => {
     expect(providerListPage(type)?.key).toBe(key);
   });
@@ -278,8 +280,8 @@ describe("providerListName", () => {
   it.each([
     [ProviderType.MUSIC, "music"],
     [ProviderType.PLUGIN, "plugin_providers"],
-    [ProviderType.METADATA, "metadata_providers"],
-    [ProviderType.AUDIO_ANALYSIS, "audio_analysis_providers"],
+    [ProviderType.METADATA, "metadata"],
+    [ProviderType.AUDIO_ANALYSIS, "audio_analysis"],
     [ProviderType.PLAYER, "player_support"],
   ])("names the page listing the %s providers", (type, name) => {
     expect(providerListName(type)).toBe(name);
@@ -355,15 +357,11 @@ describe("settingsHeading", () => {
     ["music", "settings.music", "settings.music_description"],
     ["players", "settings.players", "settings.players_description"],
     ["system", "settings.system", "settings.system_description"],
+    ["metadata", "metadata", "settings.metadata_description"],
     [
-      "metadata_providers",
-      "metadata",
-      "settings.metadata_providers_description",
-    ],
-    [
-      "audio_analysis_providers",
+      "audio_analysis",
       "settings.audio_analysis_providers",
-      "settings.audio_analysis_providers_description",
+      "settings.audio_analysis_description",
     ],
     [
       "remote_access",

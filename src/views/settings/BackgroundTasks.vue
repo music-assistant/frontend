@@ -11,15 +11,21 @@
       <div class="tasks-header w-100">
         <BackgroundTaskFilters @update:search="searchQuery = $event" />
 
-        <Button
-          v-if="canManageTasks"
-          class="clear-finished-btn"
-          variant="outline"
-          @click="clearFinishedTasks"
-        >
-          <Trash2 class="size-4" />
-          {{ t("background_tasks.clear_finished") }}
-        </Button>
+        <div class="flex shrink-0 items-center gap-2">
+          <SettingsViewModeToggle
+            :mode="viewMode"
+            @toggle="tasksViewMode.toggleViewMode()"
+          />
+          <Button
+            v-if="canManageTasks"
+            class="clear-finished-btn"
+            variant="outline"
+            @click="clearFinishedTasks"
+          >
+            <Trash2 class="size-4" />
+            {{ t("background_tasks.clear_finished") }}
+          </Button>
+        </div>
       </div>
 
       <div class="font-weight-medium">
@@ -104,6 +110,7 @@ import SettingsLinkRows, {
   type SettingsRow,
 } from "@/components/settings/SettingsLinkRows.vue";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
+import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -596,11 +603,6 @@ const getPriority = (task: BackgroundTask) => {
   padding-bottom: 6px;
 }
 
-.clear-finished-btn {
-  flex-shrink: 0;
-  align-self: center;
-}
-
 .tasks-header :deep(.filters-container) {
   align-items: flex-start;
 }
@@ -612,8 +614,7 @@ const getPriority = (task: BackgroundTask) => {
   }
 
   .clear-finished-btn {
-    width: 100%;
-    align-self: stretch;
+    flex: 1;
   }
 }
 </style>

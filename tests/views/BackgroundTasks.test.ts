@@ -1,4 +1,5 @@
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
+import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
 import { Scope } from "@/plugins/api/interfaces";
 import BackgroundTasks from "@/views/settings/BackgroundTasks.vue";
 import {
@@ -78,13 +79,33 @@ describe("BackgroundTasks", () => {
 
     expect(wrapper.find(SETTINGS_ROW).exists()).toBe(false);
   });
+
+  it.each([
+    ["who may manage the tasks", BUILTIN_ROLE_SCOPES.admin],
+    ["who may only read them", BUILTIN_ROLE_SCOPES.user],
+  ])(
+    "switches the view from the header of the list, for %s",
+    async (_role, scopes) => {
+      hasScope.mockImplementation(scopeChecker(scopes));
+      const toggleViewMode = vi.fn();
+
+      const wrapper = await mountPage({ toggleViewMode });
+      const toggle = wrapper
+        .get(".tasks-header")
+        .getComponent(SettingsViewModeToggle);
+      toggle.vm.$emit("toggle");
+
+      expect(toggle.props("mode")).toBe("list");
+      expect(toggleViewMode).toHaveBeenCalledOnce();
+    },
+  );
 });
 
-async function mountPage() {
+async function mountPage({ toggleViewMode = vi.fn() } = {}) {
   const wrapper = shallowMount(BackgroundTasks, {
     global: {
       provide: {
-        tasksViewMode: { viewMode: ref("list"), toggleViewMode: vi.fn() },
+        tasksViewMode: { viewMode: ref("list"), toggleViewMode },
       },
       stubs: {
         RouterLink: {
