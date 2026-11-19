@@ -64,8 +64,8 @@ const props = defineProps<{
   page: SettingsPageId;
   // settings the page edits with controls of its own, in the custom slot
   customSettings?: readonly SettingsField[];
-  // the form is a part of a page about something else, so the page's menu
-  // does not offer to reset it
+  // the form is a part of a page about something else, so it leaves the
+  // page's menu to the page and offers no reset there
   embedded?: boolean;
 }>();
 
@@ -131,11 +131,13 @@ const resetToDefaults = function () {
   emit("reset");
 };
 
-// the page's menu resets the form while it is on screen
+// the page's menu resets the form while it is on screen; an embedded form
+// leaves the menu to the page
 const pageMenu = useSettingsPageMenu();
 watch(
-  () => !props.embedded && showForm.value && loaded.value,
+  () => showForm.value && loaded.value,
   (resettable) => {
+    if (props.embedded) return;
     pageMenu.value = resettable
       ? [
           {
@@ -149,7 +151,7 @@ watch(
   { immediate: true },
 );
 onBeforeUnmount(() => {
-  pageMenu.value = [];
+  if (!props.embedded) pageMenu.value = [];
 });
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {

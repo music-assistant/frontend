@@ -66,6 +66,7 @@ const editConfigStub = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useSettingsPageMenu().value = [];
   hasScope.mockReturnValue(true);
   apiMock.getCoreConfig.mockResolvedValue(streamsConfig());
   apiMock.saveCoreConfig.mockResolvedValue(streamsConfig());
@@ -239,6 +240,16 @@ describe("SettingsPageForm", () => {
 
     expect(wrapper.find('[data-testid="edit-config"]').exists()).toBe(true);
     expect(useSettingsPageMenu().value).toEqual([]);
+  });
+
+  it("keeps what the page it is a part of put in the menu", async () => {
+    const pageItem = { label: "settings.reload", action: vi.fn() };
+    useSettingsPageMenu().value = [pageItem];
+
+    const wrapper = await mountForm({ embedded: true });
+    wrapper.unmount();
+
+    expect(useSettingsPageMenu().value).toEqual([pageItem]);
   });
 
   it("takes the reset out of the page menu when it closes", async () => {

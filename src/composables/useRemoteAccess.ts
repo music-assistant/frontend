@@ -7,11 +7,12 @@ import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
 
 /**
- * Music Assistant's own remote access: whether it is on, the id to connect
- * with, and turning it on and off.
+ * Music Assistant's own remote access: whether it is on, whether it runs
+ * through Home Assistant Link, the id to connect with, and turning it on and
+ * off.
  *
- * Nothing is read on creation; call `load` for the id of remote access that
- * is already on.
+ * Nothing is read on creation; call `load` for the details of remote access
+ * that is already on: its id and whether it runs through Home Assistant Link.
  */
 export function useRemoteAccess() {
   const info = ref<RemoteAccessInfo>();
@@ -28,6 +29,8 @@ export function useRemoteAccess() {
     () =>
       info.value?.enabled ?? api.serverInfo.value?.has_remote_access ?? false,
   );
+  // unknown until the details of remote access came in
+  const usingHaCloud = computed(() => info.value?.using_ha_cloud);
   const remoteId = computed(() => {
     const id = info.value?.remote_id;
     return id ? formatRemoteId(id) : undefined;
@@ -79,5 +82,14 @@ export function useRemoteAccess() {
     }
   };
 
-  return { enabled, remoteId, loadingId, busy, load, setEnabled, copyId };
+  return {
+    enabled,
+    usingHaCloud,
+    remoteId,
+    loadingId,
+    busy,
+    load,
+    setEnabled,
+    copyId,
+  };
 }

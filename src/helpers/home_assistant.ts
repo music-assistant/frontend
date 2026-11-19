@@ -1,12 +1,11 @@
 import { isProviderErrorStatus } from "@/helpers/provider_config";
-import {
-  type ProviderConfig,
-  ProviderStatus,
-  type RemoteAccessInfo,
-} from "@/plugins/api/interfaces";
+import { type ProviderConfig, ProviderStatus } from "@/plugins/api/interfaces";
 
 export const HASS_DOMAIN = "hass";
 export const HASS_PLAYERS_DOMAIN = "hass_players";
+// the webserver setting that gives a Home Assistant user without an account
+// one when they first sign in with Home Assistant
+export const SELF_REGISTRATION_KEY = "auth_allow_self_registration";
 
 export type HassConnectionState =
   "not_set_up" | "connecting" | "connected" | "disabled" | "needs_attention";
@@ -26,12 +25,13 @@ export function hassConnectionState(
 }
 
 /**
- * The translation key of how remote access runs: off, or on with or without
- * Home Assistant Cloud.
+ * The translation key of how remote access that is on runs: with or without
+ * Home Assistant Link.
+ *
+ * @param usingHaCloud - Whether remote access runs through Home Assistant Link.
  */
-export function remoteAccessStateKey(info: RemoteAccessInfo): string {
-  if (!info.enabled) return "off";
-  return info.using_ha_cloud
+export function remoteAccessStateKey(usingHaCloud: boolean): string {
+  return usingHaCloud
     ? "settings.home_assistant.remote_access_ha_cloud"
     : "settings.home_assistant.remote_access_without_ha_cloud";
 }
