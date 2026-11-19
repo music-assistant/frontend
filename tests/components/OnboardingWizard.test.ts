@@ -671,7 +671,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
       for (const [title, count] of [
         ["onboarding.steps.home_assistant.title", "3/7"],
-        ["onboarding.steps.core_settings.title", "4/7"],
+        ["onboarding.steps.core_settings.away_title", "4/7"],
       ]) {
         await wrapper.find("[data-testid=onboarding-next]").trigger("click");
         await flushPromises();
@@ -1472,7 +1472,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
               ? "onboarding.steps.intent.summary_title"
               : id === "plugins" && intent === "phone_apps"
                 ? "onboarding.steps.plugins.phone_apps_title"
-                : `onboarding.steps.${id}.title`;
+                : id === "ai"
+                  ? "onboarding.steps.ai.enrich_title"
+                  : `onboarding.steps.${id}.title`;
           const row = wrapper
             .findAll("[data-testid=onboarding-summary-done]")
             .find((item) => item.text().includes(title));
@@ -1664,7 +1666,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     // a review is nothing to set up, so it is shown rather than skipped, and
     // moving on from it is all the footer offers
-    expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
+    expect(heading(wrapper)).toBe("onboarding.steps.core_settings.away_title");
     expect(wrapper.find("[data-testid=onboarding-network-hint]").exists()).toBe(
       true,
     );
@@ -1676,7 +1678,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // through
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
-    expect(heading(wrapper)).toBe("onboarding.steps.ai.title");
+    expect(heading(wrapper)).toBe("onboarding.steps.ai.enrich_title");
 
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
@@ -1700,7 +1702,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await wrapper.find("[data-testid=onboarding-next]").trigger("click");
     await flushPromises();
 
-    expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
+    expect(heading(wrapper)).toBe("onboarding.steps.core_settings.away_title");
 
     wrapper.unmount();
   });
@@ -1742,9 +1744,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const wrapper = await mountWizard({ step: "core_settings" });
     await flushPromises();
 
-    expect(heading(wrapper)).toBe("onboarding.steps.core_settings.title");
+    expect(heading(wrapper)).toBe("onboarding.steps.core_settings.away_title");
     expect(
-      wrapper.find("[data-testid=onboarding-remote-access]").exists(),
+      wrapper.find("[data-testid=onboarding-remote-access-turn-on]").exists(),
     ).toBe(true);
 
     wrapper.unmount();

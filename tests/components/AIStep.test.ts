@@ -79,12 +79,44 @@ async function mountStep() {
   return wrapper;
 }
 
+type Wrapper = Awaited<ReturnType<typeof mountStep>>;
+
+function testId(wrapper: Wrapper, id: string) {
+  return wrapper.find(`[data-testid=${id}]`);
+}
+
+const linked = (wrapper: Wrapper) =>
+  testId(wrapper, "onboarding-invitation-visual").attributes("data-linked");
+
 describe("AIStep", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     onboardingState.services.value = [];
     apiMock.getAIEngines.mockResolvedValue([]);
     apiMock.getAIUsage.mockResolvedValue([]);
+  });
+
+  it("lists a few examples of what AI brings", async () => {
+    const wrapper = await mountStep();
+
+    expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
+      "onboarding.steps.ai.intro",
+    );
+    // a selection: more of Music Assistant uses AI over time
+    expect(testId(wrapper, "onboarding-invitation-features-title").text()).toBe(
+      "onboarding.steps.ai.examples",
+    );
+    expect(
+      testId(wrapper, "onboarding-invitation-features")
+        .findAll("li")
+        .map((item) => item.text()),
+    ).toEqual([
+      "onboarding.steps.ai.features.announcements",
+      "onboarding.steps.ai.features.ai_radio",
+      "onboarding.steps.ai.features.smart_playlists",
+      "onboarding.steps.ai.features.music_quiz",
+      "onboarding.steps.ai.features.playlist_covers",
+    ]);
   });
 
   it("lists the AI services set up, each with what it provides", async () => {
@@ -108,7 +140,18 @@ describe("AIStep", () => {
       "OpenAIsettings.ai.engine_count.text · settings.ai.engine_count.image",
       "Home Assistantsettings.ai.engine_count.speech",
     ]);
-    expect(wrapper.text()).not.toContain("onboarding.nothing_configured");
+    // set up, so the link is made and nothing is left to invite to
+    expect(linked(wrapper)).toBe("true");
+    expect(testId(wrapper, "onboarding-invitation-features").exists()).toBe(
+      false,
+    );
+    expect(testId(wrapper, "onboarding-invitation-optional").exists()).toBe(
+      false,
+    );
+    // a way to add another, without the weight of the first invitation
+    const add = wrapper.get("[data-testid=onboarding-add-ai-service]");
+    expect(add.text()).toBe("settings.ai.add_service");
+    expect(add.classes()).toContain("bg-accent");
   });
 
   it("flags a service that is set up but does not work", async () => {
@@ -127,18 +170,24 @@ describe("AIStep", () => {
     expect(service.find("[aria-label]").attributes("aria-label")).toBe(
       "settings.provider_status_auth_required",
     );
+    expect(linked(wrapper)).toBeUndefined();
   });
 
-  it("says nothing is set up, and offers to add an AI service", async () => {
+  it("invites to add an AI service while none is set up, as optional", async () => {
     const wrapper = await mountStep();
 
     expect(wrapper.find("[data-testid=onboarding-ai-service]").exists()).toBe(
       false,
     );
-    expect(wrapper.text()).toContain("onboarding.nothing_configured");
-    expect(wrapper.get("[data-testid=onboarding-add-ai-service]").text()).toBe(
-      "settings.ai.add_service",
+    const add = wrapper.get("[data-testid=onboarding-add-ai-service]");
+    expect(add.text()).toBe("settings.ai.add_service");
+    expect(add.classes()).toEqual(
+      expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
     );
+    expect(testId(wrapper, "onboarding-invitation-optional").text()).toBe(
+      "onboarding.steps.ai.optional",
+    );
+    expect(linked(wrapper)).toBeUndefined();
   });
 
   it("opens the add flow on the AI and speech services", async () => {
