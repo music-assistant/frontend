@@ -11,6 +11,7 @@
       :show-password-values="showPasswordValues"
       :disabled="disabled"
       :provider-domain="providerDomain"
+      :clearable="clearable"
       @toggle-password="emit('toggle-password')"
       @update:value="emit('update:value', $event)"
       @action="emit('action')"
@@ -94,12 +95,17 @@ import { ConfigValueType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import ConfigEntryField from "./ConfigEntryField.vue";
 
-const props = defineProps<{
-  confEntry: ConfigEntryUI;
-  showPasswordValues: boolean;
-  disabled: boolean;
-  providerDomain?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    confEntry: ConfigEntryUI;
+    showPasswordValues: boolean;
+    disabled: boolean;
+    providerDomain?: string;
+    // false leaves out the clear button of a dropdown, for a value that must stay set
+    clearable?: boolean;
+  }>(),
+  { providerDomain: undefined, clearable: true },
+);
 
 const emit = defineEmits<{
   (e: "update:value", value: ConfigValueType): void;

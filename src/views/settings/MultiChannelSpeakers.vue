@@ -41,6 +41,7 @@
           :conf-entry="shown"
           :show-password-values="showPasswordValues"
           :disabled="isDisabled(entry)"
+          :clearable="entry !== speaker.channel"
           @update:value="setValue(entry, $event)"
           @toggle-password="emit('toggle-password')"
           @action="emit('action', entry)"
@@ -122,8 +123,14 @@ const getChannelTitle = function (speaker: MultiChannelSpeaker): string {
 // a speaker that moves to the channel of another one swaps with it, which is what
 // the server does on save as well
 const setValue = function (entry: ConfigEntryUI, value: ConfigValueType) {
+  // a speaker always plays a channel, and the server would store an empty one
+  if (isChannel(entry) && (value === null || value === "")) return;
   const swap = getChannelSwap(props.speakers, entry, value);
   emit("update:value", entry, value);
   if (swap) emit("update:value", swap.entry, swap.value);
 };
+
+function isChannel(entry: ConfigEntryUI): boolean {
+  return props.speakers.some((speaker) => speaker.channel === entry);
+}
 </script>

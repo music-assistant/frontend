@@ -133,6 +133,24 @@ function entry(overrides: Partial<ConfigEntryUI>): ConfigEntryUI {
   } as ConfigEntryUI;
 }
 
+describe("ConfigEntryRow field", () => {
+  it("hands a dropdown that must keep its value to the field without a clear button", () => {
+    const field = (clearable?: boolean) =>
+      mount(ConfigEntryRow, {
+        props: {
+          confEntry: entry({}),
+          showPasswordValues: false,
+          disabled: false,
+          ...(clearable === undefined ? {} : { clearable }),
+        },
+        global: { stubs: { ...STUBS, ConfigEntryField: true } },
+      }).getComponent({ name: "ConfigEntryField" });
+
+    expect(field().props("clearable")).toBe(true);
+    expect(field(false).props("clearable")).toBe(false);
+  });
+});
+
 function mountRow(confEntry: ConfigEntryUI) {
   return mount(ConfigEntryRow, {
     props: { confEntry, showPasswordValues: false, disabled: false },

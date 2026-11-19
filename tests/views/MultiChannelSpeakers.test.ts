@@ -72,6 +72,29 @@ describe("MultiChannelSpeakers", () => {
     });
   });
 
+  it("keeps the channel of a speaker set", async () => {
+    const speakers = [speaker(1, "Studio left", "front_left", true)];
+    const wrapper = mountSpeakers(speakers);
+    await wrapper.get('[data-slot="accordion-trigger"]').trigger("click");
+
+    // only the channel goes without a clear button
+    expect(entryRow(wrapper, "speaker_1_channel").props("clearable")).toBe(
+      false,
+    );
+    expect(entryRow(wrapper, "speaker_1_output_delay").props("clearable")).toBe(
+      true,
+    );
+    // and an empty choice never reaches the form, while a channel does
+    entryRow(wrapper, "speaker_1_channel").vm.$emit("update:value", null);
+    entryRow(wrapper, "speaker_1_channel").vm.$emit("update:value", "");
+    expect(wrapper.emitted("update:value")).toBeUndefined();
+    entryRow(wrapper, "speaker_1_channel").vm.$emit(
+      "update:value",
+      "front_right",
+    );
+    expect(wrapper.emitted("update:value")).toHaveLength(1);
+  });
+
   it("follows a channel picked but not saved yet", async () => {
     const speakers = [speaker(1, "Studio left", "front_left", true)];
     const wrapper = mountSpeakers(speakers);
