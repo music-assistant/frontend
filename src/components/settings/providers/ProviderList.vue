@@ -1,13 +1,11 @@
 <template>
   <ProviderListPanel
-    v-for="list in lists"
-    :key="list.type"
     :list="list"
     :loaded="loaded"
     :view-mode="viewMode"
-    @search="setSearchQuery(list.type, $event)"
-    @filter-label="setLabelFilter(list.type, $event)"
-    @add="openCatalog(list)"
+    @search="setSearchQuery"
+    @filter-label="setLabelFilter"
+    @add="openCatalog"
     @toggle-view-mode="providersViewMode.toggleViewMode()"
   >
     <template #row="{ item }">
@@ -54,10 +52,7 @@ import ProviderListPanel from "@/components/settings/providers/ProviderListPanel
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
-import {
-  type ProviderList,
-  useProviderSources,
-} from "@/composables/settings/providers/useProviderSources";
+import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { getCatalogRoute } from "@/helpers/provider_catalog";
 import {
@@ -85,12 +80,12 @@ import { computed, inject } from "vue";
 import { useRouter } from "vue-router";
 
 /**
- * The lists of providers on a settings page, kept in sync with the server, with
+ * The list of providers on a settings page, kept in sync with the server, with
  * what can be done with each provider and the dialog for who may use a source.
  */
 const props = defineProps<{
-  // the list types, as providerListType gives them, in display order
-  types: readonly string[];
+  // the list type, as providerListType gives it
+  type: string;
 }>();
 
 const router = useRouter();
@@ -158,14 +153,14 @@ const getErrorText = function (item: ProviderConfig) {
 
 const {
   loaded,
-  lists,
+  list,
   setSearchQuery,
   setLabelFilter,
   loadItems,
   removeSource,
 } = useProviderSources({
   managesAllSources,
-  listTypes: () => props.types,
+  listType: () => props.type,
   getProviderName,
   getSourceLabels: sourceLabelsOf,
   isErrorStatus,
@@ -181,8 +176,8 @@ const {
 } = useProviderAccess({ managesAllSources, canOwnSources });
 
 // the Catalog opens on the type of the list and only offers what the viewer may add
-const openCatalog = function (list: ProviderList) {
-  void router.push(getCatalogRoute(list.type));
+const openCatalog = function () {
+  void router.push(getCatalogRoute(props.type));
 };
 
 const openProviderOptions = function (providerInstanceId: string) {

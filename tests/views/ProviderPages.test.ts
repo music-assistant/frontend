@@ -2065,8 +2065,8 @@ async function mountWithConfigs(
         FilterEmptyState: false,
         ItemGroup: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
+        ProviderList: false,
         ProviderListPanel: false,
-        ProviderLists: false,
         ProviderRow: ProviderRowStub,
         // the panel holds the list, its heading and its add button
         SettingsListPanel: false,

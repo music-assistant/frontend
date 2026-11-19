@@ -9,9 +9,8 @@ import { providerListType } from "@/helpers/settings_pages";
 import { computed } from "vue";
 
 interface Props {
-  // the lists of providers the settings page shows, or undefined when it lists
-  // every type
-  types?: readonly string[];
+  // the list type of the settings page, as providerListType gives it
+  type: string;
 }
 
 const props = defineProps<Props>();
@@ -22,10 +21,7 @@ const { moved, dismissNotice } = useCommunityCatalog();
 const movedHere = computed(() =>
   moved.value.filter(
     ({ manifest }) =>
-      !props.types ||
-      props.types.includes(
-        providerListType(manifest.type, manifest.media_types),
-      ),
+      providerListType(manifest.type, manifest.media_types) === props.type,
   ),
 );
 </script>
