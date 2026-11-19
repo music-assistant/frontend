@@ -266,10 +266,10 @@ watch(
 onBeforeUnmount(() => clearTimeout(signInTimer));
 
 // the wizard may only move on once the account is there: there is nothing else
-// to do on a server nobody can sign in to. Back to the welcome is open as long
-// as no account is on its way.
+// to do on a server nobody can sign in to. Back to the welcome is open until
+// the form is submitted.
 const beforeLeave = async (options?: StepLeaveOptions): Promise<boolean> =>
-  ctx.value.signedIn || (!!options?.back && !busy.value);
+  ctx.value.signedIn || (!!options?.back && !locked.value);
 
 // an account this page is not signed in with: the reload or the sign-in in the
 // step is the way on, so the wizard's forward button stands down

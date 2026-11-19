@@ -259,6 +259,7 @@ describe("AccountStep", () => {
     expect(wrapper.vm.ownsForwardAction).toBe(true);
     expect(wrapper.vm.forwardForm).toBeUndefined();
     expect(wrapper.emitted("advance")).toBeUndefined();
+    await expect(wrapper.vm.beforeLeave({ back: true })).resolves.toBe(false);
 
     wrapper.unmount();
   });
@@ -283,6 +284,7 @@ describe("AccountStep", () => {
     expect(wrapper.vm.ownsForwardAction).toBe(true);
     expect(wrapper.vm.forwardForm).toBeUndefined();
     expect(wrapper.emitted("advance")).toBeUndefined();
+    await expect(wrapper.vm.beforeLeave({ back: true })).resolves.toBe(false);
 
     wrapper.unmount();
   });
@@ -306,6 +308,7 @@ describe("AccountStep", () => {
       wrapper.find("[data-testid=onboarding-account-reload]").exists(),
     ).toBe(true);
     expect(wrapper.emitted("advance")).toBeUndefined();
+    await expect(wrapper.vm.beforeLeave({ back: true })).resolves.toBe(false);
 
     wrapper.unmount();
   });
