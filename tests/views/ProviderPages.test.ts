@@ -1,13 +1,13 @@
 /**
- * The settings pages listing providers: the Music hub, and the page listing
- * the providers of each other type.
+ * The settings pages listing providers: the Music hub, the metadata and the
+ * audio analysis pages, and the page listing the providers of each other type.
  */
 import {
   flushPromises,
   type MountingOptions,
   shallowMount,
 } from "@vue/test-utils";
-import { ref } from "vue";
+import { type Component, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CommunityProviderState,
@@ -28,6 +28,8 @@ import {
 import type { MusicAssistantApi } from "@/plugins/api";
 import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
 import SettingsListPanel from "@/components/settings/SettingsListPanel.vue";
+import AudioAnalysis from "@/views/settings/AudioAnalysis.vue";
+import MetadataSettings from "@/views/settings/MetadataSettings.vue";
 import MusicSettings from "@/views/settings/MusicSettings.vue";
 import ProviderListSettings from "@/views/settings/ProviderListSettings.vue";
 import { communityProvider } from "../fixtures/communityProvider";
@@ -803,7 +805,7 @@ describe("Providers", () => {
 
   it.each([
     [ProviderType.METADATA, "settings.metadataproviders"],
-    [ProviderType.AUDIO_ANALYSIS, "settings.audio_analysis_providers"],
+    [ProviderType.PLAYER, "settings.playerproviders"],
   ])(
     "heads the %s providers with their Marketplace name",
     async (type, heading) => {
@@ -821,6 +823,27 @@ describe("Providers", () => {
       expect(panels(wrapper).map(({ title }) => title)).toEqual([heading]);
     },
   );
+
+  it("names the audio analysis providers the analysis modules", async () => {
+    pageType = ProviderType.AUDIO_ANALYSIS;
+
+    const wrapper = await mountWithConfigs([
+      providerConfig({
+        domain: "essentia",
+        instance_id: "essentia--1",
+        status: ProviderStatus.LOADED,
+        type: ProviderType.AUDIO_ANALYSIS,
+      }),
+    ]);
+
+    expect(panels(wrapper)).toEqual([
+      {
+        list: ProviderType.AUDIO_ANALYSIS,
+        title: "settings.audio_analysis_modules",
+        count: 1,
+      },
+    ]);
+  });
 
   it("lists the plugins under their Marketplace name, below the header of their page", async () => {
     pageType = ProviderType.PLUGIN;
@@ -854,31 +877,6 @@ describe("Providers", () => {
 });
 
 describe("Providers leading to the settings pages of their section", () => {
-  const STATUS_ROW = '[data-testid="settings-page-link-audio_analysis"]';
-
-  it("leads the audio analysis providers to the analysis status", async () => {
-    pageType = ProviderType.AUDIO_ANALYSIS;
-
-    const wrapper = await mountWithLinks();
-
-    const row = wrapper.get(STATUS_ROW);
-    expect(JSON.parse(row.attributes("href")!)).toEqual({
-      name: "audioanalysissettings",
-    });
-    expect(row.text()).toContain("settings.audio_analysis_status.title");
-  });
-
-  it("leaves the row out for a role that may not open the status", async () => {
-    pageType = ProviderType.AUDIO_ANALYSIS;
-    authMock.hasScope.mockImplementation(
-      (scope) => scope !== Scope.SYSTEM_MANAGE,
-    );
-
-    const wrapper = await mountWithLinks();
-
-    expect(wrapper.find(STATUS_ROW).exists()).toBe(false);
-  });
-
   it("leads Music to the library settings, the genres, the metadata and the audio analysis, saying how many providers run", async () => {
     apiMock.providers = {
       "fanarttv--1": providerInstance({
@@ -897,11 +895,8 @@ describe("Providers leading to the settings pages of their section", () => {
     expect(linkRows(wrapper)).toEqual([
       { key: "library", to: { name: "librarysettings" } },
       { key: "genres", to: { name: "genremanagement" } },
-      { key: "metadata_providers", to: { name: "metadataproviders" } },
-      {
-        key: "audio_analysis_providers",
-        to: { name: "audioanalysisproviders" },
-      },
+      { key: "metadata", to: { name: "metadataproviders" } },
+      { key: "audio_analysis", to: { name: "audioanalysisproviders" } },
     ]);
     expect(wrapper.findAll('[data-testid="settings-page-state"]')).toHaveLength(
       2,
@@ -917,10 +912,7 @@ describe("Providers leading to the settings pages of their section", () => {
   it.each([
     [Scope.CONFIG_CORE_WRITE, ["library"]],
     [Scope.LIBRARY_MANAGE, ["genres"]],
-    [
-      Scope.CONFIG_PROVIDERS_WRITE,
-      ["metadata_providers", "audio_analysis_providers"],
-    ],
+    [Scope.CONFIG_PROVIDERS_WRITE, ["metadata", "audio_analysis"]],
   ])(
     "leads a role granting only %s on Music where it may go",
     async (scope, keys) => {
@@ -929,22 +921,6 @@ describe("Providers leading to the settings pages of their section", () => {
       const wrapper = await mountWithLinks();
 
       expect(linkRows(wrapper).map(({ key }) => key)).toEqual(keys);
-    },
-  );
-
-  it.each([
-    [ProviderType.METADATA, "metadata", "metadatasettings"],
-    [ProviderType.AUDIO_ANALYSIS, "audio_analysis", "audioanalysissettings"],
-  ])(
-    "leads the %s providers to their %s settings page",
-    async (type, pageId, routeName) => {
-      pageType = type;
-
-      const wrapper = await mountWithLinks();
-
-      expect(linkRows(wrapper)).toEqual([
-        { key: pageId, to: { name: routeName } },
-      ]);
     },
   );
 
@@ -1041,8 +1017,8 @@ describe("Providers on a hub", () => {
   });
 
   it.each([
-    [ProviderType.METADATA, "metadata_providers"],
-    [ProviderType.AUDIO_ANALYSIS, "audio_analysis_providers"],
+    [ProviderType.METADATA, "metadata"],
+    [ProviderType.AUDIO_ANALYSIS, "audio_analysis"],
     [ProviderType.PLAYER, "player_support"],
   ])("heads the %s providers as their page", async (type, name) => {
     pageType = type;
@@ -1368,7 +1344,7 @@ describe("Providers on the page of a type", () => {
     );
 
   it.each(LIST_TYPES)(
-    "lists the %s providers its route hands it, alone",
+    "lists the %s providers on their page, alone",
     async (type) => {
       pageType = type;
 
@@ -2208,10 +2184,19 @@ async function mountWithLinks() {
   return wrapper;
 }
 
+// the pages listing the providers of a type along with more of their own; any
+// other type is listed on the page its route hands the type
+const OWN_PAGES: Partial<Record<ProviderType, Component>> = {
+  [ProviderType.MUSIC]: MusicSettings,
+  [ProviderType.METADATA]: MetadataSettings,
+  [ProviderType.AUDIO_ANALYSIS]: AudioAnalysis,
+};
+
 // the page the test opens, with what its route hands it
 function mountPage(options: { global: MountingOptions<unknown>["global"] }) {
-  return pageType === ProviderType.MUSIC
-    ? shallowMount(MusicSettings, options)
+  const page = OWN_PAGES[pageType];
+  return page
+    ? shallowMount(page, options)
     : shallowMount(ProviderListSettings, {
         ...options,
         props: { type: pageType },

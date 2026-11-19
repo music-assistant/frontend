@@ -43,8 +43,10 @@ const paramsAndQueryProps = (route: {
 const MOVED_SETTINGS_PAGES: Readonly<Record<string, string>> = {
   library: "librarysettings",
   genremanagement: "genremanagement",
-  metadata: "metadatasettings",
-  "audio-analysis": "audioanalysissettings",
+  metadata: "metadataproviders",
+  "music/metadata/settings": "metadataproviders",
+  "audio-analysis": "audioanalysisproviders",
+  "music/audio-analysis/status": "audioanalysisproviders",
   playback: "playbacksettings",
   network: "networksettings",
   "remote-access": "remoteaccesssettings",
@@ -625,40 +627,18 @@ export const routes: RouteRecordRaw[] = [
             name: "metadataproviders",
             component: () =>
               import(
-                /* webpackChunkName: "providerlistsettings" */ "@/views/settings/ProviderListSettings.vue"
+                /* webpackChunkName: "metadatasettings" */ "@/views/settings/MetadataSettings.vue"
               ),
-            props: { type: ProviderType.METADATA },
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
-          },
-          {
-            path: "music/metadata/settings",
-            name: "metadatasettings",
-            component: () =>
-              import(
-                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
-              ),
-            props: { page: "metadata" satisfies SettingsPageId },
-            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
             path: "music/audio-analysis",
             name: "audioanalysisproviders",
             component: () =>
               import(
-                /* webpackChunkName: "providerlistsettings" */ "@/views/settings/ProviderListSettings.vue"
-              ),
-            props: { type: ProviderType.AUDIO_ANALYSIS },
-            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
-          },
-          {
-            path: "music/audio-analysis/status",
-            name: "audioanalysissettings",
-            component: () =>
-              import(
                 /* webpackChunkName: "audioanalysissettings" */ "@/views/settings/AudioAnalysis.vue"
               ),
-            props: true,
-            meta: { requiresScope: Scope.SYSTEM_MANAGE },
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
           },
           {
             path: "marketplace",

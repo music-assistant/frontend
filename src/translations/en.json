@@ -560,10 +560,6 @@
             "source_selection": "Source selection",
             "maintenance": "Library maintenance"
         },
-        "metadata": {
-            "title": "Metadata settings",
-            "description": "Language, online lookups, genres and the artwork cache"
-        },
         "about": "About",
         "about_description": "Version information, credits and more",
         "auto_refresh_log": "Auto-refresh",
@@ -907,7 +903,7 @@
             "nobody": "Nobody can use this source"
         },
         "player_providers_description": "Configure player support for your audio output devices",
-        "metadata_providers_description": "Manage where artwork and additional info come from",
+        "metadata_description": "Metadata sources, language, online lookups, genres and the artwork cache",
         "plugin_providers_description": "Manage plugins that extend Music Assistant functionality",
         "restore_genres": "Restore Genres",
         "genre_statistics_description": "Browse and filter all genres in your library. Genres can be globally excluded and restored.",
@@ -918,11 +914,8 @@
         "add_player_providers": "Add more player support",
         "add_audio_analysis_provider": "Add audio analysis",
         "audio_analysis_providers": "Audio analysis",
-        "audio_analysis_providers_description": "Manage providers that analyze your audio",
-        "audio_analysis_status": {
-            "title": "Analysis status",
-            "description": "Progress per provider, failed tracks and analysis settings"
-        },
+        "audio_analysis_description": "Analysis progress, failed tracks, analysis modules and settings",
+        "audio_analysis_modules": "Analysis modules",
         "audio_analysis_coverage": {
             "title": "Audio Analysis Coverage",
             "col_pending": "Pending",
