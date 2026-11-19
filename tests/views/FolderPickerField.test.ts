@@ -27,7 +27,9 @@ import {
 
 const { apiMock, hasScopeMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
-    serverInfo: { value: { server_version: "2.11.0" } },
+    serverInfo: {
+      value: { server_version: "2.11.0", homeassistant_addon: false },
+    },
     getStorageInfo: vi.fn<MusicAssistantApi["getStorageInfo"]>(),
     getStorageFolders: vi.fn<MusicAssistantApi["getStorageFolders"]>(),
   },
@@ -62,6 +64,7 @@ const dataDir = storageLocation({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  apiMock.serverInfo.value.homeassistant_addon = false;
   hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   apiMock.getStorageInfo.mockResolvedValue(
     storageInfo({ locations: [media, offlineShare, dataDir] }),
@@ -443,6 +446,28 @@ describe("FolderPickerField without a location to pick from", () => {
       "https://music-assistant.io/installation/#with-docker",
     );
     expect(docs.attributes("target")).toBe("_blank");
+    expect(empty.find("button").exists()).toBe(false);
+  });
+
+  it("points a Home Assistant app to the shares of Home Assistant instead", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = true;
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({
+        locations: [dataDir],
+        can_mount_shares: false,
+        supported_share_types: [],
+      }),
+    );
+    const wrapper = await mountPicker();
+
+    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
+    expect(empty.text()).toContain("settings.storage.cannot_mount_ha_text");
+    expect(empty.text()).not.toContain(
+      "settings.folder_picker.empty_text_container",
+    );
+    expect(
+      empty.get('[data-testid="folder-picker-docs"]').attributes("href"),
+    ).toBe("https://music-assistant.io/settings/storage/");
     expect(empty.find("button").exists()).toBe(false);
   });
 

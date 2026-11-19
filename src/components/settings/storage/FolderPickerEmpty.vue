@@ -7,8 +7,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { DOCKER_DOCS_URL } from "@/helpers/storage";
+import { DOCKER_DOCS_URL, STORAGE_DOCS_URL } from "@/helpers/storage";
 import { getExternalLinkUrl } from "@/helpers/utils";
+import { api } from "@/plugins/api";
 import { HardDrive } from "@lucide/vue";
 import { computed } from "vue";
 
@@ -24,6 +25,10 @@ defineProps<{
 
 // the docs of a beta server live on the beta site
 const dockerDocsUrl = computed(() => getExternalLinkUrl(DOCKER_DOCS_URL));
+const storageDocsUrl = computed(() => getExternalLinkUrl(STORAGE_DOCS_URL));
+const runsAsHomeAssistantApp = computed(
+  () => !!api.serverInfo.value?.homeassistant_addon,
+);
 </script>
 
 <template>
@@ -39,6 +44,19 @@ const dockerDocsUrl = computed(() => getExternalLinkUrl(DOCKER_DOCS_URL));
         </template>
         <template v-else-if="canAdd">
           {{ $t("settings.folder_picker.empty_text_add") }}
+        </template>
+        <!-- a Home Assistant app gets its network shares from Home Assistant -->
+        <template v-else-if="runsAsHomeAssistantApp">
+          {{ $t("settings.storage.cannot_mount_ha_text") }}
+          <a
+            :href="storageDocsUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-primary"
+            data-testid="folder-picker-docs"
+          >
+            {{ $t("settings.storage.cannot_mount_link") }}
+          </a>
         </template>
         <!-- a container can only use the folders mapped into it -->
         <template v-else>

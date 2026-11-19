@@ -186,6 +186,7 @@ import {
   DOCKER_DOCS_URL,
   isManagedShare,
   type ManagedShareLocation,
+  STORAGE_DOCS_URL,
   storageErrorText,
   usedByShownOn,
 } from "@/helpers/storage";
@@ -197,8 +198,6 @@ import { FolderPlus, HardDrive, Info, Plus, RefreshCw } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
-
-const STORAGE_DOCS_URL = "https://music-assistant.io/settings/storage/";
 
 const { t } = useI18n();
 const {
