@@ -1,4 +1,5 @@
 import { useCalibrationSession } from "@/composables/sendspin-sync/useCalibrationSession";
+import { ApiCommandError } from "@/plugins/api/errors";
 import type { CalibrationSessionState } from "@/plugins/api/interfaces";
 import { effectScope } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,9 +9,26 @@ const { sendCommand } = vi.hoisted(() => ({ sendCommand: vi.fn() }));
 vi.mock("@/plugins/api", () => ({ default: { sendCommand } }));
 
 const PLAYERS = [
-  { player_id: "living", name: "Living room", busy: false, adjustable: true },
-  { player_id: "kitchen", name: "Kitchen", busy: true, adjustable: true },
+  {
+    player_id: "living",
+    name: "Living room",
+    busy: false,
+    adjustable: true,
+    silent: false,
+  },
+  {
+    player_id: "kitchen",
+    name: "Kitchen",
+    busy: true,
+    adjustable: true,
+    silent: false,
+  },
 ];
+
+/** A command the server answered with a refusal, in its own words. */
+function refusal(message: string): ApiCommandError {
+  return new ApiCommandError(message, 1, message);
+}
 
 function sessionState(
   overrides: Partial<CalibrationSessionState> = {},
@@ -94,7 +112,11 @@ describe("useCalibrationSession", () => {
     // The offsets are relative and the server does the normalising: pre-shifting
     // or flipping them here would double the correction it then applies.
     const offsets = { living: 0, kitchen: -7.25 };
-    const result = { applied: { living: 8 }, manual: { kitchen: 0 } };
+    const result = {
+      applied: { living: 8 },
+      previous: { living: 250 },
+      manual: { kitchen: 0 },
+    };
     sendCommand.mockResolvedValue(result);
     const session = withScope(() => useCalibrationSession());
 
@@ -109,75 +131,203 @@ describe("useCalibrationSession", () => {
     sendCommand.mockResolvedValueOnce(sessionState());
     await session.start(["living", "kitchen"]);
 
-    // The walk took too long: the server gave the speakers back, so soloing fails
-    // and asking for the session confirms there is none.
-    sendCommand.mockRejectedValueOnce(new Error("No calibration session"));
+    // The phone was out of reach too long: the server gave the speakers back, so
+    // soloing is refused and asking for the session confirms there is none.
+    sendCommand.mockRejectedValueOnce(refusal("No calibration session"));
     sendCommand.mockResolvedValueOnce(null);
 
     expect(await session.solo("kitchen")).toBe(false);
     expect(session.lost.value).toBe("expired");
     expect(session.state.value).toBeNull();
+    expect(session.owned.value).toBe(false);
   });
 
-  it("separates a server that broke from a session that expired", async () => {
+  it("shows the server's own reason for a refusal, and keeps the session", async () => {
     const session = withScope(() => useCalibrationSession());
     sendCommand.mockResolvedValueOnce(sessionState());
     await session.start(["living", "kitchen"]);
 
-    // The command failed but the session is still there, so this is not an expiry.
-    sendCommand.mockRejectedValueOnce(new Error("Player unavailable"));
+    // The command was refused but the session is still there, so this is not an
+    // expiry: it is something the user can put right and try again.
+    sendCommand.mockRejectedValueOnce(refusal("Kitchen is not available."));
     sendCommand.mockResolvedValueOnce(sessionState());
 
     expect(await session.solo("kitchen")).toBe(false);
-    expect(session.lost.value).toBe("failed");
+    expect(session.lost.value).toBeNull();
+    expect(session.problem.value).toEqual({
+      kind: "refused",
+      message: "Kitchen is not available.",
+    });
     expect(session.state.value).not.toBeNull();
   });
 
-  it("re-solos the current speaker so the session cannot time out", async () => {
+  it("does not call a refused start an expiry", async () => {
+    const session = withScope(() => useCalibrationSession());
+    // A muted speaker is the likeliest first refusal there is. No session ever
+    // existed, so "it timed out" would be the wrong thing to say twice over.
+    sendCommand.mockRejectedValueOnce(
+      refusal("Kitchen is muted or turned all the way down."),
+    );
+
+    expect(await session.start(["living", "kitchen"])).toBe(false);
+    expect(session.lost.value).toBeNull();
+    expect(session.problem.value).toEqual({
+      kind: "refused",
+      message: "Kitchen is muted or turned all the way down.",
+    });
+    // Nothing was asked about a session this page never had.
+    expect(callsTo("sendspin_sync/session")).toHaveLength(0);
+  });
+
+  it("puts a problem away once a command goes through", async () => {
+    const session = withScope(() => useCalibrationSession());
+    sendCommand.mockRejectedValueOnce(refusal("Kitchen is muted."));
+    await session.start(["living", "kitchen"]);
+    expect(session.problem.value).not.toBeNull();
+
+    sendCommand.mockResolvedValueOnce(sessionState());
+    await session.start(["living", "kitchen"]);
+
+    expect(session.problem.value).toBeNull();
+  });
+
+  it("tries a solo that never reached the server once more", async () => {
+    vi.useFakeTimers();
+    const session = withScope(() => useCalibrationSession());
+    sendCommand.mockResolvedValueOnce(sessionState());
+    await session.start(["living", "kitchen"]);
+
+    // A far room at the edge of the Wi-Fi. Soloing the speaker that is already
+    // soloed changes nothing, so sending it twice is safe.
+    sendCommand.mockRejectedValueOnce(new Error("Connection lost"));
+    sendCommand.mockResolvedValueOnce(
+      sessionState({ soloed_player_id: "kitchen" }),
+    );
+    const pending = session.solo("kitchen");
+    await vi.advanceTimersByTimeAsync(1_500);
+
+    expect(await pending).toBe(true);
+    expect(callsTo("sendspin_sync/solo_player")).toHaveLength(2);
+    expect(session.problem.value).toBeNull();
+  });
+
+  it("says the server was out of reach, and keeps the run", async () => {
+    vi.useFakeTimers();
+    const session = withScope(() => useCalibrationSession());
+    sendCommand.mockResolvedValueOnce(sessionState());
+    await session.start(["living", "kitchen"]);
+
+    sendCommand.mockRejectedValueOnce(new Error("Connection lost"));
+    sendCommand.mockRejectedValueOnce(new Error("Connection lost"));
+    const pending = session.solo("kitchen");
+    await vi.advanceTimersByTimeAsync(1_500);
+
+    // Nothing measured so far is any less true, so this costs another tap and
+    // no more than that.
+    expect(await pending).toBe(false);
+    expect(session.problem.value).toEqual({ kind: "unreachable" });
+    expect(session.lost.value).toBeNull();
+    expect(session.state.value).not.toBeNull();
+  });
+
+  it("never sends an apply twice on its own", async () => {
+    vi.useFakeTimers();
+    const session = withScope(() => useCalibrationSession());
+    sendCommand.mockRejectedValueOnce(new Error("Connection lost"));
+
+    const pending = session.apply({ living: 0, kitchen: 12 });
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    // The server folds in the delays the speakers carry, so a second apply of
+    // the same readings would correct the correction.
+    expect(await pending).toBeNull();
+    expect(callsTo("sendspin_sync/apply_measurements")).toHaveLength(1);
+    expect(session.problem.value).toEqual({ kind: "unreachable" });
+  });
+
+  it("tells the server it is still there, well inside the timeout", async () => {
     vi.useFakeTimers();
     const session = withScope(() => useCalibrationSession());
     sendCommand.mockResolvedValue(
       sessionState({ soloed_player_id: "kitchen" }),
     );
     await session.start(["living", "kitchen"]);
-    await session.solo("kitchen");
 
-    const before = callsTo("sendspin_sync/solo_player").length;
-    await vi.advanceTimersByTimeAsync(300_000);
+    await vi.advanceTimersByTimeAsync(90_000);
 
-    // Only the commands that change a session put its inactivity timer back, and
-    // re-soloing the speaker that is already soloed is a no-op on the audio path.
-    expect(callsTo("sendspin_sync/solo_player").length).toBe(before + 1);
-  });
-
-  it("reads the session when there is nothing soloed to re-solo yet", async () => {
-    vi.useFakeTimers();
-    const session = withScope(() => useCalibrationSession());
-    sendCommand.mockResolvedValue(sessionState());
-    await session.start(["living", "kitchen"]);
-
-    await vi.advanceTimersByTimeAsync(300_000);
-
-    expect(callsTo("sendspin_sync/session")).toHaveLength(1);
+    expect(callsTo("sendspin_sync/keep_alive")).toHaveLength(3);
+    // A keep-alive changes nothing: no speaker is touched to send one.
     expect(callsTo("sendspin_sync/solo_player")).toHaveLength(0);
   });
 
-  it("stops nudging a session it has already lost", async () => {
+  it("says nothing about a keep-alive that did not get through", async () => {
     vi.useFakeTimers();
     const session = withScope(() => useCalibrationSession());
-    sendCommand.mockResolvedValueOnce(
-      sessionState({ soloed_player_id: "living" }),
-    );
+    sendCommand.mockResolvedValueOnce(sessionState());
     await session.start(["living", "kitchen"]);
 
-    sendCommand.mockRejectedValueOnce(new Error("gone"));
+    sendCommand.mockRejectedValueOnce(new Error("Connection lost"));
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    // One that was missed says nothing about the run, and the next one is half
+    // a minute away.
+    expect(session.problem.value).toBeNull();
+    expect(session.lost.value).toBeNull();
+    expect(session.state.value).not.toBeNull();
+  });
+
+  it("learns from a keep-alive that the session has gone", async () => {
+    vi.useFakeTimers();
+    const session = withScope(() => useCalibrationSession());
+    sendCommand.mockResolvedValueOnce(sessionState());
+    await session.start(["living", "kitchen"]);
+
+    sendCommand.mockRejectedValueOnce(refusal("No calibration session"));
     sendCommand.mockResolvedValueOnce(null);
-    await session.solo("living");
+    await vi.advanceTimersByTimeAsync(30_000);
     expect(session.lost.value).toBe("expired");
 
+    // And stops sending them: there is nothing left to keep alive.
     sendCommand.mockClear();
-    await vi.advanceTimersByTimeAsync(900_000);
+    await vi.advanceTimersByTimeAsync(180_000);
     expect(sendCommand).not.toHaveBeenCalled();
+  });
+
+  it("leaves a session it only found running to whoever started it", async () => {
+    const session = withScope(() => useCalibrationSession());
+    sendCommand.mockResolvedValueOnce(sessionState());
+    await session.refresh();
+    expect(session.state.value).not.toBeNull();
+    expect(session.owned.value).toBe(false);
+
+    // Closing this page must not end a walk in progress on another device.
+    await session.stop();
+
+    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(0);
+    expect(session.state.value).not.toBeNull();
+  });
+
+  it("ends a session it found running when asked to", async () => {
+    const session = withScope(() => useCalibrationSession());
+    sendCommand.mockResolvedValueOnce(sessionState());
+    await session.refresh();
+
+    await session.stop(true);
+
+    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(1);
+    expect(session.state.value).toBeNull();
+  });
+
+  it("does not call a refusal an expiry on a page that owns no session", async () => {
+    const session = withScope(() => useCalibrationSession());
+    // Somebody else's session is running, so a start from here is refused.
+    sendCommand.mockRejectedValueOnce(
+      refusal("A calibration session is already running."),
+    );
+
+    expect(await session.start(["living", "kitchen"])).toBe(false);
+    expect(session.lost.value).toBeNull();
+    expect(session.problem.value?.kind).toBe("refused");
   });
 
   it("gives the speakers back, and does not report a stop that failed", async () => {

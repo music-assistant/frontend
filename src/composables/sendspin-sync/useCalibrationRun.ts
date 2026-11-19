@@ -36,7 +36,7 @@ import {
   type CaptureLoss,
 } from "@/helpers/sendspin-sync/verdict";
 import type { CalibrationApplyResult } from "@/plugins/api/interfaces";
-import { computed, ref, watch } from "vue";
+import { computed, onScopeDispose, ref, watch } from "vue";
 import { useCalibrationSession } from "./useCalibrationSession";
 import { useChirpCapture } from "./useChirpCapture";
 
@@ -96,19 +96,35 @@ export function useCalibrationRun() {
   const openError = ref<string | null>(null);
   /** The speaker currently being recorded, so the view can show it where it is. */
   const measuringPlayerId = ref<string | null>(null);
+  /** Seconds left of the reading in progress, for the user standing still. */
+  const secondsLeft = ref(0);
+  /** True between the tap on Start and the session being up, or refused. */
+  const starting = ref(false);
+  /**
+   * True while the walk is being repeated over the delays just applied.
+   *
+   * Those readings are of corrected speakers, so they are kept apart from the
+   * ones the correction was worked out from: one fit over both would see every
+   * speaker jump part-way through.
+   */
+  const verifying = ref(false);
 
   const samples = ref<ArrivalSample[]>([]);
   let nextVisit = 0;
+  let countdown: ReturnType<typeof setInterval> | null = null;
 
   /**
    * The speaker every other reading is relative to, and the one to re-measure.
    *
-   * Whichever speaker was measured first, rather than whichever was ticked first:
+   * Whichever speaker was heard first, rather than whichever was ticked first:
    * the fit fixes its offset at zero by the order the arrivals came in, and the
-   * walk is free to visit the speakers in any order at all. `null` until there is
-   * a reading, because until then nothing is a reference yet.
+   * walk is free to visit the speakers in any order at all. A reading that heard
+   * nothing put no arrivals in, so it is no reference. `null` until there is a
+   * reading, because until then nothing is a reference yet.
    */
-  const anchor = computed(() => visits.value[0]?.playerId ?? null);
+  const anchor = computed(
+    () => visits.value.find((visit) => visit.found > 0)?.playerId ?? null,
+  );
 
   const measured = computed(
     () => new Set(visits.value.map((visit) => visit.playerId)),
@@ -191,12 +207,18 @@ export function useCalibrationRun() {
   );
 
   // A context that stopped leaves the arrivals either side of the gap on
-  // unrelated timelines, so the run is over whenever this fires.
+  // unrelated timelines, so the run is over whenever this fires. Nothing of it
+  // can be used, so the speakers go back at once rather than staying silent
+  // until somebody reads the screen.
   watch(capture.voided, (voided) => {
-    if (voided) phase.value = "voided";
+    if (!voided) return;
+    phase.value = "voided";
+    void finish();
   });
   watch(session.lost, (lost) => {
-    if (lost) phase.value = "voided";
+    if (!lost) return;
+    phase.value = "voided";
+    void capture.close();
   });
 
   /**
@@ -204,39 +226,58 @@ export function useCalibrationRun() {
    *
    * Must be called straight from a user gesture so the browser counts the tap as
    * permission to open an `AudioContext`.
+   *
+   * A start the server refuses leaves the page where it was, with the reason in
+   * the session's `problem`: a speaker that is muted is put right in a moment,
+   * and is no reason to send the user back through anything.
    */
   async function begin(force = false): Promise<boolean> {
     if (phase.value !== "picking" || selected.value.length < 2) return false;
+    if (starting.value) return false;
+    starting.value = true;
 
-    const opening = await capture.open();
-    if (!opening.opened) {
-      openError.value = opening.error?.name ?? "OpenFailed";
-      return false;
+    try {
+      const opening = await capture.open();
+      if (!opening.opened) {
+        openError.value = opening.error?.name ?? "OpenFailed";
+        return false;
+      }
+      openError.value = null;
+
+      if (!(await session.start(selected.value, force))) {
+        await capture.close();
+        return false;
+      }
+
+      phase.value = "walking";
+      return true;
+    } finally {
+      starting.value = false;
     }
-    openError.value = null;
-
-    if (!(await session.start(selected.value, force))) {
-      await capture.close();
-      return false;
-    }
-
-    phase.value = "walking";
-    return true;
   }
 
-  /** Measure one speaker: make it audible, let it settle, then listen. */
-  async function measure(playerId: string): Promise<boolean> {
+  /**
+   * Measure one speaker: make it audible, let it settle, then listen.
+   *
+   * `replace` throws that speaker's latest reading away first, for one the user
+   * is taking again because it came out badly. Without it the reading is added,
+   * which is what the closing steps of the walk ask for: a second reading of a
+   * speaker is what the clock drift is worked out from.
+   */
+  async function measure(playerId: string, replace = false): Promise<boolean> {
     if (phase.value !== "walking") return false;
     phase.value = "measuring";
     measuringPlayerId.value = playerId;
 
     try {
       if (!(await session.solo(playerId))) return false;
+      startCountdown();
       await settle();
       if (capture.voided.value) return false;
 
       const recording = await capture.record(RECORD_SECONDS);
       if (!recording) return false;
+      if (replace) forgetLatest(playerId);
 
       const scan = scanArrivals(recording.samples, {
         sampleRate: recording.sampleRate,
@@ -267,8 +308,11 @@ export function useCalibrationRun() {
           spacingSeconds: scan.spacingSeconds,
         },
       ];
+      // The user is looking at the room, not the screen.
+      navigator.vibrate?.(200);
       return scan.arrivals.length > 0;
     } finally {
+      stopCountdown();
       measuringPlayerId.value = null;
       // A void that landed mid-measurement must not be overwritten back to a
       // state that invites another one.
@@ -276,6 +320,32 @@ export function useCalibrationRun() {
         phase.value =
           capture.voided.value || session.lost.value ? "voided" : "walking";
     }
+  }
+
+  /** Drop the most recent reading of one speaker, and the arrivals it put in. */
+  function forgetLatest(playerId: string): void {
+    const latest = visits.value.findLast(
+      (visit) => visit.playerId === playerId,
+    );
+    if (!latest) return;
+    visits.value = visits.value.filter((visit) => visit !== latest);
+    samples.value = samples.value.filter(
+      (sample) => sample.visit !== latest.visit,
+    );
+  }
+
+  /**
+   * Throw every reading away and walk again, on the same session and microphone.
+   *
+   * For a walk that went wrong in a way no single reading puts right. The
+   * recording has run without a gap since the start, so new readings stand on
+   * the same timeline and nothing has to be opened again.
+   */
+  function clearReadings(): void {
+    if (phase.value !== "walking") return;
+    visits.value = [];
+    samples.value = [];
+    nextVisit = 0;
   }
 
   /** Hand the offsets to the server, and keep the delays it worked out. */
@@ -290,10 +360,30 @@ export function useCalibrationRun() {
     return true;
   }
 
+  /**
+   * Walk the speakers again over the delays that were just applied.
+   *
+   * The speakers have their corrections now, so a second walk shows whether
+   * they landed: every speaker should read about the same as the first one.
+   */
+  function verify(): void {
+    if (phase.value !== "walking" || !applyResult.value) return;
+    visits.value = [];
+    samples.value = [];
+    nextVisit = 0;
+    applyResult.value = null;
+    verifying.value = true;
+  }
+
   /** End the run: stop the session, release the microphone. */
   async function finish(): Promise<void> {
     await session.stop();
     await capture.close();
+  }
+
+  /** End a session found running that was not started from this page. */
+  async function endAdopted(): Promise<void> {
+    await session.stop(true);
   }
 
   /**
@@ -312,6 +402,7 @@ export function useCalibrationRun() {
     nextVisit = 0;
     applyResult.value = null;
     openError.value = null;
+    verifying.value = false;
     phase.value = "picking";
   }
 
@@ -319,11 +410,30 @@ export function useCalibrationRun() {
     return new Promise((resolve) => setTimeout(resolve, SETTLE_SECONDS * 1000));
   }
 
+  /** Count the reading down, settling time included, a second at a time. */
+  function startCountdown(): void {
+    stopCountdown();
+    secondsLeft.value = Math.ceil(SETTLE_SECONDS + RECORD_SECONDS);
+    countdown = setInterval(() => {
+      secondsLeft.value = Math.max(0, secondsLeft.value - 1);
+    }, 1000);
+  }
+
+  function stopCountdown(): void {
+    if (countdown !== null) clearInterval(countdown);
+    countdown = null;
+    secondsLeft.value = 0;
+  }
+
+  onScopeDispose(stopCountdown);
+
   return {
     // server state
     players: session.players,
     sessionState: session.state,
+    sessionOwned: session.owned,
     sessionLost: session.lost,
+    sessionProblem: session.problem,
     busy: session.busy,
     loadPlayers: session.loadPlayers,
     refresh: session.refresh,
@@ -337,6 +447,9 @@ export function useCalibrationRun() {
     selected,
     visits,
     measuringPlayerId,
+    secondsLeft,
+    starting,
+    verifying,
     anchor,
     remaining,
     needsBracket,
@@ -349,8 +462,11 @@ export function useCalibrationRun() {
     applyResult,
     begin,
     measure,
+    clearReadings,
     apply,
+    verify,
     finish,
+    endAdopted,
     restart,
   };
 }

@@ -6,8 +6,20 @@ const KEYS = "providers.sendspin_sync.calibration.pick";
 const MANUAL = "providers.sendspin_sync.calibration.manual";
 
 const PLAYERS = [
-  { player_id: "living", name: "Living room", busy: false, adjustable: true },
-  { player_id: "kitchen", name: "Kitchen", busy: true, adjustable: true },
+  {
+    player_id: "living",
+    name: "Living room",
+    busy: false,
+    adjustable: true,
+    silent: false,
+  },
+  {
+    player_id: "kitchen",
+    name: "Kitchen",
+    busy: true,
+    adjustable: true,
+    silent: false,
+  },
 ];
 
 /**
@@ -28,7 +40,13 @@ function mountPicker(
       ...props,
     },
     ...(attachToDocument ? { attachTo: document.body } : {}),
-    global: { mocks: { $t: (key: string) => key } },
+    // Interpolations are appended so a test can assert the counts a line gives.
+    global: {
+      mocks: {
+        $t: (key: string, values: unknown[] = []) =>
+          values.length ? `${key} ${values.join(" ")}` : key,
+      },
+    },
   });
 }
 
@@ -142,6 +160,77 @@ describe("SendspinSyncPlayerPicker", () => {
     // The flag tells the run to force the takeover the user has now been shown.
     await startButton(wrapper).trigger("click");
     expect(wrapper.emitted("start")).toEqual([[true]]);
+  });
+
+  it("says what the house is in for before anything is touched", () => {
+    const text = mountPicker().text();
+
+    expect(text).toContain(`${KEYS}.what_happens`);
+    expect(text).toContain(`${KEYS}.checklist`);
+    expect(text).toContain(`${KEYS}.microphone`);
+  });
+
+  it("marks a speaker nobody could hear, and will not have it picked", async () => {
+    const wrapper = mountPicker(
+      { players: [PLAYERS[0], { ...PLAYERS[1], silent: true }] },
+      true,
+    );
+
+    // The server refuses a muted speaker, so it is said here, where turning it
+    // up is one step away, and not after the start has failed.
+    expect(wrapper.text()).toContain(`${KEYS}.silent`);
+    expect(wrapper.text()).toContain(`${KEYS}.silent_hint`);
+    const box = wrapper.findAll('[data-slot="checkbox"]')[1];
+    expect(box.attributes("disabled")).toBeDefined();
+    await wrapper.findAll("label span")[1].trigger("click");
+    expect(wrapper.emitted("update:selected")).toBeUndefined();
+  });
+
+  it("says nothing about muted speakers when none is", () => {
+    expect(mountPicker().text()).not.toContain(`${KEYS}.silent`);
+  });
+
+  it("says how much of the result will be entered by hand, before the walk", () => {
+    const players = [PLAYERS[0], { ...PLAYERS[1], adjustable: false }];
+
+    expect(mountPicker({ players }).text()).not.toContain(
+      `${KEYS}.some_manual`,
+    );
+    expect(
+      mountPicker({ players, selected: ["living", "kitchen"] }).text(),
+    ).toContain(`${KEYS}.some_manual 1 2`);
+  });
+
+  it("warns when nothing picked can be corrected from here", () => {
+    const wrapper = mountPicker({
+      players: PLAYERS.map((player) => ({ ...player, adjustable: false })),
+      selected: ["living", "kitchen"],
+    });
+
+    // Still worth walking, so it can start. But nothing will be changed for the
+    // user, and that is better heard now than at the end.
+    expect(wrapper.text()).toContain(`${KEYS}.all_manual`);
+    expect(startButton(wrapper).attributes("disabled")).toBeUndefined();
+  });
+
+  it("will not start on a browser that has no microphone to ask for", () => {
+    const wrapper = mountPicker({
+      selected: ["living", "kitchen"],
+      blocked: true,
+    });
+
+    expect(startButton(wrapper).attributes("disabled")).toBeDefined();
+    // And does not promise a prompt that is not coming.
+    expect(wrapper.text()).not.toContain(`${KEYS}.microphone`);
+  });
+
+  it("takes one tap on Start while the microphone prompt is up", () => {
+    const wrapper = mountPicker({
+      selected: ["living", "kitchen"],
+      starting: true,
+    });
+
+    expect(startButton(wrapper).attributes("disabled")).toBeDefined();
   });
 
   it("does not mention a takeover when nothing picked is playing", async () => {

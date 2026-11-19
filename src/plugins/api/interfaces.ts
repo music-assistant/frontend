@@ -2520,11 +2520,17 @@ export interface CalibrationPlayer {
   // whether the server can write a delay to this speaker. A speaker that cannot
   // take one is still worth measuring — the number is set on the device by hand
   adjustable: boolean;
+  // whether the speaker is muted or turned all the way down, which the server
+  // refuses to start a session over
+  silent: boolean;
 }
 
 export interface CalibrationApplyResult {
   // the absolute delay the server wrote to each speaker, replacing what it held
   applied: Record<string, number>;
+  // the delay each of those speakers carried before the session, which is what
+  // to set it back to by hand to undo the correction
+  previous: Record<string, number>;
   // for each speaker the server could not write to, the delay to ADD to whatever
   // the device already applies — not a value to set. The server does not read the
   // device's own delay, because the figure it can read is a configured default the

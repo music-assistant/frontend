@@ -6,8 +6,20 @@ import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 
 const PLAYERS = [
-  { player_id: "living", name: "Living room", busy: false, adjustable: true },
-  { player_id: "kitchen", name: "Kitchen", busy: false, adjustable: true },
+  {
+    player_id: "living",
+    name: "Living room",
+    busy: false,
+    adjustable: true,
+    silent: false,
+  },
+  {
+    player_id: "kitchen",
+    name: "Kitchen",
+    busy: false,
+    adjustable: true,
+    silent: false,
+  },
 ];
 
 const BASE = "providers.sendspin_sync.calibration.results";
@@ -70,18 +82,23 @@ function mountResults(
   });
 }
 
-/** The Apply button, which is absent altogether on a run that cannot be applied. */
-function applyButton(wrapper: ReturnType<typeof mountResults>) {
-  return wrapper
-    .findAll("button")
-    .find((button) => !button.text().includes(`${BASE}.finish`));
+/** A button by the one string it shows. */
+function buttonSaying(wrapper: ReturnType<typeof mountResults>, key: string) {
+  return wrapper.findAll("button").find((button) => button.text() === key);
 }
 
-/** The Finish button, which is offered whatever the run came to. */
+/** The Apply button, which is absent altogether on a run that cannot be applied. */
+function applyButton(wrapper: ReturnType<typeof mountResults>) {
+  return buttonSaying(wrapper, `${BASE}.apply`);
+}
+
+/**
+ * The button that gives the speakers back, which is offered whatever the run
+ * came to. It reads as the next step once the delays are in.
+ */
 function finishButton(wrapper: ReturnType<typeof mountResults>) {
-  return wrapper
-    .findAll("button")
-    .find((button) => button.text().includes(`${BASE}.finish`))!;
+  return (buttonSaying(wrapper, `${BASE}.finish`) ??
+    buttonSaying(wrapper, `${BASE}.done`))!;
 }
 
 describe("SendspinSyncResults", () => {
@@ -294,15 +311,129 @@ describe("SendspinSyncResults", () => {
     expect(wrapper.emitted("apply")).toHaveLength(1);
   });
 
-  it("shows the delay the server actually set, and will not apply twice", () => {
+  it("says whether the run can be applied in a word, ahead of the reasons", () => {
+    expect(mountResults().text()).toContain(`${BASE}.ready`);
+    expect(mountResults({ trustworthy: false }).text()).toContain(
+      `${BASE}.not_ready`,
+    );
+  });
+
+  it("shows the delay each speaker is about to be given, before it is given", () => {
+    const [living, kitchen] = mountResults().findAll("li");
+
+    // Worked out the way the server will: the earliest speaker stays where it
+    // is and the later one is brought forward to meet it.
+    expect(living.text()).toContain(`${BASE}.planned_delay 0`);
+    expect(kitchen.text()).toContain(`${BASE}.planned_delay 12`);
+    // The reading that says why sits under it.
+    expect(kitchen.text()).toContain(`${BASE}.milliseconds 12.35`);
+  });
+
+  it("puts the earliest speaker at zero wherever the walk started", () => {
+    const [living, kitchen] = mountResults({
+      fit: fitFixture({ offsetsMs: { living: 0, kitchen: -7.25 } }),
+    }).findAll("li");
+
+    // Kitchen arrived first, so it is the one left alone.
+    expect(living.text()).toContain(`${BASE}.planned_delay 7`);
+    expect(kitchen.text()).toContain(`${BASE}.planned_delay 0`);
+  });
+
+  it("says a speaker it cannot write to gets an amount to add, before applying", () => {
+    const [, kitchen] = mountResults({
+      players: [PLAYERS[0], { ...PLAYERS[1], adjustable: false }],
+    }).findAll("li");
+
+    expect(kitchen.text()).toContain(`${MANUAL}.row 12`);
+    expect(kitchen.text()).not.toContain(`${BASE}.planned_delay`);
+  });
+
+  it("promises no delay from a run that cannot be applied", () => {
     const wrapper = mountResults({
-      applyResult: { applied: { living: 12, kitchen: 0 }, manual: {} },
+      fit: fitFixture({ residualMs: 4.2 }),
+      trustworthy: false,
     });
 
-    expect(wrapper.findAll("li")[0].text()).toContain(`${BASE}.applied_delay`);
+    expect(wrapper.text()).not.toContain(`${BASE}.planned_delay`);
+    expect(wrapper.findAll("li")[1].text()).toContain(
+      `${BASE}.milliseconds 12.35`,
+    );
+  });
+
+  it("shows the delay the server actually set, and will not apply twice", () => {
+    const wrapper = mountResults({
+      applyResult: {
+        applied: { living: 12, kitchen: 0 },
+        previous: { living: 250, kitchen: 0 },
+        manual: {},
+      },
+    });
+
+    // With what it replaced, which is the number to set by hand to undo it.
+    expect(wrapper.findAll("li")[0].text()).toContain(
+      `${BASE}.applied_delay 12 250`,
+    );
+    expect(wrapper.text()).toContain(`${BASE}.undo`);
+    expect(wrapper.text()).toContain(`${BASE}.applied_heading.title`);
     expect(wrapper.text()).not.toContain(`${MANUAL}.title`);
     expect(wrapper.text()).not.toContain(`${MANUAL}.badge`);
-    expect(applyButton(wrapper)!.attributes("disabled")).toBeDefined();
+    // The server folds in the delays the speakers carry, so a second apply of
+    // the same readings would correct the correction.
+    expect(applyButton(wrapper)).toBeUndefined();
+  });
+
+  it("makes giving the speakers back the next step once the delays are in", async () => {
+    const wrapper = mountResults({
+      applyResult: {
+        applied: { living: 12, kitchen: 0 },
+        previous: { living: 0, kitchen: 0 },
+        manual: {},
+      },
+    });
+
+    await buttonSaying(wrapper, `${BASE}.done`)!.trigger("click");
+
+    expect(wrapper.emitted("finish")).toHaveLength(1);
+  });
+
+  it("offers to check the result once a delay was written", async () => {
+    expect(
+      buttonSaying(mountResults(), `${BASE}.verify_action`),
+    ).toBeUndefined();
+
+    const wrapper = mountResults({
+      applyResult: {
+        applied: { living: 12, kitchen: 0 },
+        previous: { living: 0, kitchen: 0 },
+        manual: {},
+      },
+    });
+    await buttonSaying(wrapper, `${BASE}.verify_action`)!.trigger("click");
+
+    expect(wrapper.emitted("verify")).toHaveLength(1);
+  });
+
+  it("reads a walk over applied delays as a check, and promises no delay from it", () => {
+    const wrapper = mountResults({
+      fit: fitFixture({ offsetsMs: { living: 0, kitchen: 0.4 } }),
+      verifying: true,
+    });
+
+    expect(wrapper.text()).toContain(`${BASE}.verify_heading.title`);
+    // The speakers carry delays this page cannot see, so what the server would
+    // set from these readings is not something to put a number on here.
+    expect(wrapper.text()).not.toContain(`${BASE}.planned_delay`);
+    expect(wrapper.findAll("li")[1].text()).toContain(
+      `${BASE}.milliseconds 0.40`,
+    );
+  });
+
+  it("keeps the technical figures out of the way of the decision", () => {
+    const details = mountResults().find("details");
+
+    expect(details.attributes("open")).toBeUndefined();
+    expect(details.find("summary").text()).toContain(`${BASE}.technical`);
+    expect(details.text()).toContain(`${BASE}.ppm 40.0`);
   });
 
   it("marks a speaker no delay can be written to, before anything is applied", () => {
@@ -319,24 +450,37 @@ describe("SendspinSyncResults", () => {
   it("hands over the delays nothing could be written to, prominently", () => {
     const wrapper = mountResults({
       players: [PLAYERS[0], { ...PLAYERS[1], adjustable: false }],
-      applyResult: { applied: { living: 0 }, manual: { kitchen: 12 } },
+      applyResult: {
+        applied: { living: 0 },
+        previous: { living: 0 },
+        manual: { kitchen: 12 },
+      },
     });
 
     const [living, kitchen] = wrapper.findAll("li");
     // An amount to add, worded so it cannot be read as the applied row's
-    // "delay set to" — the two numbers look alike and mean opposite things.
-    expect(kitchen.text()).toContain(`${MANUAL}.row`);
+    // "set to" — the two numbers look alike and mean opposite things. Each
+    // leads its row, with the reading it came from dimmed underneath.
+    expect(kitchen.find(".items-end .font-medium").text()).toBe(
+      `${MANUAL}.row 12`,
+    );
     expect(kitchen.text()).not.toContain(`${BASE}.applied_delay`);
-    // Not dimmed the way a delay already in place is: this one is the deliverable
-    // for that speaker rather than a note about it.
-    expect(kitchen.find(".text-muted-foreground").exists()).toBe(false);
-    expect(living.find(".text-muted-foreground").exists()).toBe(true);
+    expect(living.find(".items-end .font-medium").text()).toBe(
+      `${BASE}.applied_delay 0 0`,
+    );
+    expect(kitchen.find(".items-end .text-muted-foreground").text()).toBe(
+      `${BASE}.milliseconds 12.35`,
+    );
     expect(wrapper.text()).toContain(`${MANUAL}.title`);
   });
 
   it("follows the server over the speaker's own flag once it has written", () => {
     const wrapper = mountResults({
-      applyResult: { applied: { living: 0 }, manual: { kitchen: 12 } },
+      applyResult: {
+        applied: { living: 0 },
+        previous: { living: 0 },
+        manual: { kitchen: 12 },
+      },
     });
 
     // Both speakers reported themselves adjustable, and the server still could
@@ -348,13 +492,19 @@ describe("SendspinSyncResults", () => {
   it("treats an all-manual run as a result, not a failure", () => {
     const wrapper = mountResults({
       players: PLAYERS.map((player) => ({ ...player, adjustable: false })),
-      applyResult: { applied: {}, manual: { living: 0, kitchen: 12 } },
+      applyResult: {
+        applied: {},
+        previous: {},
+        manual: { living: 0, kitchen: 12 },
+      },
     });
 
-    // Every delay was worked out; none of them was written. Saying "Delays
-    // applied" here would claim the speakers were changed.
-    expect(wrapper.text()).toContain(`${BASE}.worked_out`);
+    // Every delay was worked out; none of them was written. So there is nothing
+    // to undo and nothing a second walk could check, and neither is offered.
     expect(wrapper.text()).not.toContain(`${BASE}.applied_delay`);
+    expect(wrapper.text()).not.toContain(`${BASE}.undo`);
+    expect(buttonSaying(wrapper, `${BASE}.verify_action`)).toBeUndefined();
+    expect(buttonSaying(wrapper, `${BASE}.done`)).toBeDefined();
     expect(wrapper.text()).toContain(`${MANUAL}.title`);
   });
 

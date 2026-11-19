@@ -221,6 +221,7 @@ export function useChirpCapture() {
 
     sampleRate.value = context.sampleRate;
     watchClock();
+    document.addEventListener("visibilitychange", holdAwakeAgain);
     opened.value = true;
     return {
       opened: true,
@@ -284,8 +285,27 @@ export function useChirpCapture() {
     contextStates.value = [];
   }
 
+  /**
+   * Take the screen wake lock again once the page is back in view.
+   *
+   * A browser releases the lock whenever the page is hidden and never hands it
+   * back by itself, so a glance at a notification would otherwise leave the rest
+   * of the walk to the phone's own screen timeout.
+   */
+  function holdAwakeAgain(): void {
+    if (document.visibilityState !== "visible" || !opened.value) return;
+    if (wakeLock?.check?.heldToEnd) return;
+    void holdScreenAwake(window.isSecureContext).then(async (held) => {
+      if (!opened.value) return held.release();
+      const previous = wakeLock;
+      wakeLock = held;
+      await previous?.release();
+    });
+  }
+
   /** Release the microphone, the graph and the wake lock. */
   async function close(): Promise<void> {
+    document.removeEventListener("visibilitychange", holdAwakeAgain);
     if (watchdog !== null) {
       clearInterval(watchdog);
       watchdog = null;

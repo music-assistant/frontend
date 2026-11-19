@@ -1,8 +1,10 @@
 <template>
   <Card class="gap-4">
     <CardHeader>
-      <CardTitle>{{ $t(`${KEYS}.results.title`) }}</CardTitle>
-      <CardDescription>{{ $t(`${KEYS}.results.description`) }}</CardDescription>
+      <CardTitle>{{ $t(`${KEYS}.results.${heading}.title`) }}</CardTitle>
+      <CardDescription>
+        {{ $t(`${KEYS}.results.${heading}.description`) }}
+      </CardDescription>
     </CardHeader>
 
     <CardContent class="space-y-4">
@@ -28,20 +30,18 @@
           >
             {{ $t(`${KEYS}.results.unheard`) }}
           </span>
-          <span v-else class="shrink-0 font-mono">
-            {{ $t(`${KEYS}.results.milliseconds`, [row.offset]) }}
-            <!-- An amount to add to what the device already applies, where the
-                 delay below it is absolute and already in place. The two mean
-                 opposite things, so this one is not dimmed the way that one is
-                 and its wording leads with "add". -->
-            <span v-if="row.manual !== null" class="font-medium">
-              {{ $t(`${KEYS}.manual.row`, [row.manual]) }}
+          <span v-else class="flex shrink-0 flex-col items-end">
+            <!-- The one number to act on leads. An amount to add to what the
+                 device already applies and a delay that is set outright mean
+                 opposite things, so each says which it is in words. -->
+            <span class="font-medium">
+              {{ $t(row.action.key, row.action.values) }}
             </span>
             <span
-              v-else-if="row.applied !== null"
-              class="text-muted-foreground"
+              v-if="row.detail"
+              class="font-mono text-xs text-muted-foreground"
             >
-              {{ $t(`${KEYS}.results.applied_delay`, [row.applied]) }}
+              {{ $t(row.detail.key, row.detail.values) }}
             </span>
           </span>
         </li>
@@ -67,6 +67,13 @@
         role="status"
         aria-live="polite"
       >
+        <!-- The answer to "can I apply this" in a word, ahead of the reasons. -->
+        <p
+          class="text-sm font-medium"
+          :class="trustworthy ? '' : 'text-destructive'"
+        >
+          {{ $t(`${KEYS}.results.${trustworthy ? "ready" : "not_ready"}`) }}
+        </p>
         <p class="font-medium">
           {{ $t(`${KEYS}.results.check.${verdict}.title`) }}
         </p>
@@ -77,38 +84,55 @@
         </p>
       </div>
 
-      <dl
-        class="grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm"
-      >
-        <dt class="text-muted-foreground">{{ $t(`${KEYS}.results.clock`) }}</dt>
-        <dd class="font-mono">
-          {{ $t(`${KEYS}.results.ppm`, [fit.rateErrorPpm.toFixed(1)]) }}
-        </dd>
-        <!-- One figure for the run cannot separate a single bad speaker from
+      <!-- What changes, and how to change it back, said once the change is made
+           and while the numbers it replaced are still on the screen. -->
+      <p v-if="wrote" class="text-sm text-muted-foreground">
+        {{ $t(`${KEYS}.results.undo`) }}
+      </p>
+
+      <!-- For whoever is chasing a run that will not check out. Nobody deciding
+           whether to press Apply needs a clock rate in parts per million. -->
+      <details class="text-sm">
+        <summary class="cursor-pointer text-muted-foreground">
+          {{ $t(`${KEYS}.results.technical`) }}
+        </summary>
+        <dl
+          class="mt-2 grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-3 gap-y-1"
+        >
+          <dt class="text-muted-foreground">
+            {{ $t(`${KEYS}.results.clock`) }}
+          </dt>
+          <dd class="font-mono">
+            {{ $t(`${KEYS}.results.ppm`, [fit.rateErrorPpm.toFixed(1)]) }}
+          </dd>
+          <!-- One figure for the run cannot separate a single bad speaker from
              detection that was poor everywhere, and those are different faults
              with different fixes. -->
-        <dt class="text-muted-foreground">
-          {{ $t(`${KEYS}.results.scatter`) }}
-        </dt>
-        <dd class="flex flex-col font-mono">
-          <span v-for="row in scatterRows" :key="row.playerId">
-            {{ $t(`${KEYS}.results.scatter_row`, [row.name, row.scatter]) }}
-          </span>
-        </dd>
-        <dt class="text-muted-foreground">
-          {{ $t(`${KEYS}.results.arrivals`) }}
-        </dt>
-        <dd class="font-mono">
-          {{ $t(`${KEYS}.results.used`, [fit.used, fit.rejected]) }}
-        </dd>
-        <!-- Next to the chirps because the two are read together: arrivals
+          <dt class="text-muted-foreground">
+            {{ $t(`${KEYS}.results.scatter`) }}
+          </dt>
+          <dd class="flex flex-col font-mono">
+            <span v-for="row in scatterRows" :key="row.playerId">
+              {{ $t(`${KEYS}.results.scatter_row`, [row.name, row.scatter]) }}
+            </span>
+          </dd>
+          <dt class="text-muted-foreground">
+            {{ $t(`${KEYS}.results.arrivals`) }}
+          </dt>
+          <dd class="font-mono">
+            {{ $t(`${KEYS}.results.used`, [fit.used, fit.rejected]) }}
+          </dd>
+          <!-- Next to the chirps because the two are read together: arrivals
              thinner than expected are explained by a recording with holes in it,
              and there is nothing else on this panel that would say so. -->
-        <dt class="text-muted-foreground">{{ $t(`${KEYS}.results.gaps`) }}</dt>
-        <dd class="font-mono">
-          {{ $t(`${KEYS}.results.lost`, [loss.dropouts, lostPercent]) }}
-        </dd>
-      </dl>
+          <dt class="text-muted-foreground">
+            {{ $t(`${KEYS}.results.gaps`) }}
+          </dt>
+          <dd class="font-mono">
+            {{ $t(`${KEYS}.results.lost`, [loss.dropouts, lostPercent]) }}
+          </dd>
+        </dl>
+      </details>
     </CardContent>
 
     <CardFooter class="flex-col items-stretch gap-2 sm:flex-row">
@@ -116,16 +140,30 @@
            offering to apply delays the panel has just said cannot be trusted is
            a contradiction whichever state it is in. -->
       <Button
-        v-if="trustworthy"
-        :disabled="disabled || applyResult !== null"
+        v-if="trustworthy && !applyResult"
+        :disabled="disabled"
         @click="emit('apply')"
       >
         <Spinner v-if="disabled" class="size-4" aria-hidden="true" />
         <Check v-else class="size-4" aria-hidden="true" />
-        {{ $t(`${KEYS}.results.${doneLabel}`) }}
+        {{ $t(`${KEYS}.results.apply`) }}
       </Button>
-      <Button variant="outline" :disabled="disabled" @click="emit('finish')">
-        {{ $t(`${KEYS}.results.finish`) }}
+      <!-- Once the delays are in, giving the speakers back is the next step and
+           the one most easily forgotten. -->
+      <Button
+        :variant="applyResult ? 'default' : 'outline'"
+        :disabled="disabled"
+        @click="emit('finish')"
+      >
+        {{ $t(`${KEYS}.results.${applyResult ? "done" : "finish"}`) }}
+      </Button>
+      <Button
+        v-if="wrote"
+        variant="outline"
+        :disabled="disabled"
+        @click="emit('verify')"
+      >
+        {{ $t(`${KEYS}.results.verify_action`) }}
       </Button>
     </CardFooter>
   </Card>
@@ -179,6 +217,7 @@ const {
   trustworthy,
   anchor,
   disabled,
+  verifying = false,
 } = defineProps<{
   players: CalibrationPlayer[];
   /** Every speaker the run set out to measure, in the order it walked them. */
@@ -198,9 +237,51 @@ const {
   trustworthy: boolean;
   anchor: string | null;
   disabled: boolean;
+  /** True when these readings were taken over delays this run already applied. */
+  verifying?: boolean;
 }>();
 
-const emit = defineEmits<{ apply: []; finish: [] }>();
+const emit = defineEmits<{ apply: []; verify: []; finish: [] }>();
+
+/** A string to translate in the template, with what it has to fill in. */
+interface Phrase {
+  key: string;
+  values: unknown[];
+}
+
+/** Which of the panel's headings fits what the numbers on it are. */
+const heading = computed(() => {
+  if (applyResult) return "applied_heading";
+  return verifying ? "verify_heading" : "measured_heading";
+});
+
+/** Whether the server wrote a delay to any speaker, so there is one to check or undo. */
+const wrote = computed(
+  () => applyResult !== null && Object.keys(applyResult.applied).length > 0,
+);
+
+/**
+ * The delay each speaker is about to be given, worked out the way the server will.
+ *
+ * The server leaves the earliest speaker where it is and brings every later one
+ * forward to meet it, on top of the delay each already carries. A session takes
+ * those delays off before it measures, so on a first walk that is the readings
+ * alone. On a walk repeated over applied delays it is not, and no figure is
+ * offered: the server knows what the speakers carry and this page does not.
+ */
+const planned = computed<Record<string, number> | null>(() => {
+  if (verifying) return null;
+  const offsets = Object.values(fit.offsetsMs);
+  if (!offsets.length || selected.some((id) => !(id in fit.offsetsMs)))
+    return null;
+  const earliest = Math.min(...offsets);
+  return Object.fromEntries(
+    Object.entries(fit.offsetsMs).map(([playerId, offset]) => [
+      playerId,
+      Math.round(offset - earliest),
+    ]),
+  );
+});
 
 const byId = computed(
   () => new Map(players.map((player) => [player.player_id, player])),
@@ -284,20 +365,50 @@ const unheard = computed(() =>
 const rows = computed(() =>
   selected.map((playerId) => {
     const manual = applyResult?.manual[playerId] ?? null;
+    const applied = applyResult?.applied[playerId] ?? null;
+    const offset =
+      playerId in fit.offsetsMs ? fit.offsetsMs[playerId].toFixed(2) : null;
+    const reading: Phrase = {
+      key: `${KEYS}.results.milliseconds`,
+      values: [offset],
+    };
+    const plan = planned.value?.[playerId] ?? null;
+    const adjustable = byId.value.get(playerId)?.adjustable ?? false;
+
+    // What to do with this speaker, and under it the reading that says why.
+    let action = reading;
+    let detail: Phrase | null = null;
+    if (manual !== null) {
+      action = { key: `${KEYS}.manual.row`, values: [manual] };
+      detail = reading;
+    } else if (applied !== null) {
+      action = {
+        key: `${KEYS}.results.applied_delay`,
+        values: [applied, applyResult?.previous?.[playerId] ?? 0],
+      };
+      detail = reading;
+    } else if (!applyResult && trustworthy && plan !== null) {
+      action = {
+        key: adjustable
+          ? `${KEYS}.results.planned_delay`
+          : `${KEYS}.manual.row`,
+        values: [plan],
+      };
+      detail = reading;
+    }
+
     return {
       playerId,
       name: nameOf(playerId),
+      action,
+      detail,
       // Which speakers need a hand is the server's call, and it only makes it at
       // write time — a speaker it expected to take a delay can still come back
       // under `manual`. Its own flag stands in until then, defaulting to needing
       // one for a speaker it no longer lists: claiming otherwise would promise an
       // adjustment nothing is going to make.
-      byHand: applyResult
-        ? manual !== null
-        : !(byId.value.get(playerId)?.adjustable ?? false),
-      offset:
-        playerId in fit.offsetsMs ? fit.offsetsMs[playerId].toFixed(2) : null,
-      applied: applyResult?.applied[playerId] ?? null,
+      byHand: applyResult ? manual !== null : !adjustable,
+      offset,
       manual,
     };
   }),
@@ -307,15 +418,4 @@ const rows = computed(() =>
 const manualNames = computed(() =>
   rows.value.filter((row) => row.manual !== null).map((row) => row.name),
 );
-
-/**
- * How the Apply button reads once it has been pressed.
- *
- * A run where nothing could be written did still produce every delay it set out
- * to; calling that "Delays applied" would claim the devices were changed.
- */
-const doneLabel = computed(() => {
-  if (!applyResult) return "apply";
-  return Object.keys(applyResult.applied).length ? "applied" : "worked_out";
-});
 </script>

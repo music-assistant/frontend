@@ -46,16 +46,20 @@ vi.mock("@/composables/sendspin-sync/useCalibrationSession", async () => {
           name: "Living room",
           busy: false,
           adjustable: true,
+          silent: false,
         },
         {
           player_id: "kitchen",
           name: "Kitchen",
           busy: false,
           adjustable: true,
+          silent: false,
         },
       ]),
       state: vueRef(null),
       lost: sessionLost,
+      problem: vueRef(null),
+      owned: vueRef(false),
       busy: vueRef(false),
       ...fakes.session,
     }),
@@ -77,7 +81,7 @@ vi.mock("@/composables/sendspin-sync/useChirpCapture", async () => {
 });
 
 let voided = ref<"suspended" | null>(null);
-let sessionLost = ref<"expired" | "failed" | null>(null);
+let sessionLost = ref<"expired" | null>(null);
 let scopes: ReturnType<typeof effectScope>[] = [];
 
 function withScope<T>(factory: () => T): T {
@@ -144,8 +148,9 @@ function placeChirp(buffer: Float32Array, at: number): void {
 async function measure(
   run: ReturnType<typeof useCalibrationRun>,
   playerId: string,
+  replace = false,
 ): Promise<boolean> {
-  const pending = run.measure(playerId);
+  const pending = run.measure(playerId, replace);
   await vi.advanceTimersByTimeAsync(1000);
   return await pending;
 }
@@ -183,6 +188,7 @@ beforeEach(() => {
   fakes.session.stop.mockResolvedValue(undefined);
   fakes.session.apply.mockResolvedValue({
     applied: { living: 12 },
+    previous: { living: 0 },
     manual: { kitchen: 0 },
   });
 });
@@ -507,8 +513,47 @@ describe("useCalibrationRun", () => {
     expect(fakes.session.apply).toHaveBeenCalledWith(run.fit.value!.offsetsMs);
     expect(run.applyResult.value).toEqual({
       applied: { living: 12 },
+      previous: { living: 0 },
       manual: { kitchen: 0 },
     });
+  });
+
+  it("walks again over the applied delays without mixing the two walks", async () => {
+    const run = await started();
+    for (const visit of [
+      { startSeconds: 0, offsetSeconds: 0, player: "living" },
+      { startSeconds: 30, offsetSeconds: 0.012, player: "kitchen" },
+      { startSeconds: 60, offsetSeconds: 0, player: "living" },
+    ]) {
+      fakes.capture.record.mockResolvedValue(
+        recordingAt({ ...visit, drift: 0 }),
+      );
+      await measure(run, visit.player);
+    }
+    await run.apply();
+
+    run.verify();
+
+    // The speakers carry their corrections now. One fit over readings from both
+    // sides of the apply would see every speaker jump part-way through.
+    expect(run.verifying.value).toBe(true);
+    expect(run.visits.value).toEqual([]);
+    expect(run.fit.value).toBeNull();
+    expect(run.applyResult.value).toBeNull();
+    expect(run.phase.value).toBe("walking");
+  });
+
+  it("has nothing to check before anything was applied", async () => {
+    const run = await started();
+    fakes.capture.record.mockResolvedValue(
+      recordingAt({ startSeconds: 0, offsetSeconds: 0, drift: 0 }),
+    );
+    await measure(run, "living");
+
+    run.verify();
+
+    expect(run.verifying.value).toBe(false);
+    expect(run.visits.value).toHaveLength(1);
   });
 
   it("refuses to apply while a speaker has never been heard", async () => {
@@ -596,12 +641,202 @@ describe("useCalibrationRun", () => {
     expect(fakes.session.solo).not.toHaveBeenCalled();
   });
 
+  it("gives the speakers back as soon as a run is voided", async () => {
+    await started();
+    voided.value = "suspended";
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Nothing of the run can be used, so the house does not stay silent until
+    // somebody reads the screen and taps a button.
+    expect(fakes.session.stop).toHaveBeenCalledOnce();
+    expect(fakes.capture.close).toHaveBeenCalledOnce();
+  });
+
   it("voids the run when the server session goes away", async () => {
     const run = await started();
     sessionLost.value = "expired";
     await vi.advanceTimersByTimeAsync(0);
 
     expect(run.phase.value).toBe("voided");
+    // The server has the speakers back already; the microphone is all that is
+    // left to let go of.
+    expect(fakes.capture.close).toHaveBeenCalledOnce();
+  });
+
+  it("stays where it was when the server refuses the start", async () => {
+    fakes.session.start.mockResolvedValue(false);
+    const run = withScope(() => useCalibrationRun());
+    run.selected.value = ["living", "kitchen"];
+
+    expect(await run.begin()).toBe(false);
+
+    // A muted speaker is put right in a moment, and is no reason to send the
+    // user back through anything. The microphone is let go of meanwhile.
+    expect(run.phase.value).toBe("picking");
+    expect(run.selected.value).toEqual(["living", "kitchen"]);
+    expect(fakes.capture.close).toHaveBeenCalledOnce();
+    expect(run.starting.value).toBe(false);
+  });
+
+  it("takes one tap on Start, however many land", async () => {
+    const run = withScope(() => useCalibrationRun());
+    run.selected.value = ["living", "kitchen"];
+
+    // The microphone prompt can sit there for as long as the user likes.
+    const [first, second] = await Promise.all([run.begin(), run.begin()]);
+
+    expect([first, second]).toEqual([true, false]);
+    expect(fakes.capture.open).toHaveBeenCalledOnce();
+    expect(fakes.session.start).toHaveBeenCalledOnce();
+  });
+
+  it("goes on walking when a solo did not get through", async () => {
+    const run = await started();
+    fakes.capture.record.mockResolvedValue(
+      recordingAt({ startSeconds: 0, offsetSeconds: 0, drift: 0 }),
+    );
+    await measure(run, "living");
+    fakes.session.solo.mockResolvedValueOnce(false);
+
+    expect(await measure(run, "kitchen")).toBe(false);
+
+    // The session says why. The reading already taken is as good as it was.
+    expect(run.phase.value).toBe("walking");
+    expect(run.visits.value).toHaveLength(1);
+  });
+
+  it("replaces a reading that is taken again because it came out badly", async () => {
+    const run = await started();
+    fakes.capture.record.mockResolvedValue(
+      recordingAt({ startSeconds: 0, offsetSeconds: 0, drift: 0 }),
+    );
+    await measure(run, "living");
+    const silence = recordingAt({
+      startSeconds: 30,
+      offsetSeconds: 0,
+      drift: 0,
+    });
+    silence.samples.fill(0);
+    fakes.capture.record.mockResolvedValue(silence);
+    await measure(run, "kitchen");
+    expect(run.visits.value.map((visit) => visit.found)).toEqual([
+      expect.any(Number),
+      0,
+    ]);
+
+    fakes.capture.record.mockResolvedValue(
+      recordingAt({ startSeconds: 45, offsetSeconds: 0.012, drift: 0 }),
+    );
+    await measure(run, "kitchen", true);
+
+    // Two readings still, not three: a poor one left in would go on pulling at
+    // the result.
+    expect(run.visits.value.map((visit) => visit.playerId)).toEqual([
+      "living",
+      "kitchen",
+    ]);
+    expect(run.visits.value[1].found).toBeGreaterThanOrEqual(CHIRPS_HELD);
+    expect(run.fit.value!.offsetsMs.kitchen).toBeCloseTo(12, 1);
+  });
+
+  it("keeps the earlier reading when the retake could not be recorded", async () => {
+    const run = await started();
+    fakes.capture.record.mockResolvedValue(
+      recordingAt({ startSeconds: 0, offsetSeconds: 0, drift: 0 }),
+    );
+    await measure(run, "living");
+    fakes.capture.record.mockResolvedValue(null);
+
+    expect(await measure(run, "living", true)).toBe(false);
+
+    expect(run.visits.value).toHaveLength(1);
+  });
+
+  it("adds a second reading when a speaker is simply measured again", async () => {
+    const run = await started();
+    for (const startSeconds of [0, 60]) {
+      fakes.capture.record.mockResolvedValue(
+        recordingAt({ startSeconds, offsetSeconds: 0, drift: 0 }),
+      );
+      await measure(run, "living");
+    }
+
+    // The closing steps of the walk ask for exactly this: a second reading of a
+    // speaker is what the clock drift is worked out from.
+    expect(run.visits.value).toHaveLength(2);
+  });
+
+  it("does not anchor on a reading that heard nothing", async () => {
+    const run = await started();
+    const silence = recordingAt({
+      startSeconds: 0,
+      offsetSeconds: 0,
+      drift: 0,
+    });
+    silence.samples.fill(0);
+    fakes.capture.record.mockResolvedValue(silence);
+    await measure(run, "living");
+    expect(run.anchor.value).toBeNull();
+
+    fakes.capture.record.mockResolvedValue(
+      recordingAt({ startSeconds: 30, offsetSeconds: 0, drift: 0 }),
+    );
+    await measure(run, "kitchen");
+
+    // The silent reading put no arrivals into the fit, so it is no reference,
+    // and the walk must not send the user back to it at the end.
+    expect(run.anchor.value).toBe("kitchen");
+  });
+
+  it("starts the walk over on the session and microphone it already has", async () => {
+    const run = await started();
+    fakes.capture.record.mockResolvedValue(
+      recordingAt({ startSeconds: 0, offsetSeconds: 0, drift: 0 }),
+    );
+    await measure(run, "living");
+
+    run.clearReadings();
+
+    expect(run.visits.value).toEqual([]);
+    expect(run.fit.value).toBeNull();
+    expect(run.phase.value).toBe("walking");
+    // The recording has run without a gap, so nothing has to be opened again.
+    expect(fakes.session.stop).not.toHaveBeenCalled();
+    expect(fakes.capture.close).not.toHaveBeenCalled();
+  });
+
+  it("counts a reading down and buzzes when it is done", async () => {
+    const vibrate = vi.fn();
+    vi.stubGlobal("navigator", { ...navigator, vibrate });
+    const run = await started();
+    let finish: (recording: Recording) => void = () => undefined;
+    fakes.capture.record.mockReturnValue(
+      new Promise<Recording>((resolve) => {
+        finish = resolve;
+      }),
+    );
+
+    const pending = run.measure("living");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(run.secondsLeft.value).toBe(Math.ceil(1 + RECORD_SECONDS));
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(run.secondsLeft.value).toBe(Math.ceil(1 + RECORD_SECONDS) - 3);
+
+    finish(recordingAt({ startSeconds: 0, offsetSeconds: 0, drift: 0 }));
+    await pending;
+
+    // The user is looking at the room, not the screen.
+    expect(vibrate).toHaveBeenCalledOnce();
+    expect(run.secondsLeft.value).toBe(0);
+    vi.unstubAllGlobals();
+  });
+
+  it("ends a run found on another device only when asked to", async () => {
+    const run = withScope(() => useCalibrationRun());
+
+    await run.endAdopted();
+
+    expect(fakes.session.stop).toHaveBeenCalledWith(true);
   });
 
   it("throws a voided run away rather than salvaging part of it", async () => {

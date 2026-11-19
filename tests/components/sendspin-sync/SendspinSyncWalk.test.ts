@@ -6,11 +6,13 @@ import { describe, expect, it } from "vitest";
 
 const KEYS = "providers.sendspin_sync.calibration";
 
-const PLAYERS = [
-  { player_id: "living", name: "Living room", busy: false, adjustable: true },
-  { player_id: "kitchen", name: "Kitchen", busy: false, adjustable: true },
-  { player_id: "study", name: "Study", busy: false, adjustable: true },
-];
+const PLAYERS = ["living", "kitchen", "study"].map((player_id, index) => ({
+  player_id,
+  name: ["Living room", "Kitchen", "Study"][index],
+  busy: false,
+  adjustable: true,
+  silent: false,
+}));
 
 const SELECTED = ["living", "kitchen", "study"];
 
@@ -63,12 +65,24 @@ function askedFor(wrapper: Walk): string[] {
     .map((button) => button.text());
 }
 
+/** One button per speaker, which is not every button on the card. */
+function speakerButtons(wrapper: Walk) {
+  return wrapper.findAll(".grid > button");
+}
+
 function buttonFor(wrapper: Walk, name: string) {
-  const button = wrapper
-    .findAll("button")
-    .find((candidate) => candidate.text().includes(name));
+  const button = speakerButtons(wrapper).find((candidate) =>
+    candidate.text().includes(name),
+  );
   if (!button) throw new Error(`no button for ${name}`);
   return button;
+}
+
+/** A button by the string it shows, for the ones that are not a speaker. */
+function buttonSaying(wrapper: Walk, key: string) {
+  return wrapper
+    .findAll("button")
+    .find((candidate) => candidate.text().includes(key));
 }
 
 describe("SendspinSyncWalk", () => {
@@ -83,10 +97,12 @@ describe("SendspinSyncWalk", () => {
   });
 
   it("offers every speaker at every step, in the order they were picked", () => {
-    const buttons = mountWalk({
-      visits: [reading()],
-      anchor: "living",
-    }).findAll("button");
+    const buttons = speakerButtons(
+      mountWalk({
+        visits: [reading()],
+        anchor: "living",
+      }),
+    );
 
     expect(buttons.map((button) => button.text().split("\n")[0])).toHaveLength(
       3,
@@ -101,7 +117,9 @@ describe("SendspinSyncWalk", () => {
 
     await buttonFor(wrapper, "Kitchen").trigger("click");
 
-    expect(wrapper.emitted("measure")).toEqual([["kitchen"]]);
+    // Added to whatever was read before, not put in its place: a plain tap on a
+    // measured speaker is how the closing steps of the walk get their repeat.
+    expect(wrapper.emitted("measure")).toEqual([["kitchen", false]]);
   });
 
   it("keeps asking for unmeasured speakers without naming one", () => {
@@ -134,7 +152,7 @@ describe("SendspinSyncWalk", () => {
     expect(askedFor(wrapper)).toEqual([expect.stringContaining("Living room")]);
 
     await buttonFor(wrapper, "Living room").trigger("click");
-    expect(wrapper.emitted("measure")).toEqual([["living"]]);
+    expect(wrapper.emitted("measure")).toEqual([["living", false]]);
 
     // And the repeat is asked of the speaker actually measured first.
     await wrapper.setProps({
@@ -242,5 +260,125 @@ describe("SendspinSyncWalk", () => {
 
   it("says how to hold the phone while nothing is recording", () => {
     expect(mountWalk().text()).toContain(`${KEYS}.walk.how`);
+  });
+
+  it("counts the reading down for someone standing still", () => {
+    const wrapper = mountWalk({
+      disabled: true,
+      measuring: "living",
+      secondsLeft: 6,
+    });
+
+    expect(wrapper.text()).toContain(`${KEYS}.walk.listening_left 6`);
+  });
+
+  it("says a measured speaker can be measured again", () => {
+    const wrapper = mountWalk({ visits: [reading()], anchor: "living" });
+
+    // A tick alone reads as finished, and the closing steps ask for a repeat.
+    expect(buttonFor(wrapper, "Living room").text()).toContain(
+      `${KEYS}.walk.again_hint`,
+    );
+    expect(buttonFor(wrapper, "Kitchen").text()).not.toContain(
+      `${KEYS}.walk.again_hint`,
+    );
+  });
+
+  it("can always be stopped, from the first step on", async () => {
+    const wrapper = mountWalk();
+
+    // The house is silent for as long as this card is up, and leaving the page
+    // must not be the only way to end that.
+    await buttonSaying(wrapper, `${KEYS}.walk.stop`)!.trigger("click");
+
+    expect(wrapper.emitted("stop")).toHaveLength(1);
+  });
+
+  it("offers to start the walk over once there is something to throw away", async () => {
+    expect(buttonSaying(mountWalk(), `${KEYS}.walk.clear`)).toBeUndefined();
+
+    const wrapper = mountWalk({ visits: [reading()], anchor: "living" });
+    await buttonSaying(wrapper, `${KEYS}.walk.clear`)!.trigger("click");
+
+    expect(wrapper.emitted("clear")).toHaveLength(1);
+  });
+
+  it("says what to do about a reading that came out badly", async () => {
+    const wrapper = mountWalk({
+      visits: [
+        reading(),
+        reading({ visit: 1, playerId: "kitchen", found: 1, expected: 7 }),
+      ],
+      anchor: "living",
+    });
+
+    expect(wrapper.text()).toContain(`${KEYS}.walk.retry.poor Kitchen`);
+    expect(wrapper.text()).toContain(`${KEYS}.walk.retry.advice`);
+
+    // Taking it again replaces it: a poor reading left in would go on pulling
+    // at the result.
+    await buttonSaying(wrapper, `${KEYS}.walk.retry.action`)!.trigger("click");
+    expect(wrapper.emitted("measure")).toEqual([["kitchen", true]]);
+  });
+
+  it("only offers a retake of the speaker the user is standing at", () => {
+    const wrapper = mountWalk({
+      visits: [
+        reading({ playerId: "kitchen", found: 1, expected: 7 }),
+        reading({ visit: 1 }),
+      ],
+      anchor: "living",
+    });
+
+    // The poor one is a room away by now. Its badge still says so.
+    expect(wrapper.text()).not.toContain(`${KEYS}.walk.retry.advice`);
+    expect(buttonFor(wrapper, "Kitchen").text()).toContain(
+      `${KEYS}.confidence.poor`,
+    );
+  });
+
+  it("takes no more readings once the delays are applied", () => {
+    const wrapper = mountWalk({
+      visits: [
+        reading(),
+        reading({ visit: 1, playerId: "kitchen", found: 3, expected: 7 }),
+      ],
+      anchor: "living",
+      closed: true,
+    });
+
+    // A reading taken now is of corrected speakers, and would not belong with
+    // the ones the correction came from.
+    for (const button of speakerButtons(wrapper))
+      expect(button.attributes("disabled")).toBeDefined();
+    expect(wrapper.text()).toContain(`${KEYS}.walk.closed`);
+    expect(wrapper.text()).not.toContain(`${KEYS}.walk.retry.advice`);
+    expect(buttonSaying(wrapper, `${KEYS}.walk.clear`)).toBeUndefined();
+    // Giving the speakers back is still within reach.
+    expect(
+      buttonSaying(wrapper, `${KEYS}.walk.stop`)!.attributes("disabled"),
+    ).toBeUndefined();
+  });
+
+  it("takes the focus the picker left behind", () => {
+    const wrapper = mount(SendspinSyncWalk, {
+      props: {
+        players: PLAYERS,
+        selected: SELECTED,
+        visits: [],
+        anchor: null,
+        needsBracket: false,
+        needsCheck: false,
+        disabled: false,
+        measuring: null,
+      },
+      attachTo: document.body,
+      global: { mocks: { $t: (key: string) => key } },
+    });
+
+    expect(document.activeElement).toBe(
+      wrapper.find("[data-slot=card-header]").element,
+    );
+    wrapper.unmount();
   });
 });

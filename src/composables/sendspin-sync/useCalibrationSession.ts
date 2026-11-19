@@ -6,27 +6,20 @@
  * at a time audible. This composable is the only place that talks to it, so the
  * view never has to know the command names or the order they have to come in.
  *
- * The session tears itself down after a period of inactivity, and only the
- * commands that change it — starting, soloing, applying — put that timer back.
- * Reading the session does not. So the run is kept alive by re-soloing whichever
- * speaker is already soloed, which the server treats as a no-op on the audio
- * path: it sends no mute command to the soloed speaker, only to the others, and
- * those are muted already.
+ * The session gives the speakers back once nothing has driven it for a few
+ * minutes, so a phone that is still there says so with a keep-alive well inside
+ * that window.
  *
- * Leaning on a side effect of `solo_player` to reset a timer is a workaround, and
- * the right home for a keepalive is the server. Until there is one, the nudge is
- * at least kept away from anything it could disturb: the timer restarts on every
- * command that reaches the server, so it can only fire after a long spell of the
- * user walking or standing still. A measurement is always preceded by a solo, so
- * a nudge can never land inside one.
- *
- * A session that has gone anyway is reported rather than swallowed. Every command
- * suppresses the global error toast and reports through `lost` instead, because
- * "the session expired while you were walking" needs to be said in those terms
- * and needs to stop the flow rather than fail one button.
+ * A command can fail in three ways, and they are kept apart because they call for
+ * different things from the user. The server can refuse it, with a reason of its
+ * own that is shown as it is. The server can be out of reach for a moment, which
+ * a phone carried into a far room is all the time, and which costs nothing but
+ * another tap. Or the session can be gone, which is the only one of the three
+ * that ends the run.
  */
 
 import api from "@/plugins/api";
+import { ApiCommandError } from "@/plugins/api/errors";
 import type {
   CalibrationApplyResult,
   CalibrationPlayer,
@@ -35,25 +28,44 @@ import type {
 import { computed, onScopeDispose, ref } from "vue";
 
 /**
- * How often the session is nudged so its inactivity timeout cannot fire.
+ * How often the server is told this client is still there.
  *
- * The server allows 900 seconds, which is generous enough to walk a large house;
- * nudging at a third of that leaves room for two missed nudges before a session
- * would actually be lost.
+ * The server allows 180 seconds, so a phone can miss several of these in a row —
+ * a room with no signal, say — before the speakers are given back.
  */
-const KEEPALIVE_MS = 300_000;
+const KEEPALIVE_MS = 30_000;
+
+/** How long a command that never reached the server waits before its one retry. */
+const RETRY_DELAY_MS = 1_500;
 
 /** Why the run cannot continue against the server. */
-export type SessionLoss = "expired" | "failed";
+export type SessionLoss = "expired";
+
+/**
+ * Why the last command did nothing, while the session itself goes on.
+ *
+ * `message` is the server's own reason for a refusal, in the user's language.
+ */
+export type SessionProblem =
+  { kind: "refused"; message: string } | { kind: "unreachable" };
 
 export function useCalibrationSession() {
   const players = ref<CalibrationPlayer[]>([]);
   const state = ref<CalibrationSessionState | null>(null);
   const lost = ref<SessionLoss | null>(null);
+  const problem = ref<SessionProblem | null>(null);
+  /**
+   * Whether the session the server holds was started from here.
+   *
+   * A page that merely found a session running shows it, and may end it when
+   * asked to, but must not end it by being closed: that session is somebody's
+   * walk in progress on another device.
+   */
+  const owned = ref(false);
 
   let keepalive: ReturnType<typeof setInterval> | null = null;
-  // Counted rather than flagged: a keepalive nudge overlapping a user action must
-  // not clear the flag while the other command is still in flight.
+  // Counted rather than flagged: a keep-alive overlapping a user action must not
+  // clear the flag while the other command is still in flight.
   const inFlight = ref(0);
   const busy = computed(() => inFlight.value > 0);
 
@@ -65,18 +77,23 @@ export function useCalibrationSession() {
   async function loadPlayers(): Promise<boolean> {
     const eligible = await send<CalibrationPlayer[]>(
       "sendspin_sync/eligible_players",
+      undefined,
+      { retry: true },
     );
     if (!eligible) return false;
     players.value = eligible;
     return true;
   }
 
-  /** Adopt a session the server is already running, if there is one. */
+  /** Read the session the server is running, if there is one. */
   async function refresh(): Promise<CalibrationSessionState | null> {
     const current = await send<CalibrationSessionState | null>(
       "sendspin_sync/session",
+      undefined,
+      { retry: true },
     );
     state.value = current ?? null;
+    if (!state.value) owned.value = false;
     return state.value;
   }
 
@@ -94,6 +111,7 @@ export function useCalibrationSession() {
     if (!started) return false;
 
     state.value = started;
+    owned.value = true;
     lost.value = null;
     startKeepalive();
     return true;
@@ -101,16 +119,16 @@ export function useCalibrationSession() {
 
   /** Make one speaker of the session audible, leaving the stream running. */
   async function solo(playerId: string): Promise<boolean> {
+    // Safe to send twice: soloing the speaker that is already soloed changes
+    // nothing on the audio path.
     const soloed = await send<CalibrationSessionState>(
       "sendspin_sync/solo_player",
       { player_id: playerId },
+      { retry: true },
     );
     if (!soloed) return false;
 
     state.value = soloed;
-    // This command re-armed the server's timer, so the nudge waits again from
-    // here — which is what keeps it out of the measurement that follows.
-    startKeepalive();
     return true;
   }
 
@@ -128,6 +146,9 @@ export function useCalibrationSession() {
    * device is still applying a delay of its own, which this run measured but the
    * server will not guess at, so the number has to be added to it rather than
    * written over it.
+   *
+   * Never sent twice on its own: the server folds in the delays the speakers
+   * carry, so a second apply of the same readings would correct the correction.
    */
   async function apply(
     offsetsMs: Record<string, number>,
@@ -136,15 +157,21 @@ export function useCalibrationSession() {
       "sendspin_sync/apply_measurements",
       { offsets_ms: offsetsMs },
     );
-    if (result) startKeepalive();
     return result ?? null;
   }
 
-  /** End the session and give every speaker back. */
-  async function stop(): Promise<void> {
+  /**
+   * End the session and give every speaker back.
+   *
+   * Only a session started from here is ended, unless `adopted` says the user
+   * asked for the one found running to be ended.
+   */
+  async function stop(adopted = false): Promise<void> {
     stopKeepalive();
     if (!state.value) return;
+    if (!owned.value && !adopted) return;
     state.value = null;
+    owned.value = false;
     // Best effort: a session the server has already dropped is the outcome
     // wanted here, so a failure to stop it is not worth reporting.
     await api
@@ -157,36 +184,73 @@ export function useCalibrationSession() {
   /** Clear the fault from a run that has been thrown away. */
   function reset(): void {
     lost.value = null;
+    problem.value = null;
+    if (!owned.value) return;
     state.value = null;
+    owned.value = false;
   }
 
   /**
-   * Send one command, reporting a lost session rather than throwing.
+   * Send one command, reporting why it did nothing rather than throwing.
    *
-   * Returns `undefined` on failure. A command that fails while the server no
-   * longer has a session is an expiry — the case the user has to be told about
-   * plainly — and anything else is reported as a plain failure.
+   * Returns `undefined` on failure, with `problem` saying why — or `lost` when
+   * the failure is that the session this page was driving no longer exists.
+   *
+   * `retry` sends a command that never reached the server once more. Only for
+   * commands that are safe to land twice.
    */
   async function send<Result>(
     command: string,
     args?: Record<string, unknown>,
+    options: { retry?: boolean; quiet?: boolean } = {},
   ): Promise<Result | undefined> {
     inFlight.value++;
     try {
-      return await api.sendCommand<Result>(command, args, {
-        suppressGlobalError: true,
-      });
-    } catch (error) {
-      console.error(`[Sendspin Sync] ${command} failed`, error);
-      lost.value = (await sessionGone()) ? "expired" : "failed";
-      if (lost.value === "expired") {
-        state.value = null;
-        stopKeepalive();
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const result = await api.sendCommand<Result>(command, args, {
+            suppressGlobalError: true,
+          });
+          if (!options.quiet) problem.value = null;
+          return result;
+        } catch (error) {
+          console.error(`[Sendspin Sync] ${command} failed`, error);
+          if (error instanceof ApiCommandError) {
+            await reportRefusal(error, options.quiet ?? false);
+            return undefined;
+          }
+          if (options.retry && attempt === 0) {
+            await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+            continue;
+          }
+          if (!options.quiet) problem.value = { kind: "unreachable" };
+          return undefined;
+        }
       }
-      return undefined;
     } finally {
       inFlight.value--;
     }
+  }
+
+  /**
+   * Take in a command the server answered with a refusal.
+   *
+   * A refusal while the server no longer holds the session this page was driving
+   * is an expiry, and that is what the user is told. Anything else is the
+   * server's own reason, which is the only account of what went wrong there is.
+   */
+  async function reportRefusal(
+    error: ApiCommandError,
+    quiet: boolean,
+  ): Promise<void> {
+    if (owned.value && (await sessionGone())) {
+      lost.value = "expired";
+      state.value = null;
+      owned.value = false;
+      stopKeepalive();
+      return;
+    }
+    if (!quiet) problem.value = { kind: "refused", message: error.message };
   }
 
   /** Whether the server has stopped holding a session at all. */
@@ -206,7 +270,7 @@ export function useCalibrationSession() {
 
   function startKeepalive(): void {
     stopKeepalive();
-    keepalive = setInterval(() => void nudge(), KEEPALIVE_MS);
+    keepalive = setInterval(() => void keepAlive(), KEEPALIVE_MS);
   }
 
   function stopKeepalive(): void {
@@ -216,22 +280,23 @@ export function useCalibrationSession() {
   }
 
   /**
-   * Push the session's inactivity timeout back.
+   * Tell the server this client is still there.
    *
-   * Re-soloing the speaker that is already soloed is what re-arms it. Before the
-   * first speaker has been soloed there is nothing to re-solo, and reading the
-   * session is enough to notice it has gone.
+   * Quiet about everything but an expiry: one that did not get through says
+   * nothing about the run, and the next one is half a minute away.
    */
-  async function nudge(): Promise<void> {
-    const soloed = state.value?.soloed_player_id;
-    if (soloed) await solo(soloed);
-    else await refresh();
+  async function keepAlive(): Promise<void> {
+    await send<CalibrationSessionState>("sendspin_sync/keep_alive", undefined, {
+      quiet: true,
+    });
   }
 
   return {
     players,
     state,
     lost,
+    problem,
+    owned,
     busy,
     loadPlayers,
     refresh,

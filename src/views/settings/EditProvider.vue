@@ -369,7 +369,6 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import { authManager } from "@/plugins/auth";
-import AdvancedSettingsToggle from "./AdvancedSettingsToggle.vue";
 import AmbientSoundsCustomSounds from "./AmbientSoundsCustomSounds.vue";
 import EditConfig from "./EditConfig.vue";
 
