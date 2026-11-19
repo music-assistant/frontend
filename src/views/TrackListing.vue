@@ -15,6 +15,8 @@
       :show-track-number="false"
       :show-refresh-button="false"
       :sort-listing="config.sortListing"
+      library-toolbar
+      :show-count="false"
       :load-paged-data="config.loadPagedData"
       :restore-state="true"
     />

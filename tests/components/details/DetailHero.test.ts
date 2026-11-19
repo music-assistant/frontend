@@ -1,13 +1,27 @@
 import DetailHero from "@/components/details/DetailHero.vue";
 import Toolbar from "@/components/Toolbar.vue";
+import {
+  MediaType,
+  type MediaCollection,
+  type MediaItemType,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
+import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { track } from "../../fixtures/track";
+
+// the entries providers add, as reactive as the providers they come from
+const { declared } = await vi.hoisted(async () => {
+  const { reactive } = await import("vue");
+  return { declared: reactive({ labels: [] as string[] }) };
+});
 
 vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => true }));
 vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
-  getContextMenuItems: vi.fn(async () => []),
+  getContextMenuItems: vi.fn(async () => [{ label: "show_info" }]),
+  getDeclaredContextMenuItems: () =>
+    declared.labels.map((label) => ({ label })),
 }));
 vi.mock("@/composables/userPreferences", () => ({
   useUserPreferences: () => ({ getPreference: () => ref([]) }),
@@ -156,15 +170,15 @@ describe("DetailHero on a phone", () => {
     vi.unstubAllGlobals();
   });
 
-  const heroFor = (name: string) =>
+  const heroFor = (item: MediaItemType) =>
     mount(DetailHero, {
-      props: { item: track({ name }), backdrop: "fanart.jpg" },
+      props: { item, backdrop: "fanart.jpg" },
       slots: { main: '<div class="detail-hero-cover" /><h1>{{ name }}</h1>' },
       global: { mocks: { $t: (key: string) => key } },
     });
 
   it("lays the item's own artwork across the top, in place of its cover", () => {
-    const hero = heroFor("With art");
+    const hero = heroFor(track({ name: "With art" }));
     const backdrop = hero.get(".detail-hero__backdrop");
 
     expect(backdrop.attributes("style")).toContain("cover.jpg");
@@ -174,8 +188,19 @@ describe("DetailHero on a phone", () => {
     );
   });
 
-  it("keeps the usual backdrop for an item without artwork", () => {
-    const hero = heroFor("No art");
+  it.each([
+    ["an item without artwork", track({ name: "No art" })],
+    // its images are the covers of the stack it shows in place of artwork
+    [
+      "a collection",
+      {
+        media_type: MediaType.COLLECTION,
+        name: "With art",
+        items: [],
+      } as unknown as MediaCollection<MediaItemType>,
+    ],
+  ])("keeps the usual backdrop for %s", (_, item) => {
+    const hero = heroFor(item);
     const backdrop = hero.get(".detail-hero__backdrop");
 
     expect(backdrop.attributes("style")).toContain("fanart.jpg");
@@ -202,6 +227,27 @@ describe("DetailHero menu", () => {
         label: string;
       }>
     ).map((item) => item.label);
+
+  it("follows the entries providers add, without building the menu again", async () => {
+    declared.labels = [];
+    vi.mocked(getContextMenuItems).mockClear();
+    const wrapper = mount(DetailHero, {
+      props: { item: track({ name: "Happy Hits" }) },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+    await flushPromises();
+    expect(menuLabels(wrapper)).toEqual(["show_info", "edit_rows"]);
+
+    declared.labels = ["provider_menu_action/demo/ask"];
+    await nextTick();
+
+    expect(menuLabels(wrapper)).toEqual([
+      "show_info",
+      "provider_menu_action/demo/ask",
+      "edit_rows",
+    ]);
+    expect(getContextMenuItems).toHaveBeenCalledTimes(1);
+  });
 
   it("adds Edit rows once the page becomes editable", async () => {
     const wrapper = mount(DetailHero, {

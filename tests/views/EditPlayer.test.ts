@@ -3,13 +3,17 @@ import {
   isHassControlPickerEntry,
   type ConfigEntryUI,
 } from "@/helpers/config_entry_ui";
-import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
+import type {
+  getOutputMenuItems as buildOutputMenuItems,
+  getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems,
+} from "@/helpers/player_settings_actions";
 import {
   ConfigEntryType,
   EventType,
   PlayerType,
   ProviderType,
   type ConfigEntry,
+  type OutputProtocol,
   type PlayerConfig,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
@@ -20,8 +24,10 @@ import {
   enableAutoUnmount,
   flushPromises,
   shallowMount,
+  type VueWrapper,
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { outputProtocol } from "../fixtures/outputProtocol";
 import { providerManifest } from "../fixtures/providerManifest";
 
 const {
@@ -29,6 +35,7 @@ const {
   editConfigDiscardMock,
   editConfigResetMock,
   emitEvent,
+  getOutputMenuItems,
   getPlayerSettingsMenuItems,
   routerMock,
   toastMock,
@@ -47,6 +54,7 @@ const {
   editConfigDiscardMock: vi.fn(),
   editConfigResetMock: vi.fn(),
   emitEvent: vi.fn(),
+  getOutputMenuItems: vi.fn<typeof buildOutputMenuItems>(),
   getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
   routerMock: {
     back: vi.fn(),
@@ -73,6 +81,7 @@ const playerDetailsStubs = {
     props: [
       "configEntries",
       "disabled",
+      "outputMenuItems",
       "outputProtocols",
       "showAdvancedSettings",
     ],
@@ -105,8 +114,9 @@ vi.mock("@/helpers/player_config", async (importOriginal) => ({
   getPlayerName: (config: PlayerConfig) => config.name ?? config.default_name,
 }));
 
-// the shared menu is covered where it is built
+// the shared menus are covered where they are built
 vi.mock("@/helpers/player_settings_actions", () => ({
+  getOutputMenuItems,
   getPlayerSettingsMenuItems,
 }));
 
@@ -152,6 +162,7 @@ describe("EditPlayer", () => {
     getPlayerSettingsMenuItems.mockImplementation(() => [
       { label: "settings.delete" },
     ]);
+    getOutputMenuItems.mockReturnValue([]);
   });
 
   it("names the player in the header", async () => {
@@ -259,6 +270,35 @@ describe("EditPlayer", () => {
     expect(wrapper.text()).toContain("settings.player_not_available");
   });
 
+  it("says why the player needs setup", async () => {
+    apiMock.players = {
+      "player-1": playerState({
+        available: false,
+        needsSetup: true,
+        setupReason: "pairing_required",
+      }),
+    };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.text()).toContain("settings.setup_reason.pairing_required");
+    expect(wrapper.text()).not.toContain("settings.player_needs_setup");
+  });
+
+  it("calls a player whose provider is not installed not available", async () => {
+    apiMock.players = {
+      "player-1": playerState({
+        available: false,
+        setupReason: "provider_not_installed",
+      }),
+    };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(wrapper.text()).toContain("settings.player_not_available");
+    expect(wrapper.text()).not.toContain("provider_not_installed");
+  });
+
   it("offers to enable a disabled player", async () => {
     apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
     apiMock.savePlayerConfig.mockResolvedValueOnce(playerConfig());
@@ -343,6 +383,33 @@ describe("EditPlayer", () => {
     // pending edits have nothing left to save to, so they must not hold the
     // unsaved-changes guard and strand the user on a deleted player
     expect(editConfigDiscardMock).toHaveBeenCalled();
+  });
+
+  it("offers the menu of each output in the form", async () => {
+    const splitOffItem = { label: "settings.split_off_output" };
+    getOutputMenuItems.mockReturnValue([splitOffItem]);
+    const output = outputProtocol();
+    const wrapper = await mountPlayerPage();
+
+    expect(outputMenuItems(wrapper, output)).toEqual([splitOffItem]);
+    expect(getOutputMenuItems).toHaveBeenCalledWith(
+      expect.objectContaining({ player_id: "player-1" }),
+      output,
+      expect.objectContaining({ onSplitOff: expect.any(Function) }),
+    );
+  });
+
+  it("starts the form over from what is stored once an output is split off", async () => {
+    const wrapper = await mountPlayerPage();
+    outputMenuItems(wrapper, outputProtocol());
+
+    getOutputMenuItems.mock.calls[0][2]!.onSplitOff!();
+    await flushPromises();
+
+    // the server reset the choices that named the output, so pending edits go
+    expect(editConfigDiscardMock).toHaveBeenCalledOnce();
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(2);
+    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
   });
 
   it("renames the player from the header", async () => {
@@ -489,6 +556,7 @@ function providerInstance(): ProviderInstance {
     available: true,
     is_streaming_provider: null,
     supported_features: [],
+    supported_artist_types: [],
   };
 }
 
@@ -540,11 +608,13 @@ function playerState({
   hasSetupFlow = true,
   needsSetup = false,
   playerId = "player-1",
+  setupReason = null,
 }: {
   available?: boolean;
   hasSetupFlow?: boolean;
   needsSetup?: boolean;
   playerId?: string;
+  setupReason?: string | null;
 } = {}) {
   return {
     available,
@@ -556,6 +626,7 @@ function playerState({
     options: [],
     output_protocols: [],
     player_id: playerId,
+    setup_reason: setupReason,
     supported_features: [],
     type: PlayerType.PLAYER,
   };
@@ -568,6 +639,19 @@ function resetMenuItem(): ContextMenuItem | undefined {
   const call = emitEvent.mock.calls.find(([event]) => event === "contextmenu");
   const items = (call?.[1] as { items: ContextMenuItem[] } | undefined)?.items;
   return items?.find((item) => item.label === "settings.reset_to_defaults");
+}
+
+/**
+ * The menu the page offers for an output, through the form that shows it.
+ */
+function outputMenuItems(
+  wrapper: VueWrapper,
+  output: OutputProtocol,
+): ContextMenuItem[] {
+  const getMenuItems = wrapper
+    .findComponent({ name: "EditConfig" })
+    .props("outputMenuItems") as (output: OutputProtocol) => ContextMenuItem[];
+  return getMenuItems(output);
 }
 
 /**

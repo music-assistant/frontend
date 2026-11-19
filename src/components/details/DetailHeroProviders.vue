@@ -59,8 +59,8 @@ const isPhone = computed(() => isPhoneSizedScreen());
 
 /* below a wide hero the names go, leaving a row of larger bare icons that line up
    flush under the genres above them.
-   Keep the 1100px width in sync with DetailHeroButton's collapse breakpoint. */
-@container detail-hero (max-width: 1100px) {
+   Keep the 1156px width in sync with DetailHeroButton's collapse breakpoint. */
+@container detail-hero (max-width: 1156px) {
   .detail-hero-providers__name,
   .detail-hero-providers__sep {
     display: none;

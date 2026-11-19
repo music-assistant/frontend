@@ -114,6 +114,7 @@ import {
   MediaType,
   type StatisticsPeriod,
   type StatisticsTopItemResult,
+  type StatisticsUsers,
 } from "@/plugins/api/interfaces";
 import { computed, ref, toRef } from "vue";
 import { $t } from "@/plugins/i18n";
@@ -121,6 +122,7 @@ import { $t } from "@/plugins/i18n";
 const props = defineProps<{
   active: boolean;
   period: StatisticsPeriod;
+  users?: StatisticsUsers;
   // the page already loads the top tracks, so that tab reuses them
   tracks: StatisticsTopItemResult[];
   tracksLoading?: boolean;
@@ -149,6 +151,7 @@ const otherTab = useStatisticsTopItems({
   active: computed(() => props.active && !isTrackTab.value),
   period: toRef(props, "period"),
   mediaType: activeTab,
+  users: computed(() => props.users ?? {}),
 });
 
 const items = computed(() =>

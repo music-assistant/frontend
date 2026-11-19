@@ -56,18 +56,34 @@
       >
         {{ $t("searchtype_all") }}
       </button>
-      <button
-        v-for="mediaType in SEARCHABLE_MEDIA_TYPES"
-        :key="mediaType"
-        type="button"
-        tabindex="-1"
-        class="command-center-chip"
-        :data-active="selectedMediaTypes[0] === mediaType"
-        @mousedown.prevent
-        @click="toggleMediaType(mediaType)"
-      >
-        {{ $t(mediaType + "s") }}
-      </button>
+      <template v-for="mediaType in SEARCHABLE_MEDIA_TYPES" :key="mediaType">
+        <button
+          type="button"
+          tabindex="-1"
+          class="command-center-chip"
+          :data-active="
+            selectedMediaTypes[0] === mediaType && !selectedArtistType
+          "
+          @mousedown.prevent
+          @click="toggleMediaType(mediaType)"
+        >
+          {{ $t(mediaType + "s") }}
+        </button>
+        <template v-if="mediaType === MediaType.ARTIST">
+          <button
+            v-for="artistType in supportedAudiobookArtistTypes"
+            :key="artistType"
+            type="button"
+            tabindex="-1"
+            class="command-center-chip"
+            :data-active="selectedArtistType === artistType"
+            @mousedown.prevent
+            @click="toggleArtistType(artistType)"
+          >
+            {{ $t(artistType + "s") }}
+          </button>
+        </template>
+      </template>
       <button
         type="button"
         tabindex="-1"
@@ -156,7 +172,7 @@
 
       <CommandGroup
         v-for="section in mediaSections"
-        :key="section.mediaType"
+        :key="section.key"
         :heading="section.title"
       >
         <CommandItem
@@ -237,7 +253,7 @@
           tabindex="-1"
           class="command-center-more"
           @mousedown.prevent
-          @click="revealMore(section.mediaType)"
+          @click="revealMore(section.key)"
         >
           {{ $t("show_more") }}
         </button>
@@ -352,13 +368,20 @@ import {
 } from "@/composables/useProgressiveSearch";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
+  AUDIOBOOK_ARTIST_TYPES,
+  detailRoute,
+  isAuthorOrNarrator,
+} from "@/helpers/author_narrator";
+import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
 import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
 import { getArtistsString } from "@/helpers/utils";
+import { api } from "@/plugins/api";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
+  ArtistType,
   MediaType,
   type MediaItemTypeOrItemMapping,
   type Player,
@@ -401,11 +424,13 @@ const isTouch = useMediaQuery("(hover: none)");
 
 const query = ref("");
 const selectedMediaTypes = ref<MediaType[]>([]);
+// set with an author/narrator chip, which filters the artist results to that type
+const selectedArtistType = ref<ArtistType>();
 const pagesOnly = ref(false);
 const filterRef = ref<InstanceType<typeof ListboxFilter>>();
 const listRef = ref<InstanceType<typeof CommandList>>();
 const revealSentinel = ref<HTMLElement>();
-const revealedPerType = ref<Partial<Record<MediaType, number>>>({});
+const revealedPerType = ref<Partial<Record<string, number>>>({});
 const revealedSingle = ref(RESULTS_SINGLE_PAGE);
 // the results scroll offset, kept so reopening returns to where you were
 const savedScrollTop = ref(0);
@@ -460,20 +485,40 @@ const singleType = computed(() =>
     : undefined,
 );
 
+const supportedAudiobookArtistTypes = computed(() =>
+  AUDIOBOOK_ARTIST_TYPES.filter((artistType) =>
+    Object.values(api.providers).some((provider) =>
+      provider.supported_artist_types.includes(artistType),
+    ),
+  ),
+);
+
 const toggleMediaType = function (mediaType: MediaType) {
   pagesOnly.value = false;
-  selectedMediaTypes.value =
-    selectedMediaTypes.value[0] === mediaType ? [] : [mediaType];
+  const active =
+    selectedMediaTypes.value[0] === mediaType && !selectedArtistType.value;
+  selectedArtistType.value = undefined;
+  selectedMediaTypes.value = active ? [] : [mediaType];
+};
+
+const toggleArtistType = function (artistType: ArtistType) {
+  pagesOnly.value = false;
+  const active = selectedArtistType.value === artistType;
+  selectedArtistType.value = active ? undefined : artistType;
+  selectedMediaTypes.value = active ? [] : [MediaType.ARTIST];
 };
 
 const selectAllScope = function () {
   pagesOnly.value = false;
+  selectedArtistType.value = undefined;
   selectedMediaTypes.value = [];
 };
 
 const togglePagesOnly = function () {
   pagesOnly.value = !pagesOnly.value;
-  if (pagesOnly.value) selectedMediaTypes.value = [];
+  if (!pagesOnly.value) return;
+  selectedArtistType.value = undefined;
+  selectedMediaTypes.value = [];
 };
 
 // search runs on demand (the button or the return key), not while typing
@@ -607,13 +652,19 @@ const dedupeKey = (item: MediaItemTypeOrItemMapping): string | null => {
   return `${item.media_type}:${item.name.toLowerCase()}:${version}:${artist}`;
 };
 
+// authors and narrators are artists, listed under their own heading
+const sectionKey = (item: MediaItemTypeOrItemMapping): string =>
+  isAuthorOrNarrator(item) && "artist_type" in item
+    ? item.artist_type
+    : item.media_type;
+
 const mediaSections = computed(() => {
   if (pagesOnly.value || !resultsMatchQuery.value) return [];
 
   const single = singleType.value;
   const mediaTypes = single ? [single] : SEARCHABLE_MEDIA_TYPES;
   const sections: {
-    mediaType: MediaType;
+    key: string;
     title: string;
     items: MediaItemTypeOrItemMapping[];
     hasMore: boolean;
@@ -633,16 +684,25 @@ const mediaSections = computed(() => {
       }
       items.push(item);
     }
-    if (!items.length) continue;
-    const revealed = single
-      ? revealedSingle.value
-      : (revealedPerType.value[mediaType] ?? RESULTS_PER_TYPE);
-    sections.push({
-      mediaType,
-      title: $t(mediaType + "s"),
-      items: items.slice(0, revealed),
-      hasMore: items.length > revealed,
-    });
+    const keys =
+      mediaType !== MediaType.ARTIST
+        ? [mediaType]
+        : single
+          ? [selectedArtistType.value ?? mediaType]
+          : [mediaType, ...AUDIOBOOK_ARTIST_TYPES];
+    for (const key of keys) {
+      const keyItems = items.filter((item) => sectionKey(item) === key);
+      if (!keyItems.length) continue;
+      const revealed = single
+        ? revealedSingle.value
+        : (revealedPerType.value[key] ?? RESULTS_PER_TYPE);
+      sections.push({
+        key,
+        title: $t(key + "s"),
+        items: keyItems.slice(0, revealed),
+        hasMore: keyItems.length > revealed,
+      });
+    }
   }
   return sections;
 });
@@ -651,11 +711,12 @@ const sectionsHaveMore = computed(() =>
   mediaSections.value.some((section) => section.hasMore),
 );
 
-const revealMore = function (mediaType: MediaType) {
+const revealMore = function (sectionKey: string) {
   revealedPerType.value = {
     ...revealedPerType.value,
-    [mediaType]:
-      (revealedPerType.value[mediaType] ?? RESULTS_PER_TYPE) + RESULTS_PER_TYPE,
+    [sectionKey]:
+      (revealedPerType.value[sectionKey] ?? RESULTS_PER_TYPE) +
+      RESULTS_PER_TYPE,
   };
 };
 
@@ -680,7 +741,7 @@ const showInputSpinner = computed(
 );
 
 const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
-  const label = $t(item.media_type);
+  const label = $t(sectionKey(item));
   const artists =
     "artists" in item && item.artists.length
       ? getArtistsString(item.artists)
@@ -691,10 +752,8 @@ const itemSubtitle = function (item: MediaItemTypeOrItemMapping) {
 const onMediaSelect = function (item: MediaItemTypeOrItemMapping) {
   recordRecentSearch();
   close();
-  router.push({
-    name: item.media_type,
-    params: { itemId: item.item_id, provider: item.provider },
-  });
+  store.showFullscreenPlayer = false;
+  router.push(detailRoute(item));
 };
 
 // item mappings may omit is_playable, so treat only an explicit false as
@@ -779,6 +838,7 @@ const pageResults = computed(() => {
 
 const goToPage = function (page: MenuItem) {
   close();
+  store.showFullscreenPlayer = false;
   router.push(page.path);
 };
 
@@ -865,7 +925,9 @@ onUnmounted(() => {
 watch(
   () => route.fullPath,
   () => {
-    if (isOpen.value) close();
+    if (!isOpen.value) return;
+    close();
+    store.showFullscreenPlayer = false;
   },
 );
 
@@ -881,6 +943,7 @@ watch(isOpen, (opened) => {
     // no-op search; the real fan-out then goes out once, after the flush
     search("");
     query.value = initialQuery.value;
+    selectedArtistType.value = undefined;
     selectedMediaTypes.value = [...initialMediaTypes.value];
     nextTick(runSearch);
     return;
@@ -900,6 +963,7 @@ watch(
     [
       query.value,
       selectedMediaTypes.value.join(","),
+      selectedArtistType.value,
       pagesOnly.value,
       selectedProviders.value.join(","),
     ].join("|"),

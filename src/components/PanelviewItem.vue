@@ -19,12 +19,14 @@
           class="mt-2 flex h-8 items-center gap-2.5 @max-[150px]:hidden"
           @click.stop
         >
-          <v-icon
+          <ExplicitIcon
             v-if="
               'metadata' in item && parseBool(item.metadata.explicit || false)
             "
-            size="30"
-            icon="mdi-alpha-e-box"
+            class="size-[30px] shrink-0 scale-90 [&_text]:fill-background"
+            :aria-label="$t('tooltip.explicit')"
+            aria-hidden="false"
+            role="img"
           />
           <!-- hi res icon -->
           <span
@@ -80,6 +82,7 @@
 import MAButton from "@/components/Button.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import FavouriteButton from "@/components/FavoriteButton.vue";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import { isDark } from "@/composables/useThemePreference";
 import { canHoldFavorite } from "@/helpers/favorites";
 import { handleMenuBtnClick } from "@/helpers/media_item_actions";

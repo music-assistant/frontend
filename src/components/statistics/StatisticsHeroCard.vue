@@ -89,6 +89,7 @@ const props = withDefaults(
     error?: boolean;
     // the busiest hour of the day, when listening activity is loaded too
     peakHour?: number;
+    includesOtherUsers?: boolean;
   }>(),
   { peakHour: undefined },
 );
@@ -123,9 +124,12 @@ const sentence = computed(() => {
   const average = $t(`statistics_average_${bucket.value}`, {
     average: formatAverage(summary.value.average, locale.value),
   });
-  const busiest = $t(`statistics_busiest_sentence_${bucket.value}`, {
-    label: busiestLabel.value,
-  });
+  const busiest = $t(
+    props.includesOtherUsers
+      ? `statistics_busiest_sentence_${bucket.value}_other_users`
+      : `statistics_busiest_sentence_${bucket.value}`,
+    { label: busiestLabel.value },
+  );
   return `${average} ${busiest}`;
 });
 

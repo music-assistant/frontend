@@ -29,6 +29,8 @@
           :show-radio-number="false"
           :show-duration="false"
           :sort-listing="ListingType.VERSIONS"
+          library-toolbar
+          :show-count="false"
           :load-paged-data="loadRadioVersions"
           :title="$t('other_versions')"
           :hide-on-empty="true"

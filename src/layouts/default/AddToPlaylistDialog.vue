@@ -13,7 +13,7 @@
       <!-- right padding keeps the search box clear of the sheet's close button -->
       <SheetHeader class="flex-row items-center gap-3 border-b py-3 pl-4 pr-12">
         <ListPlus class="size-5 shrink-0 opacity-80" />
-        <SheetTitle class="truncate">{{ $t("add_playlist") }}</SheetTitle>
+        <SheetTitle class="truncate">{{ $t(title) }}</SheetTitle>
         <SearchInput
           v-model="search"
           clearable
@@ -24,7 +24,7 @@
         />
       </SheetHeader>
       <SheetDescription class="sr-only">
-        {{ $t("add_playlist") }}
+        {{ $t(title) }}
       </SheetDescription>
 
       <ScrollArea class="h-full max-h-full overflow-hidden flex-1">
@@ -183,6 +183,11 @@ const showNameDialog = ref(false);
 const newPlaylistName = ref("");
 const newPlaylistProvider = ref<ProviderInstance>();
 const search = ref("");
+const queueId = ref<string>();
+
+const title = computed(() =>
+  queueId.value ? "add_queue_to_playlist" : "add_playlist",
+);
 
 const filteredPlaylists = computed(() => {
   const query = search.value.trim().toLowerCase();
@@ -202,14 +207,25 @@ onMounted(() => {
   eventbus.on("playlistdialog", async (evt: PlaylistDialogEvent) => {
     show.value = true;
     search.value = "";
-    selectedItems.value = evt.items;
+    queueId.value = evt.queueId;
     parentItem.value = evt.parentItem;
+    playlists.value = [];
+    createPlaylistProviders.value = [];
+    selectedItems.value = evt.queueId
+      ? await fetchQueueReferenceItem(evt.queueId)
+      : evt.items;
     await fetchPlaylists();
   });
   onBeforeUnmount(() => {
     eventbus.off("playlistdialog");
   });
 });
+
+/** The queue's first item, which decides what playlists it may go into. */
+const fetchQueueReferenceItem = async function (id: string) {
+  const [first] = await api.getPlayerQueueItems(id, 1, 0);
+  return first?.media_item ? [first.media_item] : [];
+};
 
 const fetchPlaylists = async function () {
   // get all (editable) playlists that are suitable as target
@@ -333,11 +349,15 @@ const fetchPlaylists = async function () {
   }
 };
 const addToPlaylist = async function (value: MediaItemType) {
-  // add item(s) to playlist
-  api.addPlaylistTracks(
-    value.item_id,
-    selectedItems.value.map((x) => x.uri),
-  );
+  // add the queue or the selected item(s) to the playlist
+  if (queueId.value) {
+    api.queueCommandAddToPlaylist(queueId.value, value.item_id);
+  } else {
+    api.addPlaylistTracks(
+      value.item_id,
+      selectedItems.value.map((x) => x.uri),
+    );
+  }
   close();
 };
 const newPlaylist = function (provId: string) {

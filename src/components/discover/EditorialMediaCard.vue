@@ -34,7 +34,6 @@
       <MediaCollectionThumb
         v-else-if="props.item.media_type == MediaType.COLLECTION"
         :item="props.item as MediaCollection<MediaItemType>"
-        :thumb-offset="22"
       />
       <span
         v-else-if="art.placeholderIcon"
@@ -65,7 +64,7 @@
         :title="playedStateLabel"
         :aria-label="playedStateLabel"
       >
-        <Check v-if="isFullyPlayed" :size="16" />
+        <Check v-if="playedState === 'fully_played'" :size="16" />
         <ClockFading v-else :size="16" />
       </span>
       <slot name="art-overlay"></slot>
@@ -125,6 +124,7 @@ import {
   handleMenuBtnClick,
   handlePlayBtnClick,
 } from "@/helpers/media_item_actions";
+import { getPlayedState } from "@/helpers/played_state";
 import {
   getArtistsString,
   getAuthorsNarratorsArray,
@@ -133,8 +133,7 @@ import {
 import {
   getListItemProviderIconDomain,
   getProviderRootDomain,
-  isMusicBrainzItem,
-  itemSupportsPlayLog,
+  isExternalItem,
 } from "@/plugins/api/helpers";
 import {
   type Album,
@@ -209,9 +208,9 @@ const art = computed(() =>
 
 const isGenre = computed(() => props.item.media_type === MediaType.GENRE);
 
-// a release only MusicBrainz knows: muted rather than shown as unavailable,
-// since it can be opened and added to the library
-const notInLibrary = computed(() => isMusicBrainzItem(props.item));
+// an item known only by an external id: muted rather than shown as
+// unavailable, since it can be opened and added to the library
+const notInLibrary = computed(() => isExternalItem(props.item));
 
 const { isResolving } = useResolvingItems();
 const resolving = computed(() => isResolving(props.item.uri));
@@ -231,11 +230,11 @@ const getStyle = computed(() => {
 });
 
 const isPlayable = computed(() => props.item.is_playable !== false);
+// an external item is looked up when played
 const showPlay = computed(
   () =>
     isPlayable.value &&
-    props.isAvailable &&
-    !notInLibrary.value &&
+    (props.isAvailable || notInLibrary.value) &&
     !props.showCheckboxes,
 );
 
@@ -250,16 +249,11 @@ const providerDomain = computed<string | undefined>(() => {
   return getListItemProviderIconDomain(it);
 });
 
-const isFullyPlayed = computed(
-  () => itemSupportsPlayLog(props.item) && !!props.item.fully_played,
-);
-const isInProgress = computed(
-  () => itemSupportsPlayLog(props.item) && !!props.item.resume_position_ms,
-);
+const playedState = computed(() => getPlayedState(props.item));
 // undefined while unplayed, when the cover shows no played state
 const playedStateLabel = computed(() => {
-  if (isFullyPlayed.value) return t("item_fully_played");
-  return isInProgress.value ? t("item_in_progress") : undefined;
+  if (playedState.value === "fully_played") return t("item_fully_played");
+  return playedState.value ? t("item_in_progress") : undefined;
 });
 
 const displayName = computed(() => {

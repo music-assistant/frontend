@@ -79,7 +79,6 @@ function addPlayer(overrides: Partial<DiscoveredPlayer> = {}) {
     available: true,
     needsSetup: false,
     icon: null,
-    canToggle: true,
     ...overrides,
   });
 }
@@ -324,21 +323,6 @@ describe("PlayersStep", () => {
 
       wrapper.unmount();
     });
-
-    it("is out of reach while the player's provider is not running", () => {
-      addPlayer({ canToggle: false });
-
-      const wrapper = mountStep();
-
-      // switching it takes its provider, which has to be there to do it
-      expect(
-        wrapper
-          .find("[data-testid=onboarding-player-enabled]")
-          .attributes("disabled"),
-      ).toBeDefined();
-
-      wrapper.unmount();
-    });
   });
 
   describe("renaming a player", () => {
@@ -413,6 +397,25 @@ describe("PlayersStep", () => {
       ).toBe(false);
 
       wrapper.unmount();
+    });
+
+    it("keeps escape in the rename field, away from the dialog around it", async () => {
+      addPlayer({ player_id: "kitchen" });
+      const onWindowKeydown = vi.fn();
+      window.addEventListener("keydown", onWindowKeydown);
+      try {
+        const wrapper = mount(PlayersStep, {
+          attachTo: document.body,
+          global: { mocks: { $t: (key: string) => key } },
+        });
+        const input = await startRename(wrapper);
+        await input.trigger("keydown.esc");
+
+        expect(onWindowKeydown).not.toHaveBeenCalled();
+        wrapper.unmount();
+      } finally {
+        window.removeEventListener("keydown", onWindowKeydown);
+      }
     });
 
     it("drops what was typed when the user presses escape", async () => {

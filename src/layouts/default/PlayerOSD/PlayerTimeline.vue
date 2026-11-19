@@ -13,8 +13,10 @@
         :min="0"
         :max="timelineDuration"
         :step="0.1"
-        :thumb-alignment="hasWaveform ? 'overflow' : 'contain'"
+        thumb-alignment="overflow"
         @value-commit="stopDragging"
+        @pointerdown="pointerFocus = true"
+        @keydown="pointerFocus = false"
         @pointerenter="isThumbHidden = !canSeek"
         @pointermove="onTrackPointerMove"
         @pointerleave="
@@ -22,13 +24,55 @@
           hoverPercent = null;
         "
       >
+        <TooltipProvider>
+          <Tooltip :open="!!hoverLabel">
+            <TooltipContent
+              v-if="hoverLabel"
+              side="top"
+              :side-offset="HOVER_LABEL_OFFSET_PX"
+              :collision-padding="8"
+              :reference="hoverLabel.reference"
+              class="pointer-events-none z-[100001] max-w-[320px] truncate text-nowrap"
+              data-testid="timeline-hover-label"
+            >
+              <span class="opacity-70">{{ hoverLabel.time }}</span>
+              <template v-if="hoverLabel.chapter">
+                · {{ hoverLabel.chapter }}</template
+              >
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <SliderTrack
+          ref="trackRef"
           data-slot="slider-track"
           class="relative grow rounded-full"
           :class="hasWaveform ? 'h-8 md:h-10 lg:h-12' : 'h-1'"
         >
+          <template v-if="!hasWaveform && chapterSegments.length">
+            <div
+              v-for="(segment, index) in chapterSegments"
+              :key="segment.start"
+              class="absolute inset-y-0 overflow-hidden transition-transform duration-100"
+              :class="{
+                'scale-y-[2]': segment === hoveredSegment,
+                'rounded-l-full': index === 0,
+                'rounded-r-full': index === chapterSegments.length - 1,
+              }"
+              :style="segmentStyle(segment)"
+              data-testid="chapter-segment"
+            >
+              <div class="absolute inset-0" :style="trackBackgroundStyle"></div>
+              <div
+                class="absolute inset-y-0 left-0"
+                :style="{
+                  width: `${segmentFillPercent(segment)}%`,
+                  backgroundColor: color,
+                }"
+              ></div>
+            </div>
+          </template>
           <div
-            v-if="!hasWaveform"
+            v-else-if="!hasWaveform"
             class="absolute inset-0 rounded-full"
             :style="trackBackgroundStyle"
           ></div>
@@ -44,35 +88,17 @@
                centres via the track box or an explicit transform instead. -->
           <SliderRange
             v-if="!hasWaveform && !hidesRadioPosition"
+            v-show="!chapterSegments.length"
             data-slot="slider-range"
             class="absolute inset-y-0 rounded-full"
             :style="{ 'background-color': color }"
           />
-          <!-- pointerdown.stop prevents reka's slider track tap action -->
-          <button
-            v-for="tick in chapterTicks"
-            :key="tick.position"
-            type="button"
-            class="absolute top-1/2 flex h-4 w-3 items-center justify-center"
-            :style="{
-              left: `${tick.percent}%`,
-              transform: 'translate(-50%, -50%)',
-            }"
-            :aria-label="tick.name"
-            :disabled="!canSeek"
-            @pointerdown.stop
-            @click.stop="chapterClicked(tick)"
-          >
-            <span
-              class="w-1 h-1 rounded-full bg-background"
-              aria-hidden="true"
-            ></span>
-          </button>
           <!-- the bookmark icon, so a bookmark does not read as a chapter tick -->
           <TooltipProvider :delay-duration="150">
             <Tooltip
               v-for="tick in bookmarkTicks"
               :key="`bookmark-${tick.start}`"
+              @update:open="(open) => bookmarkTooltipToggled(tick.start, open)"
             >
               <TooltipTrigger as-child>
                 <button
@@ -107,35 +133,20 @@
             </Tooltip>
           </TooltipProvider>
         </SliderTrack>
+        <!-- lets clicks through to the bookmarks below -->
         <SliderThumb
           data-slot="slider-thumb"
           :style="{ 'background-color': color }"
           :class="
             cn(
-              'w-2.5 h-2.5 rounded-full shadow-sm',
+              'pointer-events-none w-2.5 h-2.5 rounded-full shadow-sm',
+              pointerFocus && 'outline-none',
               !hasWaveform && (!isThumbHidden || isDragging)
                 ? 'block'
                 : 'hidden',
             )
           "
         />
-        <!-- chapter labels above the track -->
-        <template
-          v-if="showLabels && !isThumbHidden && chapterTicks.length < 6"
-        >
-          <button
-            v-for="tick in chapterTicks"
-            :key="`label-${tick.position}`"
-            type="button"
-            class="absolute bottom-full mb-1 appearance-none border-0 bg-transparent p-0 text-caption text-inherit cursor-pointer whitespace-nowrap"
-            :style="{ left: `${tick.percent}%`, transform: 'translateX(-50%)' }"
-            :disabled="!canSeek"
-            @pointerdown.stop
-            @click="chapterClicked(tick)"
-          >
-            {{ tick.name }}
-          </button>
-        </template>
       </SliderRoot>
 
       <div v-if="showLabels" class="time-text-row">
@@ -150,6 +161,25 @@
         >
           {{ playerCurTimeStr }}
         </div>
+
+        <TooltipProvider v-if="chapterLabel" :delay-duration="400">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <button
+                type="button"
+                class="text-caption relative z-[1] -mb-2.5 min-w-0 self-start truncate px-3 pb-2.5 text-center hover:underline"
+                :aria-label="chapterToggleLabel"
+                data-testid="timeline-chapter-name"
+                @click="toggleChapterProgress"
+              >
+                {{ chapterLabel }}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" class="z-[100001]">
+              {{ chapterToggleLabel }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         <!-- end time detail -->
         <div class="text-caption time-text-right">
@@ -166,14 +196,16 @@ import {
   MediaType,
   PlaybackState,
   type MediaItemBookmark,
-  type MediaItemChapter,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import {
+  isChapteredMediaType,
   resolveCurrentChapter,
-  computeChapterTicks,
+  computeChapterSegments,
+  segmentAt,
+  type ChapterSegment,
   type ResolvedChapter,
 } from "@/helpers/chapters";
 import { formatDuration } from "@/helpers/utils";
@@ -187,6 +219,7 @@ import {
   resolveActiveTiming,
 } from "@/helpers/activeElapsedTime";
 import { Bookmark } from "@lucide/vue";
+import { useElementSize } from "@vueuse/core";
 import {
   Tooltip,
   TooltipContent,
@@ -218,7 +251,7 @@ const { activeSource } = useActiveSource(toRef(store, "activePlayer"));
 const { activeAudioSource } = useActiveAudioSource(
   toRef(store, "activePlayer"),
 );
-const { getPreference } = useUserPreferences();
+const { getPreference, setPreference } = useUserPreferences();
 const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 
 // local refs
@@ -348,7 +381,7 @@ const currentChapter = computed(() => {
   const queueItem = store.curQueueItem;
   if (
     !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    !isChapteredMediaType(media?.media_type) ||
     (media.queue_item_id !== null &&
       media.queue_item_id !== queueItem?.queue_item_id)
   ) {
@@ -428,11 +461,57 @@ const playerTotalTimeStr = computed(() => {
   return formatDuration(duration);
 });
 
+const playingChapter = computed(() => {
+  if (hidesRadioPosition.value) return undefined;
+  return resolveCurrentChapter(
+    store.curQueueItem?.media_item?.metadata?.chapters,
+    pendingSeek.value?.position ?? absoluteElapsedTime.value,
+    store.activePlayer?.current_media?.duration,
+  );
+});
+
+const chapterLabel = computed(() => {
+  const chapter = currentChapter.value ?? playingChapter.value;
+  if (!chapter) return undefined;
+  const starts = (store.curQueueItem?.media_item?.metadata?.chapters ?? [])
+    .map((x) => x.start)
+    .sort((a, b) => a - b);
+  return $t("chapter_of", {
+    current: starts.indexOf(chapter.start) + 1,
+    total: starts.length,
+  });
+});
+const chapterToggleLabel = computed(() => {
+  if (!currentChapter.value) return $t("chapter_progress_show_chapter");
+  return store.activePlayer?.current_media?.media_type ===
+    MediaType.PODCAST_EPISODE
+    ? $t("chapter_progress_show_episode")
+    : $t("chapter_progress_show_audiobook");
+});
+const toggleChapterProgress = () =>
+  setPreference("audiobook_chapter_progress", !showChapterProgress.value);
+
 const displayedElapsedTime = computed(() => displayedTimelineTime.value);
 
-const chapterTicks = computed(() => {
+const SEGMENT_GAP_PX = 2;
+// tiny segments keep their full width instead of a gap
+const MIN_SEGMENT_WITH_GAP_PX = 3;
+const trackRef = ref<InstanceType<typeof SliderTrack>>();
+const { width: trackWidth } = useElementSize(trackRef);
+
+const segmentStyle = (segment: ChapterSegment) => {
+  const roomy =
+    (segment.widthPercent / 100) * trackWidth.value >= MIN_SEGMENT_WITH_GAP_PX;
+  const half = roomy ? SEGMENT_GAP_PX / 2 : 0;
+  return {
+    left: `calc(${segment.startPercent}% + ${half}px)`,
+    width: `calc(${segment.widthPercent}% - ${half * 2}px)`,
+  };
+};
+
+const chapterSegments = computed(() => {
   if (currentChapter.value) return [];
-  return computeChapterTicks(
+  return computeChapterSegments(
     store.curQueueItem?.media_item?.metadata.chapters,
     store.activePlayer?.current_media?.duration,
   );
@@ -455,7 +534,7 @@ const bookmarkTicks = computed(() => {
       percent: ((x.start - start) / duration) * 100,
       // e.g. "35:25 · Chapter 3", for the marker's tooltip
       details: [
-        formatDuration(x.start),
+        formatDuration(x.start - start),
         resolveCurrentChapter(chapters, x.start, mediaDuration)?.chapter.name,
       ]
         .filter(Boolean)
@@ -479,15 +558,74 @@ const progressPercent = computed(() => {
   return (curTimeValue.value / timelineDuration.value) * 100;
 });
 
-// Hover seek-preview position (waveform mode only), as 0-100 percent.
+const segmentFillPercent = (segment: ChapterSegment) =>
+  Math.min(
+    100,
+    Math.max(
+      0,
+      ((progressPercent.value - segment.startPercent) / segment.widthPercent) *
+        100,
+    ),
+  );
+
+// Hover position over a waveform or chapter segments, as 0-100 percent.
 const hoverPercent = ref<number | null>(null);
 
+// the focus ring is only for keyboard focus
+const pointerFocus = ref(false);
+
+const hoverPoint = ref<{ x: number; y: number }>();
+const HOVER_LABEL_OFFSET_PX = 3;
+
 const onTrackPointerMove = (evt: PointerEvent) => {
-  if (!hasWaveform.value || !canSeek.value) return;
+  if (!(hasWaveform.value || chapterSegments.value.length) || !canSeek.value)
+    return;
   const rect = (evt.currentTarget as HTMLElement).getBoundingClientRect();
   if (!rect.width) return;
-  hoverPercent.value = ((evt.clientX - rect.left) / rect.width) * 100;
+  const x = Math.min(rect.right, Math.max(rect.left, evt.clientX));
+  hoverPercent.value = ((x - rect.left) / rect.width) * 100;
+  // a finger covers the point it drags, so the label stays over the middle
+  const centered = evt.pointerType === "touch";
+  hoverPoint.value = {
+    x: centered ? rect.left + rect.width / 2 : x,
+    y: rect.top + rect.height / 2,
+  };
 };
+
+const hoveredSegment = computed(() => {
+  if (hoverPercent.value === null || !chapterSegments.value.length)
+    return undefined;
+  const seconds = (hoverPercent.value / 100) * timelineDuration.value;
+  return segmentAt(chapterSegments.value, seconds);
+});
+
+// keyed by start, as the next tooltip can open before the previous one closes
+const openBookmarkTooltip = ref<number | null>(null);
+const bookmarkTooltipToggled = (start: number, open: boolean) => {
+  if (open) openBookmarkTooltip.value = start;
+  else if (openBookmarkTooltip.value === start)
+    openBookmarkTooltip.value = null;
+};
+
+const hoverLabel = computed(() => {
+  const segment = hoveredSegment.value;
+  const point = hoverPoint.value;
+  if (
+    !segment ||
+    !point ||
+    hoverPercent.value === null ||
+    openBookmarkTooltip.value !== null
+  )
+    return undefined;
+  const seconds = (hoverPercent.value / 100) * timelineDuration.value;
+  return {
+    reference: {
+      getBoundingClientRect: () => new DOMRect(point.x, point.y, 0, 0),
+    },
+    time: formatDuration(seconds),
+    chapter: segment.chapter?.name,
+  };
+});
 
 //watch
 watch(serverTiming, (timing) => {
@@ -523,6 +661,7 @@ watch(
     clearPendingSeek();
     dragChapter.value = null;
     hoverPercent.value = null;
+    openBookmarkTooltip.value = null;
   },
 );
 
@@ -540,11 +679,6 @@ const stopDragging = () => {
   if (store.activePlayer) {
     api.playerCommandSeek(store.activePlayer.player_id, seekPosition);
   }
-};
-
-const chapterClicked = function (chapter: MediaItemChapter) {
-  if (!canSeek.value || !store.activePlayer) return;
-  api.playerCommandSeek(store.activePlayer.player_id, chapter.start);
 };
 
 const bookmarkClicked = function (bookmark: MediaItemBookmark) {
@@ -592,7 +726,8 @@ const clearPendingSeek = () => {
   margin-top: -6px;
   margin-bottom: 5px;
 }
-.time-text-row > div {
-  width: calc(100% / 2);
+.time-text-left,
+.time-text-right {
+  flex: 1 0 0;
 }
 </style>

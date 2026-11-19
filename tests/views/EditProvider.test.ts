@@ -1,15 +1,18 @@
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { flushPromises, shallowMount, type VueWrapper } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, type Ref } from "vue";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import {
+  type ConfigEntry,
   ConfigEntryType,
   EventType,
   ProviderFeature,
   ProviderSharing,
   ProviderStatus,
+  ProviderTier,
   ProviderType,
   type ProviderConfig,
   type Scope,
@@ -42,13 +45,16 @@ const {
       spotify: {
         allow_disable: true,
         builtin: false,
-        codeowners: [],
+        codeowners: [] as string[],
         credits: [],
         description: "Spotify music provider",
         documentation: "https://example.com/spotify",
+        domain: "spotify",
         has_setup_flow: true,
         name: "Spotify",
         self_service: true,
+        support_url: null as string | null,
+        tier: "core" as ProviderTier,
       },
     },
     providers: {},
@@ -140,6 +146,7 @@ vi.mock("@/helpers/utils", async (importOriginal) => {
         : undefined,
     // the real renderer, so the error banner's markdown is assertable
     markdownToHtml: actual.markdownToHtml,
+    providerMarkdownToHtml: actual.providerMarkdownToHtml,
     openActionUrlEntries: <T>(entries: T) => entries,
   };
 });
@@ -178,10 +185,13 @@ beforeEach(() => {
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
+  apiMock.providerManifests.spotify.codeowners = [];
   apiMock.providerManifests.spotify.documentation =
     "https://example.com/spotify";
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.self_service = true;
+  apiMock.providerManifests.spotify.support_url = null;
+  apiMock.providerManifests.spotify.tier = ProviderTier.CORE;
   apiMock.getAllUsers.mockResolvedValue([]);
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.getShareCandidates.mockResolvedValue([]);
@@ -235,6 +245,106 @@ describe("EditProvider", () => {
       rel: "noopener noreferrer",
       target: "_blank",
     });
+    expect(
+      wrapper.get('[data-testid="provider-get-help"]').attributes(),
+    ).toMatchObject({
+      href: "https://github.com/music-assistant/support/issues/new?template=1_bug_report.yml&labels=triage%2Cspotify&title=Spotify%3A+",
+      rel: "noopener noreferrer",
+      target: "_blank",
+    });
+    expect(wrapper.findComponent(ProviderMaintainerMarker).exists()).toBe(
+      false,
+    );
+  });
+
+  it("marks a community provider, names its maintainers and sends Get help to them", async () => {
+    apiMock.providerManifests.spotify.tier = ProviderTier.COMMUNITY;
+    apiMock.providerManifests.spotify.codeowners = [
+      "@jane",
+      "@music-assistant",
+    ];
+    apiMock.providerManifests.spotify.support_url =
+      "https://github.com/jane/spotify/issues";
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.getComponent(ProviderMaintainerMarker).props("variant"),
+    ).toBe("icon");
+    const codeowners = wrapper.get('[data-testid="provider-codeowners"]');
+    expect(codeowners.html()).toContain("https://github.com/jane");
+    expect(codeowners.html()).not.toContain("music-assistant");
+    expect(
+      wrapper.get('[data-testid="provider-get-help"]').attributes("href"),
+    ).toBe("https://github.com/jane/spotify/issues");
+  });
+
+  it("names the maintainers of a core provider without marking it community", async () => {
+    apiMock.providerManifests.spotify.codeowners = [
+      "@music-assistant",
+      "@jane",
+    ];
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.findComponent(ProviderMaintainerMarker).exists()).toBe(
+      false,
+    );
+    const codeowners = wrapper.get('[data-testid="provider-codeowners"]');
+    expect(codeowners.html()).toContain("https://github.com/jane");
+    expect(codeowners.html()).not.toContain("music-assistant");
+  });
+
+  it("names no maintainers for a provider only the project owns", async () => {
+    apiMock.providerManifests.spotify.codeowners = ["@music-assistant"];
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "spotify--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+        stubs: providerDetailsStubs,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="provider-codeowners"]').exists()).toBe(
+      false,
+    );
   });
 
   it("shows the custom name of a source that is not loaded, and hands the settings frame the same one", async () => {
@@ -674,6 +784,44 @@ describe("EditProvider", () => {
 
     wrapper.unmount();
     expect(unsubscribeMock).toHaveBeenCalledOnce();
+  });
+
+  it("leaves out the settings the provider's own settings page shows", async () => {
+    const config = spotifyConfig(ProviderStatus.LOADED);
+    apiMock.getProviderConfig.mockResolvedValue({
+      ...config,
+      domain: "hass",
+      values: {
+        ...config.values,
+        power_controls: {
+          ...config.values.account,
+          key: "power_controls",
+          category: "player_controls",
+        },
+      },
+    });
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "hass--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper
+        .findComponent({ name: "EditConfig" })
+        .props("configEntries")
+        .map(({ key, hidden }: ConfigEntry) => [key, hidden === true]),
+    ).toEqual([
+      ["account", false],
+      ["power_controls", true],
+    ]);
   });
 
   it("merges fresh entry definitions while keeping a pending local edit", async () => {
@@ -1201,8 +1349,7 @@ describe("EditProvider", () => {
     const wrapper = await mountSavedProvider();
 
     expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
   });
@@ -1270,8 +1417,7 @@ describe("EditProvider", () => {
     });
 
     expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
   });
 
@@ -1300,8 +1446,7 @@ describe("EditProvider", () => {
 
     // the options are never shown; the member lands back on the list
     expect(routerMock.replace).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(false);
   });
@@ -1389,6 +1534,7 @@ describe("EditProvider actions and sections", () => {
       is_streaming_provider: null,
       name: "Spotify",
       supported_features: [ProviderFeature.CREATE_GROUP_PLAYER],
+      supported_artist_types: [],
       type: ProviderType.PLAYER,
     });
     const wrapper = await mountProvider();
@@ -1476,8 +1622,7 @@ describe("EditProvider actions and sections", () => {
     // unsaved edits have nothing left to save to, so they must not hold the way out
     expect(discardChanges).toHaveBeenCalled();
     expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
   });
 

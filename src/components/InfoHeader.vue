@@ -121,11 +121,10 @@
               <!-- explicit icon -->
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
-                  <v-icon
+                  <ExplicitIcon
                     v-if="parseBool(item.metadata.explicit || false)"
                     v-bind="props"
-                    icon="mdi-alpha-e-box"
-                    width="35"
+                    class="inline-block size-6 shrink-0 scale-90 align-middle [&_text]:fill-background"
                   />
                 </template>
                 <span>{{ $t("tooltip.explicit") }}</span>
@@ -282,8 +281,7 @@
               <MarqueeText :sync="marqueeSync">
                 <a style="color: secondary" @click="albumClick(item.album)">{{
                   item.album.name
-                }}</a
-                ><span v-if="'year' in item.album && item.album.year">
+                }}</a><span v-if="'year' in item.album && item.album.year">
                   • {{ item.album.year }}</span
                 ></MarqueeText
               >
@@ -402,7 +400,7 @@
             style="padding-bottom: 10px; cursor: pointer"
             @click="onDescriptionClick"
           >
-            <MarkdownText :text="shortDescription" />
+            <MarkdownText :text="shortDescription" allow-images />
           </v-card-subtitle>
 
           <!-- genres/tags -->
@@ -443,6 +441,7 @@
         </DialogHeader>
         <MarkdownText
           :text="rawDescription"
+          allow-images
           class="max-w-none text-sm leading-relaxed"
           style="max-height: 60vh; overflow-y: auto"
         />
@@ -462,6 +461,7 @@
 
 <script setup lang="ts">
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
+import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
 import FavoriteMenu from "@/components/FavoriteMenu.vue";
 import ItemSourceBadge from "@/components/ItemSourceBadge.vue";
 import MarkdownText from "@/components/MarkdownText.vue";
@@ -494,7 +494,10 @@ import {
   getAuthorsNarratorsArray,
   getImageThumbForItem,
 } from "@/helpers/utils";
-import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
+import {
+  getContextMenuItems,
+  getDeclaredContextMenuItems,
+} from "@/layouts/default/ItemContextMenu.vue";
 import { api } from "@/plugins/api";
 import { getCollectionMediaTypeFromItemId } from "@/plugins/api/helpers";
 import type {
@@ -519,7 +522,8 @@ import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { ArrowLeft } from "@lucide/vue";
 import { useEscapeBack } from "@/composables/useEscapeBack";
-import { computed, ref, watch } from "vue";
+import { usePlayActionInProgress } from "@/composables/usePlayActionInProgress";
+import { computed, ref, shallowRef, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import MarqueeText from "./MarqueeText.vue";
@@ -538,7 +542,20 @@ const compProps = defineProps<Props>();
 const showFullInfo = ref(false);
 const fanartImage = ref();
 useDisplay();
-const menuItems = ref<ContextMenuItem[]>([]);
+// the item's own menu entries, with the item they were built for
+const builtMenu = shallowRef<{
+  item: MediaItemType;
+  items: ContextMenuItem[];
+}>();
+// the entries providers add follow the providers while the page is open
+const menuItems = computed<ContextMenuItem[]>(() =>
+  builtMenu.value
+    ? [
+        ...builtMenu.value.items,
+        ...getDeclaredContextMenuItems([builtMenu.value.item]),
+      ]
+    : [],
+);
 const mappedGenres = ref<Genre[]>([]);
 
 const imgGradient = new URL("../assets/info_gradient.jpg", import.meta.url)
@@ -562,7 +579,10 @@ watch(
         getImageThumbForItem(val, ImageType.LANDSCAPE) ||
         getImageThumbForItem(val, ImageType.THUMB) ||
         imgGradient;
-      menuItems.value = await getContextMenuItems([val], val);
+      builtMenu.value = {
+        item: val,
+        items: await getContextMenuItems([val], val),
+      };
       // Load mapped genres for non-genre media items
       if (val.media_type !== MediaType.GENRE) {
         api
@@ -578,7 +598,7 @@ watch(
       }
     } else {
       fanartImage.value = imgGradient;
-      menuItems.value = [];
+      builtMenu.value = undefined;
       mappedGenres.value = [];
     }
   },
@@ -588,11 +608,9 @@ watch(
 // Watch shortcuts preference to update overflow menu when shortcuts change
 const shortcutsPreference = getPreference<string[]>("sidebar.shortcuts", []);
 watch(shortcutsPreference, async () => {
-  if (compProps.item) {
-    menuItems.value = await getContextMenuItems(
-      [compProps.item],
-      compProps.item,
-    );
+  const item = compProps.item;
+  if (item) {
+    builtMenu.value = { item, items: await getContextMenuItems([item], item) };
   }
 });
 
@@ -658,19 +676,7 @@ const backButtonClick = function () {
   backFromMediaDetails(router);
 };
 
-// Resolve the queue playMedia targets directly, since activePlayerQueue is
-// undefined while an external source is active.
-const playActionInProgress = computed(() => {
-  const player = store.activePlayer;
-  if (!player) return false;
-  const queueId =
-    player.active_source && player.active_source in api.queues
-      ? player.active_source
-      : player.player_id;
-  return (
-    api.queues[queueId]?.extra_attributes?.play_action_in_progress === true
-  );
-});
+const playActionInProgress = usePlayActionInProgress();
 
 const playButtonText = computed(() => {
   if (!store.activePlayer) return $t("play");
@@ -742,18 +748,22 @@ const collectionMediaType = computed(() => {
 const collectionArtists = computed(() => {
   if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
 
-  return getAudiobookCollectionArtists(
-    compProps.item as MediaCollection<Audiobook>,
-    (book) => book.authors,
+  return getAuthorsNarratorsArray(
+    getAudiobookCollectionArtists(
+      compProps.item as MediaCollection<Audiobook>,
+      (book) => book.authors,
+    ),
   );
 });
 
 const collectionNarrators = computed(() => {
   if (collectionMediaType.value != MediaType.AUDIOBOOK) return [];
 
-  return getAudiobookCollectionArtists(
-    compProps.item as MediaCollection<Audiobook>,
-    (book) => book.narrators,
+  return getAuthorsNarratorsArray(
+    getAudiobookCollectionArtists(
+      compProps.item as MediaCollection<Audiobook>,
+      (book) => book.narrators,
+    ),
   );
 });
 </script>

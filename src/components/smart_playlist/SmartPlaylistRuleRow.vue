@@ -76,12 +76,26 @@
     </div>
 
     <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:min-w-0">
-      <span
+      <Select
         v-if="rule.field === 'favorite'"
-        class="text-xs text-muted-foreground px-1"
+        :model-value="rule.operator"
+        :disabled="!allowFavoritesOnly"
+        @update:model-value="(v) => emit('change-operator', v as RuleOperator)"
       >
-        {{ $t("smart_playlist.favorites_yes") }}
-      </span>
+        <SelectTrigger
+          class="h-7 w-[160px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none hover:bg-accent"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-if="allowFavoritesOnly" value="is" class="text-xs">
+            {{ $t("smart_playlist.favorites_only") }}
+          </SelectItem>
+          <SelectItem value="is_not" class="text-xs">
+            {{ $t("smart_playlist.favorites_exclude") }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       <Select
         v-else-if="rule.field === 'explicit'"
@@ -276,13 +290,19 @@ import { computed } from "vue";
 import { fieldIcon } from "./fieldIcon";
 import SmartPlaylistRuleValuePicker from "./SmartPlaylistRuleValuePicker.vue";
 
-const props = defineProps<{
-  rule: RuleRow;
-  availableFields: RuleField[];
-  genreOptions: { id: number; name: string; item?: Genre }[];
-  albumTypeOptions: { id: number; name: string }[];
-  invalid?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    rule: RuleRow;
+    availableFields: RuleField[];
+    genreOptions: { id: number; name: string; item?: Genre }[];
+    albumTypeOptions: { id: number; name: string }[];
+    invalid?: boolean;
+    allowFavoritesOnly?: boolean;
+  }>(),
+  {
+    allowFavoritesOnly: true,
+  },
+);
 
 const emit = defineEmits<{
   "change-field": [field: RuleField];

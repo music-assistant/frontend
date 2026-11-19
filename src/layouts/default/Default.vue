@@ -16,7 +16,7 @@ import ReloadPrompt from "./ReloadPrompt.vue";
 import SetupPausedBanner from "@/components/onboarding/SetupPausedBanner.vue";
 import { usePlayPauseShortcut } from "@/composables/usePlayPauseShortcut";
 import { store } from "@/plugins/store";
-import { watch } from "vue";
+import { computed, watch } from "vue";
 import api from "@/plugins/api";
 import { isSelectablePlayer } from "@/helpers/players";
 import { useRoute } from "vue-router";
@@ -25,24 +25,31 @@ const route = useRoute();
 
 usePlayPauseShortcut();
 
+// the usable player a ?player= link names
+const linkedPlayerId = computed(() => {
+  const linkedPlayer = route.query.player;
+  if (!linkedPlayer) return undefined;
+  const linkedPlayerString = linkedPlayer.toString().toLowerCase();
+  // linkedPlayer can be either player id (also one it had before a merge) or player name
+  return Object.values(api.players).find((p) => {
+    return (
+      (p.player_id.toLowerCase() === linkedPlayerString ||
+        p.legacy_ids.some((id) => id.toLowerCase() === linkedPlayerString) ||
+        p.name.toLowerCase() === linkedPlayerString) &&
+      isSelectablePlayer(p)
+    );
+  })?.player_id;
+});
 watch(
-  // make sure it's retriggered when players array is populated
-  [() => route.query.player, () => Object.keys(api.players).length],
-  ([newActivePlayer]) => {
-    if (!newActivePlayer) return;
-    const newPlayerString = newActivePlayer.toString().toLowerCase();
-    // newActivePlayer can be either player id or player name
-    const newPlayerId = Object.values(api.players).find((p) => {
-      return (
-        (p.player_id.toLowerCase() === newPlayerString ||
-          p.name.toLowerCase() === newPlayerString) &&
-        isSelectablePlayer(p)
-      );
-    })?.player_id;
-
-    if (newPlayerId) {
-      store.activePlayerId = newPlayerId;
-    }
+  // make sure it's retriggered when players array is populated, and when the
+  // linked player becomes usable or another player takes over the linked id
+  [
+    () => route.query.player,
+    linkedPlayerId,
+    () => Object.keys(api.players).length,
+  ],
+  ([, playerId]) => {
+    if (playerId) store.activePlayerId = playerId;
   },
   { immediate: true },
 );

@@ -32,7 +32,6 @@ import {
   storeMusicQuizPlayerName,
   type MusicQuizParticipantStorageContext,
 } from "@/helpers/music_quiz";
-import { markMusicQuizJoinedGameEnded } from "@/helpers/music_quiz_guest_state";
 import { $t } from "@/plugins/i18n";
 import api from "@/plugins/api";
 import { waitForApiInitialization } from "@/plugins/api/helpers";
@@ -390,7 +389,6 @@ export function useMusicQuizPlayer(options: UseMusicQuizPlayerOptions) {
       }
     } else if (payload.event === "game_removed") {
       const wasJoined = joinedGame || !!playerId.value;
-      if (wasJoined) markMusicQuizJoinedGameEnded();
       gameGeneration += 1;
       autoJoinAttemptedGeneration = null;
       clearActivePlayer();

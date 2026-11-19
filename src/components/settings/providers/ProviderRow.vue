@@ -28,6 +28,18 @@
           {{ name }}
         </button>
         <span v-else>{{ name }}</span>
+        <TooltipIcon
+          v-if="statusIcon"
+          :label="statusLabel ?? ''"
+          data-testid="provider-status-icon"
+        >
+          <Spinner
+            v-if="statusIcon === 'loading'"
+            class="size-3.5"
+            aria-hidden="true"
+          />
+          <Ban v-else class="size-3.5" aria-hidden="true" />
+        </TooltipIcon>
         <Badge
           v-if="statusVariant"
           :variant="statusVariant"
@@ -35,14 +47,7 @@
         >
           {{ statusLabel }}
         </Badge>
-        <Badge
-          v-if="stageLabel"
-          variant="outline"
-          class="uppercase"
-          data-testid="stage-badge"
-        >
-          {{ stageLabel }}
-        </Badge>
+        <ProviderMaintainerMarker v-if="community" variant="icon" />
       </ItemTitle>
       <ItemDescription v-if="isError" class="text-destructive">
         {{ errorText }}
@@ -50,6 +55,7 @@
       <ItemDescription v-else-if="description">
         {{ description }}
       </ItemDescription>
+      <SourceLabels v-if="labels?.length" :labels="labels" />
       <ItemDescription v-if="accessSummary" data-testid="provider-access">
         {{ accessSummary }}
       </ItemDescription>
@@ -73,6 +79,16 @@
         {{ t("settings.reconfigure") }}
       </Button>
       <Button
+        v-if="removable"
+        size="sm"
+        variant="outline"
+        data-testid="provider-remove"
+        @click.stop="emit('remove')"
+      >
+        <Trash2 class="size-4" aria-hidden="true" />
+        {{ t("settings.remove_provider") }}
+      </Button>
+      <Button
         v-if="manageable"
         variant="ghost"
         size="icon-sm"
@@ -91,8 +107,7 @@
     v-hold="onManageableHold"
     class="provider-card flex h-full min-h-[200px] flex-col gap-3 rounded-(--radius-xl) py-4"
     :class="{
-      'cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:shadow-lg':
-        manageable,
+      'card-hover': manageable,
       'opacity-60': !config.enabled,
     }"
     data-testid="provider-row"
@@ -115,6 +130,18 @@
             {{ name }}
           </button>
           <span v-else class="text-base font-semibold">{{ name }}</span>
+          <TooltipIcon
+            v-if="statusIcon"
+            :label="statusLabel ?? ''"
+            data-testid="provider-status-icon"
+          >
+            <Spinner
+              v-if="statusIcon === 'loading'"
+              class="size-3.5"
+              aria-hidden="true"
+            />
+            <Ban v-else class="size-3.5" aria-hidden="true" />
+          </TooltipIcon>
           <Badge
             v-if="statusVariant"
             :variant="statusVariant"
@@ -122,14 +149,7 @@
           >
             {{ statusLabel }}
           </Badge>
-          <Badge
-            v-if="stageLabel"
-            variant="outline"
-            class="uppercase"
-            data-testid="stage-badge"
-          >
-            {{ stageLabel }}
-          </Badge>
+          <ProviderMaintainerMarker v-if="community" variant="icon" />
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-1">
@@ -176,6 +196,17 @@
         >
           {{ t("settings.reconfigure") }}
         </Button>
+        <Button
+          v-if="removable"
+          size="sm"
+          variant="outline"
+          class="mt-2 w-full"
+          data-testid="provider-remove"
+          @click.stop="emit('remove')"
+        >
+          <Trash2 class="size-4" aria-hidden="true" />
+          {{ t("settings.remove_provider") }}
+        </Button>
       </div>
       <p
         v-else-if="description"
@@ -183,6 +214,7 @@
       >
         {{ description }}
       </p>
+      <SourceLabels v-if="labels?.length" :labels="labels" class="mt-3" />
     </div>
 
     <div
@@ -197,6 +229,9 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
+import SourceLabels from "@/components/settings/providers/SourceLabels.vue";
+import TooltipIcon from "@/components/TooltipIcon.vue";
 import { Badge, type BadgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -208,9 +243,17 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
+import { Spinner } from "@/components/ui/spinner";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
+import type { SourceLabel } from "@/helpers/source_labels";
 import type { ProviderConfig } from "@/plugins/api/interfaces";
-import { MoreVertical, RefreshCw, TriangleAlert } from "@lucide/vue";
+import {
+  Ban,
+  MoreVertical,
+  RefreshCw,
+  Trash2,
+  TriangleAlert,
+} from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -227,18 +270,24 @@ interface Props {
   name: string;
   // the provider description, shown while the source is healthy
   description?: string;
+  // what the source offers
+  labels?: readonly SourceLabel[];
   // the access summary line; omitted hides it (a source the viewer cannot manage)
   accessSummary?: string | null;
   // the status badge variant; omitted hides the badge (a healthy source)
   statusVariant?: BadgeVariants["variant"];
+  // a quiet status shown as an icon by the name instead of a badge
+  statusIcon?: "loading" | "disabled";
   // the translated status label
   statusLabel?: string;
-  // whether the status needs attention (auth required, incompatible or error)
+  // whether the status needs attention (auth required, incompatible, error or unavailable)
   isError?: boolean;
+  // whether the row offers to remove it, for an entry that cannot be opened
+  removable?: boolean;
   // the localized error reason
   errorText?: string;
-  // the translated stage label; empty hides the stage badge
-  stageLabel?: string;
+  // whether a community member maintains the provider
+  community?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -247,6 +296,7 @@ const emit = defineEmits<{
   open: [];
   menu: [event: Event];
   reconfigure: [];
+  remove: [];
 }>();
 
 const { t } = useI18n();

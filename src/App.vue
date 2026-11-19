@@ -548,6 +548,12 @@ onMounted(async () => {
     },
   );
 
+  // the theme follows its preference as soon as that changes
+  watch(
+    () => store.currentUser?.preferences?.theme,
+    () => setTheme(),
+  );
+
   // Push UI locale changes to the server so server-provided strings (config labels, media/folder
   // names, provider descriptions) re-localize. Initial/reconnect locale is sent from the api on
   // ServerInfo; this catches later changes (language preference applied, manual switch).

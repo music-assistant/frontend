@@ -16,6 +16,7 @@ import { defineComponent, nextTick, onMounted, type PropType } from "vue";
 import { track } from "../fixtures/track";
 
 vi.mock("vue-i18n", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
+vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 const browsed = vi.hoisted(() => ({
   items: [] as object[],
@@ -29,6 +30,7 @@ vi.mock("@/plugins/api", () => ({
     getProviderName: (domain: string) => `${domain} provider`,
     browse,
   },
+  api: { subscribe_multi: () => () => {} },
 }));
 vi.mock("@/plugins/store", () => ({ store: { activePlayerId: "player" } }));
 
@@ -37,7 +39,12 @@ vi.mock("@/plugins/store", () => ({ store: { activePlayerId: "player" } }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
     name: "ItemsListing",
-    props: ["showSelectButton", "loadPagedData", "sortListing"],
+    props: {
+      showSelectButton: Boolean,
+      loadPagedData: Function,
+      sortListing: String,
+      libraryToolbar: Boolean,
+    },
     template: '<div><slot name="title" /><slot name="header" /></div>',
   },
 }));
@@ -272,6 +279,7 @@ describe("BrowseView", () => {
     });
 
     expect(listing.props("sortListing")).toBe(ListingType.BROWSE);
+    expect(listing.props("libraryToolbar")).toBe(true);
     expect(browse).toHaveBeenCalledWith(
       "filesystem://Music",
       "player",

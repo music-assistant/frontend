@@ -8,7 +8,7 @@
   >
     <div
       v-for="(mediaItem, index) in visibleItems"
-      :key="mediaItem.item_id ?? index"
+      :key="index"
       class="thumb"
       :style="thumbStyle(index)"
     >
@@ -30,33 +30,29 @@ import {
   type MediaCollection,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
-import { getImageThumbForItem } from "@/helpers/utils";
 
 interface Props {
   item: MediaCollection<MediaItemType>;
   size?: string | number;
   thumbScale?: number;
-  thumbOffset?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   size: "100%",
   thumbScale: 1,
-  thumbOffset: 19,
 });
 
+// the 0.8 scale leaves 20% for the shifts of the two upper covers
+const STACK_OFFSET_PERCENT = 10;
+
+// the server picks the covers over all items, so a filtered listing keeps them;
+// without any, the collection itself shows a placeholder
 const visibleItems = computed(() => {
-  const items = props.item.items;
-  const withThumb = items.filter(
-    (item) => getImageThumbForItem(item, ImageType.THUMB) !== undefined,
+  const covers = (props.item.metadata.images ?? []).filter(
+    (image) => image.type === ImageType.THUMB,
   );
-
-  if (withThumb.length >= 3) {
-    return withThumb.slice(0, 3);
-  }
-
-  // If there are fewer than 3 thumbnails, preserve order.
-  return items.slice(0, 3);
+  if (!covers.length) return [props.item];
+  return covers.map((image) => ({ ...props.item, image }));
 });
 
 const thumbScale = computed(() => {
@@ -68,10 +64,10 @@ const thumbScale = computed(() => {
 function thumbStyle(index: number) {
   // Double the offset for two images. No offset for a single image.
   const count = visibleItems.value.length;
-  const offset = props.thumbOffset * (count === 2 ? 2 : 1);
+  const offset = STACK_OFFSET_PERCENT * (count === 2 ? 2 : 1);
   return {
     zIndex: count - index,
-    transform: `translate(${index * offset}px, -${index * offset}px)`,
+    transform: `translate(${index * offset}%, -${index * offset}%)`,
     transformOrigin: "bottom left",
   };
 }
@@ -80,6 +76,8 @@ function thumbStyle(index: number) {
 <style scoped>
 .thumb-stack {
   position: relative;
+  /* keeps the covers' z-indexes below the overlays of the card or row */
+  isolation: isolate;
   aspect-ratio: 1;
 }
 

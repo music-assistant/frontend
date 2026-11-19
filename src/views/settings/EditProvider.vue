@@ -121,23 +121,31 @@
                 ></span>
                 {{ providerStatusLabel }}
               </Badge>
+              <ProviderMaintainerMarker
+                v-if="isCommunityProvider(providerManifest)"
+                variant="icon"
+              />
             </div>
             <CardDescription class="mt-2 max-w-3xl leading-relaxed">
               {{ providerManifest.description }}
             </CardDescription>
-            <!-- eslint-disable vue/no-v-html -- markdownToHtml sanitizes with DOMPurify -->
+            <!-- eslint-disable vue/no-v-html -- providerMarkdownToHtml sanitizes with DOMPurify -->
             <div
-              v-if="providerManifest.codeowners.length"
+              v-if="showCodeowners"
+              data-testid="provider-codeowners"
               class="mt-3 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
               v-html="
-                markdownToHtml(getAuthorsMarkdown(providerManifest.codeowners))
+                providerMarkdownToHtml(getAuthorsMarkdown(providerMaintainers))
               "
             ></div>
             <div
               v-if="providerManifest.credits.length"
-              class="mt-1 text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              class="text-xs text-muted-foreground [&_a]:text-primary [&_a]:hover:underline"
+              :class="showCodeowners ? 'mt-1' : 'mt-3'"
               v-html="
-                markdownToHtml(getCreditsMarkdown(providerManifest.credits))
+                providerMarkdownToHtml(
+                  getCreditsMarkdown(providerManifest.credits),
+                )
               "
             ></div>
             <!-- eslint-enable vue/no-v-html -->
@@ -187,6 +195,17 @@
           >
             <CircleAlert class="size-4" />
             {{ $t("settings.known_issues") }}
+          </Button>
+          <Button
+            as="a"
+            data-testid="provider-get-help"
+            variant="outline"
+            :href="helpUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <LifeBuoy class="size-4" />
+            {{ $t("settings.provider_get_help") }}
           </Button>
         </CardContent>
       </Card>
@@ -283,6 +302,7 @@ import MarkdownText from "@/components/MarkdownText.vue";
 import ProviderIcon from "@/components/ProviderIcon.vue";
 import ProviderSaveErrorDialog from "@/components/ProviderSaveErrorDialog.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
+import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
 import ProviderSettingsLinks from "@/components/settings/providers/ProviderSettingsLinks.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -298,8 +318,11 @@ import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import {
+  getProviderHelpUrl,
+  getProviderMaintainers,
   getProviderStatusTranslationKey,
   getProviderSupportIssuesUrl,
+  isCommunityProvider,
   providerDisplayName,
 } from "@/helpers/provider_config";
 import {
@@ -312,18 +335,25 @@ import {
 } from "@/helpers/provider_permissions";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
-import { getExternalLinkUrl, markdownToHtml } from "@/helpers/utils";
+import { providerPageEntries } from "@/helpers/settings_pages";
+import {
+  providerListingRoute,
+  providerListRoute,
+} from "@/helpers/settings_sections";
+import { getExternalLinkUrl, providerMarkdownToHtml } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
   ConfigValueType,
   EventType,
   ProviderConfig,
   ProviderStatus,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import {
   BookOpen,
   CircleAlert,
+  LifeBuoy,
   MoreVertical,
   Pencil,
   RotateCw,
@@ -382,6 +412,13 @@ const allConfigEntries = computed(() => {
   return Object.values(config.value.values);
 });
 
+// the settings the provider's own settings page shows in place of this one
+const pageConfigEntries = computed(() =>
+  config.value
+    ? providerPageEntries(config.value.domain, allConfigEntries.value)
+    : [],
+);
+
 const providerManifest = computed(() => {
   if (!config.value) return undefined;
   return api.providerManifests[config.value.domain];
@@ -418,11 +455,32 @@ const knownIssuesUrl = computed(() =>
   getProviderSupportIssuesUrl(config.value?.domain ?? ""),
 );
 
+const helpUrl = computed(() =>
+  providerManifest.value ? getProviderHelpUrl(providerManifest.value) : "",
+);
+
+const providerMaintainers = computed(() =>
+  providerManifest.value ? getProviderMaintainers(providerManifest.value) : [],
+);
+
+// a provider owned only by the project names no maintainers
+const showCodeowners = computed(() => providerMaintainers.value.length > 0);
+
 const documentationUrl = computed(() => {
   return getExternalLinkUrl(providerManifest.value?.documentation);
 });
 
 // watchers
+// hidden from the form, while it still saves and guards their values; hidden
+// rather than left out, so the entries depending on them still resolve
+watch(
+  pageConfigEntries,
+  (entries) => {
+    for (const entry of entries) entry.hidden = true;
+  },
+  { immediate: true },
+);
+
 watch(
   () => props.instanceId,
   (val) => {
@@ -463,10 +521,11 @@ onBeforeUnmount(() => {
 
 // methods
 const backToProviders = function () {
-  router.push({
-    name: "providersettings",
-    query: { types: config.value?.type },
-  });
+  router.push(
+    config.value
+      ? providerListingRoute(config.value, providerManifest.value?.media_types)
+      : providerListRoute(ProviderType.MUSIC),
+  );
 };
 
 const resetToDefaults = function () {
@@ -605,10 +664,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
     )
     .then(() => {
       toast.success(t("settings.provider_saved"));
-      router.push({
-        name: "providersettings",
-        query: { types: config.value!.type },
-      });
+      backToProviders();
     })
     .catch((err) => {
       saveErrorMessage.value = String(err);
@@ -646,16 +702,14 @@ const { onAction } = useConfigAction({
       values,
       config.value!.instance_id,
     ),
+  answeredBy: () => config.value!.domain,
 });
 
 const getAuthorsMarkdown = function (authors: string[]) {
   const allAuthors: string[] = [];
   for (const author of authors) {
     if (author.includes("@")) {
-      let authorName = author.replace("@", "");
-      if (authorName == "music-assistant") {
-        authorName = "the Music Assistant team";
-      }
+      const authorName = author.replace("@", "");
       allAuthors.push(
         `[${authorName}](https://github.com/${author.replace("@", "")})`,
       );
@@ -706,10 +760,7 @@ async function loadConfig(instanceId: string) {
     if (requestId === configLoadRequestId && props.instanceId === instanceId) {
       // a member only manages the music sources it owns, the rest is admin-only
       if (!canManageSource(updatedConfig)) {
-        router.replace({
-          name: "providersettings",
-          query: { types: updatedConfig.type },
-        });
+        router.replace(providerListRoute(ProviderType.MUSIC));
         return;
       }
       config.value = updatedConfig;

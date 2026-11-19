@@ -1,21 +1,33 @@
 <template>
-  <RouterLink
-    :to="to"
-    class="view-all-link"
-    :aria-label="name ? $t('tooltip.view_all', { name }) : undefined"
-  >
-    {{ $t("view_all") }}
+  <RouterLink :to="to" class="view-all-link" :aria-label="ariaLabel">
+    {{ label }}
   </RouterLink>
 </template>
 
 <script setup lang="ts">
+import { $t } from "@/plugins/i18n";
+import { computed } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 
-defineProps<{
+const props = defineProps<{
   to: RouteLocationRaw;
   // what the link opens in full, for screen readers
   name?: string;
+  // how many items it opens, shown with the label when known
+  count?: number;
 }>();
+
+const label = computed(() =>
+  props.count === undefined
+    ? $t("view_all")
+    : $t("view_all_count", { count: props.count }),
+);
+const ariaLabel = computed(() => {
+  if (!props.name) return undefined;
+  return props.count === undefined
+    ? $t("tooltip.view_all", { name: props.name })
+    : $t("tooltip.view_all_count", { name: props.name, count: props.count });
+});
 </script>
 
 <style scoped>

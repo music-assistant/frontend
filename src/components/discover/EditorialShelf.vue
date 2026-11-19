@@ -5,6 +5,10 @@
     @mouseenter="hovering = canHover"
     @mouseleave="hovering = false"
   >
+    <!-- above the title line, e.g. a heading shared by several shelves -->
+    <div v-if="$slots.heading" class="mb-[10px] px-[var(--ed-gutter)]">
+      <slot name="heading"></slot>
+    </div>
     <div class="ed-shelf__head">
       <slot name="header">
         <div class="ed-shelf__titles">

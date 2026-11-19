@@ -10,6 +10,8 @@
       :show-track-number="false"
       :show-select-button="!isRoot && !hasOnlyFolders"
       :sort-listing="ListingType.BROWSE"
+      library-toolbar
+      :show-count="false"
       :load-paged-data="loadItems"
       :path="path"
       :allow-key-hooks="true"

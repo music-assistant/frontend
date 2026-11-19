@@ -16,6 +16,7 @@ describe("AudioAnalysisMetadata", () => {
       bpm: 128,
       musical_key: "F# minor",
       camelot_key: "11A",
+      energy_level: null,
     });
 
     // the popover has to be reachable and activatable from the keyboard
@@ -29,6 +30,7 @@ describe("AudioAnalysisMetadata", () => {
       bpm: 128,
       musical_key: "F# minor",
       camelot_key: "11A",
+      energy_level: null,
     });
 
     await wrapper.find("button").trigger("click");
@@ -39,11 +41,32 @@ describe("AudioAnalysisMetadata", () => {
     expect(popoverText).toContain("F# minor (11A)");
   });
 
+  it("shows the energy level when it is the only analysis data", async () => {
+    const wrapper = mountMetadata({
+      bpm: null,
+      musical_key: null,
+      camelot_key: null,
+      energy_level: 7,
+    });
+
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    const energyTile = document.body.querySelector(
+      '[title="tooltip.energy_level"]',
+    );
+    const tileText = energyTile?.textContent;
+    wrapper.unmount();
+    expect(tileText).toContain("7");
+    expect(tileText).toContain("energy_level");
+  });
+
   it("renders nothing without analysis data", () => {
     const wrapper = mountMetadata({
       bpm: null,
       musical_key: null,
       camelot_key: null,
+      energy_level: null,
     });
 
     expect(wrapper.find("button").exists()).toBe(false);

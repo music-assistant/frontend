@@ -16,48 +16,55 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import type { SetupFlowDialogEvent } from "@/plugins/eventbus";
 import SetupFlowDialog from "@/components/SetupFlowDialog.vue";
 
-const { apiMock, eventbusMock, routerMock, storeMock, toastMock } = vi.hoisted(
-  () => ({
-    apiMock: {
-      abortSetupFlow: vi.fn<MusicAssistantApi["abortSetupFlow"]>(),
-      players: {
-        "player-1": { name: "Living Room" },
+const {
+  apiMock,
+  copyToClipboardMock,
+  eventbusMock,
+  routerMock,
+  storeMock,
+  toastMock,
+} = vi.hoisted(() => ({
+  apiMock: {
+    abortSetupFlow: vi.fn<MusicAssistantApi["abortSetupFlow"]>(),
+    players: {
+      "player-1": { name: "Living Room" },
+    },
+    providerManifests: {},
+    providers: {
+      "spotify--test": {
+        domain: "spotify",
+        name: "Spotify",
       },
-      providerManifests: {},
-      providers: {
-        "spotify--test": {
-          domain: "spotify",
-          name: "Spotify",
-        },
-      },
-      reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
-      setupProvider: vi.fn<MusicAssistantApi["setupProvider"]>(),
-      getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
-      setupPlayer: vi.fn<MusicAssistantApi["setupPlayer"]>(),
-      state: {
-        value: "authenticated",
-      },
-      submitSetupFlow: vi.fn<MusicAssistantApi["submitSetupFlow"]>(),
-      subscribeSetupFlow: vi.fn<MusicAssistantApi["subscribeSetupFlow"]>(),
     },
-    eventbusMock: {
-      off: vi.fn(),
-      on: vi.fn(),
+    reconfigureProvider: vi.fn<MusicAssistantApi["reconfigureProvider"]>(),
+    setupProvider: vi.fn<MusicAssistantApi["setupProvider"]>(),
+    getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
+    setupPlayer: vi.fn<MusicAssistantApi["setupPlayer"]>(),
+    state: {
+      value: "authenticated",
     },
-    routerMock: {
-      push: vi.fn(),
-      // the hooks the dialog follows the page with, for a test to call
-      hooks: [] as ((to: { path: string }, from: { path: string }) => void)[],
-      afterEach: vi.fn(),
-    },
-    storeMock: {
-      dialogActive: false,
-    },
-    toastMock: {
-      error: vi.fn(),
-    },
-  }),
-);
+    submitSetupFlow: vi.fn<MusicAssistantApi["submitSetupFlow"]>(),
+    subscribeSetupFlow: vi.fn<MusicAssistantApi["subscribeSetupFlow"]>(),
+  },
+  copyToClipboardMock: vi.fn(),
+  eventbusMock: {
+    off: vi.fn(),
+    on: vi.fn(),
+  },
+  routerMock: {
+    push: vi.fn(),
+    // the hooks the dialog follows the page with, for a test to call
+    hooks: [] as ((to: { path: string }, from: { path: string }) => void)[],
+    afterEach: vi.fn(),
+  },
+  storeMock: {
+    dialogActive: false,
+  },
+  toastMock: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
 
 let launchSetupFlow:
   ((event: SetupFlowDialogEvent) => Promise<void>) | undefined;
@@ -80,6 +87,12 @@ vi.mock("@/plugins/i18n", () => ({
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
+}));
+
+vi.mock("@/helpers/utils", async (importOriginal) => ({
+  copyToClipboard: copyToClipboardMock,
+  isEmbeddedImage: (await importOriginal<typeof import("@/helpers/utils")>())
+    .isEmbeddedImage,
 }));
 
 vi.mock("@/views/settings/ConfigEntryRow.vue", () => ({
@@ -256,6 +269,21 @@ describe("SetupFlowDialog", () => {
     },
   );
 
+  it.each([
+    ["an embedded", "data:image/png;base64,iVBORw0KGgo=", true],
+    ["a remote", "https://example.com/qr.png", false],
+  ])(
+    "draws %s step image only when it is embedded",
+    async (_kind, image, drawn) => {
+      const wrapper = await mountHeader(
+        { kind: "reconfigure", instanceId: "spotify--test" },
+        { ...progressStep("Scan the code"), image },
+      );
+
+      expect(wrapper.find("img").exists()).toBe(drawn);
+    },
+  );
+
   it("leaves the subtitle out when the step brings no title", async () => {
     const wrapper = await mountHeader({ kind: "player", playerId: "player-1" });
 
@@ -265,6 +293,69 @@ describe("SetupFlowDialog", () => {
         .find("dialog-description-stub")
         .exists(),
     ).toBe(false);
+  });
+
+  it("copies an external step's copy text", async () => {
+    copyToClipboardMock.mockResolvedValue(true);
+    apiMock.setupPlayer.mockResolvedValue({
+      ...terminalStep(FlowStepType.EXTERNAL),
+      copy_text: "123456",
+    });
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({ kind: "player", playerId: "player-1" });
+    await wrapper
+      .get('[aria-label="settings.setup_flow.copy"]')
+      .trigger("click");
+
+    expect(copyToClipboardMock).toHaveBeenCalledExactlyOnceWith("123456");
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("copies a form step's copy text", async () => {
+    copyToClipboardMock.mockResolvedValue(true);
+    apiMock.setupPlayer.mockResolvedValue({
+      ...terminalStep(FlowStepType.FORM),
+      copy_text: "https://example.com/auth",
+      entries: [],
+    });
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({ kind: "player", playerId: "player-1" });
+    await wrapper
+      .get('[aria-label="settings.setup_flow.copy"]')
+      .trigger("click");
+
+    expect(copyToClipboardMock).toHaveBeenCalledExactlyOnceWith(
+      "https://example.com/auth",
+    );
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("shows an error toast when copying an external step's copy text fails", async () => {
+    copyToClipboardMock.mockResolvedValue(false);
+    apiMock.setupPlayer.mockResolvedValue({
+      ...terminalStep(FlowStepType.EXTERNAL),
+      copy_text: "123456",
+    });
+    const wrapper = shallowMount(SetupFlowDialog, {
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await launchSetupFlow?.({ kind: "player", playerId: "player-1" });
+    await wrapper
+      .get('[aria-label="settings.setup_flow.copy"]')
+      .trigger("click");
+
+    expect(copyToClipboardMock).toHaveBeenCalledExactlyOnceWith("123456");
+    expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
+      "settings.setup_flow.copy_failed",
+    );
+    expect(toastMock.success).not.toHaveBeenCalled();
   });
 
   it("closes without an abort when a flow finishes silently", async () => {
@@ -636,7 +727,7 @@ describe("SetupFlowDialog launched with initial values", () => {
   it.each([
     [
       "ends the flow when a link takes the user to another page",
-      "/settings/storage",
+      "/settings/system/storage",
       true,
     ],
     ["stays open while the page stays the same", "/discover", false],

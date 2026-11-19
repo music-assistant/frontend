@@ -62,6 +62,8 @@
         <p class="text-muted-foreground text-xs">
           {{
             $t("onboarding.steps.core_settings.remote.builtin.hint", {
+              system: $t("settings.system"),
+              network: $t("settings.network.title"),
               remote_access: $t("settings.remote_access"),
             })
           }}

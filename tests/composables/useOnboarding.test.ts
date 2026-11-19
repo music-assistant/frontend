@@ -1,6 +1,8 @@
+import DiscoveredPlayerItem from "@/components/onboarding/DiscoveredPlayerItem.vue";
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import {
   EventType,
+  MediaType,
   PlayerType,
   ProviderSharing,
   ProviderType,
@@ -11,7 +13,7 @@ import {
   type PlayerConfig,
   type User,
 } from "@/plugins/api/interfaces";
-import { flushPromises } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { outputProtocol } from "../fixtures/outputProtocol";
 import { playerConfig } from "../fixtures/playerConfig";
@@ -31,6 +33,7 @@ const {
   preferenceState,
   providerConfigs,
   routerMock,
+  setPlayerEnabledMock,
   setUserPreferenceMock,
   setUserPreferencesMock,
   storeState,
@@ -42,7 +45,15 @@ const {
     players: {} as Record<string, Partial<Player>>,
     // the instances that loaded, which name a provider that has no custom name
     providers: {} as Record<string, { name: string; domain?: string }>,
-    providerManifests: {} as Record<string, { builtin: boolean; name: string }>,
+    providerManifests: {} as Record<
+      string,
+      {
+        builtin: boolean;
+        name: string;
+        type?: ProviderType;
+        media_types?: MediaType[];
+      }
+    >,
     getAllUsers: vi.fn(),
     getPlayerConfig: vi.fn(),
     getPlayerConfigs: vi.fn(),
@@ -56,7 +67,10 @@ const {
         ) => () => void
       >(),
     sendCommand: vi.fn(),
-    serverInfo: { value: undefined as { onboard_done: boolean } | undefined },
+    serverInfo: {
+      value: undefined as
+        { onboard_done: boolean; homeassistant_addon?: boolean } | undefined,
+    },
   },
   authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
   // what the server hands back as the player configurations
@@ -74,6 +88,7 @@ const {
   // what the server hands back as the provider configurations
   providerConfigs: { list: [] as Record<string, unknown>[] },
   routerMock: { replace: vi.fn(), push: vi.fn() },
+  setPlayerEnabledMock: vi.fn(),
   setUserPreferenceMock: vi.fn(),
   setUserPreferencesMock: vi.fn(),
   // replaced with a reactive store by the store mock factory below: who is
@@ -96,6 +111,12 @@ vi.mock("@/plugins/router", () => ({ default: routerMock }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
+
+// the save is covered where it lives; here it only has to be called
+vi.mock("@/helpers/player_settings_actions", () => ({
+  renamePlayer: vi.fn(),
+  setPlayerEnabled: setPlayerEnabledMock,
+}));
 
 vi.mock("@/plugins/store", async () => {
   const { reactive } = await vi.importActual<typeof import("vue")>("vue");
@@ -202,6 +223,7 @@ function addProvider(
     enabled?: boolean;
     lastError?: unknown;
     name?: string;
+    mediaTypes?: MediaType[];
   } = {},
 ) {
   providerConfigs.list.push({
@@ -215,6 +237,8 @@ function addProvider(
   apiMock.providerManifests[domain] = {
     builtin: options.builtin ?? false,
     name: `${domain} manifest`,
+    type,
+    media_types: options.mediaTypes,
   };
 }
 
@@ -320,7 +344,12 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     apiMock.subscribe_multi.mockImplementation(() => vi.fn());
     apiMock.sendCommand.mockReset();
     apiMock.sendCommand.mockResolvedValue(undefined);
-    apiMock.serverInfo.value = { onboard_done: false };
+    // the add-on connects Home Assistant by itself, so only the tests of the
+    // Home Assistant step run on a server that is not the add-on
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: true,
+    };
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.admin),
     );
@@ -362,21 +391,82 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
         domain: "spotify",
         builtin: false,
         enabled: true,
+        audioSource: false,
       },
       {
         type: ProviderType.PLAYER,
         domain: "builtin_player",
         builtin: true,
         enabled: true,
+        audioSource: false,
       },
     ]);
     // the builtin player provider does not tick the players step off
     expect(pending.value.map((step) => step.id)).toEqual([
       "intent",
       "players",
-      "plugins",
       "invite_members",
     ]);
+  });
+
+  it("only takes a plugin whose manifest declares an audio source for an app connection", async () => {
+    const audioSource = [MediaType.AUDIO_SOURCE];
+    // a player provider declares it for the line-ins of its devices
+    addProvider("sendspin--1", "sendspin", ProviderType.PLAYER, {
+      mediaTypes: audioSource,
+    });
+    addProvider("party--1", "party", ProviderType.PLUGIN);
+    preferenceState.intent.value = "phone_apps";
+
+    let module = await loadOnboardingModule();
+    expect(
+      module.useOnboarding().ctx.value.providers.map((p) => p.audioSource),
+    ).toEqual([false, false]);
+    expect(module.configuredAudioSourcePlugins()).toEqual([]);
+    expect(module.useOnboarding().pending.value.map((step) => step.id)).toEqual(
+      ["plugins"],
+    );
+
+    addProvider("connect--1", "spotify_connect", ProviderType.PLUGIN, {
+      mediaTypes: audioSource,
+    });
+    module = await loadOnboardingModule();
+    expect(
+      module.useOnboarding().ctx.value.providers.map((p) => p.audioSource),
+    ).toEqual([false, false, true]);
+    expect(module.configuredAudioSourcePlugins().map((p) => p.domain)).toEqual([
+      "spotify_connect",
+    ]);
+    expect(module.useOnboarding().pending.value).toEqual([]);
+  });
+
+  it("offers to connect Home Assistant only on a server that is not the add-on", async () => {
+    let { steps } = await loadOnboarding();
+    expect(steps.value.map((step) => step.id)).not.toContain("home_assistant");
+
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: false,
+    };
+    ({ steps } = await loadOnboarding());
+    expect(steps.value.map((step) => step.id)).toContain("home_assistant");
+  });
+
+  it("ticks Home Assistant off once its connection is set up, working or not", async () => {
+    apiMock.serverInfo.value = {
+      onboard_done: false,
+      homeassistant_addon: false,
+    };
+    let { ctx, pending } = await loadOnboarding();
+    expect(ctx.value.homeAssistantConfigured).toBe(false);
+    expect(pending.value.map((step) => step.id)).toContain("home_assistant");
+
+    addProvider("hass--1", "hass", ProviderType.PLUGIN, { enabled: false });
+    ({ ctx, pending } = await loadOnboarding());
+    expect(ctx.value.homeAssistantConfigured).toBe(true);
+    expect(pending.value.map((step) => step.id)).not.toContain(
+      "home_assistant",
+    );
   });
 
   it("asks nothing of a guest, who is only passing through", async () => {
@@ -703,19 +793,13 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     );
   });
 
-  it("keeps a deferred music source in what is pending", async () => {
+  it("only asks for app connections once the speakers are set up in existing-app setup", async () => {
     addProvider("sonos--1", "sonos", ProviderType.PLAYER);
 
     const { pending } = await loadOnboarding();
     preferenceState.intent.value = "phone_apps";
 
-    // the music sources moved behind the plugins for this answer, but stay in
-    // what is pending rather than dropped
-    expect(pending.value.map((step) => step.id)).toEqual([
-      "plugins",
-      "music_sources",
-      "invite_members",
-    ]);
+    expect(pending.value.map((step) => step.id)).toEqual(["plugins"]);
   });
 
   it("leaves only the optional steps pending once the core is set up", async () => {
@@ -725,11 +809,8 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
     const { pending } = await loadOnboarding();
     preferenceState.intent.value = "music_hub";
 
-    // the plugins and the household are optional, but still pending until done
-    expect(pending.value.map((step) => step.id)).toEqual([
-      "plugins",
-      "invite_members",
-    ]);
+    // the household is optional, but still pending until done
+    expect(pending.value.map((step) => step.id)).toEqual(["invite_members"]);
   });
 
   it("asks the server to complete onboarding without a global error toast", async () => {
@@ -991,7 +1072,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       "intent",
       "music_sources",
       "players",
-      "plugins",
       "core_settings",
       "invite_members",
       "finish",
@@ -1101,7 +1181,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
           available: false,
           needsSetup: false,
           icon: null,
-          canToggle: true,
         },
         {
           player_id: "kitchen",
@@ -1112,7 +1191,6 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
           available: true,
           needsSetup: true,
           icon: "speaker",
-          canToggle: true,
         },
       ]);
     });
@@ -1132,12 +1210,33 @@ describe("useOnboarding", { timeout: 20_000 }, () => {
       ).toEqual(["kitchen"]);
     });
 
-    it("cannot switch a player whose provider is not running", async () => {
-      addPlayerConfig({ player_id: "living", provider: "sonos--1" });
-
+    it("lets an admin switch on a player whose provider is not running", async () => {
+      addPlayerConfig({
+        player_id: "living",
+        provider: "sonos--1",
+        enabled: false,
+      });
       const module = await loadOnboardingModule();
+      const mountSwitch = () =>
+        mount(DiscoveredPlayerItem, {
+          props: {
+            player: module.discoveredPlayers()[0],
+            // as the players step decides it
+            canEdit: authMock.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+          },
+          global: { mocks: { $t: (key: string) => key } },
+        }).find("[data-testid=onboarding-player-enabled]");
 
-      expect(module.discoveredPlayers()[0].canToggle).toBe(false);
+      const toggle = mountSwitch();
+      expect(toggle.attributes("disabled")).toBeUndefined();
+      await toggle.trigger("click");
+      expect(setPlayerEnabledMock).toHaveBeenCalledWith("living", true);
+
+      // whoever may not change players can not switch it either
+      authMock.hasScope.mockImplementation(
+        scopeChecker(BUILTIN_ROLE_SCOPES.user),
+      );
+      expect(mountSwitch().attributes("disabled")).toBeDefined();
     });
 
     it("labels a player with the provider it came from", async () => {
