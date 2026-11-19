@@ -212,8 +212,10 @@ export function useMicrophoneProbe() {
     abort = new AbortController();
     const signal = abort.signal;
 
-    const result = startReport();
-    report.value = result;
+    // Read back through the ref: what it hands out is the reactive copy, and a
+    // write to the object that went in would never reach the page.
+    report.value = startReport();
+    const result = report.value;
 
     let context: AudioContext | null = null;
     let wakeLock: ScreenAwake | null = null;

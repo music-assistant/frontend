@@ -64,6 +64,8 @@ export function useCalibrationSession() {
   const owned = ref(false);
 
   let keepalive: ReturnType<typeof setInterval> | null = null;
+  // Counts the stops asked for, so a start can tell one came in while it waited.
+  let stops = 0;
   // Counted rather than flagged: a keep-alive overlapping a user action must not
   // clear the flag while the other command is still in flight.
   const inFlight = ref(0);
@@ -104,6 +106,7 @@ export function useCalibrationSession() {
    * the caller is expected to have warned about first.
    */
   async function start(playerIds: string[], force = false): Promise<boolean> {
+    const stopsBefore = stops;
     const started = await send<CalibrationSessionState>(
       "sendspin_sync/start_session",
       { player_ids: playerIds, force },
@@ -113,6 +116,12 @@ export function useCalibrationSession() {
     state.value = started;
     owned.value = true;
     lost.value = null;
+    if (stops !== stopsBefore) {
+      // The page was left while the server was still taking the speakers. That
+      // stop found nothing to end, so the session it missed is ended here.
+      await stop();
+      return false;
+    }
     startKeepalive();
     return true;
   }
@@ -167,6 +176,7 @@ export function useCalibrationSession() {
    * asked for the one found running to be ended.
    */
   async function stop(adopted = false): Promise<void> {
+    stops++;
     stopKeepalive();
     if (!state.value) return;
     if (!owned.value && !adopted) return;

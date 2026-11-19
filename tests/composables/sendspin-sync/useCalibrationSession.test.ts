@@ -352,6 +352,32 @@ describe("useCalibrationSession", () => {
     expect(callsTo("sendspin_sync/stop_session")).toHaveLength(0);
   });
 
+  it("ends a session whose start was still pending when the page was left", async () => {
+    vi.useFakeTimers();
+    let answerStart: (state: CalibrationSessionState) => void = () => undefined;
+    sendCommand.mockImplementation((command: string) =>
+      command === "sendspin_sync/start_session"
+        ? new Promise((resolve) => (answerStart = resolve))
+        : Promise.resolve(undefined),
+    );
+    const session = withScope(() => useCalibrationSession());
+
+    const starting = session.start(["living", "kitchen"]);
+    // The page goes away: there is no session to end yet, so this ends nothing.
+    await session.stop();
+    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(0);
+
+    answerStart(sessionState());
+
+    // The server took the speakers after all, and nobody is left to give them
+    // back unless the start does it.
+    expect(await starting).toBe(false);
+    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(1);
+    expect(session.state.value).toBeNull();
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(callsTo("sendspin_sync/keep_alive")).toHaveLength(0);
+  });
+
   it("stops the session when its scope goes away", async () => {
     const scope = effectScope();
     const session = scope.run(() => useCalibrationSession())!;

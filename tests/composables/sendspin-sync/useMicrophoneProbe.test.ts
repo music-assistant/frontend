@@ -5,7 +5,7 @@ import {
   type CaptureCheck,
   type MicrophoneProbeReport,
 } from "@/composables/sendspin-sync/useMicrophoneProbe";
-import { effectScope } from "vue";
+import { computed, effectScope } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const SAMPLE_RATE = 48000;
@@ -226,6 +226,29 @@ describe("useMicrophoneProbe", () => {
     const summary = summarizeProbe(probe.report.value!);
     expect(summary.verdict).toBe("blocked");
     expect(summary.checks.voice_processing).toBe("not_evaluated");
+  });
+
+  it("lets the page see what a run found after it started", async () => {
+    let refuse: (reason: unknown) => void = () => undefined;
+    const getUserMedia = vi.fn(
+      () => new Promise<MediaStream>((_resolve, reject) => (refuse = reject)),
+    );
+    stubBrowser({ getUserMedia });
+    const probe = withScope(() => useMicrophoneProbe());
+    // What the page does: read the report through a computed, which only looks
+    // again when something it read says it changed.
+    const refusal = computed(
+      () => probe.report.value?.constraints?.error?.name ?? null,
+    );
+
+    const running = probe.run();
+    await vi.waitFor(() => expect(getUserMedia).toHaveBeenCalled());
+    expect(refusal.value).toBeNull();
+
+    refuse(new DOMException("Denied", "NotAllowedError"));
+    await running;
+
+    expect(refusal.value).toBe("NotAllowedError");
   });
 
   it("reports a refused audio context instead of throwing at the click", async () => {
