@@ -2,7 +2,7 @@ import SettingsOverview from "@/components/settings/SettingsOverview.vue";
 import SettingsSectionLink from "@/components/settings/SettingsSectionLink.vue";
 import {
   availableSettingsSections,
-  type SettingsSection,
+  type SettingsMenuPage,
 } from "@/helpers/settings_sections";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -80,8 +80,8 @@ describe("SettingsOverview as a list", () => {
     expect(
       wrapper
         .findAllComponents(SettingsSectionLink)
-        .map((link) => link.props("section").name),
-    ).toEqual(ADMIN_SECTIONS.map((section) => section.name));
+        .map((link) => link.props("section").key),
+    ).toEqual(ADMIN_SECTIONS.map((section) => section.key));
     expect(
       wrapper.find('[data-testid="settings-marketplace-banner"]').exists(),
     ).toBe(false);
@@ -89,7 +89,7 @@ describe("SettingsOverview as a list", () => {
 });
 
 function mountOverview(
-  sections: readonly SettingsSection[],
+  sections: readonly SettingsMenuPage[],
   viewMode: "list" | "card",
 ) {
   return mount(SettingsOverview, {
@@ -106,5 +106,5 @@ function sectionsOf(
   return wrapper
     .findAllComponents(SettingsSectionLink)
     .filter((link) => link.props("variant") === variant)
-    .map((link) => link.props("section").name);
+    .map((link) => link.props("section").key);
 }

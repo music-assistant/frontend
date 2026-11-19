@@ -217,8 +217,7 @@ describe("Players", () => {
       '[data-testid="settings-page-link-player_support"]',
     );
     expect(JSON.parse(support.attributes("href")!)).toEqual({
-      name: "providersettings",
-      query: { types: "player" },
+      name: "playerproviders",
     });
     expect(support.get('[data-testid="settings-page-state"]').text()).toBe(
       "2 active",

@@ -20,7 +20,7 @@ import { computed } from "vue";
  * page or its tile gives them.
  */
 const props = defineProps<{
-  // the name of the settings section, or the key of a page below one
+  // the key of the page in the settings menu
   name: string | undefined;
 }>();
 

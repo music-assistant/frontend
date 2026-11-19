@@ -31,7 +31,7 @@ vi.mock("vue-i18n", async (importOriginal) => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
-const SETTINGS_ROW = '[data-testid="background-tasks-link-settings"]';
+const SETTINGS_ROW = '[data-testid="background-tasks-link-task_settings"]';
 
 enableAutoUnmount(afterEach);
 

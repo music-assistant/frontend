@@ -107,6 +107,7 @@ import {
   getPlayerSettingsMenuItems,
   removeUnavailablePlayers,
 } from "@/helpers/player_settings_actions";
+import { providerListRoute } from "@/helpers/settings_sections";
 
 import { api } from "@/plugins/api";
 import {
@@ -124,10 +125,7 @@ import { useRouter } from "vue-router";
 import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
 
 // the list of the player providers
-const PLAYER_PROVIDERS_ROUTE = {
-  name: "providersettings",
-  query: { types: ProviderType.PLAYER },
-};
+const PLAYER_PROVIDERS_ROUTE = providerListRoute(ProviderType.PLAYER);
 
 // global refs
 const router = useRouter();

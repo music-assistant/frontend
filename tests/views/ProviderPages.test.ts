@@ -1,4 +1,12 @@
-import { flushPromises, shallowMount } from "@vue/test-utils";
+/**
+ * The settings pages listing providers: the Music hub, and the page listing
+ * the providers of each other type.
+ */
+import {
+  flushPromises,
+  type MountingOptions,
+  shallowMount,
+} from "@vue/test-utils";
 import { ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -20,7 +28,8 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
 import { AUDIO_SOURCES } from "@/helpers/settings_pages";
 import SettingsListPanel from "@/components/settings/SettingsListPanel.vue";
-import Providers from "@/views/settings/Providers.vue";
+import MusicSettings from "@/views/settings/MusicSettings.vue";
+import ProviderListSettings from "@/views/settings/ProviderListSettings.vue";
 import { communityProvider } from "../fixtures/communityProvider";
 import { providerConfig } from "../fixtures/providerConfig";
 import { providerInstance } from "../fixtures/providerInstance";
@@ -38,7 +47,6 @@ const {
   authMock,
   eventbusMock,
   i18nMock,
-  routeMock,
   routerMock,
   storeMock,
   toastMock,
@@ -92,9 +100,6 @@ const {
   // given stay assertable
   i18nMock: {
     $t: vi.fn((key: string) => key),
-  },
-  routeMock: {
-    query: { types: "music" },
   },
   routerMock: {
     push: vi.fn(),
@@ -190,7 +195,6 @@ vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>();
   return {
     ...actual,
-    useRoute: () => routeMock,
     useRouter: () => routerMock,
   };
 });
@@ -252,9 +256,13 @@ beforeEach(() => {
   apiMock.reloadProvider.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
-  routeMock.query.types = "music";
+  pageType = ProviderType.MUSIC;
   storeMock.currentUser = owner;
 });
+
+// the providers of the page a test opens: the Music hub for the music sources,
+// the page of its own for any other type
+let pageType: ProviderType = ProviderType.MUSIC;
 
 describe("Providers", () => {
   it("opens reconfiguration when an authentication-required provider is activated", async () => {
@@ -665,7 +673,7 @@ describe("Providers", () => {
   });
 
   it("hides the access action for a player provider", async () => {
-    routeMock.query.types = "player";
+    pageType = ProviderType.PLAYER;
 
     const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
       type: ProviderType.PLAYER,
@@ -682,7 +690,7 @@ describe("Providers", () => {
 
   it("lists remove as the last menu item, marked as destructive", async () => {
     // a player provider also gets its conditional items, which must stay above
-    routeMock.query.types = "player";
+    pageType = ProviderType.PLAYER;
     apiMock.getProvider.mockReturnValue({
       available: true,
       domain: "spotify",
@@ -710,7 +718,7 @@ describe("Providers", () => {
   });
 
   it("opens the Catalog on the type of the page for an admin", async () => {
-    routeMock.query.types = "player";
+    pageType = ProviderType.PLAYER;
     const wrapper = await mountProviders(ProviderStatus.LOADED);
 
     await wrapper.get('[data-testid="add-provider"]').trigger("click");
@@ -731,7 +739,7 @@ describe("Providers", () => {
   });
 
   it("keeps the filter empty state for a provider type without any provider", async () => {
-    routeMock.query.types = "player";
+    pageType = ProviderType.PLAYER;
 
     const wrapper = await mountWithConfigs([]);
 
@@ -751,7 +759,7 @@ describe("Providers", () => {
   });
 
   it("leaves out a provider with a settings page of its own, and lists the other plugins", async () => {
-    routeMock.query.types = "plugin";
+    pageType = ProviderType.PLUGIN;
 
     const wrapper = await mountWithConfigs([
       providerConfig({
@@ -796,7 +804,7 @@ describe("Providers", () => {
   ])(
     "heads the %s providers with their Marketplace name",
     async (type, heading) => {
-      routeMock.query.types = type;
+      pageType = type;
 
       const wrapper = await mountWithConfigs([
         providerConfig({
@@ -812,7 +820,7 @@ describe("Providers", () => {
   );
 
   it("lists the plugins under their Marketplace name, without a page header", async () => {
-    routeMock.query.types = ProviderType.PLUGIN;
+    pageType = ProviderType.PLUGIN;
 
     const wrapper = await mountWithConfigs([
       providerConfig({
@@ -846,7 +854,7 @@ describe("Providers leading to the settings pages of their section", () => {
   const STATUS_ROW = '[data-testid="settings-page-link-audio_analysis"]';
 
   it("leads the audio analysis providers to the analysis status", async () => {
-    routeMock.query.types = ProviderType.AUDIO_ANALYSIS;
+    pageType = ProviderType.AUDIO_ANALYSIS;
 
     const wrapper = await mountWithLinks();
 
@@ -858,7 +866,7 @@ describe("Providers leading to the settings pages of their section", () => {
   });
 
   it("leaves the row out for a role that may not open the status", async () => {
-    routeMock.query.types = ProviderType.AUDIO_ANALYSIS;
+    pageType = ProviderType.AUDIO_ANALYSIS;
     authMock.hasScope.mockImplementation(
       (scope) => scope !== Scope.SYSTEM_MANAGE,
     );
@@ -886,13 +894,10 @@ describe("Providers leading to the settings pages of their section", () => {
     expect(linkRows(wrapper)).toEqual([
       { key: "library", to: { name: "librarysettings" } },
       { key: "genres", to: { name: "genremanagement" } },
-      {
-        key: "metadata_providers",
-        to: { name: "providersettings", query: { types: "metadata" } },
-      },
+      { key: "metadata_providers", to: { name: "metadataproviders" } },
       {
         key: "audio_analysis_providers",
-        to: { name: "providersettings", query: { types: "audio_analysis" } },
+        to: { name: "audioanalysisproviders" },
       },
     ]);
     expect(wrapper.findAll('[data-testid="settings-page-state"]')).toHaveLength(
@@ -930,7 +935,7 @@ describe("Providers leading to the settings pages of their section", () => {
   ])(
     "leads the %s providers to their %s settings page",
     async (type, pageId, routeName) => {
-      routeMock.query.types = type;
+      pageType = type;
 
       const wrapper = await mountWithLinks();
 
@@ -996,10 +1001,9 @@ describe("Providers on a hub", () => {
     ).toBe("AirPlay Receiver");
     expect(
       wrapper
-        .getComponent<typeof SettingsListPanel>(
-          `[data-list="${AUDIO_SOURCES}"]`,
-        )
-        .props("description"),
+        .findAllComponents(SettingsListPanel)
+        .find((panel) => panel.attributes("data-list") === AUDIO_SOURCES)
+        ?.props("description"),
     ).toBe("settings.audio_sources_description");
   });
 
@@ -1029,7 +1033,7 @@ describe("Providers on a hub", () => {
   });
 
   it("no longer lists a plugin offering audio sources with the plugins", async () => {
-    routeMock.query.types = ProviderType.PLUGIN;
+    pageType = ProviderType.PLUGIN;
 
     const wrapper = await mountWithConfigs([
       withAirplayReceiver(),
@@ -1055,7 +1059,7 @@ describe("Providers on a hub", () => {
     [ProviderType.METADATA, "metadata_providers"],
     [ProviderType.AUDIO_ANALYSIS, "audio_analysis_providers"],
   ])("heads the %s providers as a hub below Music", async (type, name) => {
-    routeMock.query.types = type;
+    pageType = type;
 
     const wrapper = await mountWithConfigs([]);
 
@@ -1065,7 +1069,7 @@ describe("Providers on a hub", () => {
   });
 
   it("gives the player support no header, as it leads to no pages", async () => {
-    routeMock.query.types = ProviderType.PLAYER;
+    pageType = ProviderType.PLAYER;
 
     const wrapper = await mountWithConfigs([]);
 
@@ -1086,6 +1090,86 @@ describe("Providers on a hub", () => {
     expect(wrapper.getComponent(SettingsListPanel).props("viewMode")).toBe(
       "list",
     );
+  });
+});
+
+describe("Providers on the page of a type", () => {
+  const LIST_TYPES = [
+    ProviderType.METADATA,
+    ProviderType.AUDIO_ANALYSIS,
+    ProviderType.PLAYER,
+    ProviderType.PLUGIN,
+  ];
+
+  // a provider of every type on the page lists
+  const oneOfEach = () =>
+    LIST_TYPES.map((type) =>
+      providerConfig({
+        domain: `${type}_provider`,
+        instance_id: `${type}_provider--1`,
+        status: ProviderStatus.LOADED,
+        type,
+      }),
+    );
+
+  it.each(LIST_TYPES)(
+    "lists the %s providers its route hands it, alone",
+    async (type) => {
+      pageType = type;
+
+      const wrapper = await mountWithConfigs(oneOfEach());
+
+      expect(panels(wrapper).map(({ list }) => list)).toEqual([type]);
+      expect(
+        wrapper
+          .findAllComponents(ProviderRowStub)
+          .map((row) => row.props("config").type),
+      ).toEqual([type]);
+    },
+  );
+
+  it("lists another type once its route hands it one", async () => {
+    pageType = ProviderType.PLUGIN;
+    const wrapper = await mountWithConfigs(oneOfEach());
+
+    await wrapper.setProps({ type: ProviderType.PLAYER });
+
+    expect(panels(wrapper).map(({ list }) => list)).toEqual([
+      ProviderType.PLAYER,
+    ]);
+  });
+
+  it("tells an admin about the ones of its type that moved to the community catalog", async () => {
+    pageType = ProviderType.PLAYER;
+    apiMock.getCommunityProviders.mockResolvedValue([
+      communityProvider("radio", {
+        state: CommunityProviderState.INSTALLED,
+        notice: "moved",
+        manifest: providerManifest({
+          domain: "radio",
+          name: "radio",
+          type: ProviderType.MUSIC,
+        }),
+      }),
+      communityProvider("speaker", {
+        state: CommunityProviderState.INSTALLED,
+        notice: "moved",
+        manifest: providerManifest({
+          domain: "speaker",
+          name: "speaker",
+          type: ProviderType.PLAYER,
+        }),
+      }),
+    ]);
+
+    const wrapper = await mountWithConfigs([]);
+
+    expect(
+      wrapper
+        .getComponent(CommunityMovedNotice)
+        .props("providers")
+        .map((provider: { domain: string }) => provider.domain),
+    ).toEqual(["speaker"]);
   });
 });
 
@@ -1164,9 +1248,7 @@ describe("Providers for a member", () => {
     );
   });
 
-  it("lists the music sources it may use, whatever type the route asks for", async () => {
-    routeMock.query.types = "player";
-
+  it("lists the music sources it may use, and no other provider", async () => {
     const wrapper = await mountWithConfigs([
       ownSource(),
       otherSource(),
@@ -1357,8 +1439,7 @@ describe("Providers for a member", () => {
     ).toBe("none");
   });
 
-  it("opens the Catalog on the music sources, whatever type the route names", async () => {
-    routeMock.query.types = "player";
+  it("opens the Catalog on the music sources", async () => {
     const wrapper = await mountWithConfigs([ownSource()]);
 
     await wrapper.get('[data-testid="add-provider"]').trigger("click");
@@ -1779,7 +1860,7 @@ async function mountWithConfigs(
 ) {
   apiMock.getProviderConfigs.mockReturnValue(Promise.resolve(configs));
 
-  const wrapper = shallowMount(Providers, {
+  const wrapper = mountPage({
     global: {
       mocks: {
         $t: (key: string) => key,
@@ -1804,6 +1885,8 @@ async function mountWithConfigs(
         FilterEmptyState: false,
         ItemGroup: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
+        ProviderListPanel: false,
+        ProviderLists: false,
         ProviderRow: ProviderRowStub,
         // the panel holds the list, its heading and its add button
         SettingsListPanel: false,
@@ -1818,7 +1901,7 @@ async function mountWithConfigs(
 // with the rows leading to the settings pages rendered, so they can be read
 async function mountWithLinks() {
   apiMock.getProviderConfigs.mockResolvedValue([]);
-  const wrapper = shallowMount(Providers, {
+  const wrapper = mountPage({
     global: {
       mocks: { $t: (key: string) => key },
       provide: {
@@ -1839,6 +1922,16 @@ async function mountWithLinks() {
   });
   await flushPromises();
   return wrapper;
+}
+
+// the page the test opens, with what its route hands it
+function mountPage(options: { global: MountingOptions<unknown>["global"] }) {
+  return pageType === ProviderType.MUSIC
+    ? shallowMount(MusicSettings, options)
+    : shallowMount(ProviderListSettings, {
+        ...options,
+        props: { type: pageType },
+      });
 }
 
 // the key and target of each row leading to a page below the list

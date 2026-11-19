@@ -1,8 +1,13 @@
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { backFromMediaDetails } from "@/helpers/navigation";
-import { SETTINGS_PAGES } from "@/helpers/settings_pages";
+import {
+  SECTION_PAGES,
+  SETTINGS_SECTIONS,
+  settingsPageRoute,
+} from "@/helpers/settings_sections";
+import { AUDIO_SOURCES } from "@/helpers/settings_pages";
 import { ConnectionState } from "@/plugins/api";
-import { Scope } from "@/plugins/api/interfaces";
+import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { routes } from "@/plugins/router";
 import {
   NavigationFailureType,
@@ -11,6 +16,7 @@ import {
   type NavigationGuardWithThis,
   type NavigationHookAfter,
   type RouteLocationNormalizedLoaded,
+  type RouteLocationRaw,
   type RouteRecordRaw,
   type Router,
   type RouterOptions,
@@ -345,21 +351,51 @@ describe("player settings routes", () => {
 });
 
 describe("settings pages", () => {
-  it.each(Object.entries(SETTINGS_PAGES))(
-    "opens the %s page on a route of the router",
-    (_id, page) => {
-      if (!mocks.router) {
-        throw new Error("The router module did not create a router");
-      }
-      const route = mocks.router.resolve(page.route);
+  it.each(
+    [...SETTINGS_SECTIONS, ...SECTION_PAGES].map((page) => [page.key, page]),
+  )("opens the %s page of the menu on a route of the router", (_key, page) => {
+    if (!mocks.router) {
+      throw new Error("The router module did not create a router");
+    }
+    const route = mocks.router.resolve(page.route);
 
-      expect(route.matched).not.toHaveLength(0);
-      // the row leading to the page shows to whoever may open it
-      if (page.link) {
-        expect(route.meta.requiresScope).toBe(page.link.requiresScope);
-      }
-    },
-  );
+    expect(route.matched).not.toHaveLength(0);
+    // the card or tile leading to the page shows to whoever may open it
+    expect(route.meta.requiresScope).toBe(page.requiresScope);
+  });
+
+  it.each([
+    ["/settings/music", "musicsettings"],
+    ["/settings/music/library", "librarysettings"],
+    ["/settings/music/genres", "genremanagement"],
+    ["/settings/music/metadata", "metadataproviders"],
+    ["/settings/music/metadata/settings", "metadatasettings"],
+    ["/settings/music/audio-analysis", "audioanalysisproviders"],
+    ["/settings/music/audio-analysis/status", "audioanalysissettings"],
+    ["/settings/players/playback", "playbacksettings"],
+    ["/settings/players/support", "playerproviders"],
+    ["/settings/plugins", "pluginproviders"],
+    ["/settings/system/network", "networksettings"],
+    ["/settings/system/network/remote-access", "remoteaccesssettings"],
+    ["/settings/system/storage", "storagesettings"],
+    ["/settings/system/home-assistant", "homeassistantsettings"],
+    ["/settings/system/tasks", "backgroundtasks"],
+    ["/settings/system/tasks/settings", "tasksettings"],
+    ["/settings/system/diagnostics", "diagnostics"],
+  ])("opens %s below the page above it in the menu", (path, name) => {
+    expect(resolveRoute(path).name).toBe(name);
+  });
+
+  it.each([
+    ["/settings/music/metadata", ProviderType.METADATA],
+    ["/settings/music/audio-analysis", ProviderType.AUDIO_ANALYSIS],
+    ["/settings/players/support", ProviderType.PLAYER],
+    ["/settings/plugins", ProviderType.PLUGIN],
+  ])("hands %s the type of the providers it lists", (path, type) => {
+    expect(resolveRoute(path).matched.at(-1)?.props.default).toEqual({
+      type,
+    });
+  });
 
   it("leaves the interface preferences to the profile page", () => {
     expect(mocks.router?.hasRoute("frontendsettings")).toBe(false);
@@ -385,9 +421,9 @@ describe("settings pages", () => {
     if (!mocks.router) {
       throw new Error("The router module did not create a router");
     }
-    const route = mocks.router.resolve(SETTINGS_PAGES.home_assistant.route);
+    const route = mocks.router.resolve(settingsPageRoute("home_assistant"));
 
-    expect(route.path).toBe("/settings/home-assistant");
+    expect(route.path).toBe("/settings/system/home-assistant");
     expect(route.meta.requiresScope).toBe(Scope.CONFIG_PROVIDERS_WRITE);
   });
 
@@ -397,11 +433,75 @@ describe("settings pages", () => {
       if (!mocks.router) {
         throw new Error("The router module did not create a router");
       }
-      const route = mocks.router.resolve(SETTINGS_PAGES[id].route);
+      const route = mocks.router.resolve(settingsPageRoute(id));
 
       expect(route.matched.at(-1)?.props.default).toEqual({ page: id });
     },
   );
+});
+
+describe("earlier addresses of the settings pages", () => {
+  it.each([
+    ["/settings/library", "librarysettings"],
+    ["/settings/genremanagement", "genremanagement"],
+    ["/settings/metadata", "metadatasettings"],
+    ["/settings/audio-analysis", "audioanalysissettings"],
+    ["/settings/playback", "playbacksettings"],
+    ["/settings/network", "networksettings"],
+    ["/settings/remote-access", "remoteaccesssettings"],
+    ["/settings/storage", "storagesettings"],
+    ["/settings/home-assistant", "homeassistantsettings"],
+    ["/settings/tasks", "backgroundtasks"],
+    ["/settings/tasks/settings", "tasksettings"],
+    ["/settings/diagnostics", "diagnostics"],
+  ])("lead %s to its page", (path, name) => {
+    expect(redirectTarget(path)).toMatchObject({ name });
+  });
+
+  it.each([
+    [ProviderType.MUSIC, "musicsettings"],
+    [AUDIO_SOURCES, "musicsettings"],
+    [ProviderType.PLUGIN, "pluginproviders"],
+    [ProviderType.PLAYER, "playerproviders"],
+    [ProviderType.METADATA, "metadataproviders"],
+    [ProviderType.AUDIO_ANALYSIS, "audioanalysisproviders"],
+  ])("lead the %s providers to the page listing them", (type, name) => {
+    expect(redirectTarget(`/settings/providers?types=${type}`)).toEqual({
+      name,
+      query: {},
+    });
+  });
+
+  it.each([
+    "/settings/providers",
+    "/settings/providers?types=bogus",
+    "/settings/providers?types=",
+  ])("lead %s without a known type to the music sources", (path) => {
+    expect(redirectTarget(path)).toEqual({
+      name: "musicsettings",
+      query: {},
+    });
+  });
+
+  it("lead several types to the page of the first one", () => {
+    expect(
+      redirectTarget("/settings/providers?types=player,music"),
+    ).toMatchObject({ name: "playerproviders" });
+  });
+
+  it.each([
+    "/settings/providers?types=music",
+    "/settings/library",
+    "/settings/tasks/settings",
+  ])("lead %s to a route of the router", (path) => {
+    if (!mocks.router) {
+      throw new Error("The router module did not create a router");
+    }
+    const target = mocks.router.resolve(redirectTarget(path));
+
+    expect(target.matched).not.toHaveLength(0);
+    expect(target.matched.at(-1)?.redirect).toBeUndefined();
+  });
 });
 
 describe("global navigation guard", () => {
@@ -546,7 +646,7 @@ describe("global navigation guard", () => {
     mocks.hasScope.mockReturnValue(true);
 
     await expect(
-      invokeGuard(globalGuard, resolveRoute("/settings/providers?types=music")),
+      invokeGuard(globalGuard, resolveRoute("/settings/music")),
     ).resolves.toBeUndefined();
   });
 
@@ -555,7 +655,7 @@ describe("global navigation guard", () => {
     mocks.hasScope.mockReturnValue(true);
 
     await expect(
-      invokeGuard(globalGuard, resolveRoute("/settings/providers?types=music")),
+      invokeGuard(globalGuard, resolveRoute("/settings/music")),
     ).resolves.toBeUndefined();
     expect(mocks.hasScope).toHaveBeenCalledWith("config.providers.read");
   });
@@ -564,7 +664,7 @@ describe("global navigation guard", () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
 
     await expect(
-      invokeGuard(globalGuard, resolveRoute("/settings/providers?types=music")),
+      invokeGuard(globalGuard, resolveRoute("/settings/music")),
     ).resolves.toEqual({ name: "discover" });
   });
 
@@ -633,10 +733,11 @@ describe("scope-gated routes", () => {
   type Role = keyof typeof ROLE_SCOPES;
 
   const ROUTE_ACCESS: [path: string, roles: Role[]][] = [
-    [
-      "/settings/providers?types=music",
-      ["admin", "user", "own_sources", "reads_sources"],
-    ],
+    ["/settings/music", ["admin", "user", "own_sources", "reads_sources"]],
+    ["/settings/music/metadata", ["admin"]],
+    ["/settings/music/audio-analysis", ["admin"]],
+    ["/settings/players/support", ["admin"]],
+    ["/settings/plugins", ["admin"]],
     ["/settings/editprovider/spotify--abc", ["admin", "user", "own_sources"]],
     ["/settings/marketplace?types=music", ["admin", "user", "own_sources"]],
     ["/settings/players", ["admin"]],
@@ -648,19 +749,20 @@ describe("scope-gated routes", () => {
       "/settings/editplayer/player-1/options",
       ["admin", "user", "guest", "own_sources", "reads_sources"],
     ],
+    ["/settings/players/playback", ["admin"]],
     ["/settings/system", ["admin"]],
-    ["/settings/network", ["admin"]],
-    ["/settings/library", ["admin"]],
-    ["/settings/storage", ["admin"]],
-    ["/settings/metadata", ["admin"]],
+    ["/settings/system/network", ["admin"]],
+    ["/settings/music/library", ["admin"]],
+    ["/settings/system/storage", ["admin"]],
+    ["/settings/music/metadata/settings", ["admin"]],
     ["/settings/editcore/radio_tuner", ["admin"]],
-    ["/settings/audio-analysis", ["admin"]],
-    ["/settings/remote-access", ["admin"]],
-    ["/settings/diagnostics", ["admin"]],
-    ["/settings/genremanagement", ["admin"]],
+    ["/settings/music/audio-analysis/status", ["admin"]],
+    ["/settings/system/network/remote-access", ["admin"]],
+    ["/settings/system/diagnostics", ["admin"]],
+    ["/settings/music/genres", ["admin"]],
     ["/settings/users", ["admin"]],
-    ["/settings/tasks", ["admin", "user", "reads_sources"]],
-    ["/settings/tasks/settings", ["admin"]],
+    ["/settings/system/tasks", ["admin", "user", "reads_sources"]],
+    ["/settings/system/tasks/settings", ["admin"]],
     ["/music-quiz", ["admin", "user", "reads_sources"]],
     [
       "/settings/profile",
@@ -917,6 +1019,16 @@ function resolveRoute(fullPath: string): RouteLocationNormalizedLoaded {
     throw new Error("The router module did not create a router");
   }
   return mocks.router.resolve(fullPath) as RouteLocationNormalizedLoaded;
+}
+
+/**
+ * Where the route at a path redirects to.
+ */
+function redirectTarget(fullPath: string): RouteLocationRaw {
+  const route = resolveRoute(fullPath);
+  const redirect = route.matched.at(-1)?.redirect;
+  if (!redirect) throw new Error(`${fullPath} does not redirect`);
+  return typeof redirect === "function" ? redirect(route, route) : redirect;
 }
 
 /**

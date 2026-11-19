@@ -118,7 +118,7 @@ import {
   isScheduledTask,
 } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
-import { SETTINGS_PAGES } from "@/helpers/settings_pages";
+import { sectionPages } from "@/helpers/settings_sections";
 import { copyToClipboard } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
@@ -131,7 +131,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { ListChecks, Settings2, Trash2 } from "@lucide/vue";
+import { ListChecks, Trash2 } from "@lucide/vue";
 import { computed, inject, markRaw, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -159,17 +159,15 @@ const canManageTasks = computed(() =>
 );
 // the settings of the tasks module sit on a page of their own
 const taskSettingsRows = computed<SettingsRow[]>(() =>
-  authManager.hasScope(Scope.CONFIG_CORE_WRITE)
-    ? [
-        {
-          key: "settings",
-          icon: markRaw(Settings2),
-          label: t("background_tasks.settings.title"),
-          description: t("background_tasks.settings.description"),
-          to: SETTINGS_PAGES.task_settings.route,
-        },
-      ]
-    : [],
+  sectionPages("background_tasks", (scope) => authManager.hasScope(scope)).map(
+    (page) => ({
+      key: page.key,
+      icon: markRaw(page.icon),
+      label: t(page.label),
+      description: t(page.description),
+      to: page.route,
+    }),
+  ),
 );
 const {
   loading,

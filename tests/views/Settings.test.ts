@@ -231,17 +231,17 @@ describe("Settings breadcrumbs on the Music pages", () => {
   const MUSIC = {
     title: "settings.music",
     disabled: false,
-    to: { name: "providersettings", query: { types: "music" } },
+    to: { name: "musicsettings" },
   };
   const METADATA = {
     title: "metadata",
     disabled: false,
-    to: { name: "providersettings", query: { types: "metadata" } },
+    to: { name: "metadataproviders" },
   };
   const AUDIO_ANALYSIS = {
     title: "settings.audio_analysis_providers",
     disabled: false,
-    to: { name: "providersettings", query: { types: "audio_analysis" } },
+    to: { name: "audioanalysisproviders" },
   };
 
   beforeEach(() => {
@@ -255,8 +255,8 @@ describe("Settings breadcrumbs on the Music pages", () => {
   });
 
   it("name Music as the page on screen on the music sources", () => {
-    expect(pageTrail("providersettings", {}, { types: "music" })).toEqual([
-      { ...MUSIC, disabled: true },
+    expect(pageTrail("musicsettings")).toEqual([
+      { title: MUSIC.title, disabled: true },
     ]);
   });
 
@@ -268,13 +268,10 @@ describe("Settings breadcrumbs on the Music pages", () => {
   });
 
   it.each([
-    ["metadata", METADATA.title],
-    ["audio_analysis", AUDIO_ANALYSIS.title],
-  ])("hang the %s providers under Music", (type, title) => {
-    expect(pageTrail("providersettings", {}, { types: type })).toEqual([
-      MUSIC,
-      { title, disabled: true },
-    ]);
+    ["metadataproviders", METADATA.title],
+    ["audioanalysisproviders", AUDIO_ANALYSIS.title],
+  ])("hang the %s list under Music", (name, title) => {
+    expect(pageTrail(name)).toEqual([MUSIC, { title, disabled: true }]);
   });
 
   it("hang the metadata settings under the metadata providers", () => {
@@ -392,6 +389,37 @@ describe("Settings breadcrumbs on the System pages", () => {
   });
 });
 
+describe("Settings breadcrumbs on a section of the overview", () => {
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+  });
+
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+  });
+
+  it.each([
+    ["catalog", "settings.catalog.title"],
+    ["pluginproviders", "settings.plugins"],
+    ["playersettings", "settings.players"],
+    ["usersettings", "auth.user_management"],
+    ["systemsettings", "settings.system"],
+    ["aboutsettings", "settings.about"],
+  ])("name %s as the page on screen", (name, title) => {
+    expect(pageTrail(name)).toEqual([{ title, disabled: true }]);
+  });
+
+  it("name the System settings as plain text above the tasks for who may only read them", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+
+    expect(pageTrail("backgroundtasks")).toEqual([
+      { title: "settings.system", disabled: false, to: undefined },
+      { title: "background_tasks.title", disabled: true },
+    ]);
+  });
+});
+
 describe("Settings breadcrumbs on the network pages", () => {
   beforeEach(() => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
@@ -498,9 +526,16 @@ describe("Settings breadcrumbs on the pages below the players", () => {
   });
 
   it("hang the player providers under the players", () => {
-    expect(pageTrail("providersettings", {}, { types: "player" })).toEqual([
+    expect(pageTrail("playerproviders")).toEqual([
       players,
       { title: "settings.playerproviders", disabled: true },
+    ]);
+  });
+
+  it("hang adding a group player under the players", () => {
+    expect(pageTrail("addgroup", { provider: "sonos--kitchen" })).toEqual([
+      players,
+      { title: "settings.add_group_player", disabled: true },
     ]);
   });
 
@@ -516,7 +551,7 @@ describe("Settings breadcrumbs on the pages below the players", () => {
       {
         title: "settings.playerproviders",
         disabled: false,
-        to: { name: "providersettings", query: { types: "player" } },
+        to: { name: "playerproviders" },
       },
       { title: "Sonos", disabled: true },
     ]);
@@ -535,7 +570,7 @@ describe("Settings breadcrumbs on the profile pages", () => {
 
   it("name the profile on its own page", () => {
     expect(pageTrail("profile")).toEqual([
-      { title: "auth.profile", disabled: true, to: { name: "profile" } },
+      { title: "auth.profile", disabled: true },
     ]);
   });
 
@@ -564,6 +599,7 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
     delete apiMock.providerManifests.filesystem_local;
     delete apiMock.providerManifests.essentia;
     delete apiMock.providerManifests.airplay_receiver;
+    delete apiMock.providerManifests.lastfm;
   });
 
   it("lead to the providers of the type of its provider, below Music", async () => {
@@ -576,12 +612,12 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
       {
         title: "settings.music",
         disabled: false,
-        to: { name: "providersettings", query: { types: "music" } },
+        to: { name: "musicsettings" },
       },
       {
         title: "metadata",
         disabled: false,
-        to: { name: "providersettings", query: { types: "metadata" } },
+        to: { name: "metadataproviders" },
       },
       { title: "fanart.tv", disabled: true },
     ]);
@@ -615,9 +651,25 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
       {
         title: "settings.music",
         disabled: false,
-        to: { name: "providersettings", query: { types: "music" } },
+        to: { name: "musicsettings" },
       },
       { title: "AirPlay Receiver", disabled: true },
+    ]);
+  });
+
+  it("lead any other plugin to the plugins", async () => {
+    apiMock.providerManifests.lastfm = {
+      name: "Last.fm",
+      type: ProviderType.PLUGIN,
+    };
+
+    expect(await providerTrail(true, "lastfm--kitchen")).toEqual([
+      {
+        title: "settings.plugins",
+        disabled: false,
+        to: { name: "pluginproviders" },
+      },
+      { title: "Last.fm", disabled: true },
     ]);
   });
 

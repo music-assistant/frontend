@@ -3,7 +3,7 @@ import { isBuiltinProvider } from "@/helpers/provider_config";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import {
   providerListType,
-  providerSettingsPage,
+  providerSettingsPageId,
 } from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
 import {
@@ -189,7 +189,7 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
       return (
         providerListType(item.type, manifest?.features) === type &&
         // a provider with a settings page of its own is managed from that page
-        !providerSettingsPage(item.domain) &&
+        !providerSettingsPageId(item.domain) &&
         // a provider that ships with the server is not a source anyone chose,
         // so a member is not shown it among the sources it may use
         (managesAll || !isBuiltinProvider(manifest))

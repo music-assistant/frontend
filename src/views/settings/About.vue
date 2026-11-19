@@ -422,7 +422,7 @@ import {
 } from "@/components/ui/card";
 import { Item, ItemContent, ItemTitle } from "@/components/ui/item";
 import { useServerTime } from "@/composables/useServerTime";
-import { SETTINGS_PAGES } from "@/helpers/settings_pages";
+import { settingsPageRoute } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -447,7 +447,7 @@ const canEditServerConfig = computed(() =>
 const internalUrl = computed(() => api.serverInfo.value?.internal_url || "");
 
 const openNetworkSettings = () => {
-  router.push(SETTINGS_PAGES.network.route);
+  router.push(settingsPageRoute("network"));
 };
 
 const clockOffsetIsLarge = computed(

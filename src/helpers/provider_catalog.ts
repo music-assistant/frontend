@@ -14,9 +14,11 @@ import {
   AUDIO_SOURCES,
   type ProviderListType,
   providerListType,
-  providerSettingsPage,
 } from "@/helpers/settings_pages";
-import { providerListRoute } from "@/helpers/settings_sections";
+import {
+  providerListRoute,
+  providerOwnPage,
+} from "@/helpers/settings_sections";
 import {
   type CommunityProvider,
   CommunityProviderState,
@@ -409,7 +411,7 @@ export const getTypeSettingsRoute = (
 export const getInstanceSettingsRoute = (
   config: ProviderConfig,
 ): RouteLocationRaw =>
-  providerSettingsPage(config.domain)?.route ?? {
+  providerOwnPage(config.domain)?.route ?? {
     name: "editprovider",
     params: { instanceId: config.instance_id },
   };

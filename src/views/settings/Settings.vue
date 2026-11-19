@@ -64,18 +64,16 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { coreModuleName } from "@/helpers/core_modules";
-import {
-  providerListType,
-  providerSettingsPage,
-  SETTINGS_PAGES,
-} from "@/helpers/settings_pages";
+import { providerListType } from "@/helpers/settings_pages";
 import {
   availableSettingsSections,
-  providerListPage,
-  providerSettingsSectionName,
+  providerListName,
+  providerOwnPage,
+  routeSettingsPage,
+  settingsTrail,
 } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
-import { ProviderType, Scope } from "@/plugins/api/interfaces";
+import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
@@ -244,80 +242,6 @@ useEscapeBack(
   () => !isOverview.value,
 );
 
-// the pages below Music that list no providers
-const MUSIC_ROUTE_NAMES = [
-  "librarysettings",
-  "genremanagement",
-  "metadatasettings",
-  "audioanalysissettings",
-];
-
-// the provider type a list of providers shows: the first one its route names
-const listedType = computed(() => {
-  const typesQuery = router.currentRoute.value.query.types as
-    string | undefined;
-  return typesQuery ? typesQuery.split(",")[0].trim() : undefined;
-});
-
-const activeTab = computed(() => {
-  const name = router.currentRoute.value.name?.toString() || "";
-  if (name.startsWith("profile")) {
-    return "profile";
-  }
-  if (MUSIC_ROUTE_NAMES.includes(name)) {
-    return "music";
-  }
-  if (
-    name.includes("player") ||
-    name.includes("queue") ||
-    name === "addgroup" ||
-    name === "playbacksettings"
-  ) {
-    return "players";
-  }
-  if (
-    name.includes("system") ||
-    name.includes("core") ||
-    name.includes("serverlog") ||
-    name === "backgroundtasks" ||
-    name === "tasksettings" ||
-    name === "diagnostics" ||
-    name === "networksettings" ||
-    name === "remoteaccesssettings" ||
-    name === "homeassistantsettings" ||
-    name === "storagesettings"
-  ) {
-    return "system";
-  }
-  if (name.includes("user")) {
-    return "users";
-  }
-  if (name.includes("about")) {
-    return "about";
-  }
-  // the Catalog carries a types query of its own, for the tab it opens on
-  if (name === "catalog") {
-    return "catalog";
-  }
-
-  const typeSection = providerSettingsSectionName(listedType.value);
-  if (typeSection) return typeSection;
-
-  if (name === "editprovider") {
-    const instanceId = router.currentRoute.value.params.instanceId as string;
-    // the providers with a settings page of their own have it under System
-    if (providerSettingsPage(embeddedProviderDomain(instanceId))) {
-      return "system";
-    }
-    const providerSection = providerSettingsSectionName(
-      providerListOf(instanceId),
-    );
-    if (providerSection) return providerSection;
-  }
-
-  return "music";
-});
-
 // the list the provider of an instance shows in, which its manifest decides so
 // a disabled instance, which is not loaded, shows in the same one
 const providerListOf = function (instanceId: string) {
@@ -326,112 +250,64 @@ const providerListOf = function (instanceId: string) {
   return type && providerListType(type, manifest?.features);
 };
 
-// the crumb of the page below a section listing the providers of a type, a
-// link for whoever may open it
-const providerListCrumbs = function (
-  type: string | undefined,
-): ToolbarHeadingItem[] {
-  const page = providerListPage(type);
-  if (!page) return [];
-  return [
-    {
-      title: t(page.label),
-      disabled: false,
-      to: authManager.hasScope(page.requiresScope) ? page.route : undefined,
-    },
-  ];
+// the page managing the provider of an instance: its own settings page, or the
+// page listing it, the music sources while its type is unknown
+const providerPageOf = function (instanceId: string) {
+  return (
+    providerOwnPage(embeddedProviderDomain(instanceId))?.key ??
+    providerListName(providerListOf(instanceId)) ??
+    "music"
+  );
 };
 
-const breadcrumbItems = computed(() => {
+// the crumbs of a page of the settings menu and the pages above it, each a link
+// for whoever may open it; the page on screen is the last one
+const pageCrumbs = function (
+  key: string,
+  { current = false } = {},
+): ToolbarHeadingItem[] {
+  const trail = settingsTrail(key);
+  return trail.map((page, index) => {
+    if (current && index === trail.length - 1) {
+      return { title: t(page.label), disabled: true };
+    }
+    const mayOpen =
+      !page.requiresScope || authManager.hasScope(page.requiresScope);
+    return {
+      title: t(page.label),
+      disabled: false,
+      to: mayOpen ? page.route : undefined,
+    };
+  });
+};
+
+const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
+  // "Settings" heads the toolbar on its own line, so the trail starts below it
+  if (isOverview.value) return [];
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
+  const page = routeSettingsPage(name);
+  if (page) return pageCrumbs(page.key, { current: true });
+
   // without config.players.write only the player options open, so the crumbs
   // leading to the players and their settings are plain text
   const canConfigurePlayers = authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE);
 
-  // "Settings" heads the toolbar on its own line, so the trail starts below it
-  const items: ToolbarHeadingItem[] = [];
-
-  if (!isOverview.value) {
-    const currentTab = activeTab.value;
-    if (currentTab === "profile") {
-      items.push({
-        title: t("auth.profile"),
-        disabled: name === "profile",
-        to: { name: "profile" },
-      });
-    } else if (currentTab === "players") {
-      items.push({
-        title: t("settings.players"),
-        disabled: name === "playersettings",
-        to: canConfigurePlayers ? { name: "playersettings" } : undefined,
-      });
-    } else if (currentTab === "system") {
-      if (!(
-        name === "backgroundtasks" &&
-        !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
-      )) {
-        items.push({
-          title: t("settings.system"),
-          disabled: name === "systemsettings",
-          to: { name: "systemsettings" },
-        });
-      }
-    } else if (currentTab === "users") {
-      items.push({
-        title: t("settings.users"),
-        disabled: name === "usersettings",
-        to: { name: "usersettings" },
-      });
-    } else if (currentTab === "catalog") {
-      items.push({ title: t("settings.catalog.title"), disabled: true });
-    } else if (currentTab === "music") {
-      items.push({
-        title: t("settings.music"),
-        // the lists of the other provider types below Music share its route
-        disabled:
-          name === "providersettings" && !providerListPage(listedType.value),
-        to: { name: "providersettings", query: { types: "music" } },
-      });
-    } else if (currentTab === "plugin_providers") {
-      items.push({
-        title: t("settings.plugins"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "plugin" } },
-      });
-    } else if (currentTab === "about") {
-      items.push({
-        title: t("settings.about"),
-        disabled: name === "aboutsettings",
-        to: { name: "aboutsettings" },
-      });
-    }
-  }
-
-  match(name)
-    .with("providersettings", () => {
-      const page = providerListPage(listedType.value);
-      if (page) items.push({ title: t(page.label), disabled: true });
-    })
+  return match(name)
     .with("editprovider", () => {
       const instanceId = route.params.instanceId as string;
-      const ownPage = providerSettingsPage(embeddedProviderDomain(instanceId));
-      if (ownPage) {
-        items.push({
-          title: t(ownPage.title),
-          disabled: false,
-          to: ownPage.route,
-        });
-      }
-      items.push(...providerListCrumbs(providerListOf(instanceId)));
-      items.push({
-        title: editedProviderName.value || api.getProviderName(instanceId),
-        disabled: true,
-      });
+      return [
+        ...pageCrumbs(providerPageOf(instanceId)),
+        {
+          title: editedProviderName.value || api.getProviderName(instanceId),
+          disabled: true,
+        },
+      ];
     })
-    .with("addgroup", () => {
-      items.push({ title: t("settings.add_group_player"), disabled: true });
-    })
+    .with("addgroup", () => [
+      ...pageCrumbs("players"),
+      { title: t("settings.add_group_player"), disabled: true },
+    ])
     .with(
       "editplayer",
       "editplayerdsp",
@@ -441,106 +317,40 @@ const breadcrumbItems = computed(() => {
         // a queue is identified by the player id of the player owning it
         const playerId = (route.params.playerId ||
           route.params.queueId) as string;
-        items.push({
-          // a disabled player is never registered, so it has no name to show
-          title: api.players[playerId]?.name || t("settings.player_settings"),
-          disabled: name === "editplayer",
-          to: canConfigurePlayers
-            ? { name: "editplayer", params: { playerId } }
-            : undefined,
-        });
+        const items: ToolbarHeadingItem[] = [
+          ...pageCrumbs("players"),
+          {
+            // a disabled player is never registered, so it has no name to show
+            title: api.players[playerId]?.name || t("settings.player_settings"),
+            disabled: name === "editplayer",
+            to: canConfigurePlayers
+              ? { name: "editplayer", params: { playerId } }
+              : undefined,
+          },
+        ];
         const section = match(name)
           .with("editplayerdsp", () => t("settings.category.dsp"))
           .with("editplayeroptions", () => t("settings.category.options"))
           .with("editqueue", () => t("settings.queue_settings"))
           .otherwise(() => undefined);
         if (section) items.push({ title: section, disabled: true });
+        return items;
       },
     )
     .with("editcore", () => {
       const domain = route.params.domain as string;
-      items.push({
-        title: coreModuleName(
-          domain,
-          (key) => t(key),
-          api.providerManifests[domain]?.name,
-        ),
-        disabled: true,
-      });
-    })
-    .with("diagnostics", () => {
-      items.push({
-        title: t("settings.diagnostics"),
-        disabled: true,
-      });
-    })
-    .with("backgroundtasks", () => {
-      items.push({
-        title: t("background_tasks.title"),
-        disabled: true,
-      });
-    })
-    .with("tasksettings", () => {
-      items.push(
+      return [
+        ...pageCrumbs("system"),
         {
-          title: t("background_tasks.title"),
-          disabled: false,
-          to: { name: "backgroundtasks" },
+          title: coreModuleName(
+            domain,
+            (key) => t(key),
+            api.providerManifests[domain]?.name,
+          ),
+          disabled: true,
         },
-        { title: t(SETTINGS_PAGES.task_settings.title), disabled: true },
-      );
+      ];
     })
-    .with("librarysettings", () => {
-      items.push({ title: t(SETTINGS_PAGES.library.title), disabled: true });
-    })
-    .with("storagesettings", () => {
-      items.push({ title: t("settings.storage.title"), disabled: true });
-    })
-    .with("genremanagement", () => {
-      items.push({ title: t("settings.genre_management"), disabled: true });
-    })
-    .with("metadatasettings", () => {
-      items.push(...providerListCrumbs(ProviderType.METADATA), {
-        title: t(SETTINGS_PAGES.metadata.title),
-        disabled: true,
-      });
-    })
-    .with("playbacksettings", () => {
-      items.push({ title: t(SETTINGS_PAGES.playback.title), disabled: true });
-    })
-    .with("networksettings", () => {
-      items.push({ title: t(SETTINGS_PAGES.network.title), disabled: true });
-    })
-    .with("remoteaccesssettings", () => {
-      const { title, route: pageRoute } = SETTINGS_PAGES.network;
-      items.push({ title: t(title), disabled: false, to: pageRoute });
-      items.push({ title: t("settings.remote_access"), disabled: true });
-    })
-    .with("homeassistantsettings", () => {
-      items.push({
-        title: t(SETTINGS_PAGES.home_assistant.title),
-        disabled: true,
-      });
-    })
-    .with("audioanalysissettings", () => {
-      items.push(...providerListCrumbs(ProviderType.AUDIO_ANALYSIS), {
-        title: t(SETTINGS_PAGES.audio_analysis.title),
-        disabled: true,
-      });
-    })
-    .with("profileinterface", () => {
-      items.push({ title: t("auth.profile_pages.interface"), disabled: true });
-    })
-    .with("profiledevice", () => {
-      items.push({ title: t("auth.profile_pages.device"), disabled: true });
-    })
-    .with("profilesecurity", () => {
-      items.push({ title: t("auth.profile_pages.security"), disabled: true });
-    })
-    .otherwise(() => {
-      return;
-    });
-
-  return items;
+    .otherwise(() => []);
 });
 </script>

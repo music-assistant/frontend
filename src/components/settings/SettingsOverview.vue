@@ -4,7 +4,7 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <SettingsSectionLink
         v-for="section in featuredSections"
-        :key="section.name"
+        :key="section.key"
         :section="section"
         variant="featured"
       />
@@ -14,7 +14,7 @@
     >
       <SettingsSectionLink
         v-for="section in regularSections"
-        :key="section.name"
+        :key="section.key"
         :section="section"
         variant="card"
       />
@@ -25,7 +25,7 @@
     <ItemGroup>
       <SettingsSectionLink
         v-for="section in sections"
-        :key="section.name"
+        :key="section.key"
         :section="section"
         variant="list"
       />
@@ -37,7 +37,7 @@
 import SettingsMarketplaceBanner from "@/components/settings/SettingsMarketplaceBanner.vue";
 import SettingsSectionLink from "@/components/settings/SettingsSectionLink.vue";
 import { ItemGroup } from "@/components/ui/item";
-import type { SettingsSection } from "@/helpers/settings_sections";
+import type { SettingsMenuPage } from "@/helpers/settings_sections";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -48,7 +48,7 @@ import { useI18n } from "vue-i18n";
  */
 const props = defineProps<{
   // the sections the current user may open, in display order
-  sections: readonly SettingsSection[];
+  sections: readonly SettingsMenuPage[];
   viewMode: "list" | "card";
 }>();
 
@@ -58,18 +58,18 @@ const FEATURED_SECTIONS = ["music", "players"];
 const { t } = useI18n();
 
 const marketplace = computed(() =>
-  props.sections.find((section) => section.name === MARKETPLACE_SECTION),
+  props.sections.find((section) => section.key === MARKETPLACE_SECTION),
 );
 
 const featuredSections = computed(() =>
-  props.sections.filter((section) => FEATURED_SECTIONS.includes(section.name)),
+  props.sections.filter((section) => FEATURED_SECTIONS.includes(section.key)),
 );
 
 const regularSections = computed(() =>
   props.sections.filter(
     (section) =>
-      section.name !== MARKETPLACE_SECTION &&
-      !FEATURED_SECTIONS.includes(section.name),
+      section.key !== MARKETPLACE_SECTION &&
+      !FEATURED_SECTIONS.includes(section.key),
   ),
 );
 </script>

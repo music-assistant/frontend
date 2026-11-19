@@ -32,7 +32,7 @@
 import SettingsIcon from "@/components/settings/SettingsIcon.vue";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { SettingsSection } from "@/helpers/settings_sections";
+import type { SettingsMenuPage } from "@/helpers/settings_sections";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
@@ -40,7 +40,7 @@ import { RouterLink } from "vue-router";
  * The Marketplace as a banner across the settings page, inviting to browse it.
  */
 defineProps<{
-  section: SettingsSection;
+  section: SettingsMenuPage;
 }>();
 
 const { t } = useI18n();

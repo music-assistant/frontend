@@ -1349,8 +1349,7 @@ describe("EditProvider", () => {
     const wrapper = await mountSavedProvider();
 
     expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
   });
@@ -1418,8 +1417,7 @@ describe("EditProvider", () => {
     });
 
     expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
   });
 
@@ -1448,8 +1446,7 @@ describe("EditProvider", () => {
 
     // the options are never shown; the member lands back on the list
     expect(routerMock.replace).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(false);
   });
@@ -1625,8 +1622,7 @@ describe("EditProvider actions and sections", () => {
     // unsaved edits have nothing left to save to, so they must not hold the way out
     expect(discardChanges).toHaveBeenCalled();
     expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
   });
 

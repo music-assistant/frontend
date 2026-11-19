@@ -595,7 +595,7 @@ describe("the audio sources", () => {
           "spotify_connect",
         ),
       ),
-    ).toEqual({ name: "providersettings", query: { types: "music" } });
+    ).toEqual({ name: "musicsettings" });
   });
 
   it("are grouped as audio sources among what is set up", () => {
@@ -642,7 +642,7 @@ describe("getManageRoute", () => {
     ];
     expect(
       getManageRoute(entry(buildCatalogEntries(MANIFESTS, configs), "spotify")),
-    ).toEqual({ name: "providersettings", query: { types: "music" } });
+    ).toEqual({ name: "musicsettings" });
   });
 
   it("leads to the settings page of a provider that has one of its own", () => {
