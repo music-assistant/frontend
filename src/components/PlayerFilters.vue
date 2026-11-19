@@ -56,7 +56,7 @@ const providerOptions = computed(() =>
 const playerTypeOptions = computed(() => [
   { label: $t("player_type.player"), value: PlayerType.PLAYER },
   { label: $t("player_type.group"), value: PlayerType.GROUP },
-  { label: $t("player_type.stereo_pair"), value: PlayerType.STEREO_PAIR },
+  { label: $t("player_type.multi_channel"), value: PlayerType.MULTI_CHANNEL },
   { label: $t("player_type.source"), value: PlayerType.SOURCE },
 ]);
 

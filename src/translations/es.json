@@ -644,7 +644,10 @@
             "session_ended_title": "Sesión de configuración finalizada",
             "session_ended_text": "La sesión de configuración finalizó; es posible que se haya completado. Comprueba tus proveedores o reproductores para confirmarlo.",
             "setup_title": "Configurar {0}",
-            "reconfigure_title": "Reconfigurar {0}"
+            "reconfigure_title": "Reconfigurar {0}",
+            "copy": "Copiar",
+            "copy_success": "Copiado al portapapeles",
+            "copy_failed": "Error al copiar al portapapeles"
         },
         "options": "Opciones",
         "server_clock_offset": "Desfase del reloj (servidor frente a este dispositivo)",
@@ -909,7 +912,11 @@
         "provider_community": "Comunidad",
         "provider_community_maintained": "Mantenido por la comunidad",
         "provider_maintained_by": "Mantenido por {maintainers}",
-        "provider_get_help": "Obtener ayuda"
+        "provider_get_help": "Obtener ayuda",
+        "show_letter_index": {
+            "label": "Mostrar índice de la A a la Z",
+            "description": "Añade una barra alfabética a las listas de artistas, álbumes y canciones para que puedas ir directamente a una letra. Solo se muestra cuando la lista está ordenada por nombre y no estás realizando ninguna búsqueda."
+        }
     },
     "show_info": "Mostrar información",
     "show_select_boxes": "Mostar cajas de selección",
@@ -953,7 +960,8 @@
         "random_play_count": "Aleatorio (primero las canciones menos reproducidas)",
         "album_name": "Álbum",
         "sort_by": "Ordenar por",
-        "sort_by_current": "Ordenar por: {0}"
+        "sort_by_current": "Ordenar por: {0}",
+        "release_date": "Fecha de lanzamiento"
     },
     "state": {
         "idle": "inactivo",
@@ -1043,7 +1051,8 @@
         "view_mode_switch": "Vista actual: {0}. Cambiar a {1}",
         "mute": "Silenciar",
         "unmute": "Activar sonido",
-        "view_mode": "Modo de visualización"
+        "view_mode": "Modo de visualización",
+        "view_all_count": "Ver todos los elementos de {name} ({count})"
     },
     "topresult": "Resultados más importantes",
     "track": "Canción",
@@ -1485,7 +1494,6 @@
     "remove_provider_mapping_confirm": "¿Seguro que quieres desvincular esta origen del elemento? Puede volver a aparecer si vuelves a buscar coincidencias en todas los orígenes de música.",
     "map_provider_mapping": "Vincular esta entrada del origen al elemento actual",
     "player_tip": {
-        "selected_player": "Reproductor seleccionado",
         "currently_playing": "Reproduciéndose actualmente en",
         "click_to_change": "Haz clic abajo para cambiar el dispositivo de salida"
     },
@@ -2296,7 +2304,10 @@
         "picker_search": "Buscar {label}",
         "field_folder": "Carpeta",
         "field_folder_is": "La carpeta es",
-        "picker_empty_folder_sources": "No hay ninguna fuente de música con carpetas configurada."
+        "picker_empty_folder_sources": "No hay ninguna fuente de música con carpetas configurada.",
+        "favorites_only": "Solo favoritos",
+        "favorites_exclude": "Excluir favoritos",
+        "favorites_exclude_hint": "Las canciones que te gustan siempre se excluyen, aunque cumplan otra regla."
     },
     "explore": "Explorar",
     "shortcuts": "Accesos directos",
@@ -2437,7 +2448,6 @@
     "grouped_volume": "Volumen agrupado",
     "player_select": {
         "active_player_volume_only": "Mostrar los controles de volumen solo para los reproductores activos",
-        "and_more": "...y {0} más",
         "disable_player_confirmation": "Este reproductor permanecerá oculto hasta que se vuelva a activar en los ajustes del reproductor.",
         "disable_player_title": "¿Desactivar {0}?",
         "display_options": "Opciones de visualización",
@@ -2654,22 +2664,24 @@
         "needs_attention": "Requiere atención.",
         "set_up": "Listo",
         "still_to_do": "Pendiente",
-        "all_done": "Todo lo de la lista está configurado.",
+        "all_done": "Puedes terminar la configuración ahora y añadir más funciones cuando quieras.",
         "players_count": "{count} reproductor | {count} reproductores",
         "run_again": "Volver a ejecutar el asistente de configuración.",
         "steps": {
             "intent": {
-                "title": "Elige cómo quieres usar Music Assistant",
-                "description": "Esto establece qué hace primero Music Assistant. Todo seguirá estando disponible, elijas lo que elijas.",
+                "title": "¿Cómo quieres utilizar Music Assistant?",
+                "description": "Elige por dónde quieres empezar. Puedes utilizar todas las funciones con cualquiera de las dos opciones.",
                 "phone_apps": {
-                    "label": "Desde las aplicaciones de mi teléfono.",
-                    "description": "Transmite contenido desde Spotify, AirPlay y otras aplicaciones a los altavoces de tu hogar."
+                    "label": "Conectar mis aplicaciones de música a mis altavoces",
+                    "description": "Sigue eligiendo música desde aplicaciones como Spotify o utiliza AirPlay. Music Assistant funciona en segundo plano para conectarlas con tus altavoces, sin necesidad de configurar una biblioteca musical.",
+                    "preview": "A continuación, añadiremos tus altavoces, conectaremos tus aplicaciones de música y te mostraremos cómo empezar a escuchar música."
                 },
                 "music_hub": {
-                    "label": "Como mi centro de música.",
-                    "description": "Reúne tus servicios de streaming y tu música local en una sola biblioteca."
+                    "label": "La experiencia completa de Music Assistant",
+                    "description": "Reúne tus servicios de música, tu música local y tus altavoces en un solo lugar. Explora, busca y crea listas de reproducción en Music Assistant. También puedes seguir reproduciendo música desde Spotify Connect y AirPlay.",
+                    "preview": "A continuación, conectaremos tus servicios de música y añadiremos tus altavoces. Después, exploraremos otras funciones."
                 },
-                "settings_note": "Puedes cambiar esto más adelante desde los ajustes."
+                "summary_title": "Tu elección de configuración"
             },
             "music_sources": {
                 "title": "Añadir orígenes de música",
@@ -2688,16 +2700,20 @@
             },
             "plugins": {
                 "title": "Añadir complementos",
-                "description": "Los complementos añaden funciones adicionales a Music Assistant, como Party, Spotify Connect y un receptor AirPlay. Siempre puedes añadirlos más adelante."
+                "description": "Los complementos añaden funciones adicionales a Music Assistant, como Party, Spotify Connect y un receptor AirPlay. Siempre puedes añadirlos más adelante.",
+                "phone_apps_title": "Conecta tus aplicaciones de música",
+                "phone_apps_description": "Añade Spotify Connect o el receptor AirPlay y, a continuación, abre sus ajustes para elegir tus altavoces. Aquí también tienes disponibles otros complementos.",
+                "connect": "Conectar una aplicación de música"
             },
             "finish": {
                 "title": "Finalizar configuración",
-                "description": "Buen trabajo configurándolo todo. Aquí tienes un breve resumen, y puedes cambiar cualquiera de estas opciones más adelante desde los ajustes."
+                "description": "Buen trabajo configurándolo todo. Aquí tienes un breve resumen, y puedes cambiar cualquiera de estas opciones más adelante desde los ajustes.",
+                "phone_apps_description": "Aquí tienes un resumen de tus altavoces y de las conexiones con tus aplicaciones. Más adelante podrás añadir una biblioteca musical y otras funciones desde los ajustes."
             },
             "core_settings": {
-                "title": "Comprueba la configuración de tu servidor",
+                "title": "Acceder a Music Assistant",
                 "load_failed": "No se pudieron cargar los ajustes del servidor. Puedes cambiarlos más tarde desde los ajustes.",
-                "intro": "Las direcciones que Music Assistant está utilizando ahora mismo. Se calculan automáticamente y normalmente son correctas, así que puedes continuar sin más.",
+                "intro": "Music Assistant funciona automáticamente en tu red doméstica. Configura el acceso remoto si también quieres escuchar música cuando estés fuera de casa.",
                 "internal_address": "Dirección interna",
                 "internal_address_hint": "Desde dónde acceden a Music Assistant las aplicaciones y dispositivos de tu casa.",
                 "stream_address": "Dirección del servidor de streaming",
@@ -2728,7 +2744,8 @@
                         "description": "Ejecuta un proxy inverso delante del servidor e introduce como dirección externa la dirección desde la que se puede acceder a él desde fuera.",
                         "set_external": "Establecer la dirección externa"
                     }
-                }
+                },
+                "network_details": "Detalles de la red"
             },
             "invite_members": {
                 "title": "Añadir usuarios",
@@ -2800,7 +2817,12 @@
         "pause": "Pausar configuración",
         "dismiss": "Descartar",
         "music_sources_count": "{count} origen de música | {count} orígenes de música",
-        "plugins_count": "{count} complemento | {count} complementos"
+        "plugins_count": "{count} complemento | {count} complementos",
+        "continue": "Continuar",
+        "explore_more": "Explorar más",
+        "listen_from_apps": "Prueba a reproducir música desde tus aplicaciones",
+        "spotify_connect_hint": "En los ajustes de Spotify Connect, elige los altavoces que quieras utilizar. Después, abre el selector de dispositivos de Spotify y selecciona uno de esos altavoces.",
+        "airplay_receiver_hint": "En los ajustes del receptor AirPlay, elige los altavoces que quieras utilizar. Después, abre el selector de audio AirPlay en tu dispositivo Apple y selecciona el receptor correspondiente a tus altavoces."
     },
     "share_playlist": "Compartir lista de reproducción.",
     "playlist_access": {
@@ -2839,10 +2861,6 @@
         "end": "Finalizar el recorrido",
         "next": "Siguiente",
         "step_counter": "{current} de {total}",
-        "offer": {
-            "title": "¿Quieres echar un vistazo rápido?",
-            "description": "Un breve recorrido señala las partes principales de la aplicación. Puedes volver a hacerlo en cualquier momento desde el menú de tu perfil."
-        },
         "stops": {
             "menu": {
                 "title": "El menú",
@@ -3086,5 +3104,26 @@
         "title": "¿Reproducir aquí en su lugar?",
         "message": "{0} ya se está reproduciendo en {1}. Solo puede reproducirse en un reproductor a la vez.",
         "stop_and_play_here": "Detener la reproducción allí y reproducir aquí"
-    }
+    },
+    "discography_first_row": "Discografía (primera fila)",
+    "discography_second_row": "Discografía (segunda fila)",
+    "discography_types_summary": "{first} +{count}",
+    "album_type_plural": {
+        "album": "Álbumes",
+        "single": "Sencillos",
+        "ep": "EP",
+        "compilation": "Recopilatorios",
+        "live": "En directo",
+        "soundtrack": "Bandas sonoras"
+    },
+    "sleep_timer_end_of_chapter": "Fin del capítulo",
+    "sleep_timer_end_of_item": {
+        "track": "Fin de la canción",
+        "podcast_episode": "Fin del episodio",
+        "audiobook": "Fin del audiolibro",
+        "other": "Fin del elemento actual"
+    },
+    "collection_refresh_failed": "No se ha podido actualizar el estado de reproducción de la colección",
+    "alphabet_jump": "Ir a la letra",
+    "view_all_count": "Ver todos ({count})"
 }

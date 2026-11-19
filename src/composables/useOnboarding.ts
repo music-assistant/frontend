@@ -8,6 +8,7 @@ import {
   useUserPreferences,
 } from "@/composables/userPreferences";
 import { EXPERT_MODE_PREFERENCE, expertModeOf } from "@/helpers/expert_mode";
+import { HASS_DOMAIN } from "@/helpers/hass_controls";
 import {
   applicableSteps,
   pendingSteps,
@@ -28,6 +29,7 @@ import {
   userDisplayName,
 } from "@/helpers/provider_access";
 import {
+  isAudioSourcePlugin,
   isBuiltinProvider,
   providerDisplayName,
 } from "@/helpers/provider_config";
@@ -37,6 +39,7 @@ import { ApiCommandError } from "@/plugins/api/errors";
 import {
   EventType,
   PlayerType,
+  ProviderType,
   Scope,
   UserRole,
   type EventMessage,
@@ -44,7 +47,6 @@ import {
   type PlayerConfig,
   type ProviderConfig,
   type ProviderStatus,
-  type ProviderType,
   type User,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -78,8 +80,6 @@ export interface DiscoveredPlayer {
   available: boolean;
   needsSetup: boolean;
   icon: string | null;
-  // switching it on or off takes its provider, which has to be running
-  canToggle: boolean;
 }
 
 /** A household member the wizard lists, built from their user account. */
@@ -329,6 +329,13 @@ export function configuredProviders(type: ProviderType): ConfiguredProvider[] {
     }));
 }
 
+/** The plugins the user set up that let an app play to Music Assistant. */
+export function configuredAudioSourcePlugins(): ConfiguredProvider[] {
+  return configuredProviders(ProviderType.PLUGIN).filter((provider) =>
+    isAudioSourcePlugin(api.providerManifests[provider.domain]),
+  );
+}
+
 // what a player of a builtin provider was last labelled with while it was
 // registered: switching it off unregisters it, and its outputs with it
 const lastPlayerLabels = new Map<string, string>();
@@ -402,7 +409,6 @@ export function discoveredPlayers(): DiscoveredPlayer[] {
         available: player?.available ?? false,
         needsSetup: player?.needs_setup ?? false,
         icon: player?.icon ?? null,
-        canToggle: config.provider in api.providers,
       };
     })
     .sort((one, other) => one.name.localeCompare(other.name));
@@ -475,11 +481,16 @@ const ctx = computed<OnboardingContext>(() => ({
     domain: config.domain,
     builtin: isBuiltinProvider(api.providerManifests[config.domain]),
     enabled: config.enabled,
+    audioSource: isAudioSourcePlugin(api.providerManifests[config.domain]),
   })),
   // the players switched on, as the players step lists them; only the
   // summary's "2 players" label reads this, as whether the step is done keys
   // off a configured PLAYER provider, not off players turning up
   playerCount: listedPlayerConfigs().filter((config) => config.enabled).length,
+  homeAssistantAddon: !!api.serverInfo.value?.homeassistant_addon,
+  homeAssistantConfigured: (providerConfigs.value ?? []).some(
+    (config) => config.domain === HASS_DOMAIN,
+  ),
   // `null` while the users are unknown, which is not the same as an empty
   // household: the invite step is then simply not done
   memberCount: users.value == null ? null : householdMembers().length,

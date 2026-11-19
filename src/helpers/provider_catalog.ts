@@ -7,6 +7,7 @@ import {
 import { isSelfServiceProvider } from "@/helpers/provider_access";
 import {
   getProviderMaintainers,
+  isAudioSourcePlugin,
   isBuiltinProvider,
 } from "@/helpers/provider_config";
 import {
@@ -87,6 +88,8 @@ export interface AddRestrictions {
   multiInstanceOnly?: boolean;
   // only providers that a member may set up itself
   selfServiceOnly?: boolean;
+  // only the plugins that let an app play to Music Assistant
+  audioSourceOnly?: boolean;
 }
 
 /** What a user who does not manage every provider may add: a music source of its own. */
@@ -150,7 +153,8 @@ export const isOfferable = (
   isCatalogType(manifest.type) &&
   (!restrictions.types || restrictions.types.includes(manifest.type)) &&
   (!restrictions.multiInstanceOnly || manifest.multi_instance) &&
-  (!restrictions.selfServiceOnly || isSelfServiceProvider(manifest));
+  (!restrictions.selfServiceOnly || isSelfServiceProvider(manifest)) &&
+  (!restrictions.audioSourceOnly || isAudioSourcePlugin(manifest));
 
 /**
  * The Catalog entries for the offerable providers, alphabetically by name: one
@@ -287,6 +291,10 @@ export const sortPopularFirst = (
     if (aRank !== bRank) return aRank - bRank;
     return compareNames(a.manifest.name, b.manifest.name);
   });
+
+/** Compares two names as the Catalog sorts them, ignoring case and accents. */
+export const compareNames = (a: string, b: string): number =>
+  a.localeCompare(b, undefined, { sensitivity: "base" });
 
 /**
  * How many entries a list shows at first, and how many more each time after: a
@@ -428,8 +436,4 @@ export const getMaintainerProfileUrl = (handle: string) =>
 function popularRank(popular: readonly string[], domain: string): number {
   const index = popular.indexOf(domain);
   return index === -1 ? popular.length : index;
-}
-
-function compareNames(a: string, b: string): number {
-  return a.localeCompare(b, undefined, { sensitivity: "base" });
 }

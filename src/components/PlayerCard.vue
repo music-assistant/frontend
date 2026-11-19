@@ -62,7 +62,7 @@
               v-else
               :icon="player.icon"
               :grouped="
-                player.type === PlayerType.PLAYER &&
+                isSpeakerPlayer(player) &&
                 player.group_members.some(
                   (playerId) => playerId !== player.player_id,
                 )
@@ -235,6 +235,7 @@ import {
   getPlayerName,
   getPlayerSetupReason,
   isBuiltinPlayer,
+  isSpeakerPlayer,
 } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { getMediaImageUrl } from "@/helpers/utils";

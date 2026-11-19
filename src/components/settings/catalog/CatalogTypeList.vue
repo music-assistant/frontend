@@ -25,6 +25,7 @@
           :key="entry.manifest.domain"
           :entry="entry"
           :installing="installing.has(entry.manifest.domain)"
+          :badge="getBadgeLabel(entry)"
           @open="emit('open', entry)"
           @add="emit('add', entry)"
         />
@@ -81,6 +82,11 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
+  type CatalogBadge,
+  getReleaseLine,
+  sortSuggestedFirst,
+} from "@/helpers/catalog_recommendations";
+import {
   ADDABLE_PROVIDER_STAGES,
   CATALOG_PAGE_SIZE,
   type CatalogEntry,
@@ -89,6 +95,7 @@ import {
   getTypeSettingsRoute,
 } from "@/helpers/provider_catalog";
 import { getProviderStageTranslationKey } from "@/helpers/provider_config";
+import { api } from "@/plugins/api";
 import { $t } from "@/plugins/i18n";
 import { ChevronRight, SearchX } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -103,6 +110,8 @@ interface Props {
   type?: CatalogType;
   // the domains being installed from the community catalog
   installing: ReadonlySet<string>;
+  // why an entry is suggested, by its domain; these lead the list
+  badges: ReadonlyMap<string, CatalogBadge>;
 }
 
 const props = defineProps<Props>();
@@ -124,13 +133,26 @@ const stageOptions = computed(() =>
 );
 
 const matches = computed(() =>
-  filterCatalogEntries(props.entries, {
-    query: props.query,
-    stages: stages.value,
-  }),
+  sortSuggestedFirst(
+    filterCatalogEntries(props.entries, {
+      query: props.query,
+      stages: stages.value,
+    }),
+    props.badges,
+  ),
 );
 
 const shown = computed(() => matches.value.slice(0, limit.value));
+
+// the release line of the server, which names what is new in it
+const releaseLine = computed(() =>
+  getReleaseLine(api.serverInfo.value?.server_version ?? ""),
+);
+
+const getBadgeLabel = (entry: CatalogEntry) => {
+  const badge = props.badges.get(entry.manifest.domain);
+  return badge ? $t(badge.label, { version: releaseLine.value }) : undefined;
+};
 
 // another search or filter starts again at the first page
 watch([() => props.query, stages], () => {

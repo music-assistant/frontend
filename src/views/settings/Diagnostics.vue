@@ -1,7 +1,7 @@
 <template>
-  <div class="flex h-full flex-col p-6 pb-40">
-    <UnsupportedInstallBanner class="mb-4 shrink-0" />
-    <Card class="flex flex-1 flex-col gap-0 overflow-hidden py-0 min-h-0">
+  <div class="flex flex-col gap-6 p-6 pb-40">
+    <UnsupportedInstallBanner />
+    <Card class="gap-0 overflow-hidden py-0">
       <CardHeader class="shrink-0 border-b px-6 py-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2">
@@ -68,6 +68,9 @@
         </template>
       </CardContent>
     </Card>
+
+    <CoreLogLevelsForm />
+    <SettingsPageForm page="diagnostics" embedded />
   </div>
 </template>
 
@@ -76,6 +79,8 @@ import { AlertCircle, Download, RefreshCw, Stethoscope } from "@lucide/vue";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
+import CoreLogLevelsForm from "@/components/settings/CoreLogLevelsForm.vue";
+import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";

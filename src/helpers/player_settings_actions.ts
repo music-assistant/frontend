@@ -1,17 +1,21 @@
 // Everything that can be done to a player from the settings surfaces: the menu on the
 // players list and the menu on the player settings page itself. Both build their menu
 // from here so the two never drift apart. The menu of a player that still needs setup
-// lives here too, as managing it is all such a player has to offer.
+// lives here too, as managing it is all such a player has to offer. So does the menu of
+// each output on the player settings page.
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getPlayerName } from "@/helpers/player_config";
+import { getSplittableProtocols } from "@/helpers/player_merge";
 import { getPlayerSetupMenuItem } from "@/helpers/player_menu_items";
 import { isSelectablePlayer } from "@/helpers/players";
 import { openLinkInNewTab } from "@/helpers/utils";
 import { setUserPreference } from "@/composables/userPreferences";
 import { api } from "@/plugins/api";
 import {
+  OutputProtocol,
   Player,
   PlayerConfig,
+  PlayerProtocolInfo,
   PlayerType,
   Scope,
 } from "@/plugins/api/interfaces";
@@ -26,10 +30,12 @@ import {
   CircleOff,
   Cog,
   ListMusic,
+  Merge,
   Pencil,
   Power,
   Settings,
   SlidersHorizontal,
+  Split,
   Trash2,
 } from "@lucide/vue";
 import { markRaw } from "vue";
@@ -41,6 +47,13 @@ export interface PlayerSettingsMenuOptions {
   includeSections?: boolean;
   // called once the player is gone, so its settings page can leave
   onDeleted?: () => void;
+  // called with the id of the player it was merged into
+  onMerged?: (targetPlayerId: string) => void;
+}
+
+export interface OutputMenuOptions {
+  // called once the output is split off as a player of its own
+  onSplitOff?: () => void;
 }
 
 /** Which settings sections a player has something to show for. */
@@ -56,7 +69,7 @@ export const getPlayerSettingsSections = (playerId: string) => {
 
 /**
  * Menu entries acting on a player: its settings sections, renaming, (re)configuring,
- * enabling and removing it.
+ * merging it into another player, enabling and removing it.
  */
 export const getPlayerSettingsMenuItems = (
   config: PlayerConfig,
@@ -126,6 +139,17 @@ export const getPlayerSettingsMenuItems = (
       disabled: !manifest?.documentation,
     },
     {
+      label: "settings.merge_player",
+      action: () =>
+        eventbus.emit("playerMergeDialog", {
+          playerId,
+          playerName: getPlayerName(config),
+          onMerged: options.onMerged,
+        }),
+      icon: markRaw(Merge),
+      hide: config.player_type === PlayerType.GROUP,
+    },
+    {
       label: config.enabled ? "settings.disable" : "settings.enable",
       action: () => {
         if (!config.enabled) {
@@ -149,6 +173,37 @@ export const getPlayerSettingsMenuItems = (
       color: "error",
     },
   );
+
+  return menuItems;
+};
+
+/**
+ * Menu entries acting on one output of a player: splitting it off as a player of its
+ * own. Empty when there is nothing to do with the output.
+ */
+export const getOutputMenuItems = (
+  config: PlayerConfig,
+  output: OutputProtocol,
+  options: OutputMenuOptions = {},
+): ContextMenuItem[] => {
+  const player = api.players[config.player_id];
+  // a player holds one protocol of each domain; the domain also finds the protocol of
+  // the native output, whose id is "native" rather than that of its protocol
+  const protocol = player
+    ? getSplittableProtocols(player).find(
+        (candidate) => candidate.domain === output.protocol_domain,
+      )
+    : undefined;
+  const menuItems: ContextMenuItem[] = [];
+
+  if (protocol) {
+    menuItems.push({
+      label: "settings.split_off_output",
+      action: () =>
+        confirmSplitOff(protocol, getPlayerName(config), options.onSplitOff),
+      icon: markRaw(Split),
+    });
+  }
 
   return menuItems;
 };
@@ -238,6 +293,37 @@ export const removeUnavailablePlayers = async (
 };
 
 /**
+ * Merge a player into another one, and say whether the merge landed. The player
+ * bar follows to the player that stays.
+ *
+ * @param playerId The player that goes.
+ * @param targetPlayerId The player that stays.
+ */
+export const mergePlayer = async (
+  playerId: string,
+  targetPlayerId: string,
+): Promise<boolean> => {
+  try {
+    await api.mergePlayers(playerId, targetPlayerId);
+  } catch {
+    // a failed command is already reported by the api layer, with the
+    // server's reason why the two can not be one player
+    return false;
+  }
+  if (store.activePlayerId === playerId) {
+    store.activePlayerId = targetPlayerId;
+    void setUserPreference("activePlayerId", targetPlayerId);
+  }
+  toast.success($t("settings.player_merged"));
+  return true;
+};
+
+/** The name of an output of a player, such as "AirPlay". */
+export const getOutputName = (
+  protocol: Pick<PlayerProtocolInfo, "domain">,
+): string => api.getProviderManifest(protocol.domain)?.name ?? protocol.domain;
+
+/**
  * Switch a player on or off, and say whether the change landed. Switching off
  * the player the player bar points at hands the bar to another player.
  */
@@ -279,6 +365,33 @@ function openPlayerRenameDialog(config: PlayerConfig) {
     playerId: config.player_id,
     name: config.name,
     defaultName: config.default_name,
+  });
+}
+
+function confirmSplitOff(
+  protocol: PlayerProtocolInfo,
+  playerName: string,
+  onSplitOff?: () => void,
+) {
+  const outputName = getOutputName(protocol);
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("settings.split_off_output_title", [outputName, playerName]),
+    message: $t("settings.split_off_output_confirmation", [
+      outputName,
+      playerName,
+    ]),
+    confirmLabel: $t("settings.split_off"),
+    destructive: false,
+    onConfirm: async () => {
+      try {
+        await api.unlinkProtocol(protocol.protocol_id);
+      } catch {
+        // a failed command is already reported by the api layer
+        return;
+      }
+      toast.success($t("settings.output_split_off", [outputName]));
+      onSplitOff?.();
+    },
   });
 }
 

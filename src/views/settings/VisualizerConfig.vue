@@ -50,6 +50,7 @@
           </div>
           <Switch
             :model-value="enabledPref"
+            :aria-label="$t('settings.visualizer_enabled.label')"
             @update:model-value="
               (v: boolean) => setPref('visualizer_enabled', v)
             "
@@ -71,7 +72,10 @@
               (v: unknown) => setPref('visualizer_quality', String(v))
             "
           >
-            <SelectTrigger class="w-full shrink-0 sm:w-56">
+            <SelectTrigger
+              class="w-full shrink-0 sm:w-56"
+              :aria-label="$t('visualizer.quality')"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -115,7 +119,6 @@
           :default-value="VISUALIZER_PALETTE_RAMP_DEFAULT"
           :label="$t('visualizer.palette_ramp')"
           :description="$t('visualizer.palette_ramp_description')"
-          :aria-label="$t('visualizer.palette_ramp')"
           :min="0"
           :max="100"
           :step="VISUALIZER_PALETTE_RAMP_STEP"
@@ -189,7 +192,10 @@
               (v: unknown) => setPref('visualizer_preset_mode', String(v))
             "
           >
-            <SelectTrigger class="w-full shrink-0 sm:w-56">
+            <SelectTrigger
+              class="w-full shrink-0 sm:w-56"
+              :aria-label="$t('visualizer.preset_mode')"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -215,7 +221,10 @@
             :model-value="presetPref || undefined"
             @update:model-value="(v: unknown) => selectFixedPreset(String(v))"
           >
-            <SelectTrigger class="w-full shrink-0 sm:w-72">
+            <SelectTrigger
+              class="w-full shrink-0 sm:w-72"
+              :aria-label="$t('visualizer.fixed_preset')"
+            >
               <SelectValue :placeholder="$t('visualizer.preset_random')" />
             </SelectTrigger>
             <SelectContent class="w-[var(--reka-select-trigger-width)]">
@@ -269,6 +278,7 @@
           </div>
           <Switch
             :model-value="beatSwitchPref"
+            :aria-label="$t('visualizer.beat_switch')"
             @update:model-value="
               (v: boolean) => setPref('visualizer_beat_switch', v)
             "

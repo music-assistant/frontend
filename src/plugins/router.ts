@@ -1,7 +1,12 @@
+import {
+  AUDIOBOOK_ARTIST_LISTING_ROUTE,
+  AUDIOBOOK_ARTIST_ROUTE,
+} from "@/helpers/author_narrator";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { returnedByHistory } from "@/helpers/navigation";
+import type { SettingsPageId } from "@/helpers/settings_pages";
 import { parseStatisticsPeriod } from "@/helpers/statistics_period";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
@@ -436,6 +441,33 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
           },
+          // authors and narrators keep the audiobooks section active; the role
+          // only names the page, the views get no role prop
+          {
+            path: ":role(authors|narrators)/:provider/:itemId",
+            name: AUDIOBOOK_ARTIST_ROUTE,
+            component: () =>
+              import(
+                /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
+              ),
+            props: (route: { params: Record<string, string> }) => ({
+              provider: route.params.provider,
+              itemId: route.params.itemId,
+            }),
+          },
+          {
+            path: ":role(authors|narrators)/:provider/:itemId/:listing",
+            name: AUDIOBOOK_ARTIST_LISTING_ROUTE,
+            component: () =>
+              import(
+                /* webpackChunkName: "artistlisting" */ "@/views/ArtistListing.vue"
+              ),
+            props: (route: { params: Record<string, string> }) => ({
+              provider: route.params.provider,
+              itemId: route.params.itemId,
+              listing: route.params.listing,
+            }),
+          },
         ],
       },
       {
@@ -535,6 +567,16 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
           },
           {
+            path: "library",
+            name: "librarysettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "librarysettings" */ "@/views/settings/LibrarySettings.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
             path: "storage",
             name: "storagesettings",
             component: () =>
@@ -557,6 +599,26 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
+            path: "playback",
+            name: "playbacksettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
+              ),
+            props: { page: "playback" satisfies SettingsPageId },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
+            path: "metadata",
+            name: "metadatasettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
+              ),
+            props: { page: "metadata" satisfies SettingsPageId },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
             path: "system",
             name: "systemsettings",
             component: () =>
@@ -565,6 +627,16 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
             // members read core settings, the server settings pages change them
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
+            path: "network",
+            name: "networksettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "networksettings" */ "@/views/settings/NetworkSettings.vue"
+              ),
+            props: true,
             meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
@@ -634,6 +706,16 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
             meta: { requiresScope: Scope.SYSTEM_READ },
+          },
+          {
+            path: "tasks/settings",
+            name: "tasksettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
+              ),
+            props: { page: "task_settings" satisfies SettingsPageId },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
             path: "genremanagement",

@@ -157,8 +157,7 @@
               {{
                 $t("onboarding.steps.core_settings.override_hint", {
                   system: $t("settings.system"),
-                  webserver: $t("settings.core_module.webserver.name"),
-                  streams: $t("settings.core_module.streams.name"),
+                  network: $t("settings.network.title"),
                 })
               }}
             </p>

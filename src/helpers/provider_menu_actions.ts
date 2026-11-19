@@ -95,7 +95,13 @@ export const getProviderMenuItems = (
     );
 };
 
-function isPlainIconName(icon: string | null): icon is string {
+/**
+ * Whether an icon a manifest declares is a plain material design icon name,
+ * which is all the app draws from a manifest.
+ *
+ * @param icon - The icon the manifest declares, if any.
+ */
+export function isPlainIconName(icon: string | null): icon is string {
   return !!icon && icon.length <= MAX_ICON_LENGTH && ICON_PATTERN.test(icon);
 }
 

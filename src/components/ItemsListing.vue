@@ -539,8 +539,7 @@ import { useListingSaves } from "@/composables/useListingSaves";
 import { useListingWindow } from "@/composables/useListingWindow";
 import { useTopListingRow } from "@/composables/useTopListingRow";
 import { useCurrentLetter } from "@/composables/useCurrentLetter";
-import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
-import { useTrackReorderRows } from "@/composables/useTrackReorderRows";
+import { usePlaylistTrackReorder } from "@/composables/usePlaylistTrackReorder";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -575,6 +574,7 @@ import {
   providerServiceName,
 } from "@/plugins/api/helpers";
 import {
+  ArtistType,
   EventMessage,
   EventType,
   ItemMapping,
@@ -1653,8 +1653,6 @@ const canDragTracks = computed(
     displayedSort.value.sortField === SortField.POSITION &&
     displayedSort.value.sortDirection !== SortDirection.DESC &&
     !hasActiveFilters.value &&
-    // a move made while reconnecting could not be saved nor read back
-    canSavePlaylistMoves() &&
     listsPlaylistFromStart(pagedItems.value),
 );
 const trackRowColumns = computed<TrackColumn[]>(() =>
@@ -1681,7 +1679,7 @@ const {
   draggedCount,
   rowDragStyle: trackRowDragStyle,
   rowDragClass: trackRowDragClass,
-} = useTrackReorderRows({
+} = usePlaylistTrackReorder({
   listEl: listRowsEl,
   items: pagedItems,
   // albums re-read their rows the same way, but only a playlist's edits are held
@@ -1858,6 +1856,13 @@ const musicProviders = computed(() => {
         return provider.available;
       }
       if (provider.type !== ProviderType.MUSIC) return false;
+      // audiobook providers offer artists as authors/narrators only
+      if (
+        props.itemtype === "artists" &&
+        !provider.supported_artist_types.includes(ArtistType.SINGER)
+      ) {
+        return false;
+      }
       // If we have required feature(s) for this itemtype, filter by them
       if (requiredFeatures) {
         return requiredFeatures.some((feature) =>

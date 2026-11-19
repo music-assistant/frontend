@@ -55,7 +55,7 @@
       <nav v-else :aria-label="t('settings.settings')">
         <ItemGroup>
           <SettingsSectionLink
-            v-for="section in listSections"
+            v-for="section in settingsSections"
             :key="section.name"
             :section="section"
             variant="list"
@@ -96,7 +96,12 @@ import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
-import { availableSettingsSections } from "@/helpers/settings_sections";
+import { coreModuleName } from "@/helpers/core_modules";
+import { SETTINGS_PAGES } from "@/helpers/settings_pages";
+import {
+  availableSettingsSections,
+  providerSettingsSectionName,
+} from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -258,36 +263,6 @@ provide("tasksViewMode", {
   toggleViewMode: toggleTasksViewMode,
 });
 
-const isSystemPage = computed(
-  () => router.currentRoute.value.name?.toString() === "systemsettings",
-);
-
-const systemViewMode = ref<"list" | "card">("list");
-const savedSystemViewMode = getPreference<"list" | "card">(
-  "settings.system.viewMode",
-  "list",
-);
-
-watch(
-  () => savedSystemViewMode.value,
-  (savedViewMode) => {
-    if (savedViewMode === "list" || savedViewMode === "card") {
-      systemViewMode.value = savedViewMode;
-    }
-  },
-  { immediate: true },
-);
-
-const toggleSystemViewMode = function () {
-  systemViewMode.value = systemViewMode.value === "list" ? "card" : "list";
-  setPreference("settings.system.viewMode", systemViewMode.value);
-};
-
-provide("systemViewMode", {
-  viewMode: systemViewMode,
-  toggleViewMode: toggleSystemViewMode,
-});
-
 // the page on screen owns the toolbar's view mode toggle, if it has one
 const viewModeToggle = computed(() => {
   if (isOverview.value)
@@ -298,8 +273,6 @@ const viewModeToggle = computed(() => {
     return { mode: providersViewMode.value, toggle: toggleProvidersViewMode };
   if (isTasksPage.value)
     return { mode: tasksViewMode.value, toggle: toggleTasksViewMode };
-  if (isSystemPage.value)
-    return { mode: systemViewMode.value, toggle: toggleSystemViewMode };
   return undefined;
 });
 
@@ -320,15 +293,6 @@ const settingsSections = computed(() =>
   availableSettingsSections((scope) => authManager.hasScope(scope)),
 );
 
-const providerSectionNames = [
-  "catalog",
-  "music_providers",
-  "player_providers",
-  "metadata_providers",
-  "plugin_providers",
-  "audio_analysis_providers",
-];
-
 const featuredSectionNames = ["music_providers", "players"];
 
 const featuredSections = computed(() =>
@@ -343,22 +307,6 @@ const regularSections = computed(() =>
   ),
 );
 
-// the list groups the providers first, then the players, then the rest
-const listSections = computed(() => {
-  const sections = settingsSections.value;
-  return [
-    ...sections.filter((section) =>
-      providerSectionNames.includes(section.name),
-    ),
-    ...sections.filter((section) => section.name === "players"),
-    ...sections.filter(
-      (section) =>
-        !providerSectionNames.includes(section.name) &&
-        section.name !== "players",
-    ),
-  ];
-});
-
 // computed properties
 const isOverview = computed(() => {
   return router.currentRoute.value.name === "settings";
@@ -369,15 +317,32 @@ useEscapeBack(
   () => !isOverview.value,
 );
 
+// the library options and the pages they lead to, which sit with the music sources
+const LIBRARY_ROUTE_NAMES = [
+  "librarysettings",
+  "storagesettings",
+  "genremanagement",
+];
+
 const activeTab = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
   if (name === "profile") {
     return "profile";
   }
+  if (name === "audioanalysissettings") {
+    return "audio_analysis_providers";
+  }
+  if (LIBRARY_ROUTE_NAMES.includes(name)) {
+    return "music_providers";
+  }
+  if (name === "metadatasettings") {
+    return "metadata_providers";
+  }
   if (
     name.includes("player") ||
     name.includes("queue") ||
-    name === "addgroup"
+    name === "addgroup" ||
+    name === "playbacksettings"
   ) {
     return "players";
   }
@@ -386,18 +351,15 @@ const activeTab = computed(() => {
     name.includes("core") ||
     name.includes("serverlog") ||
     name === "backgroundtasks" ||
+    name === "tasksettings" ||
     name === "diagnostics" ||
-    name === "genremanagement" ||
-    name === "audioanalysissettings" ||
-    name === "storagesettings"
+    name === "networksettings" ||
+    name === "remoteaccesssettings"
   ) {
     return "system";
   }
   if (name.includes("frontend")) {
     return "frontend";
-  }
-  if (name.includes("remoteaccess")) {
-    return "remote_access";
   }
   if (name.includes("user")) {
     return "users";
@@ -413,11 +375,8 @@ const activeTab = computed(() => {
   const typesQuery = router.currentRoute.value.query.types as
     string | undefined;
   const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
-  if (firstType === "music") return "music_providers";
-  if (firstType === "player") return "player_providers";
-  if (firstType === "metadata") return "metadata_providers";
-  if (firstType === "plugin") return "plugin_providers";
-  if (firstType === "audio_analysis") return "audio_analysis_providers";
+  const typeSection = providerTypeTab(firstType);
+  if (typeSection) return typeSection;
 
   if (name === "editprovider") {
     const instanceId = router.currentRoute.value.params.instanceId as string;
@@ -425,16 +384,29 @@ const activeTab = computed(() => {
     const providerType =
       api.getProvider(instanceId)?.type ||
       api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
-    if (providerType === ProviderType.MUSIC) return "music_providers";
-    if (providerType === ProviderType.PLAYER) return "player_providers";
-    if (providerType === ProviderType.METADATA) return "metadata_providers";
-    if (providerType === ProviderType.PLUGIN) return "plugin_providers";
-    if (providerType === ProviderType.AUDIO_ANALYSIS)
-      return "audio_analysis_providers";
+    const providerSection = providerTypeTab(providerType);
+    if (providerSection) return providerSection;
   }
 
   return "music_providers";
 });
+
+// the tab of a provider type; the player providers hang under the players
+const providerTypeTab = function (type: string | undefined) {
+  return type === ProviderType.PLAYER
+    ? "players"
+    : providerSettingsSectionName(type);
+};
+
+// the crumb of the library options, a link for whoever may open them
+const libraryCrumb = function (): ToolbarHeadingItem {
+  const { title, route } = SETTINGS_PAGES.library;
+  return {
+    title: t(title),
+    disabled: false,
+    to: authManager.hasScope(Scope.CONFIG_CORE_WRITE) ? route : undefined,
+  };
+};
 
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
@@ -471,12 +443,6 @@ const breadcrumbItems = computed(() => {
           to: { name: "systemsettings" },
         });
       }
-    } else if (currentTab === "remote_access") {
-      items.push({
-        title: t("settings.remote_access"),
-        disabled: name === "remoteaccesssettings",
-        to: { name: "remoteaccesssettings" },
-      });
     } else if (currentTab === "frontend") {
       items.push({
         title: t("settings.frontend"),
@@ -497,12 +463,6 @@ const breadcrumbItems = computed(() => {
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "music" } },
       });
-    } else if (currentTab === "player_providers") {
-      items.push({
-        title: t("settings.playerproviders"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "player" } },
-      });
     } else if (currentTab === "metadata_providers") {
       items.push({
         title: t("settings.metadataproviders"),
@@ -519,7 +479,10 @@ const breadcrumbItems = computed(() => {
       items.push({
         title: t("settings.audio_analysis_providers"),
         disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "audio_analysis" } },
+        // the provider list is only open to who manages every provider
+        to: authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
+          ? { name: "providersettings", query: { types: "audio_analysis" } }
+          : undefined,
       });
     } else if (currentTab === "about") {
       items.push({
@@ -531,7 +494,22 @@ const breadcrumbItems = computed(() => {
   }
 
   match(name)
+    // the player providers are listed below the players
+    .with("providersettings", () => {
+      if (activeTab.value !== "players") return;
+      items.push({ title: t("settings.playerproviders"), disabled: true });
+    })
     .with("editprovider", () => {
+      if (activeTab.value === "players") {
+        items.push({
+          title: t("settings.playerproviders"),
+          disabled: false,
+          to: {
+            name: "providersettings",
+            query: { types: ProviderType.PLAYER },
+          },
+        });
+      }
       items.push({
         title:
           editedProviderName.value ||
@@ -569,13 +547,12 @@ const breadcrumbItems = computed(() => {
     )
     .with("editcore", () => {
       const domain = route.params.domain as string;
-      const translated = t(`settings.core_module.${domain}.name`);
-      const moduleName =
-        translated !== `settings.core_module.${domain}.name`
-          ? translated
-          : api.providerManifests[domain]?.name || domain;
       items.push({
-        title: moduleName,
+        title: coreModuleName(
+          domain,
+          (key) => t(key),
+          api.providerManifests[domain]?.name,
+        ),
         disabled: true,
       });
     })
@@ -591,21 +568,45 @@ const breadcrumbItems = computed(() => {
         disabled: true,
       });
     })
-    .with("genremanagement", () => {
-      items.push({
-        title: t("settings.genre_management"),
+    .with("tasksettings", () => {
+      items.push(
+        {
+          title: t("background_tasks.title"),
+          disabled: false,
+          to: { name: "backgroundtasks" },
+        },
+        { title: t(SETTINGS_PAGES.task_settings.title), disabled: true },
+      );
+    })
+    .with("librarysettings", () => {
+      items.push({ title: t(SETTINGS_PAGES.library.title), disabled: true });
+    })
+    .with("storagesettings", () => {
+      items.push(libraryCrumb(), {
+        title: t("settings.storage.music_locations"),
         disabled: true,
       });
     })
-    .with("storagesettings", () => {
-      items.push({
-        title: t("settings.storage.title"),
-        disabled: true,
-      });
+    .with("genremanagement", () => {
+      items.push(libraryCrumb(), { title: t("genres"), disabled: true });
+    })
+    .with("metadatasettings", () => {
+      items.push({ title: t(SETTINGS_PAGES.metadata.title), disabled: true });
+    })
+    .with("playbacksettings", () => {
+      items.push({ title: t(SETTINGS_PAGES.playback.title), disabled: true });
+    })
+    .with("networksettings", () => {
+      items.push({ title: t(SETTINGS_PAGES.network.title), disabled: true });
+    })
+    .with("remoteaccesssettings", () => {
+      const { title, route: pageRoute } = SETTINGS_PAGES.network;
+      items.push({ title: t(title), disabled: false, to: pageRoute });
+      items.push({ title: t("settings.remote_access"), disabled: true });
     })
     .with("audioanalysissettings", () => {
       items.push({
-        title: t("settings.audio_analysis"),
+        title: t(SETTINGS_PAGES.audio_analysis.title),
         disabled: true,
       });
     })

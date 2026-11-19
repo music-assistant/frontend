@@ -1,3 +1,7 @@
+import {
+  AUDIOBOOK_ARTIST_LISTING_ROUTE,
+  AUDIOBOOK_ARTIST_ROUTE,
+} from "@/helpers/author_narrator";
 import type { RouteLocationRaw, Router } from "vue-router";
 
 /**
@@ -49,6 +53,8 @@ const LISTING_ROUTES: Record<string, string | undefined> = {
   artist: "artists",
   artistlisting: "artists",
   audiobook: "audiobooks",
+  [AUDIOBOOK_ARTIST_ROUTE]: "audiobooks",
+  [AUDIOBOOK_ARTIST_LISTING_ROUTE]: "audiobooks",
   collection: "audiobooks",
   genre: "genres",
   playlist: "playlists",

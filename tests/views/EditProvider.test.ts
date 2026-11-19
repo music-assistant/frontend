@@ -145,6 +145,7 @@ vi.mock("@/helpers/utils", async (importOriginal) => {
         : undefined,
     // the real renderer, so the error banner's markdown is assertable
     markdownToHtml: actual.markdownToHtml,
+    providerMarkdownToHtml: actual.providerMarkdownToHtml,
     openActionUrlEntries: <T>(entries: T) => entries,
   };
 });
@@ -1497,6 +1498,7 @@ describe("EditProvider actions and sections", () => {
       is_streaming_provider: null,
       name: "Spotify",
       supported_features: [ProviderFeature.CREATE_GROUP_PLAYER],
+      supported_artist_types: [],
       type: ProviderType.PLAYER,
     });
     const wrapper = await mountProvider();

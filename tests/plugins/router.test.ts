@@ -1,5 +1,6 @@
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { backFromMediaDetails } from "@/helpers/navigation";
+import { SETTINGS_PAGES } from "@/helpers/settings_pages";
 import { ConnectionState } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { routes } from "@/plugins/router";
@@ -313,6 +314,23 @@ describe("AI Radio guard", () => {
   });
 });
 
+describe("audiobook artist routes", () => {
+  it.each([
+    ["/audiobooks/authors/deezer/author_1", "audiobookartist"],
+    ["/audiobooks/narrators/deezer/narrator_1", "audiobookartist"],
+    [
+      "/audiobooks/authors/deezer/author_1/audiobooks",
+      "audiobookartistlisting",
+    ],
+    ["/audiobooks/deezer/book_1", "audiobook"],
+    ["/audiobooks/deezer/collection/series_1", "collection"],
+    // an old bookmark of an author page still opens the artist route
+    ["/artists/deezer/author_1", "artist"],
+  ])("resolves %s to %s", (path, name) => {
+    expect(resolveRoute(path).name).toBe(name);
+  });
+});
+
 describe("player settings routes", () => {
   it.each(PLAYER_SETTINGS_ROUTES)(
     "opens $name on a page of its own",
@@ -322,6 +340,36 @@ describe("player settings routes", () => {
       // a redirect record would resolve without a name of its own
       expect(route.name).toBe(name);
       expect(route.params).toMatchObject(params);
+    },
+  );
+});
+
+describe("settings pages", () => {
+  it.each(Object.entries(SETTINGS_PAGES))(
+    "opens the %s page on a route of the router",
+    (_id, page) => {
+      if (!mocks.router) {
+        throw new Error("The router module did not create a router");
+      }
+      const route = mocks.router.resolve(page.route);
+
+      expect(route.matched).not.toHaveLength(0);
+      // the row leading to the page shows to whoever may open it
+      if (page.link) {
+        expect(route.meta.requiresScope).toBe(page.link.requiresScope);
+      }
+    },
+  );
+
+  it.each(["playback", "metadata", "task_settings"] as const)(
+    "hands the %s page to the view showing its form",
+    (id) => {
+      if (!mocks.router) {
+        throw new Error("The router module did not create a router");
+      }
+      const route = mocks.router.resolve(SETTINGS_PAGES[id].route);
+
+      expect(route.matched.at(-1)?.props.default).toEqual({ page: id });
     },
   );
 });
@@ -571,13 +619,18 @@ describe("scope-gated routes", () => {
       ["admin", "user", "guest", "own_sources", "reads_sources"],
     ],
     ["/settings/system", ["admin"]],
-    ["/settings/editcore/webserver", ["admin"]],
+    ["/settings/network", ["admin"]],
+    ["/settings/library", ["admin"]],
+    ["/settings/storage", ["admin"]],
+    ["/settings/metadata", ["admin"]],
+    ["/settings/editcore/radio_tuner", ["admin"]],
     ["/settings/audio-analysis", ["admin"]],
     ["/settings/remote-access", ["admin"]],
     ["/settings/diagnostics", ["admin"]],
     ["/settings/genremanagement", ["admin"]],
     ["/settings/users", ["admin"]],
     ["/settings/tasks", ["admin", "user", "reads_sources"]],
+    ["/settings/tasks/settings", ["admin"]],
     ["/music-quiz", ["admin", "user", "reads_sources"]],
     [
       "/settings/frontend",

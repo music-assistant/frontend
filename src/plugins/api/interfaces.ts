@@ -439,13 +439,30 @@ export enum SleepTimerMode {
 
 export enum PlayerType {
   PLAYER = "player", // A regular player.
-  STEREO_PAIR = "stereo_pair",
+  MULTI_CHANNEL = "multi_channel", // One player made of several speakers that play as one.
+  STEREO_PAIR = "stereo_pair", // A stereo pair as an older server reports it.
   GROUP = "group", // A (dedicated) group player or playergroup.
   PROTOCOL = "protocol",
   DISPLAY = "display",
   VISUALIZER = "visualizer",
   LIGHT = "light",
   SOURCE = "source", // A capture-only device that provides audio input.
+  UNKNOWN = "unknown",
+}
+
+export enum ChannelLayout {
+  // How the speakers of a multi-channel player are laid out: the number of
+  // full-range speakers and of subwoofers; a set of two speakers is stereo.
+  STEREO = "stereo",
+  LAYOUT_1_1 = "1.1",
+  LAYOUT_2_1 = "2.1",
+  LAYOUT_3_0 = "3.0",
+  LAYOUT_3_1 = "3.1",
+  LAYOUT_4_0 = "4.0",
+  LAYOUT_4_1 = "4.1",
+  LAYOUT_5_0 = "5.0",
+  LAYOUT_5_1 = "5.1",
+  LAYOUT_7_1 = "7.1",
   UNKNOWN = "unknown",
 }
 
@@ -1762,6 +1779,9 @@ export interface Player {
   legacy_ids: string[];
   // protocols: the protocols the player is made up of, also those that are away
   protocols: PlayerProtocolInfo[];
+  // channel_layout: how the speakers of a multi-channel player are laid out;
+  // null for a player that is no set of speakers or whose layout is not known
+  channel_layout?: ChannelLayout | null;
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
@@ -1831,6 +1851,23 @@ export interface ProviderManifest {
   // menu_actions: entries this provider adds to the menu of a media item;
   // absent from an older server
   menu_actions?: ProviderMenuAction[];
+  // media_types: the media types the provider offers whatever its config
+  // (audio_source for a provider that plays audio into Music Assistant);
+  // optional metadata for discovery
+  media_types?: MediaType[];
+  // page: a page this provider serves, listed in the app's menu; an older
+  // server declares none
+  page?: ProviderPage | null;
+}
+
+export interface ProviderPage {
+  // A page a provider serves, opened through providers/open_page.
+  // label: the text of the menu entry, already in the user's language
+  label: string;
+  // scope: what a user needs to see and open the page
+  scope: Scope;
+  // icon: name of a material design icon, such as mdi-chart-line
+  icon: string | null;
 }
 
 export interface ProviderMenuAction {
@@ -1947,6 +1984,7 @@ export interface ProviderInstance {
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider: boolean | null;
+  supported_artist_types: ArtistType[];
 }
 
 export interface DashboardDevice {

@@ -9,6 +9,7 @@ import { truncateString } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { getDeviceInfo, getDeviceName } from "@/plugins/api/helpers";
 import {
+  ChannelLayout,
   PlaybackState,
   Player,
   PlayerFeature,
@@ -309,10 +310,34 @@ export const canBeGroupMember = function (player: Player): boolean {
  * Visualizers and metadata-only displays are both screens to the user, so the
  * group pickers offer them as one category.
  */
-export const isScreenPlayer = function (player: Player): boolean {
+export const isScreenPlayer = function (player: Pick<Player, "type">): boolean {
   return (
     player.type === PlayerType.VISUALIZER || player.type === PlayerType.DISPLAY
   );
+};
+
+/**
+ * Whether the player is a speaker, or a set of speakers that plays as one.
+ *
+ * Both lead a sync group of other players the same way.
+ */
+export const isSpeakerPlayer = function (player?: Player): boolean {
+  return (
+    player?.type === PlayerType.PLAYER ||
+    player?.type === PlayerType.MULTI_CHANNEL
+  );
+};
+
+/**
+ * The type of a player as text, with the layout of its speakers when it has one.
+ */
+export const getPlayerTypeLabel = function (player: Player): string {
+  const typeLabel = $t(`player_type.${player.type}`);
+  const layout = player.channel_layout;
+  if (!layout || layout === ChannelLayout.UNKNOWN) return typeLabel;
+  const layoutLabel =
+    layout === ChannelLayout.STEREO ? $t("channel_layout.stereo") : layout;
+  return `${typeLabel} · ${layoutLabel}`;
 };
 
 export const canEditPlayerGroup = function (player: Player): boolean {

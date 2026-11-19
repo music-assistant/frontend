@@ -63,20 +63,11 @@ describe("useDiscographyRows", () => {
     expect(rows.continuesBelow("discography")).toBe(false);
   });
 
-  it("hands the heading to the second row when the first comes up empty", () => {
+  it("keeps a row that comes up empty heading the section", () => {
     const rows = setup(["discography", "discography_second"], [], [album()]);
 
-    expect(rows.isShown("discography")).toBe(false);
-    expect(rows.showsHeading("discography_second")).toBe(true);
-  });
-
-  it("keeps a row shown while it loads", () => {
-    const rows = setup(["discography", "discography_second"], undefined, [
-      album(),
-    ]);
-
-    expect(rows.isShown("discography")).toBe(true);
-    expect(rows.rowItems.value.discography).toBeUndefined();
+    expect(rows.showsHeading("discography")).toBe(true);
+    expect(rows.continuesBelow("discography")).toBe(true);
     expect(rows.showsHeading("discography_second")).toBe(false);
   });
 

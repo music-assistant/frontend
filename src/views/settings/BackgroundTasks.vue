@@ -1,5 +1,11 @@
 <template>
   <div>
+    <SettingsLinkRows
+      class="mx-5 mt-5"
+      :rows="taskSettingsRows"
+      test-id-prefix="background-tasks"
+    />
+
     <div class="tasks-header w-100">
       <BackgroundTaskFilters @update:search="searchQuery = $event" />
 
@@ -91,6 +97,9 @@ import BackgroundTaskDetailsDialog from "@/components/settings/background-tasks/
 import BackgroundTaskFilters from "@/components/settings/background-tasks/BackgroundTaskFilters.vue";
 import BackgroundTaskItem from "@/components/settings/background-tasks/BackgroundTaskItem.vue";
 import BackgroundTaskScheduleDialog from "@/components/settings/background-tasks/BackgroundTaskScheduleDialog.vue";
+import SettingsLinkRows, {
+  type SettingsRow,
+} from "@/components/settings/SettingsLinkRows.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -109,6 +118,7 @@ import {
   isScheduledTask,
 } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
+import { SETTINGS_PAGES } from "@/helpers/settings_pages";
 import { copyToClipboard } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
@@ -121,8 +131,8 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { ListChecks, Trash2 } from "@lucide/vue";
-import { computed, inject, ref } from "vue";
+import { ListChecks, Settings2, Trash2 } from "@lucide/vue";
+import { computed, inject, markRaw, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
@@ -146,6 +156,20 @@ const { t } = useI18n();
 const viewMode = computed(() => tasksViewMode.viewMode.value);
 const canManageTasks = computed(() =>
   authManager.hasScope(Scope.SYSTEM_MANAGE),
+);
+// the settings of the tasks module sit on a page of their own
+const taskSettingsRows = computed<SettingsRow[]>(() =>
+  authManager.hasScope(Scope.CONFIG_CORE_WRITE)
+    ? [
+        {
+          key: "settings",
+          icon: markRaw(Settings2),
+          label: t("background_tasks.settings.title"),
+          description: t("background_tasks.settings.description"),
+          to: SETTINGS_PAGES.task_settings.route,
+        },
+      ]
+    : [],
 );
 const {
   loading,

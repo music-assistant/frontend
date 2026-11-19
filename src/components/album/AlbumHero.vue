@@ -17,7 +17,7 @@
     <template v-if="item" #main>
       <div class="album-hero__main">
         <div class="album-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
 
         <div class="album-hero__text">
@@ -138,15 +138,7 @@ const emit = defineEmits<{
 
 const router = useRouter();
 
-// px, matching .album-hero__cover
-const COVER_SIZE = 280;
-const PHONE_COVER_SIZE = 180;
-
 const isPhone = computed(() => isPhoneSizedScreen());
-
-const coverSize = computed(() =>
-  isPhone.value ? PHONE_COVER_SIZE : COVER_SIZE,
-);
 
 // "Album · 2011 · 12 tracks · 48 min", without whatever the album does not have
 const facts = computed(() => {
@@ -273,7 +265,7 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   min-width: 0;
 }
 
-@media (max-width: 768px) {
+@container detail-hero (width < 48rem) {
   .album-hero__main {
     flex-direction: column;
     align-items: stretch;

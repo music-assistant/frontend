@@ -15,7 +15,6 @@ import {
 import type { MusicAssistantApi } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import EditCoreConfig from "@/views/settings/EditCoreConfig.vue";
-import ServerUrlsCard from "@/views/settings/ServerUrlsCard.vue";
 
 const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
@@ -31,13 +30,13 @@ const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
         has_setup_flow: false,
         name: "Cache",
       },
-      webserver: {
+      radio_tuner: {
         codeowners: [],
         credits: [],
-        description: "Web server",
+        description: "Radio tuner module",
         documentation: undefined,
         has_setup_flow: false,
-        name: "Web server",
+        name: "Radio tuner",
       },
     },
     saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
@@ -313,62 +312,45 @@ describe("EditCoreConfig", () => {
     });
   });
 
-  it("shows the URL card on the webserver page only", async () => {
-    apiMock.getCoreConfig.mockResolvedValueOnce(coreConfig());
+  it("leaves the log level to Diagnostics, while saving it as it is", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(radioTunerConfig());
+    apiMock.saveCoreConfig.mockResolvedValueOnce(radioTunerConfig());
 
-    const wrapper = shallowMount(EditCoreConfig, {
-      props: { domain: "cache" },
-      global: { mocks: { $t: (key: string) => key } },
-    });
+    const wrapper = mountWithForm("radio_tuner");
     await flushPromises();
 
-    expect(wrapper.findComponent(ServerUrlsCard).exists()).toBe(false);
-  });
-
-  it("edits the webserver URLs in their own card and saves them with the form", async () => {
-    apiMock.getCoreConfig.mockResolvedValueOnce(webserverConfig());
-    apiMock.saveCoreConfig.mockResolvedValueOnce(webserverConfig());
-
-    const wrapper = mountWithForm("webserver");
-    await flushPromises();
-
-    const card = wrapper.findComponent(ServerUrlsCard);
-    expect(card.props("baseUrl")).toMatchObject({ key: "base_url" });
-    expect(card.props("externalUrl")).toMatchObject({ key: "external_url" });
-    // the card shows them, so the form leaves them out
-    expect(renderedKeys(wrapper)).toEqual(["server_name"]);
-    expect(saveDisabled(wrapper)).toBe(true);
-
-    await card.vm.$emit(
-      "update:value",
-      "external_url",
-      "https://music.example",
-    );
-
-    expect(saveDisabled(wrapper)).toBe(false);
+    expect(renderedKeys(wrapper)).toEqual(["band"]);
 
     await wrapper.find('[data-testid="config-save"]').trigger("click");
     await flushPromises();
 
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("webserver", {
-      server_name: "My server",
-      base_url: "auto",
-      external_url: "https://music.example",
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("radio_tuner", {
+      band: "band value",
+      log_level: "log_level value",
     });
   });
 
+  it("returns to the System settings after a save", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(radioTunerConfig());
+    apiMock.saveCoreConfig.mockResolvedValueOnce(radioTunerConfig());
+
+    const wrapper = mountWithForm("radio_tuner");
+    await flushPromises();
+    await wrapper.find('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+
+    expect(routerMock.push).toHaveBeenCalledWith({ name: "systemsettings" });
+  });
+
   it("stays on the page when the server refuses the save", async () => {
-    const reason = "The value for Published IP address is not valid.";
-    apiMock.getCoreConfig.mockResolvedValueOnce(webserverConfig());
+    const reason = "The value for Band is not valid.";
+    apiMock.getCoreConfig.mockResolvedValueOnce(radioTunerConfig());
     apiMock.saveCoreConfig.mockRejectedValueOnce(
       new ApiCommandError(reason, 1, reason),
     );
 
-    const wrapper = mountWithForm("webserver");
+    const wrapper = mountWithForm("radio_tuner");
     await flushPromises();
-    await wrapper
-      .findComponent(ServerUrlsCard)
-      .vm.$emit("update:value", "external_url", "https://music.example");
     await wrapper.find('[data-testid="config-save"]').trigger("click");
     await flushPromises();
 
@@ -378,39 +360,20 @@ describe("EditCoreConfig", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
-  it("resets the webserver URLs from the header menu too", async () => {
-    apiMock.getCoreConfig.mockResolvedValueOnce(
-      webserverConfig({
-        base_url: "https://ma.lan",
-        external_url: "https://music.example",
-      }),
-    );
+  it("names the module by its manifest when the app has no name for it", async () => {
+    apiMock.getCoreConfig.mockResolvedValueOnce(radioTunerConfig());
 
-    const reset = vi.fn();
-    const wrapper = mountWithForm("webserver", {
-      ServerUrlsCard: {
-        name: "ServerUrlsCard",
-        props: ["baseUrl", "externalUrl"],
-        template: "<div />",
-        methods: { reset },
-      },
-    });
+    const wrapper = mountWithForm("radio_tuner");
     await flushPromises();
 
-    await wrapper
-      .findComponent({ name: "SettingsHeaderCard" })
-      .vm.$emit("resetToDefaults");
-
-    const card = wrapper.findComponent(ServerUrlsCard);
-    expect(card.props("baseUrl").value).toBe("auto");
-    expect(card.props("externalUrl")?.value).toBeNull();
-    // the card's switches follow the reset values rather than earlier choices
-    expect(reset).toHaveBeenCalledOnce();
+    expect(
+      wrapper.findComponent({ name: "SettingsHeaderCard" }).props("title"),
+    ).toBe("Radio tuner");
   });
 });
 
 // with the real form, so what it saves and guards can be read
-function mountWithForm(domain: string, stubs: Record<string, object> = {}) {
+function mountWithForm(domain: string) {
   return shallowMount(EditCoreConfig, {
     props: { domain },
     global: {
@@ -423,7 +386,6 @@ function mountWithForm(domain: string, stubs: Record<string, object> = {}) {
           template: "<form><slot /></form>",
           methods: { validate: async () => ({ valid: true }) },
         },
-        ...stubs,
       },
     },
   });
@@ -435,37 +397,27 @@ function renderedKeys(wrapper: ReturnType<typeof mountWithForm>) {
     .map((row) => (row.props("confEntry") as ConfigEntry).key);
 }
 
-function saveDisabled(wrapper: ReturnType<typeof mountWithForm>) {
-  return (
-    wrapper.find('[data-testid="config-save"]').attributes("disabled") ===
-    "true"
-  );
-}
-
-function webserverConfig(
-  values: { base_url?: string; external_url?: string | null } = {},
-): CoreConfig {
-  const entry = (
-    key: string,
-    value: string | null,
-    default_value: string | null,
-  ): ConfigEntry => ({
-    category: "generic",
-    default_value,
+function stringEntry(key: string, category: string): ConfigEntry {
+  return {
+    category,
+    default_value: null,
     key,
     label: key,
     options: [],
     required: false,
     type: ConfigEntryType.STRING,
-    value,
-  });
+    value: `${key} value`,
+  };
+}
+
+// a module added on the server that no settings page shows
+function radioTunerConfig(): CoreConfig {
   return {
-    domain: "webserver",
+    domain: "radio_tuner",
     last_error: null,
     values: {
-      server_name: entry("server_name", "My server", ""),
-      base_url: entry("base_url", values.base_url ?? "auto", "auto"),
-      external_url: entry("external_url", values.external_url ?? null, null),
+      band: stringEntry("band", "generic"),
+      log_level: stringEntry("log_level", "generic"),
     },
   };
 }

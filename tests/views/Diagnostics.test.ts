@@ -1,5 +1,7 @@
 import { flushPromises, shallowMount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import CoreLogLevelsForm from "@/components/settings/CoreLogLevelsForm.vue";
+import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
 import { Switch } from "@/components/ui/switch";
 import type { MusicAssistantApi } from "@/plugins/api";
 import Diagnostics from "@/views/settings/Diagnostics.vue";
@@ -110,5 +112,20 @@ describe("Diagnostics log refresh", () => {
     // a second interval would outlive the page, since only one handle is closed
     expect(apiMock.sendCommand).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe("Diagnostics settings", () => {
+  it("sets the log levels of the modules and holds the cache settings below the log", async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.findComponent(CoreLogLevelsForm).exists()).toBe(true);
+    // the log viewer is what the page is about, so the toolbar menu stays its own
+    expect(wrapper.findComponent(SettingsPageForm).props()).toMatchObject({
+      page: "diagnostics",
+      embedded: true,
+    });
+    wrapper.unmount();
   });
 });

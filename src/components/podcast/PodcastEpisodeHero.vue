@@ -11,7 +11,7 @@
     <template v-if="item" #main>
       <div class="podcast-episode-hero__main">
         <div class="podcast-episode-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
 
         <div class="podcast-episode-hero__text">
@@ -170,8 +170,6 @@ const router = useRouter();
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-const coverSize = computed(() => (isPhone.value ? 132 : 200));
-
 // empty when the episode has no (valid) publish date
 const releaseDate = computed(() =>
   props.item ? episodeReleaseDate(props.item) : "",
@@ -305,7 +303,7 @@ const gotoPodcast = function () {
   visibility: hidden;
 }
 
-@media (max-width: 768px) {
+@container detail-hero (width < 48rem) {
   .podcast-episode-hero__main {
     flex-direction: column;
     align-items: stretch;
@@ -325,6 +323,8 @@ const gotoPodcast = function () {
   .podcast-episode-hero__actions {
     gap: 10px;
   }
+}
+@media (max-width: 768px) {
   .podcast-episode-hero__badge {
     width: 44px;
     height: 44px;
