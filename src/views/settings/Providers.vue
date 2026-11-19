@@ -1,126 +1,129 @@
 <template>
-  <SettingsPageLinks
-    class="mx-5 mt-5"
-    :section="providerSettingsSectionName(currentType)"
-  />
-  <div class="providers-header w-full">
-    <ProviderFilters v-if="showSearch" @update:search="searchQuery = $event" />
-    <!-- the empty state below carries the add button while there is nothing to list -->
-    <Button
-      v-if="canOwnSources() && !showMusicEmptyState"
-      class="add-provider-btn"
-      data-testid="add-provider"
-      @click="openCatalog"
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsHubHeader v-if="isHub" :name="listName" />
+    <SettingsPageLinks :section="listName" />
+    <CommunityMovedTypeNotice :types="listTypes" />
+
+    <SettingsListPanel
+      v-for="list in lists"
+      :key="list.type"
+      :title="listTitle(list.type)"
+      :count="list.filteredProviders.length"
+      :description="listDescription(list.type)"
+      :view-mode="viewMode"
+      :actions="listActions(list)"
+      data-testid="provider-list"
+      :data-list="list.type"
+      @toggle-view-mode="providersViewMode.toggleViewMode()"
     >
-      <Plus class="size-4" />
-      {{ addProviderLabel }}
-    </Button>
-  </div>
-
-  <CommunityMovedTypeNotice class="mx-5 mb-4" :type="currentType" />
-
-  <div class="pl-5 font-medium">
-    {{
-      $t("settings.providers_total", filteredProviders.length, {
-        named: { count: filteredProviders.length },
-      })
-    }}
-  </div>
-  <div
-    class="mt-4 px-5 py-2.5"
-    :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
-  >
-    <div class="space-y-6">
-      <section
-        v-for="section in sections"
-        :key="section.key"
-        class="space-y-3"
-        data-testid="provider-section"
-        :data-section="section.key"
-      >
-        <h2
-          v-if="section.label"
-          class="text-muted-foreground text-sm font-medium"
+      <template v-if="list.showSearch" #filters>
+        <ProviderFilters @update:search="setSearchQuery(list.type, $event)" />
+      </template>
+      <div class="space-y-6">
+        <section
+          v-for="section in list.sections"
+          :key="section.key"
+          class="space-y-3"
+          data-testid="provider-section"
+          :data-section="section.key"
         >
-          {{ $t(section.label) }}
-        </h2>
-        <component
-          :is="viewMode === 'list' ? ItemGroup : 'div'"
-          :class="
-            viewMode === 'list'
-              ? 'gap-2'
-              : 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'
-          "
-        >
-          <ProviderRow
-            v-for="item in section.items"
-            :key="item.instance_id"
-            :variant="viewMode"
-            :config="item"
-            :manageable="canManageSource(item) && !isUnavailable(item)"
-            :reconfigurable="canReconfigureSource(item)"
-            :removable="canManageSource(item) && isUnavailable(item)"
-            :syncing="isProviderSyncing(item.instance_id)"
-            :name="getProviderName(item)"
-            :description="api.providerManifests[item.domain]?.description"
-            :access-summary="
-              canConfigureSourceAccess(item) ? accessSummary(item) : null
+          <h3
+            v-if="section.label"
+            class="text-muted-foreground m-0 text-sm font-medium"
+          >
+            {{ $t(section.label) }}
+          </h3>
+          <component
+            :is="viewMode === 'list' ? ItemGroup : 'div'"
+            :class="
+              viewMode === 'list'
+                ? 'gap-2'
+                : 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'
             "
-            :status-variant="statusVariant(item.status)"
-            :status-icon="statusIcon(item.status)"
-            :status-label="statusLabel(item)"
-            :is-error="isErrorStatus(item.status)"
-            :error-text="getErrorText(item)"
-            :community="isCommunityProvider(api.providerManifests[item.domain])"
-            @open="openProvider(item)"
-            @menu="openMenu($event, item)"
-            @reconfigure="reconfigureProvider(item)"
-            @remove="removeSource(item)"
-          />
-        </component>
-      </section>
-    </div>
+          >
+            <ProviderRow
+              v-for="item in section.items"
+              :key="item.instance_id"
+              :variant="viewMode"
+              :config="item"
+              :manageable="canManageSource(item) && !isUnavailable(item)"
+              :reconfigurable="canReconfigureSource(item)"
+              :removable="canManageSource(item) && isUnavailable(item)"
+              :syncing="isProviderSyncing(item.instance_id)"
+              :name="getProviderName(item)"
+              :description="api.providerManifests[item.domain]?.description"
+              :access-summary="
+                canConfigureSourceAccess(item) ? accessSummary(item) : null
+              "
+              :status-variant="statusVariant(item.status)"
+              :status-icon="statusIcon(item.status)"
+              :status-label="statusLabel(item)"
+              :is-error="isErrorStatus(item.status)"
+              :error-text="getErrorText(item)"
+              :community="
+                isCommunityProvider(api.providerManifests[item.domain])
+              "
+              @open="openProvider(item)"
+              @menu="openMenu($event, item)"
+              @reconfigure="reconfigureProvider(item)"
+              @remove="removeSource(item)"
+            />
+          </component>
+        </section>
+      </div>
 
-    <Empty
-      v-if="showMusicEmptyState"
-      class="rounded-(--radius-xl) border"
-      data-testid="music-sources-empty"
-    >
-      <EmptyMedia variant="icon">
-        <Music />
-      </EmptyMedia>
-      <EmptyTitle>{{ $t("settings.music_sources_empty_title") }}</EmptyTitle>
-      <EmptyDescription>
-        {{
-          $t(
-            canOwnSources()
-              ? "settings.music_sources_empty"
-              : "settings.music_sources_shared_empty",
-          )
-        }}
-      </EmptyDescription>
-      <EmptyContent v-if="canOwnSources()">
-        <Button data-testid="add-provider-empty" @click="openCatalog">
-          <Plus class="size-4" />
-          {{ $t("settings.add_music_provider") }}
-        </Button>
-      </EmptyContent>
-    </Empty>
+      <Empty
+        v-if="list.showMusicEmptyState"
+        class="rounded-(--radius-xl) border"
+        data-testid="music-sources-empty"
+      >
+        <EmptyMedia variant="icon">
+          <Music />
+        </EmptyMedia>
+        <EmptyTitle>{{ $t("settings.music_sources_empty_title") }}</EmptyTitle>
+        <EmptyDescription>
+          {{
+            $t(
+              canOwnSources()
+                ? "settings.music_sources_empty"
+                : "settings.music_sources_shared_empty",
+            )
+          }}
+        </EmptyDescription>
+        <EmptyContent v-if="canOwnSources()">
+          <Button data-testid="add-provider-empty" @click="openCatalog(list)">
+            <Plus class="size-4" />
+            {{ $t("settings.add_music_provider") }}
+          </Button>
+        </EmptyContent>
+      </Empty>
 
-    <FilterEmptyState
-      v-else-if="loaded && filteredProviders.length === 0"
-      :icon="Puzzle"
-      data-testid="providers-empty"
+      <!-- the audio sources are a short list below the music sources, so an
+           empty one says so in a line -->
+      <p
+        v-else-if="loaded && isEmptyAudioSources(list)"
+        class="text-muted-foreground m-0 text-sm"
+        data-testid="audio-sources-empty"
+      >
+        {{ $t("settings.audio_sources_empty") }}
+      </p>
+
+      <FilterEmptyState
+        v-else-if="loaded && list.filteredProviders.length === 0"
+        :icon="Puzzle"
+        data-testid="providers-empty"
+      />
+    </SettingsListPanel>
+
+    <ProviderAccessDialog
+      v-model:open="showAccessDialog"
+      :config="accessDialogConfig"
+      :users="managesAllSources() ? users : null"
+      :share-candidates="accessShareCandidates"
+      :can-change-owner="managesAllSources()"
+      @saved="loadItems"
     />
   </div>
-  <ProviderAccessDialog
-    v-model:open="showAccessDialog"
-    :config="accessDialogConfig"
-    :users="managesAllSources() ? users : null"
-    :share-candidates="accessShareCandidates"
-    :can-change-owner="managesAllSources()"
-    @saved="loadItems"
-  />
 </template>
 
 <script setup lang="ts">
@@ -129,6 +132,10 @@ import ProviderFilters from "@/components/ProviderFilters.vue";
 import CommunityMovedTypeNotice from "@/components/settings/catalog/CommunityMovedTypeNotice.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
+import SettingsHubHeader from "@/components/settings/SettingsHubHeader.vue";
+import SettingsListPanel, {
+  type SettingsPanelAction,
+} from "@/components/settings/SettingsListPanel.vue";
 import SettingsPageLinks from "@/components/settings/SettingsPageLinks.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -141,9 +148,12 @@ import {
 import { ItemGroup } from "@/components/ui/item";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
-import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
+import {
+  type ProviderList,
+  useProviderSources,
+} from "@/composables/settings/providers/useProviderSources";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
-import { getCatalogRoute } from "@/helpers/provider_catalog";
+import { getCatalogRoute, getCatalogType } from "@/helpers/provider_catalog";
 import {
   getProviderStatusTranslationKey,
   isCommunityProvider,
@@ -160,7 +170,12 @@ import {
   maySetUpSource,
 } from "@/helpers/provider_permissions";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
-import { providerSettingsSectionName } from "@/helpers/settings_sections";
+import { AUDIO_SOURCES } from "@/helpers/settings_pages";
+import {
+  isSettingsHub,
+  pageProviderLists,
+  providerListName,
+} from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import {
   type ProviderConfig,
@@ -171,7 +186,7 @@ import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { Music, Plus, Puzzle } from "@lucide/vue";
 import { match } from "ts-pattern";
-import { computed, inject } from "vue";
+import { computed, inject, markRaw } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
@@ -184,17 +199,27 @@ const providersViewMode = inject<{
 
 const viewMode = computed(() => providersViewMode.viewMode.value);
 
+// the type the route names, the music sources by default
 const currentType = computed(() =>
   managesAllSources()
-    ? (route.query.types as string | undefined)
+    ? (route.query.types as string | undefined) || ProviderType.MUSIC
     : ProviderType.MUSIC,
 );
 
-const addProviderLabel = computed(() => {
-  const type = currentType.value;
+// a member only lists its music sources
+const listTypes = computed(() =>
+  managesAllSources()
+    ? pageProviderLists(currentType.value)
+    : [ProviderType.MUSIC],
+);
 
+const listName = computed(() => providerListName(currentType.value));
+const isHub = computed(() => isSettingsHub(listName.value));
+
+const addProviderLabel = function (type: string) {
   return match(type)
     .with(ProviderType.MUSIC, () => $t("settings.add_music_provider"))
+    .with(AUDIO_SOURCES, () => $t("settings.add_audio_source"))
     .with(ProviderType.PLAYER, () => $t("settings.add_player_provider"))
     .with(ProviderType.METADATA, () => $t("settings.add_metadata_provider"))
     .with(ProviderType.PLUGIN, () => $t("settings.add_plugin_provider"))
@@ -202,7 +227,41 @@ const addProviderLabel = computed(() => {
       $t("settings.add_audio_analysis_provider"),
     )
     .otherwise(() => $t("settings.add_new"));
-});
+};
+
+// a list is titled by the name the Marketplace gives its type
+const listTitle = function (type: string) {
+  return $t(getCatalogType(type)?.label ?? type);
+};
+
+const listDescription = function (type: string) {
+  return type === AUDIO_SOURCES
+    ? $t("settings.audio_sources_description")
+    : undefined;
+};
+
+// the empty state of the music sources carries the add button while there is
+// nothing to list
+const listActions = function (list: ProviderList): SettingsPanelAction[] {
+  if (!canOwnSources() || list.showMusicEmptyState) return [];
+  return [
+    {
+      key: "add-provider",
+      label: addProviderLabel(list.type),
+      shortLabel: $t("add"),
+      icon: markRaw(Plus),
+      onSelect: () => openCatalog(list),
+    },
+  ];
+};
+
+const isEmptyAudioSources = function (list: ProviderList) {
+  return (
+    list.type === AUDIO_SOURCES &&
+    list.filteredProviders.length === 0 &&
+    !list.searchQuery
+  );
+};
 
 const { isProviderSyncing } = useBackgroundTasks();
 
@@ -250,21 +309,13 @@ const getErrorText = function (item: ProviderConfig) {
   return item.last_error?.message ?? "";
 };
 
-const {
-  loaded,
-  searchQuery,
-  filteredProviders,
-  sections,
-  showSearch,
-  showMusicEmptyState,
-  loadItems,
-  removeSource,
-} = useProviderSources({
-  managesAllSources,
-  currentType,
-  getProviderName,
-  isErrorStatus,
-});
+const { loaded, lists, setSearchQuery, loadItems, removeSource } =
+  useProviderSources({
+    managesAllSources,
+    listTypes,
+    getProviderName,
+    isErrorStatus,
+  });
 
 const {
   users,
@@ -275,9 +326,9 @@ const {
   openAccessDialog,
 } = useProviderAccess({ managesAllSources, canOwnSources });
 
-// the Catalog opens on the type of this page and only offers what the viewer may add
-const openCatalog = function () {
-  void router.push(getCatalogRoute(currentType.value));
+// the Catalog opens on the type of the list and only offers what the viewer may add
+const openCatalog = function (list: ProviderList) {
+  void router.push(getCatalogRoute(list.type));
 };
 
 const openProviderOptions = function (providerInstanceId: string) {
@@ -348,33 +399,3 @@ const openMenu = function (evt: Event, item: ProviderConfig) {
   });
 };
 </script>
-
-<style scoped>
-.providers-header {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 20px 20px 6px 20px;
-}
-
-.add-provider-btn {
-  flex-shrink: 0;
-  align-self: center;
-  margin-left: auto;
-}
-
-/* Mobile responsive */
-@media (max-width: 960px) {
-  .providers-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .add-provider-btn {
-    width: 100%;
-    align-self: stretch;
-  }
-}
-</style>

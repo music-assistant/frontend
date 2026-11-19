@@ -6,6 +6,7 @@ import {
   type CoreConfig,
   type ProviderConfig,
   ProviderFeature,
+  type ProviderInstance,
   ProviderSharing,
   ProviderStage,
   ProviderStatus,
@@ -17,9 +18,12 @@ import {
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
+import { AUDIO_SOURCES } from "@/helpers/settings_pages";
+import SettingsListPanel from "@/components/settings/SettingsListPanel.vue";
 import Providers from "@/views/settings/Providers.vue";
 import { communityProvider } from "../fixtures/communityProvider";
 import { providerConfig } from "../fixtures/providerConfig";
+import { providerInstance } from "../fixtures/providerInstance";
 import { providerManifest } from "../fixtures/providerManifest";
 import {
   BUILTIN_ROLE_SCOPES,
@@ -71,7 +75,7 @@ const {
         stage: "stable",
       },
     },
-    providers: {},
+    providers: {} as Record<string, ProviderInstance>,
     reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
     removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
     saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
@@ -239,6 +243,7 @@ beforeEach(() => {
   } as unknown as CoreConfig);
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.getShareCandidates.mockResolvedValue(shareCandidates);
+  apiMock.providers = {};
   apiMock.providerManifests.spotify.builtin = false;
   apiMock.providerManifests.spotify.has_setup_flow = true;
   apiMock.providerManifests.spotify.self_service = true;
@@ -771,13 +776,61 @@ describe("Providers", () => {
     ).toEqual(["spotify_connect"]);
   });
 
-  it("lists every source in a single untitled section", async () => {
+  it("lists every music source in a single section of a list headed by its Marketplace name", async () => {
     const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
 
-    const sections = wrapper.findAll('[data-testid="provider-section"]');
+    expect(panels(wrapper)[0]).toEqual({
+      list: ProviderType.MUSIC,
+      title: "settings.music_sources",
+      count: 2,
+    });
+    const sections = panelSections(wrapper, ProviderType.MUSIC);
     expect(sections).toHaveLength(1);
-    expect(sections[0].find("h2").exists()).toBe(false);
+    expect(sections[0].find("h3").exists()).toBe(false);
     expect(sections[0].findAll('[data-testid="provider-row"]')).toHaveLength(2);
+  });
+
+  it.each([
+    [ProviderType.METADATA, "settings.metadataproviders"],
+    [ProviderType.AUDIO_ANALYSIS, "settings.audio_analysis_providers"],
+  ])(
+    "heads the %s providers with their Marketplace name",
+    async (type, heading) => {
+      routeMock.query.types = type;
+
+      const wrapper = await mountWithConfigs([
+        providerConfig({
+          domain: "spotify",
+          instance_id: "spotify--1",
+          status: ProviderStatus.LOADED,
+          type,
+        }),
+      ]);
+
+      expect(panels(wrapper).map(({ title }) => title)).toEqual([heading]);
+    },
+  );
+
+  it("lists the plugins under their Marketplace name, without a page header", async () => {
+    routeMock.query.types = ProviderType.PLUGIN;
+
+    const wrapper = await mountWithConfigs([
+      providerConfig({
+        domain: "party",
+        instance_id: "party--1",
+        status: ProviderStatus.LOADED,
+        type: ProviderType.PLUGIN,
+      }),
+    ]);
+
+    expect(panels(wrapper)).toEqual([
+      { list: ProviderType.PLUGIN, title: "settings.plugins", count: 1 },
+    ]);
+    expect(wrapper.findAll('[data-testid="provider-row"]')).toHaveLength(1);
+    expect(wrapper.find("h3").exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "SettingsHubHeader" }).exists()).toBe(
+      false,
+    );
   });
 
   it("reports a failing user lookup", async () => {
@@ -815,25 +868,75 @@ describe("Providers leading to the settings pages of their section", () => {
     expect(wrapper.find(STATUS_ROW).exists()).toBe(false);
   });
 
+  it("leads Music to the library settings, the genres, the metadata and the audio analysis, saying how many providers run", async () => {
+    apiMock.providers = {
+      "fanarttv--1": providerInstance({
+        domain: "fanarttv",
+        type: ProviderType.METADATA,
+      }),
+      "musicbrainz--1": providerInstance({
+        domain: "musicbrainz",
+        type: ProviderType.METADATA,
+      }),
+      "spotify--1": providerInstance({ domain: "spotify" }),
+    };
+
+    const wrapper = await mountWithLinks();
+
+    expect(linkRows(wrapper)).toEqual([
+      { key: "library", to: { name: "librarysettings" } },
+      { key: "genres", to: { name: "genremanagement" } },
+      {
+        key: "metadata_providers",
+        to: { name: "providersettings", query: { types: "metadata" } },
+      },
+      {
+        key: "audio_analysis_providers",
+        to: { name: "providersettings", query: { types: "audio_analysis" } },
+      },
+    ]);
+    expect(wrapper.findAll('[data-testid="settings-page-state"]')).toHaveLength(
+      2,
+    );
+    expect(i18nMock.$t).toHaveBeenCalledWith("settings.providers_active", 2, {
+      named: { count: 2 },
+    });
+    expect(i18nMock.$t).toHaveBeenCalledWith("settings.providers_active", 0, {
+      named: { count: 0 },
+    });
+  });
+
   it.each([
-    [ProviderType.MUSIC, "library", "librarysettings"],
-    [ProviderType.METADATA, "metadata", "metadatasettings"],
+    [Scope.CONFIG_CORE_WRITE, ["library"]],
+    [Scope.LIBRARY_MANAGE, ["genres"]],
+    [
+      Scope.CONFIG_PROVIDERS_WRITE,
+      ["metadata_providers", "audio_analysis_providers"],
+    ],
   ])(
-    "leads the %s sources to the %s settings",
+    "leads a role granting only %s on Music where it may go",
+    async (scope, keys) => {
+      authMock.hasScope.mockImplementation(scopeChecker([scope]));
+
+      const wrapper = await mountWithLinks();
+
+      expect(linkRows(wrapper).map(({ key }) => key)).toEqual(keys);
+    },
+  );
+
+  it.each([
+    [ProviderType.METADATA, "metadata", "metadatasettings"],
+    [ProviderType.AUDIO_ANALYSIS, "audio_analysis", "audioanalysissettings"],
+  ])(
+    "leads the %s providers to their %s settings page",
     async (type, pageId, routeName) => {
       routeMock.query.types = type;
 
       const wrapper = await mountWithLinks();
 
-      const rows = wrapper.findAll('[data-testid^="settings-page-link-"]');
-      expect(rows).toHaveLength(1);
-      expect(rows[0].attributes("data-testid")).toBe(
-        `settings-page-link-${pageId}`,
-      );
-      expect(JSON.parse(rows[0].attributes("href")!)).toEqual({
-        name: routeName,
-      });
-      expect(rows[0].text()).toContain(`settings.${pageId}.title`);
+      expect(linkRows(wrapper)).toEqual([
+        { key: pageId, to: { name: routeName } },
+      ]);
     },
   );
 
@@ -846,6 +949,142 @@ describe("Providers leading to the settings pages of their section", () => {
 
     expect(wrapper.find('[data-testid^="settings-page-link-"]').exists()).toBe(
       false,
+    );
+  });
+});
+
+describe("Providers on a hub", () => {
+  afterEach(() => {
+    delete (apiMock.providerManifests as Record<string, unknown>)
+      .airplay_receiver;
+  });
+
+  // the AirPlay receiver says in its manifest that apps play through it
+  function withAirplayReceiver() {
+    (apiMock.providerManifests as Record<string, unknown>).airplay_receiver = {
+      ...apiMock.providerManifests.spotify,
+      features: [ProviderFeature.AUDIO_SOURCE],
+      name: "AirPlay Receiver",
+    };
+    return providerConfig({
+      domain: "airplay_receiver",
+      instance_id: "airplay_receiver--1",
+      name: "AirPlay Receiver",
+      status: ProviderStatus.LOADED,
+      type: ProviderType.PLUGIN,
+    });
+  }
+
+  it("heads Music with its title, and lists the audio sources below the music sources", async () => {
+    const wrapper = await mountWithConfigs([
+      ownSource(),
+      withAirplayReceiver(),
+    ]);
+
+    expect(
+      wrapper.findComponent({ name: "SettingsHubHeader" }).props("name"),
+    ).toBe("music");
+    expect(panels(wrapper)).toEqual([
+      { list: ProviderType.MUSIC, title: "settings.music_sources", count: 1 },
+      { list: AUDIO_SOURCES, title: "settings.audio_sources", count: 1 },
+    ]);
+    expect(
+      wrapper
+        .get(`[data-list="${AUDIO_SOURCES}"]`)
+        .get('[data-testid="provider-row"]')
+        .text(),
+    ).toBe("AirPlay Receiver");
+    expect(
+      wrapper
+        .getComponent<typeof SettingsListPanel>(
+          `[data-list="${AUDIO_SOURCES}"]`,
+        )
+        .props("description"),
+    ).toBe("settings.audio_sources_description");
+  });
+
+  it("opens the Marketplace on the audio sources from their list", async () => {
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    await wrapper
+      .get(`[data-list="${AUDIO_SOURCES}"] [data-testid="add-provider"]`)
+      .trigger("click");
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "catalog",
+      query: { types: AUDIO_SOURCES },
+    });
+  });
+
+  it("says in a line that there are no audio sources yet", async () => {
+    const wrapper = await mountWithConfigs([ownSource()]);
+
+    const audioSources = wrapper.get(`[data-list="${AUDIO_SOURCES}"]`);
+    expect(
+      audioSources.find('[data-testid="audio-sources-empty"]').exists(),
+    ).toBe(true);
+    expect(audioSources.find("[data-testid=providers-empty]").exists()).toBe(
+      false,
+    );
+  });
+
+  it("no longer lists a plugin offering audio sources with the plugins", async () => {
+    routeMock.query.types = ProviderType.PLUGIN;
+
+    const wrapper = await mountWithConfigs([
+      withAirplayReceiver(),
+      providerConfig({
+        domain: "party",
+        instance_id: "party--1",
+        status: ProviderStatus.LOADED,
+        type: ProviderType.PLUGIN,
+      }),
+    ]);
+
+    expect(panels(wrapper)).toEqual([
+      { list: ProviderType.PLUGIN, title: "settings.plugins", count: 1 },
+    ]);
+    expect(
+      wrapper
+        .findAllComponents(ProviderRowStub)
+        .map((row) => row.props("config").domain),
+    ).toEqual(["party"]);
+  });
+
+  it.each([
+    [ProviderType.METADATA, "metadata_providers"],
+    [ProviderType.AUDIO_ANALYSIS, "audio_analysis_providers"],
+  ])("heads the %s providers as a hub below Music", async (type, name) => {
+    routeMock.query.types = type;
+
+    const wrapper = await mountWithConfigs([]);
+
+    expect(
+      wrapper.findComponent({ name: "SettingsHubHeader" }).props("name"),
+    ).toBe(name);
+  });
+
+  it("gives the player support no header, as it leads to no pages", async () => {
+    routeMock.query.types = ProviderType.PLAYER;
+
+    const wrapper = await mountWithConfigs([]);
+
+    expect(wrapper.findComponent({ name: "SettingsHubHeader" }).exists()).toBe(
+      false,
+    );
+  });
+
+  it("switches the view from the header of a list", async () => {
+    const toggleViewMode = vi.fn();
+    const wrapper = await mountWithConfigs([ownSource()], "list", {
+      toggleViewMode,
+    });
+
+    wrapper.getComponent(SettingsListPanel).vm.$emit("toggle-view-mode");
+
+    expect(toggleViewMode).toHaveBeenCalledOnce();
+    expect(wrapper.getComponent(SettingsListPanel).props("viewMode")).toBe(
+      "list",
     );
   });
 });
@@ -951,8 +1190,8 @@ describe("Providers for a member", () => {
     expect(
       sections.map((section) => section.attributes("data-section")),
     ).toEqual(["own", "shared"]);
-    expect(sections[0].get("h2").text()).toBe("settings.music_sources_own");
-    expect(sections[1].get("h2").text()).toBe("settings.music_sources_shared");
+    expect(sections[0].get("h3").text()).toBe("settings.music_sources_own");
+    expect(sections[1].get("h3").text()).toBe("settings.music_sources_shared");
 
     expect(
       sections[0]
@@ -966,6 +1205,18 @@ describe("Providers for a member", () => {
     ).toEqual([
       expect.stringContaining("Household Spotify"),
       expect.stringContaining("Shared Spotify"),
+    ]);
+  });
+
+  it("heads its sources by whose they are, in the list of its music sources alone", async () => {
+    const wrapper = await mountWithConfigs([ownSource(), otherSource()]);
+
+    expect(panels(wrapper)).toEqual([
+      { list: ProviderType.MUSIC, title: "settings.music_sources", count: 2 },
+    ]);
+    expect(wrapper.findAll("h3").map((h3) => h3.text())).toEqual([
+      "settings.music_sources_own",
+      "settings.music_sources_shared",
     ]);
   });
 
@@ -1169,7 +1420,7 @@ describe("Providers for a member", () => {
   it("shows a member without sources of its own what it may use", async () => {
     const wrapper = await mountWithConfigs([otherSource()]);
 
-    expect(wrapper.get('[data-section="shared"]').get("h2").text()).toBe(
+    expect(wrapper.get('[data-section="shared"]').get("h3").text()).toBe(
       "settings.music_sources_shared",
     );
     expect(wrapper.find('[data-testid="music-sources-empty"]').exists()).toBe(
@@ -1524,6 +1775,7 @@ async function mountProviders(
 async function mountWithConfigs(
   configs: ProviderConfig[] | Promise<ProviderConfig[]>,
   viewMode: "list" | "card" = "list",
+  { toggleViewMode = vi.fn() } = {},
 ) {
   apiMock.getProviderConfigs.mockReturnValue(Promise.resolve(configs));
 
@@ -1534,12 +1786,13 @@ async function mountWithConfigs(
       },
       provide: {
         providersViewMode: {
-          toggleViewMode: vi.fn(),
+          toggleViewMode,
           viewMode: ref<"list" | "card">(viewMode),
         },
       },
       stubs: {
         Button: ButtonStub,
+        Card: SlotStub,
         CommunityMovedTypeNotice: false,
         Container: SlotStub,
         Empty: SlotStub,
@@ -1552,6 +1805,8 @@ async function mountWithConfigs(
         ItemGroup: SlotStub,
         ProviderAccessDialog: AccessDialogStub,
         ProviderRow: ProviderRowStub,
+        // the panel holds the list, its heading and its add button
+        SettingsListPanel: false,
         "v-icon": true,
       },
     },
@@ -1577,13 +1832,40 @@ async function mountWithLinks() {
           props: ["to"],
           template: '<a :href="JSON.stringify(to)"><slot /></a>',
         },
-        SettingsLinkRows: false,
         SettingsPageLinks: false,
+        SettingsTiles: false,
       },
     },
   });
   await flushPromises();
   return wrapper;
+}
+
+// the key and target of each row leading to a page below the list
+function linkRows(wrapper: Awaited<ReturnType<typeof mountWithLinks>>) {
+  return wrapper.findAll('[data-testid^="settings-page-link-"]').map((row) => ({
+    key: row.attributes("data-testid")!.replace("settings-page-link-", ""),
+    to: JSON.parse(row.attributes("href")!),
+  }));
+}
+
+// the list, title and count of each list on the page, in their order
+function panels(wrapper: Awaited<ReturnType<typeof mountWithConfigs>>) {
+  return wrapper.findAllComponents(SettingsListPanel).map((panel) => ({
+    list: panel.attributes("data-list"),
+    title: panel.props("title"),
+    count: panel.props("count"),
+  }));
+}
+
+// the sections of the list of the given type
+function panelSections(
+  wrapper: Awaited<ReturnType<typeof mountWithConfigs>>,
+  list: string,
+) {
+  return wrapper
+    .get(`[data-list="${list}"]`)
+    .findAll('[data-testid="provider-section"]');
 }
 
 // the only row on a page that lists a single source

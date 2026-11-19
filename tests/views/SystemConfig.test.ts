@@ -1,3 +1,6 @@
+import SettingsTiles, {
+  type SettingsTile,
+} from "@/components/settings/SettingsTiles.vue";
 import { Scope, type CoreConfig } from "@/plugins/api/interfaces";
 import SystemConfig from "@/views/settings/SystemConfig.vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
@@ -46,16 +49,49 @@ beforeEach(() => {
 });
 
 describe("SystemConfig", () => {
-  it("leads to the network, Home Assistant, the background tasks and the diagnostics", async () => {
+  it("heads the page as the System hub", async () => {
+    const wrapper = await mountPage();
+
+    const header = wrapper.get('[data-testid="settings-hub-header"]');
+    expect(header.get("h1").text()).toBe("settings.system");
+    expect(header.get("p").text()).toBe("settings.system_description");
+  });
+
+  it("gives each page its own tile, a module no settings page shows a plain one", async () => {
+    apiMock.getCoreConfigs.mockResolvedValue([
+      ...KNOWN_MODULES.map(coreConfig),
+      coreConfig("radio_tuner"),
+    ]);
+
+    const wrapper = await mountPage();
+
+    expect(
+      wrapper
+        .getComponent(SettingsTiles)
+        .props("tiles")
+        .map(({ key, color }: SettingsTile) => [key, color]),
+    ).toEqual([
+      ["network", "blue"],
+      ["storage", "orange"],
+      ["home_assistant", "cyan"],
+      ["background_tasks", "green"],
+      ["diagnostics", "red"],
+      ["core_radio_tuner", "grey-darken-1"],
+    ]);
+  });
+
+  it("leads to the network, the storage, Home Assistant, the background tasks and the diagnostics", async () => {
     const wrapper = await mountPage();
 
     expect(rowKeys(wrapper)).toEqual([
       "network",
+      "storage",
       "home_assistant",
       "background_tasks",
       "diagnostics",
     ]);
     expect(linkOf(wrapper, "network")).toEqual({ name: "networksettings" });
+    expect(linkOf(wrapper, "storage")).toEqual({ name: "storagesettings" });
     expect(linkOf(wrapper, "home_assistant")).toEqual({
       name: "homeassistantsettings",
     });
@@ -84,6 +120,7 @@ describe("SystemConfig", () => {
 
     expect(rowKeys(wrapper)).toEqual([
       "network",
+      "storage",
       "home_assistant",
       "background_tasks",
       "diagnostics",
@@ -100,18 +137,21 @@ describe("SystemConfig", () => {
   });
 
   it.each([
-    [Scope.CONFIG_CORE_WRITE, "network"],
-    [Scope.CONFIG_PROVIDERS_WRITE, "home_assistant"],
-    [Scope.SYSTEM_READ, "background_tasks"],
-    [Scope.SYSTEM_MANAGE, "diagnostics"],
-  ])("leaves a page out without %s, which it needs", async (scope, key) => {
-    hasScope.mockImplementation((granted) => granted !== scope);
+    [Scope.CONFIG_CORE_WRITE, ["network"]],
+    [Scope.CONFIG_PROVIDERS_WRITE, ["storage", "home_assistant"]],
+    [Scope.SYSTEM_READ, ["background_tasks"]],
+    [Scope.SYSTEM_MANAGE, ["diagnostics"]],
+  ])(
+    "leaves the pages out without %s, which they need",
+    async (scope, keys) => {
+      hasScope.mockImplementation((granted) => granted !== scope);
 
-    const wrapper = await mountPage();
+      const wrapper = await mountPage();
 
-    expect(rowKeys(wrapper)).not.toContain(key);
-    expect(rowKeys(wrapper)).toHaveLength(3);
-  });
+      expect(rowKeys(wrapper)).toHaveLength(5 - keys.length);
+      for (const key of keys) expect(rowKeys(wrapper)).not.toContain(key);
+    },
+  );
 });
 
 async function mountPage() {

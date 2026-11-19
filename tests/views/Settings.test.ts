@@ -6,6 +6,7 @@ import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
 import { useSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
 import {
+  ProviderFeature,
   ProviderType,
   UserRole,
   type ProviderManifest,
@@ -25,7 +26,7 @@ const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
       players: { kitchen: { name: "Kitchen" } },
       providerManifests: {} as Record<
         string,
-        Pick<ProviderManifest, "name" | "type">
+        Pick<ProviderManifest, "name" | "type" | "features">
       >,
       getProvider: vi.fn(),
       // resolves an instance id to a name, falling back to the manifest name
@@ -226,16 +227,21 @@ describe("Settings breadcrumbs on the settings of a provider", () => {
   });
 });
 
-describe("Settings breadcrumbs on the library pages", () => {
-  const MUSIC_SOURCES = {
-    title: "settings.music_sources",
+describe("Settings breadcrumbs on the Music pages", () => {
+  const MUSIC = {
+    title: "settings.music",
     disabled: false,
     to: { name: "providersettings", query: { types: "music" } },
   };
-  const LIBRARY = {
-    title: "settings.library.title",
+  const METADATA = {
+    title: "metadata",
     disabled: false,
-    to: { name: "librarysettings" },
+    to: { name: "providersettings", query: { types: "metadata" } },
+  };
+  const AUDIO_ANALYSIS = {
+    title: "settings.audio_analysis_providers",
+    disabled: false,
+    to: { name: "providersettings", query: { types: "audio_analysis" } },
   };
 
   beforeEach(() => {
@@ -245,54 +251,61 @@ describe("Settings breadcrumbs on the library pages", () => {
   afterEach(() => {
     routeState.name = "editplayeroptions";
     routeState.params = { playerId: "kitchen" };
+    routeState.query = {};
   });
 
-  it("hang the library options under the music sources", () => {
-    expect(pageTrail("librarysettings")).toEqual([
-      MUSIC_SOURCES,
-      { title: "settings.library.title", disabled: true },
+  it("name Music as the page on screen on the music sources", () => {
+    expect(pageTrail("providersettings", {}, { types: "music" })).toEqual([
+      { ...MUSIC, disabled: true },
     ]);
   });
 
   it.each([
-    ["storagesettings", "settings.storage.music_locations"],
-    ["genremanagement", "genres"],
-  ])("hang %s under the library options", (name, title) => {
-    expect(pageTrail(name)).toEqual([
-      MUSIC_SOURCES,
-      LIBRARY,
+    ["librarysettings", "settings.library.title"],
+    ["genremanagement", "settings.genre_management"],
+  ])("hang %s under Music", (name, title) => {
+    expect(pageTrail(name)).toEqual([MUSIC, { title, disabled: true }]);
+  });
+
+  it.each([
+    ["metadata", METADATA.title],
+    ["audio_analysis", AUDIO_ANALYSIS.title],
+  ])("hang the %s providers under Music", (type, title) => {
+    expect(pageTrail("providersettings", {}, { types: type })).toEqual([
+      MUSIC,
       { title, disabled: true },
     ]);
   });
 
-  it("name the library options as plain text for who may not open them", () => {
-    hasScope.mockImplementation((scope) => scope !== Scope.CONFIG_CORE_WRITE);
-
-    expect(pageTrail("storagesettings")[1]).toEqual({
-      ...LIBRARY,
-      to: undefined,
-    });
-  });
-});
-
-describe("Settings breadcrumbs on the metadata settings", () => {
-  afterEach(() => {
-    routeState.name = "editplayeroptions";
-    routeState.params = { playerId: "kitchen" };
-  });
-
-  it("hang the metadata settings under the metadata sources", () => {
-    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
-
+  it("hang the metadata settings under the metadata providers", () => {
     expect(pageTrail("metadatasettings")).toEqual([
-      {
-        title: "settings.metadataproviders",
-        disabled: false,
-        to: { name: "providersettings", query: { types: "metadata" } },
-      },
+      MUSIC,
+      METADATA,
       { title: "settings.metadata.title", disabled: true },
     ]);
   });
+
+  it("hang the analysis status under the audio analysis providers", () => {
+    expect(pageTrail("audioanalysissettings")).toEqual([
+      MUSIC,
+      AUDIO_ANALYSIS,
+      { title: "settings.audio_analysis_status.title", disabled: true },
+    ]);
+  });
+
+  it.each([
+    ["metadatasettings", METADATA],
+    ["audioanalysissettings", AUDIO_ANALYSIS],
+  ])(
+    "name the providers above %s as plain text for who may not manage them",
+    (name, crumb) => {
+      hasScope.mockImplementation(
+        (scope) => scope !== Scope.CONFIG_PROVIDERS_WRITE,
+      );
+
+      expect(pageTrail(name)[1]).toEqual({ ...crumb, to: undefined });
+    },
+  );
 });
 
 /** The trail the settings page hands its heading on the given page. */
@@ -322,38 +335,6 @@ function pageTrail(
   return items;
 }
 
-describe("Settings breadcrumbs on the audio analysis status", () => {
-  afterEach(() => {
-    routeState.name = "editplayeroptions";
-    routeState.params = { playerId: "kitchen" };
-  });
-
-  it("hang the status page under the audio analysis providers", () => {
-    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
-
-    expect(pageTrail("audioanalysissettings")).toEqual([
-      {
-        title: "settings.audio_analysis_providers",
-        disabled: false,
-        to: { name: "providersettings", query: { types: "audio_analysis" } },
-      },
-      { title: "settings.audio_analysis_status.title", disabled: true },
-    ]);
-  });
-
-  it("name the providers as plain text for who may not manage them", () => {
-    hasScope.mockImplementation(
-      (scope) => scope !== Scope.CONFIG_PROVIDERS_WRITE,
-    );
-
-    expect(pageTrail("audioanalysissettings")[0]).toEqual({
-      title: "settings.audio_analysis_providers",
-      disabled: false,
-      to: undefined,
-    });
-  });
-});
-
 describe("Settings breadcrumbs on the System pages", () => {
   const SYSTEM = {
     title: "settings.system",
@@ -380,6 +361,13 @@ describe("Settings breadcrumbs on the System pages", () => {
         to: { name: "backgroundtasks" },
       },
       { title: "background_tasks.settings.title", disabled: true },
+    ]);
+  });
+
+  it("hang the storage under the System settings", () => {
+    expect(pageTrail("storagesettings")).toEqual([
+      SYSTEM,
+      { title: "settings.storage.title", disabled: true },
     ]);
   });
 
@@ -533,16 +521,6 @@ describe("Settings breadcrumbs on the pages below the players", () => {
       { title: "Sonos", disabled: true },
     ]);
   });
-
-  it("leave the music sources as they are", () => {
-    expect(pageTrail("providersettings", {}, { types: "music" })).toEqual([
-      {
-        title: "settings.music_sources",
-        disabled: true,
-        to: { name: "providersettings", query: { types: "music" } },
-      },
-    ]);
-  });
 });
 
 describe("Settings breadcrumbs on the settings of a provider that is not loaded", () => {
@@ -556,17 +534,63 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
     routeState.params = { playerId: "kitchen" };
     delete apiMock.providerManifests.fanarttv;
     delete apiMock.providerManifests.filesystem_local;
+    delete apiMock.providerManifests.essentia;
+    delete apiMock.providerManifests.airplay_receiver;
   });
 
-  it("lead to the sources of the type of its provider", async () => {
+  it("lead to the providers of the type of its provider, below Music", async () => {
     apiMock.providerManifests.fanarttv = {
       name: "fanart.tv",
       type: ProviderType.METADATA,
     };
 
-    const trail = await providerTrail(true, "fanarttv--kitchen");
+    expect(await providerTrail(true, "fanarttv--kitchen")).toEqual([
+      {
+        title: "settings.music",
+        disabled: false,
+        to: { name: "providersettings", query: { types: "music" } },
+      },
+      {
+        title: "metadata",
+        disabled: false,
+        to: { name: "providersettings", query: { types: "metadata" } },
+      },
+      { title: "fanart.tv", disabled: true },
+    ]);
+  });
 
-    expect(trail[0].title).toBe("settings.metadataproviders");
+  it("lead an audio analysis provider to its providers, below Music", async () => {
+    apiMock.providerManifests.essentia = {
+      name: "Essentia",
+      type: ProviderType.AUDIO_ANALYSIS,
+    };
+
+    const trail = await providerTrail(true, "essentia--kitchen");
+
+    expect(trail.map(({ title }) => title)).toEqual([
+      "settings.music",
+      "settings.audio_analysis_providers",
+      "Essentia",
+    ]);
+  });
+
+  it("lead a plugin offering audio sources to Music, where it is listed", async () => {
+    apiMock.providerManifests.airplay_receiver = {
+      name: "AirPlay Receiver",
+      type: ProviderType.PLUGIN,
+      features: [ProviderFeature.AUDIO_SOURCE],
+    };
+
+    const trail = await providerTrail(true, "airplay_receiver--kitchen");
+
+    expect(trail).toEqual([
+      {
+        title: "settings.music",
+        disabled: false,
+        to: { name: "providersettings", query: { types: "music" } },
+      },
+      { title: "AirPlay Receiver", disabled: true },
+    ]);
   });
 
   // the server converts SMB and NFS sources into Local files, keeping their ids
@@ -578,7 +602,7 @@ describe("Settings breadcrumbs on the settings of a provider that is not loaded"
 
     const trail = await providerTrail(true, "filesystem_nfs--k2Lm9xQa");
 
-    expect(trail[0].title).toBe("settings.music_sources");
+    expect(trail[0].title).toBe("settings.music");
   });
 });
 

@@ -47,10 +47,8 @@ import type {
   CatalogTypeCount,
 } from "@/helpers/provider_catalog";
 import { api } from "@/plugins/api";
-import type {
-  CatalogRecommendation,
-  ProviderType,
-} from "@/plugins/api/interfaces";
+import type { ProviderListType } from "@/helpers/settings_pages";
+import type { CatalogRecommendation } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
@@ -73,7 +71,7 @@ const emit = defineEmits<{
   (e: "open", entry: CatalogEntry): void;
   (e: "add", entry: CatalogEntry): void;
   (e: "enable-community"): void;
-  (e: "select-type", type: ProviderType): void;
+  (e: "select-type", type: ProviderListType): void;
 }>();
 
 const { dismissed, dismiss } = useDismissedSuggestions();

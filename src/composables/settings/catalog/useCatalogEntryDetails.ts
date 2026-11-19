@@ -1,9 +1,9 @@
 import { getRepositoryUrl } from "@/helpers/community_catalog";
 import {
   type CatalogEntry,
-  getCatalogType,
   getEntryMaintainers,
   getManageRoute,
+  getManifestCatalogType,
 } from "@/helpers/provider_catalog";
 import { isCommunityProvider } from "@/helpers/provider_config";
 import { $t } from "@/plugins/i18n";
@@ -18,7 +18,7 @@ export function useCatalogEntryDetails(entry: MaybeRefOrGetter<CatalogEntry>) {
   const manifest = computed(() => toValue(entry).manifest);
 
   const typeLabel = computed(() => {
-    const type = getCatalogType(manifest.value.type);
+    const type = getManifestCatalogType(manifest.value);
     return type ? $t(type.itemLabel) : "";
   });
 

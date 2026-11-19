@@ -1,3 +1,4 @@
+import { AUDIO_SOURCES } from "@/helpers/settings_pages";
 import Catalog from "@/views/settings/Catalog.vue";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
@@ -8,6 +9,7 @@ import {
   type CoreConfig,
   EventType,
   type ProviderConfig,
+  ProviderFeature,
   ProviderIconVariant,
   type ProviderManifest,
   ProviderSharing,
@@ -257,6 +259,52 @@ describe("Catalog", () => {
       "settings.music_sources2",
       "settings.playerproviders2",
     ]);
+  });
+
+  describe("with plugins through which apps play to Music Assistant", () => {
+    beforeEach(() => {
+      for (const manifest of [
+        providerManifest({
+          domain: "airplay_receiver",
+          name: "AirPlay Receiver",
+          type: ProviderType.PLUGIN,
+          features: [ProviderFeature.AUDIO_SOURCE],
+        }),
+        providerManifest({
+          domain: "party",
+          name: "Party",
+          type: ProviderType.PLUGIN,
+        }),
+      ]) {
+        apiMock.providerManifests[manifest.domain] = manifest;
+      }
+    });
+
+    it("gives them a tab of their own after the music sources", async () => {
+      await mountCatalog();
+
+      expect(tabLabels()).toEqual([
+        "settings.catalog.discover",
+        "settings.music_sources2",
+        "settings.audio_sources1",
+        "settings.playerproviders2",
+        "settings.plugins1",
+      ]);
+    });
+
+    it("lists them on their tab and leaves them off the plugins", async () => {
+      await mountList(AUDIO_SOURCES);
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual([
+        "AirPlay Receiver",
+      ]);
+    });
+
+    it("leaves the plugins tab to the other plugins", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
+    });
   });
 
   it("counts what is set up on the Installed button, and opens the Installed view with it", async () => {

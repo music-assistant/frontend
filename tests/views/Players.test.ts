@@ -1,3 +1,6 @@
+import SettingsListPanel, {
+  type SettingsPanelAction,
+} from "@/components/settings/SettingsListPanel.vue";
 import Players from "@/views/settings/Players.vue";
 import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
@@ -7,6 +10,7 @@ import type {
 } from "@/helpers/player_settings_actions";
 import {
   PlayerType,
+  ProviderFeature,
   ProviderType,
   Scope,
   type PlayerConfig,
@@ -243,8 +247,18 @@ describe("Players", () => {
     expect(linkRowKeys(wrapper)).toEqual(rows);
   });
 
+  it("heads the page as the Players hub", async () => {
+    const wrapper = await mountPlayers("list");
+
+    const header = wrapper.get('[data-testid="settings-hub-header"]');
+    expect(header.get("h1").text()).toBe("Players");
+    expect(header.get("p").text()).toBe(
+      "Your players, lights, screens and audio inputs, and how they play",
+    );
+  });
+
   it.each(["list", "card"] as const)(
-    "lists each kind of device under a heading of its own in %s view",
+    "lists the players first and every other kind of device under a heading of its own in %s view",
     async (viewMode) => {
       apiMock.getPlayerConfigs.mockResolvedValue(DEVICES);
       const wrapper = await mountPlayers(viewMode);
@@ -252,11 +266,13 @@ describe("Players", () => {
       expect(
         wrapper.findAll('[data-testid="player-section"]').map((section) => ({
           key: section.attributes("data-section"),
-          heading: section.get("h2").text(),
+          heading: section.find("h3").exists()
+            ? section.get("h3").text()
+            : undefined,
           players: section.findAll(PLAYER_SELECTORS[viewMode]).length,
         })),
       ).toEqual([
-        { key: "players", heading: "Players", players: 1 },
+        { key: "players", heading: undefined, players: 1 },
         { key: "lights", heading: "Lights", players: 1 },
         { key: "screens", heading: "Screens", players: 1 },
         { key: "inputs", heading: "Audio inputs", players: 1 },
@@ -264,13 +280,14 @@ describe("Players", () => {
     },
   );
 
-  it("shows no heading over a single kind of device", async () => {
+  it("lists every kind of device in the one list of the players, counting them all", async () => {
+    apiMock.getPlayerConfigs.mockResolvedValue(DEVICES);
     const wrapper = await mountPlayers("list");
 
-    expect(sectionKeys(wrapper)).toEqual(["players"]);
-    expect(wrapper.find('[data-testid="player-section"] h2').exists()).toBe(
-      false,
-    );
+    const panel = wrapper.get('[data-testid="player-list"]');
+    expect(panel.get("h2").text()).toBe("Players 4");
+    expect(panel.findAll('[data-testid="player-section"]')).toHaveLength(4);
+    expect(panel.findComponent({ name: "PlayerFilters" }).exists()).toBe(true);
   });
 
   it("splits what the filters leave into sections", async () => {
@@ -287,9 +304,47 @@ describe("Players", () => {
     await flushPromises();
 
     expect(sectionKeys(wrapper)).toEqual(["lights"]);
-    expect(wrapper.find('[data-testid="player-section"] h2').exists()).toBe(
-      false,
+    expect(wrapper.get('[data-testid="player-section"] h3').text()).toBe(
+      "Lights",
     );
+  });
+
+  it("offers to add a group player from the list when a provider makes them", async () => {
+    apiMock.providers = {
+      "sonos--1": providerInstance({
+        domain: "sonos",
+        instance_id: "sonos--1",
+        type: ProviderType.PLAYER,
+        supported_features: [ProviderFeature.CREATE_GROUP_PLAYER],
+      }),
+    };
+    const wrapper = await mountPlayers("list");
+
+    const actions = wrapper
+      .getComponent(SettingsListPanel)
+      .props("actions") as SettingsPanelAction[];
+    expect(actions.map(({ key, label }) => ({ key, label }))).toEqual([
+      { key: "add-player-group", label: "Add group player" },
+    ]);
+  });
+
+  it("offers no group player without a provider making them", async () => {
+    const wrapper = await mountPlayers("list");
+
+    expect(wrapper.getComponent(SettingsListPanel).props("actions")).toEqual(
+      [],
+    );
+  });
+
+  it("switches the view from the header of the list", async () => {
+    const toggleViewMode = vi.fn();
+    const wrapper = await mountPlayers("card", toggleViewMode);
+
+    const panel = wrapper.getComponent(SettingsListPanel);
+    expect(panel.props("viewMode")).toBe("card");
+    panel.vm.$emit("toggle-view-mode");
+
+    expect(toggleViewMode).toHaveBeenCalledOnce();
   });
 
   it("points an admin to the player providers", async () => {
@@ -593,7 +648,10 @@ function unavailablePlayer(playerId: string) {
   };
 }
 
-async function mountPlayers(viewMode: "list" | "card") {
+async function mountPlayers(
+  viewMode: "list" | "card",
+  toggleViewMode = vi.fn(),
+) {
   const wrapper = mount(Players, {
     global: {
       mocks: {
@@ -603,7 +661,7 @@ async function mountPlayers(viewMode: "list" | "card") {
       directives: { hold: {} },
       provide: {
         playersViewMode: {
-          toggleViewMode: vi.fn(),
+          toggleViewMode,
           viewMode: ref(viewMode),
         },
       },

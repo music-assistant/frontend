@@ -480,11 +480,13 @@
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
         "players_description": "Your players, lights, screens and audio inputs, and how they play",
+        "music": "Music",
+        "music_description": "Your music sources, library, metadata and audio analysis",
         "frontend_description": "Customize the user interface theme and appearance",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
-        "system_description": "The network, Home Assistant, background tasks and diagnostics of the server",
+        "system_description": "The network, storage, Home Assistant, background tasks and diagnostics of the server",
         "system": "System",
         "network": {
             "title": "Network",
@@ -520,8 +522,8 @@
             "description": "Crossfade, volume normalization, autoplay and what happens when you press play"
         },
         "library": {
-            "title": "Library",
-            "description": "Music locations, which source plays, genres and library maintenance",
+            "title": "Library settings",
+            "description": "Which source plays a track and library maintenance",
             "source_selection": "Source selection",
             "maintenance": "Library maintenance"
         },
@@ -687,7 +689,7 @@
             "description": "Vibrate while adjusting the volume slider. Touch devices with a vibration motor only."
         },
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
-        "genre_management": "Genre Management",
+        "genre_management": "Genre management",
         "genre_management_description": "Manage default genres and restore genre defaults",
         "restore_missing_defaults": "Restore Missing Defaults",
         "restore_missing_defaults_description": "Adds any missing default genres without affecting your existing genres or custom mappings.",
@@ -757,6 +759,7 @@
             "no_match": "Nothing matches your search or filter",
             "type": {
                 "music": "Music source",
+                "audio_source": "Audio source",
                 "player": "Player support",
                 "metadata": "Metadata source",
                 "plugin": "Plugin",
@@ -764,6 +767,7 @@
             },
             "manage_type": {
                 "music": "Manage your music sources",
+                "audio_source": "Manage audio sources",
                 "player": "Manage player support",
                 "metadata": "Manage your metadata sources",
                 "plugin": "Manage plugins",
@@ -839,7 +843,6 @@
                 }
             }
         },
-        "music_providers_description": "Manage your music streaming services and local libraries",
         "music_sources_empty_title": "No music sources yet",
         "music_sources_empty": "Connect a music service account or add a local library to start listening.",
         "source_access": {
@@ -885,6 +888,10 @@
         "missing_players_hint": "Missing players? {0}",
         "add_player_providers": "Add more player support",
         "add_audio_analysis_provider": "Add audio analysis",
+        "audio_sources": "Audio sources",
+        "audio_sources_description": "Apps such as Spotify and AirPlay play to Music Assistant through these",
+        "audio_sources_empty": "No audio sources yet",
+        "add_audio_source": "Add an audio source",
         "audio_analysis_providers": "Audio analysis",
         "audio_analysis_providers_description": "Manage providers that analyze your audio",
         "audio_analysis_status": {
@@ -1061,7 +1068,8 @@
         "music_sources_shared": "Shared with you",
         "music_sources_shared_empty": "No music sources have been shared with you yet.",
         "storage": {
-            "description": "The folders, drives and network shares your music can come from",
+            "title": "Storage",
+            "description": "Music folders, drives, network shares and the storage of the server",
             "load_failed": "Could not load the storage",
             "music_locations": "Music locations",
             "music_locations_empty_title": "No music locations yet",
@@ -1865,6 +1873,7 @@
     "description": "Description",
     "genre": "Genre",
     "genres": "Genres",
+    "metadata": "Metadata",
     "link": "Link",
     "link_alias": "Link alias",
     "link_alias_failed": "Failed to link alias",

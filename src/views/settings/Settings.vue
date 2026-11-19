@@ -14,54 +14,21 @@
         />
       </template>
       <template #append>
-        <Button
+        <SettingsViewModeToggle
           v-if="viewModeToggle"
-          variant="ghost"
-          size="icon"
-          :title="getToggleViewModeLabel(viewModeToggle.mode)"
-          :aria-label="getToggleViewModeLabel(viewModeToggle.mode)"
-          @click="viewModeToggle.toggle()"
-        >
-          <List v-if="viewModeToggle.mode === 'list'" class="size-5" />
-          <LayoutGrid v-else class="size-5" />
-        </Button>
+          :mode="viewModeToggle.mode"
+          @toggle="viewModeToggle.toggle()"
+        />
       </template>
     </Toolbar>
 
     <Separator />
 
     <div v-if="isOverview" class="p-5 max-md:px-3 max-md:py-4">
-      <div v-if="settingsViewMode === 'card'" class="flex flex-col gap-4">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <SettingsSectionLink
-            v-for="section in featuredSections"
-            :key="section.name"
-            :section="section"
-            variant="card"
-          />
-        </div>
-        <div
-          class="grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] md:gap-4 min-[960px]:grid-cols-2 xl:grid-cols-3"
-        >
-          <SettingsSectionLink
-            v-for="section in regularSections"
-            :key="section.name"
-            :section="section"
-            variant="card"
-          />
-        </div>
-      </div>
-
-      <nav v-else :aria-label="t('settings.settings')">
-        <ItemGroup>
-          <SettingsSectionLink
-            v-for="section in settingsSections"
-            :key="section.name"
-            :section="section"
-            variant="list"
-          />
-        </ItemGroup>
-      </nav>
+      <SettingsOverview
+        :sections="settingsSections"
+        :view-mode="settingsViewMode"
+      />
 
       <div v-if="canOpenOnboarding" class="mt-2 flex justify-center">
         <Button
@@ -82,13 +49,13 @@
 </template>
 
 <script setup lang="ts">
-import SettingsSectionLink from "@/components/settings/SettingsSectionLink.vue";
+import SettingsOverview from "@/components/settings/SettingsOverview.vue";
+import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import ToolbarHeading, {
   type ToolbarHeadingItem,
 } from "@/components/ToolbarHeading.vue";
 import { Button } from "@/components/ui/button";
-import { ItemGroup } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import { provideSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
@@ -97,15 +64,20 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { coreModuleName } from "@/helpers/core_modules";
-import { providerSettingsPage, SETTINGS_PAGES } from "@/helpers/settings_pages";
+import {
+  providerListType,
+  providerSettingsPage,
+  SETTINGS_PAGES,
+} from "@/helpers/settings_pages";
 import {
   availableSettingsSections,
+  providerListPage,
   providerSettingsSectionName,
 } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { LayoutGrid, List, Settings } from "@lucide/vue";
+import { Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
@@ -135,26 +107,6 @@ const savedSettingsViewMode = getPreference<"list" | "card">(
   "card",
 );
 
-type SettingsViewMode = "list" | "card";
-
-const getSettingsViewModeLabel = function (mode: SettingsViewMode) {
-  return mode === "list" ? t("view.list") : t("view.card");
-};
-
-const getNextSettingsViewMode = function (
-  mode: SettingsViewMode,
-): SettingsViewMode {
-  return mode === "list" ? "card" : "list";
-};
-
-const getToggleViewModeLabel = function (mode: SettingsViewMode) {
-  const nextMode = getNextSettingsViewMode(mode);
-  return t("tooltip.view_mode_switch", [
-    getSettingsViewModeLabel(mode),
-    getSettingsViewModeLabel(nextMode),
-  ]);
-};
-
 watch(
   () => savedSettingsViewMode.value,
   (savedViewMode) => {
@@ -171,10 +123,6 @@ const toggleSettingsViewMode = function () {
 };
 
 const playersViewMode = ref<"list" | "card">("list");
-const isPlayersPage = computed(() => {
-  const name = router.currentRoute.value.name?.toString() || "";
-  return name.includes("players") || name === "addgroup";
-});
 
 const savedPlayersViewMode = getPreference<"list" | "card">(
   "settings.players.viewMode",
@@ -202,10 +150,6 @@ provide("playersViewMode", {
 });
 
 const providersViewMode = ref<"list" | "card">("card");
-const isProvidersPage = computed(() => {
-  const name = router.currentRoute.value.name?.toString() || "";
-  return name.includes("providers");
-});
 
 const savedProvidersViewMode = getPreference<"list" | "card">(
   "settings.providers.viewMode",
@@ -263,14 +207,11 @@ provide("tasksViewMode", {
   toggleViewMode: toggleTasksViewMode,
 });
 
-// the page on screen owns the toolbar's view mode toggle, if it has one
+// the page on screen owns the toolbar's view mode toggle, if it has one; the
+// lists of a hub have the toggle in their panel
 const viewModeToggle = computed(() => {
   if (isOverview.value)
     return { mode: settingsViewMode.value, toggle: toggleSettingsViewMode };
-  if (isPlayersPage.value)
-    return { mode: playersViewMode.value, toggle: togglePlayersViewMode };
-  if (isProvidersPage.value)
-    return { mode: providersViewMode.value, toggle: toggleProvidersViewMode };
   if (isTasksPage.value)
     return { mode: tasksViewMode.value, toggle: toggleTasksViewMode };
   return undefined;
@@ -293,20 +234,6 @@ const settingsSections = computed(() =>
   availableSettingsSections((scope) => authManager.hasScope(scope)),
 );
 
-const featuredSectionNames = ["music_providers", "players"];
-
-const featuredSections = computed(() =>
-  settingsSections.value.filter((section) =>
-    featuredSectionNames.includes(section.name),
-  ),
-);
-
-const regularSections = computed(() =>
-  settingsSections.value.filter(
-    (section) => !featuredSectionNames.includes(section.name),
-  ),
-);
-
 // computed properties
 const isOverview = computed(() => {
   return router.currentRoute.value.name === "settings";
@@ -317,26 +244,28 @@ useEscapeBack(
   () => !isOverview.value,
 );
 
-// the library options and the pages they lead to, which sit with the music sources
-const LIBRARY_ROUTE_NAMES = [
+// the pages below Music that list no providers
+const MUSIC_ROUTE_NAMES = [
   "librarysettings",
-  "storagesettings",
   "genremanagement",
+  "metadatasettings",
+  "audioanalysissettings",
 ];
+
+// the provider type a list of providers shows: the first one its route names
+const listedType = computed(() => {
+  const typesQuery = router.currentRoute.value.query.types as
+    string | undefined;
+  return typesQuery ? typesQuery.split(",")[0].trim() : undefined;
+});
 
 const activeTab = computed(() => {
   const name = router.currentRoute.value.name?.toString() || "";
   if (name === "profile") {
     return "profile";
   }
-  if (name === "audioanalysissettings") {
-    return "audio_analysis_providers";
-  }
-  if (LIBRARY_ROUTE_NAMES.includes(name)) {
-    return "music_providers";
-  }
-  if (name === "metadatasettings") {
-    return "metadata_providers";
+  if (MUSIC_ROUTE_NAMES.includes(name)) {
+    return "music";
   }
   if (
     name.includes("player") ||
@@ -355,7 +284,8 @@ const activeTab = computed(() => {
     name === "diagnostics" ||
     name === "networksettings" ||
     name === "remoteaccesssettings" ||
-    name === "homeassistantsettings"
+    name === "homeassistantsettings" ||
+    name === "storagesettings"
   ) {
     return "system";
   }
@@ -373,10 +303,7 @@ const activeTab = computed(() => {
     return "catalog";
   }
 
-  const typesQuery = router.currentRoute.value.query.types as
-    string | undefined;
-  const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
-  const typeSection = providerTypeTab(firstType);
+  const typeSection = providerSettingsSectionName(listedType.value);
   if (typeSection) return typeSection;
 
   if (name === "editprovider") {
@@ -385,32 +312,37 @@ const activeTab = computed(() => {
     if (providerSettingsPage(embeddedProviderDomain(instanceId))) {
       return "system";
     }
-    // disabled instances are not loaded, so fall back to the manifest type
-    const providerType =
-      api.getProvider(instanceId)?.type ||
-      api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
-    const providerSection = providerTypeTab(providerType);
+    const providerSection = providerSettingsSectionName(
+      providerListOf(instanceId),
+    );
     if (providerSection) return providerSection;
   }
 
-  return "music_providers";
+  return "music";
 });
 
-// the tab of a provider type; the player providers hang under the players
-const providerTypeTab = function (type: string | undefined) {
-  return type === ProviderType.PLAYER
-    ? "players"
-    : providerSettingsSectionName(type);
+// the list the provider of an instance shows in, which its manifest decides so
+// a disabled instance, which is not loaded, shows in the same one
+const providerListOf = function (instanceId: string) {
+  const manifest = api.providerManifests[embeddedProviderDomain(instanceId)];
+  const type = manifest?.type ?? api.getProvider(instanceId)?.type;
+  return type && providerListType(type, manifest?.features);
 };
 
-// the crumb of the library options, a link for whoever may open them
-const libraryCrumb = function (): ToolbarHeadingItem {
-  const { title, route } = SETTINGS_PAGES.library;
-  return {
-    title: t(title),
-    disabled: false,
-    to: authManager.hasScope(Scope.CONFIG_CORE_WRITE) ? route : undefined,
-  };
+// the crumb of the page below a section listing the providers of a type, a
+// link for whoever may open it
+const providerListCrumbs = function (
+  type: string | undefined,
+): ToolbarHeadingItem[] {
+  const page = providerListPage(type);
+  if (!page) return [];
+  return [
+    {
+      title: t(page.label),
+      disabled: false,
+      to: authManager.hasScope(page.requiresScope) ? page.route : undefined,
+    },
+  ];
 };
 
 const breadcrumbItems = computed(() => {
@@ -462,32 +394,19 @@ const breadcrumbItems = computed(() => {
       });
     } else if (currentTab === "catalog") {
       items.push({ title: t("settings.catalog.title"), disabled: true });
-    } else if (currentTab === "music_providers") {
+    } else if (currentTab === "music") {
       items.push({
-        title: t("settings.music_sources"),
-        disabled: name === "providersettings",
+        title: t("settings.music"),
+        // the lists of the other provider types below Music share its route
+        disabled:
+          name === "providersettings" && !providerListPage(listedType.value),
         to: { name: "providersettings", query: { types: "music" } },
-      });
-    } else if (currentTab === "metadata_providers") {
-      items.push({
-        title: t("settings.metadataproviders"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "metadata" } },
       });
     } else if (currentTab === "plugin_providers") {
       items.push({
         title: t("settings.plugins"),
         disabled: name === "providersettings",
         to: { name: "providersettings", query: { types: "plugin" } },
-      });
-    } else if (currentTab === "audio_analysis_providers") {
-      items.push({
-        title: t("settings.audio_analysis_providers"),
-        disabled: name === "providersettings",
-        // the provider list is only open to who manages every provider
-        to: authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE)
-          ? { name: "providersettings", query: { types: "audio_analysis" } }
-          : undefined,
       });
     } else if (currentTab === "about") {
       items.push({
@@ -499,10 +418,9 @@ const breadcrumbItems = computed(() => {
   }
 
   match(name)
-    // the player providers are listed below the players
     .with("providersettings", () => {
-      if (activeTab.value !== "players") return;
-      items.push({ title: t("settings.playerproviders"), disabled: true });
+      const page = providerListPage(listedType.value);
+      if (page) items.push({ title: t(page.label), disabled: true });
     })
     .with("editprovider", () => {
       const instanceId = route.params.instanceId as string;
@@ -514,16 +432,7 @@ const breadcrumbItems = computed(() => {
           to: ownPage.route,
         });
       }
-      if (activeTab.value === "players") {
-        items.push({
-          title: t("settings.playerproviders"),
-          disabled: false,
-          to: {
-            name: "providersettings",
-            query: { types: ProviderType.PLAYER },
-          },
-        });
-      }
+      items.push(...providerListCrumbs(providerListOf(instanceId)));
       items.push({
         title: editedProviderName.value || api.getProviderName(instanceId),
         disabled: true,
@@ -594,16 +503,16 @@ const breadcrumbItems = computed(() => {
       items.push({ title: t(SETTINGS_PAGES.library.title), disabled: true });
     })
     .with("storagesettings", () => {
-      items.push(libraryCrumb(), {
-        title: t("settings.storage.music_locations"),
-        disabled: true,
-      });
+      items.push({ title: t("settings.storage.title"), disabled: true });
     })
     .with("genremanagement", () => {
-      items.push(libraryCrumb(), { title: t("genres"), disabled: true });
+      items.push({ title: t("settings.genre_management"), disabled: true });
     })
     .with("metadatasettings", () => {
-      items.push({ title: t(SETTINGS_PAGES.metadata.title), disabled: true });
+      items.push(...providerListCrumbs(ProviderType.METADATA), {
+        title: t(SETTINGS_PAGES.metadata.title),
+        disabled: true,
+      });
     })
     .with("playbacksettings", () => {
       items.push({ title: t(SETTINGS_PAGES.playback.title), disabled: true });
@@ -623,7 +532,7 @@ const breadcrumbItems = computed(() => {
       });
     })
     .with("audioanalysissettings", () => {
-      items.push({
+      items.push(...providerListCrumbs(ProviderType.AUDIO_ANALYSIS), {
         title: t(SETTINGS_PAGES.audio_analysis.title),
         disabled: true,
       });

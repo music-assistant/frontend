@@ -212,6 +212,7 @@ import {
   CATALOG_DISCOVER_TAB,
   CATALOG_INSTALLED_TAB,
   type CatalogEntry,
+  catalogEntriesOfType,
   type CatalogTab,
   countCatalogTypes,
   FEATURE_REQUESTS_URL,
@@ -297,19 +298,19 @@ const activeType = computed(() => getCatalogType(activeTab.value));
 const tabCounts = computed(() =>
   typeCounts.value.map(({ type }) => ({
     type,
-    count: filterCatalogEntries(entries.value, {
-      types: [type.type],
-      query: searchQuery.value,
-      stages: type.type === activeTab.value ? selectedStages.value : [],
-    }).length,
+    count: filterCatalogEntries(
+      catalogEntriesOfType(entries.value, type.type),
+      {
+        query: searchQuery.value,
+        stages: type.type === activeTab.value ? selectedStages.value : [],
+      },
+    ).length,
   })),
 );
 
 const listEntries = computed(() =>
   activeType.value
-    ? entries.value.filter(
-        (entry) => entry.manifest.type === activeType.value!.type,
-      )
+    ? catalogEntriesOfType(entries.value, activeType.value.type)
     : entries.value,
 );
 

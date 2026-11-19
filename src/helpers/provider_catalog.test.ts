@@ -2,6 +2,7 @@ import {
   CommunityProviderState,
   MediaType,
   type ProviderConfig,
+  ProviderFeature,
   type ProviderManifest,
   ProviderStage,
   ProviderTier,
@@ -11,8 +12,10 @@ import { describe, expect, it } from "vitest";
 import { communityProvider } from "../../tests/fixtures/communityProvider";
 import { providerConfig } from "../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
+import { AUDIO_SOURCES } from "./settings_pages";
 import {
   buildCatalogEntries,
+  catalogEntriesOfType,
   countCatalogTypes,
   CATALOG_DISCOVER_TAB,
   CATALOG_INSTALLED_TAB,
@@ -26,6 +29,7 @@ import {
   getEntryMaintainers,
   getInstanceSettingsRoute,
   getManageRoute,
+  getManifestCatalogType,
   getMaintainerProfileUrl,
   groupInstalledProviders,
   isOfferable,
@@ -521,6 +525,106 @@ describe("countCatalogTypes", () => {
         buildCatalogEntries(MANIFESTS, [], { types: [ProviderType.MUSIC] }),
       ).map(({ type }) => type.type),
     ).toEqual([ProviderType.MUSIC]);
+  });
+});
+
+describe("the audio sources", () => {
+  // the plugins through which apps play to Music Assistant say so in their manifest
+  const AUDIO_SOURCE_MANIFESTS = MANIFESTS.map((item) =>
+    ["spotify_connect", "airplay_receiver"].includes(item.domain)
+      ? { ...item, features: [ProviderFeature.AUDIO_SOURCE] }
+      : item,
+  );
+
+  it("get a tab of their own, right after the music sources and away from the plugins", () => {
+    const entries = buildCatalogEntries(AUDIO_SOURCE_MANIFESTS, CONFIGS);
+
+    expect(
+      countCatalogTypes(entries).map(({ type, count }) => [type.type, count]),
+    ).toEqual([
+      [ProviderType.MUSIC, 4],
+      [AUDIO_SOURCES, 2],
+      [ProviderType.PLAYER, 3],
+      [ProviderType.METADATA, 1],
+      [ProviderType.PLUGIN, 1],
+      [ProviderType.AUDIO_ANALYSIS, 1],
+    ]);
+    expect(names(catalogEntriesOfType(entries, AUDIO_SOURCES))).toEqual([
+      "AirPlay Receiver",
+      "Spotify Connect",
+    ]);
+    expect(names(catalogEntriesOfType(entries, ProviderType.PLUGIN))).toEqual([
+      "Party",
+    ]);
+  });
+
+  it("are named as audio sources on their cards", () => {
+    const airplay = AUDIO_SOURCE_MANIFESTS.find(
+      (item) => item.domain === "airplay_receiver",
+    )!;
+
+    expect(getManifestCatalogType(airplay)?.itemLabel).toBe(
+      "settings.catalog.type.audio_source",
+    );
+  });
+
+  it("stay plugins on a server whose manifests name no features", () => {
+    expect(
+      names(
+        catalogEntriesOfType(
+          buildCatalogEntries(MANIFESTS, CONFIGS),
+          ProviderType.PLUGIN,
+        ),
+      ),
+    ).toEqual(["AirPlay Receiver", "Party", "Spotify Connect"]);
+  });
+
+  it("are managed on Music when there are several", () => {
+    const configs = ["a", "b"].map((id) =>
+      providerConfig({
+        domain: "spotify_connect",
+        type: ProviderType.PLUGIN,
+        instance_id: `spotify_connect--${id}`,
+      }),
+    );
+
+    expect(
+      getManageRoute(
+        entry(
+          buildCatalogEntries(AUDIO_SOURCE_MANIFESTS, configs),
+          "spotify_connect",
+        ),
+      ),
+    ).toEqual({ name: "providersettings", query: { types: "music" } });
+  });
+
+  it("are grouped as audio sources among what is set up", () => {
+    const manifests = Object.fromEntries(
+      AUDIO_SOURCE_MANIFESTS.map((item) => [item.domain, item]),
+    );
+    const configs = [
+      ...CONFIGS,
+      providerConfig({
+        domain: "airplay_receiver",
+        type: ProviderType.PLUGIN,
+        instance_id: "airplay_receiver",
+        name: "AirPlay Receiver",
+      }),
+    ];
+
+    expect(
+      groupInstalledProviders(
+        configs,
+        manifests,
+        true,
+        (config) => config.name ?? config.domain,
+      ).map((group) => group.type.type),
+    ).toEqual([
+      ProviderType.MUSIC,
+      AUDIO_SOURCES,
+      ProviderType.PLAYER,
+      ProviderType.PLUGIN,
+    ]);
   });
 });
 
