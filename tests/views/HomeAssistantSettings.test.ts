@@ -210,6 +210,16 @@ describe("HomeAssistantSettings while Home Assistant is connected", () => {
     expect(stateOf(row(wrapper, "ai"))).toBe("settings.home_assistant.ai_none");
   });
 
+  it("shows no engine state until the engines are in", async () => {
+    apiMock.getAIEngines.mockRejectedValue(new Error("unavailable"));
+
+    const wrapper = await mountPage();
+
+    expect(
+      row(wrapper, "ai").find('[data-testid="home-assistant-state"]').exists(),
+    ).toBe(false);
+  });
+
   it("leads to signing in with Home Assistant and to remote access through its cloud", async () => {
     const wrapper = await mountPage();
 

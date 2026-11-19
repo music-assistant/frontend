@@ -120,7 +120,7 @@ const {
   connect,
   addPlayers,
 } = useHomeAssistantConnection();
-const { engines } = useAIEngines();
+const { engines, loaded: enginesLoaded } = useAIEngines();
 
 const rows = computed<SettingsRow[]>(() => {
   const hass = hassConfig.value;
@@ -221,9 +221,11 @@ function aiRow(hass: ProviderConfig): SettingsRow {
     icon: markRaw(Sparkles),
     label: $t("settings.home_assistant.ai"),
     description: $t("settings.home_assistant.ai_description"),
-    state:
-      engineSummary(enginesOf(engines.value, hass.instance_id)) ||
-      $t("settings.home_assistant.ai_none"),
+    // what it provides is only known once the engines are in
+    state: enginesLoaded.value
+      ? engineSummary(enginesOf(engines.value, hass.instance_id)) ||
+        $t("settings.home_assistant.ai_none")
+      : undefined,
     to: settingsPageRoute("ai"),
   };
 }
