@@ -205,8 +205,8 @@ const stepHeading = ref<HTMLHeadingElement | null>(null);
 const finishing = ref(false);
 // whether this open's data is in and its opening step is settled
 const ready = ref(false);
-// a step can take a moment to let go of the user — the server settings save on
-// their way out — and a second click must not set off from where the first one
+// a step can take a moment to let go of the user — an answer saves on its way
+// out — and a second click must not set off from where the first one
 // has already arrived
 const moving = ref(false);
 // what stops the players being followed once the wizard is gone

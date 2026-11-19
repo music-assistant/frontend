@@ -110,7 +110,6 @@ import {
   SourceFolder,
   StorageInfo,
   StorageLocation,
-  StreamServerInfo,
   TranscriptCue,
   MediaCollection,
   ArtistType,
@@ -4065,19 +4064,6 @@ export class MusicAssistantApi {
     return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
       enabled,
     });
-  }
-
-  // Stream server methods
-
-  public async getStreamServerInfo(
-    options?: CommandOptions,
-  ): Promise<StreamServerInfo> {
-    // Get the address the stream server hands to players
-    return this.sendCommand<StreamServerInfo>(
-      "streams/info",
-      undefined,
-      options,
-    );
   }
 
   // Storage methods
