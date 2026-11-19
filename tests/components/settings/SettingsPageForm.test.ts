@@ -202,7 +202,7 @@ describe("SettingsPageForm", () => {
     expect(wrapper.emitted("saved")).toBeUndefined();
   });
 
-  it("applies an immediate change without a toast", async () => {
+  it("saves an immediate change on its own, and says so", async () => {
     const wrapper = await mountForm();
 
     await wrapper
@@ -213,7 +213,23 @@ describe("SettingsPageForm", () => {
     expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
       background_scan_concurrency: 4,
     });
+    expect(toastMock.success).toHaveBeenCalledExactlyOnceWith(
+      "settings.settings_saved",
+    );
+    expect(wrapper.emitted("saved")).toHaveLength(1);
+  });
+
+  it("confirms no immediate change the server refused", async () => {
+    apiMock.saveCoreConfig.mockRejectedValueOnce(new Error("refused"));
+    const wrapper = await mountForm();
+
+    await wrapper
+      .getComponent(editConfigStub)
+      .vm.$emit("immediateApply", { background_scan_concurrency: 4 });
+    await flushPromises();
+
     expect(toastMock.success).not.toHaveBeenCalled();
+    expect(wrapper.emitted("saved")).toBeUndefined();
   });
 
   it("offers a reset of the form in the page menu", async () => {

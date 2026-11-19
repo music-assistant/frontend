@@ -695,6 +695,40 @@ describe("EditConfig", () => {
     );
   });
 
+  it("offers no save action on a form whose entries save the moment they change", () => {
+    const wrapper = mountEntries([
+      entry({
+        key: "power_controls",
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+        immediate_apply: true,
+      }),
+      entry({
+        key: "mute_controls",
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+        immediate_apply: true,
+      }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["power_controls", "mute_controls"]);
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
+  });
+
+  it("keeps the save action while an entry waits for it", () => {
+    const wrapper = mountEntries([
+      entry({
+        key: "power_controls",
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+        immediate_apply: true,
+      }),
+      entry({ key: "host", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
+  });
+
   it("leaves out the card and its save action for a config with nothing to show", () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING, hidden: true }),

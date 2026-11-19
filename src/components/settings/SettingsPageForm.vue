@@ -15,7 +15,7 @@
         inline-save
         @submit="onSubmit"
         @action="onAction"
-        @immediate-apply="save"
+        @immediate-apply="onImmediateApply"
       />
     </template>
 
@@ -151,6 +151,16 @@ watch(
 onBeforeUnmount(() => {
   pageMenu.value = [];
 });
+
+// an entry that applies the moment it changes is saved on its own; the api
+// reports a failed save itself
+const onImmediateApply = async function (
+  values: Record<string, ConfigValueType>,
+) {
+  if (!(await save(values))) return;
+  toast.success($t("settings.settings_saved"));
+  emit("saved");
+};
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   if (!(await save(values))) {
