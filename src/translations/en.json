@@ -3358,7 +3358,7 @@
                 "discovered_by": "Discovered by",
                 "rename": "Rename {name}",
                 "features": {
-                    "found": "Found on your network by themselves",
+                    "found_automatically": "Found on your network automatically",
                     "one_place": "Play on all of them from one place",
                     "groups": "Group them to play together"
                 }

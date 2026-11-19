@@ -191,7 +191,10 @@ const inviting = computed(
 );
 
 const FEATURES: readonly InvitationFeature[] = [
-  { icon: Radar, labelKey: "onboarding.steps.players.features.found" },
+  {
+    icon: Radar,
+    labelKey: "onboarding.steps.players.features.found_automatically",
+  },
   { icon: Play, labelKey: "onboarding.steps.players.features.one_place" },
   { icon: Group, labelKey: "onboarding.steps.players.features.groups" },
 ];

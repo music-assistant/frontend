@@ -32,6 +32,7 @@
           <h1
             ref="stepHeading"
             class="text-xl font-semibold outline-none"
+            :class="{ 'mx-auto text-center': currentId === 'get_started' }"
             tabindex="-1"
             data-testid="onboarding-heading"
           >

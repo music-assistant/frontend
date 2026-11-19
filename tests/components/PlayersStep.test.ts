@@ -132,7 +132,7 @@ describe("PlayersStep", () => {
         .findAll("li")
         .map((item) => item.text()),
     ).toEqual([
-      "onboarding.steps.players.features.found",
+      "onboarding.steps.players.features.found_automatically",
       "onboarding.steps.players.features.one_place",
       "onboarding.steps.players.features.groups",
     ]);

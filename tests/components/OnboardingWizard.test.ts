@@ -785,6 +785,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
           false,
         );
+        // centred under the logo, like the rest of the welcome
+        expect(
+          wrapper.find("[data-testid=onboarding-heading]").classes(),
+        ).toContain("text-center");
         expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
           "onboarding.steps.get_started.start",
         );
@@ -792,10 +796,13 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
         await getStarted(wrapper);
 
-        // the logo belongs to the welcome alone
+        // the logo and the centred heading belong to the welcome alone
         expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
           false,
         );
+        expect(
+          wrapper.find("[data-testid=onboarding-heading]").classes(),
+        ).not.toContain("text-center");
 
         expect(wrapper.find("form#form-onboarding-account").exists()).toBe(
           true,
