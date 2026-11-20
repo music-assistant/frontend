@@ -87,7 +87,8 @@ export function useAudioAnalysisCoverage(): {
             pending: cov.pending,
             staleVersion: cov.stale_version,
             analysisVersion: cov.analysis_version,
-            coveragePct: total > 0 ? Math.round((analyzed / total) * 100) : 0,
+            // rounded down, so only a module with nothing waiting shows 100%
+            coveragePct: total > 0 ? Math.floor((analyzed / total) * 100) : 0,
             hasData: total > 0,
           } satisfies ProviderCoverageRow;
         } catch {

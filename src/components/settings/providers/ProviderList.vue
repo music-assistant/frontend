@@ -33,7 +33,11 @@
         @menu="openMenu($event, item)"
         @reconfigure="reconfigureProvider(item)"
         @remove="removeSource(item)"
-      />
+      >
+        <template v-if="$slots.details" #details>
+          <slot name="details" :config="item"></slot>
+        </template>
+      </ProviderRow>
     </template>
   </ProviderListPanel>
 
@@ -89,6 +93,11 @@ const props = defineProps<{
   type: string;
   // in place of the name the Marketplace gives the type
   title?: string;
+}>();
+
+defineSlots<{
+  // more about a provider, under its description
+  details?(props: { config: ProviderConfig }): unknown;
 }>();
 
 const router = useRouter();
