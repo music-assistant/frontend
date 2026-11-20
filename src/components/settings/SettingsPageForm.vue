@@ -12,6 +12,7 @@
         :config-entries="entries"
         :disabled="false"
         :provider-domain="settingsPageProviderDomain(page)"
+        :flat="flat"
         inline-save
         @submit="onSubmit"
         @action="onAction"
@@ -67,6 +68,9 @@ const props = defineProps<{
   // the form is a part of a page about something else, so it leaves the
   // page's menu to the page and offers no reset there
   embedded?: boolean;
+  // the form sits in a frame that names it, so it draws no card or title of
+  // its own
+  flat?: boolean;
 }>();
 
 defineSlots<{

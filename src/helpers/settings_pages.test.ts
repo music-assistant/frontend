@@ -196,10 +196,10 @@ describe("the page of each setting", () => {
     ).toEqual(["network"]);
   });
 
-  it("shows the task settings on a page of their own", () => {
+  it("shows the task settings with the background tasks", () => {
     expect(
       pagesShowing(TASKS, entry("max_concurrent_tasks", "generic")),
-    ).toEqual(["task_settings"]);
+    ).toEqual(["background_tasks"]);
   });
 
   it("shows the cache actions with the diagnostics", () => {
@@ -265,7 +265,7 @@ describe("coreSettingsPageId", () => {
   it.each([
     ["players", "playback"],
     ["ai", "ai"],
-    ["tasks", "task_settings"],
+    ["tasks", "background_tasks"],
   ])("finds the page showing the settings of the %s module", (domain, id) => {
     expect(coreSettingsPageId(domain)).toBe(id);
   });

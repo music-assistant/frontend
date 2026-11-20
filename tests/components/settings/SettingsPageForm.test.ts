@@ -55,6 +55,7 @@ const editConfigStub = {
     disabled: Boolean,
     inlineSave: Boolean,
     hideHeader: Boolean,
+    flat: Boolean,
     providerDomain: String,
   },
   emits: ["submit", "action", "immediateApply"],
@@ -127,7 +128,16 @@ describe("SettingsPageForm", () => {
     ).toEqual(["background_scan_concurrency"]);
     expect(form.props("inlineSave")).toBe(true);
     expect(form.props("hideHeader")).toBe(false);
+    expect(form.props("flat")).toBe(false);
     expect(form.props("providerDomain")).toBeUndefined();
+  });
+
+  it("hands a flat form to a host that frames it", async () => {
+    const wrapper = await mountForm({ flat: true });
+
+    const form = wrapper.getComponent(editConfigStub);
+    expect(form.props("flat")).toBe(true);
+    expect(form.props("inlineSave")).toBe(true);
   });
 
   it("names the provider to the form of a page showing its settings", async () => {
@@ -363,7 +373,7 @@ describe("SettingsPageForm with settings the page edits itself", () => {
   }
 });
 
-async function mountForm(props: { embedded?: boolean } = {}) {
+async function mountForm(props: { embedded?: boolean; flat?: boolean } = {}) {
   const wrapper = mount(SettingsPageForm, {
     props: { page: "audio_analysis", ...props },
     global: { stubs: { EditConfig: editConfigStub } },

@@ -377,7 +377,6 @@ describe("settings pages", () => {
     ["/settings/system/storage", "storagesettings"],
     ["/settings/system/home-assistant", "homeassistantsettings"],
     ["/settings/system/tasks", "backgroundtasks"],
-    ["/settings/system/tasks/settings", "tasksettings"],
     ["/settings/system/diagnostics", "diagnostics"],
   ])("opens %s below the page above it in the menu", (path, name) => {
     expect(resolveRoute(path).name).toBe(name);
@@ -422,7 +421,7 @@ describe("settings pages", () => {
     expect(route.meta.requiresScope).toBe(Scope.CONFIG_PROVIDERS_WRITE);
   });
 
-  it.each(["library", "playback", "task_settings"] as const)(
+  it.each(["library", "playback"] as const)(
     "hands the %s page to the view showing its form",
     (id) => {
       if (!mocks.router) {
@@ -449,7 +448,8 @@ describe("earlier addresses of the settings pages", () => {
     ["/settings/storage", "storagesettings"],
     ["/settings/home-assistant", "homeassistantsettings"],
     ["/settings/tasks", "backgroundtasks"],
-    ["/settings/tasks/settings", "tasksettings"],
+    ["/settings/tasks/settings", "backgroundtasks"],
+    ["/settings/system/tasks/settings", "backgroundtasks"],
     ["/settings/diagnostics", "diagnostics"],
     ["/settings/editcore/ai", "aisettings"],
   ])("lead %s to its page", (path, name) => {
@@ -490,6 +490,7 @@ describe("earlier addresses of the settings pages", () => {
     "/settings/providers?types=music",
     "/settings/library",
     "/settings/tasks/settings",
+    "/settings/system/tasks/settings",
     "/settings/music/audio-analysis/status",
     "/settings/editcore/ai",
   ])("lead %s to a route of the router", (path) => {
@@ -760,7 +761,6 @@ describe("scope-gated routes", () => {
     ["/settings/music/genres", ["admin"]],
     ["/settings/users", ["admin"]],
     ["/settings/system/tasks", ["admin", "user", "reads_sources"]],
-    ["/settings/system/tasks/settings", ["admin"]],
     ["/music-quiz", ["admin", "user", "reads_sources"]],
     [
       "/settings/profile",
