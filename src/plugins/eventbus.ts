@@ -95,6 +95,10 @@ export type PlaylistAccessDialogEvent = {
   playlist: Playlist;
 };
 
+export type ShareLinkPreviewEvent = {
+  uri: string;
+};
+
 export type CreateSmartPlaylistEvent = {
   providerId?: string;
 };
@@ -169,6 +173,7 @@ export type Events = {
   importPlaylistDialog: ImportPlaylistEvent;
   migratePlaylistDialog: MigratePlaylistDialogEvent;
   playlistAccessDialog: PlaylistAccessDialogEvent;
+  shareLinkPreview: ShareLinkPreviewEvent;
   createSmartPlaylist: CreateSmartPlaylistEvent;
   audioOverlayDialog: AudioOverlayDialogEvent;
   playAnnouncementDialog: PlayAnnouncementDialogEvent;
