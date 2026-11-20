@@ -920,13 +920,8 @@
         "audio_analysis_modules": "Analysis modules",
         "audio_analysis_settings_description": "How many tracks are analyzed at the same time",
         "audio_analysis_coverage": {
-            "description": "How far each module has got",
             "up_to_date": "Up to date",
-            "modules_busy": "{count} module busy | {count} modules busy",
-            "col_pending": "Pending",
-            "col_stale": "Stale",
-            "unavailable": "unavailable",
-            "none": "—"
+            "waiting": "{count} waiting"
         },
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
