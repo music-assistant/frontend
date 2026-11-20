@@ -4,11 +4,13 @@
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import { api } from "@/plugins/api";
 import {
+  ChannelLayout,
   type ConfigValueType,
   type OutputProtocol,
   type Player,
   type PlayerProtocolInfo,
   ProviderFeature,
+  SpeakerChannel,
 } from "@/plugins/api/interfaces";
 
 // the entries of a speaker of a multi-channel player: speaker_<number>_<field>
@@ -43,6 +45,15 @@ export interface ChannelChange {
 
 // the player ids that can be a speaker of a new multi-channel player, by provider (instance)
 export type MultiChannelCandidates = Record<string, readonly string[]>;
+
+// the layouts a provider combines speakers into, each with its channels in order, as the
+// server lists them
+export type MultiChannelLayouts = Partial<
+  Record<ChannelLayout, readonly SpeakerChannel[]>
+>;
+
+// the player id of the speaker on each channel of a multi-channel player to be
+export type ChannelSpeakers = Partial<Record<SpeakerChannel, string>>;
 
 /** Whether a provider (instance) can combine its speakers into a multi-channel player. */
 export const canCombineSpeakers = function (
@@ -113,23 +124,122 @@ export const getSpeakerField = function (key: string): string | undefined {
 };
 
 /**
- * A name for a player made of two speakers: the words both their names start with, such
- * as "Studio" for "Studio left" and "Studio right". Empty when they share none.
+ * A name for a player made of speakers: the words all their names start with, such as
+ * "Studio" for "Studio left" and "Studio right". Empty when they share none.
  */
-export const suggestMultiChannelName = function (
-  first: string,
-  second: string,
-): string {
-  const firstWords = first.trim().split(/\s+/);
-  const secondWords = second.trim().split(/\s+/);
+export const suggestMultiChannelName = function (...names: string[]): string {
+  const [first = [], ...others] = names.map((name) => name.trim().split(/\s+/));
   const shared: string[] = [];
-  for (const [index, word] of firstWords.entries()) {
-    if (word.toLocaleLowerCase() !== secondWords[index]?.toLocaleLowerCase()) {
+  for (const [index, word] of first.entries()) {
+    const lower = word.toLocaleLowerCase();
+    if (others.some((words) => words[index]?.toLocaleLowerCase() !== lower)) {
       break;
     }
     shared.push(word);
   }
   return shared.join(" ");
+};
+
+/**
+ * The speakers on the channels after a speaker moves to a channel: the speaker that was on
+ * that channel takes the one the moving speaker leaves, if it had one.
+ *
+ * @param speakers The speaker on each channel.
+ * @param channel The channel the speaker moves to.
+ * @param playerId The player id of the speaker.
+ */
+export const assignChannelSpeaker = function (
+  speakers: ChannelSpeakers,
+  channel: SpeakerChannel,
+  playerId: string,
+): ChannelSpeakers {
+  const result = { ...speakers, [channel]: playerId };
+  const left = (Object.keys(speakers) as SpeakerChannel[]).find(
+    (candidate) => candidate !== channel && speakers[candidate] === playerId,
+  );
+  if (left) {
+    if (speakers[channel] === undefined) delete result[left];
+    else result[left] = speakers[channel];
+  }
+  return result;
+};
+
+/**
+ * The speakers on the channels of another layout: each keeps its channel when the layout has
+ * it, and the speaker that has to stay takes the first free channel, else the first one.
+ *
+ * @param speakers The speaker on each channel of the previous layout.
+ * @param channels The channels of the new layout.
+ * @param keep The player id of the speaker that has to stay.
+ */
+export const changeChannelLayout = function (
+  speakers: ChannelSpeakers,
+  channels: readonly SpeakerChannel[],
+  keep: string,
+): ChannelSpeakers {
+  const result: ChannelSpeakers = {};
+  for (const channel of channels) {
+    if (speakers[channel] !== undefined) result[channel] = speakers[channel];
+  }
+  if (!Object.values(result).includes(keep)) {
+    const free = channels.find((channel) => result[channel] === undefined);
+    result[free ?? channels[0]] = keep;
+  }
+  return result;
+};
+
+/**
+ * Whether a multi-channel player can take a subwoofer: one of the layouts of its provider has
+ * the channels of the player and a subwoofer.
+ *
+ * @param layouts The layouts of the provider of the player.
+ * @param layout The layout of the player.
+ */
+export const canAddSubwoofer = function (
+  layouts: MultiChannelLayouts,
+  layout: ChannelLayout,
+): boolean {
+  const channels = layouts[layout];
+  return (
+    !!channels &&
+    !channels.includes(SpeakerChannel.LFE) &&
+    isLayout(layouts, [...channels, SpeakerChannel.LFE])
+  );
+};
+
+/**
+ * Whether a multi-channel player can let its subwoofer go: one of the layouts of its provider
+ * has the channels of the player without the subwoofer.
+ *
+ * @param layouts The layouts of the provider of the player.
+ * @param layout The layout of the player.
+ */
+export const canRemoveSubwoofer = function (
+  layouts: MultiChannelLayouts,
+  layout: ChannelLayout,
+): boolean {
+  const channels = layouts[layout];
+  return (
+    !!channels?.includes(SpeakerChannel.LFE) &&
+    isLayout(
+      layouts,
+      channels.filter((channel) => channel !== SpeakerChannel.LFE),
+    )
+  );
+};
+
+/**
+ * The subwoofer of a multi-channel player: the speaker on the LFE channel. Undefined for a
+ * player without one.
+ *
+ * @param entries Every entry of the config of the player.
+ */
+export const getSubwoofer = function (
+  entries: ConfigEntryUI[],
+): MultiChannelSpeaker | undefined {
+  return groupSpeakerEntries(entries, entries).speakers.find(
+    (speaker) => speaker.channel?.value === SpeakerChannel.LFE,
+  );
 };
 
 /**
@@ -200,6 +310,18 @@ export const getChannelSwap = function (
   )?.channel;
   return other ? { entry: other, value: entry.value ?? null } : undefined;
 };
+
+/** Whether the channels are those of one of the layouts, in any order. */
+function isLayout(
+  layouts: MultiChannelLayouts,
+  channels: readonly SpeakerChannel[],
+): boolean {
+  return Object.values(layouts).some(
+    (other) =>
+      other?.length === channels.length &&
+      channels.every((channel) => other.includes(channel)),
+  );
+}
 
 /** The numbers of the speakers in entries of one protocol: each with a state and a channel. */
 function getSpeakerNumbers(entries: Pick<ConfigEntryUI, "key">[]): Set<number> {

@@ -1,14 +1,20 @@
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import {
+  assignChannelSpeaker,
+  canAddSubwoofer,
+  canRemoveSubwoofer,
+  changeChannelLayout,
   getChannelSwap,
   getCombiningProviders,
   getComposableProtocol,
   getSpeakerField,
+  getSubwoofer,
   groupSpeakerEntries,
   isSpeakerChannelEntry,
   suggestMultiChannelName,
 } from "@/helpers/multi_channel";
 import {
+  ChannelLayout,
   ConfigEntryType,
   type OutputProtocol,
   type Player,
@@ -16,6 +22,7 @@ import {
   PlayerType,
   ProtocolRole,
   ProviderFeature,
+  SpeakerChannel,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { outputProtocol } from "../../tests/fixtures/outputProtocol";
@@ -134,6 +141,129 @@ describe("suggestMultiChannelName", () => {
 
   it("suggests nothing for speakers that share no first word", () => {
     expect(suggestMultiChannelName("Left speaker", "Right speaker")).toBe("");
+  });
+
+  it("takes the words every speaker starts with, or the name of a single one", () => {
+    expect(
+      suggestMultiChannelName("Studio left", "Studio right", "Studio sub"),
+    ).toBe("Studio");
+    expect(
+      suggestMultiChannelName("Studio left", "Studio right", "Subwoofer"),
+    ).toBe("");
+    expect(suggestMultiChannelName("  Desk   speaker ")).toBe("Desk speaker");
+    expect(suggestMultiChannelName()).toBe("");
+  });
+});
+
+describe("assignChannelSpeaker", () => {
+  const { FRONT_LEFT, FRONT_RIGHT, LFE } = SpeakerChannel;
+
+  it("puts a speaker on a free channel", () => {
+    expect(assignChannelSpeaker({ [FRONT_LEFT]: "a" }, LFE, "b")).toEqual({
+      [FRONT_LEFT]: "a",
+      [LFE]: "b",
+    });
+  });
+
+  it("swaps a speaker with the one on the channel it moves to", () => {
+    expect(
+      assignChannelSpeaker(
+        { [FRONT_LEFT]: "a", [FRONT_RIGHT]: "b" },
+        FRONT_RIGHT,
+        "a",
+      ),
+    ).toEqual({ [FRONT_LEFT]: "b", [FRONT_RIGHT]: "a" });
+  });
+
+  it("leaves the channel of a speaker that moves to a free one empty", () => {
+    const speakers = assignChannelSpeaker({ [FRONT_LEFT]: "a" }, LFE, "a");
+    expect(speakers[FRONT_LEFT]).toBeUndefined();
+    expect(speakers[LFE]).toBe("a");
+  });
+});
+
+describe("changeChannelLayout", () => {
+  const { FRONT_CENTER, FRONT_LEFT, FRONT_RIGHT, LFE } = SpeakerChannel;
+  const STEREO = [FRONT_LEFT, FRONT_RIGHT];
+  const SPEAKER_SUB = [FRONT_CENTER, LFE];
+  const STEREO_SUB = [FRONT_LEFT, FRONT_RIGHT, LFE];
+
+  it("keeps every speaker on a channel the new layout has", () => {
+    expect(
+      changeChannelLayout(
+        { [FRONT_LEFT]: "a", [FRONT_RIGHT]: "b" },
+        STEREO_SUB,
+        "a",
+      ),
+    ).toEqual({ [FRONT_LEFT]: "a", [FRONT_RIGHT]: "b" });
+  });
+
+  it("puts the speaker that stays on the first free channel", () => {
+    expect(
+      changeChannelLayout(
+        { [FRONT_LEFT]: "a", [FRONT_RIGHT]: "b", [LFE]: "c" },
+        SPEAKER_SUB,
+        "b",
+      ),
+    ).toEqual({ [FRONT_CENTER]: "b", [LFE]: "c" });
+  });
+
+  it("puts the speaker that stays on the first channel when none is free", () => {
+    expect(
+      changeChannelLayout(
+        { [FRONT_LEFT]: "a", [FRONT_RIGHT]: "b", [LFE]: "c" },
+        STEREO,
+        "c",
+      ),
+    ).toEqual({ [FRONT_LEFT]: "c", [FRONT_RIGHT]: "b" });
+  });
+});
+
+describe("canAddSubwoofer and canRemoveSubwoofer", () => {
+  const { FRONT_CENTER, FRONT_LEFT, FRONT_RIGHT, LFE } = SpeakerChannel;
+  const LAYOUTS = {
+    [ChannelLayout.STEREO]: [FRONT_LEFT, FRONT_RIGHT],
+    [ChannelLayout.LAYOUT_2_1]: [FRONT_LEFT, FRONT_RIGHT, LFE],
+    [ChannelLayout.LAYOUT_1_1]: [FRONT_CENTER, LFE],
+  };
+
+  it("adds a subwoofer to a layout the provider offers with one", () => {
+    expect(canAddSubwoofer(LAYOUTS, ChannelLayout.STEREO)).toBe(true);
+    expect(canAddSubwoofer(LAYOUTS, ChannelLayout.LAYOUT_2_1)).toBe(false);
+    expect(canAddSubwoofer(LAYOUTS, ChannelLayout.LAYOUT_1_1)).toBe(false);
+  });
+
+  it("removes a subwoofer from a layout the provider offers without one", () => {
+    expect(canRemoveSubwoofer(LAYOUTS, ChannelLayout.LAYOUT_2_1)).toBe(true);
+    expect(canRemoveSubwoofer(LAYOUTS, ChannelLayout.STEREO)).toBe(false);
+    // one speaker alone is no layout: taking the player apart is the way
+    expect(canRemoveSubwoofer(LAYOUTS, ChannelLayout.LAYOUT_1_1)).toBe(false);
+  });
+
+  it("offers neither for a layout the provider does not list", () => {
+    const stereoOnly = { [ChannelLayout.STEREO]: [FRONT_LEFT, FRONT_RIGHT] };
+
+    expect(canAddSubwoofer(stereoOnly, ChannelLayout.STEREO)).toBe(false);
+    expect(canAddSubwoofer({}, ChannelLayout.STEREO)).toBe(false);
+    expect(canRemoveSubwoofer(LAYOUTS, ChannelLayout.LAYOUT_5_1)).toBe(false);
+  });
+});
+
+describe("getSubwoofer", () => {
+  it("finds the speaker on the subwoofer channel", () => {
+    const entries = [
+      ...setRecord().entries,
+      ...speakerEntries(3, "Studio sub", "lfe", "online"),
+    ];
+
+    expect(getSubwoofer(entries)).toMatchObject({
+      number: 3,
+      name: "Studio sub",
+    });
+  });
+
+  it("finds none in a set without one", () => {
+    expect(getSubwoofer(setRecord().entries)).toBeUndefined();
   });
 });
 
