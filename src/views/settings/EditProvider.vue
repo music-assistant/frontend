@@ -520,12 +520,14 @@ onBeforeUnmount(() => {
 });
 
 // methods
+const providersRoute = function () {
+  return config.value
+    ? providerListingRoute(config.value, providerManifest.value?.provides)
+    : providerListRoute(ProviderType.MUSIC);
+};
+
 const backToProviders = function () {
-  router.push(
-    config.value
-      ? providerListingRoute(config.value, providerManifest.value?.provides)
-      : providerListRoute(ProviderType.MUSIC),
-  );
+  router.push(providersRoute());
 };
 
 const resetToDefaults = function () {
@@ -631,7 +633,8 @@ const onRemove = function () {
       // the source is gone, and with it the page showing its settings; unsaved
       // edits have nothing left to save to, so they must not hold the way out
       editConfig.value?.discardChanges();
-      backToProviders();
+      // replaced, so going back never returns to the page of the removed source
+      router.replace(providersRoute());
     } catch (err) {
       toast.error(String(err));
     }
