@@ -42,7 +42,10 @@ const { apiMock, routerMock, toastMock } = vi.hoisted(() => ({
     saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
   },
   routerMock: {
+    back: vi.fn(),
     push: vi.fn(),
+    // the entry before the page, null on a page opened directly
+    options: { history: { state: { back: null as string | null } } },
   },
   toastMock: {
     error: vi.fn(),
@@ -90,6 +93,7 @@ enableAutoUnmount(afterEach);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  routerMock.options.history.state.back = null;
 });
 
 describe("EditCoreConfig", () => {
@@ -367,7 +371,21 @@ describe("EditCoreConfig", () => {
     });
   });
 
-  it("returns to the System settings after a save", async () => {
+  it("returns to where the user came from after a save", async () => {
+    routerMock.options.history.state.back = "/settings/system";
+    apiMock.getCoreConfig.mockResolvedValueOnce(radioTunerConfig());
+    apiMock.saveCoreConfig.mockResolvedValueOnce(radioTunerConfig());
+
+    const wrapper = mountWithForm("radio_tuner");
+    await flushPromises();
+    await wrapper.find('[data-testid="config-save"]').trigger("click");
+    await flushPromises();
+
+    expect(routerMock.back).toHaveBeenCalledOnce();
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
+
+  it("returns to the System settings after a save to a page opened directly", async () => {
     apiMock.getCoreConfig.mockResolvedValueOnce(radioTunerConfig());
     apiMock.saveCoreConfig.mockResolvedValueOnce(radioTunerConfig());
 
