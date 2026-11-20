@@ -1,7 +1,8 @@
 import ProvidersStep from "@/components/onboarding/steps/ProvidersStep.vue";
 import type { ConfiguredProvider } from "@/composables/useOnboarding";
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import { ProviderStatus, ProviderType } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { apiMock, onboardingState } = vi.hoisted(() => ({
@@ -83,12 +84,13 @@ function testId(wrapper: Wrapper, id: string) {
 
 const features = (wrapper: Wrapper) =>
   testId(wrapper, "onboarding-invitation-features")
-    .findAll("li")
+    .findAll("[data-slot=item]")
     .map((item) => item.text());
-const linked = (wrapper: Wrapper) =>
-  testId(wrapper, "onboarding-invitation-visual").attributes("data-linked");
-const addButton = (wrapper: Wrapper) =>
-  testId(wrapper, "onboarding-add-provider");
+const addRow = (wrapper: Wrapper) => testId(wrapper, "onboarding-add-provider");
+// the step's own way forward, which the wizard shows as its main button
+const primaryAction = (wrapper: Wrapper) =>
+  (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
 
 describe("ProvidersStep", () => {
   beforeEach(() => {
@@ -101,23 +103,20 @@ describe("ProvidersStep", () => {
     it("invites to add one while none is set up", () => {
       const wrapper = mountStep(ProviderType.MUSIC);
 
-      expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
-        "onboarding.steps.music_sources.description",
-      );
       expect(features(wrapper)).toEqual([
         "onboarding.steps.music_sources.features.streaming",
         "onboarding.steps.music_sources.features.files",
         "onboarding.steps.music_sources.features.radio",
       ]);
-      expect(addButton(wrapper).text()).toBe("settings.add_music_provider");
-      expect(addButton(wrapper).classes()).toEqual(
-        expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
+      expect(primaryAction(wrapper)?.labelKey).toBe(
+        "settings.add_music_provider",
       );
+      // the wizard's footer holds it, so the step has no button of its own
+      expect(addRow(wrapper).exists()).toBe(false);
       // the step is not optional, so nothing says it can wait
-      expect(testId(wrapper, "onboarding-invitation-optional").exists()).toBe(
+      expect(testId(wrapper, "onboarding-invitation-note").exists()).toBe(
         false,
       );
-      expect(linked(wrapper)).toBeUndefined();
 
       wrapper.unmount();
     });
@@ -137,13 +136,13 @@ describe("ProvidersStep", () => {
       expect(testId(wrapper, "onboarding-invitation-features").exists()).toBe(
         false,
       );
-      expect(addButton(wrapper).classes()).toContain("bg-accent");
-      expect(linked(wrapper)).toBe("true");
+      expect(addRow(wrapper).text()).toBe("settings.add_music_provider");
+      expect(primaryAction(wrapper)).toBeUndefined();
 
       wrapper.unmount();
     });
 
-    it("leaves the link unmade while no source works", () => {
+    it("lists a source that does not work, with what is wrong", () => {
       onboardingState.musicSources = [
         configured("spotify", {
           needsAttention: true,
@@ -153,7 +152,11 @@ describe("ProvidersStep", () => {
 
       const wrapper = mountStep(ProviderType.MUSIC);
 
-      expect(linked(wrapper)).toBeUndefined();
+      expect(
+        wrapper
+          .get("[data-testid=onboarding-configured-provider] [aria-label]")
+          .attributes("aria-label"),
+      ).toBe("settings.provider_status_auth_required");
 
       wrapper.unmount();
     });
@@ -162,7 +165,8 @@ describe("ProvidersStep", () => {
       const wrapper = mountStep(ProviderType.MUSIC);
       const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
 
-      await addButton(wrapper).trigger("click");
+      primaryAction(wrapper)?.run();
+      await flushPromises();
 
       expect(dialog.props()).toMatchObject({
         show: true,
@@ -178,18 +182,14 @@ describe("ProvidersStep", () => {
     it("invites to connect one while none is set up", () => {
       const wrapper = mountStep(ProviderType.PLUGIN);
 
-      expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
-        "onboarding.steps.plugins.phone_apps_instructions",
-      );
       expect(features(wrapper)).toEqual([
         "onboarding.steps.plugins.features.apps",
         "onboarding.steps.plugins.features.spotify_connect",
         "onboarding.steps.plugins.features.airplay",
       ]);
-      expect(addButton(wrapper).text()).toBe(
+      expect(primaryAction(wrapper)?.labelKey).toBe(
         "onboarding.steps.plugins.connect",
       );
-      expect(addButton(wrapper).classes()).toContain("h-10");
 
       wrapper.unmount();
     });
@@ -232,7 +232,8 @@ describe("ProvidersStep", () => {
       const wrapper = mountStep(ProviderType.PLUGIN);
       const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
 
-      await addButton(wrapper).trigger("click");
+      primaryAction(wrapper)?.run();
+      await flushPromises();
 
       expect(dialog.props()).toMatchObject({
         show: true,

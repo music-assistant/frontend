@@ -1,4 +1,5 @@
 import CoreSettingsStep from "@/components/onboarding/steps/CoreSettingsStep.vue";
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
   type RemoteAccessInfo,
@@ -96,18 +97,28 @@ function testId(wrapper: Wrapper, id: string) {
   return wrapper.find(`[data-testid=${id}]`);
 }
 
+// the step's own way forward, which the wizard shows as its main button
 const turnOn = (wrapper: Wrapper) =>
-  testId(wrapper, "onboarding-remote-access-turn-on");
+  (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
 const turnOff = (wrapper: Wrapper) =>
   testId(wrapper, "onboarding-remote-access-turn-off");
 const isOn = (wrapper: Wrapper) =>
   testId(wrapper, "onboarding-remote-access-on").exists();
 const shownId = (wrapper: Wrapper) =>
   testId(wrapper, "onboarding-remote-access-id");
-const optionalLine = (wrapper: Wrapper) =>
-  testId(wrapper, "onboarding-invitation-optional");
+const note = (wrapper: Wrapper) =>
+  testId(wrapper, "onboarding-invitation-note");
+// what remote access brings through Home Assistant Link: a row of the list
+// that invites, and of the one that shows it on
 const homeAssistantLine = (wrapper: Wrapper) =>
-  testId(wrapper, "onboarding-remote-access-home-assistant");
+  wrapper
+    .findAll("[data-slot=item]")
+    .find(
+      (row) =>
+        row.text() ===
+        "onboarding.steps.core_settings.remote.features.home_assistant_link",
+    );
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -129,34 +140,12 @@ afterEach(() => {
 });
 
 describe("CoreSettingsStep", () => {
-  describe("the intro", () => {
-    it("is about listening away from home, beyond the home network", async () => {
-      const wrapper = await mountStep();
-
-      expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
-        "onboarding.steps.core_settings.home_network_intro",
-      );
-    });
-
-    it("says the add-on is reached wherever Home Assistant is", async () => {
-      onboardingState.homeAssistantAddon = true;
-      onboardingState.homeAssistantConfigured = true;
-      onboardingState.homeAssistantConnected = true;
-
-      const wrapper = await mountStep();
-
-      expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
-        "onboarding.steps.core_settings.home_network_intro_addon",
-      );
-    });
-  });
-
   it("lists what remote access brings", async () => {
     const wrapper = await mountStep();
 
     expect(
       testId(wrapper, "onboarding-invitation-features")
-        .findAll("li")
+        .findAll("[data-slot=item]")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.core_settings.remote.features.secure",
@@ -166,13 +155,12 @@ describe("CoreSettingsStep", () => {
   });
 
   describe("while remote access is off", () => {
-    it("offers to turn it on, as the step's centred action", async () => {
+    it("offers to turn it on, as the step's main action", async () => {
       const wrapper = await mountStep();
 
-      expect(turnOn(wrapper).text()).toBe(
+      expect(turnOn(wrapper)?.labelKey).toBe(
         "onboarding.steps.core_settings.remote.turn_on",
       );
-      expect(turnOn(wrapper).classes()).toContain("self-center");
       expect(isOn(wrapper)).toBe(false);
       // the id is only worth asking for once remote access is on
       expect(apiMock.getRemoteAccessInfo).not.toHaveBeenCalled();
@@ -181,14 +169,9 @@ describe("CoreSettingsStep", () => {
     it("says it is optional, and where to find it and a reverse proxy later", async () => {
       const wrapper = await mountStep();
 
-      expect(optionalLine(wrapper).text()).toBe(
+      expect(note(wrapper).text()).toBe(
         "onboarding.steps.core_settings.optional",
       );
-      expect(
-        testId(wrapper, "onboarding-invitation-visual").attributes(
-          "data-linked",
-        ),
-      ).toBeUndefined();
     });
   });
 
@@ -197,21 +180,18 @@ describe("CoreSettingsStep", () => {
       apiMock.serverInfo.value = serverInfo(true);
     });
 
-    it("says so, with the id, the link made and no invitation", async () => {
+    it("says so, with the id, where to use it and no invitation", async () => {
       const wrapper = await mountStep();
 
       expect(isOn(wrapper)).toBe(true);
       expect(shownId(wrapper).text()).toContain(REMOTE_ID_GROUPED);
-      expect(turnOn(wrapper).exists()).toBe(false);
-      expect(optionalLine(wrapper).exists()).toBe(false);
+      expect(turnOn(wrapper)).toBeUndefined();
+      expect(note(wrapper).text()).toBe(
+        "onboarding.steps.core_settings.remote.builtin.hint",
+      );
       expect(testId(wrapper, "onboarding-invitation-features").exists()).toBe(
         false,
       );
-      expect(
-        testId(wrapper, "onboarding-invitation-visual").attributes(
-          "data-linked",
-        ),
-      ).toBe("true");
     });
 
     it("keeps the room for the id while it is being read", async () => {
@@ -271,7 +251,7 @@ describe("CoreSettingsStep", () => {
     it("turns remote access on", async () => {
       const wrapper = await mountStep();
 
-      await turnOn(wrapper).trigger("click");
+      turnOn(wrapper)?.run();
       await flushPromises();
 
       expect(apiMock.configureRemoteAccess).toHaveBeenCalledWith(true);
@@ -292,7 +272,7 @@ describe("CoreSettingsStep", () => {
 
       expect(apiMock.configureRemoteAccess).toHaveBeenCalledWith(false);
       expect(isOn(wrapper)).toBe(false);
-      expect(turnOn(wrapper).exists()).toBe(true);
+      expect(turnOn(wrapper)).toBeDefined();
       expect(toastMock.success).toHaveBeenCalledWith(
         "settings.remote_access_disabled_success",
       );
@@ -308,10 +288,10 @@ describe("CoreSettingsStep", () => {
       );
 
       const wrapper = await mountStep();
-      await turnOn(wrapper).trigger("click");
+      turnOn(wrapper)?.run();
+      await flushPromises();
 
-      expect(turnOn(wrapper).attributes("aria-busy")).toBe("true");
-      expect(turnOn(wrapper).attributes("disabled")).toBeDefined();
+      expect(turnOn(wrapper)?.busy).toBe(true);
 
       answer(remoteAccessInfo());
       await flushPromises();
@@ -324,12 +304,12 @@ describe("CoreSettingsStep", () => {
 
       const wrapper = await mountStep();
 
-      await turnOn(wrapper).trigger("click");
+      turnOn(wrapper)?.run();
       await flushPromises();
 
       // the api tells the user itself; the step says what is still true
       expect(isOn(wrapper)).toBe(false);
-      expect(turnOn(wrapper).exists()).toBe(true);
+      expect(turnOn(wrapper)).toBeDefined();
       expect(toastMock.success).not.toHaveBeenCalled();
       expect(warnSpy).toHaveBeenCalledOnce();
     });
@@ -393,9 +373,9 @@ describe("CoreSettingsStep", () => {
 
       // the request would only fail at them, and the line about Home
       // Assistant goes with the action it is about
-      expect(turnOn(wrapper).exists()).toBe(false);
-      expect(optionalLine(wrapper).exists()).toBe(false);
-      expect(homeAssistantLine(wrapper).exists()).toBe(false);
+      expect(turnOn(wrapper)).toBeUndefined();
+      expect(note(wrapper).exists()).toBe(false);
+      expect(homeAssistantLine(wrapper)).toBeUndefined();
     });
 
     it("asks nothing about remote access that is on", async () => {
@@ -412,7 +392,7 @@ describe("CoreSettingsStep", () => {
     it("is left out without Home Assistant", async () => {
       const wrapper = await mountStep();
 
-      expect(homeAssistantLine(wrapper).exists()).toBe(false);
+      expect(homeAssistantLine(wrapper)).toBeUndefined();
     });
 
     it("shows with Home Assistant connected", async () => {
@@ -421,9 +401,18 @@ describe("CoreSettingsStep", () => {
 
       const wrapper = await mountStep();
 
-      expect(homeAssistantLine(wrapper).text()).toBe(
-        "onboarding.steps.core_settings.remote.home_assistant",
-      );
+      expect(homeAssistantLine(wrapper)).toBeDefined();
+    });
+
+    it("stays once remote access is on", async () => {
+      apiMock.serverInfo.value = serverInfo(true);
+      onboardingState.homeAssistantConfigured = true;
+      onboardingState.homeAssistantConnected = true;
+
+      const wrapper = await mountStep();
+
+      expect(isOn(wrapper)).toBe(true);
+      expect(homeAssistantLine(wrapper)).toBeDefined();
     });
 
     it("is left out while the Home Assistant connection does not work", async () => {
@@ -433,7 +422,7 @@ describe("CoreSettingsStep", () => {
 
       const wrapper = await mountStep();
 
-      expect(homeAssistantLine(wrapper).exists()).toBe(false);
+      expect(homeAssistantLine(wrapper)).toBeUndefined();
     });
 
     it("shows on the add-on, which connects Home Assistant by itself", async () => {
@@ -441,7 +430,7 @@ describe("CoreSettingsStep", () => {
 
       const wrapper = await mountStep();
 
-      expect(homeAssistantLine(wrapper).exists()).toBe(true);
+      expect(homeAssistantLine(wrapper)).toBeDefined();
     });
   });
 

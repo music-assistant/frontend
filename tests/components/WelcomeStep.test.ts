@@ -1,3 +1,4 @@
+import { STEP_LEAD_ID } from "@/helpers/onboarding";
 import { UserRole, type Scope, type User } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -118,28 +119,6 @@ describe("WelcomeStep", () => {
     toastMock.error.mockReset();
   });
 
-  it("greets the member by the name they go by", async () => {
-    const wrapper = await mountStep();
-
-    expect(wrapper.find("[data-testid=onboarding-greeting]").text()).toBe(
-      "onboarding.steps.welcome.description:Sam",
-    );
-
-    wrapper.unmount();
-  });
-
-  it("falls back on the username of a member without a display name", async () => {
-    storeMock.currentUser = user({ username: "sam", display_name: null });
-
-    const wrapper = await mountStep();
-
-    expect(wrapper.find("[data-testid=onboarding-greeting]").text()).toBe(
-      "onboarding.steps.welcome.description:sam",
-    );
-
-    wrapper.unmount();
-  });
-
   it("offers both experiences, and says what they change", async () => {
     const wrapper = await mountStep();
 
@@ -193,9 +172,8 @@ describe("WelcomeStep", () => {
     const wrapper = await mountStep();
 
     const group = wrapper.find("[role=group]");
-    expect(group.attributes("aria-labelledby")).toBe(
-      wrapper.find("[data-testid=onboarding-greeting]").attributes("id"),
-    );
+    // the wizard's lead under the step's title asks it
+    expect(group.attributes("aria-labelledby")).toBe(STEP_LEAD_ID);
 
     wrapper.unmount();
   });

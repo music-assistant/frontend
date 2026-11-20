@@ -1,3 +1,4 @@
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import { UserRole, type Role, type Scope } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -86,8 +87,15 @@ function dialog(wrapper: Awaited<ReturnType<typeof mountStep>>) {
   return wrapper.findComponent({ name: "CreateUserDialog" });
 }
 
+// the last row of the household's list
 function addButton(wrapper: Awaited<ReturnType<typeof mountStep>>) {
   return wrapper.find("[data-testid=onboarding-add-member]");
+}
+
+// the step's own way forward, which the wizard shows as its main button
+function primaryAction(wrapper: Awaited<ReturnType<typeof mountStep>>) {
+  return (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
 }
 
 function members(wrapper: Awaited<ReturnType<typeof mountStep>>) {
@@ -168,7 +176,7 @@ describe("InviteMembersStep", () => {
       "onboarding.steps.invite_members.load_failed",
     );
     // and there is still a way to add someone
-    expect(addButton(wrapper).exists()).toBe(true);
+    expect(primaryAction(wrapper)?.labelKey).toBe("onboarding.add_member");
     expect(warnSpy).toHaveBeenCalledOnce();
 
     wrapper.unmount();
@@ -192,18 +200,16 @@ describe("InviteMembersStep", () => {
     expect(
       wrapper
         .find("[data-testid=onboarding-invitation-features]")
-        .findAll("li")
+        .findAll("[data-slot=item]")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.invite_members.features.sign_in",
       "onboarding.steps.invite_members.features.players",
       "onboarding.steps.invite_members.features.music",
     ]);
-    expect(addButton(wrapper).classes()).toEqual(
-      expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
-    );
+    expect(primaryAction(wrapper)?.labelKey).toBe("onboarding.add_member");
     expect(
-      wrapper.find("[data-testid=onboarding-invitation-optional]").text(),
+      wrapper.find("[data-testid=onboarding-invitation-note]").text(),
     ).toBe("onboarding.steps.invite_members.optional");
 
     wrapper.unmount();
@@ -222,14 +228,10 @@ describe("InviteMembersStep", () => {
       wrapper.find("[data-testid=onboarding-invitation-features]").exists(),
     ).toBe(false);
     expect(
-      wrapper.find("[data-testid=onboarding-invitation-optional]").exists(),
+      wrapper.find("[data-testid=onboarding-invitation-note]").exists(),
     ).toBe(false);
-    expect(addButton(wrapper).classes()).toContain("bg-accent");
-    expect(
-      wrapper
-        .find("[data-testid=onboarding-invitation-visual]")
-        .attributes("data-linked"),
-    ).toBe("true");
+    expect(addButton(wrapper).text()).toBe("onboarding.add_member");
+    expect(primaryAction(wrapper)).toBeUndefined();
 
     wrapper.unmount();
   });
@@ -239,10 +241,8 @@ describe("InviteMembersStep", () => {
 
     expect(members(wrapper)).toHaveLength(0);
     expect(
-      wrapper
-        .find("[data-testid=onboarding-invitation-visual]")
-        .attributes("data-linked"),
-    ).toBeUndefined();
+      wrapper.find("[data-testid=onboarding-invitation-features]").exists(),
+    ).toBe(true);
 
     wrapper.unmount();
   });
@@ -251,7 +251,8 @@ describe("InviteMembersStep", () => {
     const wrapper = await mountStep();
     expect(dialog(wrapper).props("modelValue")).toBe(false);
 
-    await addButton(wrapper).trigger("click");
+    primaryAction(wrapper)?.run();
+    await flushPromises();
 
     expect(dialog(wrapper).props("modelValue")).toBe(true);
 
@@ -268,22 +269,22 @@ describe("InviteMembersStep", () => {
     wrapper.unmount();
   });
 
-  // the primary action while the household is only the admin who is setting it
-  // up, and a quieter one once there is a household to add to
+  // the main action while the household is only the admin who is setting it
+  // up, and the list's last row once there is a household to add to
   it.each([
-    [1, "bg-primary", "bg-accent"],
-    [2, "bg-accent", "bg-primary"],
+    [1, true],
+    [2, false],
   ])(
-    "carries the emphasis a household of %i calls for",
-    async (memberCount, emphasis, demoted) => {
+    "offers adding a user the way a household of %i calls for",
+    async (memberCount, asMainAction) => {
       users.list = Array.from({ length: memberCount }, (_, index) =>
         user({ user_id: `member-${index}`, username: `member-${index}` }),
       );
 
       const wrapper = await mountStep();
 
-      expect(addButton(wrapper).classes()).toContain(emphasis);
-      expect(addButton(wrapper).classes()).not.toContain(demoted);
+      expect(primaryAction(wrapper) !== undefined).toBe(asMainAction);
+      expect(addButton(wrapper).exists()).toBe(!asMainAction);
 
       wrapper.unmount();
     },

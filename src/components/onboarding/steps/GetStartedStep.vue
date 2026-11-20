@@ -1,6 +1,5 @@
 <template>
   <OnboardingInvitation
-    :intro="$t('onboarding.steps.get_started.intro')"
     :features="FEATURES"
     data-testid="onboarding-get-started"
   />

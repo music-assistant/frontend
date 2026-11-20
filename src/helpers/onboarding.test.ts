@@ -4,6 +4,7 @@ import {
   experienceOf,
   firstStep,
   pendingSteps,
+  stepLeadKey,
   stepTitleKey,
   type OnboardingContext,
   type OnboardingProvider,
@@ -130,7 +131,7 @@ describe("onboarding step order", () => {
   });
 
   it("titles the intent step with the question it asks", () => {
-    expect(stepTitleKey("intent")).toBe("onboarding.steps.intent.question");
+    expect(stepTitleKey("intent")).toBe("onboarding.steps.intent.title");
   });
 
   it("runs the admin track in its base order without an answer", () => {
@@ -742,5 +743,56 @@ describe("the welcome's answer", () => {
   it("names the experience the expert mode flag stands for", () => {
     expect(experienceOf(true)).toBe("expert");
     expect(experienceOf(false)).toBe("standard");
+  });
+});
+
+describe("the sentence under a step's title", () => {
+  it("defaults to the step's own intro", () => {
+    expect(stepLeadKey("intent", context())).toBe(
+      "onboarding.steps.intent.intro",
+    );
+    expect(stepLeadKey("home_assistant", context())).toBe(
+      "onboarding.steps.home_assistant.intro",
+    );
+  });
+
+  it("says what can be done to the players once there are any", () => {
+    expect(stepLeadKey("players", context())).toBe(
+      "onboarding.steps.players.description_empty",
+    );
+    expect(stepLeadKey("players", context({ playerCount: 2 }))).toBe(
+      "onboarding.steps.players.description",
+    );
+  });
+
+  it("tells the add-on where Music Assistant is reached", () => {
+    expect(
+      stepLeadKey("core_settings", context({ homeAssistantAddon: false })),
+    ).toBe("onboarding.steps.core_settings.intro");
+    expect(stepLeadKey("core_settings", context())).toBe(
+      "onboarding.steps.core_settings.intro_addon",
+    );
+  });
+
+  it("introduces the AI examples only while no AI service is set up", () => {
+    expect(stepLeadKey("ai", context())).toBe(
+      "onboarding.steps.ai.intro_examples",
+    );
+    // a builtin service says nothing about what was set up
+    expect(
+      stepLeadKey("ai", context({ providers: [aiService("tts", true)] })),
+    ).toBe("onboarding.steps.ai.intro_examples");
+    expect(
+      stepLeadKey("ai", context({ providers: [aiService("openai")] })),
+    ).toBe("onboarding.steps.ai.intro");
+  });
+
+  it("recaps the app setup in its own words", () => {
+    expect(stepLeadKey("finish", context())).toBe(
+      "onboarding.steps.finish.description",
+    );
+    expect(
+      stepLeadKey("finish", context({ answers: { intent: "phone_apps" } })),
+    ).toBe("onboarding.steps.finish.phone_apps_description");
   });
 });

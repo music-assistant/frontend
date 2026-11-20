@@ -1,23 +1,16 @@
 <template>
-  <section class="flex flex-col gap-4">
-    <p
-      :id="DESCRIPTION_ID"
-      class="text-muted-foreground text-sm"
-      data-testid="onboarding-greeting"
-    >
-      {{ $t("onboarding.steps.welcome.description", { name }) }}
-    </p>
-
+  <section class="flex flex-col gap-3">
+    <!-- the cards answer one question, and the step's lead is what asks it -->
     <ChoiceCards
       :options="options"
       :selected="shown"
       :busy="busy"
-      :labelled-by="DESCRIPTION_ID"
+      :labelled-by="STEP_LEAD_ID"
       test-id-prefix="onboarding-experience"
       @select="select"
     />
 
-    <p class="text-muted-foreground text-sm">
+    <p class="text-muted-foreground text-center text-xs text-pretty">
       {{ $t("onboarding.steps.welcome.defaults_hint") }}
     </p>
   </section>
@@ -30,18 +23,14 @@ import ChoiceCards, {
 import { useOnboarding } from "@/composables/useOnboarding";
 import {
   experienceOf,
+  STEP_LEAD_ID,
   type OnboardingExperience,
   type OnboardingStepId,
 } from "@/helpers/onboarding";
-import { userDisplayName } from "@/helpers/provider_access";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import { Play, SlidersHorizontal } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 import { toast } from "vue-sonner";
-
-// what the cards answer, for the screen readers that read it out first
-const DESCRIPTION_ID = "onboarding-welcome-description";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
@@ -52,12 +41,6 @@ const emit = defineEmits<{
 }>();
 
 const { expertMode, setExpertMode } = useOnboarding();
-
-// the welcome only ever opens on someone who is signed in, so the empty name
-// is there for the type rather than for a greeting anyone will read
-const name = computed(() =>
-  store.currentUser ? userDisplayName(store.currentUser) : "",
-);
 
 const options: ChoiceCardOption<OnboardingExperience>[] = [
   {
