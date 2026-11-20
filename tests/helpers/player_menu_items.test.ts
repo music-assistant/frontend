@@ -305,15 +305,18 @@ describe("getPlayerMenuItems settings shortcuts", () => {
   });
 
   it("picks a settings page from the fullscreen player", () => {
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "queue",
-    });
+    const menuItems = getPlayerMenuItems(
+      makePlayer({ options: [{ key: "eq", name: "EQ" } as PlayerOption] }),
+      makeQueue(),
+      { context: "queue" },
+    );
     const subItems = openSettingsItem(menuItems)?.subItems ?? [];
 
     expect(subItems.map((item) => item.label)).toEqual([
       "settings.queue_settings",
       "settings.player_settings",
       "settings.category.dsp",
+      "settings.category.options",
     ]);
     for (const subItem of subItems) subItem.action?.();
 
@@ -321,6 +324,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
       "/settings/editqueue/kitchen",
       "/settings/editplayer/kitchen",
       "/settings/editplayer/kitchen/dsp",
+      "/settings/editplayer/kitchen/options",
     ]);
     expect(storeMock.showFullscreenPlayer).toBe(false);
     expect(storeMock.showPlayersMenu).toBe(false);
