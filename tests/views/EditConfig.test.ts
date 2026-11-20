@@ -682,6 +682,28 @@ describe("EditConfig", () => {
     expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
   });
 
+  it("draws no card or title of its own when flat, keeping its advanced toggle and its fields", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "server", type: ConfigEntryType.STRING }),
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        inlineSave: true,
+        flat: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.findComponent({ name: "Card" }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "CardHeader" }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "CardContent" }).exists()).toBe(false);
+    expect(wrapper.text()).not.toContain("settings.options");
+    expect(advancedToggle(wrapper).exists()).toBe(true);
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+  });
+
   it("offers no save action on a form holding only actions", () => {
     const wrapper = mountEntries([
       entry({ key: "clear_cache", type: ConfigEntryType.ACTION }),

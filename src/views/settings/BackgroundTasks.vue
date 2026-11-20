@@ -1,10 +1,13 @@
 <template>
   <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
     <SettingsPageHeader page="background_tasks" />
-    <SettingsLinkRows
-      :rows="taskSettingsRows"
-      test-id-prefix="background-tasks"
-    />
+    <SettingsFoldRows v-if="canEditSettings">
+      <SettingsPageFoldRow
+        page="background_tasks"
+        :label="t('background_tasks.settings.title')"
+        :description="t('background_tasks.settings.description')"
+      />
+    </SettingsFoldRows>
 
     <!-- the filters, the count and the tasks stay together as one block -->
     <div>
@@ -106,9 +109,8 @@ import BackgroundTaskDetailsDialog from "@/components/settings/background-tasks/
 import BackgroundTaskFilters from "@/components/settings/background-tasks/BackgroundTaskFilters.vue";
 import BackgroundTaskItem from "@/components/settings/background-tasks/BackgroundTaskItem.vue";
 import BackgroundTaskScheduleDialog from "@/components/settings/background-tasks/BackgroundTaskScheduleDialog.vue";
-import SettingsLinkRows, {
-  type SettingsRow,
-} from "@/components/settings/SettingsLinkRows.vue";
+import SettingsFoldRows from "@/components/settings/SettingsFoldRows.vue";
+import SettingsPageFoldRow from "@/components/settings/SettingsPageFoldRow.vue";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
 import { Button } from "@/components/ui/button";
@@ -129,7 +131,7 @@ import {
   isScheduledTask,
 } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
-import { sectionPages } from "@/helpers/settings_sections";
+import { canEditSettingsPage } from "@/helpers/settings_pages";
 import { copyToClipboard } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
@@ -143,7 +145,7 @@ import {
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { ListChecks, Trash2 } from "@lucide/vue";
-import { computed, inject, markRaw, ref } from "vue";
+import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 
@@ -168,17 +170,8 @@ const viewMode = computed(() => tasksViewMode.viewMode.value);
 const canManageTasks = computed(() =>
   authManager.hasScope(Scope.SYSTEM_MANAGE),
 );
-// the settings of the tasks module sit on a page of their own
-const taskSettingsRows = computed<SettingsRow[]>(() =>
-  sectionPages("background_tasks", (scope) => authManager.hasScope(scope)).map(
-    (page) => ({
-      key: page.key,
-      icon: markRaw(page.icon),
-      label: t(page.label),
-      description: t(page.description),
-      to: page.route,
-    }),
-  ),
+const canEditSettings = canEditSettingsPage("background_tasks", (scope) =>
+  authManager.hasScope(scope),
 );
 const {
   loading,

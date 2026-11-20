@@ -1,9 +1,16 @@
 <template>
-  <Card v-if="rows.length > 0" data-test="aa-coverage">
-    <CardHeader>
-      <CardTitle>{{ $t("settings.audio_analysis_coverage.title") }}</CardTitle>
-    </CardHeader>
-    <CardContent class="space-y-2">
+  <SettingsFoldRow
+    v-if="hasModules"
+    value="progress"
+    :icon="ChartNoAxesColumn"
+    :label="$t('background_tasks.progress')"
+    :description="$t('settings.audio_analysis_coverage.description')"
+    :state="state"
+  >
+    <div v-if="!rows.length" class="flex justify-center py-6">
+      <Spinner class="size-5" />
+    </div>
+    <div v-else class="space-y-2">
       <Item
         v-for="row in rows"
         :key="row.instanceId"
@@ -64,16 +71,17 @@
           </Badge>
         </ItemContent>
       </Item>
-    </CardContent>
-  </Card>
+    </div>
+  </SettingsFoldRow>
 </template>
 
 <script setup lang="ts">
 import { useAudioAnalysisCoverage } from "@/composables/audio-analysis/useAudioAnalysisCoverage";
 import { $t } from "@/plugins/i18n";
 import { api } from "@/plugins/api";
+import { ProviderType } from "@/plugins/api/interfaces";
+import SettingsFoldRow from "@/components/settings/SettingsFoldRow.vue";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Item,
   ItemContent,
@@ -81,18 +89,50 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Progress } from "@/components/ui/progress";
-import { onMounted, watch } from "vue";
+import { Spinner } from "@/components/ui/spinner";
+import { ChartNoAxesColumn } from "@lucide/vue";
+import { computed, onMounted, watch } from "vue";
 
+/**
+ * How far each analysis module has got, as a row of a `SettingsFoldRows` card.
+ * Renders nothing while no analysis module is set up.
+ */
 const { rows, refresh } = useAudioAnalysisCoverage();
 
 const none = $t("settings.audio_analysis_coverage.none");
+
+const modules = computed(() =>
+  Object.values(api.providers).filter(
+    (provider) => provider.type === ProviderType.AUDIO_ANALYSIS,
+  ),
+);
+// known from the providers right away, so the row doesn't pop in once the
+// coverage has loaded
+const hasModules = computed(() => modules.value.length > 0);
+
+// nothing until the coverage of an available module is known; a track that an
+// older version of a module analyzed counts as pending for it
+const state = computed(() => {
+  const available = rows.value.filter((row) => row.available);
+  if (!available.length) return undefined;
+  const busy = available.filter((row) => row.pending > 0).length;
+  return busy
+    ? $t("settings.audio_analysis_coverage.modules_busy", busy, {
+        named: { count: busy },
+      })
+    : $t("settings.audio_analysis_coverage.up_to_date");
+});
 
 onMounted(() => {
   refresh();
 });
 
+// api.providers changes in place, so follow the modules and whether each is up
 watch(
-  () => api.providers,
+  () =>
+    modules.value
+      .map((provider) => `${provider.instance_id}:${provider.available}`)
+      .join(),
   () => {
     refresh();
   },

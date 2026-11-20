@@ -6,21 +6,37 @@
     :disabled="disabled"
     :class="{ 'floating-save-clearance': showSaveAction && !inlineSave }"
   >
-    <Card v-if="hasOptions" class="gap-0 py-0">
-      <CardHeader
-        v-if="!hideHeader"
-        class="flex flex-wrap items-center gap-3 px-6 py-4 [.border-b]:pb-4"
-        :class="{ 'border-b': hasVisibleSections }"
+    <component
+      :is="flat ? 'div' : Card"
+      v-if="hasOptions"
+      :class="{ 'gap-0 py-0': !flat }"
+    >
+      <!-- a flat form keeps only the advanced toggle of its header -->
+      <component
+        :is="flat ? 'div' : CardHeader"
+        v-if="flat ? showAdvancedToggle : !hideHeader"
+        :class="
+          flat
+            ? 'flex'
+            : [
+                'flex flex-wrap items-center gap-3 px-6 py-4 [.border-b]:pb-4',
+                { 'border-b': hasVisibleSections },
+              ]
+        "
       >
-        <CardTitle>{{ $t("settings.options") }}</CardTitle>
+        <CardTitle v-if="!flat">{{ $t("settings.options") }}</CardTitle>
         <AdvancedSettingsToggle
           v-if="showAdvancedToggle"
           :show-advanced-settings="showAdvancedSettings"
           test-id="config-advanced-settings"
           @update:show-advanced-settings="setShowAdvancedSettings"
         />
-      </CardHeader>
-      <CardContent v-if="hasVisibleSections" class="px-6 pb-5">
+      </component>
+      <component
+        :is="flat ? 'div' : CardContent"
+        v-if="hasVisibleSections"
+        :class="{ 'px-6 pb-5': !flat }"
+      >
         <!-- Generic settings section -->
         <section
           v-for="panel of regularPanels.filter(
@@ -93,8 +109,8 @@
             @set-entry-value="onEntryValueSet"
           />
         </section>
-      </CardContent>
-    </Card>
+      </component>
+    </component>
 
     <div
       v-if="showSaveAction"
@@ -214,6 +230,8 @@ export interface Props {
   // Leave out the Options header and its advanced toggle, for a host that names the form and
   // decides which of its entries show.
   hideHeader?: boolean;
+  // Leave out the card and the Options title, for a host that frames and names the form.
+  flat?: boolean;
   // Whether the advanced entries show, for a host that decides it; without one, the choice
   // the user made with the advanced toggle applies.
   showAdvancedSettings?: boolean;
