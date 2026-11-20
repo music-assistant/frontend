@@ -360,13 +360,13 @@ async function buildMenu(item?: MediaItemType) {
 }
 /* the facts about the item line up on the right, bottom-aligned with the
    buttons; they wrap onto more lines rather than crowd the lines beside them,
-   but never narrower than their widest name */
+   and a name too long for the column is cut short */
 .detail-hero__aside {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  min-width: min-content;
+  min-width: 0;
   text-align: right;
 }
 /* an aside whose only child rendered nothing (Vue leaves a comment node there,

@@ -3067,6 +3067,8 @@
     "lyrics_hide": "Hide lyrics for this track",
     "lyrics_loading": "Lyrics are being fetched...",
     "show_audio_chain_details": "Show audio pipeline details",
+    "all_genres": "All {count} genres",
+    "genres_of_item": "Every genre of {name}",
     "show_less": "Show less",
     "show_more": "Show more",
     "autoplay_on_title": "Autoplay is enabled",
