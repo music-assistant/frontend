@@ -6,14 +6,22 @@
   >
     <Spinner v-if="busy" class="size-4 shrink-0" />
     <div class="w-full sm:w-80 [&_.v-input\_\_details]:hidden">
-      <ConfigEntryField
-        v-if="entry"
-        :conf-entry="entry"
-        :show-password-values="false"
-        :disabled="busy"
-        :clearable="false"
-        @update:value="pick"
-      />
+      <template v-if="entry">
+        <ConfigEntryField
+          :conf-entry="entry"
+          :show-password-values="false"
+          :disabled="busy"
+          :clearable="false"
+          @update:value="pick"
+        />
+        <p
+          v-if="unavailable"
+          class="text-destructive px-4 pt-1.5 text-xs"
+          data-testid="ai-engine-unavailable"
+        >
+          {{ $t("settings.ai.engine_unavailable") }}
+        </p>
+      </template>
       <span
         v-else-if="loadFailed"
         class="text-muted-foreground block text-sm sm:text-right"
@@ -31,6 +39,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useConfigValue } from "@/composables/useConfigValue";
 import { engineSettingKey, engineSettingOwner } from "@/helpers/ai_settings";
 import type { AIEngineUsage, ConfigValueType } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
 import { watch } from "vue";
 
@@ -42,6 +51,8 @@ const props = defineProps<{
   setting: AIEngineUsage;
   // the engine the setting uses, shown when its picker cannot be loaded
   state: string;
+  // the engine the setting selects is not available
+  unavailable: boolean;
 }>();
 
 const emit = defineEmits<{

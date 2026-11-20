@@ -543,6 +543,7 @@
             },
             "follows_default": "Default · {engine}",
             "not_available": "Not available",
+            "engine_unavailable": "The selected engine is not available",
             "choose_models": "Choose the models to use",
             "assistant_access": "Access for AI assistants",
             "mcp_server": "Enable the built-in MCP server",
