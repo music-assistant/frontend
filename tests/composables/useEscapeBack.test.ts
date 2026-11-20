@@ -1,8 +1,11 @@
+import { Select, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { store } from "@/plugins/store";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { h, ref } from "vue";
+import { h, ref, type VNode } from "vue";
+import { createVuetify } from "vuetify";
+import { VAutocomplete, VSelect } from "vuetify/components";
 
 vi.mock("@/plugins/store", () => ({
   store: {
@@ -42,6 +45,28 @@ function harness(enabled = () => true) {
   };
   return { back, component, wrapper: mount(component) };
 }
+/** Mounts `field` on the page and presses Escape on what then has focus. */
+function escapeFrom(field: () => VNode, focusSelector: string) {
+  const back = vi.fn();
+  mount(
+    {
+      setup() {
+        useEscapeBack(back);
+        return field;
+      },
+    },
+    { attachTo: document.body, global: { plugins: [createVuetify()] } },
+  );
+  const focused = document.querySelector<HTMLElement>(focusSelector)!;
+  focused.focus();
+  expect(document.activeElement).toBe(focused);
+  // no list is open, so only the field itself can claim Escape
+  expect(document.querySelector('.v-overlay--active, [role="listbox"]')).toBe(
+    null,
+  );
+  escape(focused);
+  return back;
+}
 
 describe("useEscapeBack", () => {
   it("navigates once, prevents default, and stops listening after unmount", () => {
@@ -80,6 +105,33 @@ describe("useEscapeBack", () => {
     document.body.innerHTML = `<${markup}><span></span></${markup.split(" ")[0]}>`;
     const target = document.body.firstElementChild!;
     escape(target.querySelector("span") ?? target);
+    expect(back).not.toHaveBeenCalled();
+  });
+
+  it("goes back from a select whose list is closed, as after picking from it", () => {
+    const back = escapeFrom(
+      () => h(VSelect, { items: ["A", "B"], modelValue: "B" }),
+      ".v-select input",
+    );
+    expect(back).toHaveBeenCalledOnce();
+  });
+
+  it("goes back from a reka select whose list is closed", () => {
+    const back = escapeFrom(
+      () =>
+        h(Select, { modelValue: "b" }, () =>
+          h(SelectTrigger, () => h(SelectValue)),
+        ),
+      '[data-slot="select-trigger"]',
+    );
+    expect(back).toHaveBeenCalledOnce();
+  });
+
+  it("leaves Escape to an autocomplete, which takes typing", () => {
+    const back = escapeFrom(
+      () => h(VAutocomplete, { items: ["A", "B"] }),
+      ".v-autocomplete input",
+    );
     expect(back).not.toHaveBeenCalled();
   });
 
