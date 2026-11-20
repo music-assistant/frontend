@@ -6,6 +6,7 @@ import {
   UserRole,
   type ConfigEntry,
   type CoreConfig,
+  type User,
 } from "@/plugins/api/interfaces";
 import UserManagement from "@/views/settings/UserManagement.vue";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -57,7 +58,7 @@ const editConfigStub = {
   template: "<div data-testid='edit-config' />",
 };
 
-async function mountView() {
+async function mountView(member: Partial<User> = {}) {
   apiMock.getAllUsers.mockResolvedValue([
     user({
       user_id: "ha",
@@ -65,7 +66,12 @@ async function mountView() {
       role: UserRole.SERVICE,
       display_name: "Home Assistant Integration",
     }),
-    user({ user_id: "marcel", username: "marcel", display_name: "Marcel" }),
+    user({
+      user_id: "marcel",
+      username: "marcel",
+      display_name: "Marcel",
+      ...member,
+    }),
   ]);
   const wrapper = mount(UserManagement, {
     global: {
@@ -115,6 +121,17 @@ describe("UserManagement", () => {
     expect(cards).toHaveLength(2);
     expect(cards[0].text()).toContain("auth.system_user");
     expect(cards[1].text()).not.toContain("auth.system_user");
+  });
+
+  it("marks a user who may not get explicit content", async () => {
+    const allowed = await mountView();
+    expect(allowed.text()).not.toContain("auth.explicit_restricted");
+
+    const wrapper = await mountView({ allow_explicit: false });
+
+    const [systemCard, memberCard] = wrapper.findAll('[data-slot="card"]');
+    expect(systemCard.text()).not.toContain("auth.explicit_restricted");
+    expect(memberCard.text()).toContain("auth.explicit_restricted");
   });
 
   it("offers no disable or delete action for the Home Assistant account", async () => {

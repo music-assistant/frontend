@@ -119,7 +119,11 @@
                     </DropdownMenu>
                   </div>
                   <div
-                    v-if="!user.enabled || isSystemUser(user)"
+                    v-if="
+                      !user.enabled ||
+                      isSystemUser(user) ||
+                      user.allow_explicit === false
+                    "
                     class="flex flex-wrap gap-2 mt-2"
                   >
                     <Badge v-if="!user.enabled" variant="destructive">
@@ -127,6 +131,12 @@
                     </Badge>
                     <Badge v-if="isSystemUser(user)" variant="secondary">
                       {{ $t("auth.system_user") }}
+                    </Badge>
+                    <Badge
+                      v-if="user.allow_explicit === false"
+                      variant="outline"
+                    >
+                      {{ $t("auth.explicit_restricted") }}
                     </Badge>
                   </div>
                 </div>
