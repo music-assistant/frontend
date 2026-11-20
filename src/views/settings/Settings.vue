@@ -64,6 +64,7 @@ import ToolbarHeading, {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
+import { provideSettingsPageBack } from "@/composables/useSettingsPageBack";
 import { provideSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -100,6 +101,9 @@ const editedProviderName = provideEditedProviderName();
 
 // the page on screen puts what it offers in the menu of its header
 provideSettingsPageMenu();
+
+// the page on screen may handle back itself, such as closing a panel first
+const pageBack = provideSettingsPageBack();
 
 const settingsViewMode = ref<"list" | "card">("card");
 const savedSettingsViewMode = getPreference<"list" | "card">(
@@ -349,6 +353,7 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
 // back to where the user came from; a page opened directly goes one level up,
 // to the nearest page above it that the user may open
 const back = function () {
+  if (pageBack.value?.()) return;
   const parent = breadcrumbItems.value
     .slice(0, -1)
     .findLast((item) => item.to)?.to;

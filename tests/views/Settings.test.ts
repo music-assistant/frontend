@@ -7,8 +7,10 @@ import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
 import type { ToolbarHeadingItem } from "@/components/ToolbarHeading.vue";
 import { useEditedProviderName } from "@/composables/useEditedProviderName";
+import { useSettingsPageBack } from "@/composables/useSettingsPageBack";
 import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import {
+  DSPFilterType,
   ProviderOffering,
   ProviderType,
   UserRole,
@@ -16,11 +18,12 @@ import {
   Scope,
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
+import EditPlayerDsp from "@/views/settings/EditPlayerDsp.vue";
 import Settings from "@/views/settings/Settings.vue";
 import { ArrowLeft, Settings as SettingsIcon } from "@lucide/vue";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { defineComponent, h, nextTick, type Component } from "vue";
+import { defineComponent, h, nextTick, ref, type Component } from "vue";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 import { user } from "../fixtures/user";
 
@@ -65,6 +68,27 @@ apiMock.providerManifests.spotify = {
   provides: [],
 };
 
+// what the DSP settings of a player load, the page that handles back itself
+Object.assign(apiMock, {
+  getDSPConfig: vi.fn(async () => ({
+    enabled: true,
+    filters: [
+      {
+        type: DSPFilterType.TONE_CONTROL,
+        enabled: true,
+        bass_level: 0,
+        mid_level: 0,
+        treble_level: 0,
+      },
+    ],
+    input_gain: 0,
+    output_gain: 0,
+    preset_id: null,
+  })),
+  getDSPPresets: vi.fn(async () => []),
+  subscribe: vi.fn(() => () => {}),
+});
+
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/composables/useOnboarding", () => ({
@@ -95,9 +119,11 @@ vi.mock("vue-router", async (importOriginal) => ({
       },
     },
     push: routerPush,
+    replace: vi.fn(),
     back: routerBack,
     options: { history: { state: historyState } },
   }),
+  useRoute: () => routeState,
 }));
 vi.mock("vue-i18n", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-i18n")>()),
@@ -908,7 +934,7 @@ describe("the way back from a settings page", () => {
     historyState.back = null;
   });
 
-  function mountPage(routeName: string) {
+  function mountPage(routeName: string, page: Component | boolean = true) {
     routeState.name = routeName;
     wrapper = mount(Settings, {
       global: {
@@ -916,13 +942,23 @@ describe("the way back from a settings page", () => {
           Container: { template: "<div><slot /></div>" },
           Toolbar: ToolbarStub,
           ToolbarHeading: ToolbarHeadingStub,
-          RouterView: true,
+          RouterView: page,
           VBtn: true,
           VDivider: true,
         },
       },
     });
     return wrapper;
+  }
+
+  /** A page that handles back itself with `handle`. */
+  function pageHandlingBack(handle: () => boolean): Component {
+    return {
+      setup() {
+        useSettingsPageBack(handle);
+        return () => h("div");
+      },
+    };
   }
 
   function pressEscape() {
@@ -1002,5 +1038,159 @@ describe("the way back from a settings page", () => {
     pressEscape();
     expect(routerBack).toHaveBeenCalledOnce();
     expect(routerPush).toHaveBeenCalledOnce();
+  });
+
+  it("leaves back to the page on screen when the page handles it", () => {
+    const handle = vi.fn(() => true);
+    const page = mountPage("editplayerdsp", pageHandlingBack(handle));
+
+    page.getComponent(ToolbarStub).props("iconAction")();
+    pressEscape();
+
+    expect(handle).toHaveBeenCalledTimes(2);
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(routerBack).not.toHaveBeenCalled();
+  });
+
+  it("goes back as usual when the page on screen does not handle it", () => {
+    const page = mountPage(
+      "editplayerdsp",
+      pageHandlingBack(() => false),
+    );
+
+    page.getComponent(ToolbarStub).props("iconAction")();
+
+    expect(routerPush).toHaveBeenCalledExactlyOnceWith({
+      name: "editplayer",
+      params: { playerId: "kitchen" },
+    });
+  });
+
+  it("stops asking a page once it has closed", async () => {
+    const handle = vi.fn(() => true);
+    const shown = ref(true);
+    const Page = pageHandlingBack(handle);
+    const page = mountPage("editplayerdsp", {
+      setup: () => () => (shown.value ? h(Page) : null),
+    });
+
+    shown.value = false;
+    await nextTick();
+    page.getComponent(ToolbarStub).props("iconAction")();
+
+    expect(handle).not.toHaveBeenCalled();
+    expect(routerPush).toHaveBeenCalledOnce();
+  });
+});
+
+describe("the way back from the DSP settings of a player", () => {
+  const ToolbarStub = { props: ["iconAction"], template: "<div />" };
+  const PLAYER_SETTINGS = {
+    name: "editplayer",
+    params: { playerId: "kitchen" },
+  };
+  let wrapper: ReturnType<typeof mount> | undefined;
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routerPush.mockReset();
+    routeState.name = "editplayerdsp";
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    store.forceMobileLayout = undefined;
+    routeState.name = "editplayeroptions";
+  });
+
+  async function mountDsp({ phone }: { phone: boolean }) {
+    // the app lays itself out for a phone whatever the window measures
+    store.forceMobileLayout = phone;
+    wrapper = mount(Settings, {
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: {
+          Toolbar: ToolbarStub,
+          ToolbarHeading: ToolbarHeadingStub,
+          RouterView: {
+            render: () => h(EditPlayerDsp, { playerId: "kitchen" }),
+          },
+          Badge: true,
+          DropdownMenu: true,
+          DSPPipeline: {
+            emits: ["onSelect"],
+            template:
+              '<button data-testid="dsp-stages" @click="$emit(\'onSelect\', 0)" />',
+          },
+          DSPToneControl: true,
+          Switch: true,
+        },
+      },
+    });
+    await flushPromises();
+    return wrapper;
+  }
+
+  const stageOpen = () => wrapper!.find("h3").exists();
+  const stagesShown = () =>
+    wrapper!.find('[data-testid="dsp-stages"]').exists();
+  const pressBack = () =>
+    wrapper!.getComponent(ToolbarStub).props("iconAction")();
+  const pressEscape = () =>
+    document.body.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+  it.each([
+    ["the arrow", pressBack],
+    ["Escape", pressEscape],
+  ])("closes an open stage on a phone first with %s", async (_way, goBack) => {
+    const page = await mountDsp({ phone: true });
+    await page.get('[data-testid="dsp-stages"]').trigger("click");
+    expect(stageOpen()).toBe(true);
+    expect(stagesShown()).toBe(false);
+
+    goBack();
+    await nextTick();
+
+    expect(stageOpen()).toBe(false);
+    expect(stagesShown()).toBe(true);
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it("leaves the stage panel to the arrow of the toolbar on a phone", async () => {
+    const page = await mountDsp({ phone: true });
+    await page.get('[data-testid="dsp-stages"]').trigger("click");
+
+    expect(page.find('[aria-label="back"]').exists()).toBe(false);
+  });
+
+  it.each([
+    ["the arrow", pressBack],
+    ["Escape", pressEscape],
+  ])(
+    "leaves the page on a phone with no stage open with %s",
+    async (_way, goBack) => {
+      await mountDsp({ phone: true });
+      expect(stageOpen()).toBe(false);
+
+      goBack();
+
+      expect(routerPush).toHaveBeenCalledExactlyOnceWith(PLAYER_SETTINGS);
+    },
+  );
+
+  it("leaves the page on a wide screen, where the stage sits beside the list", async () => {
+    await mountDsp({ phone: false });
+    expect(stageOpen()).toBe(true);
+
+    pressBack();
+
+    expect(routerPush).toHaveBeenCalledExactlyOnceWith(PLAYER_SETTINGS);
   });
 });
