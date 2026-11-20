@@ -59,7 +59,7 @@ import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
 const QUEUE_DOCS_URL =
-  "https://music-assistant.io/settings/individual-player/#queue-settings";
+  "https://music-assistant.io/settings/individual-player/#playback-settings";
 
 // global refs
 const router = useRouter();
