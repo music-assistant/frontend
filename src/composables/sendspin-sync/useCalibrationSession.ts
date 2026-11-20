@@ -176,15 +176,14 @@ export function useCalibrationSession() {
    * asked for the one found running to be ended.
    *
    * Returns false when there was a session to end and the server could not be
-   * told to end it.
+   * told to end it. The session is kept in that case, so the next stop asks the
+   * server again rather than answering for speakers it still holds.
    */
   async function stop(adopted = false): Promise<boolean> {
     stops++;
     stopKeepalive();
     if (!state.value) return true;
     if (!owned.value && !adopted) return true;
-    state.value = null;
-    owned.value = false;
     // Never thrown: this also runs as the page goes away, with nobody to catch
     // it. The answer says whether the server was told, because until it is the
     // speakers stay held and the user must not be told otherwise.
@@ -192,11 +191,13 @@ export function useCalibrationSession() {
       await api.sendCommand("sendspin/calibration/stop_session", undefined, {
         suppressGlobalError: true,
       });
-      return true;
     } catch (error) {
       console.error("[Sendspin Sync] stop_session failed", error);
       return false;
     }
+    state.value = null;
+    owned.value = false;
+    return true;
   }
 
   /** Clear the fault from a run that has been thrown away. */

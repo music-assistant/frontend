@@ -189,7 +189,8 @@ export function useCalibrationRun() {
   // A context that stopped leaves the arrivals either side of the gap on
   // unrelated timelines, so the run is over whenever this fires. Nothing of it
   // can be used, so the speakers go back at once rather than staying silent
-  // until somebody reads the screen.
+  // until somebody reads the screen. A release that fails here is not lost: the
+  // session keeps it, and starting over asks the server again.
   watch(capture.voided, (voided) => {
     if (!voided) return;
     phase.value = "voided";
@@ -200,6 +201,24 @@ export function useCalibrationRun() {
     phase.value = "voided";
     void capture.close();
   });
+
+  /**
+   * Load the speakers on offer, and untick the ones that can no longer start.
+   *
+   * A speaker that left the list has no row to untick it on, and one that went
+   * silent has a checkbox that is switched off, so a tick left on either would
+   * count towards the minimum and then be refused by the server.
+   */
+  async function loadPlayers(): Promise<boolean> {
+    if (!(await session.loadPlayers())) return false;
+    const startable = new Set(
+      session.players.value
+        .filter((player) => !player.silent)
+        .map((player) => player.player_id),
+    );
+    selected.value = selected.value.filter((id) => startable.has(id));
+    return true;
+  }
 
   /**
    * Take the selected speakers over, open the microphone, and start walking.
@@ -418,7 +437,7 @@ export function useCalibrationRun() {
     sessionLost: session.lost,
     sessionProblem: session.problem,
     busy: session.busy,
-    loadPlayers: session.loadPlayers,
+    loadPlayers,
     refresh: session.refresh,
     // capture state
     voided: capture.voided,

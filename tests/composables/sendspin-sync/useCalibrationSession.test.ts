@@ -341,8 +341,13 @@ describe("useCalibrationSession", () => {
     expect(await session.stop()).toBe(false);
 
     expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(1);
-    expect(session.state.value).toBeNull();
     expect(session.lost.value).toBeNull();
+
+    // The session is kept, so asking again reaches the server instead of
+    // answering for speakers it was never told to give back.
+    expect(await session.stop()).toBe(true);
+    expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(2);
+    expect(session.state.value).toBeNull();
   });
 
   it("says the speakers are back once the server has been told", async () => {

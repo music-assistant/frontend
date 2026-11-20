@@ -6,6 +6,7 @@ import {
   CHIRP_SECONDS,
 } from "@/helpers/sendspin-sync/chirp";
 import { BRACKET_LIMIT_MS } from "@/helpers/sendspin-sync/verdict";
+import type { CalibrationPlayer } from "@/plugins/api/interfaces";
 import { effectScope, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -40,22 +41,7 @@ vi.mock("@/composables/sendspin-sync/useCalibrationSession", async () => {
   const { ref: vueRef } = await vi.importActual<typeof import("vue")>("vue");
   return {
     useCalibrationSession: () => ({
-      players: vueRef([
-        {
-          player_id: "living",
-          name: "Living room",
-          busy: false,
-          adjustable: true,
-          silent: false,
-        },
-        {
-          player_id: "kitchen",
-          name: "Kitchen",
-          busy: false,
-          adjustable: true,
-          silent: false,
-        },
-      ]),
+      players,
       state: vueRef(null),
       lost: sessionLost,
       problem: vueRef(null),
@@ -80,6 +66,17 @@ vi.mock("@/composables/sendspin-sync/useChirpCapture", async () => {
   };
 });
 
+function speaker(playerId: string, silent = false): CalibrationPlayer {
+  return {
+    player_id: playerId,
+    name: playerId,
+    busy: false,
+    adjustable: true,
+    silent,
+  };
+}
+
+let players = ref<CalibrationPlayer[]>([]);
 let voided = ref<"suspended" | null>(null);
 let sessionLost = ref<"expired" | null>(null);
 let scopes: ReturnType<typeof effectScope>[] = [];
@@ -159,6 +156,7 @@ async function started() {
 
 beforeEach(() => {
   scopes = [];
+  players = ref([speaker("living"), speaker("kitchen")]);
   voided = ref(null);
   sessionLost = ref(null);
   vi.useFakeTimers();
@@ -835,6 +833,31 @@ describe("useCalibrationRun", () => {
     expect(run.visits.value).toHaveLength(1);
     expect(run.visits.value[0].found).toBe(0);
     expect(run.phase.value).toBe("walking");
+  });
+
+  it("unticks the speakers a reloaded list can no longer start", async () => {
+    const run = withScope(() => useCalibrationRun());
+    run.selected.value = ["bedroom", "living", "kitchen"];
+    // The bedroom dropped off the list and the kitchen was muted meanwhile:
+    // neither has a checkbox left to untick it with.
+    fakes.session.loadPlayers.mockImplementation(() => {
+      players.value = [speaker("living"), speaker("kitchen", true)];
+      return Promise.resolve(true);
+    });
+
+    expect(await run.loadPlayers()).toBe(true);
+
+    expect(run.selected.value).toEqual(["living"]);
+  });
+
+  it("keeps the ticks when the list could not be reloaded", async () => {
+    const run = withScope(() => useCalibrationRun());
+    run.selected.value = ["bedroom", "living"];
+    fakes.session.loadPlayers.mockResolvedValue(false);
+
+    expect(await run.loadPlayers()).toBe(false);
+
+    expect(run.selected.value).toEqual(["bedroom", "living"]);
   });
 
   it("releases everything when the run is finished", async () => {

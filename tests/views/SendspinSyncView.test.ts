@@ -131,6 +131,31 @@ function mountView() {
  * The view reads both once, as it is set up, so this has to come before the
  * mount. jsdom offers neither, which is the blocked case and not the usual one.
  */
+const originalSecureContext = Object.getOwnPropertyDescriptor(
+  window,
+  "isSecureContext",
+);
+const originalMediaDevices = Object.getOwnPropertyDescriptor(
+  navigator,
+  "mediaDevices",
+);
+
+/** Put back what `browserWith` replaced, for whatever runs next here. */
+function restoreBrowser(): void {
+  // A property that did not exist is deleted rather than left defined as
+  // undefined, which an `in` check elsewhere would still see.
+  if (originalSecureContext) {
+    Object.defineProperty(window, "isSecureContext", originalSecureContext);
+  } else {
+    Reflect.deleteProperty(window, "isSecureContext");
+  }
+  if (originalMediaDevices) {
+    Object.defineProperty(navigator, "mediaDevices", originalMediaDevices);
+  } else {
+    Reflect.deleteProperty(navigator, "mediaDevices");
+  }
+}
+
 function browserWith(options: { secure: boolean; microphone: boolean }): void {
   Object.defineProperty(window, "isSecureContext", {
     value: options.secure,
@@ -161,6 +186,7 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const wrapper of wrappers) wrapper.unmount();
+  restoreBrowser();
   vi.restoreAllMocks();
 });
 
