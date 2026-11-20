@@ -75,8 +75,11 @@ const {
     t: vi.fn((key: string) => key),
   },
   routerMock: {
+    back: vi.fn(),
     push: vi.fn(),
     replace: vi.fn(),
+    // the entry before the page, null on a page opened directly
+    options: { history: { state: { back: null as string | null } } },
   },
   toastMock: {
     error: vi.fn(),
@@ -181,6 +184,7 @@ vi.mock("vue-router", async (importOriginal) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  routerMock.options.history.state.back = null;
   providersUpdated = undefined;
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
@@ -1343,6 +1347,15 @@ describe("EditProvider", () => {
     ]);
     expect(apiMock.saveProviderConfig).not.toHaveBeenCalled();
     expect(toastMock.success).not.toHaveBeenCalled();
+  });
+
+  it("returns to where the user came from after saving", async () => {
+    routerMock.options.history.state.back = "/settings/players";
+
+    await mountSavedProvider();
+
+    expect(routerMock.back).toHaveBeenCalledOnce();
+    expect(routerMock.push).not.toHaveBeenCalled();
   });
 
   it("sends an admin back to the music sources page after saving", async () => {

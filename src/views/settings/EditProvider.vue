@@ -333,6 +333,7 @@ import {
   canToggleSource,
   managesAllSources,
 } from "@/helpers/provider_permissions";
+import { goBack } from "@/helpers/navigation";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { providerPageEntries } from "@/helpers/settings_pages";
@@ -527,7 +528,7 @@ const providersRoute = function () {
 };
 
 const backToProviders = function () {
-  router.push(providersRoute());
+  goBack(router, providersRoute());
 };
 
 const resetToDefaults = function () {
