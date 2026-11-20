@@ -39,7 +39,7 @@ function instantaneousHz(progress: number): number {
 describe("CHIRP_PERIOD_SECONDS", () => {
   it("is the one second the server emits at", () => {
     // Pinned rather than derived, because it is agreed with the server's
-    // `sendspin_sync` by hand and nothing at runtime negotiates it. A build that
+    // calibration track by hand and nothing at runtime negotiates it. A build that
     // moves off this alone counts every arrival against the wrong chirp.
     expect(CHIRP_PERIOD_SECONDS).toBe(1);
   });

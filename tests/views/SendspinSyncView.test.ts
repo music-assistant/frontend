@@ -182,10 +182,10 @@ describe("SendspinSyncView", () => {
     const wrapper = mountView();
 
     expect(wrapper.text()).toContain(
-      "providers.sendspin_sync.calibration.pick.title",
+      "providers.sendspin.calibration.pick.title",
     );
     expect(wrapper.text()).not.toContain(
-      "providers.sendspin_sync.calibration.walk.step.start.title",
+      "providers.sendspin.calibration.walk.step.start.title",
     );
   });
 
@@ -227,7 +227,7 @@ describe("SendspinSyncView", () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain(
-      "providers.sendspin_sync.calibration.walk.step.start.title",
+      "providers.sendspin.calibration.walk.step.start.title",
     );
     expect(wrapper.text()).toContain("Living room");
   });
@@ -239,7 +239,7 @@ describe("SendspinSyncView", () => {
 
     expect(wrapper.text()).toContain("This run has to be thrown away");
     expect(wrapper.text()).not.toContain(
-      "providers.sendspin_sync.calibration.pick.title",
+      "providers.sendspin.calibration.pick.title",
     );
     expect(wrapper.find('[role="status"]').exists()).toBe(true);
   });
@@ -275,9 +275,7 @@ describe("SendspinSyncView", () => {
     const start = wrapper
       .findAll("button")
       .find((button) =>
-        button
-          .text()
-          .includes("providers.sendspin_sync.calibration.pick.start"),
+        button.text().includes("providers.sendspin.calibration.pick.start"),
       )!;
     expect(start.attributes("disabled")).toBeDefined();
   });
@@ -323,7 +321,7 @@ describe("SendspinSyncView", () => {
       "Kitchen is muted or turned all the way down.",
     );
     expect(wrapper.text()).toContain(
-      "providers.sendspin_sync.calibration.pick.title",
+      "providers.sendspin.calibration.pick.title",
     );
   });
 

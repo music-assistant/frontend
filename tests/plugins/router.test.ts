@@ -335,20 +335,8 @@ describe("Sendspin Sync guard", () => {
     );
   });
 
-  it("redirects to Discover with a toast when the plugin is disabled", async () => {
+  it("lets an admin through", async () => {
     mocks.store.currentUser = admin;
-
-    await expect(
-      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
-    ).resolves.toEqual({ name: "discover" });
-    expect(mocks.toastError).toHaveBeenCalledWith(
-      "providers.sendspin_sync.toast.unavailable",
-    );
-  });
-
-  it("allows Sendspin Sync when the plugin is enabled", async () => {
-    mocks.store.currentUser = admin;
-    mocks.store.enabledPlugins = new Set(["sendspin_sync"]);
 
     await expect(
       invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
@@ -358,28 +346,12 @@ describe("Sendspin Sync guard", () => {
 
   it("turns a non-admin away from the calibration walk", async () => {
     mocks.store.currentUser = { role: "user", username: "listener" };
-    mocks.store.enabledPlugins = new Set(["sendspin_sync"]);
 
     await expect(
       invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
     ).resolves.toEqual({ name: "discover" });
     expect(mocks.toastError).toHaveBeenCalledWith(
-      "providers.sendspin_sync.toast.admin_only",
-    );
-  });
-
-  it("names the role rather than the plugin when a non-admin is turned away", async () => {
-    mocks.store.currentUser = { role: "user", username: "listener" };
-
-    await invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync"));
-
-    // A non-admin cannot tell whether the plugin is enabled, so the plugin
-    // check must not answer ahead of the role check.
-    expect(mocks.toastError).toHaveBeenCalledWith(
-      "providers.sendspin_sync.toast.admin_only",
-    );
-    expect(mocks.toastError).not.toHaveBeenCalledWith(
-      "providers.sendspin_sync.toast.unavailable",
+      "providers.sendspin.calibration.admin_only",
     );
   });
 
@@ -396,7 +368,6 @@ describe("Sendspin Sync guard", () => {
     // The user lands with the connection: a guard that read the role too early
     // would have turned this admin away as a non-admin.
     mocks.store.currentUser = admin;
-    mocks.store.enabledPlugins = new Set(["sendspin_sync"]);
     mocks.apiState.value = ConnectionState.INITIALIZED;
 
     await expect(pending.result).resolves.toBeUndefined();
@@ -415,16 +386,15 @@ describe("Sendspin Sync guard", () => {
 
     await vi.advanceTimersByTimeAsync(1);
 
-    await expect(pending.result).resolves.toEqual({ name: "discover" });
-    expect(mocks.toastError).toHaveBeenCalledWith(
-      "providers.sendspin_sync.toast.unavailable",
-    );
+    // The page opens and says for itself that the server can not be reached:
+    // there is no plugin whose absence a missing connection could be read as.
+    await expect(pending.result).resolves.toBeUndefined();
+    expect(mocks.toastError).not.toHaveBeenCalled();
   });
 
   it("does not read a connection that never arrived as a non-admin", async () => {
     vi.useFakeTimers();
     mocks.apiState.value = ConnectionState.AUTHENTICATED;
-    mocks.store.enabledPlugins = new Set(["sendspin_sync"]);
     const pending = trackGuard(
       invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
     );
@@ -434,7 +404,7 @@ describe("Sendspin Sync guard", () => {
 
     await pending.result;
     expect(mocks.toastError).not.toHaveBeenCalledWith(
-      "providers.sendspin_sync.toast.admin_only",
+      "providers.sendspin.calibration.admin_only",
     );
   });
 });

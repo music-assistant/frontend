@@ -180,7 +180,7 @@
             @click="openSendspinSyncCalibration"
           >
             <AudioLines class="size-4" />
-            {{ $t("providers.sendspin_sync.calibration.open") }}
+            {{ $t("providers.sendspin.calibration.open") }}
           </Button>
           <Button
             v-if="documentationUrl"
@@ -360,7 +360,6 @@ import {
   Scope,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
-import { store } from "@/plugins/store";
 import {
   AudioLines,
   BookOpen,
@@ -382,7 +381,7 @@ import { authManager } from "@/plugins/auth";
 import AmbientSoundsCustomSounds from "./AmbientSoundsCustomSounds.vue";
 import EditConfig from "./EditConfig.vue";
 
-const SENDSPIN_SYNC_DOMAIN = "sendspin_sync";
+const SENDSPIN_DOMAIN = "sendspin";
 
 // global refs
 const router = useRouter();
@@ -485,14 +484,14 @@ const documentationUrl = computed(() => {
   return getExternalLinkUrl(providerManifest.value?.documentation);
 });
 
-// Mirrors the sendspin-sync route guard, so the link is only offered when
-// following it actually reaches the calibration page. The admin check is part
-// of that: calibration takes every selected speaker over and then writes each
-// one's delay, which the server refuses below admin scope.
+// Offered on the page of the Sendspin provider, whose speakers a calibration
+// evens out. Mirrors the sendspin-sync route guard, so the link is only offered
+// when following it actually reaches the calibration page: calibration takes
+// every selected speaker over and then writes each one's delay, which the
+// server refuses below admin scope.
 const canCalibrateSendspinSync = computed(
   () =>
-    config.value?.domain === SENDSPIN_SYNC_DOMAIN &&
-    store.enabledPlugins.has(SENDSPIN_SYNC_DOMAIN) &&
+    config.value?.domain === SENDSPIN_DOMAIN &&
     authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
 );
 

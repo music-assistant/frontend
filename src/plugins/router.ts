@@ -275,20 +275,15 @@ export const routes: RouteRecordRaw[] = [
               );
             });
           }
-          // Ahead of the plugin check, so a non-admin is told this is an
-          // administrator tool rather than that the plugin is missing. The
-          // server is what actually refuses the calibration commands.
+          // A non-admin is told this is an administrator tool. The server is
+          // what actually refuses the calibration commands.
           // Only judged once the connection is up: a wait that timed out
           // leaves no user to read, and that is not a non-admin.
           if (
             api.state.value === ConnectionState.INITIALIZED &&
             !authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)
           ) {
-            toast.error($t("providers.sendspin_sync.toast.admin_only"));
-            return { name: "discover" };
-          }
-          if (!store.enabledPlugins.has("sendspin_sync")) {
-            toast.error($t("providers.sendspin_sync.toast.unavailable"));
+            toast.error($t("providers.sendspin.calibration.admin_only"));
             return { name: "discover" };
           }
         },

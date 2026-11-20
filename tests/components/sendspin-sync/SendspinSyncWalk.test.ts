@@ -3,7 +3,7 @@ import type { Measurement } from "@/composables/sendspin-sync/useCalibrationRun"
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 
-const KEYS = "providers.sendspin_sync.calibration";
+const KEYS = "providers.sendspin.calibration";
 
 const PLAYERS = ["living", "kitchen", "study"].map((player_id, index) => ({
   player_id,

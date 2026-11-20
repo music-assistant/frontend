@@ -80,7 +80,7 @@ describe("useCalibrationSession", () => {
 
     expect(await session.loadPlayers()).toBe(true);
     expect(session.players.value).toEqual(PLAYERS);
-    expect(callsTo("sendspin_sync/eligible_players")).toHaveLength(1);
+    expect(callsTo("sendspin/calibration/eligible_players")).toHaveLength(1);
   });
 
   it("starts a session over the speakers in the order they were picked", async () => {
@@ -88,7 +88,7 @@ describe("useCalibrationSession", () => {
     const session = withScope(() => useCalibrationSession());
 
     expect(await session.start(["living", "kitchen"], true)).toBe(true);
-    expect(callsTo("sendspin_sync/start_session")[0][0]).toEqual({
+    expect(callsTo("sendspin/calibration/start_session")[0][0]).toEqual({
       player_ids: ["living", "kitchen"],
       force: true,
     });
@@ -102,7 +102,7 @@ describe("useCalibrationSession", () => {
     const session = withScope(() => useCalibrationSession());
 
     expect(await session.solo("kitchen")).toBe(true);
-    expect(callsTo("sendspin_sync/solo_player")[0][0]).toEqual({
+    expect(callsTo("sendspin/calibration/solo_player")[0][0]).toEqual({
       player_id: "kitchen",
     });
     expect(session.state.value?.soloed_player_id).toBe("kitchen");
@@ -121,7 +121,7 @@ describe("useCalibrationSession", () => {
     const session = withScope(() => useCalibrationSession());
 
     expect(await session.apply(offsets)).toEqual(result);
-    expect(callsTo("sendspin_sync/apply_measurements")[0][0]).toEqual({
+    expect(callsTo("sendspin/calibration/apply_measurements")[0][0]).toEqual({
       offsets_ms: offsets,
     });
   });
@@ -176,7 +176,7 @@ describe("useCalibrationSession", () => {
       message: "Kitchen is muted or turned all the way down.",
     });
     // Nothing was asked about a session this page never had.
-    expect(callsTo("sendspin_sync/session")).toHaveLength(0);
+    expect(callsTo("sendspin/calibration/session")).toHaveLength(0);
   });
 
   it("puts a problem away once a command goes through", async () => {
@@ -207,7 +207,7 @@ describe("useCalibrationSession", () => {
     await vi.advanceTimersByTimeAsync(1_500);
 
     expect(await pending).toBe(true);
-    expect(callsTo("sendspin_sync/solo_player")).toHaveLength(2);
+    expect(callsTo("sendspin/calibration/solo_player")).toHaveLength(2);
     expect(session.problem.value).toBeNull();
   });
 
@@ -241,7 +241,7 @@ describe("useCalibrationSession", () => {
     // The server folds in the delays the speakers carry, so a second apply of
     // the same readings would correct the correction.
     expect(await pending).toBeNull();
-    expect(callsTo("sendspin_sync/apply_measurements")).toHaveLength(1);
+    expect(callsTo("sendspin/calibration/apply_measurements")).toHaveLength(1);
     expect(session.problem.value).toEqual({ kind: "unreachable" });
   });
 
@@ -255,9 +255,9 @@ describe("useCalibrationSession", () => {
 
     await vi.advanceTimersByTimeAsync(90_000);
 
-    expect(callsTo("sendspin_sync/keep_alive")).toHaveLength(3);
+    expect(callsTo("sendspin/calibration/keep_alive")).toHaveLength(3);
     // A keep-alive changes nothing: no speaker is touched to send one.
-    expect(callsTo("sendspin_sync/solo_player")).toHaveLength(0);
+    expect(callsTo("sendspin/calibration/solo_player")).toHaveLength(0);
   });
 
   it("says nothing about a keep-alive that did not get through", async () => {
@@ -303,7 +303,7 @@ describe("useCalibrationSession", () => {
     // Closing this page must not end a walk in progress on another device.
     await session.stop();
 
-    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(0);
+    expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(0);
     expect(session.state.value).not.toBeNull();
   });
 
@@ -314,7 +314,7 @@ describe("useCalibrationSession", () => {
 
     await session.stop(true);
 
-    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(1);
+    expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(1);
     expect(session.state.value).toBeNull();
   });
 
@@ -340,7 +340,7 @@ describe("useCalibrationSession", () => {
     // server still holds the speakers, and the caller must not say otherwise.
     expect(await session.stop()).toBe(false);
 
-    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(1);
+    expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(1);
     expect(session.state.value).toBeNull();
     expect(session.lost.value).toBeNull();
   });
@@ -358,14 +358,14 @@ describe("useCalibrationSession", () => {
 
     await session.stop();
 
-    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(0);
+    expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(0);
   });
 
   it("ends a session whose start was still pending when the page was left", async () => {
     vi.useFakeTimers();
     let answerStart: (state: CalibrationSessionState) => void = () => undefined;
     sendCommand.mockImplementation((command: string) =>
-      command === "sendspin_sync/start_session"
+      command === "sendspin/calibration/start_session"
         ? new Promise((resolve) => (answerStart = resolve))
         : Promise.resolve(undefined),
     );
@@ -374,17 +374,17 @@ describe("useCalibrationSession", () => {
     const starting = session.start(["living", "kitchen"]);
     // The page goes away: there is no session to end yet, so this ends nothing.
     await session.stop();
-    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(0);
+    expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(0);
 
     answerStart(sessionState());
 
     // The server took the speakers after all, and nobody is left to give them
     // back unless the start does it.
     expect(await starting).toBe(false);
-    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(1);
+    expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(1);
     expect(session.state.value).toBeNull();
     await vi.advanceTimersByTimeAsync(120_000);
-    expect(callsTo("sendspin_sync/keep_alive")).toHaveLength(0);
+    expect(callsTo("sendspin/calibration/keep_alive")).toHaveLength(0);
   });
 
   it("stops the session when its scope goes away", async () => {
@@ -397,6 +397,6 @@ describe("useCalibrationSession", () => {
     scope.stop();
     await Promise.resolve();
 
-    expect(callsTo("sendspin_sync/stop_session")).toHaveLength(1);
+    expect(callsTo("sendspin/calibration/stop_session")).toHaveLength(1);
   });
 });

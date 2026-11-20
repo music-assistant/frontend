@@ -5,7 +5,7 @@
         class="inline-flex items-center text-2xl font-semibold tracking-tight"
       >
         <Mic class="mr-2 h-5 w-5" aria-hidden="true" />
-        {{ $t("providers.sendspin_sync.title") }}
+        {{ $t(`${KEYS}.title`) }}
       </h1>
       <p class="text-sm text-muted-foreground">{{ $t(`${KEYS}.subtitle`) }}</p>
     </header>
@@ -162,7 +162,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { toast } from "vue-sonner";
 
-const KEYS = "providers.sendspin_sync.calibration";
+const KEYS = "providers.sendspin.calibration";
 
 const {
   players,

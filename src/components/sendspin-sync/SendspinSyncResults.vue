@@ -203,7 +203,7 @@ import type {
 import { Check, Wrench } from "@lucide/vue";
 import { computed } from "vue";
 
-const KEYS = "providers.sendspin_sync.calibration";
+const KEYS = "providers.sendspin.calibration";
 
 const {
   players,

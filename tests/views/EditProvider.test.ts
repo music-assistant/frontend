@@ -42,16 +42,16 @@ const {
     invokeProviderConfigAction:
       vi.fn<MusicAssistantApi["invokeProviderConfigAction"]>(),
     providerManifests: {
-      sendspin_sync: {
-        allow_disable: true,
-        builtin: false,
+      sendspin: {
+        allow_disable: false,
+        builtin: true,
         codeowners: [] as string[],
         credits: [],
-        description: "Sendspin Sync plugin",
+        description: "Sendspin player provider",
         documentation: "",
-        domain: "sendspin_sync",
+        domain: "sendspin",
         has_setup_flow: false,
-        name: "Sendspin Sync",
+        name: "Sendspin",
         self_service: true,
         support_url: null as string | null,
         tier: "core" as ProviderTier,
@@ -98,8 +98,6 @@ const {
   },
   unsubscribeMock: vi.fn(),
 }));
-
-const storeMock = vi.hoisted(() => ({ enabledPlugins: new Set<string>() }));
 
 let providersUpdated: (() => void) | undefined;
 
@@ -171,21 +169,6 @@ vi.mock("@/plugins/i18n", () => ({
   $t: i18nMock.t,
 }));
 
-// The real store, except for the set of loaded plugins, which it derives from the
-// api and a test sets directly.
-vi.mock("@/plugins/store", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/plugins/store")>();
-  return {
-    ...actual,
-    store: new Proxy(actual.store, {
-      get: (target, key, receiver) =>
-        key === "enabledPlugins"
-          ? storeMock.enabledPlugins
-          : Reflect.get(target, key, receiver),
-    }),
-  };
-});
-
 vi.mock("vue-sonner", () => ({
   toast: toastMock,
 }));
@@ -213,7 +196,6 @@ vi.mock("vue-router", async (importOriginal) => {
 beforeEach(() => {
   vi.clearAllMocks();
   providersUpdated = undefined;
-  storeMock.enabledPlugins = new Set<string>();
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
   apiMock.providerManifests.spotify.allow_disable = true;
@@ -403,13 +385,12 @@ describe("EditProvider", () => {
     expect(publishedName.value).toBe("");
   });
 
-  it("routes to the calibration page from the Sendspin Sync provider", async () => {
-    storeMock.enabledPlugins.add("sendspin_sync");
-    apiMock.getProviderConfig.mockResolvedValue(sendspinSyncConfig());
+  it("routes to the calibration page from the Sendspin provider", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(sendspinConfig());
 
     const wrapper = shallowMount(EditProvider, {
       props: {
-        instanceId: "sendspin_sync--1",
+        instanceId: "sendspin",
       },
       global: {
         mocks: {
@@ -432,42 +413,18 @@ describe("EditProvider", () => {
     expect(routerMock.push).toHaveBeenCalledWith({ name: "sendspin-sync" });
   });
 
-  it("hides the calibration link while the Sendspin Sync plugin is not enabled", async () => {
-    // The route guard bounces to discover unless the plugin is enabled, so the
-    // link stays hidden even though this is the Sendspin Sync provider.
-    apiMock.getProviderConfig.mockResolvedValue(sendspinSyncConfig());
-
-    const wrapper = shallowMount(EditProvider, {
-      props: {
-        instanceId: "sendspin_sync--1",
-      },
-      global: {
-        mocks: {
-          $t: (key: string) => key,
-        },
-        stubs: providerDetailsStubs,
-      },
-    });
-    await flushPromises();
-
-    expect(
-      wrapper.find('[data-testid="provider-sendspin-sync-calibrate"]').exists(),
-    ).toBe(false);
-  });
-
   it("hides the calibration link from a non-admin", async () => {
     // Calibration takes the speakers over and writes their delays, which the
     // server refuses below admin scope — so the route guard turns a non-admin
     // away and this link must not lead them there.
-    storeMock.enabledPlugins.add("sendspin_sync");
     authMock.hasScope.mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),
     );
-    apiMock.getProviderConfig.mockResolvedValue(sendspinSyncConfig());
+    apiMock.getProviderConfig.mockResolvedValue(sendspinConfig());
 
     const wrapper = shallowMount(EditProvider, {
       props: {
-        instanceId: "sendspin_sync--1",
+        instanceId: "sendspin",
       },
       global: {
         mocks: {
@@ -484,7 +441,6 @@ describe("EditProvider", () => {
   });
 
   it("leaves other providers without a calibration link", async () => {
-    storeMock.enabledPlugins.add("sendspin_sync");
     apiMock.getProviderConfig.mockResolvedValue(
       spotifyConfig(ProviderStatus.LOADED),
     );
@@ -1890,14 +1846,14 @@ describe("EditProvider actions and sections", () => {
 });
 
 /**
- * The Sendspin Sync plugin's provider config, loaded and enabled.
+ * The config of the Sendspin provider, which ships with the server.
  */
-function sendspinSyncConfig(): ProviderConfig {
+function sendspinConfig(): ProviderConfig {
   return providerConfig({
-    domain: "sendspin_sync",
-    instance_id: "sendspin_sync--1",
+    domain: "sendspin",
+    instance_id: "sendspin",
     status: ProviderStatus.LOADED,
-    type: ProviderType.PLUGIN,
+    type: ProviderType.PLAYER,
   });
 }
 

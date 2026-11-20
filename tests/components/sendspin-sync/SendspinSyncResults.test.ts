@@ -21,8 +21,8 @@ const PLAYERS = [
   },
 ];
 
-const BASE = "providers.sendspin_sync.calibration.results";
-const MANUAL = "providers.sendspin_sync.calibration.manual";
+const BASE = "providers.sendspin.calibration.results";
+const MANUAL = "providers.sendspin.calibration.manual";
 
 function fitFixture(overrides: Partial<LatencyFit> = {}): LatencyFit {
   return {

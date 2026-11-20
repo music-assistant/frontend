@@ -148,7 +148,7 @@ import type { CalibrationPlayer } from "@/plugins/api/interfaces";
 import { Check, Mic, RotateCcw, Square, TriangleAlert } from "@lucide/vue";
 import { computed, onMounted, useTemplateRef } from "vue";
 
-const KEYS = "providers.sendspin_sync.calibration";
+const KEYS = "providers.sendspin.calibration";
 
 const CONFIDENCE_VARIANT: Record<Confidence, BadgeVariants["variant"]> = {
   good: "default",

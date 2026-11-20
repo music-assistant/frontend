@@ -2344,9 +2344,10 @@
             "title_reveal_artist_skipped": "Skipped, it was {0}",
             "landing_continue": "Continue"
         },
-        "sendspin_sync": {
-            "title": "Sendspin Sync",
+        "sendspin": {
             "calibration": {
+                "title": "Sendspin Sync",
+                "admin_only": "Speaker calibration is an administrator tool. Ask an administrator to run it.",
                 "open": "Even out speaker timing",
                 "subtitle": "Carry this phone from speaker to speaker. Its microphone listens for a short test sound from each one, works out how far apart their timing is, and evens them out.",
                 "toast": {
@@ -2559,10 +2560,6 @@
                         "description": "Music Assistant gave the speakers back, because it stopped hearing from this phone for a few minutes or because the calibration was ended from another device. Any delays you had already applied are kept; nothing else was changed. Start again when you are ready to walk."
                     }
                 }
-            },
-            "toast": {
-                "unavailable": "Sendspin Sync is not enabled on this server.",
-                "admin_only": "Speaker calibration is an administrator tool. Ask an administrator to run it."
             }
         },
         "ai_radio": {

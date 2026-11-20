@@ -78,7 +78,7 @@ export function useCalibrationSession() {
   /** The Sendspin speakers a session can be run against. */
   async function loadPlayers(): Promise<boolean> {
     const eligible = await send<CalibrationPlayer[]>(
-      "sendspin_sync/eligible_players",
+      "sendspin/calibration/eligible_players",
       undefined,
       { retry: true },
     );
@@ -90,7 +90,7 @@ export function useCalibrationSession() {
   /** Read the session the server is running, if there is one. */
   async function refresh(): Promise<CalibrationSessionState | null> {
     const current = await send<CalibrationSessionState | null>(
-      "sendspin_sync/session",
+      "sendspin/calibration/session",
       undefined,
       { retry: true },
     );
@@ -108,7 +108,7 @@ export function useCalibrationSession() {
   async function start(playerIds: string[], force = false): Promise<boolean> {
     const stopsBefore = stops;
     const started = await send<CalibrationSessionState>(
-      "sendspin_sync/start_session",
+      "sendspin/calibration/start_session",
       { player_ids: playerIds, force },
     );
     if (!started) return false;
@@ -131,7 +131,7 @@ export function useCalibrationSession() {
     // Safe to send twice: soloing the speaker that is already soloed changes
     // nothing on the audio path.
     const soloed = await send<CalibrationSessionState>(
-      "sendspin_sync/solo_player",
+      "sendspin/calibration/solo_player",
       { player_id: playerId },
       { retry: true },
     );
@@ -163,7 +163,7 @@ export function useCalibrationSession() {
     offsetsMs: Record<string, number>,
   ): Promise<CalibrationApplyResult | null> {
     const result = await send<CalibrationApplyResult>(
-      "sendspin_sync/apply_measurements",
+      "sendspin/calibration/apply_measurements",
       { offsets_ms: offsetsMs },
     );
     return result ?? null;
@@ -189,7 +189,7 @@ export function useCalibrationSession() {
     // it. The answer says whether the server was told, because until it is the
     // speakers stay held and the user must not be told otherwise.
     try {
-      await api.sendCommand("sendspin_sync/stop_session", undefined, {
+      await api.sendCommand("sendspin/calibration/stop_session", undefined, {
         suppressGlobalError: true,
       });
       return true;
@@ -275,7 +275,7 @@ export function useCalibrationSession() {
   async function sessionGone(): Promise<boolean> {
     try {
       const current = await api.sendCommand<CalibrationSessionState | null>(
-        "sendspin_sync/session",
+        "sendspin/calibration/session",
         undefined,
         { suppressGlobalError: true },
       );
@@ -304,9 +304,13 @@ export function useCalibrationSession() {
    * nothing about the run, and the next one is half a minute away.
    */
   async function keepAlive(): Promise<void> {
-    await send<CalibrationSessionState>("sendspin_sync/keep_alive", undefined, {
-      quiet: true,
-    });
+    await send<CalibrationSessionState>(
+      "sendspin/calibration/keep_alive",
+      undefined,
+      {
+        quiet: true,
+      },
+    );
   }
 
   return {

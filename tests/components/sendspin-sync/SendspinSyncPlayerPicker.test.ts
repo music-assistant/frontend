@@ -2,8 +2,8 @@ import SendspinSyncPlayerPicker from "@/components/sendspin-sync/SendspinSyncPla
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 
-const KEYS = "providers.sendspin_sync.calibration.pick";
-const MANUAL = "providers.sendspin_sync.calibration.manual";
+const KEYS = "providers.sendspin.calibration.pick";
+const MANUAL = "providers.sendspin.calibration.manual";
 
 const PLAYERS = [
   {

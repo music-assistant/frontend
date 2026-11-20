@@ -2,7 +2,7 @@
  * The calibration chirp the server plays, regenerated locally.
  *
  * These constants and the phase formula mirror the server's
- * `sendspin_sync/chirp.py`. They have to agree exactly: the reference built here
+ * `sendspin/calibration_chirp.py`. They have to agree exactly: the reference built here
  * is the matched filter the arrival detector correlates a recording against, and
  * a sweep that differs from the transmitted one broadens the correlation peak
  * instead of compressing it.
