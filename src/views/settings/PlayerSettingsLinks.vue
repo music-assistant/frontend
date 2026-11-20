@@ -10,7 +10,7 @@ import { getPlayerSettingsSections } from "@/helpers/player_settings_actions";
 import { api } from "@/plugins/api";
 import { DSPConfig, EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { AudioLines, ListMusic, SlidersHorizontal } from "@lucide/vue";
+import { AudioLines, CirclePlay, SlidersHorizontal } from "@lucide/vue";
 import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 
 /**
@@ -55,8 +55,8 @@ const links = computed(() => {
       key: "queue",
       // a queue is identified by the player id of the player owning it
       to: `/settings/editqueue/${props.playerId}`,
-      icon: markRaw(ListMusic),
-      label: $t("settings.queue_settings"),
+      icon: markRaw(CirclePlay),
+      label: $t("settings.playback.title"),
       description: $t("settings.queue_settings_description"),
     });
   }

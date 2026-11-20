@@ -53,7 +53,7 @@ describe("PlayerSettingsLinks", () => {
     const wrapper = await mountLinks();
 
     expect(rowLabels(wrapper)).toEqual([
-      "settings.queue_settings",
+      "settings.playback.title",
       "settings.category.dsp",
       "settings.category.options",
     ]);

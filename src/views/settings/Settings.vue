@@ -325,7 +325,7 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
         const section = match(name)
           .with("editplayerdsp", () => t("settings.category.dsp"))
           .with("editplayeroptions", () => t("settings.category.options"))
-          .with("editqueue", () => t("settings.queue_settings"))
+          .with("editqueue", () => t("settings.playback.title"))
           .otherwise(() => undefined);
         if (section) items.push({ title: section, disabled: true });
         return items;

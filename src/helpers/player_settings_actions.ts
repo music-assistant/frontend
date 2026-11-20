@@ -34,9 +34,9 @@ import {
   AudioLines,
   BookOpen,
   CircleOff,
+  CirclePlay,
   Cog,
   Group,
-  ListMusic,
   Merge,
   Pencil,
   Power,
@@ -122,7 +122,7 @@ export const getPlayerSettingsMenuItems = (
       menuItems.push({
         label: "open_queue_settings",
         action: () => router.push(`/settings/editqueue/${playerId}`),
-        icon: markRaw(ListMusic),
+        icon: markRaw(CirclePlay),
       });
     }
     if (sections.dsp) {
