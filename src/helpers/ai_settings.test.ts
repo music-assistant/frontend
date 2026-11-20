@@ -15,6 +15,7 @@ import {
   engineSummary,
   engineUsageRows,
   hasEnginePicker,
+  selectsAvailableEngine,
   withRestartingSettings,
 } from "./ai_settings";
 
@@ -105,15 +106,15 @@ describe("engineUsageRows", () => {
   it.each([
     ["selects no engine", null],
     ["selects an engine that is gone", "removed"],
-  ])("reports a setting that %s", (_name, engineUid) => {
+  ])("leaves a setting that %s to its picker to report", (_name, engineUid) => {
     const [row] = engineUsageRows(
       [setting({ engine: engineUid })],
       [engine("gpt")],
       reconfigure,
     );
 
-    expect(row.description).toBe("settings.ai.not_available");
-    expect(row.error).toBe(true);
+    expect(row.description).toBe("");
+    expect(row.error).toBeUndefined();
   });
 
   it("calmly says no engine of its kind is available", () => {
@@ -239,6 +240,21 @@ describe("hasEnginePicker", () => {
   it("has nothing to pick without engines of its kind", () => {
     expect(
       hasEnginePicker(setting({ kind: AIEngineKind.SPEECH }), [engine("gpt")]),
+    ).toBe(false);
+  });
+});
+
+describe("selectsAvailableEngine", () => {
+  it("finds the engine a setting selects among the available ones", () => {
+    expect(selectsAvailableEngine(setting(), [engine("gpt")])).toBe(true);
+  });
+
+  it.each([
+    ["no engine", null],
+    ["an engine that is gone", "removed"],
+  ])("is false for a setting that selects %s", (_name, engineUid) => {
+    expect(
+      selectsAvailableEngine(setting({ engine: engineUid }), [engine("gpt")]),
     ).toBe(false);
   });
 });

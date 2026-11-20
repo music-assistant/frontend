@@ -23,6 +23,7 @@ import {
   engineSettingState,
   engineUsageRows,
   hasEnginePicker,
+  selectsAvailableEngine,
   withRestartingSettings,
 } from "@/helpers/ai_settings";
 import { api } from "@/plugins/api";
@@ -92,7 +93,11 @@ const pickers = computed(
         .filter((setting) => hasEnginePicker(setting, props.engines))
         .map((setting) => [
           engineSettingKey(setting),
-          { setting, state: engineSettingState(setting, props.engines) },
+          {
+            setting,
+            state: engineSettingState(setting, props.engines),
+            unavailable: !selectsAvailableEngine(setting, props.engines),
+          },
         ]),
     ),
 );

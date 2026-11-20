@@ -158,6 +158,29 @@ describe("AIEngineUsage", () => {
     expect(found.find(".text-destructive").exists()).toBe(false);
   });
 
+  it("says under its picker that the engine a setting selects is gone", async () => {
+    const wrapper = await mountUsage([
+      ANNOUNCEMENTS,
+      { ...QUIZ, engine: "removed" },
+    ]);
+
+    const missing = row(wrapper, "music_quiz--1/ai_engine");
+    expect(
+      picker(wrapper, "music_quiz--1/ai_engine")
+        .get('[data-testid="ai-engine-unavailable"]')
+        .text(),
+    ).toBe("settings.ai.engine_unavailable");
+    // the setting itself is not what is unavailable
+    const description = missing.get('[data-testid="ai-usage-description"]');
+    expect(description.text()).toBe("");
+    expect(description.classes()).not.toContain("text-destructive");
+    expect(
+      picker(wrapper, "players/announce_tts_engine")
+        .find('[data-testid="ai-engine-unavailable"]')
+        .exists(),
+    ).toBe(false);
+  });
+
   it("loads a picker again when its setting is listed anew", async () => {
     const wrapper = await mountUsage([QUIZ]);
     stored["music_quiz--1"] = "claude";
