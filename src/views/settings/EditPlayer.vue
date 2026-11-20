@@ -313,7 +313,8 @@ const player = computed(() =>
   config.value ? api.players[config.value.player_id] : undefined,
 );
 
-const multiChannelCandidates = useMultiChannelCandidates(player);
+const { candidates: multiChannelCandidates, layouts: multiChannelLayouts } =
+  useMultiChannelCandidates(player);
 
 const isMultiChannel = computed(
   () => player.value?.type === PlayerType.MULTI_CHANNEL,
@@ -433,6 +434,9 @@ const openPlayerMenu = function (evt: MouseEvent) {
       editConfig.value?.discardChanges();
       router.replace(`/settings/editplayer/${targetPlayerId}`);
     },
+    multiChannelLayouts: multiChannelLayouts.value,
+    // the server numbers the speakers anew, so the form starts over from what is stored
+    onSpeakersChanged: reloadConfig,
   });
   // resetting acts on the form rather than on the player, so it is not part of
   // the menu the other player surfaces share
@@ -459,15 +463,10 @@ const getOutputMenu = function (output: OutputProtocol) {
   if (!config.value) return [];
   return getOutputMenuItems(config.value, output, {
     multiChannelCandidates: multiChannelCandidates.value,
+    multiChannelLayouts: multiChannelLayouts.value,
     // the server reset the choices that named the output that went, so the
     // form starts over from what is stored
-    onSplitOff: () => {
-      if (!config.value) return;
-      const playerId = config.value.player_id;
-      editConfig.value?.discardChanges();
-      config.value = undefined;
-      void loadConfig(playerId);
-    },
+    onSplitOff: reloadConfig,
     // the output moved into the new player, and this player may be gone with it
     onMultiChannelCreated: (playerId) => {
       editConfig.value?.discardChanges();
@@ -558,6 +557,15 @@ const { onAction } = useConfigAction({
   answeredBy: (action) =>
     getPlayerActionProvider(api.players[config.value!.player_id], action),
 });
+
+// drop what the form holds and show the config as the server stores it now
+function reloadConfig() {
+  if (!config.value) return;
+  const playerId = config.value.player_id;
+  editConfig.value?.discardChanges();
+  config.value = undefined;
+  void loadConfig(playerId);
+}
 
 async function loadConfig(playerId: string) {
   const requestId = ++configLoadRequestId;

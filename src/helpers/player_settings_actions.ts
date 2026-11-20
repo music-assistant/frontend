@@ -5,9 +5,13 @@
 // each output on the player settings page.
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
+  canAddSubwoofer,
   canCombineSpeakers,
+  canRemoveSubwoofer,
   getComposableProtocol,
+  getSubwoofer,
   type MultiChannelCandidates,
+  type MultiChannelLayouts,
 } from "@/helpers/multi_channel";
 import { getPlayerName } from "@/helpers/player_config";
 import { getSplittableProtocols } from "@/helpers/player_merge";
@@ -33,6 +37,7 @@ import { store } from "@/plugins/store";
 import {
   AudioLines,
   BookOpen,
+  CircleMinus,
   CircleOff,
   CirclePlay,
   Cog,
@@ -42,6 +47,7 @@ import {
   Power,
   Settings,
   SlidersHorizontal,
+  Speaker,
   Split,
   Trash2,
   Ungroup,
@@ -61,6 +67,11 @@ export interface PlayerSettingsMenuOptions {
   onDeleted?: () => void;
   // called with the id of the player it was merged into
   onMerged?: (targetPlayerId: string) => void;
+  // the layouts of a multi-channel player on each provider, as the server lists them; a
+  // set offers to add or remove a subwoofer only when they hold the layout it leads to
+  multiChannelLayouts?: Record<string, MultiChannelLayouts>;
+  // called once a speaker joined or left the multi-channel player
+  onSpeakersChanged?: () => void;
 }
 
 export interface OutputMenuOptions {
@@ -69,6 +80,8 @@ export interface OutputMenuOptions {
   // the speakers the server lists as candidates of a new multi-channel player; an output
   // offers to start one only when its player is among them
   multiChannelCandidates?: MultiChannelCandidates;
+  // the layouts of a multi-channel player on each provider, as the server lists them
+  multiChannelLayouts?: Record<string, MultiChannelLayouts>;
   // called with the id of the multi-channel player the output moved into
   onMultiChannelCreated?: (playerId: string) => void;
 }
@@ -109,6 +122,8 @@ export const getPlayerSettingsMenuItems = (
   const composedSet =
     (player?.type ?? config.player_type) === PlayerType.MULTI_CHANNEL &&
     canCombineSpeakers(config.provider);
+  const layout = composedSet ? player?.channel_layout : undefined;
+  const layouts = options.multiChannelLayouts?.[config.provider] ?? {};
   const menuItems: ContextMenuItem[] = [];
 
   if (options.includeSections) {
@@ -191,6 +206,29 @@ export const getPlayerSettingsMenuItems = (
       icon: markRaw(config.enabled ? CircleOff : Power),
     },
     {
+      label: "settings.multi_channel.add_subwoofer",
+      action: () =>
+        eventbus.emit("multiChannelSubwooferDialog", {
+          playerId,
+          playerName: getPlayerName(config),
+          provider: config.provider,
+          onAdded: options.onSpeakersChanged,
+        }),
+      icon: markRaw(Speaker),
+      hide: !layout || !canAddSubwoofer(layouts, layout),
+    },
+    {
+      label: "settings.multi_channel.remove_subwoofer",
+      action: () =>
+        void confirmRemoveSubwoofer(
+          playerId,
+          getPlayerName(config),
+          options.onSpeakersChanged,
+        ),
+      icon: markRaw(CircleMinus),
+      hide: !layout || !canRemoveSubwoofer(layouts, layout),
+    },
+    {
       label: "settings.multi_channel.take_apart",
       action: () =>
         confirmTakeApart(playerId, getPlayerName(config), options.onDeleted),
@@ -247,7 +285,10 @@ export const getOutputMenuItems = (
   const composableProtocol =
     player &&
     getComposableProtocol(player, output, options.multiChannelCandidates ?? {});
-  if (composableProtocol) {
+  const layouts =
+    composableProtocol &&
+    options.multiChannelLayouts?.[composableProtocol.provider];
+  if (composableProtocol && layouts && Object.keys(layouts).length > 0) {
     menuItems.push({
       label: "settings.multi_channel.make",
       action: () =>
@@ -255,6 +296,7 @@ export const getOutputMenuItems = (
           playerId: config.player_id,
           playerName: getPlayerName(config),
           protocol: composableProtocol,
+          layouts,
           onCreated: options.onMultiChannelCreated,
         }),
       icon: markRaw(Group),
@@ -407,6 +449,36 @@ export const createMultiChannelPlayer = async (
   return player;
 };
 
+/**
+ * Add a subwoofer to a multi-channel player, and say whether it joined. The player bar
+ * follows the speaker to that player.
+ *
+ * @param playerId The player id of the multi-channel player.
+ * @param playerName The name of the multi-channel player.
+ * @param speakerId The player id of the speaker that becomes its subwoofer.
+ */
+export const addSubwoofer = async (
+  playerId: string,
+  playerName: string,
+  speakerId: string,
+): Promise<boolean> => {
+  try {
+    await whileRemoving([speakerId], () =>
+      api.addMultiChannelSpeaker(playerId, speakerId, SpeakerChannel.LFE),
+    );
+  } catch {
+    // a failed command is already reported by the api layer, with the
+    // server's reason why the speaker can not join
+    return false;
+  }
+  if (store.activePlayerId === speakerId) {
+    store.activePlayerId = playerId;
+    void setUserPreference("activePlayerId", playerId);
+  }
+  toast.success($t("settings.multi_channel.subwoofer_added", [playerName]));
+  return true;
+};
+
 /** The name of an output of a player, such as "AirPlay". */
 export const getOutputName = (
   protocol: Pick<PlayerProtocolInfo, "domain">,
@@ -503,6 +575,43 @@ function confirmTakeApart(
       selectFallbackPlayer(playerId);
       toast.success($t("settings.multi_channel.taken_apart", [playerName]));
       onDeleted?.();
+    },
+  });
+}
+
+async function confirmRemoveSubwoofer(
+  playerId: string,
+  playerName: string,
+  onRemoved?: () => void,
+) {
+  let config: PlayerConfig;
+  try {
+    // the form writes its unsaved changes into the config it shows, so the stored one
+    // says which speaker is the subwoofer
+    config = await api.getPlayerConfig(playerId);
+  } catch {
+    // a failed command is already reported by the api layer
+    return;
+  }
+  const subwoofer = getSubwoofer(Object.values(config.values));
+  if (!subwoofer) return;
+  eventbus.emit("deleteConfirmationDialog", {
+    title: $t("settings.multi_channel.remove_subwoofer_title", [playerName]),
+    message: $t("settings.multi_channel.remove_subwoofer_confirmation", [
+      subwoofer.name,
+    ]),
+    confirmLabel: $t("remove"),
+    onConfirm: async () => {
+      try {
+        await api.removeMultiChannelSpeaker(playerId, subwoofer.number);
+      } catch {
+        // a failed command is already reported by the api layer
+        return;
+      }
+      toast.success(
+        $t("settings.multi_channel.subwoofer_removed", [playerName]),
+      );
+      onRemoved?.();
     },
   });
 }
