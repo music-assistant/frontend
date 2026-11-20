@@ -2,7 +2,10 @@
   <!-- a query container, so the floating Save button of a form can line up
        with the column below -->
   <div class="@container">
-    <Toolbar :icon="Settings">
+    <Toolbar
+      :icon="isOverview ? Settings : ArrowLeft"
+      :icon-action="isOverview ? undefined : back"
+    >
       <template #title>
         <ToolbarHeading
           :title="t('settings.settings')"
@@ -78,7 +81,7 @@ import {
 import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { Settings } from "@lucide/vue";
+import { ArrowLeft, Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
@@ -231,11 +234,6 @@ const isOverview = computed(() => {
   return router.currentRoute.value.name === "settings";
 });
 
-useEscapeBack(
-  () => goBack(router, { name: "settings" }),
-  () => !isOverview.value,
-);
-
 // the list the provider of an instance shows in, which its manifest decides so
 // a disabled instance, which is not loaded, shows in the same one
 const providerListOf = function (instanceId: string) {
@@ -347,4 +345,15 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
     })
     .otherwise(() => []);
 });
+
+// back to where the user came from; a page opened directly goes one level up,
+// to the nearest page above it that the user may open
+const back = function () {
+  const parent = breadcrumbItems.value
+    .slice(0, -1)
+    .findLast((item) => item.to)?.to;
+  goBack(router, parent ?? { name: "settings" });
+};
+
+useEscapeBack(back, () => !isOverview.value);
 </script>

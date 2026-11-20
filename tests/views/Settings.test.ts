@@ -17,6 +17,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import Settings from "@/views/settings/Settings.vue";
+import { ArrowLeft, Settings as SettingsIcon } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, nextTick, type Component } from "vue";
@@ -50,6 +51,11 @@ const { apiMock, hasScope, onboardingOpen, routerPush, routeState } =
       query: {} as Record<string, string>,
     },
   }));
+const { historyState, routerBack } = vi.hoisted(() => ({
+  // the entry before the page on screen, null on a page opened directly
+  historyState: { back: null as string | null },
+  routerBack: vi.fn(),
+}));
 
 // the source behind the instance id in the route, whose generic name the crumb
 // shows until the page below it resolves the name of this instance
@@ -89,6 +95,8 @@ vi.mock("vue-router", async (importOriginal) => ({
       },
     },
     push: routerPush,
+    back: routerBack,
+    options: { history: { state: historyState } },
   }),
 }));
 vi.mock("vue-i18n", async (importOriginal) => ({
@@ -125,7 +133,9 @@ function playerOptionsTrail(): ToolbarHeadingItem[] {
       },
     },
   });
-  return wrapper.getComponent(ToolbarHeadingStub).props("items");
+  const items = wrapper.getComponent(ToolbarHeadingStub).props("items");
+  wrapper.unmount();
+  return items;
 }
 
 describe("Settings breadcrumbs on the options of a player", () => {
@@ -876,5 +886,121 @@ describe("the settings column", () => {
     expect(column.find("[data-testid=toolbar]").exists()).toBe(false);
 
     wrapper.unmount();
+  });
+});
+
+describe("the way back from a settings page", () => {
+  const ToolbarStub = { props: ["icon", "iconAction"], template: "<div />" };
+  // unmounted after each test, so no earlier page answers Escape in its place
+  let wrapper: ReturnType<typeof mount> | undefined;
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routerBack.mockReset();
+    routerPush.mockReset();
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+    wrapper = undefined;
+    routeState.name = "editplayeroptions";
+    routeState.params = { playerId: "kitchen" };
+    historyState.back = null;
+  });
+
+  function mountPage(routeName: string) {
+    routeState.name = routeName;
+    wrapper = mount(Settings, {
+      global: {
+        stubs: {
+          Container: { template: "<div><slot /></div>" },
+          Toolbar: ToolbarStub,
+          ToolbarHeading: ToolbarHeadingStub,
+          RouterView: true,
+          VBtn: true,
+          VDivider: true,
+        },
+      },
+    });
+    return wrapper;
+  }
+
+  function pressEscape() {
+    document.body.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  }
+
+  it("shows a back arrow on a page below the overview", () => {
+    const toolbar = mountPage("editplayeroptions").getComponent(ToolbarStub);
+
+    expect(toolbar.props("icon")).toBe(ArrowLeft);
+    expect(toolbar.props("iconAction")).toBeTypeOf("function");
+  });
+
+  it("keeps the plain gear on the overview", () => {
+    const toolbar = mountPage("settings").getComponent(ToolbarStub);
+
+    expect(toolbar.props("icon")).toBe(SettingsIcon);
+    expect(toolbar.props("iconAction")).toBeUndefined();
+  });
+
+  it("returns to where the user came from", () => {
+    historyState.back = "/settings/homeassistant";
+    const page = mountPage("aisettings");
+
+    page.getComponent(ToolbarStub).props("iconAction")();
+
+    expect(routerBack).toHaveBeenCalledOnce();
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "the settings of the player",
+      "editplayeroptions",
+      { name: "editplayer", params: { playerId: "kitchen" } },
+    ],
+    ["the network page", "remoteaccesssettings", { name: "networksettings" }],
+    ["the System settings", "networksettings", { name: "systemsettings" }],
+    ["the overview", "systemsettings", { name: "settings" }],
+  ])(
+    "goes up to %s from %s when that page was opened directly",
+    (_parent, routeName, parentRoute) => {
+      const page = mountPage(routeName);
+
+      page.getComponent(ToolbarStub).props("iconAction")();
+
+      expect(routerPush).toHaveBeenCalledExactlyOnceWith(parentRoute);
+      expect(routerBack).not.toHaveBeenCalled();
+    },
+  );
+
+  it("goes up to the overview when the user may open no page above it", () => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    const page = mountPage("editplayeroptions");
+
+    page.getComponent(ToolbarStub).props("iconAction")();
+
+    expect(routerPush).toHaveBeenCalledExactlyOnceWith({ name: "settings" });
+  });
+
+  it("goes the same way on Escape", () => {
+    mountPage("editplayeroptions");
+
+    pressEscape();
+    expect(routerPush).toHaveBeenCalledExactlyOnceWith({
+      name: "editplayer",
+      params: { playerId: "kitchen" },
+    });
+
+    historyState.back = "/settings/players";
+    pressEscape();
+    expect(routerBack).toHaveBeenCalledOnce();
+    expect(routerPush).toHaveBeenCalledOnce();
   });
 });

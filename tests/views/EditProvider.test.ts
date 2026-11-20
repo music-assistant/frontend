@@ -1621,9 +1621,11 @@ describe("EditProvider actions and sections", () => {
     expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
     // unsaved edits have nothing left to save to, so they must not hold the way out
     expect(discardChanges).toHaveBeenCalled();
-    expect(routerMock.push).toHaveBeenCalledWith({
+    // the page of the removed source is replaced, so back cannot return to it
+    expect(routerMock.replace).toHaveBeenCalledWith({
       name: "musicsettings",
     });
+    expect(routerMock.push).not.toHaveBeenCalled();
   });
 
   it("leaves another source opened during a removal untouched", async () => {
@@ -1670,6 +1672,7 @@ describe("EditProvider actions and sections", () => {
     ]);
     expect(discardChanges).not.toHaveBeenCalled();
     expect(routerMock.push).not.toHaveBeenCalled();
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 
   it("shows the sections of the source with its access summary", async () => {
