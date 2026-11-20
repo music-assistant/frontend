@@ -1,55 +1,41 @@
 <template>
-  <OnboardingInvitation
-    :intro="$t(descriptionKey)"
-    :features="features"
-    :set-up="configured.length > 0"
-    :linked="linked"
-  >
-    <template #partner>
-      <component :is="icon" />
-    </template>
-
-    <ItemGroup v-if="configured.length > 0" class="gap-2">
-      <ConfiguredProviderItem
-        v-for="provider in configured"
-        :key="provider.instance_id"
-        :provider="provider"
-        data-testid="onboarding-configured-provider"
-      />
-    </ItemGroup>
-
-    <!-- the invitation while nothing is set up, a way to add another after -->
-    <Button
-      :variant="configured.length > 0 ? 'secondary' : 'default'"
-      :size="configured.length > 0 ? 'default' : 'lg'"
-      class="self-center"
-      data-testid="onboarding-add-provider"
-      @click="showAddProviderDialog = true"
-    >
-      <Plus class="size-4" />
-      {{ $t(addLabelKey) }}
-    </Button>
+  <div>
+    <OnboardingInvitation :features="features" :set-up="configured.length > 0">
+      <OnboardingList>
+        <ConfiguredProviderItem
+          v-for="provider in configured"
+          :key="provider.instance_id"
+          :provider="provider"
+          data-testid="onboarding-configured-provider"
+        />
+        <OnboardingAddRow
+          :label="$t(addLabelKey)"
+          data-testid="onboarding-add-provider"
+          @click="showAddProviderDialog = true"
+        />
+      </OnboardingList>
+    </OnboardingInvitation>
 
     <AddProviderDialog
       v-model:show="showAddProviderDialog"
       :provider-type="providerType"
       :audio-source-only="connectingApps"
     />
-  </OnboardingInvitation>
+  </div>
 </template>
 
 <script setup lang="ts">
 import ConfiguredProviderItem from "@/components/onboarding/ConfiguredProviderItem.vue";
+import OnboardingAddRow from "@/components/onboarding/OnboardingAddRow.vue";
 import OnboardingInvitation, {
   type InvitationFeature,
 } from "@/components/onboarding/OnboardingInvitation.vue";
-import { Button } from "@/components/ui/button";
-import { ItemGroup } from "@/components/ui/item";
+import OnboardingList from "@/components/onboarding/OnboardingList.vue";
 import {
   configuredAudioSourcePlugins,
   configuredProviders,
 } from "@/composables/useOnboarding";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import type { OnboardingStepId, StepPrimaryAction } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
 import {
@@ -57,11 +43,9 @@ import {
   AudioLines,
   HardDrive,
   Headphones,
-  Music,
   Music2,
   Plus,
   Radio,
-  Smartphone,
 } from "@lucide/vue";
 import { computed, markRaw, ref } from "vue";
 
@@ -90,19 +74,11 @@ const configured = computed(() =>
     : configuredProviders(props.providerType),
 );
 
-const descriptionKey = computed(() =>
-  connectingApps.value
-    ? "onboarding.steps.plugins.phone_apps_instructions"
-    : "onboarding.steps.music_sources.description",
-);
-
 const addLabelKey = computed(() =>
   connectingApps.value
     ? "onboarding.steps.plugins.connect"
     : "settings.add_music_provider",
 );
-
-const icon = computed(() => markRaw(connectingApps.value ? Smartphone : Music));
 
 const MUSIC_SOURCE_FEATURES: readonly InvitationFeature[] = [
   {
@@ -127,7 +103,16 @@ const MUSIC_APP_FEATURES: readonly InvitationFeature[] = [
 const features = computed(() =>
   connectingApps.value ? MUSIC_APP_FEATURES : MUSIC_SOURCE_FEATURES,
 );
-const linked = computed(() =>
-  configured.value.some((provider) => !provider.needsAttention),
+// until one is set up, adding one is the step's main button
+const primaryAction = computed<StepPrimaryAction | undefined>(() =>
+  configured.value.length > 0
+    ? undefined
+    : {
+        labelKey: addLabelKey.value,
+        icon: markRaw(Plus),
+        run: () => (showAddProviderDialog.value = true),
+      },
 );
+
+defineExpose({ primaryAction });
 </script>

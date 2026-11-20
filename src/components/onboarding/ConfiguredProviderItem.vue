@@ -5,7 +5,6 @@
     v-bind="$attrs"
     :as="opensSettings ? 'button' : 'div'"
     :type="opensSettings ? 'button' : undefined"
-    variant="outline"
     size="sm"
     :class="
       opensSettings &&

@@ -1,61 +1,49 @@
 <template>
-  <OnboardingInvitation
-    :intro="$t('onboarding.steps.ai.intro')"
-    :features="FEATURES"
-    :features-title="$t('onboarding.steps.ai.examples')"
-    :set-up="hasServices"
-    :linked="linked"
-    :optional="optionalLine"
-  >
-    <template #partner>
-      <Sparkles />
-    </template>
-
-    <ItemGroup v-if="hasServices" class="gap-2">
-      <!-- what a service does for AI is set on the AI settings page, so its
-           row here only shows how it is doing -->
-      <ConfiguredProviderItem
-        v-for="service in services"
-        :key="service.provider.instance_id"
-        :provider="service.provider"
-        :description="service.provides"
-        status-only
-        data-testid="onboarding-ai-service"
-      />
-    </ItemGroup>
-
-    <!-- the invitation while nothing is set up, a way to add another after -->
-    <Button
-      :variant="hasServices ? 'secondary' : 'default'"
-      :size="hasServices ? 'default' : 'lg'"
-      class="self-center"
-      data-testid="onboarding-add-ai-service"
-      @click="showAddDialog = true"
+  <div>
+    <OnboardingInvitation
+      :features="FEATURES"
+      :set-up="hasServices"
+      :note="hasServices ? undefined : optionalLine"
     >
-      <Plus class="size-4" />
-      {{ $t("settings.ai.add_service") }}
-    </Button>
+      <OnboardingList>
+        <!-- what a service does for AI is set on the AI settings page, so its
+             row here only shows how it is doing -->
+        <ConfiguredProviderItem
+          v-for="service in services"
+          :key="service.provider.instance_id"
+          :provider="service.provider"
+          :description="service.provides"
+          status-only
+          data-testid="onboarding-ai-service"
+        />
+        <OnboardingAddRow
+          :label="$t('settings.ai.add_service')"
+          data-testid="onboarding-add-ai-service"
+          @click="showAddDialog = true"
+        />
+      </OnboardingList>
+    </OnboardingInvitation>
 
     <AddProviderDialog
       v-model:show="showAddDialog"
       :provider-type="ProviderType.PLUGIN"
       ai-service-only
     />
-  </OnboardingInvitation>
+  </div>
 </template>
 
 <script setup lang="ts">
 import ConfiguredProviderItem from "@/components/onboarding/ConfiguredProviderItem.vue";
+import OnboardingAddRow from "@/components/onboarding/OnboardingAddRow.vue";
 import OnboardingInvitation, {
   type InvitationFeature,
 } from "@/components/onboarding/OnboardingInvitation.vue";
-import { Button } from "@/components/ui/button";
-import { ItemGroup } from "@/components/ui/item";
+import OnboardingList from "@/components/onboarding/OnboardingList.vue";
 import { useAIEngines } from "@/composables/settings/useAIEngines";
 import { configuredAIServices } from "@/composables/useOnboarding";
 import { enginesOf } from "@/helpers/ai_engines";
 import { engineSummary } from "@/helpers/ai_settings";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import type { OnboardingStepId, StepPrimaryAction } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import AddProviderDialog from "@/views/settings/AddProviderDialog.vue";
@@ -65,10 +53,9 @@ import {
   MicVocal,
   Plus,
   Radio,
-  Sparkles,
   WandSparkles,
 } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, markRaw, ref } from "vue";
 
 /**
  * The invitation to add AI: a few things it brings, the AI services set up,
@@ -107,10 +94,20 @@ const services = computed(() =>
 );
 
 const hasServices = computed(() => services.value.length > 0);
-const linked = computed(() =>
-  services.value.some(({ provider }) => !provider.needsAttention),
-);
 const optionalLine = computed(() =>
   $t("onboarding.steps.ai.optional", { ai: $t("settings.ai.title") }),
 );
+
+// until a service is set up, adding one is the step's main button
+const primaryAction = computed<StepPrimaryAction | undefined>(() =>
+  hasServices.value
+    ? undefined
+    : {
+        labelKey: "settings.ai.add_service",
+        icon: markRaw(Plus),
+        run: () => (showAddDialog.value = true),
+      },
+);
+
+defineExpose({ primaryAction });
 </script>

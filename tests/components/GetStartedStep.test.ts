@@ -9,12 +9,9 @@ describe("GetStartedStep", () => {
     });
 
     expect(
-      wrapper.find("[data-testid=onboarding-invitation-intro]").text(),
-    ).toBe("onboarding.steps.get_started.intro");
-    expect(
       wrapper
         .find("[data-testid=onboarding-invitation-features]")
-        .findAll("li")
+        .findAll("[data-slot=item]")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.get_started.features.account",
@@ -22,14 +19,9 @@ describe("GetStartedStep", () => {
       "onboarding.steps.get_started.features.music",
       "onboarding.steps.get_started.features.extras",
     ]);
-    // nothing to link Music Assistant to yet, and the wizard shows its logo
-    // on this step itself
-    expect(
-      wrapper.find("[data-testid=onboarding-invitation-visual]").exists(),
-    ).toBe(false);
     expect(wrapper.find("button").exists()).toBe(false);
     expect(
-      wrapper.find("[data-testid=onboarding-invitation-optional]").exists(),
+      wrapper.find("[data-testid=onboarding-invitation-note]").exists(),
     ).toBe(false);
 
     wrapper.unmount();

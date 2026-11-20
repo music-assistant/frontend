@@ -3,9 +3,10 @@
     <!-- one layer below the other dialogs, so a setup flow or confirmation
          opened from the wizard shows on top of it. Fixed height so the header
          and Next stay put when a step changes size; the wizard scrolls the
-         step inside it -->
+         step inside it. A phone gets the whole screen, padded clear of the
+         device's own edges, and the close button lines up with Back -->
     <DialogContent
-      class="z-[9998] flex h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-4 sm:h-[min(84dvh,44rem)] sm:max-w-[calc(100%-2rem)] sm:p-6 lg:max-w-3xl"
+      class="z-[9998] flex flex-col gap-0 overflow-hidden p-4 max-sm:inset-0 max-sm:h-dvh max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:border-0 max-sm:pt-[calc(1rem+var(--device-inset-top))] max-sm:pr-[calc(1rem+var(--device-inset-right))] max-sm:pb-[calc(1rem+var(--device-inset-bottom))] max-sm:pl-[calc(1rem+var(--device-inset-left))] sm:h-[min(84dvh,44rem)] sm:max-w-2xl sm:p-6 [&>[data-slot=dialog-close]]:top-[calc(1rem+var(--device-inset-top))] [&>[data-slot=dialog-close]]:right-[calc(1rem+var(--device-inset-right))] sm:[&>[data-slot=dialog-close]]:top-6 sm:[&>[data-slot=dialog-close]]:right-4"
       overlay-class="z-[9998]"
       :show-close-button="canLeave"
       :close-label="ctx.isMember ? undefined : $t('onboarding.pause')"
