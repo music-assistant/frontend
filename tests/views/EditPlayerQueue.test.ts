@@ -40,7 +40,7 @@ describe("EditPlayerQueue", () => {
         .findComponent({ name: "SettingsHeaderCard" })
         .props("documentationUrl"),
     ).toBe(
-      "https://music-assistant.io/settings/individual-player/#queue-settings",
+      "https://music-assistant.io/settings/individual-player/#playback-settings",
     );
   });
 
