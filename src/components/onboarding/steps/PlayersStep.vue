@@ -3,44 +3,48 @@
     <!-- with nothing set up and nothing found yet, the step invites to add
          player support; after that it follows what turns up -->
     <OnboardingInvitation :features="FEATURES" :set-up="!inviting">
-      <!-- a live region so a player that was just found is announced -->
-      <OnboardingList aria-live="polite">
-        <DiscoveredPlayerItem
-          v-for="player in players"
-          :key="player.player_id"
-          :player="player"
-          :can-edit="canEdit"
-        />
-        <!-- a provider that is running is still looking, and the list shows
+      <!-- room for the players discovery usually finds, so the heading above
+           stays put while they turn up -->
+      <div class="min-h-64">
+        <!-- a live region so a player that was just found is announced -->
+        <OnboardingList aria-live="polite">
+          <DiscoveredPlayerItem
+            v-for="player in players"
+            :key="player.player_id"
+            :player="player"
+            :can-edit="canEdit"
+          />
+          <!-- a provider that is running is still looking, and the list shows
              that rather than an emptiness that reads as final -->
-        <OnboardingPlaceholderRow
-          v-if="players.length === 0"
-          :icon="Speaker"
-          :looking="discovering"
-          :title="$t('onboarding.steps.players.empty')"
-          :description="
-            discovering
-              ? $t('onboarding.steps.players.discovering_hint')
-              : $t('onboarding.steps.players.no_provider_hint')
-          "
-          :data-testid="
-            discovering
-              ? 'onboarding-players-discovering'
-              : 'onboarding-players-empty'
-          "
-        />
-        <!-- the picker adds a provider either way; only where nothing is set
+          <OnboardingPlaceholderRow
+            v-if="players.length === 0"
+            :icon="Speaker"
+            :looking="discovering"
+            :title="$t('onboarding.steps.players.empty')"
+            :description="
+              discovering
+                ? $t('onboarding.steps.players.discovering_hint')
+                : $t('onboarding.steps.players.no_provider_hint')
+            "
+            :data-testid="
+              discovering
+                ? 'onboarding-players-discovering'
+                : 'onboarding-players-empty'
+            "
+          />
+          <!-- the picker adds a provider either way; only where nothing is set
              up yet is it named -->
-        <OnboardingAddRow
-          :label="
-            providers.length > 0
-              ? $t('onboarding.steps.players.add_more')
-              : $t('settings.add_player_provider')
-          "
-          data-testid="onboarding-add-provider"
-          @click="showAddProviderDialog = true"
-        />
-      </OnboardingList>
+          <OnboardingAddRow
+            :label="
+              providers.length > 0
+                ? $t('onboarding.steps.players.add_more')
+                : $t('settings.add_player_provider')
+            "
+            data-testid="onboarding-add-provider"
+            @click="showAddProviderDialog = true"
+          />
+        </OnboardingList>
+      </div>
     </OnboardingInvitation>
 
     <!-- the player providers that are set up, so what "add more" adds to is in
