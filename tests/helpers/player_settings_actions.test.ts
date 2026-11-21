@@ -1,5 +1,6 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
+  addSubwoofer,
   createMultiChannelPlayer,
   getOutputMenuItems,
   getPlayerSettingsMenuItems,
@@ -11,12 +12,15 @@ import {
   setPlayerEnabled,
 } from "@/helpers/player_settings_actions";
 import {
+  ChannelLayout,
+  ConfigEntryType,
   PlayerType,
   ProtocolRole,
   ProviderFeature,
   ProviderType,
   Scope,
   SpeakerChannel,
+  type ConfigEntry,
   type OutputProtocol,
   type Player,
   type PlayerOption,
@@ -40,6 +44,7 @@ const {
   toastMock,
 } = vi.hoisted(() => ({
   apiMock: {
+    addMultiChannelSpeaker: vi.fn(),
     createMultiChannelPlayer: vi.fn(),
     getProvider: vi.fn(),
     getPlayerConfig: vi.fn(),
@@ -47,6 +52,7 @@ const {
     mergePlayers: vi.fn(),
     players: {} as Record<string, unknown>,
     queues: {} as Record<string, unknown>,
+    removeMultiChannelSpeaker: vi.fn(),
     removePlayer: vi.fn(),
     removeUnavailablePlayers: vi.fn(),
     savePlayerConfig: vi.fn(),
@@ -116,6 +122,20 @@ vi.mock("@/helpers/utils", () => ({
 vi.mock("vue-sonner", () => ({
   toast: toastMock,
 }));
+
+// the layouts of the Sendspin provider, as the server lists them
+const LAYOUTS = {
+  [ChannelLayout.STEREO]: [
+    SpeakerChannel.FRONT_LEFT,
+    SpeakerChannel.FRONT_RIGHT,
+  ],
+  [ChannelLayout.LAYOUT_2_1]: [
+    SpeakerChannel.FRONT_LEFT,
+    SpeakerChannel.FRONT_RIGHT,
+    SpeakerChannel.LFE,
+  ],
+  [ChannelLayout.LAYOUT_1_1]: [SpeakerChannel.FRONT_CENTER, SpeakerChannel.LFE],
+};
 
 const SECTION_LABELS = [
   "open_player_settings",
@@ -872,6 +892,7 @@ describe("getOutputMenuItems multi-channel player", () => {
     output("sendspin", { output_protocol_id: "native", is_native: true });
   // the server lists this player as a candidate speaker on Sendspin
   const multiChannelCandidates = { sendspin: ["studio-right", "kitchen"] };
+  const multiChannelLayouts = { sendspin: LAYOUTS };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -897,6 +918,7 @@ describe("getOutputMenuItems multi-channel player", () => {
     menuItem(
       getOutputMenuItems(playerConfig(), native(), {
         multiChannelCandidates,
+        multiChannelLayouts,
         onMultiChannelCreated,
       }),
       "settings.multi_channel.make",
@@ -906,6 +928,7 @@ describe("getOutputMenuItems multi-channel player", () => {
       playerId: "kitchen",
       playerName: "Kitchen",
       protocol: sendspin(),
+      layouts: LAYOUTS,
       onCreated: onMultiChannelCreated,
     });
   });
@@ -920,6 +943,7 @@ describe("getOutputMenuItems multi-channel player", () => {
       visibleLabels(
         getOutputMenuItems(playerConfig(), native(), {
           multiChannelCandidates,
+          multiChannelLayouts,
         }),
       ),
     ).toEqual(["settings.split_off_output", "settings.multi_channel.make"]);
@@ -928,6 +952,7 @@ describe("getOutputMenuItems multi-channel player", () => {
       visibleLabels(
         getOutputMenuItems(playerConfig(), output("airplay"), {
           multiChannelCandidates: { airplay: ["kitchen"] },
+          multiChannelLayouts: { airplay: LAYOUTS },
         }),
       ),
     ).toEqual(["settings.split_off_output"]);
@@ -937,10 +962,23 @@ describe("getOutputMenuItems multi-channel player", () => {
     expect(
       getOutputMenuItems(playerConfig(), native(), {
         multiChannelCandidates: { sendspin: ["studio-right"] },
+        multiChannelLayouts,
       }),
     ).toEqual([]);
     // before the list is there
     expect(getOutputMenuItems(playerConfig(), native())).toEqual([]);
+  });
+
+  it("offers nothing while the server lists no layouts for the provider", () => {
+    expect(
+      getOutputMenuItems(playerConfig(), native(), { multiChannelCandidates }),
+    ).toEqual([]);
+    expect(
+      getOutputMenuItems(playerConfig(), native(), {
+        multiChannelCandidates,
+        multiChannelLayouts: { sendspin: {} },
+      }),
+    ).toEqual([]);
   });
 });
 
@@ -1040,6 +1078,256 @@ describe("getPlayerSettingsMenuItems taking a multi-channel player apart", () =>
     // the api layer reports the server's reason, so this must not toast a second time
     expect(toastMock.error).not.toHaveBeenCalled();
     expect(toastMock.success).not.toHaveBeenCalled();
+  });
+});
+
+describe("getPlayerSettingsMenuItems subwoofer of a multi-channel player", () => {
+  const ADD = "settings.multi_channel.add_subwoofer";
+  const REMOVE = "settings.multi_channel.remove_subwoofer";
+  // the layouts of the provider of the set, as the server lists them
+  const multiChannelLayouts = { "chromecast--1": LAYOUTS };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMock.getProvider.mockReturnValue(
+      providerInstance({
+        supported_features: [ProviderFeature.CREATE_MULTI_CHANNEL_PLAYER],
+      }),
+    );
+    apiMock.getProviderManifest.mockReturnValue(providerManifest());
+  });
+
+  it.each([
+    [ChannelLayout.STEREO, [ADD]],
+    [ChannelLayout.LAYOUT_2_1, [REMOVE]],
+    // without its subwoofer a speaker is no set: taking it apart is the way
+    [ChannelLayout.LAYOUT_1_1, []],
+    [ChannelLayout.UNKNOWN, []],
+  ])("offers for a %s set: %j", (layout, offered) => {
+    registerPlayer({ type: PlayerType.MULTI_CHANNEL, channel_layout: layout });
+
+    const labels = visibleLabels(
+      getPlayerSettingsMenuItems(playerConfig(), { multiChannelLayouts }),
+    );
+
+    expect(labels.filter((label) => label === ADD || label === REMOVE)).toEqual(
+      offered,
+    );
+  });
+
+  it("offers neither without the layouts of the provider", () => {
+    registerPlayer({
+      type: PlayerType.MULTI_CHANNEL,
+      channel_layout: ChannelLayout.STEREO,
+    });
+
+    expect(
+      visibleLabels(getPlayerSettingsMenuItems(playerConfig())),
+    ).not.toContain(ADD);
+    // a provider that offers no layout with a subwoofer
+    expect(
+      visibleLabels(
+        getPlayerSettingsMenuItems(playerConfig(), {
+          multiChannelLayouts: {
+            "chromecast--1": { stereo: LAYOUTS.stereo },
+          },
+        }),
+      ),
+    ).not.toContain(ADD);
+  });
+
+  it("offers neither for a set the device delivers, or one without live state", () => {
+    registerPlayer({
+      type: PlayerType.MULTI_CHANNEL,
+      channel_layout: ChannelLayout.STEREO,
+    });
+    apiMock.getProvider.mockReturnValue(providerInstance());
+    let labels = visibleLabels(
+      getPlayerSettingsMenuItems(playerConfig(), { multiChannelLayouts }),
+    );
+    expect(labels).not.toContain(ADD);
+
+    apiMock.getProvider.mockReturnValue(
+      providerInstance({
+        supported_features: [ProviderFeature.CREATE_MULTI_CHANNEL_PLAYER],
+      }),
+    );
+    apiMock.players = {};
+    labels = visibleLabels(
+      getPlayerSettingsMenuItems(
+        playerConfig({
+          enabled: false,
+          player_type: PlayerType.MULTI_CHANNEL,
+        }),
+        { multiChannelLayouts },
+      ),
+    );
+    expect(labels).not.toContain(ADD);
+    expect(labels).not.toContain(REMOVE);
+  });
+
+  it("opens the dialog to pick a subwoofer for the set", () => {
+    registerPlayer({
+      type: PlayerType.MULTI_CHANNEL,
+      channel_layout: ChannelLayout.STEREO,
+    });
+    const onSpeakersChanged = vi.fn();
+
+    menuItem(
+      getPlayerSettingsMenuItems(
+        playerConfig({ provider: "sendspin--1", name: "Studio" }),
+        { multiChannelLayouts: { "sendspin--1": LAYOUTS }, onSpeakersChanged },
+      ),
+      ADD,
+    ).action?.();
+
+    expect(emitEvent).toHaveBeenCalledWith("multiChannelSubwooferDialog", {
+      playerId: "kitchen",
+      playerName: "Studio",
+      provider: "sendspin--1",
+      onAdded: onSpeakersChanged,
+    });
+  });
+
+  it("removes the subwoofer by its number after asking, and reports it", async () => {
+    registerPlayer({
+      type: PlayerType.MULTI_CHANNEL,
+      channel_layout: ChannelLayout.LAYOUT_2_1,
+    });
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerConfig({
+        values: Object.fromEntries(
+          [
+            ...speakerEntries(1, "Studio left", "front_left"),
+            ...speakerEntries(2, "Studio sub", "lfe"),
+            ...speakerEntries(3, "Studio right", "front_right"),
+          ].map((entry) => [entry.key, entry]),
+        ),
+      }),
+    );
+    apiMock.removeMultiChannelSpeaker.mockResolvedValue(undefined);
+    const onSpeakersChanged = vi.fn();
+
+    menuItem(
+      getPlayerSettingsMenuItems(playerConfig(), {
+        multiChannelLayouts,
+        onSpeakersChanged,
+      }),
+      REMOVE,
+    ).action?.();
+    await flushPromises();
+
+    // the stored config, not the form, says which speaker is the subwoofer
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledWith("kitchen");
+    expect(apiMock.removeMultiChannelSpeaker).not.toHaveBeenCalled();
+    await confirmation().onConfirm();
+
+    expect(apiMock.removeMultiChannelSpeaker).toHaveBeenCalledWith(
+      "kitchen",
+      2,
+    );
+    expect(onSpeakersChanged).toHaveBeenCalledOnce();
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the subwoofer when the server refuses to remove it", async () => {
+    registerPlayer({
+      type: PlayerType.MULTI_CHANNEL,
+      channel_layout: ChannelLayout.LAYOUT_2_1,
+    });
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerConfig({
+        values: Object.fromEntries(
+          speakerEntries(1, "Studio sub", "lfe").map((entry) => [
+            entry.key,
+            entry,
+          ]),
+        ),
+      }),
+    );
+    apiMock.removeMultiChannelSpeaker.mockRejectedValueOnce(
+      new Error("Take the player apart instead."),
+    );
+    const onSpeakersChanged = vi.fn();
+
+    menuItem(
+      getPlayerSettingsMenuItems(playerConfig(), {
+        multiChannelLayouts,
+        onSpeakersChanged,
+      }),
+      REMOVE,
+    ).action?.();
+    await flushPromises();
+    await confirmation().onConfirm();
+
+    expect(onSpeakersChanged).not.toHaveBeenCalled();
+    // the api layer reports the server's reason, so this must not toast a second time
+    expect(toastMock.error).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+  });
+
+  function speakerEntries(
+    number: number,
+    name: string,
+    channel: string,
+  ): ConfigEntry[] {
+    const entry = (key: string, overrides: Partial<ConfigEntry>) =>
+      ({
+        key,
+        type: ConfigEntryType.STRING,
+        label: key,
+        default_value: null,
+        required: false,
+        options: [],
+        ...overrides,
+      }) as ConfigEntry;
+    return [
+      entry(`speaker_${number}_state`, {
+        type: ConfigEntryType.LABEL,
+        default_value: "online",
+      }),
+      entry(`speaker_${number}_display_name`, {
+        type: ConfigEntryType.LABEL,
+        value: name,
+      }),
+      entry(`speaker_${number}_channel_setting`, { value: channel }),
+    ];
+  }
+});
+
+describe("addSubwoofer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    storeMock.activePlayerId = undefined;
+  });
+
+  it("adds the speaker on the subwoofer channel and hands the set its player bar", async () => {
+    apiMock.addMultiChannelSpeaker.mockResolvedValue(undefined);
+    storeMock.activePlayerId = "studio-sub";
+
+    expect(await addSubwoofer("studio", "Studio", "studio-sub")).toBe(true);
+
+    expect(apiMock.addMultiChannelSpeaker).toHaveBeenCalledWith(
+      "studio",
+      "studio-sub",
+      SpeakerChannel.LFE,
+    );
+    expect(storeMock.activePlayerId).toBe("studio");
+    expect(setPreference).toHaveBeenCalledWith("activePlayerId", "studio");
+    expect(toastMock.success).toHaveBeenCalledOnce();
+  });
+
+  it("says the speaker did not join when the server refuses, and leaves its reason to the api", async () => {
+    apiMock.addMultiChannelSpeaker.mockRejectedValueOnce(
+      new Error("Studio sub is not available"),
+    );
+    storeMock.activePlayerId = "studio-sub";
+
+    expect(await addSubwoofer("studio", "Studio", "studio-sub")).toBe(false);
+
+    expect(storeMock.activePlayerId).toBe("studio-sub");
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 });
 

@@ -8,12 +8,14 @@ import type {
   getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems,
 } from "@/helpers/player_settings_actions";
 import {
+  ChannelLayout,
   ConfigEntryType,
   EventType,
   PlayerType,
   ProtocolRole,
   ProviderFeature,
   ProviderType,
+  SpeakerChannel,
   type ConfigEntry,
   type OutputProtocol,
   type PlayerConfig,
@@ -46,6 +48,8 @@ const {
   apiMock: {
     getMultiChannelCandidates:
       vi.fn<MusicAssistantApi["getMultiChannelCandidates"]>(),
+    getMultiChannelLayouts:
+      vi.fn<MusicAssistantApi["getMultiChannelLayouts"]>(),
     getPlayerConfig: vi.fn<MusicAssistantApi["getPlayerConfig"]>(),
     getProvider: vi.fn<MusicAssistantApi["getProvider"]>(),
     getProviderManifest: vi.fn<MusicAssistantApi["getProviderManifest"]>(),
@@ -140,6 +144,13 @@ vi.mock("vue-router", async (importOriginal) => {
 });
 
 const CONTROL_KEYS = ["power_control", "volume_control", "mute_control"];
+// the layouts of the Sendspin provider, as the server lists them
+const LAYOUTS = {
+  [ChannelLayout.STEREO]: [
+    SpeakerChannel.FRONT_LEFT,
+    SpeakerChannel.FRONT_RIGHT,
+  ],
+};
 
 describe("EditPlayer", () => {
   // the api mock is a module singleton, so a component left mounted keeps
@@ -431,15 +442,25 @@ describe("EditPlayer", () => {
       supported_features: [ProviderFeature.CREATE_MULTI_CHANNEL_PLAYER],
     });
     apiMock.getMultiChannelCandidates.mockResolvedValue(["player-1"]);
+    apiMock.getMultiChannelLayouts.mockResolvedValue(LAYOUTS);
     const wrapper = await mountPlayerPage();
 
     outputMenuItems(wrapper, outputProtocol());
+    await wrapper.get('[data-testid="player-menu"]').trigger("click");
 
     expect(apiMock.getMultiChannelCandidates).toHaveBeenCalledWith("sendspin", {
       suppressGlobalError: true,
     });
+    expect(apiMock.getMultiChannelLayouts).toHaveBeenCalledWith("sendspin", {
+      suppressGlobalError: true,
+    });
     expect(getOutputMenuItems.mock.lastCall?.[2]).toMatchObject({
       multiChannelCandidates: { sendspin: ["player-1"] },
+      multiChannelLayouts: { sendspin: LAYOUTS },
+    });
+    // the menu of the page decides from them whether a subwoofer can join or go
+    expect(getPlayerSettingsMenuItems.mock.lastCall?.[1]).toMatchObject({
+      multiChannelLayouts: { sendspin: LAYOUTS },
     });
   });
 
@@ -537,6 +558,19 @@ describe("EditPlayer", () => {
     await flushPromises();
 
     // the server reset the choices that named the output, so pending edits go
+    expect(editConfigDiscardMock).toHaveBeenCalledOnce();
+    expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(2);
+    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
+  });
+
+  it("starts the form over from what is stored once a speaker joined or left", async () => {
+    const wrapper = await mountPlayerPage();
+    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+
+    getPlayerSettingsMenuItems.mock.calls[0][1]!.onSpeakersChanged!();
+    await flushPromises();
+
+    // the server numbers the speakers anew, so pending edits of a speaker go
     expect(editConfigDiscardMock).toHaveBeenCalledOnce();
     expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(2);
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);

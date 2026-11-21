@@ -37,6 +37,16 @@ describe("getPlayerTypeLabel", () => {
     ).toBe("Multi-channel · Stereo pair");
     expect(
       getPlayerTypeLabel(
+        player(PlayerType.MULTI_CHANNEL, ChannelLayout.LAYOUT_2_1),
+      ),
+    ).toBe("Multi-channel · Stereo pair with subwoofer");
+    expect(
+      getPlayerTypeLabel(
+        player(PlayerType.MULTI_CHANNEL, ChannelLayout.LAYOUT_1_1),
+      ),
+    ).toBe("Multi-channel · Speaker with subwoofer");
+    expect(
+      getPlayerTypeLabel(
         player(PlayerType.MULTI_CHANNEL, ChannelLayout.LAYOUT_5_1),
       ),
     ).toBe("Multi-channel · 5.1");
