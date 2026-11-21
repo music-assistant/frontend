@@ -136,6 +136,34 @@ describe("ItemContextMenu", () => {
     wrapper.unmount();
   });
 
+  // the menu can open under a held right button or long-press finger; a menu
+  // item selects on a pointerup that is not default-prevented
+  it("ignores the release of the press that opened it, not a later one", async () => {
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [{ label: "exclude_genre" }],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+    // the menu is not attached, so the presses go where the document sees them
+    const menu = document.body;
+    const release = () => {
+      const event = new PointerEvent("pointerup", {
+        bubbles: true,
+        cancelable: true,
+      });
+      menu.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+
+    expect(release()).toBe(true);
+    menu.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    expect(release()).toBe(false);
+    wrapper.unmount();
+  });
+
   it("renders a subComponent item as a popout with its props", async () => {
     const popout = markRaw({
       props: ["playerId"],

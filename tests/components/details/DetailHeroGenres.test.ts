@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGetGenres, mockExcludeGenre, mockHasScope } = vi.hoisted(() => ({
   mockGetGenres: vi.fn(),
@@ -42,11 +42,18 @@ const hold = {
   },
 };
 
-async function mountGenres(item: MediaItemType = artist()) {
-  mockGetGenres.mockResolvedValue([ROCK]);
+async function mountGenres(item: MediaItemType = artist(), genres = [ROCK]) {
+  mockGetGenres.mockResolvedValue(genres);
   const wrapper = mount(DetailHeroGenres, {
     props: { item },
-    global: { mocks: { $t: (key: string) => key }, directives: { hold } },
+    attachTo: document.body,
+    global: {
+      mocks: {
+        $t: (key: string, values?: { count: number }) =>
+          values ? `${key}:${values.count}` : key,
+      },
+      directives: { hold },
+    },
   });
   await flushPromises();
   return wrapper;
@@ -138,5 +145,130 @@ describe("DetailHeroGenres", () => {
     await wrapper.find(".detail-hero-genres__genre").trigger("contextmenu");
 
     expect(menus).toHaveLength(0);
+  });
+
+  describe("past two lines", () => {
+    const many = Array.from({ length: 20 }, (_, index) =>
+      genre({ item_id: String(index), name: `Genre ${index}` }),
+    );
+
+    // jsdom lays nothing out, so the list reports itself taller than it shows
+    beforeEach(() => {
+      vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(
+        100,
+      );
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    async function openAll() {
+      const wrapper = await mountGenres(artist(), many);
+      await wrapper.find(".detail-hero-genres__all").trigger("click");
+      await flushPromises();
+      return wrapper;
+    }
+    const dialogGenres = () =>
+      [...document.querySelectorAll("[role=dialog] button[title]")].map(
+        (button) => button.textContent?.trim(),
+      );
+
+    it("lists every genre in a dialog", async () => {
+      const wrapper = await openAll();
+
+      expect(wrapper.find(".detail-hero-genres__all").text()).toBe(
+        "all_genres:20",
+      );
+      expect(dialogGenres()).toHaveLength(20);
+      wrapper.unmount();
+    });
+
+    it("narrows the dialog to the genres matching the search", async () => {
+      const wrapper = await openAll();
+      const search = document.querySelector<HTMLInputElement>(
+        "[role=dialog] input",
+      )!;
+
+      search.value = "genre 1";
+      search.dispatchEvent(new Event("input"));
+      await flushPromises();
+
+      expect(dialogGenres()).toEqual([
+        "Genre 1",
+        ...Array.from({ length: 10 }, (_, index) => `Genre ${10 + index}`),
+      ]);
+      wrapper.unmount();
+    });
+    it("says so when no genre matches the search", async () => {
+      const wrapper = await openAll();
+      const search = document.querySelector<HTMLInputElement>(
+        "[role=dialog] input",
+      )!;
+
+      search.value = "jazz";
+      search.dispatchEvent(new Event("input"));
+      await flushPromises();
+
+      expect(dialogGenres()).toEqual([]);
+      expect(
+        document
+          .querySelector("[role=dialog] [role=status]")
+          ?.textContent?.trim(),
+      ).toBe("No items found.");
+      wrapper.unmount();
+    });
+
+    // music, podcasts and audiobooks each have their own genres
+    it("tells apart the genres that share a name", async () => {
+      const wrapper = await mountGenres(artist(), [
+        ...many,
+        genre({ item_id: "a", name: "History" }),
+        genre({
+          item_id: "b",
+          name: "History",
+          content_type: MediaType.PODCAST,
+        }),
+      ]);
+      await wrapper.find(".detail-hero-genres__all").trigger("click");
+      await flushPromises();
+
+      expect(dialogGenres()).toContain("History · Music");
+      expect(dialogGenres()).toContain("History · Podcasts");
+      wrapper.unmount();
+    });
+
+    // the clamped names are out of sight, so they must be out of reach too
+    it("takes the genres past the clamp out of the tab order", async () => {
+      const LINE_HEIGHT = 10;
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+        new DOMRect(0, 0, 100, 2 * LINE_HEIGHT),
+      );
+      vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(
+        function (this: HTMLElement) {
+          const index = Number(this.textContent?.replace("Genre ", ""));
+          // two genres on each line
+          const top = Math.floor(index / 2) * LINE_HEIGHT;
+          return [
+            new DOMRect(0, top, 10, LINE_HEIGHT),
+          ] as unknown as DOMRectList;
+        },
+      );
+      const wrapper = await mountGenres(artist(), many);
+
+      const reachable = wrapper
+        .findAll(".detail-hero-genres__genre")
+        .filter((name) => name.attributes("inert") === undefined);
+      expect(reachable.map((name) => name.text())).toEqual([
+        "Genre 0",
+        "Genre 1",
+        "Genre 2",
+        "Genre 3",
+      ]);
+      wrapper.unmount();
+    });
+  });
+
+  it("offers no full list when every genre fits", async () => {
+    const wrapper = await mountGenres();
+
+    expect(wrapper.find(".detail-hero-genres__all").exists()).toBe(false);
   });
 });

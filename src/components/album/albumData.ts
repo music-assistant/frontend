@@ -3,12 +3,9 @@ import {
   sortReleasesNewestFirst,
 } from "@/components/artist/artistData";
 import type { RowSource } from "@/components/details/rowRegistry";
-import { getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
-  ImageType,
   type Album,
-  type Artist,
   type SortDirection,
   type SortField,
   type Track,
@@ -74,27 +71,4 @@ export function albumReview(album: Album): string | undefined {
 /** The total playing time of the tracks, in seconds. */
 export function albumDuration(tracks: Track[]): number {
   return tracks.reduce((total, track) => total + (track.duration || 0), 0);
-}
-
-export interface AlbumBackdrop {
-  // undefined when neither the album nor its artist has any artwork
-  url?: string;
-  // the cover standing in for missing wide art, which the hero blurs so it
-  // reads as colour instead of a second copy of the cover beside it
-  blurred: boolean;
-}
-
-/**
- * The artwork behind the album hero: wide art (fanart, then landscape) of the
- * album or the given artist, else the cover to blur. No size is passed, so the
- * server serves the original image.
- */
-export function albumBackdrop(album: Album, artist?: Artist): AlbumBackdrop {
-  const wide =
-    getImageThumbForItem(album, ImageType.FANART) ||
-    getImageThumbForItem(album, ImageType.LANDSCAPE) ||
-    getImageThumbForItem(artist, ImageType.FANART) ||
-    getImageThumbForItem(artist, ImageType.LANDSCAPE);
-  if (wide) return { url: wide, blurred: false };
-  return { url: getImageThumbForItem(album, ImageType.THUMB), blurred: true };
 }
