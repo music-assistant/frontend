@@ -1,34 +1,33 @@
 <template>
   <section class="flex min-h-full flex-1 flex-col">
-    <!-- inset so the title lines up with the row artwork, as on the other listings -->
-    <Toolbar
-      class="ps-[5px] pe-[7px]"
-      :icon="AudioLines"
-      :subtitle="subtitle"
-      color="transparent"
-    >
-      <template #title>
-        <span class="flex items-baseline">
+    <!-- spaced as the headers of the other listings -->
+    <header class="flex h-[55px] shrink-0 items-center ps-[30px] pe-[11px]">
+      <AudioLines class="size-6 shrink-0 opacity-80" aria-hidden="true" />
+      <div
+        class="ms-[23px] flex min-w-0 flex-1 flex-col justify-center leading-[1.2]"
+      >
+        <h1 class="m-0 flex items-baseline text-xl leading-6 font-normal">
           {{ $t("live_sources") }}
           <span
             v-if="player && !loading && !failed"
-            class="ms-2 text-base font-normal text-muted-foreground"
+            class="ms-2 text-base text-muted-foreground"
           >
             {{ sources.length }}
           </span>
-        </span>
-      </template>
-      <template #append>
-        <ListingSortMenu
-          :options="[]"
-          sort-by=""
-          :view-mode="viewMode"
-          :grid-controls="gridControls"
-          :compact="store.mobileLayout"
-          @view-mode="selectViewMode"
-        />
-      </template>
-    </Toolbar>
+        </h1>
+        <p v-if="subtitle" class="m-0 truncate text-[0.7rem] opacity-60">
+          {{ subtitle }}
+        </p>
+      </div>
+      <ListingSortMenu
+        :options="[]"
+        sort-by=""
+        :view-mode="viewMode"
+        :grid-controls="gridControls"
+        :compact="store.mobileLayout"
+        @view-mode="selectViewMode"
+      />
+    </header>
     <Separator />
 
     <div
@@ -117,7 +116,6 @@ import LiveSourceListItem from "@/components/live-sources/LiveSourceListItem.vue
 import ListingSortMenu from "@/components/listing-toolbar/ListingSortMenu.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
-import Toolbar from "@/components/Toolbar.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
