@@ -8,23 +8,46 @@
       <DialogHeader>
         <DialogTitle>{{ $t("link_alias") }}</DialogTitle>
       </DialogHeader>
-      <v-autocomplete
+      <Combobox
         v-model="selectedAlias"
-        v-model:search="aliasSearch"
-        :items="availableAliases"
-        :item-title="(alias: string) => formatAliasName(alias)"
-        :item-value="(alias: string) => alias"
-        clearable
-        hide-details
-        :label="$t('link_alias')"
-        :loading="aliasLoading"
-        :menu-props="{ zIndex: 10000 }"
-      />
+        open-on-click
+        ignore-filter
+        reset-model-value-on-clear
+        :reset-search-term-on-blur="!!selectedAlias"
+      >
+        <ComboboxAnchor>
+          <ComboboxInput
+            v-model="aliasSearch"
+            :display-value="displayAlias"
+            :placeholder="$t('link_alias')"
+            :aria-label="$t('link_alias')"
+          />
+          <Spinner v-if="aliasLoading" />
+          <ComboboxCancel
+            v-if="selectedAlias || aliasSearch"
+            :aria-label="$t('clear')"
+            @click="aliasSearch = ''"
+          />
+          <ComboboxTrigger :aria-label="$t('tooltip.open_options')" />
+        </ComboboxAnchor>
+        <ComboboxList>
+          <ComboboxEmpty>{{ emptyText }}</ComboboxEmpty>
+          <ComboboxItem
+            v-for="alias in availableAliases"
+            :key="alias"
+            :value="alias"
+            :text-value="formatAliasName(alias)"
+          >
+            {{ formatAliasName(alias) }}
+            <ComboboxItemIndicator />
+          </ComboboxItem>
+        </ComboboxList>
+      </Combobox>
       <DialogFooter>
         <Button variant="outline" @click="model = false">
           {{ $t("cancel") }}
         </Button>
-        <Button :disabled="!selectedAlias || loading" @click="linkAlias">
+        <Button :disabled="!canLink || loading" @click="linkAlias">
           {{ $t("link_alias") }}
         </Button>
       </DialogFooter>
@@ -35,12 +58,25 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import {
+  Combobox,
+  ComboboxAnchor,
+  ComboboxCancel,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxItemIndicator,
+  ComboboxList,
+  ComboboxTrigger,
+} from "@/components/ui/combobox";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
+import { rankedAliases } from "@/helpers/genre";
 import { formatAliasName } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { SortField } from "@/plugins/api/interfaces";
@@ -68,48 +104,78 @@ const aliasOptions = ref<string[]>([]);
 const selectedAlias = ref<string | null>(null);
 const searchThrottle = ref<number | undefined>();
 
+const displayAlias = (alias: string | null) =>
+  alias ? formatAliasName(alias) : "";
+
 const availableAliases = computed(() => {
   const current = new Set(props.currentAliases.map((a) => a.toLowerCase()));
   return aliasOptions.value.filter((a) => !current.has(a.toLowerCase()));
 });
 
+const canLink = computed(
+  () =>
+    !!selectedAlias.value &&
+    aliasSearch.value === displayAlias(selectedAlias.value),
+);
+
+const emptyText = computed(() => {
+  if (!aliasSearch.value) return t("link_alias_search_hint");
+  if (aliasLoading.value) return t("searching");
+  return t("no_content");
+});
+
 watch(
   () => aliasSearch.value,
-  () => {
+  (search) => {
     clearTimeout(searchThrottle.value);
+    // picking an alias shows its name in the field, which is no new search
+    if (selectedAlias.value && search === displayAlias(selectedAlias.value)) {
+      aliasLoading.value = false;
+      return;
+    }
+    aliasOptions.value = [];
+    if (!search) {
+      aliasLoading.value = false;
+      return;
+    }
+    aliasLoading.value = true;
     searchThrottle.value = window.setTimeout(async () => {
-      if (!aliasSearch.value) {
-        aliasOptions.value = [];
-        return;
-      }
-      aliasLoading.value = true;
       try {
-        const genres = await api.getLibraryGenres({
-          search: aliasSearch.value,
-          limit: SEARCH_RESULT_LIMIT,
-          offset: 0,
-          sort_field: SortField.NAME,
-        });
-        const allAliases = new Set<string>();
-        for (const genre of genres) {
-          for (const alias of genre.genre_aliases || []) {
-            allAliases.add(alias);
-          }
+        const genres = await api.getLibraryGenres(
+          {
+            search,
+            limit: SEARCH_RESULT_LIMIT,
+            offset: 0,
+            sort_field: SortField.NAME,
+            summary: false,
+          },
+          { suppressGlobalError: true },
+        );
+        if (search !== aliasSearch.value) return;
+        aliasOptions.value = rankedAliases(genres, search);
+      } catch {
+        if (search === aliasSearch.value) {
+          toast.error(t("settings.error_loading_genres"));
         }
-        aliasOptions.value = [...allAliases].sort((a, b) => a.localeCompare(b));
       } finally {
-        aliasLoading.value = false;
+        if (search === aliasSearch.value) aliasLoading.value = false;
       }
     }, SEARCH_THROTTLE_MS);
   },
 );
+
+watch(model, (open) => {
+  if (open) return;
+  selectedAlias.value = null;
+  aliasSearch.value = "";
+});
 
 onBeforeUnmount(() => {
   clearTimeout(searchThrottle.value);
 });
 
 const linkAlias = async () => {
-  if (!selectedAlias.value || loading.value) return;
+  if (!canLink.value || !selectedAlias.value || loading.value) return;
 
   loading.value = true;
   try {
