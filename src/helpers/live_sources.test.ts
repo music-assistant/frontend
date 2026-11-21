@@ -17,6 +17,7 @@ import { playerSource } from "../../tests/fixtures/playerSource";
 import {
   getLiveSourceIcon,
   getLiveSourceOwnerName,
+  getSelectableInputIds,
   hasSelectableInput,
   liveSourcesAvailable,
   sortLiveSources,
@@ -106,6 +107,16 @@ describe("getLiveSourceIcon", () => {
   it("finds the kind of input in the name the user gave it", () => {
     const source = input("sendspin://audio_source/x", "Record player");
     expect(getLiveSourceIcon(source)).toBe(Disc3);
+  });
+});
+
+describe("getSelectableInputIds", () => {
+  it("lists the inputs the player can switch to", () => {
+    const passive = { ...input("aux", "AUX"), passive: true };
+    const sources = [input("tv", "TV"), passive, liveSource()];
+    expect(getSelectableInputIds(player({ source_list: sources }))).toEqual([
+      "tv",
+    ]);
   });
 });
 

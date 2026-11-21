@@ -1,7 +1,7 @@
 import { sourceProviderId } from "@/composables/nowPlayingSource";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import { sortLiveSources } from "@/helpers/live_sources";
-import { api } from "@/plugins/api";
+import { getSelectableInputIds, sortLiveSources } from "@/helpers/live_sources";
+import { api, ConnectionState } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import { EventType, Scope, type PlayerSource } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -79,14 +79,31 @@ export function useLiveSources(playerId: MaybeRefOrGetter<string | undefined>) {
     }
   };
 
-  // another player has other sources: the old ones go before they are clicked
+  // what the player can switch to changes with its inputs, and with its sync,
+  // which leaves it nothing to switch to while it plays what another plays
+  const inputsKey = computed(() => {
+    const id = toValue(playerId);
+    const player = id ? api.players[id] : undefined;
+    if (!player) return "";
+    return [player.synced_to, ...getSelectableInputIds(player).sort()].join();
+  });
   watch(
-    () => toValue(playerId),
-    () => {
-      entries.value = [];
+    [() => toValue(playerId), inputsKey],
+    ([id], [previousId]) => {
+      // another player has other sources: the old ones go before they are clicked
+      if (id !== previousId) entries.value = [];
       void load();
     },
     { immediate: true },
+  );
+  // changes made while the connection was down arrive with the next sync
+  watch(
+    () => api.state?.value,
+    (state, previous) => {
+      if (state === ConnectionState.INITIALIZED && previous !== state) {
+        void load();
+      }
+    },
   );
   const unsubscribe = api.subscribe_multi(REFRESH_EVENTS, load);
   onBeforeUnmount(() => unsubscribe());

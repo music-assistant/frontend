@@ -52,16 +52,24 @@ export function getLiveSourceOwnerName(
 }
 
 /**
+ * The ids of the inputs a player can switch to, such as TV or Line-in.
+ *
+ * @param player - The player.
+ */
+export function getSelectableInputIds(player: Player): string[] {
+  return player.source_list
+    .filter((source) => source.is_input && !source.passive)
+    .map((source) => source.id);
+}
+
+/**
  * Whether a player can switch to an input of its own, such as TV or Line-in.
  *
  * @param player - The player.
  */
 export function hasSelectableInput(player: Player): boolean {
   // a player synced to another plays what that player plays
-  return (
-    !player.synced_to &&
-    player.source_list.some((source) => source.is_input && !source.passive)
-  );
+  return !player.synced_to && getSelectableInputIds(player).length > 0;
 }
 
 /**

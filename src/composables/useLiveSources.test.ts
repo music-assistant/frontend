@@ -1,8 +1,12 @@
 import { ApiCommandError } from "@/plugins/api/errors";
-import { Scope, type PlayerSource } from "@/plugins/api/interfaces";
+import {
+  Scope,
+  type Player,
+  type PlayerSource,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, ref } from "vue";
 import { toast } from "vue-sonner";
 import { playerSource } from "../../tests/fixtures/playerSource";
@@ -12,20 +16,28 @@ import {
   useLiveSources,
 } from "./useLiveSources";
 
-const { apiMock, storeMock, routerMock } = vi.hoisted(() => ({
-  apiMock: {
-    players: {} as Record<string, unknown>,
-    getLiveSources: vi.fn(),
-    playerCommandGroupSelectSource: vi.fn(),
-    subscribe_multi: vi.fn((_events: string[], _callback: () => void) => {
-      return () => {};
-    }),
-  },
-  storeMock: { hasLiveSources: false },
-  routerMock: { push: vi.fn() },
-}));
+const { apiMock, storeMock, routerMock } = await vi.hoisted(async () => {
+  const { reactive, ref } = await import("vue");
+  return {
+    apiMock: {
+      players: reactive({}) as Record<string, Player>,
+      state: ref("initialized"),
+      getLiveSources: vi.fn(),
+      playerCommandGroupSelectSource: vi.fn(),
+      subscribe_multi: vi.fn((_events: string[], _callback: () => void) => {
+        return () => {};
+      }),
+    },
+    storeMock: { hasLiveSources: false },
+    routerMock: { push: vi.fn() },
+  };
+});
 
-vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+vi.mock("@/plugins/api", () => ({
+  api: apiMock,
+  default: apiMock,
+  ConnectionState: { INITIALIZED: "initialized" },
+}));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
 vi.mock("@/plugins/router", () => ({ default: routerMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: vi.fn() } }));
@@ -65,9 +77,30 @@ const Harness = defineComponent({
   },
 });
 
+// the selected player, with an input of its own
+const livingRoom = (overrides: Partial<Player> = {}) =>
+  ({
+    player_id: "living_room",
+    name: "Living Room",
+    synced_to: null,
+    source_list: [INPUT],
+    ...overrides,
+  }) as unknown as Player;
+
+const mountLiveSources = (playerId: string) => {
+  let result: ReturnType<typeof useLiveSources> | undefined;
+  mount(Harness, {
+    props: { setup: () => (result = useLiveSources(playerId)) },
+  });
+  return result!;
+};
+
+enableAutoUnmount(afterEach);
+
 beforeEach(() => {
   vi.clearAllMocks();
-  apiMock.players = {};
+  for (const id of Object.keys(apiMock.players)) delete apiMock.players[id];
+  apiMock.state.value = "initialized";
   storeMock.hasLiveSources = false;
   grant();
 });
@@ -179,19 +212,63 @@ describe("useLiveSources", () => {
 
   it("loads again when players or providers come and go", async () => {
     apiMock.getLiveSources.mockResolvedValue([]);
-    mount(Harness, {
-      props: { setup: () => useLiveSources("living_room") },
-    });
+    const { sources } = mountLiveSources("living_room");
     await flushPromises();
-    const [events, refresh] = apiMock.subscribe_multi.mock.calls[0];
-    expect(events).toEqual([
-      "player_added",
-      "player_removed",
-      "providers_updated",
-    ]);
-    refresh();
+    apiMock.getLiveSources.mockResolvedValue([LIVE_SOURCE]);
+    for (const [, refresh] of apiMock.subscribe_multi.mock.calls) refresh();
     await flushPromises();
-    expect(apiMock.getLiveSources).toHaveBeenCalledTimes(2);
+    expect(sources.value).toEqual([LIVE_SOURCE]);
+  });
+
+  it("drops the inputs of the player when it joins a group", async () => {
+    apiMock.players.living_room = livingRoom();
+    apiMock.getLiveSources.mockResolvedValue([INPUT, LIVE_SOURCE]);
+    const { sources } = mountLiveSources("living_room");
+    await flushPromises();
+    expect(sources.value).toEqual([INPUT, LIVE_SOURCE]);
+
+    apiMock.getLiveSources.mockResolvedValue([LIVE_SOURCE]);
+    apiMock.players.living_room = livingRoom({ synced_to: "den" });
+    await flushPromises();
+    expect(sources.value).toEqual([LIVE_SOURCE]);
+  });
+
+  it("lists an input the player gets", async () => {
+    apiMock.players.living_room = livingRoom({ source_list: [] });
+    apiMock.getLiveSources.mockResolvedValue([LIVE_SOURCE]);
+    const { sources } = mountLiveSources("living_room");
+    await flushPromises();
+
+    apiMock.getLiveSources.mockResolvedValue([INPUT, LIVE_SOURCE]);
+    apiMock.players.living_room = livingRoom();
+    await flushPromises();
+    expect(sources.value).toEqual([INPUT, LIVE_SOURCE]);
+  });
+
+  it("does not load again when the player only plays on", async () => {
+    apiMock.players.living_room = livingRoom();
+    apiMock.getLiveSources.mockResolvedValue([INPUT]);
+    mountLiveSources("living_room");
+    await flushPromises();
+
+    apiMock.players.living_room = livingRoom({ volume_level: 40 });
+    await flushPromises();
+    expect(apiMock.getLiveSources).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads again after a reconnect", async () => {
+    apiMock.getLiveSources.mockRejectedValue(new Error("connection lost"));
+    const { sources, failed } = mountLiveSources("living_room");
+    await flushPromises();
+    expect(failed.value).toBe(true);
+
+    apiMock.getLiveSources.mockResolvedValue([LIVE_SOURCE]);
+    apiMock.state.value = "reconnecting";
+    await flushPromises();
+    apiMock.state.value = "initialized";
+    await flushPromises();
+    expect(failed.value).toBe(false);
+    expect(sources.value).toEqual([LIVE_SOURCE]);
   });
 });
 
