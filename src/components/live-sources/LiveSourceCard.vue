@@ -5,11 +5,12 @@
     role="button"
     tabindex="0"
     class="group ma-tap relative cursor-pointer rounded-lg p-2 transition-colors hover:bg-[rgba(var(--v-theme-on-surface),0.08)] max-[500px]:p-1"
+    @click.capture="swallowClickAfterHold"
     @click="onClick"
     @keydown.enter.self="emit('start')"
     @keydown.space.self.prevent="emit('start')"
     @contextmenu.prevent="(evt: MouseEvent) => emit('menu', evt)"
-    @touchstart.passive="holdFired = false"
+    @touchstart.passive="onTouchStart"
   >
     <div
       data-card-art
@@ -64,8 +65,9 @@ import MAButton from "@/components/Button.vue";
 import { bannerBackground } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import type { PlayerSource } from "@/plugins/api/interfaces";
+import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { Play } from "@lucide/vue";
-import { ref, type Component } from "vue";
+import type { Component } from "vue";
 
 defineProps<{
   source: PlayerSource;
@@ -82,20 +84,13 @@ const emit = defineEmits<{
   menu: [evt: Event];
 }>();
 
-// set while a long-press opened the menu, so the click that follows the
-// finger-lift does not also start the source
-const holdFired = ref(false);
+const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
+  (evt: Event) => emit("menu", evt),
+);
 
-const onClick = () => {
-  if (holdFired.value) {
-    holdFired.value = false;
-    return;
-  }
-  emit("start");
-};
-
-const onHold = (evt: TouchEvent) => {
-  holdFired.value = true;
-  emit("menu", evt);
+// a long-press on the edge of the card makes the card itself the target of the
+// click, where the capture phase can not stop it
+const onClick = (evt: Event) => {
+  if (!evt.defaultPrevented) emit("start");
 };
 </script>

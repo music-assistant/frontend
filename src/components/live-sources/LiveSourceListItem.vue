@@ -5,8 +5,10 @@
     show-menu-btn
     class="group"
     :menu-button-label="`${$t('more_options')}: ${source.name}`"
-    @click="emit('start')"
-    @menu="(evt: Event) => emit('menu', evt)"
+    @click.capture="swallowClickAfterHold"
+    @touchstart.passive="onTouchStart"
+    @click="onClick"
+    @menu="onMenu"
   >
     <template #prepend>
       <div class="listitem-media-thumb shrink-0 overflow-hidden rounded">
@@ -60,6 +62,7 @@ import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { Button } from "@/components/ui/button";
 import type { PlayerSource } from "@/plugins/api/interfaces";
+import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { Play } from "@lucide/vue";
 import { useMediaQuery } from "@vueuse/core";
@@ -80,4 +83,21 @@ const emit = defineEmits<{
 
 // touch devices can't hover, so they get a play button of their own
 const isTouch = useMediaQuery("(hover: none)");
+
+const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu(
+  (evt: Event) => emit("menu", evt),
+);
+
+// the row opens its menu on a long-press, a right-click and its menu button;
+// only the long-press, a touch, is followed by a click on finger-lift
+const onMenu = (evt: Event) => {
+  if ("touches" in evt) onHold(evt);
+  else emit("menu", evt);
+};
+
+// a long-press on the edge of the row makes the row itself the target of the
+// click, where the capture phase can not stop it
+const onClick = (evt: Event) => {
+  if (!evt.defaultPrevented) emit("start");
+};
 </script>
