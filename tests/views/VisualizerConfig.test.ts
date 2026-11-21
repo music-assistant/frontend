@@ -19,7 +19,8 @@ vi.mock("@/composables/userPreferences", async () => {
   };
 });
 vi.mock("@/helpers/expert_mode", () => ({ expertModeSetting: () => true }));
-vi.mock("@/helpers/visualizer/presetLibrary", () => ({
+vi.mock("@/helpers/visualizer/presetLibrary", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   listPresetNames: vi.fn(async () => ["kept"]),
 }));
 vi.mock("@/plugins/visualizer-relay", () => ({
@@ -29,7 +30,10 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 describe("VisualizerConfig accessible names", () => {
   it("names every switch, select trigger and slider thumb", async () => {
-    const wrapper = mount(VisualizerConfig);
+    // The curator has its own tests and would start a WebGL preview here.
+    const wrapper = mount(VisualizerConfig, {
+      global: { stubs: { PresetCurator: true } },
+    });
     await flushPromises();
 
     const controls = wrapper.findAll(
