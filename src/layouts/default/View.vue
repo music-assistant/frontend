@@ -33,6 +33,7 @@
           <merge-genre-dialog />
           <delete-genre-dialog />
           <link-genre-dialog />
+          <genre-image-dialog />
           <player-group-playback-dialog />
           <setup-flow-dialog />
           <player-rename-dialog />
@@ -63,6 +64,7 @@ import AddManualLink from "@/components/AddManualLink.vue";
 import CommandCenter from "@/components/CommandCenter.vue";
 import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";
 import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
+import GenreImageDialog from "@/components/genre/GenreImageDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import MultiChannelPlayerDialog from "@/components/MultiChannelPlayerDialog.vue";
