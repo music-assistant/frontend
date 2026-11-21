@@ -174,6 +174,15 @@
             {{ $t("settings.reconfigure") }}
           </Button>
           <Button
+            v-if="canCalibrateSendspinSync"
+            data-testid="provider-sendspin-sync-calibrate"
+            variant="outline"
+            @click="openSendspinSyncCalibration"
+          >
+            <AudioLines class="size-4" />
+            {{ $t("providers.sendspin.calibration.open") }}
+          </Button>
+          <Button
             v-if="documentationUrl"
             as="a"
             data-testid="provider-documentation"
@@ -349,9 +358,11 @@ import {
   ProviderConfig,
   ProviderStatus,
   ProviderType,
+  Scope,
 } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import {
+  AudioLines,
   BookOpen,
   CircleAlert,
   LifeBuoy,
@@ -367,8 +378,11 @@ import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import { authManager } from "@/plugins/auth";
 import AmbientSoundsCustomSounds from "./AmbientSoundsCustomSounds.vue";
 import EditConfig from "./EditConfig.vue";
+
+const SENDSPIN_DOMAIN = "sendspin";
 
 // global refs
 const router = useRouter();
@@ -471,6 +485,17 @@ const documentationUrl = computed(() => {
   return getExternalLinkUrl(providerManifest.value?.documentation);
 });
 
+// Offered on the page of the Sendspin provider, whose speakers a calibration
+// evens out. Mirrors the sendspin-sync route guard, so the link is only offered
+// when following it actually reaches the calibration page: calibration takes
+// every selected speaker over and then writes each one's delay, which the
+// server refuses below admin scope.
+const canCalibrateSendspinSync = computed(
+  () =>
+    config.value?.domain === SENDSPIN_DOMAIN &&
+    authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+);
+
 // watchers
 // hidden from the form, while it still saves and guards their values; hidden
 // rather than left out, so the entries depending on them still resolve
@@ -529,6 +554,10 @@ const providersRoute = function () {
 
 const backToProviders = function () {
   goBack(router, providersRoute());
+};
+
+const openSendspinSyncCalibration = function () {
+  router.push({ name: "sendspin-sync" });
 };
 
 const resetToDefaults = function () {

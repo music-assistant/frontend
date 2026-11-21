@@ -2346,6 +2346,224 @@
             "title_reveal_artist_skipped": "Skipped, it was {0}",
             "landing_continue": "Continue"
         },
+        "sendspin": {
+            "calibration": {
+                "title": "Sendspin Sync",
+                "admin_only": "Speaker calibration is an administrator tool. Ask an administrator to run it.",
+                "open": "Even out speaker timing",
+                "subtitle": "Carry this phone from speaker to speaker. Its microphone listens for a short test sound from each one, works out how far apart their timing is, and evens them out.",
+                "toast": {
+                    "started": "Calibration started. Stand where you listen to your first speaker.",
+                    "applied": "Speaker delays updated.",
+                    "manual": "Delays worked out. Add each one to the speaker's current delay.",
+                    "released": "Your speakers have been given back.",
+                    "release_failed": "Music Assistant could not be reached, so your speakers are still held. Try again, or wait: they are given back on their own within a few minutes."
+                },
+                "manual": {
+                    "badge": "Set by hand",
+                    "row": "add {0} ms by hand",
+                    "title": "Add these amounts to the speakers' current delays",
+                    "description": "Music Assistant cannot set the delay on {0}. These are amounts to add, not values to set: a speaker already delaying by 20 ms that needs 43 ms more ends up at 63 ms. The easier route on an ESPHome speaker is static_delay_adjustable: true under the player's media_source, which lets Music Assistant work the total out and set it for you next time you calibrate. Otherwise add the amount to whatever initial_static_delay the speaker already carries. Other speakers do it their own way — some amplifiers have a delay control on the hardware."
+                },
+                "confidence": {
+                    "good": "Good",
+                    "weak": "Weak",
+                    "poor": "Poor"
+                },
+                "microphone_failed": {
+                    "refused": {
+                        "title": "This page is not allowed to use the microphone",
+                        "description": "Calibration listens to each speaker through this phone's microphone, so it cannot start without it. Allow microphone access for this site in the browser's settings, then start again. Nothing was done to your speakers."
+                    },
+                    "no_device": {
+                        "title": "No microphone could be opened",
+                        "description": "The browser allowed it, but no microphone answered. Check that another app is not holding it — a call, a voice recorder — and start again. Nothing was done to your speakers."
+                    },
+                    "other": {
+                        "title": "The microphone could not be opened",
+                        "description": "Calibration needs to hear each speaker, so it cannot start. Close anything else that may be using the microphone, reload this page and start again. Nothing was done to your speakers."
+                    }
+                },
+                "microphone_blocked": {
+                    "insecure": {
+                        "title": "Open Music Assistant over a secure connection",
+                        "description": "Browsers only offer microphone access on a secure origin, with no exception for local networks. Reach Music Assistant through the Home Assistant ingress, enable TLS in Music Assistant's own settings, or put a reverse proxy with a valid certificate in front of it."
+                    },
+                    "no_api": {
+                        "title": "This browser has no microphone API",
+                        "description": "The browser does not offer getUserMedia, so no audio can be captured. Try a current version of Chrome, Safari or Firefox."
+                    }
+                },
+                "problem": {
+                    "refused": {
+                        "title": "Music Assistant could not do that"
+                    },
+                    "unreachable": {
+                        "title": "Music Assistant could not be reached",
+                        "description": "That did not get through, which happens at the edge of the Wi-Fi. Nothing is lost: your readings are kept. Move a step closer to the router and tap again."
+                    }
+                },
+                "in_progress": {
+                    "title": "A calibration is already running",
+                    "description": "The server allows one at a time, so that one has to end before you can start another. If it was you on another device, or a run that was abandoned, you can end it here.",
+                    "stop": "End the running calibration",
+                    "confirm": "Tap again to end it and give the speakers back"
+                },
+                "pick": {
+                    "title": "Choose the speakers",
+                    "description": "Pick every speaker you want playing in time with each other, in one go. A speaker left out will not stay in time with the ones included. You then walk to each one in turn, about ten seconds a speaker, and finish back at the first.",
+                    "what_happens": "While this runs, the speakers you pick stop what they are playing and stay silent, except for the one being measured, which plays a short repeating sweep. Everything is put back when you finish, stop, or leave this page.",
+                    "legend": "Speakers to calibrate",
+                    "minimum": "Pick at least two speakers — calibration measures them against each other.",
+                    "manual": "Speakers marked \"Set by hand\" can't be adjusted from here, but they are still worth measuring — you will get an amount to enter on the speaker yourself.",
+                    "some_manual": "{0} of the {1} speakers you picked will be corrected for you. The rest come back as amounts to enter by hand.",
+                    "all_manual": "None of the speakers you picked can be corrected from here. You will get an amount for each to enter by hand, and nothing will be changed for you.",
+                    "silent": "Muted",
+                    "silent_hint": "A speaker marked \"Muted\" is muted or turned all the way down. Turn it up to its normal listening volume, then come back to this page to pick it.",
+                    "checklist": "Before you start: quiet the room, turn off anything else that is playing, and leave each speaker at its normal listening volume. Stay on this page for the whole walk and do not lock the phone — switching apps ends the run.",
+                    "microphone": "Your browser will ask to use the microphone when you start.",
+                    "busy": "Playing",
+                    "start": "Start calibration",
+                    "start_takeover": "Take over and start",
+                    "takeover": {
+                        "title": "These speakers are playing something",
+                        "description": "Calibration will interrupt {0}, and give it back when you are done."
+                    },
+                    "none": {
+                        "title": "No speakers can be calibrated",
+                        "description": "Calibration works on speakers that play through Sendspin, Music Assistant's own synchronized streaming — ESPHome speakers, the web and mobile apps, and speakers with their Sendspin output switched on. At least two have to be switched on and reachable."
+                    }
+                },
+                "walk": {
+                    "measure": "Measure",
+                    "again": "Measure again",
+                    "not_measured": "Not measured yet",
+                    "found": "Heard {0} of {1} test sounds",
+                    "again_hint": "Tap to measure again",
+                    "listening_left": "Listening — keep the phone still. {0} seconds left; the phone buzzes when it is done.",
+                    "closed": "The delays are in place. Check the result or give the speakers back below.",
+                    "stop": "Stop and give the speakers back",
+                    "clear": "Start the walk over",
+                    "how": "Stand where you would listen to the speaker and face it, then tap it and keep the phone still for about ten seconds. Where you stand is part of the reading — every 34 cm is about a millisecond — so use the same spot if you measure that speaker again.",
+                    "listening": "Listening — keep the phone still and the screen on.",
+                    "retry": {
+                        "weak": "{0} was hard to hear",
+                        "poor": "{0} could barely be heard",
+                        "advice": "Turn it up, move closer, or quiet the room, then measure it again from where you are. The new reading replaces this one.",
+                        "action": "Measure {0} again"
+                    },
+                    "step": {
+                        "start": {
+                            "title": "Stand where you listen to the speaker you want to start at",
+                            "description": "Every other speaker is measured against this one, and the walk sends you back to it at the end — so start at one you can easily come back to."
+                        },
+                        "next": {
+                            "title": "Stand where you listen to a speaker you have not measured yet",
+                            "description": "Measured {0} of {1}. Take them in whatever order suits the room."
+                        },
+                        "repeat": {
+                            "title": "Go back to where you measured {0}",
+                            "description": "Measure {0} once more, from the same spot. Measuring one speaker at the start and the end of the walk lets the app correct for this phone's own timing drifting while you walked."
+                        },
+                        "check": {
+                            "title": "Measure {0} again to check the walk",
+                            "description": "Optional. These readings are already good enough to apply. One more reading of {0} would double-check them; stop here if you would rather."
+                        },
+                        "done": {
+                            "title": "Every speaker measured",
+                            "description": "The results are below. Measure any speaker again if you want to."
+                        }
+                    }
+                },
+                "results": {
+                    "measured_heading": {
+                        "title": "What the walk measured",
+                        "description": "The delay each speaker needs so they all play at the same moment. The earliest speaker stays as it is and the others are brought into line with it."
+                    },
+                    "applied_heading": {
+                        "title": "The delays are in place",
+                        "description": "Each speaker Music Assistant can adjust now has its new delay. Give the speakers back, or walk them once more to check the result."
+                    },
+                    "verify_heading": {
+                        "title": "After the correction",
+                        "description": "How far apart the speakers are now. Readings within a millisecond or two of each other mean the correction landed."
+                    },
+                    "ready": "Ready to apply",
+                    "not_ready": "Not ready to apply",
+                    "planned_delay": "will be set to {0} ms",
+                    "undo": "To undo this, set each speaker's Sendspin static delay back to the value shown as \"was\" in its player settings.",
+                    "technical": "Technical details",
+                    "done": "Done — give the speakers back",
+                    "verify_action": "Check the result",
+                    "milliseconds": "{0} ms",
+                    "unheard": "not heard",
+                    "applied_delay": "set to {0} ms (was {1} ms)",
+                    "clock": "This phone's clock",
+                    "ppm": "{0} ppm off the server",
+                    "scatter": "Reading scatter",
+                    "scatter_row": "{0}: {1} ms",
+                    "arrivals": "Chirps used",
+                    "used": "{0} used, {1} discarded",
+                    "gaps": "Recording gaps",
+                    "lost": "{0} dropouts, {1}% of a reading",
+                    "apply": "Apply these delays",
+                    "finish": "Stop and give the speakers back",
+                    "check": {
+                        "lossy": {
+                            "title": "This phone's recording had gaps in it",
+                            "description": "{0}% of one reading never reached the browser, more than the {1}% its chirps can be read through. This is about the recording and nothing else — the speakers are fine, and so is the way you walked. There is no need to hurry between speakers; the time spent walking costs the measurement nothing. A phone drops audio when it is busy elsewhere, so close other apps, leave the screen on, keep this tab in front of you, then use \"Start the walk over\" above."
+                        },
+                        "unindexable": {
+                            "title": "These speakers are too far apart to measure together",
+                            "description": "Their delays span {0} ms, and a speaker can only be placed while it stays inside {1} ms of the others — past that, a late arrival is indistinguishable from an early one on the following chirp, and these readings would rest on the order you walked in rather than on the room. That is the edge of what the measurement can say, and walking differently will not move it. Calibrate a group whose delays sit closer together: leaving out the speaker you know to be slowest, usually one on Bluetooth, is normally enough."
+                        },
+                        "irreconcilable": {
+                            "title": "These readings could not be reconciled",
+                            "description": "The chirps only fit if this phone's clock were {0} ppm off the server, and no clock is — {1} ppm is already far outside anything real. Either this phone's recording is not what it appears to be, or one speaker sits further behind the others than the chirps can place; nothing measured here can be trusted either way. Try again without the speaker you know to be slowest, and with another phone or browser if that changes nothing."
+                        },
+                    "unmeasured": {
+                        "title": "One speaker was never heard",
+                        "description": "Nothing was picked up from {0}. Turn it up or stand closer and measure it again: the delays are worked out relative to each other, so leaving one out would move every other speaker around it and leave that one where it was."
+                    },
+                    "short_bracket": {
+                        "title": "The check was too quick to count",
+                        "description": "{0} was measured twice, but the two readings were too close together in time to pin down this phone's clock drift. Measure it again now, at the end of the walk, so the two readings sit at opposite ends of the run."
+                    },
+                        "unbracketed": {
+                            "title": "Not checked yet",
+                            "description": "Measure {0} a second time. Until one speaker has been measured at both ends of the walk, this phone's clock drift rests on the few seconds a single reading spans, and the numbers above cannot be separated from it."
+                        },
+                        "scattered": {
+                            "title": "The readings do not agree with each other",
+                            "description": "The individual chirps scatter by {0} ms, more than the {1} ms a clean recording stays inside. The phone probably moved while it was listening, or something interfered with the audio. Use \"Start the walk over\" above and keep the phone still while it listens."
+                        },
+                        "pinned": {
+                            "title": "Good enough to apply",
+                            "description": "The readings line up tightly, and measuring one speaker {0} minutes apart accounted for this phone's own timing drift. Measuring a second speaker twice would double-check that, and is optional."
+                        },
+                        "checked": {
+                            "title": "This run checks out",
+                            "description": "There were enough repeated readings to test the clock drift rather than just set it, and they agree to within {0} ms. These numbers can be trusted."
+                        },
+                        "disagrees": {
+                            "title": "This run does not check out",
+                            "description": "The repeated readings disagree by {0} ms, more than the {1} ms it takes to trust the rest. Something moved, or the audio was interrupted — use \"Start the walk over\" above rather than applying this."
+                        }
+                    }
+                },
+                "void": {
+                    "restart": "Start again",
+                    "suspended": {
+                        "title": "This run has to be thrown away",
+                        "description": "The phone stopped recording part way through — usually the screen locking, or another app taking the microphone. Every reading is timed against one continuous recording, and there is no way to stitch the two halves back together, so the run cannot be salvaged. Your speakers have been given back and nothing was changed on them. Keep the screen on, stay on this page, and start again."
+                    },
+                    "expired": {
+                        "title": "This calibration has ended",
+                        "description": "Music Assistant gave the speakers back, because it stopped hearing from this phone for a few minutes or because the calibration was ended from another device. Any delays you had already applied are kept; nothing else was changed. Start again when you are ready to walk."
+                    }
+                }
+            }
+        },
         "ai_radio": {
             "title": "AI Radio",
             "context": {

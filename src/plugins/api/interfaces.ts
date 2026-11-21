@@ -2613,3 +2613,41 @@ export type AIRadioEventName =
   | "stations_updated"
   | "sections_updated"
   | "queue_dj_updated";
+
+// Sendspin Sync interfaces
+
+export interface CalibrationPlayer {
+  player_id: string;
+  name: string;
+  // whether the speaker is busy with the user's own content, so a client can warn
+  // before a session takes it over
+  busy: boolean;
+  // whether the server can write a delay to this speaker. A speaker that cannot
+  // take one is still worth measuring — the number is set on the device by hand
+  adjustable: boolean;
+  // whether the speaker is muted or turned all the way down, which the server
+  // refuses to start a session over
+  silent: boolean;
+}
+
+export interface CalibrationApplyResult {
+  // the absolute delay the server wrote to each speaker, replacing what it held
+  applied: Record<string, number>;
+  // the delay each of those speakers carried before the session, which is what
+  // to set it back to by hand to undo the correction
+  previous: Record<string, number>;
+  // for each speaker the server could not write to, the delay to ADD to whatever
+  // the device already applies — not a value to set. The server does not read the
+  // device's own delay, because the figure it can read is a configured default the
+  // device may not be carrying, and trusting it would move the reference every
+  // other speaker is normalised against
+  manual: Record<string, number>;
+}
+
+export interface CalibrationSessionState {
+  anchor_player_id: string;
+  queue_id: string;
+  player_ids: string[];
+  soloed_player_id: string | null;
+  streaming: boolean;
+}
