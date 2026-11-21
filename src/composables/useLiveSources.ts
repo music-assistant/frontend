@@ -29,6 +29,7 @@ const REFRESH_EVENTS = [
 ];
 
 let tracking = false;
+let latestAvailabilityRequest = 0;
 
 /**
  * Keep `store.hasLiveSources` current from now on, for the menu item of the
@@ -166,14 +167,17 @@ export function openLiveSourceMenu(
 }
 
 async function refreshHasLiveSources(): Promise<void> {
+  const request = ++latestAvailabilityRequest;
   try {
     const sources = await api.getLiveSources(undefined, {
       suppressGlobalError: true,
     });
-    store.hasLiveSources = sources.length > 0;
+    if (request === latestAvailabilityRequest) {
+      store.hasLiveSources = sources.length > 0;
+    }
   } catch {
-    // a server without the list has no live sources to start
-    store.hasLiveSources = false;
+    // a failed check keeps the last answer, so a server without the list,
+    // which is never answered, has none
   }
 }
 

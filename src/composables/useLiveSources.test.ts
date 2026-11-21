@@ -213,13 +213,37 @@ describe("trackLiveSources", () => {
   });
 
   it("leaves it out for a server without the list", async () => {
-    storeMock.hasLiveSources = true;
     apiMock.getLiveSources.mockRejectedValue(
       new ApiCommandError("Invalid command", 1),
     );
     (await freshTracker())();
     await flushPromises();
     expect(storeMock.hasLiveSources).toBe(false);
+  });
+
+  it("keeps the menu item when a check fails", async () => {
+    apiMock.getLiveSources.mockResolvedValue([LIVE_SOURCE]);
+    const track = await freshTracker();
+    track();
+    await flushPromises();
+    apiMock.getLiveSources.mockRejectedValue(new Error("connection lost"));
+    track();
+    await flushPromises();
+    expect(storeMock.hasLiveSources).toBe(true);
+  });
+
+  it("keeps the answer of the latest check", async () => {
+    let answerFirst: (sources: PlayerSource[]) => void = () => {};
+    apiMock.getLiveSources
+      .mockReturnValueOnce(new Promise((resolve) => (answerFirst = resolve)))
+      .mockResolvedValueOnce([LIVE_SOURCE]);
+    const track = await freshTracker();
+    track();
+    track();
+    await flushPromises();
+    answerFirst([]);
+    await flushPromises();
+    expect(storeMock.hasLiveSources).toBe(true);
   });
 
   it("refreshes on every call, and on players and providers that come and go", async () => {
