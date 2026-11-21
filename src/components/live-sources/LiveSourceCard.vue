@@ -4,7 +4,7 @@
     v-hold="onHold"
     role="button"
     tabindex="0"
-    class="group ma-tap relative cursor-pointer rounded-lg p-2 transition-colors hover:bg-[rgba(var(--v-theme-on-surface),0.08)] max-[500px]:p-1"
+    class="group ma-tap relative cursor-pointer rounded-lg p-2 transition-colors hover:bg-foreground/[0.08] max-[500px]:p-1"
     @click.capture="swallowClickAfterHold"
     @click="onClick"
     @keydown.enter.self="emit('start')"
@@ -36,7 +36,7 @@
         {{ source.name }}
       </div>
       <div
-        class="mt-0.5 min-h-4 truncate text-xs text-[rgba(var(--v-theme-on-surface),0.6)] max-[500px]:mt-0"
+        class="mt-0.5 min-h-4 truncate text-xs text-muted-foreground max-[500px]:mt-0"
       >
         {{ ownerName }}
       </div>

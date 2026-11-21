@@ -13,9 +13,6 @@ import {
   vi,
 } from "vitest";
 import { markRaw, type Component } from "vue";
-import { createVuetify } from "vuetify";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
 import { playerSource } from "../fixtures/playerSource";
 
 vi.mock("@/plugins/breakpoint", () => ({ getBreakpointValue: () => false }));
@@ -54,7 +51,7 @@ function mountItem(item: Component, props: Record<string, unknown> = {}) {
       ...props,
     },
     global: {
-      plugins: [TouchEvents, createVuetify({ components, directives })],
+      plugins: [TouchEvents],
       mocks: { $t: (key: string) => key },
       stubs: { NowPlayingBadge: true },
     },
@@ -66,8 +63,8 @@ describe.each([
     kind: "list row",
     item: LiveSourceListItem,
     props: {},
-    edge: ".v-list-item",
-    body: ".v-list-item-title",
+    edge: "[data-slot=item]",
+    body: "[data-slot=item-title]",
     playButton: "button[aria-label^=play]",
   },
   {
@@ -108,6 +105,27 @@ describe.each([
       expect(wrapper.emitted("start")).toBeUndefined();
     },
   );
+
+  it.each(["Enter", " "])("starts the source with %j", (key) => {
+    const wrapper = mountItem(item, props);
+    wrapper.find(edge).trigger("keydown", { key });
+    expect(wrapper.emitted("start")).toHaveLength(1);
+  });
+
+  it("opens the menu on a right-click", () => {
+    const wrapper = mountItem(item, props);
+    wrapper.find(body).trigger("contextmenu");
+    expect(wrapper.emitted("menu")).toHaveLength(1);
+    expect(wrapper.emitted("start")).toBeUndefined();
+  });
+
+  it("opens the menu with its menu button, labelled with the source", () => {
+    const wrapper = mountItem(item, props);
+    const button = wrapper.find("button[aria-label='more_options: Line-in']");
+    button.trigger("click");
+    expect(wrapper.emitted("menu")).toHaveLength(1);
+    expect(wrapper.emitted("start")).toBeUndefined();
+  });
 
   it("starts the source on the next tap after a long-press", () => {
     const wrapper = mountItem(item, props);
