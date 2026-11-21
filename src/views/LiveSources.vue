@@ -23,6 +23,7 @@
           :options="[]"
           sort-by=""
           :view-mode="viewMode"
+          :grid-controls="gridControls"
           :compact="store.mobileLayout"
           @view-mode="selectViewMode"
         />
@@ -30,7 +31,10 @@
     </Toolbar>
     <Separator />
 
-    <div class="p-2.5">
+    <div
+      class="p-2.5"
+      :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
+    >
       <Empty v-if="!player" class="border-none">
         <EmptyHeader>
           <EmptyMedia variant="icon">
@@ -52,7 +56,7 @@
         <div v-if="viewMode === 'list'">
           <ListViewSkeleton v-for="n in SKELETON_COUNT" :key="n" />
         </div>
-        <div v-else :class="GRID_CLASS">
+        <div v-else :class="GRID_CLASS" :style="gridStyle">
           <PanelViewSkeleton v-for="n in SKELETON_COUNT" :key="n" />
         </div>
       </template>
@@ -93,11 +97,12 @@
         />
       </div>
 
-      <div v-else :class="GRID_CLASS">
+      <div v-else ref="gridEl" :class="GRID_CLASS" :style="gridStyle">
         <LiveSourceCard
           v-for="source in sources"
           :key="source.id"
           v-bind="rowProps(source)"
+          :show-actions="showActions"
           @start="start(source)"
           @menu="(evt: Event) => openMenu(source, evt)"
         />
@@ -109,7 +114,6 @@
 <script setup lang="ts">
 import LiveSourceCard from "@/components/live-sources/LiveSourceCard.vue";
 import LiveSourceListItem from "@/components/live-sources/LiveSourceListItem.vue";
-import type { ListingViewMode } from "@/components/listing-toolbar/constants";
 import ListingSortMenu from "@/components/listing-toolbar/ListingSortMenu.vue";
 import ListViewSkeleton from "@/components/skeletons/ListViewSkeleton.vue";
 import PanelViewSkeleton from "@/components/skeletons/PanelViewSkeleton.vue";
@@ -129,7 +133,7 @@ import {
   startLiveSource,
   useLiveSources,
 } from "@/composables/useLiveSources";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { useListingView } from "@/composables/useListingView";
 import {
   getLiveSourceIcon,
   getLiveSourceOwnerName,
@@ -146,10 +150,9 @@ defineOptions({
   name: "LiveSources",
 });
 
-// the view mode is kept like that of the other listings
-const PREFERENCE_PATH = "livesources";
 const SKELETON_COUNT = 4;
-const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))]";
+// the gaps and edges of the panel view of the other listings
+const GRID_CLASS = "-m-1 grid gap-4";
 
 const player = computed(() => store.activePlayer);
 const playerName = computed(() =>
@@ -165,18 +168,17 @@ const { sources, loading, failed, reload } = useLiveSources(
   () => player.value?.player_id,
 );
 
-const { getItemsListingPreferences, setItemsListingPreference } =
-  useUserPreferences();
-const preferences = getItemsListingPreferences(
-  PREFERENCE_PATH,
-  PREFERENCE_PATH,
-);
-const viewMode = computed<ListingViewMode>(() =>
-  preferences.value.viewMode === "panel" ? "panel" : "list",
-);
-const selectViewMode = (mode: ListingViewMode) => {
-  setItemsListingPreference(PREFERENCE_PATH, PREFERENCE_PATH, "viewMode", mode);
-};
+const {
+  viewMode,
+  selectViewMode,
+  columnCount,
+  gridControls,
+  showActions,
+  gridEl,
+} = useListingView("livesources");
+const gridStyle = computed(() => ({
+  gridTemplateColumns: `repeat(${columnCount.value}, minmax(0, 1fr))`,
+}));
 
 const rowProps = (source: PlayerSource) => ({
   source,

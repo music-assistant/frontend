@@ -4,7 +4,7 @@
     v-hold="onHold"
     role="button"
     tabindex="0"
-    class="ma-tap relative cursor-pointer rounded-lg p-2 transition-colors hover:bg-[rgba(var(--v-theme-on-surface),0.08)] max-[500px]:p-1"
+    class="group ma-tap relative cursor-pointer rounded-lg p-2 transition-colors hover:bg-[rgba(var(--v-theme-on-surface),0.08)] max-[500px]:p-1"
     @click="onClick"
     @keydown.enter.self="emit('start')"
     @keydown.space.self.prevent="emit('start')"
@@ -12,7 +12,8 @@
     @touchstart.passive="holdFired = false"
   >
     <div
-      class="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+      data-card-art
+      class="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.25),inset_0_0_0_1px_rgba(255,255,255,0.04)]"
       :style="{ background: bannerBackground }"
     >
       <component
@@ -26,40 +27,44 @@
         icon-style="position: absolute; right: 6px; bottom: 6px; z-index: 2"
       />
     </div>
-    <div class="mt-2.5 flex items-start gap-1 max-[500px]:mt-1">
-      <div class="min-w-0 flex-1">
-        <div
-          class="truncate text-sm font-semibold"
-          :class="{ 'text-primary': isPlaying }"
-        >
-          {{ source.name }}
-        </div>
-        <div
-          v-if="ownerName"
-          class="mt-0.5 truncate text-xs text-muted-foreground"
-        >
-          {{ ownerName }}
-        </div>
+    <div class="relative mt-2.5 max-[500px]:mt-1">
+      <div
+        class="truncate text-sm font-semibold"
+        :class="{ 'text-primary': isPlaying }"
+      >
+        {{ source.name }}
       </div>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        class="-me-1 shrink-0"
+      <div
+        class="mt-0.5 min-h-4 truncate text-xs text-[rgba(var(--v-theme-on-surface),0.6)] max-[500px]:mt-0"
+      >
+        {{ ownerName }}
+      </div>
+      <!-- touch screens start a source with a tap on the card -->
+      <span
+        class="pointer-events-none absolute right-0 bottom-0.5 z-[4] inline-flex size-[38px] translate-y-2 items-center justify-center rounded-full bg-primary text-white opacity-0 shadow-[0_6px_14px_rgba(0,0,0,0.35)] transition-[opacity,transform] duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:hidden"
+        @click.stop="emit('start')"
+      >
+        <Play :size="18" fill="currentColor" :stroke-width="0" />
+      </span>
+    </div>
+    <div v-if="showActions" class="mt-2 flex h-8 items-center" @click.stop>
+      <MAButton
+        variant="list"
+        icon="mdi-dots-vertical"
+        class="ms-auto"
         :aria-label="`${$t('more_options')}: ${source.name}`"
         @click.stop="(evt: MouseEvent) => emit('menu', evt)"
-      >
-        <EllipsisVertical />
-      </Button>
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import MAButton from "@/components/Button.vue";
 import { bannerBackground } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
-import { Button } from "@/components/ui/button";
 import type { PlayerSource } from "@/plugins/api/interfaces";
-import { EllipsisVertical } from "@lucide/vue";
+import { Play } from "@lucide/vue";
 import { ref, type Component } from "vue";
 
 defineProps<{
@@ -68,6 +73,8 @@ defineProps<{
   // the player it belongs to, shown below its name
   ownerName?: string;
   isPlaying: boolean;
+  // the action row below the card, as the cards of the other listings have
+  showActions: boolean;
 }>();
 
 const emit = defineEmits<{
