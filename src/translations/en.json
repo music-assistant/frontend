@@ -135,6 +135,14 @@
     "queue_options": "Queue options",
     "queue_previous_items": "Played items",
     "radios": "Radio",
+    "live_sources": "Live sources",
+    "live_sources_page": {
+        "plays_on": "Plays on {0}",
+        "no_player": "Select a player to see what you can play on it live.",
+        "select_player": "Select a player",
+        "empty": "Nothing to play live",
+        "empty_description": "{0} has no live sources or inputs."
+    },
     "read_more": "read more",
     "refresh_item": "Refresh item",
     "remove_library": "Remove from library",

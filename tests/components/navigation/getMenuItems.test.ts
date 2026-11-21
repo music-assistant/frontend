@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MicVocal } from "@lucide/vue";
 
-const { storeMock, mockSetUserPreference } = vi.hoisted(() => ({
+const { apiMock, storeMock, mockSetUserPreference } = vi.hoisted(() => ({
+  apiMock: { players: {} as Record<string, unknown> },
   storeMock: {
     currentUser: null as { preferences?: Record<string, unknown> } | null,
     enabledPlugins: new Set<string>(),
     libraryAudiobooksCount: 1,
     libraryPodcastsCount: 1,
+    hasLiveSources: false,
   },
   mockSetUserPreference: vi.fn(),
 }));
+
+vi.mock("@/plugins/api", () => ({ api: apiMock }));
 
 vi.mock("@/plugins/store", () => ({
   store: storeMock,
@@ -79,6 +83,8 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     storeMock.enabledPlugins = new Set<string>();
     storeMock.libraryAudiobooksCount = 1;
     storeMock.libraryPodcastsCount = 1;
+    storeMock.hasLiveSources = false;
+    apiMock.players = {};
     storeMock.currentUser = { preferences: {} };
     vi.mocked(authManager.hasScope).mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.user),
@@ -92,6 +98,7 @@ describe("getMenuItems (sidebar.menu preference)", () => {
       "ai_radio",
       "milkdrop_visualizer",
     ]);
+    storeMock.hasLiveSources = true;
 
     expect(getIds()).toEqual(DEFAULT_MENU_ITEMS);
     expect(getMenuItems().filter((item) => item.hidden)).toEqual([]);
@@ -173,6 +180,44 @@ describe("getMenuItems (sidebar.menu preference)", () => {
     const order = resolveMenuConfig().order;
     // music_quiz follows its default predecessor (party), wherever that is
     expect(order.indexOf("music_quiz")).toBe(order.indexOf("party") + 1);
+  });
+
+  it("leaves out Live sources while there is nothing to play live", () => {
+    apiMock.players = { den: { synced_to: null, source_list: [] } };
+
+    expect(getIds()).not.toContain("live_sources");
+  });
+
+  it("offers Live sources below Radio for a live source", () => {
+    storeMock.hasLiveSources = true;
+
+    const ids = getIds();
+    expect(ids.indexOf("live_sources")).toBe(ids.indexOf("radios") + 1);
+  });
+
+  it("offers Live sources for a player with an input to switch to", () => {
+    apiMock.players = {
+      den: {
+        synced_to: null,
+        source_list: [{ id: "tv", passive: false, is_input: true }],
+      },
+    };
+
+    expect(getIds()).toContain("live_sources");
+  });
+
+  it("slots Live sources below Radio in an order saved before it", () => {
+    storeMock.hasLiveSources = true;
+    setPreferences({
+      [MENU_PREFERENCE_KEY]: {
+        // saved before Live sources existed; Radio was moved to the top
+        order: DEFAULT_MENU_ITEMS.filter((id) => id !== "live_sources").sort(
+          (a, b) => (a === "radios" ? -1 : b === "radios" ? 1 : 0),
+        ),
+      },
+    });
+
+    expect(getIds().slice(0, 2)).toEqual(["radios", "live_sources"]);
   });
 
   it("drops stale ids from hidden and order", () => {

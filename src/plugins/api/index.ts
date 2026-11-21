@@ -47,6 +47,7 @@ import {
   type Player,
   type PlayerOptionValueType,
   type PlayerQueue,
+  type PlayerSource,
   type Playlist,
   type PlaylistAccess,
   type ProviderInstance,
@@ -2242,6 +2243,23 @@ export class MusicAssistantApi {
     users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
     return this.statisticsApi.getDecadeDistribution(period, limit, users);
+  }
+
+  /**
+   * The live sources the user can start, each named with the player it belongs to.
+   *
+   * @param playerId - The player to start them on, which adds the inputs it can
+   *   switch to; omit for the live sources of all players.
+   */
+  public getLiveSources(
+    playerId?: string,
+    options?: CommandOptions,
+  ): Promise<PlayerSource[]> {
+    return this.sendCommand(
+      "music/live_sources",
+      { player_id: playerId },
+      options,
+    );
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {

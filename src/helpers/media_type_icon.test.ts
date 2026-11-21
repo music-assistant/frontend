@@ -2,6 +2,7 @@ import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 import {
+  AudioLines,
   BookAudio,
   Disc3,
   Folder,
@@ -22,6 +23,7 @@ describe("getMediaTypeIcon", () => {
     [MediaType.AUDIOBOOK, BookAudio],
     [MediaType.PODCAST, Podcast],
     [MediaType.RADIO, Radio],
+    [MediaType.AUDIO_SOURCE, AudioLines],
     [MediaType.GENRE, GenreIcon],
     [MediaType.FOLDER, Folder],
   ])("gives %s the icon of its menu entry", (mediaType, icon) => {

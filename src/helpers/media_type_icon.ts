@@ -2,6 +2,7 @@ import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { MediaType } from "@/plugins/api/interfaces";
 import {
+  AudioLines,
   BookAudio,
   Disc3,
   Folder,
@@ -23,6 +24,7 @@ const MEDIA_TYPE_ICONS: Partial<Record<MediaType, Component>> = {
   [MediaType.PODCAST]: Podcast,
   [MediaType.PODCAST_EPISODE]: Podcast,
   [MediaType.RADIO]: Radio,
+  [MediaType.AUDIO_SOURCE]: AudioLines,
   [MediaType.GENRE]: GenreIcon,
   [MediaType.FOLDER]: Folder,
 };
