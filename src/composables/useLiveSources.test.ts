@@ -92,13 +92,19 @@ describe("startLiveSource", () => {
     expect(toast.error).toHaveBeenCalledWith("play_failed");
   });
 
-  it("leaves a reason of the server to the toast of the api", async () => {
-    apiMock.playerCommandGroupSelectSource.mockRejectedValue(
-      new ApiCommandError("failed", 1, "Spotify is not signed in"),
-    );
-    await startLiveSource("living_room", LIVE_SOURCE);
-    expect(toast.error).not.toHaveBeenCalled();
-  });
+  it.each([
+    ["with", "Spotify is not signed in"],
+    ["without", undefined],
+  ])(
+    "leaves an error of the server %s a reason to the toast of the api",
+    async (_with, details) => {
+      apiMock.playerCommandGroupSelectSource.mockRejectedValue(
+        new ApiCommandError("failed", 1, details),
+      );
+      await startLiveSource("living_room", LIVE_SOURCE);
+      expect(toast.error).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("getLiveSourceMenuItems", () => {

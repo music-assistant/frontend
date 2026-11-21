@@ -107,10 +107,8 @@ export async function startLiveSource(
   try {
     await api.playerCommandGroupSelectSource(playerId, source.id);
   } catch (err) {
-    // a server error with a reason already got its own toast from the api
-    if (!(err instanceof ApiCommandError && err.details)) {
-      toast.error($t("play_failed"));
-    }
+    // the api already told about an error of the server
+    if (!(err instanceof ApiCommandError)) toast.error($t("play_failed"));
   }
 }
 
