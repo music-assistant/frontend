@@ -49,24 +49,26 @@
       </span>
     </div>
     <div v-if="showActions" class="mt-2 flex h-8 items-center" @click.stop>
-      <MAButton
-        variant="list"
-        icon="mdi-dots-vertical"
-        class="ms-auto"
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="ms-auto rounded-full text-muted-foreground"
         :aria-label="`${$t('more_options')}: ${source.name}`"
         @click.stop="(evt: MouseEvent) => emit('menu', evt)"
-      />
+      >
+        <EllipsisVertical class="size-5" />
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import MAButton from "@/components/Button.vue";
 import { bannerBackground } from "@/components/discover/editorialArtwork";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
+import { Button } from "@/components/ui/button";
 import type { PlayerSource } from "@/plugins/api/interfaces";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
-import { Play } from "@lucide/vue";
+import { EllipsisVertical, Play } from "@lucide/vue";
 import type { Component } from "vue";
 
 defineProps<{
