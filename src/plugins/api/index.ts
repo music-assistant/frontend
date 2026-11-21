@@ -2246,7 +2246,7 @@ export class MusicAssistantApi {
   }
 
   /**
-   * The live sources the user can start, each named with the player it belongs to.
+   * The live sources the user can start, each with the player it belongs to.
    *
    * @param playerId - The player to start them on, which adds the inputs it can
    *   switch to; omit for the live sources of all players.
