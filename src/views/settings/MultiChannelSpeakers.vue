@@ -11,11 +11,13 @@
         <span class="flex min-w-0 flex-1 items-center gap-3">
           <span
             data-testid="multi-channel-speaker-channel"
-            class="w-12 shrink-0 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            class="w-20 shrink-0 truncate text-xs font-semibold tracking-wider text-muted-foreground uppercase"
           >
             {{ getChannelTitle(speaker) }}
           </span>
-          <span class="truncate">{{ speaker.name }}</span>
+          <span data-testid="multi-channel-speaker-name" class="truncate">
+            {{ speaker.name }}
+          </span>
           <span
             data-testid="multi-channel-speaker-state"
             class="ml-auto flex shrink-0 items-center gap-1.5 text-xs font-normal text-muted-foreground"

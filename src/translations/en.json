@@ -111,7 +111,9 @@
         "unknown": "Unknown"
     },
     "channel_layout": {
-        "stereo": "Stereo pair"
+        "stereo": "Stereo pair",
+        "speaker_with_subwoofer": "Speaker with subwoofer",
+        "stereo_with_subwoofer": "Stereo pair with subwoofer"
     },
     "players": "Players",
     "players_need_setup": "A new device was discovered that needs to be set up | {count} new devices were discovered that need to be set up",
@@ -1078,10 +1080,13 @@
         "multi_channel": {
             "make": "Make multi-channel player…",
             "make_title": "Make multi-channel player",
-            "make_description": "{0} and another speaker play as one player, each on its own channel.",
+            "make_description": "{0} and the speakers you pick play as one player, each on its own channel.",
+            "layout": "Layout",
             "channels": {
                 "front_left": "Left",
-                "front_right": "Right"
+                "front_right": "Right",
+                "front_center": "Center",
+                "lfe": "Subwoofer"
             },
             "this_speaker": "{0} (this speaker)",
             "channel": "Channel",
@@ -1098,7 +1103,16 @@
             "take_apart_title": "Take {0} apart?",
             "take_apart_confirmation": "{0} disappears, with its settings. Its speakers come back as players of their own, with default settings.",
             "take_apart_confirm": "Take apart",
-            "taken_apart": "{0} taken apart"
+            "taken_apart": "{0} taken apart",
+            "add_subwoofer": "Add subwoofer…",
+            "add_subwoofer_title": "Add subwoofer",
+            "add_subwoofer_description": "Pick the speaker that plays the bass of {0}.",
+            "add_subwoofer_note": "The {0} output of the subwoofer moves to {1}. A player without another output disappears, with its settings.",
+            "subwoofer_added": "Subwoofer added to {0}",
+            "remove_subwoofer": "Remove subwoofer",
+            "remove_subwoofer_title": "Remove the subwoofer from {0}?",
+            "remove_subwoofer_confirmation": "{0} comes back as a player of its own, with default settings.",
+            "subwoofer_removed": "Subwoofer removed from {0}"
         },
         "hide_unavailable_players": "Hide unavailable players",
         "remove_unavailable_players": "Remove unavailable players",

@@ -159,7 +159,7 @@ function rows(wrapper: VueWrapper): string[][] {
     .findAll('[data-testid="multi-channel-speaker-row"]')
     .map((row) => [
       row.get('[data-testid="multi-channel-speaker-channel"]').text(),
-      row.get(".truncate").text(),
+      row.get('[data-testid="multi-channel-speaker-name"]').text(),
       row.get('[data-testid="multi-channel-speaker-state"]').text(),
     ]);
 }

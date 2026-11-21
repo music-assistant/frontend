@@ -111,6 +111,9 @@
             <!-- the protocol of a multi-channel player shows a row per speaker -->
             <MultiChannelSpeakers
               v-if="speakerEntriesByPanel[panel].speakers.length > 0"
+              :class="{
+                'mt-4': speakerEntriesByPanel[panel].others.length > 0,
+              }"
               :speakers="speakerEntriesByPanel[panel].speakers"
               :show-password-values="showPasswordValues"
               :is-disabled="(entry) => isProtocolEntryDisabled(panel, entry)"

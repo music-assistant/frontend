@@ -12,6 +12,7 @@ import { effectScope, ref, type EffectScope } from "vue";
 const { apiMock } = vi.hoisted(() => ({
   apiMock: {
     getMultiChannelCandidates: vi.fn(),
+    getMultiChannelLayouts: vi.fn(),
     getProvider: vi.fn(),
   },
 }));
@@ -35,19 +36,25 @@ describe("useMultiChannelCandidates", () => {
           : [],
     }));
     apiMock.getMultiChannelCandidates.mockResolvedValue(["studio-left"]);
+    apiMock.getMultiChannelLayouts.mockResolvedValue(LAYOUTS);
   });
 
   afterEach(() => scope.stop());
 
-  it("fetches the list of each provider of the player that combines speakers, quietly", async () => {
-    const candidates = useCandidates(speaker());
+  it("fetches the lists of each provider of the player that combines speakers, quietly", async () => {
+    const { candidates, layouts } = useCandidates(speaker());
     await flushPromises();
 
     expect(apiMock.getMultiChannelCandidates).toHaveBeenCalledOnce();
     expect(apiMock.getMultiChannelCandidates).toHaveBeenCalledWith("sendspin", {
       suppressGlobalError: true,
     });
+    expect(apiMock.getMultiChannelLayouts).toHaveBeenCalledOnce();
+    expect(apiMock.getMultiChannelLayouts).toHaveBeenCalledWith("sendspin", {
+      suppressGlobalError: true,
+    });
     expect(candidates.value).toEqual({ sendspin: ["studio-left"] });
+    expect(layouts.value).toEqual({ sendspin: LAYOUTS });
   });
 
   it("fetches again when the player comes back, not when anything else changes", async () => {
@@ -69,10 +76,23 @@ describe("useMultiChannelCandidates", () => {
       new Error("Unknown command"),
     );
 
-    const candidates = useCandidates(speaker());
+    const { candidates, layouts } = useCandidates(speaker());
     await flushPromises();
 
     expect(candidates.value).toEqual({ sendspin: [] });
+    expect(layouts.value).toEqual({ sendspin: LAYOUTS });
+  });
+
+  it("lists no layouts for a provider whose layouts do not load", async () => {
+    apiMock.getMultiChannelLayouts.mockRejectedValueOnce(
+      new Error("Unknown command"),
+    );
+
+    const { candidates, layouts } = useCandidates(speaker());
+    await flushPromises();
+
+    expect(candidates.value).toEqual({ sendspin: ["studio-left"] });
+    expect(layouts.value).toEqual({ sendspin: {} });
   });
 
   it("keeps the list of the player that shows when an earlier one answers late", async () => {
@@ -81,7 +101,7 @@ describe("useMultiChannelCandidates", () => {
       .mockReturnValueOnce(new Promise((resolve) => (answerFirst = resolve)))
       .mockResolvedValueOnce(["studio-right"]);
     const player = ref<Player | undefined>(speaker());
-    const candidates = scope.run(() => useMultiChannelCandidates(player))!;
+    const { candidates } = scope.run(() => useMultiChannelCandidates(player))!;
 
     player.value = speaker({ player_id: "studio-right" });
     await flushPromises();
@@ -95,6 +115,11 @@ describe("useMultiChannelCandidates", () => {
     return scope.run(() => useMultiChannelCandidates(ref(player)))!;
   }
 });
+
+const LAYOUTS = {
+  stereo: ["front_left", "front_right"],
+  "2.1": ["front_left", "front_right", "lfe"],
+};
 
 function speaker(overrides: Partial<Player> = {}): Player {
   return {
