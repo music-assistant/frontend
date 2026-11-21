@@ -124,3 +124,36 @@ function splitDiscoverPath(subPath: string): {
     rowId: subPath.slice(slashIndex + 1),
   };
 }
+
+/** How a breadcrumb level looks up its name. */
+export interface BrowseLevelNames {
+  /** The name of the Discover scheme level. */
+  discover: string;
+  /** The name of a folder the server listed under this browse path, if known. */
+  folderName: (path: string) => string | undefined;
+  /** The name of a provider instance, or the id itself for an unknown provider. */
+  providerName: (providerId: string) => string;
+}
+
+/**
+ * The name a breadcrumb shows for a level of a browse path.
+ *
+ * A level the server listed as a folder is named as the server named it, which
+ * covers folders that stand for no provider, such as `live_sources://`. Any
+ * other level shows its provider name or the path segment it came from.
+ *
+ * @param level - The level, from {@link browsePathLevels}.
+ * @param names - Where the names come from.
+ */
+export function browseLevelTitle(
+  level: BrowsePathLevel,
+  names: BrowseLevelNames,
+): string {
+  if (level.kind === "scheme") return names.discover;
+  if (level.kind === "provider") {
+    return names.folderName(level.path) ?? names.providerName(level.segment);
+  }
+  if (level.kind === "row")
+    return names.folderName(level.path) ?? level.segment;
+  return level.segment;
+}
