@@ -73,7 +73,7 @@
           data-testid="cast-dashboard-get-url"
           @click="copyDashboardUrlToClipboard"
         >
-          <v-icon icon="mdi-link" size="16" />
+          <Link aria-hidden="true" />
           <span>{{ $t("dashboard.get_url") }}</span>
         </DropdownMenuItem>
       </template>
@@ -106,7 +106,7 @@ import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import router from "@/plugins/router";
 import { store } from "@/plugins/store";
-import { Check, MonitorSmartphone, TvMinimal, Unplug } from "@lucide/vue";
+import { Check, Link, MonitorSmartphone, TvMinimal, Unplug } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { toast } from "vue-sonner";
 import { copyToClipboard } from "@/helpers/utils";

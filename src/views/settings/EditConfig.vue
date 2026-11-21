@@ -6,21 +6,37 @@
     :disabled="disabled"
     :class="{ 'floating-save-clearance': showSaveAction && !inlineSave }"
   >
-    <Card v-if="hasOptions" class="gap-0 py-0">
-      <CardHeader
-        v-if="!hideHeader"
-        class="flex flex-wrap items-center gap-3 px-6 py-4 [.border-b]:pb-4"
-        :class="{ 'border-b': hasVisibleSections }"
+    <component
+      :is="flat ? 'div' : Card"
+      v-if="hasOptions"
+      :class="{ 'gap-0 py-0': !flat }"
+    >
+      <!-- a flat form keeps only the advanced toggle of its header -->
+      <component
+        :is="flat ? 'div' : CardHeader"
+        v-if="flat ? showAdvancedToggle : !hideHeader"
+        :class="
+          flat
+            ? 'flex'
+            : [
+                'flex flex-wrap items-center gap-3 px-6 py-4 [.border-b]:pb-4',
+                { 'border-b': hasVisibleSections },
+              ]
+        "
       >
-        <CardTitle>{{ $t("settings.options") }}</CardTitle>
+        <CardTitle v-if="!flat">{{ $t("settings.options") }}</CardTitle>
         <AdvancedSettingsToggle
           v-if="showAdvancedToggle"
           :show-advanced-settings="showAdvancedSettings"
           test-id="config-advanced-settings"
           @update:show-advanced-settings="setShowAdvancedSettings"
         />
-      </CardHeader>
-      <CardContent v-if="hasVisibleSections" class="px-6 pb-5">
+      </component>
+      <component
+        :is="flat ? 'div' : CardContent"
+        v-if="hasVisibleSections"
+        :class="{ 'px-6 pb-5': !flat }"
+      >
         <!-- Generic settings section -->
         <section
           v-for="panel of regularPanels.filter(
@@ -59,6 +75,8 @@
           :show-password-values="showPasswordValues"
           :is-disabled="isRowDisabled"
           :output-protocols="outputProtocols"
+          :output-menu-items="outputMenuItems"
+          :multi-channel="multiChannel"
           @update:value="onValueUpdate"
           @action="onEntryAction"
           @toggle-password="showPasswordValues = !showPasswordValues"
@@ -91,8 +109,8 @@
             @set-entry-value="onEntryValueSet"
           />
         </section>
-      </CardContent>
-    </Card>
+      </component>
+    </component>
 
     <div
       v-if="showSaveAction"
@@ -161,7 +179,9 @@ import {
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
 import { Button } from "@/components/ui/button";
+import { isSpeakerChannelEntry } from "@/helpers/multi_channel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   ConfigEntryType,
   ConfigValueType,
@@ -196,6 +216,11 @@ export interface Props {
   // Output protocols of the player being configured; drives derived-transport labelling
   // in the protocol section. Omitted for provider/core configs.
   outputProtocols?: OutputProtocol[];
+  // The menu entries of an output of the player being configured; an output without any
+  // gets no menu button. Omitted for provider/core configs.
+  outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
+  // The config is that of a multi-channel player, whose speakers show as rows of their own.
+  multiChannel?: boolean;
   // Domain of the provider being configured; lets a field recognise the entries of the
   // provider it belongs to. Omitted for player/core configs.
   providerDomain?: string;
@@ -205,6 +230,8 @@ export interface Props {
   // Leave out the Options header and its advanced toggle, for a host that names the form and
   // decides which of its entries show.
   hideHeader?: boolean;
+  // Leave out the card and the Options title, for a host that frames and names the form.
+  flat?: boolean;
   // Whether the advanced entries show, for a host that decides it; without one, the choice
   // the user made with the advanced toggle applies.
   showAdvancedSettings?: boolean;
@@ -228,10 +255,13 @@ const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const showPasswordValues = ref(false);
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
+// entries reset to their default and not edited since: a save unsets their stored value
+const resetKeys = ref(new Set<string>());
 
 // props
 const props = withDefaults(defineProps<Props>(), {
   outputProtocols: undefined,
+  outputMenuItems: undefined,
   providerDomain: undefined,
   // left unset rather than cast to false, so the user's own choice can apply
   showAdvancedSettings: undefined,
@@ -301,14 +331,17 @@ const hasVisibleSections = computed(
 );
 
 // what the save button can store: a visible entry holding a value, or the enable
-// switch of an optional protocol; actions and labels alone leave nothing to save
+// switch of an optional protocol; actions and labels alone leave nothing to save,
+// and neither do entries that are saved the moment they change
 const hasEditableEntries = computed(
   () =>
     Object.values(visibleEntriesByCategory.value)
       .flat()
       .some(
         (entry) =>
-          !VALUELESS_ENTRY_TYPES.includes(entry.type) && !isInjected(entry),
+          !VALUELESS_ENTRY_TYPES.includes(entry.type) &&
+          !isInjected(entry) &&
+          !entry.immediate_apply,
       ) ||
     (entries.value ?? []).some((entry) =>
       entry.key.endsWith("||protocol||enabled"),
@@ -332,6 +365,8 @@ const requiredValuesPresent = computed(() =>
 
 const hasUnsavedChanges = computed(() => {
   if (!entries.value) return false;
+  // a reset can leave every value as it shows, while the server still stores some
+  if (resetKeys.value.size > 0) return true;
   for (const entry of entries.value) {
     // Skip non-value entry types
     if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
@@ -411,7 +446,7 @@ const submit = async function () {
   // submit button is pressed
   if (await validate()) {
     allowNavigation.value = true;
-    emit("submit", getCurrentValues());
+    emit("submit", getSaveValues());
   }
 };
 const action = async function (action: string, immediateApply: boolean) {
@@ -421,6 +456,7 @@ const action = async function (action: string, immediateApply: boolean) {
 
 const onValueUpdate = function (entry: ConfigEntryUI, value: ConfigValueType) {
   entry.value = value;
+  resetKeys.value.delete(entry.key);
   // If immediate_apply is set, emit the value change immediately
   // and update oldValues so the form doesn't show as "unsaved"
   if (entry.immediate_apply) {
@@ -461,6 +497,7 @@ const resetToDefaults = function () {
     // server keeps in the config, so a reset leaves it as it is
     if (entry.hidden) continue;
     entry.value = entry.default_value;
+    if (unsetsOnReset(entry)) resetKeys.value.add(entry.key);
   }
 };
 
@@ -482,7 +519,10 @@ const saveFailed = function () {
  */
 const saveSucceeded = function (values: Record<string, ConfigValueType>) {
   for (const [key, value] of Object.entries(values)) {
-    oldValues.value[key] = snapshot(value);
+    // a reset entry went out as null, while the form shows its default
+    oldValues.value[key] = resetKeys.value.delete(key)
+      ? snapshot(entries.value?.find((e) => e.key === key)?.value ?? null)
+      : snapshot(value);
   }
   allowNavigation.value = false;
 };
@@ -627,6 +667,35 @@ const getCurrentValues = function () {
   }
   return values;
 };
+
+/**
+ * The values a save sends: null for an entry reset to its default, so the server
+ * stops storing a value for it and it follows its default from then on.
+ */
+const getSaveValues = function () {
+  const values = getCurrentValues();
+  for (const key of resetKeys.value) {
+    if (key in values) values[key] = null;
+  }
+  return values;
+};
+
+/**
+ * Whether a save unsets an entry that was reset, rather than send its default. The
+ * name and the switches that turn a provider, an output or a plugin on keep sending
+ * their value, as does an entry that is not saved as a value at all, and the channel
+ * of a speaker of a multi-channel player, which always plays one.
+ */
+const unsetsOnReset = function (entry: ConfigEntryUI) {
+  if (VALUELESS_ENTRY_TYPES.includes(entry.type) || isInjected(entry)) {
+    return false;
+  }
+  if (props.multiChannel && isSpeakerChannelEntry(entry, entries.value ?? [])) {
+    return false;
+  }
+  const { key } = entry;
+  return key !== "enabled" && key !== "name" && !key.endsWith("||enabled");
+};
 </script>
 
 <style scoped>
@@ -639,7 +708,12 @@ const getCurrentValues = function () {
   position: fixed;
   /* A landscape phone is wide enough to count as the desktop layout, so this
      rule is what keeps the button clear of a side cutout. */
-  right: calc(24px + var(--device-inset-right));
+  /* 100cqw is the width of the settings page, its query container: on a page
+     wider than the settings column, the button moves in to the column's edge. */
+  right: calc(
+    24px + var(--device-inset-right) +
+      max(0px, (100cqw - var(--settings-column-width)) / 2)
+  );
   bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
   z-index: 20;
 }

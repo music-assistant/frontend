@@ -6,12 +6,12 @@
     :blur-backdrop="blurBackdrop"
     :height="400"
     :phone-height="360"
-    :editable-rows="false"
+    @edit-rows="emit('edit-rows')"
   >
     <template v-if="item" #main>
       <div class="podcast-episode-hero__main">
         <div class="podcast-episode-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
 
         <div class="podcast-episode-hero__text">
@@ -164,13 +164,12 @@ const emit = defineEmits<{
   (e: "previous"): void;
   (e: "next"): void;
   (e: "transcript"): void;
+  (e: "edit-rows"): void;
 }>();
 
 const router = useRouter();
 
 const isPhone = computed(() => isPhoneSizedScreen());
-
-const coverSize = computed(() => (isPhone.value ? 132 : 200));
 
 // empty when the episode has no (valid) publish date
 const releaseDate = computed(() =>
@@ -305,7 +304,7 @@ const gotoPodcast = function () {
   visibility: hidden;
 }
 
-@media (max-width: 768px) {
+@container detail-hero (width < 48rem) {
   .podcast-episode-hero__main {
     flex-direction: column;
     align-items: stretch;
@@ -325,6 +324,8 @@ const gotoPodcast = function () {
   .podcast-episode-hero__actions {
     gap: 10px;
   }
+}
+@media (max-width: 768px) {
   .podcast-episode-hero__badge {
     width: 44px;
     height: 44px;

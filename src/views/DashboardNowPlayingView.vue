@@ -83,7 +83,7 @@ import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
-import { getPlayerDisplayName } from "@/helpers/players";
+import { getPlayerDisplayName, resolvePlayer } from "@/helpers/players";
 import {
   type ImageColorPalette,
   getMediaImageUrl,
@@ -106,7 +106,8 @@ const route = useRoute();
 onMounted(() => {
   const playerId = route.query.player;
   if (typeof playerId === "string" && playerId) {
-    store.activePlayerId = playerId;
+    // an id the player had before a merge pins the player it was merged into
+    store.activePlayerId = resolvePlayer(playerId)?.player_id ?? playerId;
   }
 });
 

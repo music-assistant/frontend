@@ -162,24 +162,34 @@ export const isHassControlPickerEntry = (
 
 /**
  * Merges a freshly fetched set of config entries into the entries currently
- * on screen after a PROVIDERS_UPDATED refresh.
+ * on screen, after a refresh or after a save of some of them.
  *
  * `incoming` wins for everything about an entry's definition (options,
  * read_only, whether it exists at all), since that's what the server just
  * told us is current. `current` wins for `value`, so a refresh never
- * discards something the user typed but hasn't saved yet.
+ * discards something the user typed but hasn't saved yet. The value of an
+ * entry the user can not edit, such as a label, and of an entry just saved
+ * comes from `incoming`.
  *
  * Every returned entry is a fresh object, so the form is free to keep editing
  * them in place without reaching back into either argument.
+ *
+ * @param saved The keys of the entries the server just stored.
  */
 export const mergeConfigEntries = (
   current: Record<string, ConfigEntry>,
   incoming: Record<string, ConfigEntry>,
+  saved: Iterable<string> = [],
 ): Record<string, ConfigEntry> => {
+  const savedKeys = new Set(saved);
   const merged: Record<string, ConfigEntry> = {};
   for (const [key, incomingEntry] of Object.entries(incoming)) {
     const currentEntry = current[key];
-    merged[key] = currentEntry
+    const keepsDraft =
+      currentEntry !== undefined &&
+      !savedKeys.has(key) &&
+      !VALUELESS_ENTRY_TYPES.includes(incomingEntry.type);
+    merged[key] = keepsDraft
       ? { ...incomingEntry, value: currentEntry.value }
       : { ...incomingEntry };
   }

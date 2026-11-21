@@ -1,18 +1,22 @@
 <template>
   <section class="flex flex-col gap-4">
-    <p :id="DESCRIPTION_ID" class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.account.description") }}
-    </p>
-
     <!-- the account is there and the app is signed in with it: the step is
          done, and says so to whoever comes back to it -->
-    <p
-      v-if="ctx.signedIn"
-      class="text-sm"
-      data-testid="onboarding-account-ready"
-    >
-      {{ $t("onboarding.steps.account.ready", { name }) }}
-    </p>
+    <OnboardingList v-if="ctx.signedIn">
+      <Item size="sm" data-testid="onboarding-account-ready">
+        <ItemMedia variant="icon">
+          <UserRound />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>
+            {{ $t("onboarding.steps.account.ready", { name }) }}
+          </ItemTitle>
+        </ItemContent>
+        <ItemActions>
+          <Check class="text-primary size-4" aria-hidden="true" />
+        </ItemActions>
+      </Item>
+    </OnboardingList>
 
     <!-- there is an account, but this page is not signed in with it: the
          browser is on its way to the client that started the setup, or the
@@ -33,11 +37,13 @@
       </Button>
     </div>
 
+    <!-- the wizard's forward button is this form's submit button -->
     <form
       v-else
-      id="form-onboarding-account"
+      :id="FORM_ID"
+      class="flex flex-col gap-4"
       novalidate
-      :aria-describedby="DESCRIPTION_ID"
+      :aria-describedby="STEP_LEAD_ID"
       @submit.prevent="submit"
     >
       <FieldGroup>
@@ -93,17 +99,15 @@
       <Alert
         v-if="failure"
         variant="destructive"
-        class="mt-4"
         data-testid="onboarding-account-error"
       >
         <AlertDescription>{{ failure }}</AlertDescription>
       </Alert>
 
-      <div class="mt-4 flex items-center gap-3">
-        <!-- once the sign-in has been given up on, a reload is the way on:
-             the account is there, and the page signs in with it -->
+      <!-- once the sign-in has been given up on, a reload is the way on:
+           the account is there, and the page signs in with it -->
+      <div v-if="signInFailed">
         <Button
-          v-if="phase === 'sign_in_failed'"
           type="button"
           variant="outline"
           data-testid="onboarding-account-reload"
@@ -111,48 +115,53 @@
         >
           {{ $t("onboarding.steps.account.reload") }}
         </Button>
-        <Button
-          v-else
-          type="submit"
-          :disabled="locked"
-          :loading="busy"
-          data-testid="onboarding-account-create"
-        >
-          {{ $t("onboarding.steps.account.create") }}
-        </Button>
-        <!-- always in the page, so what is announced is a change to it -->
-        <span
-          class="text-muted-foreground text-sm"
-          aria-live="polite"
-          data-testid="onboarding-account-progress"
-        >
-          {{ busy ? $t(`onboarding.steps.account.${phase}`) : "" }}
-        </span>
       </div>
+
+      <!-- always in the page, so what is announced is a change to it -->
+      <p
+        class="text-muted-foreground text-sm"
+        aria-live="polite"
+        data-testid="onboarding-account-progress"
+      >
+        {{ busy ? $t(`onboarding.steps.account.${phase}`) : "" }}
+      </p>
     </form>
   </section>
 </template>
 
 <script setup lang="ts">
 import FormTextField from "@/components/forms/FormTextField.vue";
+import OnboardingList from "@/components/onboarding/OnboardingList.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import {
   AccountSetupError,
   useFirstRunSetup,
 } from "@/composables/useFirstRunSetup";
 import { useOnboarding } from "@/composables/useOnboarding";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import {
+  STEP_LEAD_ID,
+  type OnboardingStepId,
+  type StepForwardForm,
+  type StepLeaveOptions,
+} from "@/helpers/onboarding";
 import { userDisplayName } from "@/helpers/provider_access";
 import { firstRunAccountSchema } from "@/lib/forms/profile";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { Check, UserRound } from "@lucide/vue";
 import { useForm } from "@tanstack/vue-form";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 
-// what the form answers, for the screen readers that read it out first
-const DESCRIPTION_ID = "onboarding-account-description";
+const FORM_ID = "form-onboarding-account";
 // how long the app gets to sign in with the new account before the step says
 // it did not
 const SIGN_IN_TIMEOUT_MS = 20_000;
@@ -191,6 +200,7 @@ const locked = computed(() => phase.value !== "idle");
 const recovering = computed(
   () => phase.value === "handed_back" || phase.value === "account_exists",
 );
+const signInFailed = computed(() => phase.value === "sign_in_failed");
 const failure = ref<string | null>(null);
 
 // the done state only ever shows once someone is signed in, so the empty name
@@ -267,12 +277,24 @@ watch(
 
 onBeforeUnmount(() => clearTimeout(signInTimer));
 
-// the wizard may only leave once the account is there: there is nothing else
-// to do on a server nobody can sign in to
-const beforeLeave = async (): Promise<boolean> => ctx.value.signedIn;
+// the wizard may only move on once the account is there: there is nothing else
+// to do on a server nobody can sign in to. Back to the welcome is open until
+// the form is submitted.
+const beforeLeave = async (options?: StepLeaveOptions): Promise<boolean> =>
+  ctx.value.signedIn || (!!options?.back && !locked.value);
 
-// the form submits itself, so the wizard's Next stands down until it has
-const ownsForwardAction = computed(() => !ctx.value.signedIn);
+// an account this page is not signed in with: the reload or the sign-in in the
+// step is the way on, so the wizard's forward button stands down
+const ownsForwardAction = computed(
+  () => !ctx.value.signedIn && (recovering.value || signInFailed.value),
+);
 
-defineExpose({ beforeLeave, busy, ownsForwardAction });
+// until the account is there, the wizard's forward button creates it
+const forwardForm = computed<StepForwardForm | undefined>(() =>
+  ctx.value.signedIn || ownsForwardAction.value
+    ? undefined
+    : { id: FORM_ID, labelKey: "onboarding.steps.account.create" },
+);
+
+defineExpose({ beforeLeave, busy, ownsForwardAction, forwardForm });
 </script>

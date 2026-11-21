@@ -439,13 +439,55 @@ export enum SleepTimerMode {
 
 export enum PlayerType {
   PLAYER = "player", // A regular player.
-  STEREO_PAIR = "stereo_pair",
+  MULTI_CHANNEL = "multi_channel", // One player made of several speakers that play as one.
+  STEREO_PAIR = "stereo_pair", // A stereo pair as an older server reports it.
   GROUP = "group", // A (dedicated) group player or playergroup.
   PROTOCOL = "protocol",
   DISPLAY = "display",
   VISUALIZER = "visualizer",
   LIGHT = "light",
   SOURCE = "source", // A capture-only device that provides audio input.
+  CONTROLLER = "controller", // A device that only controls playback, such as a remote.
+  UNKNOWN = "unknown",
+}
+
+export enum ChannelLayout {
+  // How the speakers of a multi-channel player are laid out: the number of
+  // full-range speakers and of subwoofers; a set of two speakers is stereo.
+  STEREO = "stereo",
+  LAYOUT_1_1 = "1.1",
+  LAYOUT_2_1 = "2.1",
+  LAYOUT_3_0 = "3.0",
+  LAYOUT_3_1 = "3.1",
+  LAYOUT_4_0 = "4.0",
+  LAYOUT_4_1 = "4.1",
+  LAYOUT_5_0 = "5.0",
+  LAYOUT_5_1 = "5.1",
+  LAYOUT_7_1 = "7.1",
+  UNKNOWN = "unknown",
+}
+
+export enum SpeakerChannel {
+  // The channel a speaker of a multi-channel player plays: a speaker position
+  // of the FLAC channel mask, as the Sendspin specification names them.
+  FRONT_LEFT = "front_left",
+  FRONT_RIGHT = "front_right",
+  FRONT_CENTER = "front_center",
+  LFE = "lfe",
+  BACK_LEFT = "back_left",
+  BACK_RIGHT = "back_right",
+  FRONT_LEFT_OF_CENTER = "front_left_of_center",
+  FRONT_RIGHT_OF_CENTER = "front_right_of_center",
+  BACK_CENTER = "back_center",
+  SIDE_LEFT = "side_left",
+  SIDE_RIGHT = "side_right",
+  TOP_CENTER = "top_center",
+  TOP_FRONT_LEFT = "top_front_left",
+  TOP_FRONT_CENTER = "top_front_center",
+  TOP_FRONT_RIGHT = "top_front_right",
+  TOP_REAR_LEFT = "top_rear_left",
+  TOP_REAR_CENTER = "top_rear_center",
+  TOP_REAR_RIGHT = "top_rear_right",
   UNKNOWN = "unknown",
 }
 
@@ -585,10 +627,16 @@ export enum ProviderFeature {
   REMOVE_PLAYER = "remove_player",
   REMOVE_GROUP_PLAYER = "remove_group_player",
   CREATE_GROUP_PLAYER = "create_group_player",
+  CREATE_MULTI_CHANNEL_PLAYER = "create_multi_channel_player",
   // metadata provider specific features
   ARTIST_METADATA = "artist_metadata",
   ALBUM_METADATA = "album_metadata",
   TRACK_METADATA = "track_metadata",
+  // provider delivers live audio sources, such as a receiver or a line-in
+  AUDIO_SOURCE = "audio_source",
+  // plugin specific features
+  AI_QUERY = "ai_query",
+  TTS = "tts",
 }
 
 export enum ProviderType {
@@ -1345,6 +1393,7 @@ export interface RecommendationFolder extends BrowseFolder {
   enabled_by_default: boolean;
   type: RecommendationFolderType;
   supports_provider_filter: boolean;
+  supports_hide_played: boolean;
 }
 
 // computed over all items of a collection, also when it holds a filtered subset
@@ -1763,6 +1812,9 @@ export interface Player {
   legacy_ids: string[];
   // protocols: the protocols the player is made up of, also those that are away
   protocols: PlayerProtocolInfo[];
+  // channel_layout: how the speakers of a multi-channel player are laid out;
+  // null for a player that is no set of speakers or whose layout is not known
+  channel_layout?: ChannelLayout | null;
 
   // output_protocols: all available output methods for this player
   // Includes native output (if PLAY_MEDIA supported) + protocol outputs
@@ -1832,6 +1884,24 @@ export interface ProviderManifest {
   // menu_actions: entries this provider adds to the menu of a media item;
   // absent from an older server
   menu_actions?: ProviderMenuAction[];
+  // provides: what the provider offers whatever its config, for discovery only:
+  // the media types of a music provider, audio_source for one that plays audio
+  // into Music Assistant, or the main features of a plugin; absent from an
+  // older server
+  provides?: ProviderOffering[];
+  // page: a page this provider serves, listed in the app's menu; an older
+  // server declares none
+  page?: ProviderPage | null;
+}
+
+export interface ProviderPage {
+  // A page a provider serves, opened through providers/open_page.
+  // label: the text of the menu entry, already in the user's language
+  label: string;
+  // scope: what a user needs to see and open the page
+  scope: Scope;
+  // icon: name of a material design icon, such as mdi-chart-line
+  icon: string | null;
 }
 
 export interface ProviderMenuAction {
@@ -1848,6 +1918,30 @@ export interface ProviderMenuAction {
   icon: string | null;
   // requires_player: whether the action acts on a player, which the app then passes
   requires_player: boolean;
+}
+
+export enum ProviderOffering {
+  // what a music provider offers
+  ARTIST = "artist",
+  ALBUM = "album",
+  TRACK = "track",
+  PLAYLIST = "playlist",
+  RADIO = "radio",
+  PODCAST = "podcast",
+  AUDIOBOOK = "audiobook",
+  SOUND_EFFECT = "sound_effect",
+  // live audio played into Music Assistant
+  AUDIO_SOURCE = "audio_source",
+  // what a plugin delivers
+  AI = "ai",
+  TTS = "tts",
+  SCROBBLE = "scrobble",
+  ASSISTANT = "assistant",
+  VISUALIZER = "visualizer",
+  RECOMMENDATIONS = "recommendations",
+  FUN = "fun",
+  // the fallback for a value that is not known
+  UNKNOWN = "unknown",
 }
 
 export enum ProviderStage {
@@ -1948,6 +2042,7 @@ export interface ProviderInstance {
   supported_features: ProviderFeature[];
   available: boolean;
   is_streaming_provider: boolean | null;
+  supported_artist_types: ArtistType[];
 }
 
 export interface DashboardDevice {
@@ -2192,6 +2287,42 @@ export interface SetupRequest {
   device_name?: string;
 }
 
+// AI interfaces
+
+export enum AIEngineKind {
+  TEXT = "text",
+  SPEECH = "speech",
+  IMAGE = "image",
+}
+
+/** An AI engine a plugin provides. */
+export interface AIEngine {
+  uid: string;
+  // the engine name, prefixed with the name of the plugin it comes from
+  name: string;
+  kind: AIEngineKind;
+  // the instance id of the plugin providing the engine
+  provider: string;
+}
+
+/** An engine setting of a core module or provider, with the engine it selects. */
+export interface AIEngineUsage {
+  owner_type: "core" | "provider";
+  // the core module domain or provider instance id
+  owner: string;
+  domain: string;
+  // the provider instance name or the core module name
+  name: string;
+  key: string;
+  kind: AIEngineKind;
+  // the setting is changed through the setup flow of the provider
+  in_setup_data: boolean;
+  // the setting follows the default engine of its kind
+  follows_default: boolean;
+  // the uid of the selected engine, null when it selects no available engine
+  engine: string | null;
+}
+
 // Remote Access interfaces
 
 export interface RemoteAccessInfo {
@@ -2201,11 +2332,6 @@ export interface RemoteAccessInfo {
   remote_id: string;
   using_ha_cloud: boolean;
   signaling_url: string;
-}
-
-/** The address the stream server hands to players, as it is in use right now. */
-export interface StreamServerInfo {
-  base_url: string;
 }
 
 // Storage interfaces

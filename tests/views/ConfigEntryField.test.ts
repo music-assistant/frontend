@@ -126,6 +126,17 @@ describe("ConfigEntryField", () => {
     },
   );
 
+  it.each([
+    ["an embedded", IMAGE_DATA_URI, true],
+    ["a remote", "https://example.com/qr.png", false],
+  ])("draws %s image only when it is embedded", (_kind, value, drawn) => {
+    const wrapper = mountField(
+      entry({ key: "qr", type: ConfigEntryType.IMAGE, value }),
+    );
+
+    expect(wrapper.find("img").exists()).toBe(drawn);
+  });
+
   it("offers the entity picker for a Home Assistant control list", () => {
     const wrapper = mountField(hassControlsEntry(), false, "hass");
 
@@ -142,6 +153,34 @@ describe("ConfigEntryField", () => {
       false,
     );
     expect(wrapper.find(".v-select").exists()).toBe(true);
+  });
+
+  it("leaves out the clear button of a dropdown that must keep its value", () => {
+    const dropdown = entry({
+      key: "speaker_1_channel",
+      type: ConfigEntryType.STRING,
+      options: [
+        { title: "Left", value: "front_left" },
+        { title: "Right", value: "front_right" },
+      ],
+      value: "front_left",
+    });
+    const clearable = (wrapper: VueWrapper) =>
+      wrapper.getComponent({ name: "VSelect" }).props("clearable");
+
+    expect(clearable(mountField(dropdown))).toBe(true);
+    expect(
+      clearable(
+        mount(ConfigEntryField, {
+          props: {
+            confEntry: dropdown,
+            showPasswordValues: false,
+            clearable: false,
+          },
+          global: { plugins: [vuetify] },
+        }),
+      ),
+    ).toBe(false);
   });
 
   it("shows a value the options do not list yet", () => {

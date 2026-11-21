@@ -7,14 +7,17 @@ import {
   STORAGE_KIND_LABEL_KEYS,
   storageLocationName,
 } from "@/helpers/storage";
+import { cn } from "@/lib/utils";
 import type { StorageLocation } from "@/plugins/api/interfaces";
-import { ChevronRight, FolderCheck } from "@lucide/vue";
+import { Check, ChevronRight } from "@lucide/vue";
 
 /** The storage locations a folder picker starts from; an unavailable one cannot be opened. */
 defineProps<{
   locations: StorageLocation[];
   // the path of the location that holds the selected folder, if any
   selectedLocationPath?: string | null;
+  // the selected folder, shown on the location that holds it
+  selectedPath?: string | null;
   disabled?: boolean;
 }>();
 
@@ -29,8 +32,14 @@ const emit = defineEmits<{ open: [location: StorageLocation] }>();
     <li v-for="location in locations" :key="location.path">
       <button
         type="button"
-        class="hover:bg-accent/50 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:hover:bg-transparent"
-        :class="{ 'opacity-60': disabled }"
+        :class="
+          cn(
+            'hover:bg-accent/50 flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:hover:bg-transparent',
+            location.path === selectedLocationPath &&
+              'bg-primary/10 hover:bg-primary/15',
+            disabled && 'opacity-60',
+          )
+        "
         :disabled="disabled || !location.available"
         data-testid="folder-picker-location"
         @click="emit('open', location)"
@@ -47,13 +56,6 @@ const emit = defineEmits<{ open: [location: StorageLocation] }>();
           >
             {{ storageLocationName(location) }}
             <Badge
-              v-if="!isNamedByKind(location)"
-              as="span"
-              variant="secondary"
-            >
-              {{ $t(STORAGE_KIND_LABEL_KEYS[location.kind]) }}
-            </Badge>
-            <Badge
               v-if="location.read_only"
               as="span"
               variant="outline"
@@ -64,20 +66,22 @@ const emit = defineEmits<{ open: [location: StorageLocation] }>();
             <Badge v-if="!location.available" as="span" variant="destructive">
               {{ $t("settings.storage.unavailable") }}
             </Badge>
-            <Badge
-              v-if="location.path === selectedLocationPath"
-              as="span"
-              data-testid="folder-picker-holds-selection"
-            >
-              <FolderCheck />
-              {{ $t("settings.folder_picker.holds_selection") }}
-            </Badge>
           </span>
           <span
             class="text-muted-foreground text-xs"
             :class="{ 'opacity-60': !location.available }"
           >
-            <StoragePath :path="location.path" />
+            <template v-if="!isNamedByKind(location)">
+              {{ $t(STORAGE_KIND_LABEL_KEYS[location.kind]) }} ·
+            </template>
+            <!-- the location holding the selected folder names that folder -->
+            <StoragePath
+              v-if="location.path === selectedLocationPath && selectedPath"
+              :path="selectedPath"
+              class="text-foreground font-medium"
+              data-testid="folder-picker-selected-path"
+            />
+            <StoragePath v-else :path="location.path" />
           </span>
           <!-- the reason stays readable while the rest of the row is dimmed -->
           <span
@@ -88,6 +92,13 @@ const emit = defineEmits<{ open: [location: StorageLocation] }>();
             {{ location.error }}
           </span>
         </span>
+        <Check
+          v-if="location.path === selectedLocationPath"
+          class="text-primary size-4 shrink-0"
+          role="img"
+          :aria-label="$t('settings.folder_picker.selected')"
+          data-testid="folder-picker-holds-selection"
+        />
         <ChevronRight
           v-if="location.available"
           class="text-muted-foreground size-4 shrink-0"

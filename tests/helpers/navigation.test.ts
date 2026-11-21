@@ -87,6 +87,8 @@ describe("backFromMediaDetails", () => {
     ["album", "albums"],
     ["artist", "artists"],
     ["audiobook", "audiobooks"],
+    ["audiobookartist", "audiobooks"],
+    ["audiobookartistlisting", "audiobooks"],
     ["collection", "audiobooks"],
     ["genre", "genres"],
     ["playlist", "playlists"],

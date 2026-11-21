@@ -196,7 +196,7 @@
       :model-value="confEntry.value"
       :menu-props="{ zIndex: 10000 }"
       :chips="confEntry.multi_value"
-      :clearable="true"
+      :clearable="clearable"
       :multiple="confEntry.multi_value"
       :items="displayOptions"
       :item-props="
@@ -322,17 +322,23 @@ import {
   HASS_CONTROL_KEYS,
   isHassControlPickerEntry,
 } from "@/helpers/config_entry_ui";
-import { HASS_DOMAIN } from "@/helpers/hass_controls";
+import { HASS_DOMAIN } from "@/helpers/home_assistant";
+import { isEmbeddedImage } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 
-const props = defineProps<{
-  confEntry: ConfigEntryUI;
-  showPasswordValues: boolean;
-  disabled?: boolean;
-  // domain of the provider this config belongs to; absent for player and core configs
-  providerDomain?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    confEntry: ConfigEntryUI;
+    showPasswordValues: boolean;
+    disabled?: boolean;
+    // domain of the provider this config belongs to; absent for player and core configs
+    providerDomain?: string;
+    // false leaves out the clear button of a dropdown, for a value that must stay set
+    clearable?: boolean;
+  }>(),
+  { disabled: false, providerDomain: undefined, clearable: true },
+);
 
 // only the Home Assistant provider's own control lists get the entity picker, not any
 // other provider that happens to use the same key names
@@ -354,11 +360,11 @@ const isNumberEntry = computed(
 
 // Only surface an <img> when a source is actually available; otherwise the
 // element would render as a broken image (both value and default missing).
-const imageSrc = computed(
-  () =>
-    (props.confEntry.value ?? props.confEntry.default_value) as
-      string | undefined,
-);
+// A provider's image is only drawn when embedded, so it loads nothing remote.
+const imageSrc = computed(() => {
+  const src = props.confEntry.value ?? props.confEntry.default_value;
+  return typeof src === "string" && isEmbeddedImage(src) ? src : undefined;
+});
 
 const emit = defineEmits<{
   (e: "togglePassword"): void;

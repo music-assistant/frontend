@@ -35,9 +35,9 @@
         color="transparent"
       >
         <template #prepend>
-          <!-- on mobile the drag handle is the close affordance -->
+          <!-- kept next to the drag handle: kiosk WebViews can turn a swipe
+               down into a native pull-to-refresh -->
           <Button
-            v-if="!store.mobileLayout"
             variant="ghost"
             size="icon-sm"
             :aria-label="$t('tooltip.close_fullscreen')"
@@ -95,7 +95,7 @@
               <PlayerIcon
                 :icon="store.activePlayer?.icon"
                 :grouped="
-                  store.activePlayer?.type == PlayerType.PLAYER &&
+                  isSpeakerPlayer(store.activePlayer) &&
                   !!store.activePlayer?.group_members.length
                 "
                 :size="128"
@@ -116,14 +116,17 @@
                   : ""
               }}
             </v-card-title>
-            <!-- current media title -->
+            <!-- the playing chapter, or the media title -->
             <v-card-title
               v-else-if="store.activePlayer?.current_media?.title"
               :style="`font-size: ${titleFontSize};font-weight:600;cursor:pointer;`"
               @click="openCurrentTrackDetails"
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ store.activePlayer.current_media.title }}
+                {{
+                  playingChapter?.chapter.name ??
+                  store.activePlayer.current_media.title
+                }}
               </MarqueeText>
             </v-card-title>
             <!-- no player selected message -->
@@ -151,27 +154,26 @@
               {{ $t("off") }}
             </v-card-subtitle>
 
-            <!-- subtitle: album; placeholder when empty so the artwork
-                 above keeps a constant size -->
+            <!-- subtitle: the book or episode under its chapter, else the album;
+                 placeholder when empty so the artwork above keeps a constant size -->
             <v-card-subtitle
-              v-else-if="store.activePlayer?.current_media && showAlbumSubtitle"
+              v-else-if="
+                store.activePlayer?.current_media &&
+                (playingChapter || showAlbumSubtitle)
+              "
               :style="`font-size: ${subTitleFontSize};${
-                albumSubtitle ? 'cursor:pointer;' : ''
+                playingChapter || albumSubtitle ? 'cursor:pointer;' : ''
               }`"
-              @click="onAlbumClick"
+              @click="
+                playingChapter ? openCurrentTrackDetails() : onAlbumClick()
+              "
             >
               <MarqueeText :sync="playerMarqueeSync">
-                {{ albumSubtitle || " " }}
-              </MarqueeText>
-            </v-card-subtitle>
-
-            <!-- subtitle: current chapter, followed by the author line -->
-            <v-card-subtitle
-              v-if="currentChapter"
-              :style="`font-size: ${subTitleFontSize};`"
-            >
-              <MarqueeText :sync="playerMarqueeSync">
-                {{ currentChapter.chapter.name }}
+                {{
+                  playingChapter
+                    ? store.activePlayer.current_media.title
+                    : albumSubtitle || " "
+                }}
               </MarqueeText>
             </v-card-subtitle>
 
@@ -254,9 +256,7 @@
                 :ref="measureRow"
                 :data-index="row.index"
                 class="queue-virt-row"
-                :style="{
-                  transform: `translateY(${row.vItem.start + rowOffset(row.index)}px)`,
-                }"
+                :style="{ transform: `translateY(${row.vItem.start}px)` }"
               >
                 <!-- section divider (Now playing / Up next) -->
                 <div v-if="row.divider" class="queue-divider">
@@ -273,31 +273,42 @@
                 </div>
                 <!-- queue mode banner (radio mix / autoplay state) under Up next -->
                 <QueueModeBanner v-if="row.divider === 'up_next'" />
-                <!-- loaded item -->
-                <QueueListItem
-                  v-if="row.item"
-                  :item="row.item"
-                  :state="row.state"
-                  :is-playing="playerActive"
-                  :dragging="draggingIndex === row.index"
-                  :marquee-sync="
-                    row.state === 'playing'
-                      ? playerMarqueeSync
-                      : hoveredMarqueeSync
-                  "
-                  :request-badge-color="requestBadgeColor"
-                  :boost-badge-color="boostBadgeColor"
-                  @menu="(e: Event) => openQueueItemMenu(e, row.index)"
-                  @dragstart="(e: PointerEvent) => startItemDrag(e, row.index)"
-                />
-                <!-- placeholder while the page loads -->
-                <div v-else class="queue-skeleton">
-                  <div class="queue-skeleton__thumb"></div>
-                  <div class="queue-skeleton__lines">
-                    <div class="queue-skeleton__line"></div>
-                    <div
-                      class="queue-skeleton__line queue-skeleton__line--sub"
-                    ></div>
+                <!-- only the item slides aside during a drag, so the divider
+                     and banner above it stay where they are -->
+                <div
+                  class="queue-virt-item"
+                  :style="{
+                    transform: `translateY(${rowOffset(row.index)}px)`,
+                  }"
+                >
+                  <!-- loaded item -->
+                  <QueueListItem
+                    v-if="row.item"
+                    :item="row.item"
+                    :state="row.state"
+                    :is-playing="playerActive"
+                    :dragging="draggingIndex === row.index"
+                    :marquee-sync="
+                      row.state === 'playing'
+                        ? playerMarqueeSync
+                        : hoveredMarqueeSync
+                    "
+                    :request-badge-color="requestBadgeColor"
+                    :boost-badge-color="boostBadgeColor"
+                    @menu="(e: Event) => openQueueItemMenu(e, row.index)"
+                    @dragstart="
+                      (e: PointerEvent) => startItemDrag(e, row.index)
+                    "
+                  />
+                  <!-- placeholder while the page loads -->
+                  <div v-else class="queue-skeleton">
+                    <div class="queue-skeleton__thumb"></div>
+                    <div class="queue-skeleton__lines">
+                      <div class="queue-skeleton__line"></div>
+                      <div
+                        class="queue-skeleton__line queue-skeleton__line--sub"
+                      ></div>
+                    </div>
                   </div>
                 </div>
                 <QueueChapterList
@@ -306,14 +317,13 @@
                     row.item?.media_item &&
                     (queueChapterGroups.length || canAddBookmark)
                   "
+                  class="max-h-72"
                   :item="row.item"
                   :groups="queueChapterGroups"
-                  :active-position="activeChapterPosition(row.item)"
+                  :active-position="playingChapterPosition"
                   :can-add="canAddBookmark"
                   :position="playingPosition"
-                  @seek="
-                    (target) => chapterClicked(row.item!.media_item!, target)
-                  "
+                  @seek="playingChapterClicked"
                 />
               </div>
               <!-- floating ghost of the dragged item; tracks the pointer -->
@@ -352,7 +362,7 @@
               <PlayerIcon
                 :icon="store.activePlayer?.icon"
                 :grouped="
-                  store.activePlayer?.type == PlayerType.PLAYER &&
+                  isSpeakerPlayer(store.activePlayer) &&
                   !!store.activePlayer?.group_members.length
                 "
                 :size="128"
@@ -515,6 +525,7 @@ import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime"
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -525,7 +536,11 @@ import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
 import { openExternalItem } from "@/helpers/open_external_item";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
-import { getPlayerDisplayName, getPlayerName } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  getPlayerName,
+  isSpeakerPlayer,
+} from "@/helpers/players";
 import {
   ImageColorPalette,
   formatDuration,
@@ -561,6 +576,7 @@ import {
 import {
   chaptersFitBookmarks,
   groupBookmarksByChapter,
+  isChapteredMediaType,
   resolveCurrentChapter,
 } from "@/helpers/chapters";
 import api from "@/plugins/api";
@@ -569,8 +585,6 @@ import {
   MediaItemChapter,
   MediaType,
   PlaybackState,
-  PlayerType,
-  QueueItem,
   Track,
   TranscriptCue,
 } from "@/plugins/api/interfaces";
@@ -632,15 +646,11 @@ const chapterQueueItem = computed(() => {
   return queueItem;
 });
 
-const currentChapter = computed(() => {
+const playingChapter = computed(() => {
   void nowTick.value;
   const media = store.activePlayer?.current_media;
   const queueItem = chapterQueueItem.value;
-  if (
-    !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
-    !queueItem
-  ) {
+  if (!isChapteredMediaType(media?.media_type) || !queueItem) {
     return undefined;
   }
   return resolveCurrentChapter(
@@ -649,14 +659,6 @@ const currentChapter = computed(() => {
     media.duration,
   );
 });
-
-const activeChapter = computed(() => currentChapter.value?.chapter);
-
-// the playing chapter of the item, for its chapter list
-const activeChapterPosition = (item: QueueItem) =>
-  item.queue_item_id === chapterQueueItem.value?.queue_item_id
-    ? activeChapter.value?.position
-    : undefined;
 
 const updateChapterTimer = (needed: boolean) => {
   if (needed && chapterTimer === null) {
@@ -680,10 +682,23 @@ const playingPosition = computed(() => {
 const chapterTimerNeeded = computed(
   () =>
     store.showFullscreenPlayer &&
-    store.showQueueItems &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
-    ((!!chapterQueueItem.value && showChapterProgress.value) ||
-      canAddBookmark.value),
+    (!!chapterQueueItem.value ||
+      (store.showQueueItems && canAddBookmark.value)),
+);
+
+const playingChapterClicked = (target: Pick<MediaItemChapter, "start">) => {
+  const media = store.curQueueItem?.media_item;
+  if (media) chapterClicked(media, target);
+};
+
+const playingChapterPosition = computed(
+  () =>
+    resolveCurrentChapter(
+      chapterQueueItem.value?.media_item?.metadata?.chapters,
+      playingPosition.value,
+      store.activePlayer?.current_media?.duration,
+    )?.chapter.position,
 );
 
 watch(chapterTimerNeeded, updateChapterTimer, { immediate: true });
@@ -1330,6 +1345,11 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value && !showSkip.value,
     },
   );
+  const currentMediaItem = store.curQueueItem?.media_item;
+  if (currentMediaItem) {
+    const sharePreviewItem = useShareLinkPreviewMenuItem(currentMediaItem);
+    if (sharePreviewItem) menuItems.push(sharePreviewItem);
+  }
   // playback speed only means something for spoken-word content, which is also
   // the only content anyone plays at anything but 1x
   if (speedSupported.value) {
@@ -1352,13 +1372,28 @@ const openQueueMenu = function (evt: Event) {
     selected: showWaveformPref.value,
     close_on_click: false,
   };
+  const chapterProgressItem = {
+    label: "settings.audiobook_chapter_progress.label",
+    action: () => {
+      void setPreference(
+        "audiobook_chapter_progress",
+        !showChapterProgress.value,
+      );
+    },
+    icon: "mdi-book-open-page-variant-outline",
+    selected: showChapterProgress.value,
+    close_on_click: false,
+  };
+  const displayItems = chapterQueueItem.value
+    ? [chapterProgressItem, waveformItem]
+    : [waveformItem];
   const visualizerEntryIndex = menuItems.findIndex(
     (item) => item.label === "settings.visualizer_enabled.label",
   );
   if (visualizerEntryIndex === -1) {
-    menuItems.push(waveformItem);
+    menuItems.push(...displayItems);
   } else {
-    menuItems.splice(visualizerEntryIndex, 0, waveformItem);
+    menuItems.splice(visualizerEntryIndex, 0, ...displayItems);
   }
   // While lyrics/transcript are open, surface the sync-offset stepper at the
   // top of the overflow menu.
@@ -1526,6 +1561,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
 }
 
 .queue-items-scroll-box {
@@ -1553,8 +1589,14 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-/* While dragging, the rows slide smoothly as the landing gap opens/moves. */
-.queue-virt--dragging .queue-virt-row {
+/* Outside a drag nothing may animate, so a slide still running on drop stops
+   at once and the items land in place. */
+.queue-virt-item {
+  transition-property: none;
+}
+
+/* While dragging, the items slide smoothly as the landing gap opens/moves. */
+.queue-virt--dragging .queue-virt-item {
   transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1);
 }
 

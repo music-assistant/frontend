@@ -170,7 +170,7 @@ import {
   hasCommunityUpdate,
   isCommunityProblem,
 } from "@/helpers/community_catalog";
-import { getCatalogType } from "@/helpers/provider_catalog";
+import { getManifestCatalogType } from "@/helpers/provider_catalog";
 import {
   type CommunityProvider,
   CommunityProviderState,
@@ -216,7 +216,7 @@ const updateCount = computed(
 
 // what it is and which version is installed
 function getSummary(provider: CommunityProvider): string {
-  const type = getCatalogType(provider.manifest.type);
+  const type = getManifestCatalogType(provider.manifest);
   return [
     type ? $t(type.itemLabel) : "",
     provider.installed_version

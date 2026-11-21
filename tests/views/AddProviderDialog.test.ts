@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CatalogRecommendationReason,
+  ProviderOffering,
   ProviderStage,
   ProviderTier,
   ProviderType,
@@ -399,6 +400,34 @@ describe("AddProviderDialog", () => {
     expect(providerNames()).toEqual(["Spotify"]);
   });
 
+  it("offers only the plugins that bring AI or speech when restricted", async () => {
+    apiMock.providerManifests = {
+      ...PLUGIN_MANIFESTS,
+      openai_compatible: providerManifest({
+        domain: "openai_compatible",
+        name: "OpenAI Compatible",
+        type: ProviderType.PLUGIN,
+        provides: [ProviderOffering.AI],
+      }),
+      openai_tts: providerManifest({
+        domain: "openai_tts",
+        name: "OpenAI TTS",
+        type: ProviderType.PLUGIN,
+        provides: [ProviderOffering.TTS],
+      }),
+    };
+
+    await openDialog({
+      providerType: ProviderType.PLUGIN,
+      aiServiceOnly: true,
+    });
+
+    expect(
+      document.querySelector("[data-slot='dialog-title']")?.textContent,
+    ).toBe("settings.ai.add_service");
+    expect(providerNames()).toEqual(["OpenAI Compatible", "OpenAI TTS"]);
+  });
+
   it("does not fetch the provider configs while hidden", async () => {
     const wrapper = mount(AddProviderDialog, {
       props: { show: false },
@@ -496,6 +525,7 @@ async function openDialog(
     providerType?: ProviderType;
     multiInstanceOnly?: boolean;
     selfServiceOnly?: boolean;
+    aiServiceOnly?: boolean;
   } = {},
 ): Promise<VueWrapper> {
   const wrapper = mount(AddProviderDialog, {

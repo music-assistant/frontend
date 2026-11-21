@@ -100,11 +100,44 @@ describe("IntentStep", () => {
     setUserPreferenceMock.mockResolvedValue(true);
   });
 
+  it("moves on once the picked answer has landed", async () => {
+    const wrapper = await mountStep();
+
+    await card(wrapper, "phone_apps").trigger("click");
+    await flushPromises();
+
+    expect(setUserPreferenceMock).toHaveBeenCalledWith(
+      "onboarding.intent",
+      "phone_apps",
+    );
+    expect(wrapper.emitted("advance")).toHaveLength(1);
+
+    wrapper.unmount();
+  });
+
+  it("stays here when the answer did not land", async () => {
+    setUserPreferenceMock.mockResolvedValue(false);
+
+    const wrapper = await mountStep();
+    await card(wrapper, "phone_apps").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.emitted("advance")).toBeUndefined();
+    // and the cards are the admin's to try again with
+    expect(card(wrapper, "phone_apps").attributes("disabled")).toBeUndefined();
+
+    wrapper.unmount();
+  });
+
   it("holds the wizard until the answer has landed", async () => {
     const landAnswer = holdWrite();
 
     const wrapper = await mountStep();
     await card(wrapper, "phone_apps").trigger("click");
+
+    // the cards wait for the answer, and the one on its way says so
+    expect(card(wrapper, "music_hub").attributes("disabled")).toBeDefined();
+    expect(card(wrapper, "phone_apps").attributes("aria-busy")).toBe("true");
 
     // leaving while the answer is still on its way waits for it here, rather
     // than moving on with an answer the account has not taken yet
@@ -112,7 +145,8 @@ describe("IntentStep", () => {
     landAnswer(true);
 
     await expect(leaving).resolves.toBe(true);
-    expect(wrapper.emitted("advance")).toBeUndefined();
+    await flushPromises();
+    expect(wrapper.emitted("advance")).toHaveLength(1);
 
     wrapper.unmount();
   });
@@ -132,49 +166,65 @@ describe("IntentStep", () => {
     wrapper.unmount();
   });
 
-  it("walks on with the recommended answer when none was given", async () => {
+  it("takes one answer however often it is clicked", async () => {
+    const landAnswer = holdWrite();
+
     const wrapper = await mountStep();
+    const chosen = card(wrapper, "music_hub");
+    void chosen.trigger("click");
+    await chosen.trigger("click");
 
-    // the card that was showing as chosen is what moving on answers with
-    await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
-    expect(setUserPreferenceMock).toHaveBeenCalledWith(
-      "onboarding.intent",
-      "music_hub",
-    );
-
-    wrapper.unmount();
-  });
-
-  it("previews the next steps for the selected answer without advancing", async () => {
-    const wrapper = await mountStep();
-    const preview = wrapper.find("[data-testid=onboarding-intent-preview]");
-    expect(preview.text()).toBe("onboarding.steps.intent.music_hub.preview");
-
-    await card(wrapper, "phone_apps").trigger("click");
+    landAnswer(true);
     await flushPromises();
 
-    expect(preview.text()).toBe("onboarding.steps.intent.phone_apps.preview");
-    expect(card(wrapper, "phone_apps").attributes("aria-pressed")).toBe("true");
-    expect(wrapper.emitted("advance")).toBeUndefined();
+    expect(setUserPreferenceMock).toHaveBeenCalledOnce();
+    expect(wrapper.emitted("advance")).toHaveLength(1);
+
     wrapper.unmount();
   });
 
-  it("answers nothing when the setup is paused on it", async () => {
+  it("shows nothing as chosen until the admin picks", async () => {
     const wrapper = await mountStep();
 
-    await expect(wrapper.vm.beforeLeave({ pausing: true })).resolves.toBe(true);
+    // the recommended option is only badged, so the question is the admin's
+    // to answer
+    expect(card(wrapper, "music_hub").attributes("aria-pressed")).toBe("false");
+    expect(card(wrapper, "phone_apps").attributes("aria-pressed")).toBe(
+      "false",
+    );
+    expect(card(wrapper, "music_hub").text()).toContain("recommended");
+    expect(card(wrapper, "phone_apps").text()).not.toContain("recommended");
+
+    wrapper.unmount();
+  });
+
+  it("answers nothing when the wizard leaves it unanswered", async () => {
+    const wrapper = await mountStep();
+
+    await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
     expect(setUserPreferenceMock).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });
 
-  it("leaves an answer already on the account alone", async () => {
+  it("shows the answer already on the account, without moving on", async () => {
     preferenceState.intent.value = "phone_apps";
 
     const wrapper = await mountStep();
 
+    expect(card(wrapper, "phone_apps").attributes("aria-pressed")).toBe("true");
+    expect(card(wrapper, "music_hub").attributes("aria-pressed")).toBe("false");
     await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
     expect(setUserPreferenceMock).not.toHaveBeenCalled();
+    expect(wrapper.emitted("advance")).toBeUndefined();
+
+    wrapper.unmount();
+  });
+
+  it("holds the way on itself, so the wizard shows no Next", async () => {
+    const wrapper = await mountStep();
+
+    expect(wrapper.vm.ownsForwardAction).toBe(true);
 
     wrapper.unmount();
   });

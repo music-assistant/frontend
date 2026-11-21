@@ -1,3 +1,4 @@
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import NetworkShareDialog from "@/components/settings/storage/NetworkShareDialog.vue";
 import RemoveLocationDialog from "@/components/settings/storage/RemoveLocationDialog.vue";
 import StorageLocationRow from "@/components/settings/storage/StorageLocationRow.vue";
@@ -38,6 +39,14 @@ const { apiMock, eventbusMock, toastMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
+// the page is only open to who manages the storage
+vi.mock("@/plugins/auth", async () => {
+  const { BUILTIN_ROLE_SCOPES, scopeChecker } =
+    await import("../fixtures/scopes");
+  return {
+    authManager: { hasScope: scopeChecker(BUILTIN_ROLE_SCOPES.admin) },
+  };
+});
 vi.mock("@/plugins/eventbus", () => ({ eventbus: eventbusMock }));
 vi.mock("@/plugins/i18n", () => ({
   $t: (key: string) => key,
@@ -78,6 +87,14 @@ beforeEach(() => {
 });
 
 describe("StorageSettings", () => {
+  it("heads the page with the header of the storage", async () => {
+    const wrapper = await mountPage();
+
+    expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
+      "storage",
+    );
+  });
+
   it("offers to add a network share where the install can mount one", async () => {
     const wrapper = await mountPage();
 

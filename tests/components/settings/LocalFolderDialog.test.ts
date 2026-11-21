@@ -54,7 +54,10 @@ describe("LocalFolderDialog", () => {
     expect(toastMock.success).toHaveBeenCalledWith(
       "settings.storage.folder_added",
     );
-    expect(wrapper.emitted("added")).toHaveLength(1);
+    // the location the server registered, for the caller to use
+    expect(wrapper.emitted("added")).toEqual([
+      [storageLocation({ path: "/home/me/Music" })],
+    ]);
     expect(wrapper.emitted("update:open")).toEqual([[false]]);
   });
 

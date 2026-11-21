@@ -82,6 +82,7 @@ import { Input } from "@/components/ui/input";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { storageErrorText } from "@/helpers/storage";
 import { api } from "@/plugins/api";
+import type { StorageLocation } from "@/plugins/api/interfaces";
 import { computed, ref, useId, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -91,7 +92,7 @@ const props = defineProps<{ open: boolean }>();
 
 const emit = defineEmits<{
   "update:open": [open: boolean];
-  added: [];
+  added: [location: StorageLocation];
 }>();
 
 const { t } = useI18n();
@@ -117,9 +118,9 @@ const save = async () => {
   saving.value = true;
   error.value = null;
   try {
-    await api.addLocalFolder(path.value.trim());
+    const added = await api.addLocalFolder(path.value.trim());
     toast.success(t("settings.storage.folder_added"));
-    emit("added");
+    emit("added", added);
     emit("update:open", false);
   } catch (err) {
     // the dialog stays open, so the reason shows under the path it is about

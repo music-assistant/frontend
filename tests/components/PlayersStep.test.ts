@@ -6,6 +6,7 @@ import type {
   ConfiguredProvider,
   DiscoveredPlayer,
 } from "@/composables/useOnboarding";
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -79,7 +80,6 @@ function addPlayer(overrides: Partial<DiscoveredPlayer> = {}) {
     available: true,
     needsSetup: false,
     icon: null,
-    canToggle: true,
     ...overrides,
   });
 }
@@ -92,8 +92,15 @@ function mountStep() {
 
 type Step = ReturnType<typeof mountStep>;
 
+// the last row of the list
 function addButton(wrapper: Step) {
   return wrapper.find("[data-testid=onboarding-add-provider]");
+}
+
+// the step's own way forward, which the wizard shows as its main button
+function primaryAction(wrapper: Step) {
+  return (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
 }
 
 function rows(wrapper: Step) {
@@ -120,17 +127,20 @@ describe("PlayersStep", () => {
     setPlayerEnabled.mockResolvedValue(true);
   });
 
-  it("explains what finds players when nothing is set up", () => {
+  it("invites to add player support when nothing is set up", () => {
     const wrapper = mountStep();
 
-    // with nothing to act on, the description says what finds players
-    expect(wrapper.text()).toContain(
-      "onboarding.steps.players.description_empty",
-    );
-    expect(wrapper.text()).toContain("onboarding.steps.players.empty");
-    expect(wrapper.text()).toContain(
-      "onboarding.steps.players.no_provider_hint",
-    );
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-invitation-features]")
+        .findAll("[data-slot=item]")
+        .map((item) => item.text()),
+    ).toEqual([
+      "onboarding.steps.players.features.found_automatically",
+      "onboarding.steps.players.features.one_place",
+      "onboarding.steps.players.features.groups",
+    ]);
+    expect(wrapper.text()).not.toContain("onboarding.steps.players.empty");
     // nothing is looking yet, so there is nothing to wait for
     expect(
       wrapper.find("[data-testid=onboarding-players-discovering]").exists(),
@@ -138,9 +148,15 @@ describe("PlayersStep", () => {
     expect(
       wrapper.findAll("[data-testid=onboarding-player-provider]"),
     ).toHaveLength(0);
-    // adding one is the thing to do, so it is the button that stands out
-    expect(addButton(wrapper).text()).toBe("settings.add_player_provider");
-    expect(addButton(wrapper).classes()).toContain("bg-primary");
+    // adding one is the thing to do, so it is the step's main action; the
+    // step is not optional, so nothing says it can wait
+    expect(primaryAction(wrapper)?.labelKey).toBe(
+      "settings.add_player_provider",
+    );
+    expect(addButton(wrapper).exists()).toBe(false);
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-note]").exists(),
+    ).toBe(false);
 
     wrapper.unmount();
   });
@@ -169,7 +185,11 @@ describe("PlayersStep", () => {
     expect(providers).toHaveLength(1);
     expect(providers[0].text()).toContain("Sonos");
     expect(addButton(wrapper).text()).toBe("onboarding.steps.players.add_more");
-    expect(addButton(wrapper).classes()).toContain("bg-accent");
+    expect(primaryAction(wrapper)).toBeUndefined();
+    // with something set up, the step follows what turns up instead of inviting
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-features]").exists(),
+    ).toBe(false);
 
     wrapper.unmount();
   });
@@ -225,11 +245,6 @@ describe("PlayersStep", () => {
       expect.stringContaining("AirPlay, Chromecast"),
     ]);
     expect(wrapper.text()).not.toContain("onboarding.steps.players.empty");
-    // with players to act on, the description says what can be done to them
-    expect(wrapper.text()).toContain("onboarding.steps.players.description");
-    expect(wrapper.text()).not.toContain(
-      "onboarding.steps.players.description_empty",
-    );
 
     wrapper.unmount();
   });
@@ -240,7 +255,8 @@ describe("PlayersStep", () => {
     const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
     expect(dialog.props("show")).toBe(false);
 
-    await addButton(wrapper).trigger("click");
+    primaryAction(wrapper)?.run();
+    await flushPromises();
 
     expect(dialog.props("show")).toBe(true);
     expect(dialog.props("providerType")).toBe(ProviderType.PLAYER);
@@ -321,21 +337,6 @@ describe("PlayersStep", () => {
       expect(
         wrapper.find("[data-testid=onboarding-player-rename]").exists(),
       ).toBe(false);
-
-      wrapper.unmount();
-    });
-
-    it("is out of reach while the player's provider is not running", () => {
-      addPlayer({ canToggle: false });
-
-      const wrapper = mountStep();
-
-      // switching it takes its provider, which has to be there to do it
-      expect(
-        wrapper
-          .find("[data-testid=onboarding-player-enabled]")
-          .attributes("disabled"),
-      ).toBeDefined();
 
       wrapper.unmount();
     });

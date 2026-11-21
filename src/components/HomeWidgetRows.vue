@@ -150,6 +150,7 @@
               rowItemsMap.get(row.id) !== undefined
             "
             :title="row.folder.name"
+            :view-all-to="editMode ? undefined : rowBrowseRoute(row.folder)"
             :provider="folderProvider(row.folder)"
             :items="rowItemsMap.get(row.id) ?? []"
             :dimmed="editMode && row.hidden"
@@ -180,15 +181,13 @@
           <EditorialShelf
             v-else-if="row.kind === 'recommendation' && row.folder"
             :title="row.folder.name"
+            :view-all-to="editMode ? undefined : rowBrowseRoute(row.folder)"
             :subtitle="row.folder.subtitle"
             :provider="folderProvider(row.folder)"
             :dimmed="editMode && row.hidden"
             :tiles-per-view="tilesPerView"
           >
-            <template
-              v-if="editMode || rowSupportsProviderFilter(row.folder)"
-              #actions
-            >
+            <template v-if="editMode || rowHasFilterMenu(row)" #actions>
               <template v-if="editMode">
                 <button
                   class="ed-drag-handle"
@@ -209,20 +208,29 @@
                 </Button>
               </template>
               <FacetedFilter
-                v-if="rowSupportsProviderFilter(row.folder)"
+                v-if="rowHasFilterMenu(row)"
                 :model-value="getRowHiddenProviders(row.id)"
-                :title="$t('tooltip.hide_provider')"
-                :options="providerFilterOptions"
+                :title="filterMenuTitle(row)"
+                :options="
+                  rowSupportsProviderFilter(row.folder)
+                    ? providerFilterOptions
+                    : []
+                "
+                :toggles="hidePlayedToggles(row)"
                 @update:model-value="
                   (providerIds) =>
                     onRowHiddenProvidersChange(row.id, providerIds)
+                "
+                @toggle="
+                  (_id: string, active: boolean) =>
+                    onRowHidePlayedChange(row.id, active)
                 "
               >
                 <template #trigger>
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    :aria-label="$t('tooltip.hide_provider')"
+                    :aria-label="filterMenuTitle(row)"
                   >
                     <span class="relative inline-flex">
                       <ListFilter />
@@ -269,6 +277,11 @@
           >
             <div class="ed-genres__head">
               <h2 class="ed-genres__title">{{ $t("browse_by_genre") }}</h2>
+              <ViewAllLink
+                v-if="!editMode"
+                :to="{ name: 'genres' }"
+                :name="$t('genres')"
+              />
               <div v-if="editMode" class="ed-edit-controls">
                 <button
                   class="ed-drag-handle"
@@ -389,6 +402,8 @@ import {
   setDiscoverRowHidden,
   setDiscoverRowsOrder,
 } from "@/components/discover/utils/discoverRows";
+import { rowBrowseRoute } from "@/components/discover/utils/rowBrowse";
+import ViewAllLink from "@/components/ViewAllLink.vue";
 import {
   isRecommendationRowVisible,
   rowIdsNeedingItems,
@@ -400,6 +415,11 @@ import {
   rowSupportsProviderFilter,
   setRowHiddenProviders,
 } from "@/components/discover/utils/rowProviderFilter";
+import {
+  rowHidesPlayed,
+  rowSupportsHidePlayed,
+  setRowHidePlayed,
+} from "@/components/discover/utils/rowHidePlayed";
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import PlayerCard from "@/components/PlayerCard.vue";
 import { Button } from "@/components/ui/button";
@@ -542,24 +562,60 @@ const providerFilterParamForRow = (rowId: string): string[] | undefined =>
 
 // Persists the row's hidden-provider choice and re-fetches just that row so
 // its items reflect the new filter. Clears the row's cached items first: the
-// preference (read by rowHasActiveFilter) updates synchronously, but the
-// refetch is async, so leaving the stale, now-mismatched items in place could
-// drop the row (and its filter control) from view for that gap.
-const onRowHiddenProvidersChange = (
+// stale, now-mismatched items could otherwise drop the row (and its filter
+// control) from view while the preference saves and the row reloads. The
+// refetch waits for the save, since the preference only changes once the
+// write gets its turn.
+const onRowHiddenProvidersChange = async (
   rowId: string,
   hiddenProviderIds: string[],
-): void => {
-  setRowHiddenProviders(rowId, hiddenProviderIds);
+): Promise<void> => {
   rowItemsMap.value.delete(rowId);
-  fetchRowItems([rowId]);
+  await setRowHiddenProviders(rowId, hiddenProviderIds);
+  await fetchRowItems([rowId]);
 };
 
-// Whether a row currently has eligible provider(s) hidden -- used to keep the
-// row (and its filter control) visible even if that filter empties its results.
+// Same as the source filter above, for the row's "hide fully played" switch.
+const onRowHidePlayedChange = async (
+  rowId: string,
+  hidePlayed: boolean,
+): Promise<void> => {
+  rowItemsMap.value.delete(rowId);
+  await setRowHidePlayed(rowId, hidePlayed);
+  await fetchRowItems([rowId]);
+};
+
+const HIDE_PLAYED_TOGGLE_ID = "hide_played";
+
+// The row's "hide fully played" switch, or nothing when the row has none.
+const hidePlayedToggles = (row: DiscoverRow) => {
+  if (!row.folder || !rowSupportsHidePlayed(row.folder)) return undefined;
+  return [
+    {
+      id: HIDE_PLAYED_TOGGLE_ID,
+      label: $t("listing_filters.hide_fully_played"),
+      active: rowHidesPlayed(row.folder, row.id),
+    },
+  ];
+};
+
+// a row without the sources list only has the switch to offer
+const filterMenuTitle = (row: DiscoverRow): string =>
+  row.folder && rowSupportsProviderFilter(row.folder)
+    ? $t("tooltip.hide_provider")
+    : $t("listing_filters.title");
+
+const rowHasFilterMenu = (row: DiscoverRow): boolean =>
+  row.folder !== undefined &&
+  (rowSupportsProviderFilter(row.folder) || rowSupportsHidePlayed(row.folder));
+
+// Whether a row currently has an active filter -- used to keep the row (and
+// its filter control) visible even if that filter empties its results.
 const rowHasActiveFilter = (row: DiscoverRow): boolean =>
   row.folder !== undefined &&
-  rowSupportsProviderFilter(row.folder) &&
-  providerFilterParamForRow(row.id) !== undefined;
+  ((rowSupportsProviderFilter(row.folder) &&
+    providerFilterParamForRow(row.id) !== undefined) ||
+    rowHidesPlayed(row.folder, row.id));
 
 // --- Top Picks (Model B): a balanced interleave of items across the rows the
 // user has enabled. Only shown, non-empty recommendation folders feed it, so
@@ -835,7 +891,12 @@ const fetchRowItems = async (ids: string[]): Promise<void> => {
         ? providerFilterParamForRow(id)
         : undefined;
       const items = await api
-        .getRecommendationItems(folder.provider, folder.item_id, providers)
+        .getRecommendationItems(
+          folder.provider,
+          folder.item_id,
+          providers,
+          rowHidesPlayed(folder, id),
+        )
         .catch((err) => {
           console.error(
             `Failed to load items for recommendation row ${id}:`,

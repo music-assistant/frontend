@@ -90,6 +90,8 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
   pageCount: Ref<number>;
   hasNextPage: Ref<boolean>;
   loading: Ref<boolean>;
+  // whether the failures loaded at least once
+  loaded: Ref<boolean>;
   error: Ref<string | null>;
   refresh: () => Promise<void>;
   next: () => Promise<void>;
@@ -103,6 +105,7 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
   const pageRows = ref<FailureRow[]>([]);
   const page = ref(1);
   const loading = ref(false);
+  const loaded = ref(false);
   const error = ref<string | null>(null);
 
   // Resolved-name cache keyed by provider+item_id. A null value means the
@@ -176,6 +179,7 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
       }));
       page.value = 1;
       error.value = null;
+      loaded.value = true;
       await resolveCurrentPage();
     } catch (err) {
       // Keep whatever rows we already have; stale data beats an empty table
@@ -249,6 +253,7 @@ export function useAudioAnalysisFailures(options?: { pageSize?: number }): {
     pageCount,
     hasNextPage,
     loading,
+    loaded,
     error,
     refresh,
     next,

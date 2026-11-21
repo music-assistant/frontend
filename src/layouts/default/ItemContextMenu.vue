@@ -103,21 +103,25 @@
             :side-offset="6"
             class="max-h-[70vh] max-w-[min(92vw,350px)] overflow-y-auto"
           >
-            <DropdownMenuItem
+            <template
               v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
               :key="subMenuItem.label"
-              :disabled="subMenuItem.disabled === true"
-              :variant="
-                subMenuItem.color === 'error' ? 'destructive' : 'default'
-              "
-              @select="onSelect($event, subMenuItem)"
             >
-              <MenuItemIcon :icon="subMenuItem.icon" />
-              <span class="flex-1 truncate min-w-0">{{
-                menuItemLabel(subMenuItem)
-              }}</span>
-              <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                :disabled="subMenuItem.disabled === true"
+                :variant="
+                  subMenuItem.color === 'error' ? 'destructive' : 'default'
+                "
+                @select="onSelect($event, subMenuItem)"
+              >
+                <MenuItemIcon :icon="subMenuItem.icon" />
+                <span class="flex-1 truncate min-w-0">{{
+                  menuItemLabel(subMenuItem)
+                }}</span>
+                <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator v-if="subMenuItem.separatorAfter" />
+            </template>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <!-- leaf item -->
@@ -149,9 +153,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getLucideIcon, PLAYER_ICON_FALLBACK } from "@/helpers/icon";
-import api from "@/plugins/api";
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
+import api from "@/plugins/api";
 import { store } from "@/plugins/store";
 import { Check } from "@lucide/vue";
 import { computed, h, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
@@ -198,7 +201,7 @@ const playerSubItems = computed<ContextMenuItem[]>(() => {
     action: () => {
       store.activePlayerId = player.player_id;
     },
-    icon: getLucideIcon(player.icon) ?? getLucideIcon(PLAYER_ICON_FALLBACK),
+    icon: getPlayerIcon(player),
     selected: store.activePlayerId == player.player_id,
     close_on_click: false,
   }));
@@ -341,8 +344,13 @@ import {
 } from "@/helpers/favorites";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
+import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import { openExternalItem } from "@/helpers/open_external_item";
-import { getPlayerDisplayName, playerVisible } from "@/helpers/players";
+import {
+  getPlayerDisplayName,
+  getPlayerIcon,
+  playerVisible,
+} from "@/helpers/players";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
 import { showActionResult } from "@/helpers/action_result";
 import {
@@ -357,6 +365,8 @@ import {
   canReorderPlaylistItems,
   canSharePlaylist,
 } from "@/helpers/playlist_access";
+import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
+import { playlistPosition } from "@/helpers/playlist_reorder";
 import {
   gotoRadio,
   radioActionLabelKey,
@@ -396,12 +406,6 @@ import { $t } from "@/plugins/i18n";
 import { toast } from "vue-sonner";
 
 import GenreIcon from "@/components/icons/GenreIcon.vue";
-import {
-  canSavePlaylistMoves,
-  isPlaylistEditPending,
-  sendPlaylistEdit,
-  untilTaskEnds,
-} from "@/composables/usePlaylistTrackReorder";
 import {
   ArrowDown,
   ArrowDownToLine,
@@ -657,6 +661,11 @@ export const getContextMenuItems = async function (
       },
       icon: Info,
     });
+  }
+
+  if (items.length === 1) {
+    const sharePreviewItem = useShareLinkPreviewMenuItem(firstItem);
+    if (sharePreviewItem) contextMenuItems.push(sharePreviewItem);
   }
 
   // creates an AI Radio show from the playlist, which takes config.providers.write
@@ -1081,10 +1090,9 @@ export const getContextMenuItems = async function (
     parentItem.media_type === MediaType.PLAYLIST
   ) {
     const playlist = parentItem as Playlist;
-    // while another edit is pending the listed positions are out of date, and
-    // while reconnecting an edit cannot be sent
-    const canEditOrder = () =>
-      canSavePlaylistMoves() && !isPlaylistEditPending(playlist.item_id);
+    // the server refuses an edit whose positions no longer hold these items
+    const positions = items.map((x) => playlistPosition(x) ?? 0);
+    const uris = items.map((x) => x.uri);
     if (
       (firstItem.media_type === MediaType.TRACK ||
         firstItem.media_type === MediaType.RADIO ||
@@ -1095,19 +1103,14 @@ export const getContextMenuItems = async function (
       contextMenuItems.push({
         label: "remove_playlist",
         labelArgs: [],
-        disabled: !canEditOrder(),
+        disabled: !canSavePlaylistMoves(),
         action: () => {
-          if (!canEditOrder()) return;
-          // the removal runs as a background task; the positions hold until
-          // it is done and read back
-          void sendPlaylistEdit(playlist.item_id, () =>
-            untilTaskEnds(() =>
-              api.removePlaylistTracks(
-                playlist.item_id,
-                items.map((x) => ("position" in x ? x.position : 0) as number),
-              ),
-            ),
-          );
+          if (!canSavePlaylistMoves()) return;
+          api
+            .removePlaylistTracks(playlist.item_id, positions, uris)
+            .catch(() => {
+              // the api already reports the failure to the user
+            });
           // the rows read back after it would select the tracks taking the
           // removed ones' places
           eventbus.emit("clearSelection");
@@ -1117,9 +1120,16 @@ export const getContextMenuItems = async function (
     }
     // move to the playlist's top or bottom; the listing reloads once the
     // playlist reports the change
-    const positions = items.map((x) =>
-      "position" in x && typeof x.position === "number" ? x.position : 0,
-    );
+    const moveTo = (to: number | undefined, done: string) => {
+      if (!canSavePlaylistMoves()) return;
+      api
+        .movePlaylistTracks(playlist.item_id, positions, to, uris)
+        .then(() => toast.success($t(done)))
+        .catch(() => {
+          // the api already reports the failure to the user
+        });
+      eventbus.emit("clearSelection");
+    };
     const atTop = [...new Set(positions)]
       .sort((a, b) => a - b)
       .every((position, index) => position === index + 1);
@@ -1136,32 +1146,16 @@ export const getContextMenuItems = async function (
         contextMenuItems.push({
           label: "playlist_move_to_top",
           labelArgs: [],
-          disabled: !canEditOrder(),
-          action: () => {
-            if (!canEditOrder()) return;
-            void sendPlaylistEdit(playlist.item_id, () =>
-              api.movePlaylistTracks(playlist.item_id, positions, 1),
-            ).then((moved) => {
-              if (moved) toast.success($t("playlist_moved_to_top"));
-            });
-            eventbus.emit("clearSelection");
-          },
+          disabled: !canSavePlaylistMoves(),
+          action: () => moveTo(1, "playlist_moved_to_top"),
           icon: ArrowUpToLine,
         });
       }
       contextMenuItems.push({
         label: "playlist_move_to_bottom",
         labelArgs: [],
-        disabled: !canEditOrder(),
-        action: () => {
-          if (!canEditOrder()) return;
-          void sendPlaylistEdit(playlist.item_id, () =>
-            api.movePlaylistTracks(playlist.item_id, positions),
-          ).then((moved) => {
-            if (moved) toast.success($t("playlist_moved_to_bottom"));
-          });
-          eventbus.emit("clearSelection");
-        },
+        disabled: !canSavePlaylistMoves(),
+        action: () => moveTo(undefined, "playlist_moved_to_bottom"),
         icon: ArrowDownToLine,
       });
     }
@@ -1791,6 +1785,7 @@ const runProviderMenuAction = async function (
         uri,
         choice.requiresPlayer ? store.activePlayer?.player_id : undefined,
       ),
+      choice.instanceId,
     );
   } catch {
     // the api reports the failure itself

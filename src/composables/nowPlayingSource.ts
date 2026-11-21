@@ -18,7 +18,7 @@ export interface NowPlayingSource {
  * Composable that exposes the external source active on the current player.
  */
 export function useNowPlayingSource() {
-  const nowPlayingSource = computed((): NowPlayingSource | undefined => {
+  const activeSource = computed((): NowPlayingSource | undefined => {
     const player = store.activePlayer;
     if (!player || player.powered === false) return undefined;
 
@@ -34,10 +34,18 @@ export function useNowPlayingSource() {
     };
   });
 
+  // an external source that reports no track lands its own name in the title
+  // slot, which would then read twice with the badge below it
+  const nowPlayingSource = computed(() =>
+    activeSource.value?.name === store.activePlayer?.current_media?.title
+      ? undefined
+      : activeSource.value,
+  );
+
   // an external source with no real album lands its own name in the album slot
   const albumSubtitle = computed(() => {
     const album = store.activePlayer?.current_media?.album;
-    if (!album || album === nowPlayingSource.value?.name) return "";
+    if (!album || album === activeSource.value?.name) return "";
     return album;
   });
 
