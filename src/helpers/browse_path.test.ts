@@ -165,6 +165,12 @@ describe("browseLevelTitle", () => {
     expect(titles("fs--abc://Rock")).toEqual(["My music", "Rock"]);
   });
 
+  it("keeps the provider name over the name of its listed folder", () => {
+    expect(titles("fs--abc://", { "fs--abc://": "Old name" })).toEqual([
+      "My music",
+    ]);
+  });
+
   it("names a folder that stands for no provider as the server listed it", () => {
     expect(
       titles("live_sources://", { "live_sources://": "Live sources" }),

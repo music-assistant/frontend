@@ -138,9 +138,9 @@ export interface BrowseLevelNames {
 /**
  * The name a breadcrumb shows for a level of a browse path.
  *
- * A level the server listed as a folder is named as the server named it, which
- * covers folders that stand for no provider, such as `live_sources://`. Any
- * other level shows its provider name or the path segment it came from.
+ * A provider level shows the provider's name. A level that stands for no
+ * provider, such as `live_sources://`, is named as the server listed its folder.
+ * Any other level shows the path segment it came from.
  *
  * @param level - The level, from {@link browsePathLevels}.
  * @param names - Where the names come from.
@@ -151,7 +151,10 @@ export function browseLevelTitle(
 ): string {
   if (level.kind === "scheme") return names.discover;
   if (level.kind === "provider") {
-    return names.folderName(level.path) ?? names.providerName(level.segment);
+    const providerName = names.providerName(level.segment);
+    // an unknown provider id comes back unchanged
+    if (providerName !== level.segment) return providerName;
+    return names.folderName(level.path) ?? providerName;
   }
   if (level.kind === "row")
     return names.folderName(level.path) ?? level.segment;
