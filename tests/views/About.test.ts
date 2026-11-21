@@ -1,6 +1,16 @@
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import About from "@/views/settings/About.vue";
 import {
+  Braces,
+  Bug,
+  ExternalLink,
+  FileText,
+  Library,
+  Lightbulb,
+  MessagesSquare,
+  ScrollText,
+} from "@lucide/vue";
+import {
   enableAutoUnmount,
   flushPromises,
   shallowMount,
@@ -43,5 +53,29 @@ describe("About", () => {
     expect(wrapper.getComponent(SettingsPageHeader).props("page")).toBe(
       "about",
     );
+  });
+
+  it("uses lucide icons for the settings links", async () => {
+    const wrapper = shallowMount(About, {
+      global: {
+        mocks: { $t: (key: string) => key },
+        renderStubDefaultSlot: true,
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.findAllComponents(ExternalLink)).toHaveLength(7);
+    for (const icon of [
+      FileText,
+      Library,
+      Braces,
+      Lightbulb,
+      Bug,
+      MessagesSquare,
+      ScrollText,
+    ]) {
+      expect(wrapper.findComponent(icon).exists()).toBe(true);
+    }
+    expect(wrapper.find("v-icon").exists()).toBe(false);
   });
 });

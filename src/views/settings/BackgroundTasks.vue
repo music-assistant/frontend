@@ -144,7 +144,17 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { ListChecks, Trash2 } from "@lucide/vue";
+import {
+  Ban,
+  CalendarCheck,
+  CalendarX,
+  FileText,
+  ListChecks,
+  Play,
+  RefreshCw,
+  Timer,
+  Trash2,
+} from "@lucide/vue";
 import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -513,14 +523,14 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void showTaskDetails(task);
       },
-      icon: "mdi-file-document-outline",
+      icon: FileText,
     },
     {
       label: "background_tasks.edit_schedule",
       action: () => {
         openScheduleDialog(task);
       },
-      icon: "mdi-timer-edit-outline",
+      icon: Timer,
       hide: !canManageTasks.value || !canEditTaskSchedule(task),
     },
     {
@@ -528,7 +538,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void runTask(task);
       },
-      icon: "mdi-play",
+      icon: Play,
       hide: !canManageTasks.value || !canRunTaskManually(task),
     },
     {
@@ -538,9 +548,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void toggleTaskEnabled(task);
       },
-      icon: task.schedule?.enabled
-        ? "mdi-calendar-remove"
-        : "mdi-calendar-check",
+      icon: task.schedule?.enabled ? CalendarX : CalendarCheck,
       hide: !canManageTasks.value || !isScheduledTask(task),
     },
     {
@@ -548,7 +556,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void retryTask(task);
       },
-      icon: "mdi-refresh",
+      icon: RefreshCw,
       hide:
         !canManageTasks.value || !(task.allow_retry && isRetryableTask(task)),
     },
@@ -557,7 +565,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void cancelTask(task);
       },
-      icon: "mdi-cancel",
+      icon: Ban,
       hide:
         !canManageTasks.value || !(task.allow_cancel && isCancelableTask(task)),
     },
@@ -566,7 +574,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void removeTask(task);
       },
-      icon: "mdi-delete",
+      icon: Trash2,
       color: "error",
       hide: !canManageTasks.value || !canRemoveTask(task),
     },
