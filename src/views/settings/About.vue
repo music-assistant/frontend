@@ -224,7 +224,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500"
             >
-              <v-icon icon="mdi-text-box-outline" size="24" />
+              <FileText class="size-6" aria-hidden="true" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -235,10 +235,9 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
+          <ExternalLink
+            class="size-5 text-primary shrink-0"
+            aria-hidden="true"
           />
         </a>
 
@@ -251,7 +250,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500"
             >
-              <v-icon icon="mdi-bookshelf" size="24" />
+              <Library class="size-6" aria-hidden="true" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -262,10 +261,9 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
+          <ExternalLink
+            class="size-5 text-primary shrink-0"
+            aria-hidden="true"
           />
         </a>
 
@@ -279,7 +277,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-500/10 text-teal-500"
             >
-              <v-icon icon="mdi-api" size="24" />
+              <Braces class="size-6" aria-hidden="true" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -290,10 +288,9 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
+          <ExternalLink
+            class="size-5 text-primary shrink-0"
+            aria-hidden="true"
           />
         </a>
 
@@ -306,7 +303,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500"
             >
-              <v-icon icon="mdi-lightbulb-outline" size="24" />
+              <Lightbulb class="size-6" aria-hidden="true" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -317,10 +314,9 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
+          <ExternalLink
+            class="size-5 text-primary shrink-0"
+            aria-hidden="true"
           />
         </a>
 
@@ -333,7 +329,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500"
             >
-              <v-icon icon="mdi-bug" size="24" />
+              <Bug class="size-6" aria-hidden="true" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -344,10 +340,9 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
+          <ExternalLink
+            class="size-5 text-primary shrink-0"
+            aria-hidden="true"
           />
         </a>
 
@@ -360,7 +355,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500"
             >
-              <v-icon icon="mdi-forum" size="24" />
+              <MessagesSquare class="size-6" aria-hidden="true" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -371,10 +366,9 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
+          <ExternalLink
+            class="size-5 text-primary shrink-0"
+            aria-hidden="true"
           />
         </a>
 
@@ -387,7 +381,7 @@
             <div
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500"
             >
-              <v-icon icon="mdi-license" size="24" />
+              <ScrollText class="size-6" aria-hidden="true" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-medium text-primary underline">
@@ -398,10 +392,9 @@
               </span>
             </div>
           </div>
-          <v-icon
-            icon="mdi-open-in-new"
-            size="20"
-            class="text-primary shrink-0"
+          <ExternalLink
+            class="size-5 text-primary shrink-0"
+            aria-hidden="true"
           />
         </a>
       </CardContent>
@@ -429,7 +422,17 @@ import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Pencil } from "@lucide/vue";
+import {
+  Braces,
+  Bug,
+  ExternalLink,
+  FileText,
+  Library,
+  Lightbulb,
+  MessagesSquare,
+  Pencil,
+  ScrollText,
+} from "@lucide/vue";
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
