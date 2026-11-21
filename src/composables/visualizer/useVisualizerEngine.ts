@@ -310,9 +310,14 @@ export async function createVisualizerEngine(
       visualizer.setPaletteRamp(colors, strength);
     },
     destroy() {
+      // A lost context has no extension left to lose, so a repeat would throw.
+      if (destroyed) return;
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
+      // Every engine holds its own WebGL2 context and rebuilds are routine;
+      // Chrome drops the oldest live context on overflow.
+      visualizer.loseGLContext();
     },
   };
 }
