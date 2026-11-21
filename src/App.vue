@@ -441,9 +441,14 @@ const completeInitialization = async () => {
   } else if (isGuestAccessSession) {
     router.push("/guest");
   } else if (isDashboardViewer) {
+    // A re-cast to a session that is still authenticated never reaches the login
+    // flow, so the url it was launched with is what re-pins it; the stored path
+    // only covers a plain reload, whose url no longer carries one.
     const pinnedPath = sanitizeDashboardViewerPath(
-      sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY),
+      urlParams.get("path") ??
+        sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY),
     );
+    sessionStorage.setItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY, pinnedPath);
     router.replace(pinnedPath);
   } else if (shouldOpenWelcome()) {
     // someone who has just been given an account of their own is welcomed into

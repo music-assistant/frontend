@@ -17,13 +17,11 @@ const prefs = vi.hoisted(
       visualizer_palette_ramp: 75,
     }) as Record<string, unknown>,
 );
-vi.mock("@/composables/userPreferences", () => ({
-  useUserPreferences: () => ({
-    getPreference: (key: string, fallback: unknown) => ({
-      get value() {
-        return prefs[key] ?? fallback;
-      },
-    }),
+vi.mock("@/composables/visualizer/useVisualizer", () => ({
+  visualizerPreference: (key: string, fallback: unknown) => ({
+    get value() {
+      return prefs[key] ?? fallback;
+    },
   }),
 }));
 

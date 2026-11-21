@@ -11,13 +11,20 @@ import {
   getPreset,
   randomPresetName,
 } from "@/helpers/visualizer/presetLibrary";
-import { qualityProfile } from "@/helpers/visualizer/quality";
+import {
+  boundedRenderSize,
+  qualityProfile,
+  type QualityProfile,
+} from "@/helpers/visualizer/quality";
 
 const N_SAMPLES = 1024;
 const ZERO_LEVEL = 0x80;
 const SILENCE = new Uint8Array(N_SAMPLES).fill(ZERO_LEVEL);
 const STARVATION_MS = 300;
 const PRESET_BLEND_SEC = 2.7;
+// rAF fires on the panel's tick grid; admitting a little early keeps a cap
+// that is not a whole divisor of the panel rate from skipping a tick too many
+const PACING_SLACK = 0.75;
 // The waveform is ramped down to silence over DECAY_MS before the loop halts,
 // and back up over ATTACK_MS on resume. Exported so the layer fades in step.
 export const DECAY_MS = 1500;
@@ -59,6 +66,8 @@ export interface VisualizerEngine {
     colors: readonly (readonly [number, number, number])[] | null,
     strength: number,
   ): void;
+  // what the GL context reports it is drawing with
+  readonly renderer: string;
   destroy(): void;
 }
 
@@ -71,18 +80,48 @@ export interface VisualizerEngine {
  * Chrome drops the oldest live context on overflow — the running visualizer.
  */
 let visualizerSupported: boolean | null = null;
+const UNKNOWN_RENDERER = "unknown";
+let probedRenderer = UNKNOWN_RENDERER;
 
 export function isVisualizerSupported(): boolean {
   if (visualizerSupported === null) {
+    let gl: WebGL2RenderingContext | null = null;
     try {
-      visualizerSupported =
-        typeof WebAssembly === "object" &&
-        !!document.createElement("canvas").getContext("webgl2");
+      gl = document.createElement("canvas").getContext("webgl2");
+      visualizerSupported = typeof WebAssembly === "object" && !!gl;
     } catch {
       visualizerSupported = false;
     }
+    // Separately guarded: the unmasked string names the actual driver (a
+    // software rasterizer also reports WebGL2), but a driver that throws on
+    // the query must cost us the string, not the visualizer.
+    if (gl) {
+      try {
+        const info = gl.getExtension("WEBGL_debug_renderer_info");
+        probedRenderer =
+          String(
+            (info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) ||
+              gl.getParameter(gl.RENDERER),
+          ) || UNKNOWN_RENDERER;
+      } catch {
+        probedRenderer = UNKNOWN_RENDERER;
+      }
+    }
   }
   return visualizerSupported;
+}
+
+/**
+ * What this device reports it draws with.
+ *
+ * Read from the support probe rather than the visualizer's canvas: butterchurn
+ * renders into its own OffscreenCanvas and takes a 2D context on the canvas it
+ * is given, so asking that canvas for a webgl2 context returns null and would
+ * report every display as unknown.
+ */
+export function visualizerRenderer(): string {
+  isVisualizerSupported();
+  return probedRenderer;
 }
 
 // One never-resumed AudioContext satisfies butterchurn's constructor; the
@@ -110,36 +149,50 @@ function resolveButterchurnModule(module: unknown): ButterchurnStatic {
   throw new Error("unexpected butterchurn module shape");
 }
 
+export interface VisualizerEngineOptions {
+  // upper bound on render rate
+  maxFps?: number;
+}
+
 /**
  * Create the engine on a canvas. Returns null when WebGL2 is unavailable.
  *
  * @param canvas - the target canvas element.
  * @param getFrame - returns the waveform frame for "now", or null when none.
- * @param quality - render quality tier; defaults to the "high" profile.
+ * @param quality - a quality profile, or the name of a user-facing tier.
+ * @param options - extra engine options, e.g. a frame rate cap.
  */
 export async function createVisualizerEngine(
   canvas: HTMLCanvasElement,
   getFrame: () => Uint8Array | null,
-  quality?: string,
+  quality?: string | QualityProfile,
+  options?: VisualizerEngineOptions,
 ): Promise<VisualizerEngine | null> {
   if (!isVisualizerSupported()) return null;
   const butterchurn = resolveButterchurnModule(await import("butterchurn"));
   sharedAudioContext ??= new AudioContext();
-  const profile = qualityProfile(quality);
+  const profile =
+    typeof quality === "object" ? quality : qualityProfile(quality);
 
   // Butterchurn's screen pass sets the GL viewport to exactly the width and
   // height it was given (its pixelRatio option only scales internal render
   // textures and defaults to devicePixelRatio, double-scaling if unmanaged).
   // So: size the canvas drawing buffer ourselves, hand butterchurn those
   // same dimensions, and pin its pixelRatio to 1. The quality profile
-  // supplies the dpr cap and render scale (CSS stretches the result).
-  const scale =
-    Math.min(window.devicePixelRatio || 1, profile.maxDpr) *
-    profile.renderScale;
-  const deviceSize = () => ({
-    width: Math.round(canvas.clientWidth * scale),
-    height: Math.round(canvas.clientHeight * scale),
-  });
+  // supplies the dpr cap, render scale, aspect cap and pixel budget (CSS
+  // scales the result up; `object-fit: cover` crops when the aspect was
+  // capped below the element's).
+  const deviceSize = () => {
+    const scale =
+      Math.min(window.devicePixelRatio || 1, profile.maxDpr) *
+      profile.renderScale;
+    return boundedRenderSize(
+      Math.round(canvas.clientWidth * scale),
+      Math.round(canvas.clientHeight * scale),
+      profile,
+    );
+  };
+
   let { width, height } = deviceSize();
   canvas.width = width;
   canvas.height = height;
@@ -158,6 +211,8 @@ export async function createVisualizerEngine(
       onlyUseWASM: true,
     },
   );
+
+  const renderer = visualizerRenderer();
 
   let rafHandle: number | null = null;
   let lastFrame: Uint8Array = SILENCE;
@@ -184,6 +239,7 @@ export async function createVisualizerEngine(
   const stopLoop = () => {
     if (rafHandle !== null) cancelAnimationFrame(rafHandle);
     rafHandle = null;
+    lastRenderAt = 0;
   };
 
   // Nothing redraws while the loop is halted, so whatever invalidated the
@@ -215,10 +271,20 @@ export async function createVisualizerEngine(
     return scaledFrame;
   };
 
+  const maxFps = options?.maxFps ?? 0;
+  const pacingGateMs = maxFps ? (1000 / maxFps) * PACING_SLACK : 0;
+  let lastRenderAt = 0;
+
   const renderLoop = () => {
     if (destroyed) return;
     rafHandle = requestAnimationFrame(renderLoop);
-    if (document.visibilityState !== "visible") return;
+    if (document.visibilityState !== "visible") {
+      lastRenderAt = 0;
+      return;
+    }
+    const now = performance.now();
+    if (lastRenderAt && now - lastRenderAt < pacingGateMs) return;
+
     const gain = currentGain();
     if (paused && gain <= 0) {
       // Wound down: only halting the loop stops the time-driven motion.
@@ -231,22 +297,19 @@ export async function createVisualizerEngine(
       const frame = getFrame();
       if (frame) {
         lastFrame = frame;
-        lastFrameAt = performance.now();
-      } else if (performance.now() - lastFrameAt > STARVATION_MS) {
+        lastFrameAt = now;
+      } else if (now - lastFrameAt > STARVATION_MS) {
         lastFrame = SILENCE;
       }
     }
     renderFrame(applyGain(lastFrame, gain));
+    lastRenderAt = now;
   };
 
   const resizeObserver = new ResizeObserver(() => {
     const size = deviceSize();
-    if (
-      !size.width ||
-      !size.height ||
-      (size.width === width && size.height === height)
-    )
-      return;
+    if (!size.width || !size.height) return;
+    if (size.width === width && size.height === height) return;
     width = size.width;
     height = size.height;
     canvas.width = width;
@@ -260,6 +323,7 @@ export async function createVisualizerEngine(
   rafHandle = requestAnimationFrame(renderLoop);
 
   return {
+    renderer,
     async loadPresetByName(name: string, blendSec = PRESET_BLEND_SEC) {
       // A stored name can be a preset v3 dropped.
       let loadedName = name;
@@ -313,6 +377,9 @@ export async function createVisualizerEngine(
       destroyed = true;
       if (rafHandle !== null) cancelAnimationFrame(rafHandle);
       resizeObserver.disconnect();
+      // Every engine holds its own WebGL2 context and rebuilds are routine;
+      // Chrome drops the oldest live context on overflow.
+      visualizer.loseGLContext();
     },
   };
 }

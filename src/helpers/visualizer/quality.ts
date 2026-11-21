@@ -3,8 +3,8 @@
  * device-pixel-ratio cap, warp mesh density, and FXAA.
  *
  * Rendering cost scales roughly with renderScale² × dpr² (GPU fill) and
- * mesh vertex count (per-vertex preset equations, CPU-bound on the v2
- * engine), so the tiers span tablet-friendly to full retina.
+ * mesh vertex count (per-vertex preset equations), so the tiers span
+ * tablet-friendly to full retina.
  */
 
 export type VisualizerQuality = "low" | "medium" | "high" | "native";
@@ -15,6 +15,10 @@ export interface QualityProfile {
   meshWidth: number;
   meshHeight: number;
   outputFXAA: boolean;
+  // aspect-preserving ceiling on drawing-buffer pixels
+  maxPixels?: number;
+  // widest allowed buffer aspect; the canvas cover-crops the excess instead of stretching
+  maxAspect?: number;
 }
 
 export const QUALITY_PROFILES: Record<VisualizerQuality, QualityProfile> = {
@@ -58,4 +62,57 @@ export function qualityProfile(value: string | undefined): QualityProfile {
     return QUALITY_PROFILES[value as VisualizerQuality];
   }
   return QUALITY_PROFILES[DEFAULT_QUALITY];
+}
+
+// TV/cast displays get one fixed profile: a pixel budget, since the same scale
+// factor lands on wildly different pixel loads across TV viewports. Most shader
+// presets ignore MilkDrop's aspect uniform and stretch on a wide screen, so it
+// renders 1:1 and cover-crops.
+const TV_MESH_WIDTH = 48;
+const TV_MESH_HEIGHT = 36;
+const TV_MAX_PIXELS = 1_030_000;
+
+export const TV_PROFILE: QualityProfile = {
+  renderScale: 1,
+  maxDpr: 2,
+  meshWidth: TV_MESH_WIDTH,
+  meshHeight: TV_MESH_HEIGHT,
+  outputFXAA: true,
+  maxPixels: TV_MAX_PIXELS,
+  maxAspect: 1,
+};
+
+// render rate cap for TV/cast displays
+export const TV_MAX_FPS = 30;
+
+/**
+ * Fit a drawing-buffer size to a profile's aspect cap and pixel budget.
+ *
+ * :param width: The unbounded buffer width in device pixels.
+ * :param height: The unbounded buffer height in device pixels.
+ * :param profile: The quality profile supplying the bounds.
+ */
+export function boundedRenderSize(
+  width: number,
+  height: number,
+  profile: QualityProfile,
+): { width: number; height: number } {
+  // zero means "not laid out yet"; the caller keeps its current size then
+  if (!width || !height) return { width, height };
+  const aspectCap = profile.maxAspect;
+  if (aspectCap) {
+    if (width > height * aspectCap) {
+      width = Math.round(height * aspectCap);
+    } else if (height > width * aspectCap) {
+      height = Math.round(width * aspectCap);
+    }
+  }
+  const budget = profile.maxPixels;
+  if (budget && width * height > budget) {
+    const shrink = Math.sqrt(budget / (width * height));
+    // floored so the budget is a true ceiling; rounding up can overshoot it
+    width = Math.floor(width * shrink);
+    height = Math.floor(height * shrink);
+  }
+  return { width: Math.max(1, width), height: Math.max(1, height) };
 }

@@ -8,9 +8,21 @@
  * toggle); that preference itself follows the expert mode until it is set.
  * Toggling from a view therefore only affects the player that view is showing,
  * not every display of the user.
+ *
+ * A cast dashboard runs as the dashboard viewer, which has no preferences of
+ * its own: it follows the preferences of the user who cast it, fetched from
+ * the server and refreshed live as that user changes them.
  */
 
-import { computed, toValue, type MaybeRefOrGetter } from "vue";
+import {
+  computed,
+  effectScope,
+  ref,
+  toValue,
+  watch,
+  type ComputedRef,
+  type MaybeRefOrGetter,
+} from "vue";
 import {
   setUserPreference,
   useUserPreferences,
@@ -19,20 +31,160 @@ import {
   VISUALIZER_BLUR_DEFAULT,
   VISUALIZER_OPACITY_DEFAULT,
 } from "@/composables/visualizer/state";
+import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
 import { expertModeSetting } from "@/helpers/expert_mode";
-import { api } from "@/plugins/api";
+import { api, ConnectionState } from "@/plugins/api";
+import { EventType } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
+import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 import {
+  reportVisualizerCapability,
   visualizerCanRender,
   visualizerProviderAvailable,
+  visualizerShownOnDashboards,
 } from "@/plugins/visualizer-relay";
+
+const REMOTE_CONNECTION_REASON = "relay unreachable over a remote connection";
+const UNSUPPORTED_REASON = "WebGL2 or WebAssembly unavailable in this browser";
+
+// Why this session never mounts a canvas, or null when it can render.
+function unrenderableReason(): string | null {
+  if (api.isRemoteConnection.value) return REMOTE_CONNECTION_REASON;
+  return isVisualizerSupported() ? null : UNSUPPORTED_REASON;
+}
+
+// The plugin's show_on_dashboards setting. A cast dashboard runs as the
+// dashboard viewer, which has no user preferences and no way to set any, so
+// this decides for it; the casting user's per-player override still wins.
+const dashboardDefaultEnabled = ref(false);
+let dashboardDefaultWatchStarted = false;
+
+// Watched rather than fetched once: a cast receiver boots straight into a
+// dashboard route, so the providers map is often still loading when the
+// hosting view mounts. Module-level singleton, started on first use, in a
+// detached scope so the first hosting component's unmount cannot dispose it.
+function startDashboardDefaultWatch(): void {
+  if (dashboardDefaultWatchStarted) return;
+  dashboardDefaultWatchStarted = true;
+  effectScope(true).run(() => {
+    watch(
+      () => visualizerProviderAvailable(),
+      async (available) => {
+        // only a dashboard viewer reads the plugin setting; other sessions have
+        // their own preference
+        if (!available || !authManager.isDashboardViewer()) return;
+        // A cast/TV display that cannot render MilkDrop never mounts the
+        // canvas (which reports the capable case), so its probe result would
+        // stay invisible; report the negative from here instead.
+        const reason = unrenderableReason();
+        if (reason) void reportVisualizerCapability("none", undefined, reason);
+        dashboardDefaultEnabled.value = await visualizerShownOnDashboards();
+      },
+      { immediate: true },
+    );
+  });
+}
+
+// The casting user's visualizer preferences, for dashboard viewer sessions.
+const viewerPreferences = ref<Record<string, unknown>>({});
+let viewerPreferencesSyncStarted = false;
+
+// The viewer identifies its session by the dashboard_id the server put in its
+// launched url and proves it with the url's viewer_key; re-fetched on the
+// sessions-updated event, which the server also signals when the casting user
+// changes their preferences.
+function startViewerPreferencesSync(): void {
+  if (viewerPreferencesSyncStarted) return;
+  viewerPreferencesSyncStarted = true;
+  effectScope(true).run(() => {
+    let fetchRequestId = 0;
+    const fetchViewerPreferences = async () => {
+      const { dashboard_id: dashboardId, viewer_key: viewerKey } =
+        router.currentRoute.value.query;
+      // the server rejects a request without both
+      if (typeof dashboardId !== "string" || typeof viewerKey !== "string") {
+        return;
+      }
+      // Only the latest request may land, whatever order responses arrive in.
+      const requestId = ++fetchRequestId;
+      try {
+        const preferences = await api.sendCommand<Record<string, unknown>>(
+          "dashboard/viewer_preferences",
+          { dashboard_id: dashboardId, viewer_key: viewerKey },
+          // a failing fetch would otherwise toast on a display nobody can reach
+          { suppressGlobalError: true },
+        );
+        if (requestId === fetchRequestId) {
+          viewerPreferences.value = preferences ?? {};
+        }
+      } catch (error) {
+        console.warn("[visualizer] could not fetch viewer preferences:", error);
+      }
+    };
+    // Watched rather than fetched once, for the same reason the plugin default
+    // is: a cast receiver boots straight into a dashboard route, so the
+    // connection is often still coming up when the hosting view mounts. A plain
+    // call here would be rejected and the viewer would sit on fallbacks until
+    // some unrelated session event happened along.
+    // The key is part of the source: a re-cast swaps it while connected, and
+    // the server has already dropped the previous one.
+    watch(
+      () => {
+        const ready =
+          api.state.value === ConnectionState.AUTHENTICATED ||
+          api.state.value === ConnectionState.INITIALIZED;
+        const { dashboard_id: dashboardId, viewer_key: viewerKey } =
+          router.currentRoute.value.query;
+        return ready ? `${dashboardId}:${viewerKey}` : undefined;
+      },
+      (readyKey) => {
+        if (readyKey) void fetchViewerPreferences();
+      },
+      { immediate: true },
+    );
+    api.subscribe(EventType.DASHBOARD_SESSIONS_UPDATED, () => {
+      void fetchViewerPreferences();
+    });
+  });
+}
+
+/**
+ * A visualizer preference as this session should render it: the own user's
+ * stored preference, or, for a dashboard viewer, the casting user's.
+ */
+export function visualizerPreference<T>(
+  key: string,
+  fallback: T,
+): ComputedRef<T> {
+  const { getPreference } = useUserPreferences();
+  const ownPreference = getPreference<T>(key, fallback);
+  return computed(() => {
+    if (authManager.isDashboardViewer()) {
+      return (viewerPreferences.value[key] as T | undefined) ?? fallback;
+    }
+    return ownPreference.value;
+  });
+}
 
 /**
  * Whether the visualizer is on for this player (standalone: also usable from
  * plain functions like the player menu builder). Reads reactive store state,
- * so it stays reactive when called inside a computed.
+ * so it stays reactive when called inside a computed. Free of side effects: a
+ * dashboard viewer's sources are started by useVisualizer.
  */
 export function visualizerEnabledForPlayer(playerId?: string): boolean {
+  if (authManager.isDashboardViewer()) {
+    // The casting user's GLOBAL toggle describes their own screens, not the
+    // display they deliberately cast to: only their per-player override and
+    // the plugin's show_on_dashboards setting decide here.
+    if (playerId) {
+      const override =
+        viewerPreferences.value[`visualizer_enabled.${playerId}`];
+      if (override !== undefined) return Boolean(override);
+    }
+    return dashboardDefaultEnabled.value;
+  }
   const prefs = store.currentUser?.preferences;
   if (playerId) {
     // a player merged into this one brings its preference along
@@ -42,6 +194,7 @@ export function visualizerEnabledForPlayer(playerId?: string): boolean {
       if (override !== undefined) return Boolean(override);
     }
   }
+  // show_on_dashboards deliberately does not reach here; this is not a dashboard
   return expertModeSetting("visualizer_enabled");
 }
 
@@ -53,13 +206,16 @@ export function toggleVisualizerForPlayer(playerId?: string): void {
 }
 
 export function useVisualizer(playerId?: MaybeRefOrGetter<string | undefined>) {
-  const { getPreference } = useUserPreferences();
-  const visualizerPresetPref = getPreference("visualizer_preset", "");
-  const visualizerBlurPref = getPreference(
+  // Every dashboard view hosting a visualizer goes through here, before its
+  // canvas reads any preference.
+  startDashboardDefaultWatch();
+  if (authManager.isDashboardViewer()) startViewerPreferencesSync();
+  const visualizerPresetPref = visualizerPreference("visualizer_preset", "");
+  const visualizerBlurPref = visualizerPreference(
     "visualizer_blur",
     VISUALIZER_BLUR_DEFAULT,
   );
-  const visualizerOpacityPref = getPreference(
+  const visualizerOpacityPref = visualizerPreference(
     "visualizer_opacity",
     VISUALIZER_OPACITY_DEFAULT,
   );

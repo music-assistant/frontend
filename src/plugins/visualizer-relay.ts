@@ -14,6 +14,7 @@ import { ClockSync, computeTimeSample } from "@/helpers/visualizer/timeSync";
 import { isVisualizerSupported } from "@/composables/visualizer/useVisualizerEngine";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
+import router from "@/plugins/router";
 import { store } from "@/plugins/store";
 
 const N_SAMPLES = 1024; // matches butterchurn's fixed internal buffers
@@ -80,6 +81,76 @@ export function visualizerProviderAvailable(): boolean {
 export function visualizerCanRender(): boolean {
   if (api.isRemoteConnection.value) return false;
   return isVisualizerSupported();
+}
+
+// The dashboard id the server put in the launched url. Reports carry it so a
+// server with several displays can tell whose report it is logging.
+function reportingDashboardId(): string | undefined {
+  const value = router.currentRoute.value.query.dashboard_id;
+  return typeof value === "string" ? value : undefined;
+}
+
+let capabilityReported = false;
+
+/**
+ * Report this display's render capabilities to the server, once per page load.
+ *
+ * Cast and TV receivers vary wildly in graphics support and have no reachable
+ * console; the server logs this report so it is knowable which devices can
+ * render MilkDrop and which cannot. Sent over the main API socket, so a
+ * display that cannot render (and thus never opens a relay connection) still
+ * gets its probe result recorded.
+ *
+ * :param renderer: Which renderer the display ended up with.
+ * :param gpu: What the GL context reports it draws with.
+ * :param error: Why the engine failed to start, if it did.
+ */
+export async function reportVisualizerCapability(
+  renderer: "butterchurn" | "none",
+  gpu?: string,
+  error?: string,
+): Promise<void> {
+  if (capabilityReported || !authManager.isDashboardViewer()) return;
+  capabilityReported = true;
+  try {
+    await api.sendCommand(
+      "milkdrop_visualizer/report_capability",
+      {
+        webgl2: isVisualizerSupported(),
+        renderer,
+        user_agent: navigator.userAgent,
+        gpu,
+        error,
+        dashboard_id: reportingDashboardId(),
+      },
+      // a failing report would otherwise toast on a display nobody can reach
+      { suppressGlobalError: true },
+    );
+  } catch (reportError) {
+    console.warn("[visualizer] could not report capability:", reportError);
+  }
+}
+
+/**
+ * Whether the plugin is configured to show the visualizer on dashboard screens.
+ *
+ * Cast dashboards run as the dashboard viewer, which has no user preferences and
+ * no way to set any, so this server-side setting decides for them. Dashboards
+ * only; a normal session falls back to off.
+ */
+export async function visualizerShownOnDashboards(): Promise<boolean> {
+  if (!visualizerProviderAvailable()) return false;
+  try {
+    const config = await api.sendCommand<Record<string, boolean>>(
+      "milkdrop_visualizer/config",
+      undefined,
+      { suppressGlobalError: true },
+    );
+    return config?.show_on_dashboards === true;
+  } catch (error) {
+    console.warn("[visualizer] could not read the plugin config:", error);
+    return false;
+  }
 }
 
 export class VisualizerRelayClient {
@@ -331,17 +402,6 @@ export class VisualizerRelayClient {
       this.reconnectTimer = null;
       if (!this.closed) this.openSocket();
     }, RECONNECT_DELAY_MS);
-  }
-
-  /**
-   * Tell the server why this viewer cannot render.
-   *
-   * Cast displays and kiosks have no reachable console, so an engine that fails
-   * to start would otherwise be indistinguishable from a broken relay.
-   */
-  reportError(message: string): void {
-    if (this.ws?.readyState !== WebSocket.OPEN) return;
-    this.ws.send(JSON.stringify({ type: "client/error", message }));
   }
 
   private clearTimers(): void {

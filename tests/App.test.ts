@@ -528,6 +528,7 @@ describe("App initialization", () => {
     // the trigger rewrites the address bar, so hand it back as it was found
     afterEach(() => {
       window.history.replaceState({}, "", originalUrl);
+      sessionStorage.removeItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY);
     });
 
     const asAdmin = () => {
@@ -672,6 +673,30 @@ describe("App initialization", () => {
       // a wall-mounted tablet has nobody in front of it to welcome
       expect(mockRouterReplace).toHaveBeenCalledWith("/now-playing");
       expect(mockRouterPush).not.toHaveBeenCalled();
+    });
+
+    it("re-pins a recast dashboard viewer to the url it was launched with", async () => {
+      // a recast to a still authenticated session skips the login flow, and
+      // the viewer key rotates with every cast
+      const launched = "/now-playing?dashboard_id=d1&viewer_key=new";
+      asNewMember();
+      authManagerMock.isDashboardViewer.mockReturnValue(true);
+      sessionStorage.setItem(
+        DASHBOARD_VIEWER_PATH_STORAGE_KEY,
+        "/now-playing?dashboard_id=d1&viewer_key=old",
+      );
+      window.history.replaceState(
+        {},
+        "",
+        `/?path=${encodeURIComponent(launched)}`,
+      );
+
+      wrapper = await mountApp();
+
+      expect(mockRouterReplace).toHaveBeenCalledWith(launched);
+      expect(sessionStorage.getItem(DASHBOARD_VIEWER_PATH_STORAGE_KEY)).toBe(
+        launched,
+      );
     });
 
     describe("on a fresh server's first run", () => {

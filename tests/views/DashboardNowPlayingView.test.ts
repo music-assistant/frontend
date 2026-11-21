@@ -8,6 +8,7 @@ const { authMock, routeMock, routerMock, storeMock } = vi.hoisted(() => ({
   authMock: { isDashboardViewer: (): boolean => false },
   routeMock: { query: {} as Record<string, string> },
   routerMock: {
+    currentRoute: { value: { query: {} as Record<string, string> } },
     options: { history: { state: { back: "/discover" as string | null } } },
     back: vi.fn(),
     push: vi.fn(),
@@ -16,6 +17,7 @@ const { authMock, routeMock, routerMock, storeMock } = vi.hoisted(() => ({
     frameless: false,
     showFullscreenPlayer: false,
     activePlayerId: undefined as string | undefined,
+    enabledPlugins: new Set<string>(),
     activePlayer: undefined as
       | {
           icon?: string | null;
@@ -31,9 +33,25 @@ const { authMock, routeMock, routerMock, storeMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/plugins/api", () => {
-  const api = { baseUrl: "", players: {} as Record<string, Player> };
-  return { default: api, api };
+vi.mock("@/plugins/api", async () => {
+  const { ref } = await import("vue");
+  // what a dashboard viewer's visualizer preference sync reads
+  const api = {
+    baseUrl: "",
+    players: {} as Record<string, Player>,
+    isRemoteConnection: ref(false),
+    sendCommand: vi.fn(async () => ({})),
+    state: ref("authenticated"),
+    subscribe: vi.fn(() => () => {}),
+  };
+  return {
+    api,
+    ConnectionState: {
+      AUTHENTICATED: "authenticated",
+      INITIALIZED: "initialized",
+    },
+    default: api,
+  };
 });
 
 vi.mock("@/plugins/store", () => ({
