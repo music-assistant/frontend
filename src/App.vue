@@ -91,7 +91,12 @@ import {
   pruneStaleProviderFilters,
   runAfterPreferenceWrites,
 } from "./composables/userPreferences";
-import { initializeCompanionIntegration } from "./plugins/companion";
+import {
+  getDesktopSavedLoginStatus,
+  hasDesktopSavedLogin,
+  initializeCompanionIntegration,
+  saveDesktopLogin,
+} from "./plugins/companion";
 import {
   getKioskModePreference,
   haState,
@@ -225,9 +230,16 @@ const handleRemoteConnected = async (transport: ITransport) => {
   }
 };
 
+const getSavedLoginConnection = (): string | null => {
+  const serverId = api.serverInfo.value?.server_id;
+  const connection = getCurrentAuthConnectionIdentity();
+  return serverId && connection ? `${connection}:${serverId}` : null;
+};
+
 const handleRemoteAuthenticated = async (credentials: {
   username?: string;
   password?: string;
+  savedLogin?: { context: string; remember: boolean; connection: string };
   token?: string;
   user?: User;
 }) => {
@@ -245,12 +257,48 @@ const handleRemoteAuthenticated = async (credentials: {
       );
       authManager.setCurrentUser(credentials.user);
     } else if (credentials.username && credentials.password) {
+      const candidate =
+        credentials.savedLogin?.remember && hasDesktopSavedLogin()
+          ? {
+              username: credentials.username,
+              password: credentials.password,
+              context: credentials.savedLogin.context,
+              connection: credentials.savedLogin.connection,
+              serverId: api.serverInfo.value?.server_id,
+            }
+          : null;
       const result = await api.loginWithCredentials(
         credentials.username,
         credentials.password,
         getDeviceName(),
       );
       authManager.setToken(result.token, getCurrentAuthConnectionIdentity());
+      if (
+        candidate &&
+        candidate.serverId === api.serverInfo.value?.server_id &&
+        candidate.connection === getSavedLoginConnection()
+      ) {
+        // Saving is optional: authentication remains successful if the OS store fails.
+        try {
+          const status = await getDesktopSavedLoginStatus();
+          if (
+            status?.supported &&
+            status.available &&
+            status.context === candidate.context &&
+            candidate.connection === getSavedLoginConnection() &&
+            candidate.serverId === api.serverInfo.value?.server_id
+          ) {
+            const saved = await saveDesktopLogin(candidate);
+            if (!saved?.saved)
+              toast.warning(i18n.global.t("login.saved_password_unavailable"));
+            else toast.success(i18n.global.t("login.saved_password_saved"));
+          } else {
+            toast.warning(i18n.global.t("login.saved_password_unavailable"));
+          }
+        } catch {
+          toast.warning(i18n.global.t("login.saved_password_unavailable"));
+        }
+      }
       user = result.user;
       if (user) {
         authManager.setCurrentUser(user);
@@ -274,9 +322,8 @@ const handleRemoteAuthenticated = async (credentials: {
       api.serverInfo.value?.server_id || undefined,
     );
   } catch (error) {
-    console.error("[App] Authentication failed:", error);
     if (loginComponent.value) {
-      loginComponent.value.handleAuthenticationError(error);
+      loginComponent.value.handleAuthenticationError?.(error);
     }
   }
 };

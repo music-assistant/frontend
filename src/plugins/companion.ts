@@ -46,6 +46,8 @@ declare global {
     __COMPANION__?: {
       invoke?: CompanionInvoke;
     };
+    __COMPANION_SAVED_LOGIN_VERSION__?: number;
+    __COMPANION_SAVED_LOGIN_NONCE__?: string;
     __COMPANION_PLAYER_COMMAND__?: (command: string) => Promise<void>;
     __COMPANION_VOLUME_COMMAND__?: (
       requestId: string,
@@ -88,6 +90,71 @@ type CompanionInvoke = <T>(
  * Get the invoke function from the companion app context
  * Returns null if not running in a companion app
  */
+export interface SavedLoginStatus {
+  supported: boolean;
+  available: boolean;
+  saved: boolean;
+  username?: string;
+  context?: string | null;
+}
+
+export interface SavedLoginCredentials {
+  username: string;
+  password: string;
+  context: string;
+}
+
+/** Only the desktop build advertising this protocol may receive passwords. */
+const getDesktopSavedLoginNonce = (): string | null => {
+  if (typeof window === "undefined" || window !== window.top) return null;
+  const nonce = window.__COMPANION_SAVED_LOGIN_NONCE__;
+  return window.__COMPANION_SAVED_LOGIN_VERSION__ === 1 &&
+    typeof nonce === "string" &&
+    nonce.length > 0 &&
+    typeof (window.__TAURI__?.core?.invoke || window.__TAURI__?.invoke) ===
+      "function"
+    ? nonce
+    : null;
+};
+
+export const hasDesktopSavedLogin = (): boolean =>
+  getDesktopSavedLoginNonce() !== null;
+
+export async function getDesktopSavedLoginStatus(): Promise<SavedLoginStatus | null> {
+  const nonce = getDesktopSavedLoginNonce();
+  if (!nonce) return null;
+  return getCompanionInvoke()!("companion_login_status", { nonce });
+}
+
+export async function restoreDesktopSavedLogin(
+  context: string,
+): Promise<SavedLoginCredentials | null> {
+  const nonce = getDesktopSavedLoginNonce();
+  if (!nonce) return null;
+  return getCompanionInvoke()!("companion_restore_login", { context, nonce });
+}
+
+export async function saveDesktopLogin(
+  credentials: SavedLoginCredentials,
+): Promise<SavedLoginStatus | null> {
+  const nonce = getDesktopSavedLoginNonce();
+  if (!nonce) return null;
+  return getCompanionInvoke()!("companion_save_login", {
+    username: credentials.username,
+    password: credentials.password,
+    context: credentials.context,
+    nonce,
+  });
+}
+
+export async function forgetDesktopSavedLogin(
+  context: string,
+): Promise<SavedLoginStatus | null> {
+  const nonce = getDesktopSavedLoginNonce();
+  if (!nonce) return null;
+  return getCompanionInvoke()!("companion_forget_login", { context, nonce });
+}
+
 const getCompanionInvoke = (): CompanionInvoke | null => {
   if (typeof window === "undefined") return null;
 

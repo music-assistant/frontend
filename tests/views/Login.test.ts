@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   clearGuestSession: vi.fn(),
   connectRemote: vi.fn(),
   currentRemoteId: { value: null as string | null },
+  savedLoginInvoke: vi.fn(),
   disconnectRemote: vi.fn(),
   endRejectedGuestSession: vi.fn(),
   exchangeAuthCode: vi.fn<MusicAssistantApi["exchangeAuthCode"]>(),
@@ -56,8 +57,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/plugins/api", async () => {
   // Login.vue watches api.state, so the mock has to carry a real ref:
   // assignments to a plain { value } would never reach the watcher.
-  const { ref } = await vi.importActual<typeof import("vue")>("vue");
+  const { ref, reactive } = await vi.importActual<typeof import("vue")>("vue");
   mocks.apiState = ref(mocks.apiState.value);
+  mocks.serverInfo = reactive(mocks.serverInfo);
   return {
     ConnectionLostError: class ConnectionLostError extends Error {},
     ConnectionState: {
@@ -75,6 +77,8 @@ vi.mock("@/plugins/api", async () => {
       getCurrentUserInfo: mocks.getCurrentUserInfo,
       sendCommand: mocks.sendCommand,
       serverInfo: mocks.serverInfo,
+      baseUrl: "http://localhost:8095",
+      isRemoteConnection: ref(false),
       startAuthorization: mocks.startAuthorization,
       state: mocks.apiState,
     },
@@ -330,6 +334,9 @@ beforeEach(() => {
   });
   mocks.getStoredRemoteId.mockReturnValue(null);
   mocks.currentRemoteId.value = null;
+  window.__COMPANION_SAVED_LOGIN_VERSION__ = undefined;
+  window.__COMPANION_SAVED_LOGIN_NONCE__ = undefined;
+  window.__TAURI__ = undefined;
   mocks.connectRemote.mockImplementation((remoteId: string) => {
     mocks.currentRemoteId.value = remoteId;
     return Promise.resolve({ id: "transport" });
@@ -340,6 +347,423 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+describe("desktop saved password", () => {
+  const enableDesktop = () => {
+    window.__COMPANION_SAVED_LOGIN_VERSION__ = 1;
+    window.__COMPANION_SAVED_LOGIN_NONCE__ = "native-nonce";
+    window.__TAURI__ = { core: { invoke: mocks.savedLoginInvoke } };
+    mockHostedFrontend();
+    mocks.getToken.mockReturnValue(null);
+  };
+
+  it("restores on the verified server without signing in automatically", async () => {
+    enableDesktop();
+    mocks.savedLoginInvoke.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "companion_login_status"
+          ? {
+              supported: true,
+              available: true,
+              saved: true,
+              context: "verified",
+            }
+          : { username: "alice", password: "secret", context: "verified" },
+      ),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    expect(
+      wrapper
+        .findAll("input")
+        .some(
+          (input) => (input.element as HTMLInputElement).value === "secret",
+        ),
+    ).toBe(true);
+    expect(wrapper.emitted("authenticated")).toBeUndefined();
+    expect(wrapper.find('input[type="checkbox"]').element).toHaveProperty(
+      "checked",
+      true,
+    );
+  });
+
+  it("clears completed autofill when the verified server changes, then restores the new server", async () => {
+    enableDesktop();
+    mocks.savedLoginInvoke.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "companion_login_status"
+          ? {
+              supported: true,
+              available: true,
+              saved: true,
+              context: mocks.serverInfo.value?.server_id,
+            }
+          : {
+              username:
+                mocks.serverInfo.value?.server_id === "server-id"
+                  ? "alice"
+                  : "bob",
+              password:
+                mocks.serverInfo.value?.server_id === "server-id"
+                  ? "alice-secret"
+                  : "bob-secret",
+              context: mocks.serverInfo.value?.server_id,
+            },
+      ),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    expect(wrapper.find('input[value="alice-secret"]').exists()).toBe(true);
+    window.dispatchEvent(new Event("companion-saved-login-ready"));
+    await flushPromises();
+    expect(wrapper.find('input[value="alice-secret"]').exists()).toBe(true);
+
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "other-server",
+    };
+    await flushPromises();
+    expect(wrapper.find('input[value="alice-secret"]').exists()).toBe(false);
+    expect(wrapper.find('input[value="bob-secret"]').exists()).toBe(true);
+    expect(wrapper.find('input[value="bob"]').exists()).toBe(true);
+  });
+
+  it("clears the old password but preserves an edited username on connection change", async () => {
+    enableDesktop();
+    mocks.savedLoginInvoke.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "companion_login_status"
+          ? {
+              supported: true,
+              available: true,
+              saved: mocks.serverInfo.value?.server_id === "server-id",
+              context: "verified",
+            }
+          : {
+              username: "alice",
+              password: "alice-secret",
+              context: "verified",
+            },
+      ),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    await wrapper.find('input[value="alice"]').setValue("bob");
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "other-server",
+    };
+    await flushPromises();
+    expect(wrapper.find('input[value="bob"]').exists()).toBe(true);
+    expect(wrapper.find('input[value="alice-secret"]').exists()).toBe(false);
+    expect(
+      wrapper
+        .findAll("input")
+        .some((input) => (input.element as HTMLInputElement).value === ""),
+    ).toBe(true);
+  });
+
+  it("keeps a typed password while clearing the unchanged restored username", async () => {
+    enableDesktop();
+    mocks.savedLoginInvoke.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "companion_login_status"
+          ? {
+              supported: true,
+              available: true,
+              saved: mocks.serverInfo.value?.server_id === "server-id",
+              context: "verified",
+            }
+          : {
+              username: "alice",
+              password: "alice-secret",
+              context: "verified",
+            },
+      ),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    await wrapper
+      .find('input[value="alice-secret"]')
+      .setValue("typed-password");
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "other-server",
+    };
+    await flushPromises();
+    expect(wrapper.find('input[value="alice"]').exists()).toBe(false);
+    expect(wrapper.find('input[value="typed-password"]').exists()).toBe(true);
+  });
+
+  it("waits for the native ready event when verification arrives after the form", async () => {
+    enableDesktop();
+    window.__COMPANION_SAVED_LOGIN_NONCE__ = undefined;
+    mocks.savedLoginInvoke.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "companion_login_status"
+          ? {
+              supported: true,
+              available: true,
+              saved: true,
+              context: "verified",
+            }
+          : { username: "alice", password: "secret", context: "verified" },
+      ),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    expect(mocks.savedLoginInvoke).not.toHaveBeenCalled();
+    window.__COMPANION_SAVED_LOGIN_NONCE__ = "native-nonce";
+    window.dispatchEvent(new Event("companion-saved-login-ready"));
+    await flushPromises();
+    expect(
+      wrapper
+        .findAll("input")
+        .some(
+          (input) => (input.element as HTMLInputElement).value === "secret",
+        ),
+    ).toBe(true);
+  });
+
+  it("ignores a pending restore after the selected server changes", async () => {
+    enableDesktop();
+    let finishRestore!: (value: unknown) => void;
+    mocks.savedLoginInvoke.mockImplementation((command: string) =>
+      command === "companion_login_status"
+        ? Promise.resolve({
+            supported: true,
+            available: true,
+            saved: true,
+            context: "verified",
+          })
+        : new Promise((resolve) => {
+            finishRestore = resolve;
+          }),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "other-server",
+    };
+    finishRestore({
+      username: "alice",
+      password: "secret",
+      context: "verified",
+    });
+    await flushPromises();
+    expect(
+      wrapper
+        .findAll("input")
+        .some(
+          (input) => (input.element as HTMLInputElement).value === "secret",
+        ),
+    ).toBe(false);
+  });
+
+  it("does not change consent or forget a password while authentication is pending", async () => {
+    enableDesktop();
+    mocks.savedLoginInvoke.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "companion_login_status"
+          ? {
+              supported: true,
+              available: true,
+              saved: true,
+              context: "verified",
+            }
+          : { username: "alice", password: "secret", context: "verified" },
+      ),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    await wrapper.find('input[type="checkbox"]').setValue(false);
+    const signIn = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Sign In");
+    expect(signIn).toBeDefined();
+    await signIn!.trigger("click");
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toMatchObject({
+      savedLogin: { remember: false },
+    });
+    const consent = wrapper.find('input[type="checkbox"]');
+    const forget = wrapper
+      .findAll("button")
+      .find((button) => button.attributes("class")?.includes("text-primary"));
+    expect(consent.attributes("disabled")).toBeDefined();
+    expect(forget?.attributes("disabled")).toBeDefined();
+    await consent.trigger("change");
+    await forget!.trigger("click");
+    expect((consent.element as HTMLInputElement).checked).toBe(false);
+    expect(
+      mocks.savedLoginInvoke.mock.calls.some(
+        ([command]) => command === "companion_forget_login",
+      ),
+    ).toBe(false);
+    expect(wrapper.find('input[value="secret"]').exists()).toBe(true);
+  });
+
+  it("blocks sign-in, Enter, consent and duplicate Forget until deletion finishes", async () => {
+    enableDesktop();
+    let completeForget!: (value: unknown) => void;
+    mocks.savedLoginInvoke.mockImplementation((command: string) => {
+      if (command === "companion_forget_login")
+        return new Promise((resolve) => {
+          completeForget = resolve;
+        });
+      return Promise.resolve(
+        command === "companion_restore_login"
+          ? { username: "alice", password: "secret", context: "verified" }
+          : {
+              supported: true,
+              available: true,
+              saved: true,
+              context: "verified",
+            },
+      );
+    });
+    const wrapper = mountLogin();
+    await flushPromises();
+    const consent = wrapper.find('input[type="checkbox"]');
+    const forget = wrapper
+      .findAll("button")
+      .find((button) => button.attributes("class")?.includes("text-primary"));
+    const signIn = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Sign In");
+    expect(consent.element).toHaveProperty("checked", true);
+    expect(forget).toBeDefined();
+    expect(signIn).toBeDefined();
+    await forget!.trigger("click");
+    expect(consent.attributes("disabled")).toBeDefined();
+    expect(forget!.attributes("disabled")).toBeDefined();
+    // VBtn is stubbed, so also invoke its click while disabled to verify the handler guard.
+    expect(signIn!.attributes("disabled")).toBeDefined();
+    await signIn!.trigger("click");
+    await wrapper.find('input[value="secret"]').trigger("keyup.enter");
+    await forget!.trigger("click");
+    await consent.trigger("change");
+    expect((consent.element as HTMLInputElement).checked).toBe(true);
+    expect(wrapper.emitted("authenticated")).toBeUndefined();
+    expect(
+      mocks.savedLoginInvoke.mock.calls.filter(
+        ([command]) => command === "companion_forget_login",
+      ),
+    ).toHaveLength(1);
+
+    completeForget({
+      supported: true,
+      available: true,
+      saved: false,
+      context: "verified",
+    });
+    await flushPromises();
+    expect((consent.element as HTMLInputElement).checked).toBe(false);
+    expect(consent.attributes("disabled")).toBeUndefined();
+    expect(signIn!.attributes("disabled")).toBeDefined();
+    await wrapper.find('input[value=""]').setValue("new-password");
+    await signIn!.trigger("click");
+    expect(wrapper.emitted("authenticated")?.[0]?.[0]).toMatchObject({
+      password: "new-password",
+      savedLogin: { remember: false },
+    });
+    expect(wrapper.emitted("authenticated")).toHaveLength(1);
+  });
+
+  it("keeps a newly typed password when Forget finishes later", async () => {
+    enableDesktop();
+    let completeForget!: (value: unknown) => void;
+    mocks.savedLoginInvoke.mockImplementation((command: string) => {
+      if (command === "companion_forget_login")
+        return new Promise((resolve) => {
+          completeForget = resolve;
+        });
+      return Promise.resolve(
+        command === "companion_restore_login"
+          ? {
+              username: "alice",
+              password: "saved-password",
+              context: "verified",
+            }
+          : {
+              supported: true,
+              available: true,
+              saved: true,
+              context: "verified",
+            },
+      );
+    });
+    const wrapper = mountLogin();
+    await flushPromises();
+    const forget = wrapper
+      .findAll("button")
+      .find((button) => button.attributes("class")?.includes("text-primary"));
+    expect(forget).toBeDefined();
+    await forget!.trigger("click");
+    const passwordField = wrapper.find('input[value="saved-password"]');
+    await passwordField.setValue("newly-typed-password");
+    completeForget({
+      supported: true,
+      available: true,
+      saved: false,
+      context: "verified",
+    });
+    await flushPromises();
+    expect(wrapper.find('input[value="newly-typed-password"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('input[type="checkbox"]').element).toHaveProperty(
+      "checked",
+      false,
+    );
+  });
+
+  it("removes the saved password and clears remembered intent", async () => {
+    enableDesktop();
+    mocks.savedLoginInvoke.mockImplementation((command: string) =>
+      Promise.resolve(
+        command === "companion_restore_login"
+          ? { username: "alice", password: "secret", context: "verified" }
+          : {
+              supported: true,
+              available: true,
+              saved: command !== "companion_forget_login",
+              context: "verified",
+            },
+      ),
+    );
+    const wrapper = mountLogin();
+    await flushPromises();
+    const forget = wrapper
+      .findAll("button")
+      .find((button) => button.attributes("class")?.includes("text-primary"));
+    expect(forget).toBeDefined();
+    await forget!.trigger("click");
+    await flushPromises();
+    expect(mocks.savedLoginInvoke).toHaveBeenCalledWith(
+      "companion_forget_login",
+      { context: "verified", nonce: "native-nonce" },
+    );
+    expect(
+      wrapper
+        .findAll("input")
+        .some(
+          (input) => (input.element as HTMLInputElement).value === "secret",
+        ),
+    ).toBe(false);
+    expect(wrapper.find('input[type="checkbox"]').element).toHaveProperty(
+      "checked",
+      false,
+    );
+    await wrapper.find('input[value=""]').setValue("secret");
+    mocks.serverInfo.value = {
+      homeassistant_addon: false,
+      server_id: "other-server",
+    };
+    await flushPromises();
+    expect(wrapper.find('input[value="secret"]').exists()).toBe(true);
+  });
 });
 
 describe("guest join login", () => {
