@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 import { playerSource } from "../../tests/fixtures/playerSource";
 import {
   getLiveSourceIcon,
-  getLiveSourceOwnerName,
+  getLiveSourceSubtitle,
   getSelectableInputs,
   hasSelectableInput,
   liveSourcesAvailable,
@@ -44,6 +44,13 @@ const PLAYERS: Record<string, Player> = {
   }),
 };
 
+const PROVIDER_NAMES: Record<string, string> = {
+  "spotify_connect--x": "Spotify Connect",
+  "vban--y": "VBAN Receiver",
+  "sendspin--z": "Sendspin",
+};
+const providerName = (providerId: string) => PROVIDER_NAMES[providerId];
+
 const liveSource = (overrides: Partial<PlayerSource> = {}) =>
   playerSource({
     id: "spotify_connect--x://audio_source/living_room",
@@ -55,34 +62,55 @@ const liveSource = (overrides: Partial<PlayerSource> = {}) =>
 const input = (id: string, name: string) =>
   playerSource({ id, name, passive: false, is_input: true });
 
-describe("getLiveSourceOwnerName", () => {
+describe("getLiveSourceSubtitle", () => {
   it("names the player a source belongs to", () => {
     const source = liveSource({ owner_player_id: "den" });
-    expect(getLiveSourceOwnerName(source, PLAYERS)).toBe("Den");
+    expect(getLiveSourceSubtitle(source, PLAYERS, providerName)).toBe("Den");
   });
 
   it("follows a rename of that player", () => {
     const source = liveSource({ owner_player_id: "den" });
     const renamed = { ...PLAYERS, den: player({ name: "Study" }) };
-    expect(getLiveSourceOwnerName(source, renamed)).toBe("Study");
+    expect(getLiveSourceSubtitle(source, renamed, providerName)).toBe("Study");
   });
 
-  it("names no player for a source of no player", () => {
-    const source = liveSource({ id: "vban://audio_source/1", name: "VBAN" });
-    expect(getLiveSourceOwnerName(source, PLAYERS)).toBeUndefined();
+  it("names the provider of a source of no player", () => {
+    const source = liveSource({ id: "vban--y://audio_source/1", name: "VBAN" });
+    expect(getLiveSourceSubtitle(source, PLAYERS, providerName)).toBe(
+      "VBAN Receiver",
+    );
   });
 
-  it("names no player for a device that is only an input", () => {
+  it("names the provider of a device that is only an input", () => {
     const source = liveSource({
+      id: "sendspin--z://audio_source/record_player",
       name: "Record player",
       owner_player_id: "record_player",
     });
-    expect(getLiveSourceOwnerName(source, PLAYERS)).toBeUndefined();
+    expect(getLiveSourceSubtitle(source, PLAYERS, providerName)).toBe(
+      "Sendspin",
+    );
   });
 
-  it("names no player the app does not know", () => {
+  it("names the provider when the app does not know the player", () => {
     const source = liveSource({ owner_player_id: "gone" });
-    expect(getLiveSourceOwnerName(source, PLAYERS)).toBeUndefined();
+    expect(getLiveSourceSubtitle(source, PLAYERS, providerName)).toBe(
+      "Spotify Connect",
+    );
+  });
+
+  it("names nothing for a provider the app does not know", () => {
+    const source = liveSource({ id: "gone--q://audio_source/1" });
+    expect(
+      getLiveSourceSubtitle(source, PLAYERS, providerName),
+    ).toBeUndefined();
+  });
+
+  it("names nothing for an input of no player the app knows", () => {
+    const source = { ...input("line_in", "Line-in"), owner_player_id: "gone" };
+    expect(
+      getLiveSourceSubtitle(source, PLAYERS, providerName),
+    ).toBeUndefined();
   });
 });
 
@@ -163,18 +191,22 @@ describe("liveSourcesAvailable", () => {
 });
 
 describe("sortLiveSources", () => {
-  it("sorts by name, and by the name of the player after that", () => {
+  it("sorts by name, and by the line below the name after that", () => {
     const sources = [
       input("line_in", "Line-in"),
       liveSource({ owner_player_id: "living_room" }),
       { ...input("line_in@den", "Line-in"), owner_player_id: "den" },
       { ...input("tv", "TV"), owner_player_id: "living_room" },
+      liveSource({ id: "sendspin--z://audio_source/1", name: "TV" }),
     ];
-    expect(sortLiveSources(sources, PLAYERS).map((s) => s.id)).toEqual([
+    expect(
+      sortLiveSources(sources, PLAYERS, providerName).map((s) => s.id),
+    ).toEqual([
       "line_in",
       "line_in@den",
       "spotify_connect--x://audio_source/living_room",
       "tv",
+      "sendspin--z://audio_source/1",
     ]);
   });
 });

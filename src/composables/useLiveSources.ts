@@ -1,6 +1,13 @@
-import { sourceProviderId } from "@/composables/nowPlayingSource";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import { getSelectableInputs, sortLiveSources } from "@/helpers/live_sources";
+import {
+  getLiveSourceSubtitle,
+  getSelectableInputs,
+  sortLiveSources,
+} from "@/helpers/live_sources";
+import {
+  resolveProviderDomain,
+  sourceProviderId,
+} from "@/helpers/provider_domain";
 import { api, ConnectionState } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
@@ -118,8 +125,20 @@ export function useLiveSources(playerId: MaybeRefOrGetter<string | undefined>) {
   const unsubscribe = onLiveSourcesChanged(load);
   onBeforeUnmount(() => unsubscribe());
 
-  const sources = computed(() => sortLiveSources(entries.value, api.players));
+  const sources = computed(() =>
+    sortLiveSources(entries.value, api.players, providerName),
+  );
   return { sources, loading, failed, reload: load };
+}
+
+/**
+ * The line below the name of a live source, which tells where it comes from:
+ * the player it belongs to, or else its provider.
+ *
+ * @param source - The entry in the list of live sources.
+ */
+export function liveSourceSubtitle(source: PlayerSource): string | undefined {
+  return getLiveSourceSubtitle(source, api.players, providerName);
 }
 
 /**
@@ -224,6 +243,13 @@ function onLiveSourcesChanged(callback: () => void): () => void {
     unsubscribeEvents();
     unsubscribeDisabled();
   };
+}
+
+// the name of a provider instance, undefined when the app does not know it
+function providerName(providerId: string): string | undefined {
+  return resolveProviderDomain(providerId, api)
+    ? api.getProviderName(providerId)
+    : undefined;
 }
 
 // the settings a role that changes them can open for a source, if any
