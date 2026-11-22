@@ -269,6 +269,13 @@
         <Spinner class="text-muted-foreground size-5" />
       </div>
 
+      <CommandCenterLiveSources
+        v-if="liveSourceResults.length"
+        :sources="liveSourceResults"
+        @start="onLiveSourceStart"
+        @menu="onLiveSourceMenu"
+      />
+
       <CommandGroup v-if="pageResults.length" :heading="$t('pages')">
         <CommandItem
           v-for="page in pageResults"
@@ -332,6 +339,7 @@
 </template>
 
 <script setup lang="ts">
+import CommandCenterLiveSources from "@/components/CommandCenterLiveSources.vue";
 import CommandCenterShell from "@/components/CommandCenterShell.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
@@ -360,6 +368,11 @@ import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import {
+  openLiveSourceMenu,
+  startLiveSource,
+  useLiveSources,
+} from "@/composables/useLiveSources";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
 import {
   LIBRARY_SEARCH_TARGET,
@@ -372,6 +385,7 @@ import {
   detailRoute,
   isAuthorOrNarrator,
 } from "@/helpers/author_narrator";
+import { matchLiveSources } from "@/helpers/live_sources";
 import {
   handleMenuBtnClick,
   handlePlayBtnClick,
@@ -385,6 +399,7 @@ import {
   MediaType,
   type MediaItemTypeOrItemMapping,
   type Player,
+  type PlayerSource,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -860,6 +875,38 @@ const selectPlayer = function (player: Player) {
   close();
 };
 
+// the list is only kept current while the window is open
+const { sources: liveSources } = useLiveSources(() =>
+  isOpen.value ? store.activePlayerId : undefined,
+);
+
+const liveSourceResults = computed(() => {
+  if (pagesOnly.value || selectedMediaTypes.value.length) return [];
+  return matchLiveSources(liveSources.value, query.value);
+});
+
+const onLiveSourceStart = function (source: PlayerSource) {
+  const playerId = store.activePlayerId;
+  if (!playerId) return;
+  recordRecentSearch();
+  close();
+  void startLiveSource(playerId, source);
+};
+
+const onLiveSourceMenu = function (source: PlayerSource, event: Event) {
+  recordRecentSearch();
+  const { x, y } = getEventPosition(event);
+  openLiveSourceMenu(source, store.activePlayerId, x, y);
+};
+
+// the matches shown while typing, before a search is run
+const hasLocalResults = computed(
+  () =>
+    pageResults.value.length > 0 ||
+    playerResults.value.length > 0 ||
+    liveSourceResults.value.length > 0,
+);
+
 const statusNote = computed(() => {
   const term = query.value.trim();
 
@@ -869,24 +916,16 @@ const statusNote = computed(() => {
   if (!term) return "";
   if (queryActive.value) {
     if (isSearching.value) return "";
-    // typed but not submitted: prompt to run the search, unless the live page
-    // and player matches already give something to show
+    // typed but not submitted: prompt to run the search, unless the live page,
+    // player and live source matches already give something to show
     if (!resultsMatchQuery.value) {
-      if (!pageResults.value.length && !playerResults.value.length)
-        return $t("command_center_press_enter");
-      return "";
+      return hasLocalResults.value ? "" : $t("command_center_press_enter");
     }
-    if (hasMediaResults.value) return "";
-    if (!pageResults.value.length && !playerResults.value.length)
-      return $t("no_content");
-    return "";
+    if (hasMediaResults.value || hasLocalResults.value) return "";
+    return $t("no_content");
   }
 
-  if (
-    !recentResults.value.length &&
-    !pageResults.value.length &&
-    !playerResults.value.length
-  )
+  if (!recentResults.value.length && !hasLocalResults.value)
     return $t("command_center_keep_typing");
   return "";
 });
@@ -974,12 +1013,16 @@ watch(
 );
 
 // highlight the first row as results land so a desktop enter opens the top
-// hit; on the mobile sheet on a touch screen the on-screen keyboard drives the
-// interaction — there is no enter contract there and the phantom highlight
-// would read as a selection nobody made
+// hit, including live sources that load after a reopen; on the mobile sheet on
+// a touch screen the on-screen keyboard drives the interaction — there is no
+// enter contract there and the phantom highlight would read as a selection
+// nobody made
 watch(
   () =>
-    mediaSections.value.map((section) => section.items[0]?.uri ?? "").join("|"),
+    [
+      ...mediaSections.value.map((section) => section.items[0]?.uri ?? ""),
+      liveSourceResults.value[0]?.id ?? "",
+    ].join("|"),
   async () => {
     if (store.isTouchscreen && store.mobileLayout) return;
     if (!isOpen.value || !queryActive.value) return;

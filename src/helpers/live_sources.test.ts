@@ -20,6 +20,7 @@ import {
   getSelectableInputs,
   hasSelectableInput,
   liveSourcesAvailable,
+  matchLiveSources,
   sortLiveSources,
 } from "./live_sources";
 
@@ -175,5 +176,22 @@ describe("sortLiveSources", () => {
       "spotify_connect--x://audio_source/living_room",
       "tv",
     ]);
+  });
+});
+
+describe("matchLiveSources", () => {
+  const sources = [
+    playerSource({ id: "phono", name: "Record player" }),
+    playerSource({ id: "tv", name: "TV" }),
+  ];
+
+  it("matches a part of the name, ignoring case", () => {
+    expect(matchLiveSources(sources, " RECORD ").map((s) => s.id)).toEqual([
+      "phono",
+    ]);
+  });
+
+  it("matches nothing for an empty term", () => {
+    expect(matchLiveSources(sources, "  ")).toEqual([]);
   });
 });
