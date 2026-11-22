@@ -527,6 +527,14 @@ export const routes: RouteRecordRaw[] = [
         ],
       },
       {
+        path: "/live-sources",
+        name: "livesources",
+        component: () =>
+          import(
+            /* webpackChunkName: "livesources" */ "@/views/LiveSources.vue"
+          ),
+      },
+      {
         path: "/genres",
         children: [
           {
