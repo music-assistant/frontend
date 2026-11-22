@@ -1,4 +1,5 @@
 import CommandCenter from "@/components/CommandCenter.vue";
+import { Command } from "@/components/ui/command";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import type { SearchTarget } from "@/composables/useProgressiveSearch";
 import {
@@ -114,7 +115,15 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
 });
 
 vi.mock("@/composables/useLiveSources", async () => {
-  const { computed, toValue } = await import("vue");
+  const { computed, shallowRef, toValue } = await import("vue");
+  // reactive, so a test can let the list arrive after the palette opened
+  const loaded = shallowRef<PlayerSource[]>([]);
+  Object.defineProperty(state, "liveSources", {
+    get: () => loaded.value,
+    set: (sources: PlayerSource[]) => {
+      loaded.value = sources;
+    },
+  });
   return {
     // like the real one, a player to start them on lists its live sources
     useLiveSources: (playerId: MaybeRefOrGetter<string | undefined>) => ({
@@ -1794,6 +1803,58 @@ describe("CommandCenter", () => {
     );
     expect(blurSpy).not.toHaveBeenCalled();
     expect(seen).toContain("Enter");
+
+    wrapper.unmount();
+  });
+
+  it("lets enter play a live source that loads after a reopen", async () => {
+    // vue ignores a dom event stamped before its listener under fake timers
+    vi.useRealTimers();
+    state.storeMock.activePlayerId = "p1";
+    // the real listbox, so the highlight and enter run as in the app
+    const wrapper = mount(CommandCenter, {
+      attachTo: document.body,
+      global: {
+        directives: { hold: {} },
+        stubs: {
+          CommandCenterShell: {
+            components: { Command },
+            props: ["open"],
+            template: '<Command v-if="open"><slot /></Command>',
+          },
+          MediaItemThumb: IconStub,
+          PlayerIcon: IconStub,
+          ProviderIcon: IconStub,
+          Spinner: IconStub,
+        },
+      },
+    });
+    const pressEnter = async () => {
+      wrapper
+        .get('[data-slot="command-input"]')
+        .element.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+        );
+      await flushPromises();
+    };
+    useCommandCenter().open();
+    await flushPromises();
+    await wrapper.get('[data-slot="command-input"]').setValue("record");
+    await pressEnter();
+
+    useCommandCenter().close();
+    await flushPromises();
+    useCommandCenter().open();
+    await flushPromises();
+    // the list loads only once the palette is open again
+    state.liveSources = [playerSource({ id: "phono", name: "Record player" })];
+    await flushPromises();
+
+    await pressEnter();
+    expect(state.startLiveSourceSpy).toHaveBeenCalledWith(
+      "p1",
+      state.liveSources[0],
+    );
 
     wrapper.unmount();
   });

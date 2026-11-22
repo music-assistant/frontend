@@ -1013,12 +1013,16 @@ watch(
 );
 
 // highlight the first row as results land so a desktop enter opens the top
-// hit; on the mobile sheet on a touch screen the on-screen keyboard drives the
-// interaction — there is no enter contract there and the phantom highlight
-// would read as a selection nobody made
+// hit, including live sources that load after a reopen; on the mobile sheet on
+// a touch screen the on-screen keyboard drives the interaction — there is no
+// enter contract there and the phantom highlight would read as a selection
+// nobody made
 watch(
   () =>
-    mediaSections.value.map((section) => section.items[0]?.uri ?? "").join("|"),
+    [
+      ...mediaSections.value.map((section) => section.items[0]?.uri ?? ""),
+      liveSourceResults.value[0]?.id ?? "",
+    ].join("|"),
   async () => {
     if (store.isTouchscreen && store.mobileLayout) return;
     if (!isOpen.value || !queryActive.value) return;
