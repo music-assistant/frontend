@@ -81,8 +81,8 @@ import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.v
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
 import ViewAllLink from "@/components/ViewAllLink.vue";
+import { useShelfSize } from "@/composables/useShelfSize";
 import { parseBool } from "@/helpers/parse";
-import { panelViewItemResponsive } from "@/helpers/utils";
 import { isExternalItem, itemIsAvailable } from "@/plugins/api/helpers";
 import {
   AlbumType,
@@ -90,7 +90,6 @@ import {
   type ItemMapping,
   type MediaItemType,
 } from "@/plugins/api/interfaces";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
 import type { RouteLocationRaw } from "vue-router";
@@ -149,7 +148,9 @@ defineSlots<{
 
 const SKELETONS = 6;
 
-const tilesPerView = computed(() => shelfTilesPerView());
+const { tilesPerView: shelfTilesPerView } = useShelfSize();
+// one step tighter than Discover, for the smaller covers of the detail pages
+const tilesPerView = computed(() => shelfTilesPerView(1.5, 0.4));
 
 // the item's type, so every card says what it is; the year already sits on the
 // artwork, so it isn't repeated here. A release that is not in the library says
@@ -169,16 +170,6 @@ const isExplicit = function (item: Album | ItemMapping): boolean {
     parseBool(item.metadata.explicit || false)
   );
 };
-
-/**
- * Tiles per viewport width, following the same curve as the Discover shelves
- * but one step tighter so the cards land on the detail pages' smaller sizes.
- * Every release row uses it, so a single and an album are the same size.
- */
-function shelfTilesPerView(): number {
-  const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
-  return isPhone ? 2.4 : panelViewItemResponsive(0) + 1.5;
-}
 </script>
 
 <style scoped>

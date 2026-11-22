@@ -128,6 +128,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDetailItemUpdates } from "@/composables/useDetailItemUpdates";
 import type { LoadPagedDataFn } from "@/composables/useItemsListing";
+import { useShelfSize } from "@/composables/useShelfSize";
 import {
   updateUserPreferences,
   useUserPreferences,
@@ -135,7 +136,6 @@ import {
 import { folderIdToRoute, genreMediaTypeIconMap } from "@/helpers/genre";
 import { applyGenreView, GENRE_VIEW_PREFERENCE } from "@/helpers/genre_view";
 import { LEGACY_COMPACT_VIEW_MODE } from "@/helpers/grid_size";
-import { panelViewItemResponsive } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import {
@@ -216,8 +216,8 @@ const displayRows = computed(() =>
   overviewRows.value.filter((row) => row.items?.length),
 );
 
-// Responsive tile sizing, shared curve with the rest of the app.
-const tilesPerView = computed(() => panelViewItemResponsive(0) + 0.5);
+const { tilesPerView: shelfTilesPerView } = useShelfSize();
+const tilesPerView = computed(() => shelfTilesPerView(0.5, 0.5));
 
 const viewModeIcon = computed(() => {
   if (viewMode.value === "discovery") return LayoutDashboard;

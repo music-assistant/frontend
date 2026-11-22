@@ -426,8 +426,8 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useListDragReorder } from "@/composables/useListDragReorder";
 import { useOrderedPlayers } from "@/composables/useOrderedPlayers";
+import { useShelfSize } from "@/composables/useShelfSize";
 import { returnedByHistory } from "@/helpers/navigation";
-import { panelViewItemResponsive } from "@/helpers/utils";
 import api from "@/plugins/api";
 import { ACTIVE_DOT_CLASS } from "@/constants";
 import {
@@ -438,7 +438,6 @@ import {
   type Player,
   type PlaylogUpdate,
 } from "@/plugins/api/interfaces";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { Eye, EyeOff, GripVertical, ListFilter, RefreshCw } from "@lucide/vue";
@@ -473,10 +472,8 @@ const rowItemsMap = ref(new Map<string, MediaItemTypeOrItemMapping[]>());
 const recentlyPlayed = ref<ItemMapping[]>([]);
 const genres = ref<Genre[]>([]);
 
-const tilesPerView = computed(() => {
-  const isPhone = getBreakpointValue({ breakpoint: "bp1", condition: "lt" });
-  return isPhone ? 2.2 : panelViewItemResponsive(0) + 0.5;
-});
+const { tilesPerView: shelfTilesPerView } = useShelfSize();
+const tilesPerView = computed(() => shelfTilesPerView(0.5, 0.2));
 
 // One skeleton per (partially) visible tile while a row's items load.
 const skeletonTileCount = computed(() =>

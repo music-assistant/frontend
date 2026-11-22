@@ -50,10 +50,9 @@ import RowSourceBadge from "@/components/details/RowSourceBadge.vue";
 import EditorialCardSkeleton from "@/components/discover/EditorialCardSkeleton.vue";
 import EditorialMediaCard from "@/components/discover/EditorialMediaCard.vue";
 import EditorialShelf from "@/components/discover/EditorialShelf.vue";
-import { panelViewItemResponsive } from "@/helpers/utils";
+import { useShelfSize } from "@/composables/useShelfSize";
 import { itemIsAvailable } from "@/plugins/api/helpers";
 import type { Artist, ItemMapping } from "@/plugins/api/interfaces";
-import { getBreakpointValue } from "@/plugins/breakpoint";
 import { computed } from "vue";
 
 export interface Props {
@@ -81,11 +80,8 @@ const emit = defineEmits<{
 
 const SKELETONS = 6;
 
-const tilesPerView = computed(() =>
-  getBreakpointValue({ breakpoint: "bp1", condition: "lt" })
-    ? 3.2
-    : panelViewItemResponsive(0) + 2.5,
-);
+const { tilesPerView: shelfTilesPerView } = useShelfSize();
+const tilesPerView = computed(() => shelfTilesPerView(2.5, 1.2));
 </script>
 
 <style scoped>

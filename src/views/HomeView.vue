@@ -7,6 +7,27 @@
       :title="$t('discover')"
     >
       <template #append>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="opacity-80"
+              :title="$t('grid_size')"
+              :aria-label="$t('grid_size')"
+            >
+              <LayoutGrid class="size-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <GridSizeSlider
+              :size="shelfSize"
+              :supports-actions="false"
+              @change="onShelfSizeChange"
+              @commit="onShelfSizeCommit"
+            />
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           variant="ghost"
           size="icon"
@@ -110,11 +131,18 @@
 </template>
 
 <script setup lang="ts">
+import GridSizeSlider from "@/components/GridSizeSlider.vue";
 import HomeWidgetRows from "@/components/HomeWidgetRows.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useOnboarding } from "@/composables/useOnboarding";
+import { useShelfSize } from "@/composables/useShelfSize";
 import { providerListingRoute } from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
@@ -124,6 +152,7 @@ import {
   Check,
   CircleAlert,
   Compass,
+  LayoutGrid,
   SquarePen,
   TriangleAlert,
   X,
@@ -133,6 +162,11 @@ import { type RouteLocationRaw, useRouter } from "vue-router";
 
 const router = useRouter();
 const editMode = ref(false);
+const {
+  size: shelfSize,
+  onChange: onShelfSizeChange,
+  onCommit: onShelfSizeCommit,
+} = useShelfSize();
 const hasProviderErrors = ref(false);
 const showProviderWarning = ref(true);
 // where the first provider with an error is listed
