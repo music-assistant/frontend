@@ -17,7 +17,7 @@ import { playerSource } from "../../tests/fixtures/playerSource";
 import {
   getLiveSourceIcon,
   getLiveSourceOwnerName,
-  getSelectableInputIds,
+  getSelectableInputs,
   hasSelectableInput,
   liveSourcesAvailable,
   sortLiveSources,
@@ -110,13 +110,12 @@ describe("getLiveSourceIcon", () => {
   });
 });
 
-describe("getSelectableInputIds", () => {
+describe("getSelectableInputs", () => {
   it("lists the inputs the player can switch to", () => {
+    const tv = input("tv", "TV");
     const passive = { ...input("aux", "AUX"), passive: true };
-    const sources = [input("tv", "TV"), passive, liveSource()];
-    expect(getSelectableInputIds(player({ source_list: sources }))).toEqual([
-      "tv",
-    ]);
+    const sources = [tv, passive, liveSource()];
+    expect(getSelectableInputs(player({ source_list: sources }))).toEqual([tv]);
   });
 });
 

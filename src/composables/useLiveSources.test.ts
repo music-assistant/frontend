@@ -245,6 +245,19 @@ describe("useLiveSources", () => {
     expect(sources.value).toEqual([INPUT, LIVE_SOURCE]);
   });
 
+  it("follows an input that is renamed on the device", async () => {
+    apiMock.players.living_room = livingRoom();
+    apiMock.getLiveSources.mockResolvedValue([INPUT]);
+    const { sources } = mountLiveSources("living_room");
+    await flushPromises();
+
+    const renamed = { ...INPUT, name: "Turntable" };
+    apiMock.getLiveSources.mockResolvedValue([renamed]);
+    apiMock.players.living_room = livingRoom({ source_list: [renamed] });
+    await flushPromises();
+    expect(sources.value).toEqual([renamed]);
+  });
+
   it("does not load again when the player only plays on", async () => {
     apiMock.players.living_room = livingRoom();
     apiMock.getLiveSources.mockResolvedValue([INPUT]);

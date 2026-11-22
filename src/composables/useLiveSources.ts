@@ -1,6 +1,6 @@
 import { sourceProviderId } from "@/composables/nowPlayingSource";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import { getSelectableInputIds, sortLiveSources } from "@/helpers/live_sources";
+import { getSelectableInputs, sortLiveSources } from "@/helpers/live_sources";
 import { api, ConnectionState } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import { EventType, Scope, type PlayerSource } from "@/plugins/api/interfaces";
@@ -79,13 +79,17 @@ export function useLiveSources(playerId: MaybeRefOrGetter<string | undefined>) {
     }
   };
 
-  // what the player can switch to changes with its inputs, and with its sync,
-  // which leaves it nothing to switch to while it plays what another plays
+  // what the player can switch to changes with its inputs and their names, and
+  // with its sync, which leaves it nothing to switch to while it plays what
+  // another plays
   const inputsKey = computed(() => {
     const id = toValue(playerId);
     const player = id ? api.players[id] : undefined;
     if (!player) return "";
-    return [player.synced_to, ...getSelectableInputIds(player).sort()].join();
+    const inputs = getSelectableInputs(player).map(
+      (input) => `${input.id}=${input.name}`,
+    );
+    return JSON.stringify([player.synced_to, inputs.sort()]);
   });
   watch(
     [() => toValue(playerId), inputsKey],
