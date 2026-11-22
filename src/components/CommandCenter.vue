@@ -385,6 +385,7 @@ import {
   detailRoute,
   isAuthorOrNarrator,
 } from "@/helpers/author_narrator";
+import { isImeComposition } from "@/helpers/keyboard";
 import { matchLiveSources } from "@/helpers/live_sources";
 import {
   handleMenuBtnClick,
@@ -621,9 +622,7 @@ const focusInputOnClose = function (event: Event) {
 // keyboard away and never lets reka click a row nobody meant to select. The
 // enter is settled here on the wrapper before it can reach the input.
 const onEnterKey = function (event: KeyboardEvent) {
-  // the enter that commits an IME conversion belongs to the composition, not
-  // to us; keyCode 229 covers webkit reporting that keydown as not composing
-  if (event.isComposing || event.keyCode === 229) return;
+  if (isImeComposition(event)) return;
   // the wrapper also hears enter from the toolbar buttons (search sources, the
   // search button); only the input's own enter drives a search
   const inputEl = filterRef.value?.$el as HTMLElement | undefined;

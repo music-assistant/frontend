@@ -59,12 +59,14 @@
           :search-query="searchQuery"
           :results="results"
           :is-searching="isSearching"
+          :is-submitted="seedItems.isSearchSubmitted.value"
           :has-provider="seedItems.hasSimilarTracksProvider.value"
           :is-full="seedItems.isFull.value"
           :invalid="invalid && !seedItems.hasSeed.value"
           @update:kind="onChangeKind"
           @update:search-query="onSearchUpdate"
           @select="onSelect"
+          @submit="seedItems.submitSearch()"
         >
           <template #item-sub="{ item }">
             <span

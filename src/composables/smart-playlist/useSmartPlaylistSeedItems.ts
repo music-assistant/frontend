@@ -12,7 +12,7 @@ import {
   MediaType,
   ProviderFeature as ProviderFeatureEnum,
 } from "@/plugins/api/interfaces";
-import { setupDebouncedSearch } from "./useSmartPlaylistSearchHelpers";
+import { setupSubmitSearch } from "./useSmartPlaylistSearchHelpers";
 
 export type SeedKind = "track" | "artist" | "album" | "playlist";
 
@@ -96,49 +96,56 @@ export function useSmartPlaylistSeedItems() {
     () => similarTracksProviderIds.value.length > 0,
   );
 
-  setupDebouncedSearch({
-    query: trackSearch,
-    results: trackResults,
-    isSearching: isTrackSearching,
-    searchFn: async (q) => {
-      if (!hasSimilarTracksProvider.value) return [];
-      const result = await api.search(q, [MediaType.TRACK], 20);
-      return result.tracks;
-    },
-  });
+  const searches: Record<SeedKind, ReturnType<typeof setupSubmitSearch>> = {
+    track: setupSubmitSearch({
+      query: trackSearch,
+      results: trackResults,
+      isSearching: isTrackSearching,
+      searchFn: async (q) => {
+        if (!hasSimilarTracksProvider.value) return [];
+        const result = await api.search(q, [MediaType.TRACK], 20);
+        return result.tracks;
+      },
+    }),
+    artist: setupSubmitSearch({
+      query: artistSearch,
+      results: artistResults,
+      isSearching: isArtistSearching,
+      searchFn: async (q) => {
+        if (!hasSimilarTracksProvider.value) return [];
+        const result = await api.search(q, [MediaType.ARTIST], 20);
+        return result.artists;
+      },
+    }),
+    album: setupSubmitSearch({
+      query: albumSearch,
+      results: albumResults,
+      isSearching: isAlbumSearching,
+      searchFn: async (q) => {
+        if (!hasSimilarTracksProvider.value) return [];
+        const result = await api.search(q, [MediaType.ALBUM], 20);
+        return result.albums;
+      },
+    }),
+    playlist: setupSubmitSearch({
+      query: playlistSearch,
+      results: playlistResults,
+      isSearching: isPlaylistSearching,
+      searchFn: async (q) => {
+        if (!hasSimilarTracksProvider.value) return [];
+        const result = await api.search(q, [MediaType.PLAYLIST], 20);
+        return result.playlists;
+      },
+    }),
+  };
 
-  setupDebouncedSearch({
-    query: artistSearch,
-    results: artistResults,
-    isSearching: isArtistSearching,
-    searchFn: async (q) => {
-      if (!hasSimilarTracksProvider.value) return [];
-      const result = await api.search(q, [MediaType.ARTIST], 20);
-      return result.artists;
-    },
-  });
+  const isSearchSubmitted = computed(
+    () => searches[activeKind.value].isSubmitted.value,
+  );
 
-  setupDebouncedSearch({
-    query: albumSearch,
-    results: albumResults,
-    isSearching: isAlbumSearching,
-    searchFn: async (q) => {
-      if (!hasSimilarTracksProvider.value) return [];
-      const result = await api.search(q, [MediaType.ALBUM], 20);
-      return result.albums;
-    },
-  });
-
-  setupDebouncedSearch({
-    query: playlistSearch,
-    results: playlistResults,
-    isSearching: isPlaylistSearching,
-    searchFn: async (q) => {
-      if (!hasSimilarTracksProvider.value) return [];
-      const result = await api.search(q, [MediaType.PLAYLIST], 20);
-      return result.playlists;
-    },
-  });
+  function submitSearch() {
+    return searches[activeKind.value].submit();
+  }
 
   const isFull = computed(() => seeds.value.length >= SEED_MAX);
   const hasSeed = computed(() => seeds.value.length > 0);
@@ -209,7 +216,9 @@ export function useSmartPlaylistSeedItems() {
     playlistSearch,
     playlistResults,
     isPlaylistSearching,
+    isSearchSubmitted,
 
+    submitSearch,
     addSeed,
     addSeedFromSearch,
     removeSeed,
