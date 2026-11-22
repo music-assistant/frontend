@@ -16,22 +16,39 @@ import {
   useLiveSources,
 } from "./useLiveSources";
 
-const { apiMock, storeMock, routerMock } = await vi.hoisted(async () => {
-  const { reactive, ref } = await import("vue");
-  return {
-    apiMock: {
-      players: reactive({}) as Record<string, Player>,
-      state: ref("initialized"),
-      getLiveSources: vi.fn(),
-      playerCommandGroupSelectSource: vi.fn(),
-      subscribe_multi: vi.fn((_events: string[], _callback: () => void) => {
-        return () => {};
-      }),
-    },
-    storeMock: { hasLiveSources: false },
-    routerMock: { push: vi.fn() },
-  };
-});
+const { apiMock, storeMock, routerMock, listeners, emit } = await vi.hoisted(
+  async () => {
+    const { reactive, ref } = await import("vue");
+    const listeners: [string, (evt: unknown) => void][] = [];
+    return {
+      apiMock: {
+        players: reactive({}) as Record<string, Player>,
+        state: ref("initialized"),
+        getLiveSources: vi.fn(),
+        playerCommandGroupSelectSource: vi.fn(),
+        subscribe: vi.fn((event: string, callback: (evt: unknown) => void) => {
+          listeners.push([event, callback]);
+          return () => {};
+        }),
+        subscribe_multi: vi.fn(
+          (events: string[], callback: (evt: unknown) => void) => {
+            for (const event of events) listeners.push([event, callback]);
+            return () => {};
+          },
+        ),
+      },
+      // the events the composables listen to, as the api sends them
+      listeners,
+      emit: (event: string, data?: unknown) => {
+        for (const [name, callback] of listeners) {
+          if (name === event) callback({ event, data });
+        }
+      },
+      storeMock: { hasLiveSources: false },
+      routerMock: { push: vi.fn() },
+    };
+  },
+);
 
 vi.mock("@/plugins/api", () => ({
   api: apiMock,
@@ -99,6 +116,7 @@ enableAutoUnmount(afterEach);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  listeners.length = 0;
   for (const id of Object.keys(apiMock.players)) delete apiMock.players[id];
   apiMock.state.value = "initialized";
   storeMock.hasLiveSources = false;
@@ -215,9 +233,23 @@ describe("useLiveSources", () => {
     const { sources } = mountLiveSources("living_room");
     await flushPromises();
     apiMock.getLiveSources.mockResolvedValue([LIVE_SOURCE]);
-    for (const [, refresh] of apiMock.subscribe_multi.mock.calls) refresh();
+    emit("player_added");
     await flushPromises();
     expect(sources.value).toEqual([LIVE_SOURCE]);
+  });
+
+  it("drops the sources of a player that gets disabled", async () => {
+    apiMock.getLiveSources.mockResolvedValue([INPUT, LIVE_SOURCE]);
+    const { sources } = mountLiveSources("living_room");
+    await flushPromises();
+
+    apiMock.getLiveSources.mockResolvedValue([INPUT]);
+    emit("player_updated", { player_id: "den", enabled: true });
+    await flushPromises();
+    expect(apiMock.getLiveSources).toHaveBeenCalledTimes(1);
+    emit("player_updated", { player_id: "den", enabled: false });
+    await flushPromises();
+    expect(sources.value).toEqual([INPUT]);
   });
 
   it("drops the inputs of the player when it joins a group", async () => {
@@ -342,10 +374,23 @@ describe("trackLiveSources", () => {
     track();
     track();
     await flushPromises();
-    expect(apiMock.subscribe_multi).toHaveBeenCalledTimes(1);
     expect(apiMock.getLiveSources).toHaveBeenCalledTimes(2);
-    apiMock.subscribe_multi.mock.calls[0][1]();
+    emit("providers_updated");
     await flushPromises();
     expect(apiMock.getLiveSources).toHaveBeenCalledTimes(3);
+  });
+
+  it("leaves the menu item out once a disabled player took the last source", async () => {
+    apiMock.getLiveSources.mockResolvedValue([LIVE_SOURCE]);
+    (await freshTracker())();
+    await flushPromises();
+
+    apiMock.getLiveSources.mockResolvedValue([]);
+    emit("player_updated", { player_id: "den", enabled: true });
+    await flushPromises();
+    expect(storeMock.hasLiveSources).toBe(true);
+    emit("player_updated", { player_id: "den", enabled: false });
+    await flushPromises();
+    expect(storeMock.hasLiveSources).toBe(false);
   });
 });

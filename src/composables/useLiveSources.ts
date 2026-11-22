@@ -3,7 +3,13 @@ import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { getSelectableInputs, sortLiveSources } from "@/helpers/live_sources";
 import { api, ConnectionState } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
-import { EventType, Scope, type PlayerSource } from "@/plugins/api/interfaces";
+import {
+  EventType,
+  Scope,
+  type EventMessage,
+  type Player,
+  type PlayerSource,
+} from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
@@ -37,7 +43,7 @@ let latestAvailabilityRequest = 0;
  */
 export function trackLiveSources(): void {
   if (!tracking) {
-    api.subscribe_multi(REFRESH_EVENTS, refreshHasLiveSources);
+    onLiveSourcesChanged(refreshHasLiveSources);
     tracking = true;
   }
   void refreshHasLiveSources();
@@ -109,7 +115,7 @@ export function useLiveSources(playerId: MaybeRefOrGetter<string | undefined>) {
       }
     },
   );
-  const unsubscribe = api.subscribe_multi(REFRESH_EVENTS, load);
+  const unsubscribe = onLiveSourcesChanged(load);
   onBeforeUnmount(() => unsubscribe());
 
   const sources = computed(() => sortLiveSources(entries.value, api.players));
@@ -200,6 +206,24 @@ async function refreshHasLiveSources(): Promise<void> {
     // a failed check keeps the last answer, so a server without the list,
     // which is never answered, has none
   }
+}
+
+// calls back when live sources may have come or gone; returns the unsubscribe
+function onLiveSourcesChanged(callback: () => void): () => void {
+  const unsubscribeEvents = api.subscribe_multi(REFRESH_EVENTS, () =>
+    callback(),
+  );
+  // a disabled player leaves with a last update, and no removal follows
+  const unsubscribeDisabled = api.subscribe(
+    EventType.PLAYER_UPDATED,
+    (evt: EventMessage) => {
+      if ((evt.data as Player | undefined)?.enabled === false) callback();
+    },
+  );
+  return () => {
+    unsubscribeEvents();
+    unsubscribeDisabled();
+  };
 }
 
 // the settings a role that changes them can open for a source, if any
