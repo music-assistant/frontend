@@ -66,6 +66,19 @@ describe("useListingView", () => {
     expect(view.columnCount.value).toBe(4);
   });
 
+  it("keeps following a drag that starts while the last size saves", async () => {
+    let finishSave: () => void = () => {};
+    setPreference.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    const view = useListingView("page");
+    void view.gridControls.onCommit(1);
+    view.gridControls.onChange(-2);
+    finishSave();
+    await flushPromises();
+    expect(view.columnCount.value).toBe(7);
+  });
+
   it("keeps the card actions hidden when the user hides them", async () => {
     const view = useListingView("page");
     view.gridControls.onToggleActions(false);

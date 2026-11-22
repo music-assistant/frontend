@@ -63,7 +63,8 @@ export function useListingView(path: string) {
     onCommit: async (size: number) => {
       draggedSize.value = size;
       await setItemsListingPreference(path, path, "gridSize", size);
-      draggedSize.value = undefined;
+      // a drag that started while it saved keeps its own size
+      if (draggedSize.value === size) draggedSize.value = undefined;
     },
     onToggleActions: (show: boolean) =>
       setItemsListingPreference(path, path, "showActions", show),
