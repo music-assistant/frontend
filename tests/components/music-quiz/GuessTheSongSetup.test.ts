@@ -1,7 +1,7 @@
 import GuessTheSongSetup from "@/components/music-quiz/game-types/guess-the-song/GuessTheSongSetup.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { MediaType, type SearchResults } from "@/plugins/api/interfaces";
-import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { genre } from "../../fixtures/genre";
@@ -71,6 +71,15 @@ async function flushPromises() {
   await nextTick();
 }
 
+// MediaSearch searches only once the query is submitted
+async function submitSearch(wrapper: VueWrapper, term: string) {
+  const input = wrapper.find(
+    'input[placeholder="providers.music_quiz.search_music"]',
+  );
+  await input.setValue(term);
+  await input.trigger("keydown.enter");
+}
+
 function mountConfig(includeSimilarMusic = false, sharedConfigValid = true) {
   return mount(GuessTheSongSetup, {
     props: { busy: false, includeSimilarMusic, sharedConfigValid },
@@ -104,14 +113,9 @@ enableAutoUnmount(afterEach);
 describe("GuessTheSongSetup", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
-    vi.useFakeTimers();
     mockSearch.mockReset();
     mockGetLibraryGenres.mockReset();
     mockGetLibraryGenres.mockResolvedValue([]);
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("keeps the latest source-search result when older requests finish later", async () => {
@@ -123,11 +127,7 @@ describe("GuessTheSongSetup", () => {
 
     const wrapper = mountConfig();
 
-    const searchInput = wrapper.find(
-      'input[placeholder="providers.music_quiz.search_music"]',
-    );
-    await searchInput.setValue("old");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "old");
     expect(mockSearch).toHaveBeenCalledWith(
       "old",
       [MediaType.PLAYLIST, MediaType.GENRE],
@@ -135,8 +135,7 @@ describe("GuessTheSongSetup", () => {
       ["library"],
     );
 
-    await searchInput.setValue("new");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "new");
     expect(mockSearch).toHaveBeenCalledWith(
       "new",
       [MediaType.PLAYLIST, MediaType.GENRE],
@@ -176,10 +175,7 @@ describe("GuessTheSongSetup", () => {
     const wrapper = mountConfig();
     expect(wrapper.find("#quiz-name").exists()).toBe(false);
 
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();
@@ -211,10 +207,7 @@ describe("GuessTheSongSetup", () => {
     );
     const wrapper = mountConfig(false, false);
 
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();
@@ -236,10 +229,7 @@ describe("GuessTheSongSetup", () => {
     );
     const wrapper = mountConfig();
 
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();
@@ -264,17 +254,12 @@ describe("GuessTheSongSetup", () => {
     );
     const wrapper = mountConfig(true);
 
-    const searchInput = wrapper.find(
-      'input[placeholder="providers.music_quiz.search_music"]',
-    );
-    await searchInput.setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();
     // picking a result clears the search, so search again for the next pick
-    await searchInput.setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Rock").click();
     await flushPromises();
@@ -300,10 +285,7 @@ describe("GuessTheSongSetup", () => {
     );
     const wrapper = mountConfig();
 
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();
