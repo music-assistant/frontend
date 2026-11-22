@@ -103,3 +103,18 @@ export function sortLiveSources(
       a.name.localeCompare(b.name) || ownerName(a).localeCompare(ownerName(b)),
   );
 }
+
+/**
+ * The live sources whose name holds the search term, ignoring case.
+ *
+ * @param sources - The entries in the list of live sources.
+ * @param term - The search term; an empty term matches nothing.
+ */
+export function matchLiveSources(
+  sources: readonly PlayerSource[],
+  term: string,
+): PlayerSource[] {
+  const needle = term.trim().toLowerCase();
+  if (!needle) return [];
+  return sources.filter((source) => source.name.toLowerCase().includes(needle));
+}

@@ -1,10 +1,16 @@
 import CommandCenter from "@/components/CommandCenter.vue";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import type { SearchTarget } from "@/composables/useProgressiveSearch";
-import { ArtistType, MediaType, type Player } from "@/plugins/api/interfaces";
+import {
+  ArtistType,
+  MediaType,
+  type Player,
+  type PlayerSource,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Ref } from "vue";
+import type { MaybeRefOrGetter, Ref } from "vue";
+import { playerSource } from "../fixtures/playerSource";
 
 const state = vi.hoisted(() => ({
   resultsByType: {} as Record<string, unknown[]>,
@@ -15,6 +21,9 @@ const state = vi.hoisted(() => ({
   providersRef: undefined as Ref<string[]> | undefined,
   providerTargets: { value: [] as SearchTarget[] },
   players: [] as unknown[],
+  liveSources: [] as PlayerSource[],
+  startLiveSourceSpy: vi.fn(),
+  liveSourceMenuSpy: vi.fn(),
   providers: {} as Record<string, { supported_artist_types: string[] }>,
   prefs: {} as Record<string, unknown>,
   searchSpy: vi.fn(),
@@ -101,6 +110,18 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
         },
       };
     },
+  };
+});
+
+vi.mock("@/composables/useLiveSources", async () => {
+  const { computed, toValue } = await import("vue");
+  return {
+    // like the real one, a player to start them on lists its live sources
+    useLiveSources: (playerId: MaybeRefOrGetter<string | undefined>) => ({
+      sources: computed(() => (toValue(playerId) ? state.liveSources : [])),
+    }),
+    startLiveSource: state.startLiveSourceSpy,
+    openLiveSourceMenu: state.liveSourceMenuSpy,
   };
 });
 
@@ -377,6 +398,7 @@ beforeEach(() => {
   state.providersRef = undefined;
   state.providerTargets.value = [SPOTIFY_TARGET, FILES_TARGET];
   state.players = [];
+  state.liveSources = [];
   for (const id of Object.keys(state.providers)) delete state.providers[id];
   state.prefs = {};
   state.loading.value = false;
@@ -1565,6 +1587,74 @@ describe("CommandCenter", () => {
     await itemByText(wrapper, "Kitchen").trigger("click");
     expect(state.storeMock.activePlayerId).toBe("p1");
     expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("plays a live source found by name on the selected player", async () => {
+    state.storeMock.activePlayerId = "p1";
+    state.liveSources = [
+      playerSource({ id: "phono", name: "Record player" }),
+      playerSource({ id: "tv", name: "TV" }),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // matched while typing, so there is no prompt to run the search
+    await wrapper.get('[data-testid="palette-input"]').setValue("record");
+    expect(wrapper.text()).toContain("live_sources");
+    expect(wrapper.text()).not.toContain("TV");
+    expect(wrapper.text()).not.toContain("command_center_press_enter");
+
+    await itemByText(wrapper, "Record player").trigger("click");
+    expect(state.startLiveSourceSpy).toHaveBeenCalledWith(
+      "p1",
+      state.liveSources[0],
+    );
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.recent", [
+      "record",
+    ]);
+    expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("opens the menu of a live source from its menu button", async () => {
+    state.storeMock.activePlayerId = "p1";
+    state.liveSources = [playerSource({ id: "phono", name: "Record player" })];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="palette-input"]').setValue("record");
+    await wrapper
+      .get('button[aria-label="more_options: Record player"]')
+      .trigger("click");
+    expect(state.liveSourceMenuSpy).toHaveBeenCalledWith(
+      state.liveSources[0],
+      "p1",
+      expect.any(Number),
+      expect.any(Number),
+    );
+    expect(state.startLiveSourceSpy).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it.each([
+    ["without a player", undefined, false],
+    ["in the pages scope", "p1", true],
+  ])("leaves live sources out %s", async (_, playerId, pagesOnly) => {
+    state.storeMock.activePlayerId = playerId;
+    state.liveSources = [playerSource({ id: "phono", name: "Record player" })];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    if (pagesOnly) await pagesChip(wrapper).trigger("click");
+    await wrapper.get('[data-testid="palette-input"]').setValue("record");
+    expect(wrapper.text()).not.toContain("Record player");
 
     wrapper.unmount();
   });
