@@ -39,6 +39,9 @@
         </template>
       </ProviderRow>
     </template>
+    <template #input-row="{ input }">
+      <DeviceInputRow :variant="viewMode" :source="input" />
+    </template>
   </ProviderListPanel>
 
   <ProviderAccessDialog
@@ -52,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import DeviceInputRow from "@/components/settings/providers/DeviceInputRow.vue";
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderListPanel from "@/components/settings/providers/ProviderListPanel.vue";
 import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
@@ -78,7 +82,11 @@ import {
 import { getProviderLabels } from "@/helpers/provider_labels";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { api } from "@/plugins/api";
-import { type ProviderConfig, ProviderStatus } from "@/plugins/api/interfaces";
+import {
+  type PlayerSource,
+  type ProviderConfig,
+  ProviderStatus,
+} from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { computed, inject } from "vue";
@@ -93,6 +101,8 @@ const props = defineProps<{
   type: string;
   // in place of the name the Marketplace gives the type
   title?: string;
+  // the inputs of devices listed after the providers
+  inputs?: readonly PlayerSource[];
 }>();
 
 defineSlots<{
@@ -173,6 +183,7 @@ const {
   getProviderName,
   getLabels: labelsOf,
   isErrorStatus,
+  inputs: () => props.inputs ?? [],
 });
 
 const {

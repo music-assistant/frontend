@@ -2,6 +2,8 @@ import { useProviderSources } from "@/composables/settings/providers/useProvider
 import type { ProviderLabel } from "@/helpers/provider_labels";
 import type { MusicAssistantApi } from "@/plugins/api";
 import {
+  type Player,
+  type PlayerSource,
   ProviderOffering,
   type ProviderConfig,
   ProviderSharing,
@@ -12,6 +14,7 @@ import {
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { defineComponent } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { playerSource } from "../../../fixtures/playerSource";
 import { providerConfig } from "../../../fixtures/providerConfig";
 import { user } from "../../../fixtures/user";
 
@@ -23,6 +26,7 @@ const { apiMock, eventbusMock, i18nMock, storeMock, toastMock } = vi.hoisted(
         string,
         { builtin: boolean; provides?: ProviderOffering[] }
       >,
+      players: {} as Record<string, Player>,
       providers: {} as Record<string, unknown>,
       removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
       subscribe: vi.fn<MusicAssistantApi["subscribe"]>(),
@@ -66,7 +70,11 @@ const getLabels = (config: ProviderConfig) =>
   sourceLabels[config.instance_id] ?? [];
 
 function mountSources(
-  overrides: { managesAllSources?: boolean; listType?: string } = {},
+  overrides: {
+    managesAllSources?: boolean;
+    listType?: string;
+    inputs?: PlayerSource[];
+  } = {},
 ) {
   return withComposable(() =>
     useProviderSources({
@@ -75,6 +83,7 @@ function mountSources(
       getLabels,
       isErrorStatus,
       managesAllSources: () => overrides.managesAllSources ?? true,
+      inputs: () => overrides.inputs ?? [],
     }),
   );
 }
@@ -108,6 +117,7 @@ beforeEach(() => {
   };
   // truthy so the immediate watch on api.providers loads on mount, like the real api
   apiMock.providers = {};
+  apiMock.players = {};
   apiMock.removeProviderConfig.mockResolvedValue(undefined);
   apiMock.subscribe.mockReturnValue(vi.fn());
   sourceLabels = {};
@@ -523,6 +533,82 @@ describe("the label filter", () => {
       ["own", ["radio--own"]],
       ["shared", ["radio--shared"]],
     ]);
+  });
+});
+
+describe("the inputs of devices", () => {
+  const tv = playerSource({
+    id: "tv",
+    name: "TV",
+    is_input: true,
+    passive: false,
+    owner_player_id: "den",
+  });
+  const lineIn = playerSource({
+    id: "line_in",
+    name: "Line-in",
+    is_input: true,
+    passive: false,
+    owner_player_id: "office",
+  });
+  const inputIds = (result: Sources) =>
+    result.list.value.inputs.map((input) => input.id);
+
+  beforeEach(() => {
+    apiMock.players = {
+      den: { player_id: "den", name: "Den" } as Player,
+      office: { player_id: "office", name: "Office" } as Player,
+    };
+    apiMock.getProviderConfigs.mockResolvedValue([
+      providerConfig({
+        domain: "spotify",
+        instance_id: "spotify--1",
+        name: "Spotify",
+      }),
+    ]);
+    sourceLabels = { "spotify--1": ["library"] };
+  });
+
+  it("lists them with the live sources label on offer", async () => {
+    const { result } = mountSources({ inputs: [tv, lineIn] });
+    await flushPromises();
+
+    expect(inputIds(result)).toEqual(["tv", "line_in"]);
+    expect(result.list.value.labels).toEqual(["library", "live"]);
+  });
+
+  it("keeps them for the live sources label only", async () => {
+    const { result } = mountSources({ inputs: [tv] });
+    await flushPromises();
+
+    result.setLabelFilter("live");
+    expect(inputIds(result)).toEqual(["tv"]);
+    expect(listedIds(result)).toEqual([]);
+
+    result.setLabelFilter("library");
+    expect(inputIds(result)).toEqual([]);
+    expect(listedIds(result)).toEqual(["spotify--1"]);
+  });
+
+  it("count towards the search, which matches their name and their player", async () => {
+    apiMock.getProviderConfigs.mockResolvedValue(musicConfigs(8));
+    const { result } = mountSources({ inputs: [tv, lineIn] });
+    await flushPromises();
+    expect(result.list.value.showSearch).toBe(true);
+
+    result.setSearchQuery("tv");
+    expect(inputIds(result)).toEqual(["tv"]);
+    result.setSearchQuery("office");
+    expect(inputIds(result)).toEqual(["line_in"]);
+    expect(listedIds(result)).toEqual([]);
+  });
+
+  it("leave out the empty state of the music sources", async () => {
+    apiMock.getProviderConfigs.mockResolvedValue([]);
+    const { result } = mountSources({ inputs: [tv] });
+    await flushPromises();
+
+    expect(result.list.value.showMusicEmptyState).toBe(false);
   });
 });
 

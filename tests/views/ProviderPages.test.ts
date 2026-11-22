@@ -12,6 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CommunityProviderState,
   type CoreConfig,
+  type Player,
+  PlayerType,
   ProviderOffering,
   type ProviderConfig,
   ProviderFeature,
@@ -33,6 +35,7 @@ import MetadataSettings from "@/views/settings/MetadataSettings.vue";
 import MusicSettings from "@/views/settings/MusicSettings.vue";
 import ProviderListSettings from "@/views/settings/ProviderListSettings.vue";
 import { communityProvider } from "../fixtures/communityProvider";
+import { playerSource } from "../fixtures/playerSource";
 import { providerConfig } from "../fixtures/providerConfig";
 import { providerInstance } from "../fixtures/providerInstance";
 import { providerManifest } from "../fixtures/providerManifest";
@@ -87,6 +90,7 @@ const {
         stage: "stable",
       },
     },
+    players: {} as Record<string, Player>,
     providers: {} as Record<string, ProviderInstance>,
     reloadProvider: vi.fn<MusicAssistantApi["reloadProvider"]>(),
     removeProviderConfig: vi.fn<MusicAssistantApi["removeProviderConfig"]>(),
@@ -214,6 +218,13 @@ const ButtonStub = {
 
 // stands in for the extracted row so the view's tests can read the flags it is
 // handed and drive the events it emits, without depending on how it renders
+// a row naming the input and the player it belongs to
+const DeviceInputRowStub = {
+  name: "DeviceInputRow",
+  props: ["source", "variant"],
+  template: `<div data-testid="device-input-row">{{ source.owner_player_id }}/{{ source.name }}</div>`,
+};
+
 const ProviderRowStub = {
   name: "ProviderRow",
   props: [
@@ -252,6 +263,7 @@ beforeEach(() => {
   } as unknown as CoreConfig);
   apiMock.getProvider.mockReturnValue(undefined);
   apiMock.getShareCandidates.mockResolvedValue(shareCandidates);
+  apiMock.players = {};
   apiMock.providers = {};
   apiMock.providerManifests.spotify.builtin = false;
   apiMock.providerManifests.spotify.has_setup_flow = true;
@@ -1324,6 +1336,59 @@ describe("Providers labelled with what they offer", () => {
   });
 });
 
+describe("Providers with the inputs of devices", () => {
+  const input = (id: string, name: string) =>
+    playerSource({ id, name, is_input: true, passive: false });
+
+  beforeEach(() => {
+    apiMock.players = {
+      den: {
+        player_id: "den",
+        name: "Den",
+        type: PlayerType.PLAYER,
+        source_list: [input("tv", "TV")],
+      } as unknown as Player,
+      // a device that is only an input names itself
+      turntable: {
+        player_id: "turntable",
+        name: "Turntable",
+        type: PlayerType.SOURCE,
+        source_list: [input("turntable", "Turntable")],
+      } as unknown as Player,
+    };
+  });
+
+  function inputRows(wrapper: Awaited<ReturnType<typeof mountWithConfigs>>) {
+    return wrapper.findAll('[data-testid="device-input-row"]');
+  }
+
+  it("lists each on its player after the music sources, counted with them", async () => {
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(panels(wrapper)[0].count).toBe(3);
+    expect(inputRows(wrapper).map((row) => row.text())).toEqual([
+      "turntable/Turntable",
+      "den/TV",
+    ]);
+  });
+
+  it("leaves them out for a role that cannot change the players", async () => {
+    authMock.hasScope.mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.user),
+    );
+    const wrapper = await mountProviders(ProviderStatus.LOADED);
+
+    expect(inputRows(wrapper)).toHaveLength(0);
+  });
+
+  it("leaves them off a list of another type", async () => {
+    pageType = ProviderType.METADATA;
+    const wrapper = await mountWithConfigs([]);
+
+    expect(inputRows(wrapper)).toHaveLength(0);
+  });
+});
+
 describe("Providers on the page of a type", () => {
   const LIST_TYPES = [
     ProviderType.METADATA,
@@ -2147,6 +2212,7 @@ async function mountWithConfigs(
         ProviderList: false,
         ProviderListPanel: false,
         ProviderRow: ProviderRowStub,
+        DeviceInputRow: DeviceInputRowStub,
         // the panel holds the list, its heading and its add button
         SettingsListPanel: false,
         ProviderLabelFilter: false,

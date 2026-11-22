@@ -15,6 +15,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { playerSource } from "../../tests/fixtures/playerSource";
 import {
+  getDeviceInputs,
   getLiveSourceIcon,
   getLiveSourceOwnerName,
   getSelectableInputs,
@@ -173,6 +174,63 @@ describe("sortLiveSources", () => {
       "line_in",
       "line_in@den",
       "spotify_connect--x://audio_source/living_room",
+      "tv",
+    ]);
+  });
+});
+
+describe("getDeviceInputs", () => {
+  it("lists every input once, on the player it belongs to", () => {
+    const lineIn = input("line_in", "Line-in");
+    const players = {
+      living_room: player({
+        source_list: [input("tv", "TV"), lineIn, liveSource()],
+      }),
+      // the line-in of Living Room, offered on Den by their system
+      den: player({
+        player_id: "den",
+        name: "Den",
+        source_list: [{ ...lineIn, owner_player_id: "living_room" }],
+      }),
+    };
+    expect(getDeviceInputs(players)).toEqual([
+      { ...lineIn, owner_player_id: "living_room" },
+      { ...input("tv", "TV"), owner_player_id: "living_room" },
+    ]);
+  });
+
+  it("lists the inputs of a player synced to another", () => {
+    const players = {
+      den: player({
+        player_id: "den",
+        synced_to: "living_room",
+        source_list: [input("tv", "TV")],
+      }),
+    };
+    expect(getDeviceInputs(players).map((source) => source.id)).toEqual(["tv"]);
+  });
+
+  it("leaves out an input that can not be selected", () => {
+    const players = {
+      living_room: player({
+        source_list: [{ ...input("tv", "TV"), passive: true }],
+      }),
+    };
+    expect(getDeviceInputs(players)).toEqual([]);
+  });
+
+  it("sorts by name, and by the name of the player after that", () => {
+    const players = {
+      living_room: player({ source_list: [input("li", "Line-in")] }),
+      den: player({
+        player_id: "den",
+        name: "Den",
+        source_list: [input("tv", "TV"), input("li2", "Line-in")],
+      }),
+    };
+    expect(getDeviceInputs(players).map((source) => source.id)).toEqual([
+      "li2",
+      "li",
       "tv",
     ]);
   });

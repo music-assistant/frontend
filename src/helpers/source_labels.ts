@@ -24,6 +24,9 @@ export const SOURCE_LABEL_KEYS: Readonly<Record<SourceLabel, string>> = {
   live: "settings.source_labels.live",
 };
 
+/** The labels of an input of a device, which is a live source. */
+export const DEVICE_INPUT_LABELS: readonly SourceLabel[] = ["live"];
+
 // a source earns a label with any one of the media types its manifest
 // provides; a live source is an audio source plugin instead
 const LABEL_OFFERINGS: Readonly<

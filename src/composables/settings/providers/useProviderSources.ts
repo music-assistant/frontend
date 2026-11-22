@@ -1,6 +1,8 @@
+import { getLiveSourceOwnerName } from "@/helpers/live_sources";
 import { isOwnMusicSource } from "@/helpers/provider_access";
 import { isBuiltinProvider } from "@/helpers/provider_config";
 import { getFilterLabels, type ProviderLabel } from "@/helpers/provider_labels";
+import { DEVICE_INPUT_LABELS } from "@/helpers/source_labels";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import {
   providerListType,
@@ -9,6 +11,7 @@ import {
 import { api } from "@/plugins/api";
 import {
   EventType,
+  type PlayerSource,
   type ProviderConfig,
   type ProviderStatus,
   ProviderType,
@@ -48,6 +51,9 @@ export interface ProviderList {
   // alphabetically
   filteredProviders: ProviderConfig[];
   sections: ProviderSection[];
+  // the inputs of devices the search and the label leave, listed after the
+  // providers
+  inputs: PlayerSource[];
   showSearch: boolean;
   // an empty music list invites a first source of one's own, or tells a viewer
   // who cannot add any that nothing has been shared yet
@@ -62,6 +68,8 @@ interface UseProviderSourcesOptions {
   // what a provider offers
   getLabels: (config: ProviderConfig) => ProviderLabel[];
   isErrorStatus: (status?: ProviderStatus | null) => boolean;
+  // the inputs of devices the list shows after the providers; none if left out
+  inputs?: MaybeRefOrGetter<readonly PlayerSource[]>;
 }
 
 /**
@@ -173,11 +181,16 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
 
   function buildList(type: string): ProviderList {
     const listed = listedProviders(type);
-    const showSearch = listed.length >= MIN_PROVIDERS_FOR_SEARCH;
+    const listedInputs = toValue(options.inputs) ?? [];
+    const showSearch =
+      listed.length + listedInputs.length >= MIN_PROVIDERS_FOR_SEARCH;
     // a search typed before the list shrank below the threshold would keep
     // narrowing it down unseen
     const searchQuery = showSearch ? search.value : "";
-    const labels = getFilterLabels(listed.map(getLabels));
+    const labels = getFilterLabels([
+      ...listed.map(getLabels),
+      ...listedInputs.map(() => DEVICE_INPUT_LABELS),
+    ]);
     // the same goes for a label no provider in the list offers any more
     const picked = pickedLabel.value;
     const labelFilter = picked && labels.includes(picked) ? picked : null;
@@ -188,6 +201,10 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
       getProviderName,
       isErrorStatus,
     );
+    const inputs =
+      !labelFilter || DEVICE_INPUT_LABELS.some((label) => label === labelFilter)
+        ? searchInputs(listedInputs, searchQuery)
+        : [];
     return {
       type,
       searchQuery,
@@ -199,10 +216,12 @@ export function useProviderSources(options: UseProviderSourcesOptions) {
         toValue(options.managesAllSources),
         store.currentUser?.user_id,
       ),
+      inputs,
       showSearch,
       showMusicEmptyState:
         loaded.value &&
         filteredProviders.length === 0 &&
+        inputs.length === 0 &&
         !searchQuery &&
         type === ProviderType.MUSIC,
     };
@@ -243,6 +262,20 @@ function searchProviders(
   const lowerQuery = query.toLowerCase();
   return providers.filter((item) =>
     getProviderName(item).toLowerCase().includes(lowerQuery),
+  );
+}
+
+// an input matches on its name and on the name of its player
+function searchInputs(
+  inputs: readonly PlayerSource[],
+  query: string,
+): PlayerSource[] {
+  if (!query) return [...inputs];
+  const lowerQuery = query.toLowerCase();
+  return inputs.filter((input) =>
+    [input.name, getLiveSourceOwnerName(input, api.players) ?? ""].some(
+      (name) => name.toLowerCase().includes(lowerQuery),
+    ),
   );
 }
 

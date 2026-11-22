@@ -1,7 +1,7 @@
 <template>
   <SettingsListPanel
     :title="heading"
-    :count="list.filteredProviders.length"
+    :count="list.filteredProviders.length + list.inputs.length"
     :view-mode="viewMode"
     :actions="actions"
     data-testid="provider-list"
@@ -49,6 +49,23 @@
           </template>
         </component>
       </section>
+      <component
+        :is="viewMode === 'list' ? ItemGroup : 'div'"
+        v-if="list.inputs.length"
+        :class="
+          viewMode === 'list'
+            ? 'gap-2'
+            : 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'
+        "
+        data-testid="device-inputs"
+      >
+        <template
+          v-for="input in list.inputs"
+          :key="`${input.owner_player_id}/${input.id}`"
+        >
+          <slot name="input-row" :input="input"></slot>
+        </template>
+      </component>
     </div>
 
     <Empty
@@ -78,7 +95,11 @@
     </Empty>
 
     <FilterEmptyState
-      v-else-if="loaded && list.filteredProviders.length === 0"
+      v-else-if="
+        loaded &&
+        list.filteredProviders.length === 0 &&
+        list.inputs.length === 0
+      "
       :icon="Puzzle"
       data-testid="providers-empty"
     />
@@ -105,7 +126,11 @@ import type { ProviderList } from "@/composables/settings/providers/useProviderS
 import { getCatalogType } from "@/helpers/provider_catalog";
 import type { ProviderLabel } from "@/helpers/provider_labels";
 import { canOwnSources } from "@/helpers/provider_permissions";
-import { type ProviderConfig, ProviderType } from "@/plugins/api/interfaces";
+import {
+  type PlayerSource,
+  type ProviderConfig,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Music, Plus, Puzzle } from "@lucide/vue";
 import { match } from "ts-pattern";
@@ -136,6 +161,8 @@ const emit = defineEmits<{
 
 defineSlots<{
   row(props: { item: ProviderConfig }): unknown;
+  // an input of a device, listed after the providers
+  "input-row"?(props: { input: PlayerSource }): unknown;
 }>();
 
 // a list is titled by the name the Marketplace gives its type, unless its page

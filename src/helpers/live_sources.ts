@@ -103,3 +103,22 @@ export function sortLiveSources(
       a.name.localeCompare(b.name) || ownerName(a).localeCompare(ownerName(b)),
   );
 }
+
+/**
+ * Every input of the devices, such as TV or Line-in, each once with the player
+ * it belongs to, sorted like the live sources; also those of a player synced to
+ * another.
+ *
+ * @param players - The players the app knows, by id.
+ */
+export function getDeviceInputs(
+  players: Readonly<Record<string, Player>>,
+): PlayerSource[] {
+  const inputs = Object.values(players).flatMap((player) =>
+    getSelectableInputs(player)
+      // an input another player of its system offers is listed on its own player
+      .filter((source) => !source.owner_player_id)
+      .map((source) => ({ ...source, owner_player_id: player.player_id })),
+  );
+  return sortLiveSources(inputs, players);
+}
