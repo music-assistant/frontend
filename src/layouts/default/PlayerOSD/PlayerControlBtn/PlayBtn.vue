@@ -21,6 +21,7 @@
     v-if="player && isLoading"
     class="pointer-events-none absolute top-1/2 left-1/2 z-1 size-(--spinner-size) -translate-1/2"
     :style="{ '--spinner-size': `${spinnerSize}px` }"
+    :size="spinnerSize"
     :stroke-width="SPINNER_STROKE_WIDTH"
     absolute-stroke-width
   />
