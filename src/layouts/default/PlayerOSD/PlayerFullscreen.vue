@@ -386,7 +386,9 @@
 
         <!-- main media control buttons (play, next, previous etc.)-->
         <div class="media-controls">
-          <div class="media-controls-item favorite-btn-wrapper">
+          <!-- keeps the button's width when it hides itself, e.g. for a live
+               source, so the play button stays centred on phones -->
+          <div class="media-controls-item favorite-btn-wrapper min-w-10">
             <!-- no hover box, like the transport buttons beside them -->
             <FavoriteMenuBtn
               variant="ghost-icon"
