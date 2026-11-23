@@ -1,8 +1,8 @@
 <template>
   <!-- play/pause/stop button -->
   <TransportBtn
-    v-bind="$attrs"
     class="relative rounded-full bg-[#212121] text-[var(--play-icon-color,#fff)] dark:bg-white dark:text-[var(--play-icon-color,#212121)]"
+    v-bind="$attrs"
     :icon-size="size"
     :disabled="isDisabled"
     :label="playButtonLabel"
