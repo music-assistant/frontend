@@ -421,7 +421,6 @@
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
               class="media-controls-item size-15 bg-(color:--text-color) dark:bg-(color:--text-color)"
-              :spinner-size="73"
               :size="30"
             />
           </div>

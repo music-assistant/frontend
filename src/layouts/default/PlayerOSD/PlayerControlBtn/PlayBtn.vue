@@ -1,6 +1,7 @@
 <template>
   <!-- play/pause/stop button -->
   <TransportBtn
+    ref="button"
     class="relative rounded-full bg-[#212121] text-[var(--play-icon-color,#fff)] dark:bg-white dark:text-[var(--play-icon-color,#212121)]"
     v-bind="$attrs"
     :icon-size="size"
@@ -35,24 +36,39 @@ import { usePlayPauseCommand } from "@/composables/usePlayPauseCommand";
 import TransportBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/TransportBtn.vue";
 import { Player, PlayerQueue } from "@/plugins/api/interfaces";
 import { Pause, Play, Square } from "@lucide/vue";
-import { computed, toRef } from "vue";
+import { useElementSize } from "@vueuse/core";
+import { computed, toRef, useTemplateRef } from "vue";
 
 // properties
 export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
-  spinnerSize?: number;
   size?: number;
 }
 
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
-  spinnerSize: 46,
   size: 24,
 });
 
 // the spinner ring keeps a hairline stroke at every size
 const SPINNER_STROKE_WIDTH = 2;
+// space between the button's edge and the spinner ring
+const SPINNER_GAP = 3;
+// the spinner icon draws its ring at this share of its box
+const SPINNER_RING_SHARE = 0.75;
+
+const button = useTemplateRef("button");
+const { height: buttonSize } = useElementSize(button, undefined, {
+  box: "border-box",
+});
+
+// the ring's middle line runs the gap plus half the stroke outside the button
+const spinnerSize = computed(
+  () =>
+    (buttonSize.value + 2 * SPINNER_GAP + SPINNER_STROKE_WIDTH) /
+    SPINNER_RING_SHARE,
+);
 
 const { isPlaying, showStop, isLoading, isDisabled, playPause } =
   usePlayPauseCommand(
