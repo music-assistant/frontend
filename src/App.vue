@@ -91,11 +91,10 @@ import {
   pruneStaleProviderFilters,
   runAfterPreferenceWrites,
 } from "./composables/userPreferences";
+import { saveAuthenticatedDesktopLogin } from "@/composables/useDesktopSavedLogin";
 import {
-  getDesktopSavedLoginStatus,
   hasDesktopSavedLogin,
   initializeCompanionIntegration,
-  saveDesktopLogin,
 } from "./plugins/companion";
 import {
   getKioskModePreference,
@@ -245,6 +244,15 @@ const handleRemoteAuthenticated = async (credentials: {
 }) => {
   try {
     let user = credentials.user;
+    let savedLoginCandidate: {
+      username: string;
+      password: string;
+      context: string;
+      connection: string;
+      serverId: string;
+      nonce: string;
+    } | null = null;
+    let authenticatedToken: string | null = null;
 
     if (credentials.user && !credentials.token && !credentials.username) {
       // Ingress mode: user is already authenticated by the server
@@ -257,14 +265,21 @@ const handleRemoteAuthenticated = async (credentials: {
       );
       authManager.setCurrentUser(credentials.user);
     } else if (credentials.username && credentials.password) {
-      const candidate =
-        credentials.savedLogin?.remember && hasDesktopSavedLogin()
+      const serverId = api.serverInfo.value?.server_id;
+      const nonce = window.__COMPANION_SAVED_LOGIN_NONCE__;
+      savedLoginCandidate =
+        credentials.savedLogin?.remember &&
+        hasDesktopSavedLogin() &&
+        serverId &&
+        nonce &&
+        credentials.savedLogin.connection === getSavedLoginConnection()
           ? {
               username: credentials.username,
               password: credentials.password,
               context: credentials.savedLogin.context,
               connection: credentials.savedLogin.connection,
-              serverId: api.serverInfo.value?.server_id,
+              serverId,
+              nonce,
             }
           : null;
       const result = await api.loginWithCredentials(
@@ -273,32 +288,7 @@ const handleRemoteAuthenticated = async (credentials: {
         getDeviceName(),
       );
       authManager.setToken(result.token, getCurrentAuthConnectionIdentity());
-      if (
-        candidate &&
-        candidate.serverId === api.serverInfo.value?.server_id &&
-        candidate.connection === getSavedLoginConnection()
-      ) {
-        // Saving is optional: authentication remains successful if the OS store fails.
-        try {
-          const status = await getDesktopSavedLoginStatus();
-          if (
-            status?.supported &&
-            status.available &&
-            status.context === candidate.context &&
-            candidate.connection === getSavedLoginConnection() &&
-            candidate.serverId === api.serverInfo.value?.server_id
-          ) {
-            const saved = await saveDesktopLogin(candidate);
-            if (!saved?.saved)
-              toast.warning(i18n.global.t("login.saved_password_unavailable"));
-            else toast.success(i18n.global.t("login.saved_password_saved"));
-          } else {
-            toast.warning(i18n.global.t("login.saved_password_unavailable"));
-          }
-        } catch {
-          toast.warning(i18n.global.t("login.saved_password_unavailable"));
-        }
-      }
+      authenticatedToken = result.token;
       user = result.user;
       if (user) {
         authManager.setCurrentUser(user);
@@ -321,6 +311,25 @@ const handleRemoteAuthenticated = async (credentials: {
     remoteConnectionManager.setAuthenticated(
       api.serverInfo.value?.server_id || undefined,
     );
+
+    if (savedLoginCandidate && authenticatedToken && user) {
+      const candidate = savedLoginCandidate;
+      const token = authenticatedToken;
+      const userId = user.user_id;
+      const isCurrent = () =>
+        authManager.getToken() === token &&
+        authManager.getCurrentUser()?.user_id === userId &&
+        api.serverInfo.value?.server_id === candidate.serverId &&
+        getSavedLoginConnection() === candidate.connection &&
+        hasDesktopSavedLogin() &&
+        window.__COMPANION_SAVED_LOGIN_NONCE__ === candidate.nonce;
+      // The native store is optional; its result must not delay or undo sign-in.
+      void saveAuthenticatedDesktopLogin({
+        candidate,
+        isCurrent,
+        translate: (key) => i18n.global.t(key),
+      });
+    }
   } catch (error) {
     if (loginComponent.value) {
       loginComponent.value.handleAuthenticationError?.(error);

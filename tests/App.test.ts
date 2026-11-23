@@ -97,6 +97,7 @@ const {
     clearGuestSession: vi.fn(),
     endRejectedGuestSession: vi.fn(),
     getToken: vi.fn(),
+    getCurrentUser: vi.fn(),
     guestSessionKind: vi.fn(),
     hasScope: vi.fn(),
     isDashboardViewer: vi.fn(),
@@ -319,6 +320,8 @@ vi.mock("vue-sonner", () => ({
     info: vi.fn(),
     loading: vi.fn(() => 1),
     warning: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -369,6 +372,13 @@ describe("App initialization", () => {
       user: user(),
     });
     mockHasDesktopSavedLogin.mockReturnValue(true);
+    window.__COMPANION_SAVED_LOGIN_NONCE__ = "test-nonce";
+    authManagerMock.setToken.mockImplementation((token: string) => {
+      authManagerMock.getToken.mockReturnValue(token);
+    });
+    authManagerMock.setCurrentUser.mockImplementation((account: User) => {
+      authManagerMock.getCurrentUser.mockReturnValue(account);
+    });
     mockSavedLoginStatus.mockResolvedValue({
       supported: true,
       available: true,
@@ -1129,6 +1139,144 @@ describe("App initialization", () => {
     );
   });
 
+  it("finishes authentication while desktop status is still pending", async () => {
+    apiMock.state.value = "auth_required";
+    let finishStatus!: (value: {
+      supported: boolean;
+      available: boolean;
+      saved: boolean;
+      context: string;
+    }) => void;
+    mockSavedLoginStatus.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishStatus = resolve;
+        }),
+    );
+    wrapper = mountAppWithoutSettling();
+    submitAuthentication(passwordAttempt(true));
+    await flushPromises();
+    expect(authManagerMock.setCurrentUser).toHaveBeenCalledOnce();
+    expect(storeMock.currentUser).toBeDefined();
+    expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
+    expect(mockSavedLoginStatus).toHaveBeenCalledOnce();
+    expect(mockSaveDesktopLogin).not.toHaveBeenCalled();
+    finishStatus({
+      supported: true,
+      available: true,
+      saved: false,
+      context: "verified",
+    });
+    await flushPromises();
+    expect(mockSaveDesktopLogin).toHaveBeenCalledOnce();
+    expect(toast.success).toHaveBeenCalledWith("login.saved_password_saved");
+  });
+
+  it("saves after user details refresh replaces the user object during desktop status", async () => {
+    apiMock.state.value = "auth_required";
+    let finishStatus!: (value: {
+      supported: boolean;
+      available: boolean;
+      saved: boolean;
+      context: string;
+    }) => void;
+    mockSavedLoginStatus.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishStatus = resolve;
+        }),
+    );
+    wrapper = mountAppWithoutSettling();
+    submitAuthentication(passwordAttempt(true));
+    await flushPromises();
+    const authenticatedUser = authManagerMock.getCurrentUser.mock.results.at(-1)
+      ?.value as User;
+    const refreshedUser = user({ user_id: authenticatedUser.user_id });
+    expect(refreshedUser).not.toBe(authenticatedUser);
+    authManagerMock.getCurrentUser.mockReturnValue(refreshedUser);
+    storeMock.currentUser = refreshedUser;
+    finishStatus({
+      supported: true,
+      available: true,
+      saved: false,
+      context: "verified",
+    });
+    await flushPromises();
+    expect(mockSaveDesktopLogin).toHaveBeenCalledOnce();
+    expect(toast.success).toHaveBeenCalledWith("login.saved_password_saved");
+  });
+
+  it("reports success when user details refresh while the OS save is pending", async () => {
+    apiMock.state.value = "auth_required";
+    let finishSave!: (value: {
+      supported: boolean;
+      available: boolean;
+      saved: boolean;
+      context: string;
+    }) => void;
+    mockSaveDesktopLogin.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishSave = resolve;
+        }),
+    );
+    wrapper = mountAppWithoutSettling();
+    submitAuthentication(passwordAttempt(true));
+    await flushPromises();
+    expect(mockSaveDesktopLogin).toHaveBeenCalledOnce();
+    const authenticatedUser = authManagerMock.getCurrentUser.mock.results.at(-1)
+      ?.value as User;
+    const refreshedUser = user({ user_id: authenticatedUser.user_id });
+    authManagerMock.getCurrentUser.mockReturnValue(refreshedUser);
+    storeMock.currentUser = refreshedUser;
+    finishSave({
+      supported: true,
+      available: true,
+      saved: true,
+      context: "verified",
+    });
+    await flushPromises();
+    expect(toast.success).toHaveBeenCalledWith("login.saved_password_saved");
+  });
+
+  it.each(["different user", "different token"])(
+    "does not save after switching to a %s while desktop status is pending",
+    async (changedSession) => {
+      apiMock.state.value = "auth_required";
+      let finishStatus!: (value: {
+        supported: boolean;
+        available: boolean;
+        saved: boolean;
+        context: string;
+      }) => void;
+      mockSavedLoginStatus.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finishStatus = resolve;
+          }),
+      );
+      wrapper = mountAppWithoutSettling();
+      submitAuthentication(passwordAttempt(true));
+      await flushPromises();
+      if (changedSession === "different user") {
+        authManagerMock.getCurrentUser.mockReturnValue(
+          user({ user_id: "other-user" }),
+        );
+      } else {
+        authManagerMock.getToken.mockReturnValue("other-token");
+      }
+      finishStatus({
+        supported: true,
+        available: true,
+        saved: false,
+        context: "verified",
+      });
+      await flushPromises();
+      expect(mockSaveDesktopLogin).not.toHaveBeenCalled();
+      expect(toast.success).not.toHaveBeenCalled();
+    },
+  );
+
   it("uses the consent captured at submission while password authentication is pending", async () => {
     apiMock.state.value = "auth_required";
     let finishLogin!: (result: { token: string; user: User }) => void;
@@ -1210,7 +1358,7 @@ describe("App initialization", () => {
     expect(mockSaveDesktopLogin).not.toHaveBeenCalled();
   });
 
-  it("keeps login usable and reports a generic warning if the OS save fails", async () => {
+  it("keeps login usable and reports a generic error if the OS save fails", async () => {
     apiMock.state.value = "auth_required";
     mockSaveDesktopLogin.mockRejectedValue(
       new Error("secret must never be logged: test-password-do-not-log"),
@@ -1225,10 +1373,10 @@ describe("App initialization", () => {
     );
     expect(storeMock.currentUser).toBeDefined();
     expect(mockRememberCurrentRemoteConnection).toHaveBeenCalledOnce();
-    expect(toast.warning).toHaveBeenCalledWith(
+    expect(toast.error).toHaveBeenCalledWith(
       "login.saved_password_unavailable",
     );
-    expect(JSON.stringify(vi.mocked(toast.warning).mock.calls)).not.toContain(
+    expect(JSON.stringify(vi.mocked(toast.error).mock.calls)).not.toContain(
       "test-password-do-not-log",
     );
     expect(JSON.stringify(log.mock.calls)).not.toContain(

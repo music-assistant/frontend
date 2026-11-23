@@ -214,24 +214,31 @@
                   v-if="hasDesktopSavedLogin() && savedLoginContext"
                   class="mb-4"
                 >
-                  <label class="flex items-center gap-2 text-body-2">
-                    <input
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      id="remember-desktop-password"
                       v-model="rememberPassword"
-                      type="checkbox"
                       :disabled="isAuthenticating || forgetPending"
-                      @change="rememberPasswordTouched = true"
+                      @update:model-value="rememberPasswordTouched = true"
                     />
-                    {{ $t("login.remember_password") }}
-                  </label>
-                  <button
+                    <Label
+                      for="remember-desktop-password"
+                      class="cursor-pointer"
+                    >
+                      {{ $t("login.remember_password") }}
+                    </Label>
+                  </div>
+                  <Button
                     v-if="savedPasswordExists"
                     type="button"
-                    class="mt-2 text-body-2 text-primary"
+                    variant="link"
+                    data-testid="forget-desktop-password"
+                    class="mt-2 h-auto p-0"
                     :disabled="isAuthenticating || forgetPending"
                     @click="forgetSavedPassword"
                   >
                     {{ $t("login.forget_saved_password") }}
-                  </button>
+                  </Button>
                 </div>
 
                 <!-- Sign In Button -->
@@ -498,13 +505,11 @@ import {
 } from "@/helpers/ingress";
 import type { ITransport } from "@/plugins/remote/transport";
 import { authManager } from "@/plugins/auth";
-import {
-  forgetDesktopSavedLogin,
-  getDesktopSavedLoginStatus,
-  hasDesktopSavedLogin,
-  restoreDesktopSavedLogin,
-} from "@/plugins/companion";
-import { toast } from "vue-sonner";
+import { hasDesktopSavedLogin } from "@/plugins/companion";
+import { useDesktopSavedLogin } from "@/composables/useDesktopSavedLogin";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { remoteConnectionManager } from "@/plugins/remote";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
 import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
@@ -645,139 +650,30 @@ const username = ref("");
 const password = ref("");
 const showPassword = ref(false);
 const isAuthenticating = ref(false);
-const forgetPending = ref(false);
 const loginError = ref<string | null>(null);
-const rememberPassword = ref(false);
-const rememberPasswordTouched = ref(false);
-const savedLoginReady = ref(0);
-const onSavedLoginReady = () => {
-  savedLoginReady.value++;
-};
-if (typeof window !== "undefined" && window === window.top)
-  window.addEventListener("companion-saved-login-ready", onSavedLoginReady);
-const savedPasswordExists = ref(false);
-const savedLoginContext = ref<string | null>(null);
-let savedLoginGeneration = 0;
-let loginMounted = true;
-let restoredLogin: {
-  connection: string;
-  username: string | null;
-  password: string | null;
-} | null = null;
-
-// The native bridge owns the validated context; this local key only guards against
-// applying an older asynchronous result to another selected connection.
-const savedLoginConnection = computed(() => {
-  const serverId = api.serverInfo?.value?.server_id;
-  const connection = api.isRemoteConnection?.value
-    ? createRemoteConnectionIdentity(
-        remoteConnectionManager.currentRemoteId.value,
-      )
-    : createLocalConnectionIdentity(api.baseUrl);
-  return serverId && connection ? `${connection}:${serverId}` : null;
-});
-
-watch(
-  [() => step.value === "login", savedLoginConnection, savedLoginReady],
-  async ([onLogin, connection], _previous, onCleanup) => {
-    const generation = ++savedLoginGeneration;
-    let cancelled = false;
-    onCleanup(() => {
-      cancelled = true;
-    });
-    if (restoredLogin && restoredLogin.connection !== connection) {
-      if (username.value === restoredLogin.username) username.value = "";
-      if (password.value === restoredLogin.password) password.value = "";
-      restoredLogin = null;
-    }
-    savedLoginContext.value = null;
-    savedPasswordExists.value = false;
-    rememberPassword.value = false;
-    rememberPasswordTouched.value = false;
-    if (!onLogin || !connection || !hasDesktopSavedLogin()) return;
-    const stillCurrent = () =>
-      loginMounted &&
-      !cancelled &&
-      generation === savedLoginGeneration &&
-      step.value === "login" &&
-      savedLoginConnection.value === connection;
-    try {
-      const status = await getDesktopSavedLoginStatus();
-      if (
-        !stillCurrent() ||
-        !status?.supported ||
-        !status.available ||
-        !status.context
-      )
-        return;
-      savedLoginContext.value = status.context;
-      savedPasswordExists.value = status.saved;
-      if (!status.saved) return;
-      const restored = await restoreDesktopSavedLogin(status.context);
-      if (!stillCurrent() || !restored || restored.context !== status.context)
-        return;
-      if (username.value && username.value !== restored.username) return;
-      const restoredUsername = !username.value;
-      const restoredPassword = !password.value;
-      if (restoredUsername) username.value = restored.username;
-      if (restoredPassword) password.value = restored.password;
-      if (restoredUsername || restoredPassword)
-        restoredLogin = {
-          connection,
-          username: restoredUsername ? restored.username : null,
-          password: restoredPassword ? restored.password : null,
-        };
-      if (!rememberPasswordTouched.value) rememberPassword.value = true;
-    } catch {
-      if (stillCurrent()) toast.error(t("login.saved_password_unavailable"));
-    }
+const {
+  forgetPending,
+  rememberPassword,
+  rememberPasswordTouched,
+  savedPasswordExists,
+  savedLoginContext,
+  savedLoginConnection,
+  forgetSavedPassword,
+} = useDesktopSavedLogin({
+  username,
+  password,
+  isAuthenticating,
+  step,
+  translate: t,
+  getConnection: () => {
+    const serverId = api.serverInfo?.value?.server_id;
+    const connection = api.isRemoteConnection?.value
+      ? createRemoteConnectionIdentity(
+          remoteConnectionManager.currentRemoteId.value,
+        )
+      : createLocalConnectionIdentity(api.baseUrl);
+    return serverId && connection ? `${connection}:${serverId}` : null;
   },
-  { immediate: true },
-);
-
-const forgetSavedPassword = async () => {
-  if (isAuthenticating.value || forgetPending.value) return;
-  const context = savedLoginContext.value;
-  const connection = savedLoginConnection.value;
-  if (!context || !connection || !hasDesktopSavedLogin()) return;
-  const generation = ++savedLoginGeneration;
-  const passwordAtForget = password.value;
-  forgetPending.value = true;
-  try {
-    const status = await forgetDesktopSavedLogin(context);
-    if (
-      !loginMounted ||
-      generation !== savedLoginGeneration ||
-      step.value !== "login" ||
-      savedLoginConnection.value !== connection ||
-      savedLoginContext.value !== context
-    )
-      return;
-    if (!status?.available || status.saved)
-      throw new Error("Unable to remove saved password");
-    if (password.value === passwordAtForget) password.value = "";
-    restoredLogin = null;
-    rememberPassword.value = false;
-    rememberPasswordTouched.value = true;
-    savedPasswordExists.value = false;
-    toast.success(t("login.saved_password_removed"));
-  } catch {
-    if (
-      loginMounted &&
-      generation === savedLoginGeneration &&
-      step.value === "login" &&
-      savedLoginConnection.value === connection
-    )
-      toast.error(t("login.saved_password_unavailable"));
-  } finally {
-    if (loginMounted) forgetPending.value = false;
-  }
-};
-
-onUnmounted(() => {
-  loginMounted = false;
-  ++savedLoginGeneration;
-  window.removeEventListener("companion-saved-login-ready", onSavedLoginReady);
 });
 
 // Auth providers state

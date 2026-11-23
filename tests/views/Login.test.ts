@@ -111,7 +111,8 @@ vi.mock("@/plugins/remote", () => ({
   },
 }));
 
-vi.mock("vue-i18n", () => ({
+vi.mock("vue-i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-i18n")>()),
   useI18n: () => ({
     t: (_key: string, fallback: string) => fallback,
   }),
@@ -382,10 +383,9 @@ describe("desktop saved password", () => {
         ),
     ).toBe(true);
     expect(wrapper.emitted("authenticated")).toBeUndefined();
-    expect(wrapper.find('input[type="checkbox"]').element).toHaveProperty(
-      "checked",
-      true,
-    );
+    expect(
+      wrapper.find("#remember-desktop-password").attributes("aria-checked"),
+    ).toBe("true");
   });
 
   it("clears completed autofill when the verified server changes, then restores the new server", async () => {
@@ -578,7 +578,7 @@ describe("desktop saved password", () => {
     );
     const wrapper = mountLogin();
     await flushPromises();
-    await wrapper.find('input[type="checkbox"]').setValue(false);
+    await wrapper.find("#remember-desktop-password").trigger("click");
     const signIn = wrapper
       .findAll("button")
       .find((button) => button.text() === "Sign In");
@@ -587,15 +587,13 @@ describe("desktop saved password", () => {
     expect(wrapper.emitted("authenticated")?.[0]?.[0]).toMatchObject({
       savedLogin: { remember: false },
     });
-    const consent = wrapper.find('input[type="checkbox"]');
-    const forget = wrapper
-      .findAll("button")
-      .find((button) => button.attributes("class")?.includes("text-primary"));
+    const consent = wrapper.find("#remember-desktop-password");
+    const forget = wrapper.find('[data-testid="forget-desktop-password"]');
     expect(consent.attributes("disabled")).toBeDefined();
     expect(forget?.attributes("disabled")).toBeDefined();
     await consent.trigger("change");
     await forget!.trigger("click");
-    expect((consent.element as HTMLInputElement).checked).toBe(false);
+    expect(consent.attributes("aria-checked")).toBe("false");
     expect(
       mocks.savedLoginInvoke.mock.calls.some(
         ([command]) => command === "companion_forget_login",
@@ -625,14 +623,12 @@ describe("desktop saved password", () => {
     });
     const wrapper = mountLogin();
     await flushPromises();
-    const consent = wrapper.find('input[type="checkbox"]');
-    const forget = wrapper
-      .findAll("button")
-      .find((button) => button.attributes("class")?.includes("text-primary"));
+    const consent = wrapper.find("#remember-desktop-password");
+    const forget = wrapper.find('[data-testid="forget-desktop-password"]');
     const signIn = wrapper
       .findAll("button")
       .find((button) => button.text() === "Sign In");
-    expect(consent.element).toHaveProperty("checked", true);
+    expect(consent.attributes("aria-checked")).toBe("true");
     expect(forget).toBeDefined();
     expect(signIn).toBeDefined();
     await forget!.trigger("click");
@@ -644,7 +640,7 @@ describe("desktop saved password", () => {
     await wrapper.find('input[value="secret"]').trigger("keyup.enter");
     await forget!.trigger("click");
     await consent.trigger("change");
-    expect((consent.element as HTMLInputElement).checked).toBe(true);
+    expect(consent.attributes("aria-checked")).toBe("true");
     expect(wrapper.emitted("authenticated")).toBeUndefined();
     expect(
       mocks.savedLoginInvoke.mock.calls.filter(
@@ -659,7 +655,7 @@ describe("desktop saved password", () => {
       context: "verified",
     });
     await flushPromises();
-    expect((consent.element as HTMLInputElement).checked).toBe(false);
+    expect(consent.attributes("aria-checked")).toBe("false");
     expect(consent.attributes("disabled")).toBeUndefined();
     expect(signIn!.attributes("disabled")).toBeDefined();
     await wrapper.find('input[value=""]').setValue("new-password");
@@ -696,9 +692,7 @@ describe("desktop saved password", () => {
     });
     const wrapper = mountLogin();
     await flushPromises();
-    const forget = wrapper
-      .findAll("button")
-      .find((button) => button.attributes("class")?.includes("text-primary"));
+    const forget = wrapper.find('[data-testid="forget-desktop-password"]');
     expect(forget).toBeDefined();
     await forget!.trigger("click");
     const passwordField = wrapper.find('input[value="saved-password"]');
@@ -713,10 +707,9 @@ describe("desktop saved password", () => {
     expect(wrapper.find('input[value="newly-typed-password"]').exists()).toBe(
       true,
     );
-    expect(wrapper.find('input[type="checkbox"]').element).toHaveProperty(
-      "checked",
-      false,
-    );
+    expect(
+      wrapper.find("#remember-desktop-password").attributes("aria-checked"),
+    ).toBe("false");
   });
 
   it("removes the saved password and clears remembered intent", async () => {
@@ -735,9 +728,7 @@ describe("desktop saved password", () => {
     );
     const wrapper = mountLogin();
     await flushPromises();
-    const forget = wrapper
-      .findAll("button")
-      .find((button) => button.attributes("class")?.includes("text-primary"));
+    const forget = wrapper.find('[data-testid="forget-desktop-password"]');
     expect(forget).toBeDefined();
     await forget!.trigger("click");
     await flushPromises();
@@ -752,10 +743,9 @@ describe("desktop saved password", () => {
           (input) => (input.element as HTMLInputElement).value === "secret",
         ),
     ).toBe(false);
-    expect(wrapper.find('input[type="checkbox"]').element).toHaveProperty(
-      "checked",
-      false,
-    );
+    expect(
+      wrapper.find("#remember-desktop-password").attributes("aria-checked"),
+    ).toBe("false");
     await wrapper.find('input[value=""]').setValue("secret");
     mocks.serverInfo.value = {
       homeassistant_addon: false,
