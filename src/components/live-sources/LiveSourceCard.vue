@@ -38,7 +38,7 @@
       <div
         class="mt-0.5 min-h-4 truncate text-xs text-muted-foreground max-[500px]:mt-0"
       >
-        {{ ownerName }}
+        {{ subtitle }}
       </div>
       <!-- touch screens start a source with a tap on the card -->
       <span
@@ -74,8 +74,8 @@ import type { Component } from "vue";
 defineProps<{
   source: PlayerSource;
   icon: Component;
-  // the player it belongs to, shown below its name
-  ownerName?: string;
+  // where it comes from, shown below its name
+  subtitle?: string;
   isPlaying: boolean;
   // the action row below the card, as the cards of the other listings have
   showActions: boolean;

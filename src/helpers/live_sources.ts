@@ -1,4 +1,5 @@
 import { getMediaTypeIcon } from "@/helpers/media_type_icon";
+import { sourceProviderId } from "@/helpers/provider_domain";
 import {
   MediaType,
   PlayerType,
@@ -32,23 +33,29 @@ export function getLiveSourceIcon(source: PlayerSource): Component {
   return match?.[1] ?? Cable;
 }
 
+/** Gives the name of a provider instance, undefined when the app does not know it. */
+export type ProviderNameResolver = (providerId: string) => string | undefined;
+
 /**
- * The current name of the player a live source belongs to, shown below its
- * name; undefined for a source of no player, or of a device that is only an
- * input, whose name already is the name of that device.
+ * The line below the name of a live source, which tells where it comes from:
+ * the current name of the player it belongs to, or else the name of its
+ * provider, such as for a device that is only an input or a source of no player.
  *
  * @param source - The entry in the list of live sources.
  * @param players - The players the app knows, by id.
+ * @param providerName - Gives the name of a provider instance.
  */
-export function getLiveSourceOwnerName(
+export function getLiveSourceSubtitle(
   source: PlayerSource,
   players: Readonly<Record<string, Player>>,
+  providerName: ProviderNameResolver,
 ): string | undefined {
   const owner = source.owner_player_id
     ? players[source.owner_player_id]
     : undefined;
-  if (!owner || owner.type === PlayerType.SOURCE) return undefined;
-  return owner.name;
+  if (owner && owner.type !== PlayerType.SOURCE) return owner.name;
+  const providerId = sourceProviderId(source.id);
+  return providerId ? providerName(providerId) : undefined;
 }
 
 /**
@@ -87,20 +94,22 @@ export function liveSourcesAvailable(
 }
 
 /**
- * The live sources sorted by name, and by the name of their player after that.
+ * The live sources sorted by name, and by the line below their name after that.
  *
  * @param sources - The entries in the list of live sources.
  * @param players - The players the app knows, by id.
+ * @param providerName - Gives the name of a provider instance.
  */
 export function sortLiveSources(
   sources: readonly PlayerSource[],
   players: Readonly<Record<string, Player>>,
+  providerName: ProviderNameResolver,
 ): PlayerSource[] {
-  const ownerName = (source: PlayerSource) =>
-    getLiveSourceOwnerName(source, players) ?? "";
+  const subtitle = (source: PlayerSource) =>
+    getLiveSourceSubtitle(source, players, providerName) ?? "";
   return [...sources].sort(
     (a, b) =>
-      a.name.localeCompare(b.name) || ownerName(a).localeCompare(ownerName(b)),
+      a.name.localeCompare(b.name) || subtitle(a).localeCompare(subtitle(b)),
   );
 }
 

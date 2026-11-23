@@ -34,10 +34,10 @@
         {{ source.name }}
       </ItemTitle>
       <ItemDescription
-        v-if="ownerName"
+        v-if="subtitle"
         class="block truncate leading-5 text-muted-foreground"
       >
-        {{ ownerName }}
+        {{ subtitle }}
       </ItemDescription>
     </ItemContent>
     <ItemActions class="gap-0">
@@ -90,8 +90,8 @@ import type { Component } from "vue";
 defineProps<{
   source: PlayerSource;
   icon: Component;
-  // the player it belongs to, shown below its name
-  ownerName?: string;
+  // where it comes from, shown below its name
+  subtitle?: string;
   isPlaying: boolean;
 }>();
 

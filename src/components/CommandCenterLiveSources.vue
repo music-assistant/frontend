@@ -1,7 +1,7 @@
 <template>
   <CommandGroup :heading="$t('live_sources')">
     <CommandItem
-      v-for="{ source, icon, ownerName } in rows"
+      v-for="{ source, icon, subtitle } in rows"
       :key="`live_source:${source.id}`"
       v-hold="(evt: Event) => onHold(evt, source)"
       :value="`live_source:${source.id}`"
@@ -33,8 +33,8 @@
       </div>
       <div class="flex min-w-0 flex-col">
         <span class="truncate">{{ source.name }}</span>
-        <span v-if="ownerName" class="truncate text-xs text-muted-foreground">
-          {{ ownerName }}
+        <span v-if="subtitle" class="truncate text-xs text-muted-foreground">
+          {{ subtitle }}
         </span>
       </div>
       <button
@@ -54,11 +54,8 @@
 <script setup lang="ts">
 import { CommandGroup, CommandItem } from "@/components/ui/command";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
-import {
-  getLiveSourceIcon,
-  getLiveSourceOwnerName,
-} from "@/helpers/live_sources";
-import { api } from "@/plugins/api";
+import { liveSourceSubtitle } from "@/composables/useLiveSources";
+import { getLiveSourceIcon } from "@/helpers/live_sources";
 import type { PlayerSource } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { EllipsisVertical, Play } from "@lucide/vue";
@@ -77,7 +74,7 @@ const rows = computed(() =>
   props.sources.map((source) => ({
     source,
     icon: getLiveSourceIcon(source),
-    ownerName: getLiveSourceOwnerName(source, api.players),
+    subtitle: liveSourceSubtitle(source),
   })),
 );
 

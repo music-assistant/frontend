@@ -12,6 +12,7 @@ import { toast } from "vue-sonner";
 import { playerSource } from "../../tests/fixtures/playerSource";
 import {
   getLiveSourceMenuItems,
+  liveSourceSubtitle,
   startLiveSource,
   useLiveSources,
 } from "./useLiveSources";
@@ -23,6 +24,16 @@ const { apiMock, storeMock, routerMock, listeners, emit } = await vi.hoisted(
     return {
       apiMock: {
         players: reactive({}) as Record<string, Player>,
+        providers: {
+          "vban_receiver--y": {
+            domain: "vban_receiver",
+            name: "VBAN Receiver",
+          },
+        } as Record<string, { domain: string; name: string }>,
+        providerManifests: {},
+        getProviderName(id: string) {
+          return this.providers[id]?.name ?? id;
+        },
         state: ref("initialized"),
         getLiveSources: vi.fn(),
         playerCommandGroupSelectSource: vi.fn(),
@@ -156,6 +167,22 @@ describe("startLiveSource", () => {
       expect(toast.error).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("liveSourceSubtitle", () => {
+  it("names the player a source belongs to", () => {
+    apiMock.players.den = livingRoom({ player_id: "den", name: "Den" });
+    expect(liveSourceSubtitle(LIVE_SOURCE)).toBe("Den");
+  });
+
+  it("names the provider of a source of no player", () => {
+    expect(liveSourceSubtitle(UNOWNED)).toBe("VBAN Receiver");
+  });
+
+  it("names nothing for a provider the app does not know", () => {
+    const source = { ...UNOWNED, id: "gone--z://audio_source/stream" };
+    expect(liveSourceSubtitle(source)).toBeUndefined();
+  });
 });
 
 describe("getLiveSourceMenuItems", () => {
