@@ -309,10 +309,10 @@ describe("FavoriteMenuBtn", () => {
   });
 
   // a line-in or other live source is not a library item
-  it("hides itself for an audio source", async () => {
+  it("disables itself for an audio source", async () => {
     await setPlaying(track({ media_type: MediaType.AUDIO_SOURCE }));
 
-    expect(mountButton().find(TRIGGER).exists()).toBe(false);
+    expect(mountButton().get(TRIGGER).attributes("disabled")).toBeDefined();
   });
 
   it("is not offered to a role that may not change the library", () => {
