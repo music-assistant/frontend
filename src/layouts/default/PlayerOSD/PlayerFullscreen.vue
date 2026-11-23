@@ -418,7 +418,7 @@
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
-              class="size-15"
+              class="media-controls-item size-15"
               :spinner-size="73"
               :size="30"
             />
