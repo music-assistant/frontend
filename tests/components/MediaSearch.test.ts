@@ -10,7 +10,7 @@ import {
   type Track,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { track } from "../fixtures/track";
@@ -19,9 +19,10 @@ import { genre } from "../fixtures/genre";
 import { album } from "../fixtures/album";
 import { artist } from "../fixtures/artist";
 
-const { mockSearch, mockGetLibraryGenres } = vi.hoisted(() => ({
+const { mockSearch, mockGetLibraryGenres, storeMock } = vi.hoisted(() => ({
   mockSearch: vi.fn<MusicAssistantApi["search"]>(),
   mockGetLibraryGenres: vi.fn<MusicAssistantApi["getLibraryGenres"]>(),
+  storeMock: { isTouchscreen: false },
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -31,6 +32,10 @@ vi.mock("@/plugins/api", () => ({
     search: mockSearch,
     getLibraryGenres: mockGetLibraryGenres,
   },
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: storeMock,
 }));
 
 vi.mock("@/plugins/i18n", () => ({
@@ -77,6 +82,18 @@ function mountSearch(
   props: Partial<InstanceType<typeof MediaSearch>["$props"]>,
 ) {
   return mount(MediaSearch, { props, attachTo: document.body });
+}
+
+// types the term and presses Enter, the way a user submits a search
+async function submitQuery(wrapper: VueWrapper, term: string) {
+  const input = wrapper.find("input");
+  await input.setValue(term);
+  await input.trigger("keydown.enter");
+  await flushPromises();
+}
+
+function searchButton(wrapper: VueWrapper) {
+  return wrapper.findAll("button").find((button) => button.text() === "search");
 }
 
 // the results float in a popover portalled out of the wrapper, so they are only
@@ -144,6 +161,7 @@ describe("MediaSearch", () => {
     mockSearch.mockReset();
     mockGetLibraryGenres.mockReset();
     mockGetLibraryGenres.mockResolvedValue([]);
+    storeMock.isTouchscreen = false;
   });
 
   it("searches only the default-selected media types", async () => {
@@ -160,8 +178,7 @@ describe("MediaSearch", () => {
       defaultSelectedMediaTypes: [MediaType.PLAYLIST, MediaType.GENRE],
     });
 
-    await wrapper.find("input").setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitQuery(wrapper, "test");
 
     expect(mockSearch).toHaveBeenCalledWith(
       "test",
@@ -189,9 +206,7 @@ describe("MediaSearch", () => {
       defaultSelectedMediaTypes: MUSIC_QUIZ_SOURCE_MEDIA_TYPES,
     });
 
-    await wrapper.find("input").setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
-    await flushPromises();
+    await submitQuery(wrapper, "test");
 
     expect(
       resultRows().map((result) => result.querySelector("strong")?.textContent),
@@ -219,9 +234,7 @@ describe("MediaSearch", () => {
       defaultSelectedMediaTypes: [MediaType.PLAYLIST],
     });
 
-    await wrapper.find("input").setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
-    await flushPromises();
+    await submitQuery(wrapper, "test");
     resultRows()[0]!.click();
     await flushPromises();
 
@@ -247,9 +260,7 @@ describe("MediaSearch", () => {
       excludeUris: ["playlist:1"],
     });
 
-    await wrapper.find("input").setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
-    await flushPromises();
+    await submitQuery(wrapper, "test");
 
     expect(resultRows()).toHaveLength(0);
     vi.useRealTimers();
@@ -286,9 +297,7 @@ describe("MediaSearch", () => {
       allowedMediaTypes: [MediaType.TRACK, MediaType.PLAYLIST],
     });
 
-    await wrapper.find("input").setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
-    await flushPromises();
+    await submitQuery(wrapper, "test");
 
     const rows = resultRows();
     // the duplicate track collapses, same-named playlists never do
@@ -312,9 +321,7 @@ describe("MediaSearch", () => {
     );
     const wrapper = mountSearch({ allowedMediaTypes: [MediaType.ARTIST] });
 
-    await wrapper.find("input").setValue("genesis");
-    await vi.advanceTimersByTimeAsync(300);
-    await flushPromises();
+    await submitQuery(wrapper, "genesis");
 
     expect(
       resultRows().filter((row) => row.textContent?.includes("Genesis")),
@@ -347,9 +354,7 @@ describe("MediaSearch", () => {
       allowedMediaTypes: [MediaType.TRACK, MediaType.ARTIST],
     });
 
-    await wrapper.find("input").setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
-    await flushPromises();
+    await submitQuery(wrapper, "test");
 
     const rows = resultRows();
     expect(rows).toHaveLength(4);
@@ -384,9 +389,7 @@ describe("MediaSearch", () => {
     const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
     const input = wrapper.find("input");
 
-    await input.setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
-    await flushPromises();
+    await submitQuery(wrapper, "test");
     expect(resultsPanel()).not.toBeNull();
 
     // Escape hides the panel without clearing the query, so nothing about the
@@ -420,9 +423,7 @@ describe("MediaSearch", () => {
         allowedMediaTypes: [MediaType.PLAYLIST],
       });
 
-      await wrapper.find("input").setValue("test");
-      await vi.advanceTimersByTimeAsync(300);
-      await flushPromises();
+      await submitQuery(wrapper, "test");
 
       expect(resultsPanel()?.getAttribute("data-side")).toBe(side);
       vi.useRealTimers();
@@ -448,14 +449,165 @@ describe("MediaSearch", () => {
     );
     const wrapper = mountSearch({ allowedMediaTypes: [MediaType.TRACK] });
 
-    await wrapper.find("input").setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
-    await flushPromises();
+    await submitQuery(wrapper, "test");
 
     expect(
       resultRows().filter((row) => row.textContent?.includes("Untitled")),
     ).toHaveLength(1);
 
+    vi.useRealTimers();
+  });
+
+  it("does not search while typing and asks to press Enter", async () => {
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+
+    await wrapper.find("input").setValue("test");
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    expect(resultsPanel()?.textContent).toContain("command_center_press_enter");
+    vi.useRealTimers();
+  });
+
+  it("searches from the search button once the query is long enough", async () => {
+    mockSearch.mockResolvedValue(
+      searchResults({
+        playlists: [playlistFixture({ uri: "playlist:1", name: "Some list" })],
+      }),
+    );
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+    const input = wrapper.find("input");
+
+    await input.setValue("t");
+    expect(searchButton(wrapper)?.attributes("disabled")).toBeDefined();
+
+    await input.setValue("test");
+    await searchButton(wrapper)!.trigger("click");
+    await flushPromises();
+
+    expect(mockSearch).toHaveBeenCalledWith("test", [MediaType.PLAYLIST], 8, [
+      "library",
+    ]);
+    expect(resultRows()).toHaveLength(1);
+    vi.useRealTimers();
+  });
+
+  it("hides the results once the submitted query is edited", async () => {
+    mockSearch.mockResolvedValue(
+      searchResults({
+        playlists: [playlistFixture({ uri: "playlist:1", name: "Some list" })],
+      }),
+    );
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+
+    await submitQuery(wrapper, "test");
+    expect(resultRows()).toHaveLength(1);
+
+    await wrapper.find("input").setValue("tests");
+    await flushPromises();
+
+    expect(resultRows()).toHaveLength(0);
+    expect(resultsPanel()?.textContent).toContain("command_center_press_enter");
+    vi.useRealTimers();
+  });
+
+  it("ignores a late response once the submitted query is edited", async () => {
+    const response = Promise.withResolvers<SearchResults>();
+    mockSearch.mockReturnValue(response.promise);
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+
+    await submitQuery(wrapper, "test");
+    await wrapper.find("input").setValue("tests");
+    response.resolve(
+      searchResults({
+        playlists: [playlistFixture({ uri: "playlist:1", name: "Some list" })],
+      }),
+    );
+    await flushPromises();
+
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+    expect(resultRows()).toHaveLength(0);
+    expect(resultsPanel()?.textContent).toContain("command_center_press_enter");
+    vi.useRealTimers();
+  });
+
+  it("ignores the Enter that commits an IME composition", async () => {
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+    const input = wrapper.find("input");
+
+    await input.setValue("test");
+    await input.trigger("keydown.enter", { isComposing: true });
+    await flushPromises();
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("ignores an IME Enter that only keyCode 229 reveals", async () => {
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+    const input = wrapper.find("input");
+
+    await input.setValue("test");
+    // not "keydown.enter": that modifier forces keyCode 13
+    await input.trigger("keydown", { key: "Enter", keyCode: 229 });
+    await flushPromises();
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("does not search a query shorter than the minimum length", async () => {
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+
+    await submitQuery(wrapper, "t");
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("searches again when the same query is submitted again", async () => {
+    mockSearch.mockResolvedValue(searchResults());
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+
+    await submitQuery(wrapper, "test");
+    await submitQuery(wrapper, "test");
+
+    expect(mockSearch).toHaveBeenCalledTimes(2);
+    expect(mockSearch).toHaveBeenNthCalledWith(
+      2,
+      "test",
+      [MediaType.PLAYLIST],
+      8,
+      ["library"],
+    );
+    vi.useRealTimers();
+  });
+
+  it("puts the on-screen keyboard away on submit on a touchscreen", async () => {
+    storeMock.isTouchscreen = true;
+    mockSearch.mockResolvedValue(searchResults());
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+    const input = wrapper.find("input");
+    input.element.focus();
+
+    await submitQuery(wrapper, "test");
+
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).not.toBe(input.element);
+    vi.useRealTimers();
+  });
+
+  it("keeps the field focused on submit on a non-touch device", async () => {
+    mockSearch.mockResolvedValue(searchResults());
+    const wrapper = mountSearch({ allowedMediaTypes: [MediaType.PLAYLIST] });
+    const input = wrapper.find("input");
+    input.element.focus();
+
+    await submitQuery(wrapper, "test");
+
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(input.element);
     vi.useRealTimers();
   });
 });

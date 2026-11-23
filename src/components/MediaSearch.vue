@@ -8,11 +8,14 @@
           clearable
           :placeholder="placeholder || $t('type_to_search')"
           :aria-label="$t('search')"
+          enterkeyhint="search"
           @focus="dismissed = false"
           @pointerdown="dismissed = false"
+          @keydown.enter="onEnterKey"
         >
-          <template v-if="showMediaTypeFilter" #append>
+          <template #append>
             <FacetedFilter
+              v-if="showMediaTypeFilter"
               v-model="selectedMediaTypes"
               :title="$t('media_type')"
               :options="mediaTypeOptions"
@@ -34,6 +37,16 @@
                 </InputGroupButton>
               </template>
             </FacetedFilter>
+            <InputGroupButton
+              type="button"
+              variant="default"
+              class="mr-1"
+              :disabled="!queryActive"
+              @mousedown.prevent
+              @click="submit"
+            >
+              {{ $t("search") }}
+            </InputGroupButton>
           </template>
         </SearchInput>
       </PopoverAnchor>
@@ -69,7 +82,10 @@
             />
           </span>
         </button>
-        <p v-if="loading" class="media-search-note">
+        <p v-if="!activeSearchTerm" class="media-search-note">
+          {{ $t("command_center_press_enter") }}
+        </p>
+        <p v-else-if="loading" class="media-search-note">
           {{ $t("searching") }}
         </p>
         <p v-else-if="flatResults.length === 0" class="media-search-note">
@@ -107,6 +123,7 @@ import {
   SEARCHABLE_MEDIA_TYPES,
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
+import { isImeComposition } from "@/helpers/keyboard";
 import { getArtistsString } from "@/helpers/utils";
 import { getListItemProviderIconDomain } from "@/plugins/api/helpers";
 import {
@@ -114,15 +131,10 @@ import {
   type MediaItemTypeOrItemMapping,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import { ListFilter } from "@lucide/vue";
 import { unrefElement, useElementBounding, useWindowSize } from "@vueuse/core";
-import {
-  computed,
-  onBeforeUnmount,
-  ref,
-  watch,
-  type ComponentPublicInstance,
-} from "vue";
+import { computed, ref, watch, type ComponentPublicInstance } from "vue";
 
 const PANEL_OFFSET = 4;
 const PANEL_MAX_HEIGHT = 288;
@@ -142,7 +154,6 @@ export interface Props {
   excludeUris?: string[];
   placeholder?: string;
   minLength?: number;
-  debounceMs?: number;
   inputId?: string;
 }
 
@@ -155,7 +166,6 @@ const props = withDefaults(defineProps<Props>(), {
   excludeUris: () => [],
   placeholder: undefined,
   minLength: 2,
-  debounceMs: 300,
   inputId: undefined,
 });
 
@@ -176,9 +186,7 @@ const anchorRef = ref<ComponentPublicInstance | null>(null);
 // brings it back, as does editing the query (see the watcher below).
 const dismissed = ref(false);
 
-let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-
-const { loading, providerTargets, search, filteredItems } =
+const { activeSearchTerm, loading, providerTargets, search, filteredItems } =
   useProgressiveSearch({
     mediaTypes: selectedMediaTypes,
     providers: selectedProviders,
@@ -205,10 +213,10 @@ const providerOptions = computed(() => [
   })),
 ]);
 
-const panelVisible = computed(
+const queryActive = computed(
   () => query.value.trim().length >= props.minLength,
 );
-const panelOpen = computed(() => panelVisible.value && !dismissed.value);
+const panelOpen = computed(() => queryActive.value && !dismissed.value);
 
 const { top: anchorTop, bottom: anchorBottom } = useElementBounding(anchorRef);
 const { height: viewportHeight } = useWindowSize();
@@ -285,19 +293,28 @@ const onResultClick = function (item: MediaItemTypeOrItemMapping) {
   query.value = "";
 };
 
+const submit = function () {
+  if (!queryActive.value) return;
+  dismissed.value = false;
+  // put the on-screen keyboard away so it does not cover the results
+  if (store.isTouchscreen)
+    unrefElement(anchorRef)?.querySelector("input")?.blur();
+  search(query.value.trim());
+};
+
+const onEnterKey = function (event: KeyboardEvent) {
+  if (isImeComposition(event)) return;
+  // keep an enclosing form from submitting
+  event.preventDefault();
+  submit();
+};
+
 watch(query, () => {
   dismissed.value = false;
-  clearTimeout(debounceTimer);
-  const trimmed = query.value.trim();
-  if (trimmed.length < props.minLength) {
+  // results belong to the submitted term: drop them (and any late responses)
+  // as soon as the query no longer matches it
+  if (activeSearchTerm.value && query.value.trim() !== activeSearchTerm.value)
     search("");
-    return;
-  }
-  debounceTimer = setTimeout(() => search(trimmed), props.debounceMs);
-});
-
-onBeforeUnmount(() => {
-  clearTimeout(debounceTimer);
 });
 </script>
 
