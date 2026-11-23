@@ -9,6 +9,7 @@ import type {
   ListingMultiFilter,
   ListingToggleFilter,
 } from "@/helpers/listing_filters";
+import { useCommandCenter } from "@/composables/useCommandCenter";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { SEARCH_DELAY_MS } from "@/composables/useListingSearch";
 import {
@@ -806,6 +807,28 @@ describe("ItemsListing per-page search", () => {
       );
     },
   );
+
+  it("takes the term that is still being typed along to the global search", async () => {
+    holdSearches();
+    const listing = mountListingRaw(
+      { showSearchButton: true },
+      { Empty: false, EmptyContent: false },
+    );
+    await flushPromises();
+    await toggleSearch(listing);
+    await typeSearch(listing, "hello");
+    await waitForSearch();
+
+    await listing.get(".search-field input").setValue("hello world");
+    const globalSearch = listing
+      .findAll("button")
+      .find((button) => button.text() === "try_global_search");
+    await globalSearch!.trigger("click");
+
+    const { initialQuery, close } = useCommandCenter();
+    expect(initialQuery.value).toBe("hello world");
+    close();
+  });
 
   it("does not search for a term in the listing it moved on to", async () => {
     holdSearches();

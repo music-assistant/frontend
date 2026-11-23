@@ -1604,7 +1604,7 @@ const providerFilterSubItems = () =>
 const redirectSearch = function () {
   const mediaType = listingMediaType.value;
   openCommandCenter({
-    query: params.value.search,
+    query: searchText.value,
     mediaTypes:
       mediaType && SEARCHABLE_MEDIA_TYPES.includes(mediaType)
         ? [mediaType]
