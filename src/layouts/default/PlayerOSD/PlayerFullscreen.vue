@@ -1213,7 +1213,19 @@ const onArtistClick = async function () {
   // Try to get the artist from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
 
-  if (
+  if (mediaItem && "podcast" in mediaItem) {
+    store.showFullscreenPlayer = false;
+    if (isExternalItem(mediaItem.podcast)) {
+      return openExternalItem(mediaItem.podcast);
+    }
+    router.push({
+      name: "podcast",
+      params: {
+        itemId: mediaItem.podcast.item_id,
+        provider: mediaItem.podcast.provider,
+      },
+    });
+  } else if (
     mediaItem &&
     "artists" in mediaItem &&
     mediaItem.artists &&
