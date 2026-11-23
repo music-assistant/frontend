@@ -237,6 +237,34 @@ describe("PlayerGroupMembers", () => {
     ).toEqual(["screens"]);
   });
 
+  it("lists a controller under controllers", () => {
+    const speaker = createPlayer({
+      player_id: "speaker",
+      name: "Office",
+    });
+    const remote = createPlayer({
+      player_id: "remote",
+      name: "Kitchen remote",
+      type: PlayerType.CONTROLLER,
+    });
+    const parent = createPlayer({
+      can_group_with: [speaker.player_id, remote.player_id],
+    });
+    api.players = {
+      [parent.player_id]: parent,
+      [speaker.player_id]: speaker,
+      [remote.player_id]: remote,
+    };
+
+    const wrapper = mountGroupMembers(parent, []);
+
+    expect(
+      wrapper
+        .findAll(".player-group-section > p")
+        .map((section) => section.text()),
+    ).toEqual(["players", "controllers"]);
+  });
+
   it("keeps only screens when filtering on screens", () => {
     const speaker = createPlayer({
       player_id: "speaker",

@@ -1,5 +1,6 @@
 import {
   CommunityProviderState,
+  ProviderOffering,
   type ProviderConfig,
   type ProviderManifest,
   ProviderStage,
@@ -12,6 +13,7 @@ import { providerConfig } from "../../tests/fixtures/providerConfig";
 import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
   buildCatalogEntries,
+  catalogEntriesOfType,
   countCatalogTypes,
   CATALOG_DISCOVER_TAB,
   CATALOG_INSTALLED_TAB,
@@ -19,11 +21,14 @@ import {
   filterCatalogEntries,
   getCatalogDetailRoute,
   getCatalogInstalledRoute,
+  getCatalogLabel,
   getCatalogRoute,
   getCatalogTab,
   getCatalogTabQuery,
   getEntryMaintainers,
+  getInstanceSettingsRoute,
   getManageRoute,
+  getManifestCatalogType,
   getMaintainerProfileUrl,
   groupInstalledProviders,
   isOfferable,
@@ -57,14 +62,22 @@ const MANIFESTS: ProviderManifest[] = [
   manifest("spotify_connect", "Spotify Connect", ProviderType.PLUGIN, {
     multi_instance: true,
     depends_on: "spotify",
+    provides: [ProviderOffering.AUDIO_SOURCE],
   }),
   manifest("airplay_receiver", "AirPlay Receiver", ProviderType.PLUGIN, {
     stage: ProviderStage.ALPHA,
+    provides: [ProviderOffering.AUDIO_SOURCE],
   }),
   manifest("party", "Party", ProviderType.PLUGIN),
   manifest("cast", "Cast", "core" as ProviderType),
   manifest("essentia", "Essentia", ProviderType.AUDIO_ANALYSIS),
 ];
+
+// what a server sends whose manifests say they provide nothing
+const MANIFESTS_PROVIDING_NOTHING = MANIFESTS.map((item) => ({
+  ...item,
+  provides: [],
+}));
 
 const CONFIGS: ProviderConfig[] = [
   providerConfig({ domain: "spotify", instance_id: "spotify--a" }),
@@ -170,6 +183,48 @@ describe("what can be added", () => {
     expect(isOfferable(manifestOf("spotify"), { selfServiceOnly: true })).toBe(
       true,
     );
+  });
+
+  it("offers only the plugins that let an app play to Music Assistant when restricted", () => {
+    const restrictions = { audioSourceOnly: true };
+    expect(addable([], restrictions)).toEqual([
+      "Spotify Connect",
+      "AirPlay Receiver",
+    ]);
+    // a player provider names it for the line-ins of its devices
+    expect(
+      isOfferable(
+        manifest("sendspin", "Sendspin", ProviderType.PLAYER, {
+          provides: [ProviderOffering.AUDIO_SOURCE],
+        }),
+        restrictions,
+      ),
+    ).toBe(false);
+  });
+
+  it("offers only the plugins that bring AI or speech when restricted", () => {
+    const restrictions = { aiServiceOnly: true };
+    for (const offering of [ProviderOffering.AI, ProviderOffering.TTS]) {
+      expect(
+        isOfferable(
+          manifest("openai", "OpenAI", ProviderType.PLUGIN, {
+            provides: [offering],
+          }),
+          restrictions,
+        ),
+      ).toBe(true);
+    }
+    // the other plugins bring neither
+    expect(addable([], restrictions)).toEqual([]);
+    // a provider of another type that says so is no AI service
+    expect(
+      isOfferable(
+        manifest("ai_music", "AI Music", ProviderType.MUSIC, {
+          provides: [ProviderOffering.AI],
+        }),
+        restrictions,
+      ),
+    ).toBe(false);
   });
 
   it("does not offer a type the catalog has no tab for", () => {
@@ -479,6 +534,38 @@ describe("filterCatalogEntries", () => {
     ).toEqual(["AirPlay"]);
   });
 
+  it("narrows to the sources offering the label picked, by their manifest", () => {
+    const withOfferings = buildCatalogEntries(
+      MANIFESTS_PROVIDING_NOTHING.map((item) =>
+        item.domain === "tidal"
+          ? { ...item, provides: [ProviderOffering.PODCAST] }
+          : item.domain === "airplay_receiver"
+            ? { ...item, provides: [ProviderOffering.AUDIO_SOURCE] }
+            : item,
+      ),
+      [],
+    );
+
+    expect(
+      names(filterCatalogEntries(withOfferings, { label: "podcasts" })),
+    ).toEqual(["Tidal"]);
+    expect(
+      names(filterCatalogEntries(withOfferings, { label: "live" })),
+    ).toEqual(["AirPlay Receiver"]);
+    // a label combines with the search
+    expect(
+      names(
+        filterCatalogEntries(withOfferings, {
+          query: "spotify",
+          label: "live",
+        }),
+      ),
+    ).toEqual([]);
+    expect(filterCatalogEntries(withOfferings, { label: null })).toEqual(
+      withOfferings,
+    );
+  });
+
   it("matches everything without criteria", () => {
     expect(filterCatalogEntries(entries, {})).toEqual(entries);
   });
@@ -486,7 +573,9 @@ describe("filterCatalogEntries", () => {
 
 describe("countCatalogTypes", () => {
   it("counts the entries per type, in tab order, leaving out a type without any", () => {
-    const counts = countCatalogTypes(buildCatalogEntries(MANIFESTS, CONFIGS));
+    const counts = countCatalogTypes(
+      buildCatalogEntries(MANIFESTS_PROVIDING_NOTHING, CONFIGS),
+    );
 
     expect(counts.map(({ type, count }) => [type.type, count])).toEqual([
       [ProviderType.MUSIC, 4],
@@ -500,6 +589,129 @@ describe("countCatalogTypes", () => {
         buildCatalogEntries(MANIFESTS, [], { types: [ProviderType.MUSIC] }),
       ).map(({ type }) => type.type),
     ).toEqual([ProviderType.MUSIC]);
+  });
+});
+
+describe("the audio sources", () => {
+  // the plugins through which apps play to Music Assistant say so in their manifest
+  const AUDIO_SOURCE_MANIFESTS = MANIFESTS.map((item) =>
+    ["spotify_connect", "airplay_receiver"].includes(item.domain)
+      ? { ...item, provides: [ProviderOffering.AUDIO_SOURCE] }
+      : item,
+  );
+
+  it("are listed with the music sources, away from the plugins", () => {
+    const entries = buildCatalogEntries(AUDIO_SOURCE_MANIFESTS, CONFIGS);
+
+    expect(
+      countCatalogTypes(entries).map(({ type, count }) => [type.type, count]),
+    ).toEqual([
+      [ProviderType.MUSIC, 6],
+      [ProviderType.PLAYER, 3],
+      [ProviderType.METADATA, 1],
+      [ProviderType.PLUGIN, 1],
+      [ProviderType.AUDIO_ANALYSIS, 1],
+    ]);
+    expect(names(catalogEntriesOfType(entries, ProviderType.MUSIC))).toEqual([
+      "AirPlay Receiver",
+      "Local disk",
+      "SoundCloud",
+      "Spotify",
+      "Spotify Connect",
+      "Tidal",
+    ]);
+    expect(names(catalogEntriesOfType(entries, ProviderType.PLUGIN))).toEqual([
+      "Party",
+    ]);
+  });
+
+  it("are named as music sources on their cards", () => {
+    const airplay = AUDIO_SOURCE_MANIFESTS.find(
+      (item) => item.domain === "airplay_receiver",
+    )!;
+
+    expect(getManifestCatalogType(airplay)?.itemLabel).toBe(
+      "settings.catalog.type.music",
+    );
+  });
+
+  it("stay with the player support for a player provider offering audio sources", () => {
+    // the Sendspin player provider declares audio sources for its line-ins
+    const sendspin = manifest("sendspin", "Sendspin", ProviderType.PLAYER, {
+      provides: [ProviderOffering.AUDIO_SOURCE],
+    });
+
+    expect(getManifestCatalogType(sendspin)?.type).toBe(ProviderType.PLAYER);
+  });
+
+  it("are not offered to a member, who may only add music services", () => {
+    expect(
+      names(
+        buildCatalogEntries(
+          AUDIO_SOURCE_MANIFESTS,
+          [],
+          MEMBER_ADD_RESTRICTIONS,
+        ),
+      ),
+    ).not.toContain("AirPlay Receiver");
+  });
+
+  it("stay plugins when their manifests provide nothing", () => {
+    expect(
+      names(
+        catalogEntriesOfType(
+          buildCatalogEntries(MANIFESTS_PROVIDING_NOTHING, CONFIGS),
+          ProviderType.PLUGIN,
+        ),
+      ),
+    ).toEqual(["AirPlay Receiver", "Party", "Spotify Connect"]);
+  });
+
+  it("are managed on Music when there are several", () => {
+    const configs = ["a", "b"].map((id) =>
+      providerConfig({
+        domain: "spotify_connect",
+        type: ProviderType.PLUGIN,
+        instance_id: `spotify_connect--${id}`,
+      }),
+    );
+
+    expect(
+      getManageRoute(
+        entry(
+          buildCatalogEntries(AUDIO_SOURCE_MANIFESTS, configs),
+          "spotify_connect",
+        ),
+      ),
+    ).toEqual({ name: "musicsettings" });
+  });
+
+  it("are grouped with the music sources among what is set up", () => {
+    const manifests = Object.fromEntries(
+      AUDIO_SOURCE_MANIFESTS.map((item) => [item.domain, item]),
+    );
+    const configs = [
+      ...CONFIGS,
+      providerConfig({
+        domain: "airplay_receiver",
+        type: ProviderType.PLUGIN,
+        instance_id: "airplay_receiver",
+        name: "AirPlay Receiver",
+      }),
+    ];
+
+    expect(
+      groupInstalledProviders(
+        configs,
+        manifests,
+        true,
+        (config) => config.name ?? config.domain,
+      ).map((group) => [group.type.type, group.items.map(({ name }) => name)]),
+    ).toEqual([
+      [ProviderType.MUSIC, ["AirPlay Receiver", "spotify"]],
+      [ProviderType.PLAYER, ["chromecast"]],
+      [ProviderType.PLUGIN, ["party"]],
+    ]);
   });
 });
 
@@ -517,7 +729,45 @@ describe("getManageRoute", () => {
     ];
     expect(
       getManageRoute(entry(buildCatalogEntries(MANIFESTS, configs), "spotify")),
-    ).toEqual({ name: "providersettings", query: { types: "music" } });
+    ).toEqual({ name: "musicsettings" });
+  });
+
+  it("leads to the settings page of a provider that has one of its own", () => {
+    const manifests = [
+      ...MANIFESTS,
+      manifest("hass", "Home Assistant", ProviderType.PLUGIN),
+    ];
+    const configs = [
+      providerConfig({
+        domain: "hass",
+        type: ProviderType.PLUGIN,
+        instance_id: "hass",
+      }),
+    ];
+    expect(
+      getManageRoute(entry(buildCatalogEntries(manifests, configs), "hass")),
+    ).toEqual({ name: "homeassistantsettings" });
+  });
+});
+
+describe("getInstanceSettingsRoute", () => {
+  it("leads to the settings of the instance", () => {
+    expect(getInstanceSettingsRoute(CONFIGS[2])).toEqual({
+      name: "editprovider",
+      params: { instanceId: "party--a" },
+    });
+  });
+
+  it("leads to the settings page of a provider that has one of its own", () => {
+    expect(
+      getInstanceSettingsRoute(
+        providerConfig({
+          domain: "hass",
+          type: ProviderType.PLUGIN,
+          instance_id: "hass",
+        }),
+      ),
+    ).toEqual({ name: "homeassistantsettings" });
   });
 });
 
@@ -555,6 +805,30 @@ describe("catalog tabs", () => {
   it("opens the Catalog on everything for a page without a known type", () => {
     expect(getCatalogRoute(undefined)).toEqual({ name: "catalog", query: {} });
     expect(getCatalogRoute("core")).toEqual({ name: "catalog", query: {} });
+  });
+
+  it("opens the tab of a type with a label picked", () => {
+    expect(getCatalogRoute("plugin", "ai")).toEqual({
+      name: "catalog",
+      query: { types: "plugin", label: "ai" },
+    });
+  });
+
+  it("picks no label for a page without a known type", () => {
+    expect(getCatalogRoute("core", "ai")).toEqual({
+      name: "catalog",
+      query: {},
+    });
+  });
+
+  it.each([
+    [{}, null],
+    [{ types: "plugin", label: "tts" }, "tts"],
+    [{ types: "music", label: "podcasts" }, "podcasts"],
+    [{ label: "bogus" }, null],
+    [{ label: ["ai", "tts"] }, null],
+  ])("picks from %o the label %s", (query, label) => {
+    expect(getCatalogLabel(query)).toBe(label);
   });
 });
 

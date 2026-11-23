@@ -82,14 +82,24 @@ describe("OnboardingProgress", () => {
     );
   });
 
-  it("shows a check for a completed step behind the current one, a number otherwise", () => {
-    // done and behind the current step reads as a tick; the current step and
-    // the ones ahead keep their number
-    const buttons = stepButtons(mountProgress(2));
+  it("fills the done and current segments, mutes a skipped one and leaves the rest open", () => {
+    const segment = (index: number) =>
+      stepButtons(mountProgress(2))[index].find("span").classes();
+    const skipped = mount(OnboardingProgress, {
+      props: {
+        steps: [{ id: "intent", done: false }, ...STEPS.slice(1)],
+        current: 2,
+      },
+    });
 
-    expect(buttons[0].text()).toBe("");
-    expect(buttons[1].text()).toBe("");
-    expect(buttons[2].text()).toBe("3");
-    expect(buttons[3].text()).toBe("4");
+    expect(segment(0)).toContain("bg-primary");
+    expect(segment(2)).toContain("bg-primary");
+    expect(segment(3)).toContain("bg-border");
+    expect(
+      skipped
+        .findAll("[data-testid=onboarding-progress-step]")[0]
+        .find("span")
+        .classes(),
+    ).toContain("bg-muted-foreground/50");
   });
 });

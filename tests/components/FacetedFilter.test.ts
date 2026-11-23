@@ -194,6 +194,47 @@ describe("FacetedFilter", () => {
     expect(reopened.querySelectorAll(".faceted-filter-item")).toHaveLength(12);
   });
 
+  it("shows on/off switches above the options and reports a change", async () => {
+    const wrapper = mount(FacetedFilter, {
+      props: {
+        title: "Providers",
+        options: STAGE_OPTIONS,
+        modelValue: [],
+        toggles: [{ id: "hide_played", label: "Hide played", active: false }],
+      },
+      global: { mocks: i18nMock, stubs },
+    });
+
+    const toggle = wrapper.get("[data-slot='switch']");
+    expect(wrapper.text()).toContain("Hide played");
+    expect(toggle.attributes("aria-checked")).toBe("false");
+
+    await toggle.trigger("click");
+
+    expect(wrapper.emitted("toggle")).toEqual([["hide_played", true]]);
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+    expect(wrapper.findAll(".faceted-filter-item")).toHaveLength(
+      STAGE_OPTIONS.length,
+    );
+  });
+
+  it("shows only the switches when there are no options", () => {
+    const wrapper = mount(FacetedFilter, {
+      props: {
+        title: "Providers",
+        options: [],
+        modelValue: [],
+        toggles: [{ id: "hide_played", label: "Hide played", active: true }],
+      },
+      global: { mocks: i18nMock, stubs },
+    });
+
+    expect(wrapper.get("[data-slot='switch']").attributes("aria-checked")).toBe(
+      "true",
+    );
+    expect(wrapper.find(".faceted-filter-list").exists()).toBe(false);
+  });
+
   it("focuses the search field of a long list on a desktop", async () => {
     const { content } = await mountAndOpen(manyOptions(12));
 

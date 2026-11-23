@@ -15,7 +15,7 @@ import {
   stopServerTimeSync,
 } from "@/composables/useServerTime";
 import { $t, i18n } from "../i18n";
-import type { ITransport } from "../remote/transport";
+import { MessageTooLargeError, type ITransport } from "../remote/transport";
 import { WebSocketTransport } from "../remote/websocket-transport";
 import { AccountApi } from "./account";
 import type { CommandOptions } from "./commandOptions";
@@ -30,6 +30,7 @@ import {
   type Artist,
   type AuthToken,
   type BackgroundTask,
+  type ChannelLayout,
   type CommandMessage,
   type ErrorResultMessage,
   type EventMessage,
@@ -46,6 +47,7 @@ import {
   type Player,
   type PlayerOptionValueType,
   type PlayerQueue,
+  type PlayerSource,
   type Playlist,
   type PlaylistAccess,
   type ProviderInstance,
@@ -60,6 +62,8 @@ import {
   type SortOptionInfo,
   type User,
   type UserSummary,
+  type AIEngine,
+  type AIEngineUsage,
   AlbumType,
   Audiobook,
   AuthExchangeResult,
@@ -105,12 +109,12 @@ import {
   SortField,
   SmartPlaylistRules,
   SoundEffect,
+  SpeakerChannel,
   StatisticsTopItemResult,
   StatisticsUsers,
   SourceFolder,
   StorageInfo,
   StorageLocation,
-  StreamServerInfo,
   TranscriptCue,
   MediaCollection,
   ArtistType,
@@ -1356,6 +1360,25 @@ export class MusicAssistantApi {
     });
   }
 
+  public generateShareLink(uri: string): Promise<string> {
+    return this.sendCommand(
+      "share/generate",
+      { uri },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public resolveSharedItem(
+    encoded: string,
+    allow_search = true,
+  ): Promise<MediaItemType | null> {
+    return this.sendCommand(
+      "share/resolve",
+      { encoded, allow_search },
+      { suppressGlobalError: true },
+    );
+  }
+
   public migratePlaylist(
     db_playlist_id: string | number,
     destination_provider: string,
@@ -2153,6 +2176,7 @@ export class MusicAssistantApi {
     provider: string,
     item_id: string,
     providers?: string[],
+    hidePlayed?: boolean,
   ): Promise<MediaItemTypeOrItemMapping[]> {
     // Fetches a single recommendation row's items. Per-row timeout/error
     // isolation lives server-side: an unknown id or a failing provider
@@ -2161,12 +2185,14 @@ export class MusicAssistantApi {
     // global error toast.
     // providers: source provider instance ids to include (only rows with
     // supports_provider_filter accept this); omit for the unfiltered row.
+    // hidePlayed: leave out fully played podcast episodes and audiobooks.
     return this.sendCommand(
       "music/recommendations/items",
       {
         provider,
         item_id,
         providers,
+        ...(hidePlayed && { hide_played: true }),
       },
       { suppressGlobalError: true },
     );
@@ -2219,6 +2245,23 @@ export class MusicAssistantApi {
     users?: StatisticsUsers,
   ): Promise<StatisticsDistributionItem[]> {
     return this.statisticsApi.getDecadeDistribution(period, limit, users);
+  }
+
+  /**
+   * The live sources the user can start, each with the player it belongs to.
+   *
+   * @param playerId - The player to start them on, which adds the inputs it can
+   *   switch to; omit for the live sources of all players.
+   */
+  public getLiveSources(
+    playerId?: string,
+    options?: CommandOptions,
+  ): Promise<PlayerSource[]> {
+    return this.sendCommand(
+      "music/live_sources",
+      { player_id: playerId },
+      options,
+    );
   }
 
   public async getSoundEffects(): Promise<SoundEffect[]> {
@@ -2872,6 +2915,98 @@ export class MusicAssistantApi {
     });
   }
 
+  /**
+   * Combine speakers into one new multi-channel player, and return that player.
+   * The output of each speaker on the provider moves into it.
+   *
+   * @param provider The instance id of the provider whose speakers to combine.
+   * @param name The name of the new player.
+   * @param members The channel each speaker plays, by the player id of the speaker.
+   */
+  public createMultiChannelPlayer(
+    provider: string,
+    name: string,
+    members: Record<string, SpeakerChannel>,
+  ): Promise<Player> {
+    return this.sendCommand("players/create_multi_channel_player", {
+      provider,
+      name,
+      members,
+    });
+  }
+
+  /**
+   * Add a speaker to a multi-channel player, on a channel of its own. The output of the
+   * speaker on the provider of that player moves into it.
+   *
+   * @param playerId The player id of the multi-channel player.
+   * @param speaker The player id of the speaker.
+   * @param channel The channel the speaker plays.
+   */
+  public addMultiChannelSpeaker(
+    playerId: string,
+    speaker: string,
+    channel: SpeakerChannel,
+  ): Promise<void> {
+    return this.sendCommand("players/add_multi_channel_speaker", {
+      player_id: playerId,
+      speaker,
+      channel,
+    });
+  }
+
+  /**
+   * Remove a speaker from a multi-channel player, which comes back as a player of its own.
+   *
+   * @param playerId The player id of the multi-channel player.
+   * @param number The number of the speaker, as its config entries name it (speaker_<number>_*).
+   */
+  public removeMultiChannelSpeaker(
+    playerId: string,
+    number: number,
+  ): Promise<void> {
+    return this.sendCommand("players/remove_multi_channel_speaker", {
+      player_id: playerId,
+      number,
+    });
+  }
+
+  /**
+   * Return the ids of the players whose output on a provider can be a speaker of a new
+   * multi-channel player.
+   *
+   * @param provider The instance id of the provider that combines the speakers.
+   * @param options Options for the command, such as keeping a failure quiet.
+   */
+  public getMultiChannelCandidates(
+    provider: string,
+    options?: CommandOptions,
+  ): Promise<string[]> {
+    return this.sendCommand(
+      "players/multi_channel_candidates",
+      { provider },
+      options,
+    );
+  }
+
+  /**
+   * Return the layouts a provider combines speakers into, each with its channels in order,
+   * by the value of the layout (such as "2.1").
+   *
+   * @param provider The instance id of the provider that combines the speakers.
+   * @param options Options for the command, such as keeping a failure quiet.
+   */
+  public getMultiChannelLayouts(
+    provider: string,
+    options?: CommandOptions,
+  ): Promise<Partial<Record<ChannelLayout, SpeakerChannel[]>>> {
+    return this.sendCommand(
+      "players/multi_channel_layouts",
+      { provider },
+      options,
+    );
+  }
+
   public playerCommandGroupSelectSource(
     playerId: string,
     source: string,
@@ -2971,6 +3106,12 @@ export class MusicAssistantApi {
     });
   }
 
+  public async openProviderPage(instance_id: string): Promise<string> {
+    // Open the page a provider instance declares in its manifest. Returns a
+    // short-lived address of it, relative to the server's address.
+    return this.sendCommand("providers/open_page", { instance_id });
+  }
+
   public async saveProviderConfig(
     provider_domain: string,
     values: Record<string, ConfigValueType>,
@@ -3032,13 +3173,17 @@ export class MusicAssistantApi {
     );
   }
 
-  public getShareCandidates(): Promise<UserSummary[]> {
+  public getShareCandidates(includeGuests = false): Promise<UserSummary[]> {
     // Get the users a music source or playlist can be shared with, the caller
     // included.
-    return this.sendCommand("config/providers/share_candidates", undefined, {
-      // callers show their own error toast; avoid a duplicate global one
-      suppressGlobalError: true,
-    });
+    return this.sendCommand(
+      "config/providers/share_candidates",
+      includeGuests ? { include_guests: true } : undefined,
+      {
+        // callers show their own error toast; avoid a duplicate global one
+        suppressGlobalError: true,
+      },
+    );
   }
 
   public getCatalogRecommendations(): Promise<CatalogRecommendation[]> {
@@ -3125,9 +3270,12 @@ export class MusicAssistantApi {
     });
   }
 
-  public async getPlayerConfig(player_id: string): Promise<PlayerConfig> {
+  public async getPlayerConfig(
+    player_id: string,
+    options?: CommandOptions,
+  ): Promise<PlayerConfig> {
     // Return configuration for a single player.
-    return this.sendCommand("config/players/get", { player_id });
+    return this.sendCommand("config/players/get", { player_id }, options);
   }
 
   public async getPlayerConfigEntries(
@@ -3353,9 +3501,10 @@ export class MusicAssistantApi {
 
   // Core Config related functions
 
-  public async getCoreConfigs(): Promise<CoreConfig[]> {
-    // Return all known core configurations
-    return this.sendCommand("config/core");
+  public async getCoreConfigs(includeValues = false): Promise<CoreConfig[]> {
+    // Return all known core configurations; without includeValues, the configs
+    // carry no entries.
+    return this.sendCommand("config/core", { include_values: includeValues });
   }
 
   public async getCoreConfig(domain: string): Promise<CoreConfig> {
@@ -3404,15 +3553,17 @@ export class MusicAssistantApi {
   public async saveCoreConfig(
     domain: string,
     values: Record<string, ConfigValueType>,
+    options?: CommandOptions,
   ): Promise<CoreConfig> {
     // Save Core controller Config.
     // domain: (mandatory) domain of the core controller.
     // values: the raw values for config entries that need to be stored/updated.
     // action: [optional] action key called from config entries UI.
-    const config = await this.sendCommand<CoreConfig>("config/core/save", {
-      domain,
-      values,
-    });
+    const config = await this.sendCommand<CoreConfig>(
+      "config/core/save",
+      { domain, values },
+      options,
+    );
     this._coreConfigValues.clear();
     return config;
   }
@@ -4046,6 +4197,18 @@ export class MusicAssistantApi {
     return this.accountApi.disableUser(userId);
   }
 
+  // AI methods
+
+  public async getAIEngines(): Promise<AIEngine[]> {
+    // Return the available AI engines of all kinds.
+    return this.sendCommand<AIEngine[]>("ai/engines");
+  }
+
+  public async getAIUsage(): Promise<AIEngineUsage[]> {
+    // Return each engine setting of the core modules and providers, with its engine.
+    return this.sendCommand<AIEngineUsage[]>("ai/usage");
+  }
+
   // Remote Access methods
 
   public async getRemoteAccessInfo(): Promise<RemoteAccessInfo> {
@@ -4060,19 +4223,6 @@ export class MusicAssistantApi {
     return this.sendCommand<RemoteAccessInfo>("remote_access/configure", {
       enabled,
     });
-  }
-
-  // Stream server methods
-
-  public async getStreamServerInfo(
-    options?: CommandOptions,
-  ): Promise<StreamServerInfo> {
-    // Get the address the stream server hands to players
-    return this.sendCommand<StreamServerInfo>(
-      "streams/info",
-      undefined,
-      options,
-    );
   }
 
   // Storage methods
@@ -4227,7 +4377,9 @@ export class MusicAssistantApi {
 
     try {
       this.transport.send(msgStr);
-    } catch {
+    } catch (error) {
+      // an oversized message is not a dropped connection, so let the caller see why
+      if (error instanceof MessageTooLargeError) throw error;
       // transport throws untyped errors; callers filter on ConnectionLostError
       throw new ConnectionLostError();
     }

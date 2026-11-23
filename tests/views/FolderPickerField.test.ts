@@ -4,11 +4,15 @@ import { ApiCommandError } from "@/plugins/api/errors";
 import {
   type ConfigEntry,
   ConfigEntryType,
+  type ConfigValueType,
   type Scope,
+  ShareType,
   StorageKind,
   StorageUsage,
 } from "@/plugins/api/interfaces";
 import FolderPickerBrowser from "@/components/settings/storage/FolderPickerBrowser.vue";
+import LocalFolderDialog from "@/components/settings/storage/LocalFolderDialog.vue";
+import NetworkShareDialog from "@/components/settings/storage/NetworkShareDialog.vue";
 import type { StoragePosition } from "@/helpers/storage";
 import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
 import FolderPickerField from "@/views/settings/fields/FolderPickerField.vue";
@@ -24,6 +28,9 @@ import {
 
 const { apiMock, hasScopeMock, toastMock } = vi.hoisted(() => ({
   apiMock: {
+    serverInfo: {
+      value: { server_version: "2.11.0", homeassistant_addon: false },
+    },
     getStorageInfo: vi.fn<MusicAssistantApi["getStorageInfo"]>(),
     getStorageFolders: vi.fn<MusicAssistantApi["getStorageFolders"]>(),
   },
@@ -38,9 +45,9 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope: hasScopeMock } }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
-vi.mock("vue-router", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("vue-router")>()),
-  useRouter: () => ({ resolve: () => ({ href: "#/settings/storage" }) }),
+vi.mock("vue-i18n", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-i18n")>()),
+  useI18n: () => ({ t: (key: string) => key }),
 }));
 
 const translate = (key: string) => key;
@@ -58,6 +65,7 @@ const dataDir = storageLocation({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  apiMock.serverInfo.value.homeassistant_addon = false;
   hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   apiMock.getStorageInfo.mockResolvedValue(
     storageInfo({ locations: [media, offlineShare, dataDir] }),
@@ -73,11 +81,15 @@ describe("FolderPickerField", () => {
 
     const rows = locationButtons(wrapper);
     expect(rows).toHaveLength(2);
-    // the media folder is named after its kind, with no badge repeating it
+    // the media folder is named after its kind, with no type repeating it
     expect(rows[0].text()).toContain("settings.storage.kind.builtin_media");
     expect(rows[0].findAll("[data-slot='badge']")).toHaveLength(0);
     expect(rows[1].text()).toContain("NAS music");
+    // the type is plain text next to the path, the badges are for what needs attention
     expect(rows[1].text()).toContain("settings.storage.kind.network_share");
+    expect(
+      rows[1].findAll("[data-slot='badge']").map((badge) => badge.text()),
+    ).toEqual(["settings.storage.unavailable"]);
     expect(rows[1].text()).toContain("settings.storage.unavailable");
     expect(rows[1].text()).toContain("The NAS did not answer.");
     // the server's own directories are no place for music
@@ -124,16 +136,16 @@ describe("FolderPickerField", () => {
     );
   });
 
-  it("marks the location that holds the selected folder", async () => {
+  it("marks the location that holds the selected folder, with that folder", async () => {
     const wrapper = await mountPicker(folderEntry("/media/Albums/Jazz"));
 
     const [mediaRow, shareRow] = locationButtons(wrapper);
+    expect(exists(mediaRow, "folder-picker-holds-selection")).toBe(true);
     expect(
-      mediaRow.find('[data-testid="folder-picker-holds-selection"]').exists(),
-    ).toBe(true);
-    expect(
-      shareRow.find('[data-testid="folder-picker-holds-selection"]').exists(),
-    ).toBe(false);
+      mediaRow.get('[data-testid="folder-picker-selected-path"]').text(),
+    ).toBe("/media/Albums/Jazz");
+    expect(exists(shareRow, "folder-picker-holds-selection")).toBe(false);
+    expect(exists(shareRow, "folder-picker-selected-path")).toBe(false);
   });
 
   // the app loads no CSS reset, so a list keeps its browser markers unless told not to
@@ -159,22 +171,26 @@ describe("FolderPickerField", () => {
     expect(apiMock.getStorageFolders).not.toHaveBeenCalled();
   });
 
-  it("browses into a location and picks a subfolder by its absolute path", async () => {
+  it("picks each folder it opens, by its absolute path", async () => {
     const wrapper = await mountPicker();
 
     await locationButtons(wrapper)[0].trigger("click");
     await flushPromises();
     expect(subfolderNames(wrapper)).toEqual(["Albums", "Podcasts"]);
+    expect(chosenFolder(wrapper)).toBe("/media");
 
     await subfolderButtons(wrapper)[0].trigger("click");
     await flushPromises();
     expect(apiMock.getStorageFolders).toHaveBeenLastCalledWith("/media/Albums");
     expect(wrapper.text()).toContain("settings.storage.kind.builtin_media");
     expect(subfolderNames(wrapper)).toEqual(["Jazz"]);
+    expect(chosenFolder(wrapper)).toBe("/media/Albums");
 
-    await wrapper.get('[data-testid="folder-picker-use"]').trigger("click");
-
-    expect(wrapper.emitted("update:value")).toEqual([["/media/Albums"]]);
+    // what the setup submits is the folder on screen
+    expect(wrapper.emitted("update:value")).toEqual([
+      ["/media"],
+      ["/media/Albums"],
+    ]);
   });
 
   it("goes back to the location root through the breadcrumb", async () => {
@@ -196,17 +212,36 @@ describe("FolderPickerField", () => {
     await allLocations.trigger("click");
 
     expect(locationButtons(wrapper)).toHaveLength(2);
+    // back at the locations, the folder opened last stays picked
+    expect(lastValue(wrapper)).toBe("/media");
   });
 
-  it("marks the folder the entry holds as the one selected", async () => {
-    const wrapper = await mountPicker(folderEntry("/media"));
+  it("opens the location that holds the selected folder on that folder", async () => {
+    const wrapper = await mountPicker(folderEntry("/media/Albums"));
 
     await locationButtons(wrapper)[0].trigger("click");
     await flushPromises();
 
-    const use = wrapper.get('[data-testid="folder-picker-use"]');
-    expect(use.text()).toBe("settings.folder_picker.folder_selected");
-    expect(use.attributes("disabled")).toBeDefined();
+    expect(apiMock.getStorageFolders).toHaveBeenCalledTimes(1);
+    expect(apiMock.getStorageFolders).toHaveBeenCalledWith("/media/Albums");
+    expect(currentFolder(wrapper)).toBe("Albums");
+    expect(wrapper.emitted("update:value")).toBeUndefined();
+  });
+
+  it("opens the root of that location when the selected folder is gone", async () => {
+    const reason = "The folder does not exist.";
+    apiMock.getStorageFolders.mockImplementation(async (path) => {
+      if (path === "/media/Gone") throw new ApiCommandError(reason, 1, reason);
+      return ["Albums", "Podcasts"];
+    });
+    const wrapper = await mountPicker(folderEntry("/media/Gone"));
+
+    await locationButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+
+    expect(toastMock.error).toHaveBeenCalledWith(reason);
+    expect(currentFolder(wrapper)).toBe("settings.storage.kind.builtin_media");
+    expect(wrapper.emitted("update:value")).toEqual([["/media"]]);
   });
 
   it("recognises a stored folder written with a trailing slash", async () => {
@@ -224,29 +259,26 @@ describe("FolderPickerField", () => {
 
     await locationButtons(wrapper)[0].trigger("click");
     await flushPromises();
-    await subfolderButtons(wrapper)[0].trigger("click");
-    await flushPromises();
 
-    const use = wrapper.get('[data-testid="folder-picker-use"]');
-    expect(use.text()).toBe("settings.folder_picker.folder_selected");
-    expect(use.attributes("disabled")).toBeDefined();
+    expect(currentFolder(wrapper)).toBe("Albums");
     // the stored value is left exactly as it was
     expect(wrapper.emitted("update:value")).toBeUndefined();
-    expect(
-      wrapper.get('[data-testid="folder-picker-selection"]').text(),
-    ).toContain(stored);
   });
 
   it("keeps a stored folder outside every location as the selection", async () => {
     const wrapper = await mountPicker(folderEntry("/mnt/legacy/music"));
 
     expect(
-      wrapper.get('[data-testid="folder-picker-selection"]').text(),
+      wrapper.get('[data-testid="folder-picker-outside"]').text(),
     ).toContain("/mnt/legacy/music");
-    expect(wrapper.find('[data-testid="folder-picker-outside"]').exists()).toBe(
-      true,
-    );
     expect(wrapper.emitted("update:value")).toBeUndefined();
+
+    // opening a folder picks that one instead
+    await locationButtons(wrapper)[0].trigger("click");
+    await flushPromises();
+
+    expect(wrapper.emitted("update:value")).toEqual([["/media"]]);
+    expect(exists(wrapper, "folder-picker-outside")).toBe(false);
   });
 
   it("stays on the locations when a folder cannot be opened", async () => {
@@ -263,43 +295,92 @@ describe("FolderPickerField", () => {
     expect(locationButtons(wrapper)).toHaveLength(2);
   });
 
-  it("explains an install without media locations and links to the Storage page", async () => {
+  it("offers adding a location under the list where the server allows it", async () => {
     apiMock.getStorageInfo.mockResolvedValue(
-      storageInfo({ locations: [dataDir] }),
+      storageInfo({ locations: [media], can_add_local_folder: true }),
     );
     const wrapper = await mountPicker();
 
-    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
-    expect(empty.text()).toContain("settings.folder_picker.empty_text");
-    expect(empty.text()).not.toContain("empty_text_member");
-    const manage = wrapper.get('[data-testid="folder-picker-manage"]');
-    expect(manage.attributes("href")).toBe("#/settings/storage");
-    // the setup dialog it is used from has to stay open
-    expect(manage.attributes("target")).toBe("_blank");
+    expect(exists(wrapper, "folder-picker-add-share")).toBe(true);
+    expect(exists(wrapper, "folder-picker-add-folder")).toBe(true);
+    // adding happens in place, the picker never leads away from the dialog it is in
+    expect(wrapper.find("a").exists()).toBe(false);
   });
 
-  it("sends a user who can not open the Storage page to an administrator", async () => {
-    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+  it("offers adding only what the server can add", async () => {
     apiMock.getStorageInfo.mockResolvedValue(
-      storageInfo({ locations: [dataDir] }),
+      storageInfo({
+        locations: [media],
+        can_mount_shares: false,
+        supported_share_types: [],
+      }),
     );
     const wrapper = await mountPicker();
 
-    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
-    expect(empty.text()).toContain("settings.folder_picker.empty_text_member");
-    expect(wrapper.find('[data-testid="folder-picker-manage"]').exists()).toBe(
-      false,
-    );
+    expect(exists(wrapper, "folder-picker-add-share")).toBe(false);
+    expect(exists(wrapper, "folder-picker-add-folder")).toBe(false);
   });
 
-  it("links to the Storage page only for who can change the storage", async () => {
+  it("offers adding a location only to who manages the storage", async () => {
     hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
-
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [media], can_add_local_folder: true }),
+    );
     const wrapper = await mountPicker();
 
-    expect(wrapper.find('[data-testid="folder-picker-manage"]').exists()).toBe(
-      false,
+    expect(exists(wrapper, "folder-picker-add-share")).toBe(false);
+    expect(exists(wrapper, "folder-picker-add-folder")).toBe(false);
+  });
+
+  it("picks a folder added from the picker once the storage lists it", async () => {
+    const added = storageLocation({
+      path: "/home/me/Music",
+      name: "Music",
+      kind: StorageKind.MANUAL,
+      managed: true,
+    });
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [media], can_add_local_folder: true }),
     );
+    const wrapper = await mountPicker();
+
+    await wrapper
+      .get('[data-testid="folder-picker-add-folder"]')
+      .trigger("click");
+    const dialog = wrapper.findComponent(LocalFolderDialog);
+    expect(dialog.props("open")).toBe(true);
+
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [media, added], can_add_local_folder: true }),
+    );
+    dialog.vm.$emit("added", added);
+    await flushPromises();
+
+    expect(apiMock.getStorageInfo).toHaveBeenCalledTimes(2);
+    expect(wrapper.emitted("update:value")).toEqual([["/home/me/Music"]]);
+    expect(locationButtons(wrapper)).toHaveLength(2);
+  });
+
+  it("picks a network share added from the picker, with no other next step", async () => {
+    const share = managedShare();
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [media] }),
+    );
+    const wrapper = await mountPicker();
+
+    await wrapper
+      .get('[data-testid="folder-picker-add-share"]')
+      .trigger("click");
+    const dialog = wrapper.findComponent(NetworkShareDialog);
+    expect(dialog.props("open")).toBe(true);
+    // the picker is already setting the share up as a music source
+    expect(dialog.props("addedAction")).toBeUndefined();
+    expect(dialog.props("shareTypes")).toEqual([ShareType.CIFS, ShareType.NFS]);
+
+    dialog.vm.$emit("added", share);
+    await flushPromises();
+
+    expect(wrapper.emitted("update:value")).toEqual([["/media/nas_music"]]);
   });
 
   it("fetches the storage again on refresh", async () => {
@@ -351,9 +432,103 @@ describe("FolderPickerField", () => {
     await flushPromises();
     await subfolderButtons(wrapper)[1].trigger("click");
     await flushPromises();
-    await wrapper.get('[data-testid="folder-picker-use"]').trigger("click");
 
     expect(wrapper.emitted("update:value")).toEqual([["/media/Podcasts"]]);
+  });
+});
+
+describe("FolderPickerField without a location to pick from", () => {
+  it("lets an administrator add one where the server can", async () => {
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [dataDir], can_add_local_folder: true }),
+    );
+    const wrapper = await mountPicker();
+
+    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
+    expect(empty.text()).toContain("settings.folder_picker.empty_text_add");
+    expect(exists(empty, "folder-picker-add-share")).toBe(true);
+    expect(exists(empty, "folder-picker-add-folder")).toBe(true);
+    expect(exists(empty, "folder-picker-docs")).toBe(false);
+  });
+
+  it("tells an administrator of a container how to map a folder into it", async () => {
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({
+        locations: [dataDir],
+        can_mount_shares: false,
+        supported_share_types: [],
+      }),
+    );
+    const wrapper = await mountPicker();
+
+    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
+    expect(empty.text()).toContain(
+      "settings.folder_picker.empty_text_container",
+    );
+    const docs = empty.get('[data-testid="folder-picker-docs"]');
+    expect(docs.attributes("href")).toBe(
+      "https://music-assistant.io/installation/#with-docker",
+    );
+    expect(docs.attributes("target")).toBe("_blank");
+    expect(empty.find("button").exists()).toBe(false);
+  });
+
+  it("points a Home Assistant app to the shares of Home Assistant instead", async () => {
+    apiMock.serverInfo.value.homeassistant_addon = true;
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({
+        locations: [dataDir],
+        can_mount_shares: false,
+        supported_share_types: [],
+      }),
+    );
+    const wrapper = await mountPicker();
+
+    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
+    expect(empty.text()).toContain("settings.storage.cannot_mount_ha_text");
+    expect(empty.text()).not.toContain(
+      "settings.folder_picker.empty_text_container",
+    );
+    expect(
+      empty.get('[data-testid="folder-picker-docs"]').attributes("href"),
+    ).toBe("https://music-assistant.io/settings/storage/");
+    expect(empty.find("button").exists()).toBe(false);
+  });
+
+  it("sends a user who can not add storage to an administrator", async () => {
+    hasScopeMock.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [dataDir], can_add_local_folder: true }),
+    );
+    const wrapper = await mountPicker();
+
+    const empty = wrapper.get('[data-testid="folder-picker-empty"]');
+    expect(empty.text()).toContain("settings.folder_picker.empty_text_member");
+    expect(empty.find("button").exists()).toBe(false);
+    expect(exists(empty, "folder-picker-docs")).toBe(false);
+  });
+
+  it("picks the location added from it", async () => {
+    const added = storageLocation({
+      path: "/home/me/Music",
+      name: "Music",
+      kind: StorageKind.MANUAL,
+      managed: true,
+    });
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [dataDir], can_add_local_folder: true }),
+    );
+    const wrapper = await mountPicker();
+
+    apiMock.getStorageInfo.mockResolvedValue(
+      storageInfo({ locations: [added, dataDir], can_add_local_folder: true }),
+    );
+    wrapper.findComponent(LocalFolderDialog).vm.$emit("added", added);
+    await flushPromises();
+
+    expect(wrapper.emitted("update:value")).toEqual([["/home/me/Music"]]);
+    expect(exists(wrapper, "folder-picker-empty")).toBe(false);
+    expect(locationButtons(wrapper)).toHaveLength(1);
   });
 });
 
@@ -375,8 +550,11 @@ describe("FolderPickerField while folders load", () => {
 
     expect(currentFolder(wrapper)).toBe("Podcasts");
     expect(subfolderNames(wrapper)).toEqual(["Live"]);
-    await wrapper.get('[data-testid="folder-picker-use"]').trigger("click");
-    expect(wrapper.emitted("update:value")).toEqual([["/media/Podcasts"]]);
+    // the folder whose answer came too late is never picked
+    expect(wrapper.emitted("update:value")).toEqual([
+      ["/media"],
+      ["/media/Podcasts"],
+    ]);
   });
 
   it("stays quiet about a folder the user already left", async () => {
@@ -405,9 +583,6 @@ describe("FolderPickerField while folders load", () => {
 
     // shown the way the picker shows a folder that is loading
     expect(subfolderButtons(wrapper)).toHaveLength(0);
-    expect(
-      wrapper.get('[data-testid="folder-picker-use"]').attributes("disabled"),
-    ).toBeDefined();
     const crumbs = wrapper.findAll('[data-testid="folder-picker-crumb"]');
     expect(crumbs.length).toBeGreaterThan(0);
     expect(
@@ -419,8 +594,8 @@ describe("FolderPickerField while folders load", () => {
 
     expect(subfolderNames(wrapper)).toEqual(["Albums", "Podcasts"]);
     expect(
-      wrapper.get('[data-testid="folder-picker-use"]').attributes("disabled"),
-    ).toBeUndefined();
+      crumbs.every((crumb) => crumb.attributes("disabled") === undefined),
+    ).toBe(true);
   });
 
   it("keeps a folder opened during a refresh instead of reopening the old one", async () => {
@@ -474,8 +649,8 @@ describe("FolderPickerField when a folder is gone", () => {
     expect(subfolderNames(wrapper)).toEqual(["Podcasts"]);
     // the reason tells why the view changed
     expect(toastMock.error).toHaveBeenCalledWith("The folder does not exist.");
-    await wrapper.get('[data-testid="folder-picker-use"]').trigger("click");
-    expect(wrapper.emitted("update:value")).toEqual([["/media"]]);
+    // the root on screen is the folder picked now
+    expect(lastValue(wrapper)).toBe("/media");
   });
 
   it("goes back to the locations when the location root fails as well", async () => {
@@ -487,9 +662,7 @@ describe("FolderPickerField when a folder is gone", () => {
     await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
     await flushPromises();
 
-    expect(wrapper.find('[data-testid="folder-picker-use"]').exists()).toBe(
-      false,
-    );
+    expect(exists(wrapper, "folder-picker-chosen")).toBe(false);
     expect(locationButtons(wrapper)).toHaveLength(2);
   });
 
@@ -502,9 +675,7 @@ describe("FolderPickerField when a folder is gone", () => {
     await wrapper.get('[data-testid="folder-picker-refresh"]').trigger("click");
     await flushPromises();
 
-    expect(wrapper.find('[data-testid="folder-picker-use"]').exists()).toBe(
-      false,
-    );
+    expect(exists(wrapper, "folder-picker-chosen")).toBe(false);
     expect(locationButtons(wrapper)).toHaveLength(1);
   });
 
@@ -518,6 +689,7 @@ describe("FolderPickerField when a folder is gone", () => {
     expect(toastMock.error).toHaveBeenCalledWith("The folder does not exist.");
     expect(currentFolder(wrapper)).toBe("settings.storage.kind.builtin_media");
     expect(subfolderNames(wrapper)).toEqual(["Albums", "Podcasts"]);
+    expect(lastValue(wrapper)).toBe("/media");
   });
 });
 
@@ -623,16 +795,42 @@ function folderEntry(value: string | null = null): ConfigEntryUI {
   return entry;
 }
 
+/** Mounts the picker with its value fed back into the entry, as the setup dialog does. */
 async function mountPicker(
   entry: ConfigEntryUI = folderEntry(),
   disabled = false,
 ): Promise<VueWrapper> {
-  const wrapper = mount(FolderPickerField, {
-    props: { entry, label: entry.label ?? "", disabled },
+  const wrapper: VueWrapper = mount(FolderPickerField, {
+    props: {
+      entry,
+      label: entry.label ?? "",
+      disabled,
+      "onUpdate:value": (value: ConfigValueType) =>
+        wrapper.setProps({ entry: { ...entry, value } }),
+    },
     global: { mocks: { $t: translate } },
   });
   await flushPromises();
   return wrapper;
+}
+
+/** The folder the open browser says it picks. */
+function chosenFolder(wrapper: VueWrapper) {
+  return wrapper
+    .get('[data-testid="folder-picker-chosen"] [data-testid="storage-path"]')
+    .text();
+}
+
+function lastValue(wrapper: VueWrapper) {
+  return wrapper.emitted("update:value")?.at(-1)?.[0];
+}
+
+/** Whether a page or a part of it holds the element with this test id. */
+function exists(
+  wrapper: { find(selector: string): { exists(): boolean } },
+  testId: string,
+) {
+  return wrapper.find(`[data-testid="${testId}"]`).exists();
 }
 
 function locationButtons(wrapper: VueWrapper) {

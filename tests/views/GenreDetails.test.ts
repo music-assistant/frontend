@@ -136,6 +136,7 @@ const OVERVIEW_FOLDER = {
   enabled_by_default: true,
   type: RecommendationFolderType.DEFAULT,
   supports_provider_filter: false,
+  supports_hide_played: false,
 } satisfies RecommendationFolder;
 
 async function mountDetails(

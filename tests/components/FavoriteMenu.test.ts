@@ -321,10 +321,18 @@ describe("FavoriteMenu", () => {
 
   // the player bar hands over whatever is playing, including a type the
   // server keeps no favorite state for
-  it("offers only 'add to playlist' for a podcast episode", () => {
-    const wrapper = mountMenu(podcastEpisode());
+  it("opens the playlist dialog straight away for a podcast episode", async () => {
+    const item = podcastEpisode();
+    const wrapper = mountMenu(item);
 
-    expect(entryLabels(wrapper)).toEqual(["add_playlist"]);
+    expect(entryLabels(wrapper)).toEqual([]);
+    const trigger = wrapper.get(TRIGGER);
+    expect(trigger.attributes("aria-label")).toBe("add_playlist");
+    await trigger.trigger("click");
+
+    expect(eventbus.emit).toHaveBeenCalledWith("playlistdialog", {
+      items: [item],
+    });
   });
 
   it("renders no trigger for an item that offers nothing at all", () => {

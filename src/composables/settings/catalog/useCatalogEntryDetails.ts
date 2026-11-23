@@ -1,11 +1,12 @@
 import { getRepositoryUrl } from "@/helpers/community_catalog";
 import {
   type CatalogEntry,
-  getCatalogType,
   getEntryMaintainers,
   getManageRoute,
+  getManifestCatalogType,
 } from "@/helpers/provider_catalog";
 import { isCommunityProvider } from "@/helpers/provider_config";
+import { getProviderLabels } from "@/helpers/provider_labels";
 import { $t } from "@/plugins/i18n";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -18,13 +19,16 @@ export function useCatalogEntryDetails(entry: MaybeRefOrGetter<CatalogEntry>) {
   const manifest = computed(() => toValue(entry).manifest);
 
   const typeLabel = computed(() => {
-    const type = getCatalogType(manifest.value.type);
+    const type = getManifestCatalogType(manifest.value);
     return type ? $t(type.itemLabel) : "";
   });
 
   const community = computed(
     () => !!toValue(entry).community || isCommunityProvider(manifest.value),
   );
+
+  // what it offers, as its manifest says
+  const labels = computed(() => getProviderLabels(manifest.value));
 
   // the people maintaining it; none when only the team does
   const maintainers = computed(() => getEntryMaintainers(toValue(entry)));
@@ -42,6 +46,7 @@ export function useCatalogEntryDetails(entry: MaybeRefOrGetter<CatalogEntry>) {
   return {
     typeLabel,
     community,
+    labels,
     maintainers,
     isSetUp,
     manageRoute,

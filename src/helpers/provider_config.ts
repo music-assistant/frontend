@@ -2,9 +2,11 @@ import {
   type ProviderConfig,
   type ProviderInstance,
   type ProviderManifest,
+  ProviderOffering,
   ProviderStage,
   ProviderStatus,
   ProviderTier,
+  ProviderType,
 } from "@/plugins/api/interfaces";
 
 const PROVIDER_STATUS_TRANSLATION_KEYS: Record<ProviderStatus, string> = {
@@ -60,6 +62,16 @@ export const providerRequiresReconfiguration = (
 ) =>
   status === ProviderStatus.AUTH_REQUIRED &&
   canReconfigureProvider(status, hasSetupFlow, enabled);
+
+/**
+ * Whether a provider status needs the attention of the user; the last error of
+ * the provider says why.
+ */
+export const isProviderErrorStatus = (status?: ProviderStatus | null) =>
+  status === ProviderStatus.AUTH_REQUIRED ||
+  status === ProviderStatus.INCOMPATIBLE ||
+  status === ProviderStatus.ERROR ||
+  status === ProviderStatus.UNAVAILABLE;
 
 // A retired provider fails to load as INCOMPATIBLE (the server reuses
 // UnsupportedSystemError), so the stage is what tells the two apart.
@@ -148,6 +160,38 @@ export const getProviderHelpUrl = (
  */
 export const isBuiltinProvider = (manifest?: ProviderManifest): boolean =>
   manifest?.builtin === true;
+
+/**
+ * A plugin that lets an app play to Music Assistant, such as Spotify Connect or
+ * the AirPlay receiver: its manifest says it provides audio sources. A provider
+ * of another type that says so, such as a player provider for the line-ins of
+ * its devices, is no such app.
+ */
+export const isAudioSourcePlugin = (manifest?: {
+  type: ProviderType;
+  provides?: readonly ProviderOffering[];
+}): boolean =>
+  manifest?.type === ProviderType.PLUGIN &&
+  (manifest.provides?.includes(ProviderOffering.AUDIO_SOURCE) ?? false);
+
+// what a plugin's manifest provides to be an AI service
+const AI_SERVICE_OFFERINGS: readonly ProviderOffering[] = [
+  ProviderOffering.AI,
+  ProviderOffering.TTS,
+];
+
+/**
+ * A plugin that brings AI or speech to Music Assistant, such as OpenAI
+ * Compatible or OpenAI TTS: its manifest says it provides either.
+ */
+export const isAIServicePlugin = (manifest?: {
+  type: ProviderType;
+  provides?: readonly ProviderOffering[];
+}): boolean =>
+  manifest?.type === ProviderType.PLUGIN &&
+  AI_SERVICE_OFFERINGS.some(
+    (offering) => manifest.provides?.includes(offering) ?? false,
+  );
 
 /**
  * The name a provider instance goes by: the custom name set on its configuration,

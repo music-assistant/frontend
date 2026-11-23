@@ -1,7 +1,7 @@
 import MusicTimelineSetup from "@/components/music-quiz/game-types/music-timeline/MusicTimelineSetup.vue";
 import type { MusicAssistantApi } from "@/plugins/api";
 import type { SearchResults } from "@/plugins/api/interfaces";
-import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { enableAutoUnmount, mount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playlist } from "../../fixtures/playlist";
@@ -52,6 +52,13 @@ async function flushPromises() {
   await nextTick();
 }
 
+// MediaSearch searches only once the query is submitted
+async function submitSearch(wrapper: VueWrapper, term: string) {
+  const input = wrapper.find('input[placeholder="type_to_search"]');
+  await input.setValue(term);
+  await input.trigger("keydown.enter");
+}
+
 // api.search always returns every result list, so fill the ones a case does not
 // exercise rather than letting a partial mock stand in for a server response
 const searchResults = (lists: Partial<SearchResults> = {}): SearchResults => ({
@@ -85,7 +92,6 @@ enableAutoUnmount(afterEach);
 
 describe("MusicTimelineSetup", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     document.body.innerHTML = "";
     mockSearch.mockReset();
     mockGetLibraryGenres.mockReset();
@@ -98,10 +104,6 @@ describe("MusicTimelineSetup", () => {
     );
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("emits only the Music Timeline configuration fields", async () => {
     const wrapper = mountTimeline();
 
@@ -109,10 +111,7 @@ describe("MusicTimelineSetup", () => {
     expect(wrapper.text()).not.toContain("providers.music_quiz.answer_choices");
     expect(wrapper.find("#music-timeline-name").exists()).toBe(false);
 
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();
@@ -138,10 +137,7 @@ describe("MusicTimelineSetup", () => {
   it("blocks create when shared setup is invalid", async () => {
     const wrapper = mountTimeline({ sharedConfigValid: false });
 
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();
@@ -167,10 +163,7 @@ describe("MusicTimelineSetup", () => {
       "#music-timeline-title-bonus",
       "providers.music_quiz.timeline_bonus_multiple_choice",
     );
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();
@@ -193,10 +186,7 @@ describe("MusicTimelineSetup", () => {
   it("labels removable sources for keyboard and screen-reader users", async () => {
     const wrapper = mountTimeline();
 
-    await wrapper
-      .find('input[placeholder="providers.music_quiz.search_music"]')
-      .setValue("test");
-    await vi.advanceTimersByTimeAsync(300);
+    await submitSearch(wrapper, "test");
     await flushPromises();
     searchResultButton("Test playlist").click();
     await flushPromises();

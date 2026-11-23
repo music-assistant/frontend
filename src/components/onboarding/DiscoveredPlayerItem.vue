@@ -1,6 +1,5 @@
 <template>
   <Item
-    variant="outline"
     size="sm"
     class="flex-nowrap"
     :class="{ 'opacity-60': !player.enabled }"

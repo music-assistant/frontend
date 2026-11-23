@@ -1,10 +1,13 @@
 import ArtistIcon from "@/components/icons/ArtistIcon.vue";
 import GenreIcon from "@/components/icons/GenreIcon.vue";
 import { setUserPreference } from "@/composables/userPreferences";
+import { liveSourcesAvailable } from "@/helpers/live_sources";
+import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
 import {
+  AudioLines,
   BookAudio,
   Compass,
   Disc3,
@@ -165,6 +168,16 @@ const MENU_ITEM_REGISTRY: MenuItemDefinition[] = [
     path: "/radios",
     isLibraryNode: true,
     group: "library",
+  },
+  {
+    id: "live_sources",
+    label: "live_sources",
+    icon: AudioLines,
+    path: "/live-sources",
+    isLibraryNode: true,
+    group: "library",
+    available: () =>
+      liveSourcesAvailable(store.hasLiveSources, Object.values(api.players)),
   },
   {
     id: "genres",

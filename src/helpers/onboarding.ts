@@ -1,5 +1,6 @@
 import { getProviderStatusTranslationKey } from "@/helpers/provider_config";
 import { ProviderType, type ProviderStatus } from "@/plugins/api/interfaces";
+import type { Component } from "vue";
 
 /**
  * Step model and orchestration for the onboarding wizard.
@@ -15,12 +16,15 @@ import { ProviderType, type ProviderStatus } from "@/plugins/api/interfaces";
 
 export type OnboardingStepId =
   // the admin track: setting the server up
+  | "get_started"
   | "account"
   | "intent"
   | "music_sources"
   | "players"
   | "plugins"
+  | "home_assistant"
   | "core_settings"
+  | "ai"
   | "invite_members"
   | "finish"
   // the member track: being welcomed into a server someone else set up
@@ -32,14 +36,41 @@ export type OnboardingStepId =
 
 export type OnboardingIntent = "phone_apps" | "music_hub";
 
+/**
+ * The hint on how to start playing from an app, by the domain of the plugin
+ * that receives it. Not every such plugin has one.
+ */
 export const APP_RECEIVER_INSTRUCTIONS: Readonly<Record<string, string>> = {
   spotify_connect: "onboarding.spotify_connect_hint",
   airplay_receiver: "onboarding.airplay_receiver_hint",
 };
 
-/** How the wizard leaves a step: moving on, or pausing the setup. */
+/** How the wizard leaves a step: moving on, going back, or pausing the setup. */
 export interface StepLeaveOptions {
+  back?: boolean;
   pausing?: boolean;
+}
+
+/** A step's own form, which the wizard's forward button submits. */
+export interface StepForwardForm {
+  // the id of the form element
+  id: string;
+  labelKey: string;
+}
+
+// the sentence under each step's title, which a step's own question points to
+export const STEP_LEAD_ID = "onboarding-step-lead";
+
+/**
+ * A step's own way forward while it is not set up, such as connecting Home
+ * Assistant: the wizard shows it as the footer's main button, with a skip
+ * beside it.
+ */
+export interface StepPrimaryAction {
+  labelKey: string;
+  icon: Component;
+  run: () => unknown;
+  busy?: boolean;
 }
 
 /** How much of the app a member wants to see, as the welcome asks it. */
@@ -62,6 +93,11 @@ export interface OnboardingProvider {
   // switched off in its configuration: set up all the same, so it still ticks
   // its step off, but the wizard flags it
   enabled: boolean;
+  // a plugin that lets an app play to Music Assistant, such as Spotify Connect
+  audioSource: boolean;
+  // brings AI or speech, such as OpenAI Compatible, or Home Assistant while it
+  // provides engines
+  aiService: boolean;
 }
 
 export interface OnboardingAnswers {
@@ -91,6 +127,13 @@ export interface OnboardingContext {
   ownedMusicSourceCount: number;
   providers: OnboardingProvider[];
   playerCount: number;
+  // Music Assistant runs as the Home Assistant add-on, which connects Home
+  // Assistant by itself
+  homeAssistantAddon: boolean;
+  // a connection with Home Assistant is set up, working or not
+  homeAssistantConfigured: boolean;
+  // that connection is up and running
+  homeAssistantConnected: boolean;
   // the household members: everyone with an account of their own, so neither
   // the Home Assistant system account nor a guest or service one. `null` until
   // the users are in, so nothing is decided on a household nobody asked for
@@ -111,6 +154,8 @@ export interface OnboardingStep {
   kind: OnboardingStepKind;
   // optional by nature: the wizard offers a skip instead of a Next
   optional?: boolean;
+  // done for good once it is done: the wizard never takes the user back to it
+  oneWay?: boolean;
   appliesTo(ctx: OnboardingContext): boolean;
   isDone(ctx: OnboardingContext): boolean;
 }
@@ -136,6 +181,8 @@ const onAdminTrack = (ctx: OnboardingContext) => ctx.isAdmin || ctx.firstRun;
 const onMemberTrack = (ctx: OnboardingContext) => ctx.isMember;
 const onFullSetup = (ctx: OnboardingContext) =>
   onAdminTrack(ctx) && ctx.answers.intent !== "phone_apps";
+const onAppSetup = (ctx: OnboardingContext) =>
+  onAdminTrack(ctx) && ctx.answers.intent === "phone_apps";
 
 /**
  * A step that can be ticked off. The review steps and the summary are there to
@@ -152,8 +199,17 @@ export const attentionLabelKey = (status: ProviderStatus | null) =>
 /** Both tracks, each in its base order. */
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   {
+    // the welcome a fresh server opens with, there until its account is made
+    id: "get_started",
+    kind: "step",
+    appliesTo: (ctx) => ctx.firstRun && !ctx.signedIn,
+    // nothing to tick off: it is only ever walked past
+    isDone: () => false,
+  },
+  {
     id: "account",
     kind: "step",
+    oneWay: true,
     // only a fresh server asks for this: the account is made once, before
     // anything else, and a setup run again later has nothing to make
     appliesTo: (ctx) => ctx.firstRun,
@@ -178,19 +234,21 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     isDone: (ctx) => hasConfiguredProvider(ctx, ProviderType.PLAYER),
   },
   {
+    // connecting the music apps, which only the app setup asks for
     id: "plugins",
     kind: "step",
-    optional: true,
-    appliesTo: onAdminTrack,
+    appliesTo: onAppSetup,
     isDone: (ctx) =>
-      ctx.answers.intent === "phone_apps"
-        ? ctx.providers.some(
-            (provider) =>
-              provider.type === ProviderType.PLUGIN &&
-              !provider.builtin &&
-              Object.hasOwn(APP_RECEIVER_INSTRUCTIONS, provider.domain),
-          )
-        : hasConfiguredProvider(ctx, ProviderType.PLUGIN),
+      ctx.providers.some(
+        (provider) => provider.audioSource && !provider.builtin,
+      ),
+  },
+  {
+    id: "home_assistant",
+    kind: "step",
+    optional: true,
+    appliesTo: (ctx) => onAdminTrack(ctx) && !ctx.homeAssistantAddon,
+    isDone: (ctx) => ctx.homeAssistantConfigured,
   },
   {
     id: "core_settings",
@@ -200,6 +258,14 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     // is never anything missing here. What keeps the wizard from walking past
     // this step is its kind, not this answer.
     isDone: () => false,
+  },
+  {
+    id: "ai",
+    kind: "step",
+    optional: true,
+    appliesTo: onFullSetup,
+    isDone: (ctx) =>
+      ctx.providers.some((provider) => provider.aiService && !provider.builtin),
   },
   {
     id: "invite_members",
@@ -259,12 +325,14 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
 
 /** Every step this context can see, in the order it should run in. */
 export function applicableSteps(ctx: OnboardingContext): OnboardingStep[] {
-  return ONBOARDING_STEPS.filter((step) => step.appliesTo(ctx)).map((step) =>
-    step.id === "plugins" && ctx.answers.intent === "phone_apps"
-      ? { ...step, optional: false }
-      : step,
-  );
+  return ONBOARDING_STEPS.filter((step) => step.appliesTo(ctx));
 }
+
+// the steps whose title is not under `onboarding.steps.<id>.title`
+const STEP_TITLE_KEYS: Partial<Record<OnboardingStepId, string>> = {
+  core_settings: "onboarding.steps.core_settings.away_title",
+  ai: "onboarding.steps.ai.enrich_title",
+};
 
 /** The translation key for a step's title in this setup. */
 export function stepTitleKey(
@@ -274,7 +342,49 @@ export function stepTitleKey(
   if (id === "plugins" && answers.intent === "phone_apps") {
     return "onboarding.steps.plugins.phone_apps_title";
   }
-  return `onboarding.steps.${id}.title`;
+  return STEP_TITLE_KEYS[id] ?? `onboarding.steps.${id}.title`;
+}
+
+// the steps whose lead is not under `onboarding.steps.<id>.intro`
+const STEP_LEAD_KEYS: Partial<Record<OnboardingStepId, string>> = {
+  account: "onboarding.steps.account.description",
+  music_sources: "onboarding.steps.music_sources.description",
+  plugins: "onboarding.steps.plugins.phone_apps_instructions",
+  finish: "onboarding.steps.finish.description",
+  welcome: "onboarding.steps.welcome.description",
+  your_players: "onboarding.steps.your_players.description",
+  your_music: "onboarding.steps.your_music.description",
+  all_set: "onboarding.steps.all_set.description",
+};
+
+/** The translation key for the sentence under a step's title in this setup. */
+export function stepLeadKey(
+  id: OnboardingStepId,
+  ctx: OnboardingContext,
+): string {
+  switch (id) {
+    case "players":
+      return ctx.playerCount > 0
+        ? "onboarding.steps.players.description"
+        : "onboarding.steps.players.description_empty";
+    case "core_settings":
+      return ctx.homeAssistantAddon
+        ? "onboarding.steps.core_settings.intro_addon"
+        : "onboarding.steps.core_settings.intro";
+    case "ai":
+      // the examples are only listed until an AI service is set up
+      return ctx.providers.some(
+        (provider) => provider.aiService && !provider.builtin,
+      )
+        ? "onboarding.steps.ai.intro"
+        : "onboarding.steps.ai.intro_examples";
+    case "finish":
+      return ctx.answers.intent === "phone_apps"
+        ? "onboarding.steps.finish.phone_apps_description"
+        : "onboarding.steps.finish.description";
+    default:
+      return STEP_LEAD_KEYS[id] ?? `onboarding.steps.${id}.intro`;
+  }
 }
 
 /** The steps not set up, including optional invitations. */

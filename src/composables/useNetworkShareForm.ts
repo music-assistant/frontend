@@ -39,8 +39,12 @@ export type NetworkShareSaveResult =
  * command that saves it.
  *
  * @param options - What the form is opened on.
+ * @param onAdded - Called with the location of a share once it is added.
  */
-export function useNetworkShareForm(options: NetworkShareFormOptions) {
+export function useNetworkShareForm(
+  options: NetworkShareFormOptions,
+  onAdded?: (location: StorageLocation) => void,
+) {
   const form = ref<NetworkShareForm>(emptyNetworkShareForm(ShareType.CIFS));
   const showAdvanced = ref(false);
   // the required fields are only flagged once saving was tried
@@ -97,6 +101,7 @@ export function useNetworkShareForm(options: NetworkShareFormOptions) {
         } else {
           toast.success($t("settings.storage.share_added"));
         }
+        onAdded?.(added);
       }
       return "saved";
     } catch (err) {

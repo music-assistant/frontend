@@ -1,5 +1,6 @@
 <template>
-  <div class="p-6">
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="users" />
     <Tabs v-model="activeTab" class="gap-6">
       <TabsList variant="line">
         <TabsTrigger value="users">{{ $t("auth.users") }}</TabsTrigger>
@@ -133,6 +134,8 @@
             </CardContent>
           </Card>
         </div>
+
+        <SettingsPageForm page="users" embedded />
       </TabsContent>
       <TabsContent value="roles">
         <RoleManagement :users="users" />
@@ -187,6 +190,8 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
+import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

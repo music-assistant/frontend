@@ -1,8 +1,10 @@
 <template>
   <div>
     <div class="d-flex align-center ga-3 px-4 pt-4">
-      <div class="dynamic-badge d-flex align-center justify-center rounded-lg">
-        <v-icon icon="mdi-shuffle-variant" size="22" color="primary" />
+      <div
+        class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary"
+      >
+        <Shuffle :size="22" aria-hidden="true" />
       </div>
       <div>
         <div class="text-h6">
@@ -101,7 +103,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { store } from "@/plugins/store";
-import { Music2, SlidersHorizontal } from "@lucide/vue";
+import { Music2, Shuffle, SlidersHorizontal } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 export interface Props {
@@ -167,13 +169,6 @@ watch(
 </script>
 
 <style scoped>
-.dynamic-badge {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  background: rgba(var(--v-theme-primary), 0.12);
-}
-
 .col-2 {
   width: 50%;
   max-width: 50%;

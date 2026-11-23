@@ -1,8 +1,8 @@
 <template>
   <section class="p-4">
     <SettingsHeaderCard
-      :icon="SlidersHorizontal"
-      :title="$t('settings.queue_settings')"
+      :icon="CirclePlay"
+      :title="$t('settings.playback.title')"
       :description="queueName"
       :documentation-url="documentationUrl"
       @reset-to-defaults="resetToDefaults"
@@ -17,7 +17,7 @@
         {{ $t("settings.queue_global_settings_hint") }}
       </p>
       <Button as-child variant="outline" size="sm">
-        <RouterLink to="/settings/editcore/player_queues" class="no-underline">
+        <RouterLink :to="settingsPageRoute('playback')" class="no-underline">
           {{ $t("settings.queue_global_settings_link") }}
         </RouterLink>
       </Button>
@@ -48,16 +48,18 @@ import { api } from "@/plugins/api";
 import { ConfigValueType, PlayerQueueConfig } from "@/plugins/api/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import { goBack } from "@/helpers/navigation";
+import { settingsPageRoute } from "@/helpers/settings_sections";
 import { getExternalLinkUrl } from "@/helpers/utils";
-import { Info, SlidersHorizontal } from "@lucide/vue";
+import { CirclePlay, Info } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
 const QUEUE_DOCS_URL =
-  "https://music-assistant.io/settings/individual-player/#queue-settings";
+  "https://music-assistant.io/settings/individual-player/#playback-settings";
 
 // global refs
 const router = useRouter();
@@ -122,9 +124,12 @@ const onImmediateApply = async function (
   await api
     .savePlayerQueueConfig(props.queueId!, values)
     .then((updatedConfig) => {
-      for (const [key, entry] of Object.entries(updatedConfig.values)) {
-        config.value!.values[key] = entry;
-      }
+      // the other values the user changed are still waiting for a save
+      config.value!.values = mergeConfigEntries(
+        config.value!.values,
+        updatedConfig.values,
+        Object.keys(values),
+      );
     })
     // the api reports the failure itself
     .catch(() => {});

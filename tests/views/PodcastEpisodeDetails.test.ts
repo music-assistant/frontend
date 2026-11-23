@@ -21,6 +21,7 @@ const {
   mockGetPodcastEpisodeTranscript,
   mockSubscribe,
   mockRouterPush,
+  mockStore,
 } = vi.hoisted(() => ({
   mockGetPodcastEpisode: vi.fn<MusicAssistantApi["getPodcastEpisode"]>(),
   mockGetPodcastEpisodes: vi.fn<MusicAssistantApi["getPodcastEpisodes"]>(),
@@ -29,6 +30,10 @@ const {
     vi.fn<MusicAssistantApi["getPodcastEpisodeTranscript"]>(),
   mockSubscribe: vi.fn(() => () => {}),
   mockRouterPush: vi.fn(),
+  mockStore: {
+    currentUser: undefined as
+      { preferences: Record<string, unknown> } | undefined,
+  },
 }));
 
 vi.mock("@/plugins/api", () => ({
@@ -40,7 +45,7 @@ vi.mock("@/plugins/api", () => ({
     subscribe: mockSubscribe,
   },
 }));
-vi.mock("@/plugins/store", () => ({ store: { currentUser: undefined } }));
+vi.mock("@/plugins/store", () => ({ store: mockStore }));
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockRouterPush }),
 }));
@@ -49,15 +54,27 @@ vi.mock("@/components/podcast/PodcastEpisodeHero.vue", () => ({
   default: {
     name: "PodcastEpisodeHero",
     props: ["item", "parentPodcast", "hasPrevious", "hasNext"],
-    emits: ["previous", "next", "transcript"],
+    emits: ["previous", "next", "transcript", "edit-rows"],
     template: "<div data-hero />",
   },
 }));
 vi.mock("@/components/Chapters.vue", () => ({
-  default: { name: "Chapters", template: "<div />" },
+  default: { name: "Chapters", template: '<div data-row="chapters" />' },
 }));
 vi.mock("@/components/details/DetailTextRow.vue", () => ({
-  default: { name: "DetailTextRow", template: "<div />" },
+  default: {
+    name: "DetailTextRow",
+    emits: ["edit-rows"],
+    template: '<div data-row="about" />',
+  },
+}));
+vi.mock("@/components/details/RowsEditor.vue", () => ({
+  default: {
+    name: "RowsEditor",
+    props: ["open", "item", "registry", "availableIds", "rowMeta", "subtitle"],
+    emits: ["update:open"],
+    template: "<div data-rows-editor />",
+  },
 }));
 vi.mock("@/components/ItemsListing.vue", () => ({
   default: {
@@ -69,7 +86,7 @@ vi.mock("@/components/ItemsListing.vue", () => ({
       sortListing: String,
       detailRow: Boolean,
     },
-    template: "<div data-listing />",
+    template: '<div data-listing data-row="episodes" />',
   },
 }));
 vi.mock("@/components/ui/dialog", () => ({
@@ -122,6 +139,14 @@ function listing(wrapper: VueWrapper) {
   return wrapper.findComponent({ name: "ItemsListing" });
 }
 
+function editor(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "RowsEditor" });
+}
+
+function renderedRows(wrapper: VueWrapper) {
+  return wrapper.findAll("[data-row]").map((row) => row.attributes("data-row"));
+}
+
 describe("PodcastEpisodeDetails", () => {
   beforeEach(() => {
     mockGetPodcastEpisode
@@ -134,6 +159,7 @@ describe("PodcastEpisodeDetails", () => {
     mockGetPodcastEpisodeTranscript.mockReset();
     mockSubscribe.mockReset().mockReturnValue(() => {});
     mockRouterPush.mockReset();
+    mockStore.currentUser = undefined;
   });
 
   afterEach(() => {
@@ -265,6 +291,102 @@ describe("PodcastEpisodeDetails", () => {
 
     expect(hero(wrapper).props("item")).toBeUndefined();
     expect(listing(wrapper).exists()).toBe(false);
+  });
+
+  describe("rows", () => {
+    beforeEach(() => {
+      mockGetPodcastEpisode.mockImplementation(async (itemId) => ({
+        ...EPISODES.find((episode) => episode.item_id === itemId)!,
+        metadata: { description: "About the episode" },
+      }));
+    });
+
+    it("renders the rows in their default order", async () => {
+      const wrapper = await mountDetails(EPISODES[1]);
+
+      expect(renderedRows(wrapper)).toEqual(["about", "chapters", "episodes"]);
+    });
+
+    it("follows the user's saved row order and hidden rows", async () => {
+      mockStore.currentUser = {
+        preferences: {
+          "podcast_episode.rows": {
+            order: ["episodes", "chapters", "about"],
+            hidden: ["chapters"],
+          },
+        },
+      };
+
+      const wrapper = await mountDetails(EPISODES[1]);
+
+      expect(renderedRows(wrapper)).toEqual(["episodes", "about"]);
+    });
+
+    it("opens the rows editor from the hero and the about row", async () => {
+      const wrapper = await mountDetails(EPISODES[1]);
+      expect(editor(wrapper).props("open")).toBe(false);
+
+      hero(wrapper).vm.$emit("edit-rows");
+      await flushPromises();
+      expect(editor(wrapper).props("open")).toBe(true);
+
+      editor(wrapper).vm.$emit("update:open", false);
+      wrapper.findComponent({ name: "DetailTextRow" }).vm.$emit("edit-rows");
+      await flushPromises();
+      expect(editor(wrapper).props("open")).toBe(true);
+    });
+
+    it("hands the editor the episode rows and the other episodes count", async () => {
+      const wrapper = await mountDetails(EPISODES[1]);
+
+      expect(editor(wrapper).props("availableIds")).toEqual([
+        "about",
+        "chapters",
+        "episodes",
+      ]);
+      expect(editor(wrapper).props("subtitle")).toBe(
+        "Applies to every podcast episode page",
+      );
+      expect(editor(wrapper).props("rowMeta").episodes).toBe("2 episodes");
+    });
+
+    it("leaves out the episode count until another podcast's episodes have loaded", async () => {
+      const otherShow = podcast({ item_id: "pod2", provider: "rss" });
+      const otherEpisodes = [1, 2, 3, 4].map((position) =>
+        podcastEpisode({
+          item_id: `other${position}`,
+          provider: "rss",
+          position,
+          podcast: otherShow,
+        }),
+      );
+      const wrapper = await mountDetails(EPISODES[1]);
+      let resolveEpisodes!: (value: PodcastEpisode[]) => void;
+      mockGetPodcastEpisode.mockResolvedValue(otherEpisodes[0]);
+      mockGetPodcastEpisodes.mockReturnValue(
+        new Promise((resolve) => (resolveEpisodes = resolve)),
+      );
+      mockGetPodcast.mockResolvedValue(otherShow);
+
+      await wrapper.setProps({ itemId: "other1" });
+      await flushPromises();
+      expect(editor(wrapper).props("rowMeta").episodes).toBeUndefined();
+
+      resolveEpisodes(otherEpisodes);
+      await flushPromises();
+      expect(editor(wrapper).props("rowMeta").episodes).toBe("3 episodes");
+    });
+
+    it("closes the rows editor when another episode opens", async () => {
+      const wrapper = await mountDetails(EPISODES[1]);
+      hero(wrapper).vm.$emit("edit-rows");
+      await flushPromises();
+
+      await wrapper.setProps({ itemId: "ep1" });
+      await flushPromises();
+
+      expect(editor(wrapper).props("open")).toBe(false);
+    });
   });
 
   describe("transcript", () => {

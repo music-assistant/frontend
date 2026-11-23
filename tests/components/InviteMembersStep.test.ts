@@ -1,3 +1,4 @@
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import { HOMEASSISTANT_SYSTEM_USER } from "@/helpers/users";
 import { UserRole, type Role, type Scope } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -86,8 +87,15 @@ function dialog(wrapper: Awaited<ReturnType<typeof mountStep>>) {
   return wrapper.findComponent({ name: "CreateUserDialog" });
 }
 
+// the last row of the household's list
 function addButton(wrapper: Awaited<ReturnType<typeof mountStep>>) {
   return wrapper.find("[data-testid=onboarding-add-member]");
+}
+
+// the step's own way forward, which the wizard shows as its main button
+function primaryAction(wrapper: Awaited<ReturnType<typeof mountStep>>) {
+  return (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
 }
 
 function members(wrapper: Awaited<ReturnType<typeof mountStep>>) {
@@ -144,12 +152,15 @@ describe("InviteMembersStep", () => {
 
   it("names a role the server made up here", async () => {
     storeMock.roles = [role({ role_id: "dj", name: "House DJ" })];
-    users.list = [user({ user_id: "sam-1", username: "sam", role: "dj" })];
+    users.list = [
+      user({ user_id: "admin-1", username: "admin", display_name: "Marcel" }),
+      user({ user_id: "sam-1", username: "sam", role: "dj" }),
+    ];
 
     const wrapper = await mountStep();
 
     // a role this frontend has no name for is shown by the name it was given
-    expect(members(wrapper)[0].text()).toContain("House DJ");
+    expect(members(wrapper)[1].text()).toContain("House DJ");
 
     wrapper.unmount();
   });
@@ -161,14 +172,11 @@ describe("InviteMembersStep", () => {
 
     // the api toasts its own failures; an unknown household is not an empty one
     expect(members(wrapper)).toHaveLength(0);
-    expect(wrapper.find("[data-testid=onboarding-only-you]").exists()).toBe(
-      false,
-    );
     expect(wrapper.text()).toContain(
       "onboarding.steps.invite_members.load_failed",
     );
     // and there is still a way to add someone
-    expect(addButton(wrapper).exists()).toBe(true);
+    expect(primaryAction(wrapper)?.labelKey).toBe("onboarding.add_member");
     expect(warnSpy).toHaveBeenCalledOnce();
 
     wrapper.unmount();
@@ -184,13 +192,46 @@ describe("InviteMembersStep", () => {
     wrapper.unmount();
   });
 
-  it("says so while the household is still only the admin setting it up", async () => {
+  it("invites to add someone while the household is only the admin", async () => {
     const wrapper = await mountStep();
 
-    expect(members(wrapper)).toHaveLength(1);
-    expect(wrapper.find("[data-testid=onboarding-only-you]").exists()).toBe(
-      true,
-    );
+    // the admin alone is no household to list yet
+    expect(members(wrapper)).toHaveLength(0);
+    expect(
+      wrapper
+        .find("[data-testid=onboarding-invitation-features]")
+        .findAll("[data-slot=item]")
+        .map((item) => item.text()),
+    ).toEqual([
+      "onboarding.steps.invite_members.features.sign_in",
+      "onboarding.steps.invite_members.features.players",
+      "onboarding.steps.invite_members.features.music",
+    ]);
+    expect(primaryAction(wrapper)?.labelKey).toBe("onboarding.add_member");
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-note]").text(),
+    ).toBe("onboarding.steps.invite_members.optional");
+
+    wrapper.unmount();
+  });
+
+  it("lists the household once someone is added, with a way to add another", async () => {
+    users.list = [
+      user({ user_id: "admin-1", username: "admin", display_name: "Marcel" }),
+      user({ user_id: "sam-1", username: "sam" }),
+    ];
+
+    const wrapper = await mountStep();
+
+    expect(members(wrapper)).toHaveLength(2);
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-features]").exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-note]").exists(),
+    ).toBe(false);
+    expect(addButton(wrapper).text()).toBe("onboarding.add_member");
+    expect(primaryAction(wrapper)).toBeUndefined();
 
     wrapper.unmount();
   });
@@ -199,9 +240,9 @@ describe("InviteMembersStep", () => {
     const wrapper = await mountStep({ load: false });
 
     expect(members(wrapper)).toHaveLength(0);
-    expect(wrapper.find("[data-testid=onboarding-only-you]").exists()).toBe(
-      false,
-    );
+    expect(
+      wrapper.find("[data-testid=onboarding-invitation-features]").exists(),
+    ).toBe(true);
 
     wrapper.unmount();
   });
@@ -210,7 +251,8 @@ describe("InviteMembersStep", () => {
     const wrapper = await mountStep();
     expect(dialog(wrapper).props("modelValue")).toBe(false);
 
-    await addButton(wrapper).trigger("click");
+    primaryAction(wrapper)?.run();
+    await flushPromises();
 
     expect(dialog(wrapper).props("modelValue")).toBe(true);
 
@@ -227,22 +269,22 @@ describe("InviteMembersStep", () => {
     wrapper.unmount();
   });
 
-  // the primary action while the household is only the admin who is setting it
-  // up, and a quieter one once there is a household to add to
+  // the main action while the household is only the admin who is setting it
+  // up, and the list's last row once there is a household to add to
   it.each([
-    [1, "bg-primary", "bg-accent"],
-    [2, "bg-accent", "bg-primary"],
+    [1, true],
+    [2, false],
   ])(
-    "carries the emphasis a household of %i calls for",
-    async (memberCount, emphasis, demoted) => {
+    "offers adding a user the way a household of %i calls for",
+    async (memberCount, asMainAction) => {
       users.list = Array.from({ length: memberCount }, (_, index) =>
         user({ user_id: `member-${index}`, username: `member-${index}` }),
       );
 
       const wrapper = await mountStep();
 
-      expect(addButton(wrapper).classes()).toContain(emphasis);
-      expect(addButton(wrapper).classes()).not.toContain(demoted);
+      expect(primaryAction(wrapper) !== undefined).toBe(asMainAction);
+      expect(addButton(wrapper).exists()).toBe(!asMainAction);
 
       wrapper.unmount();
     },

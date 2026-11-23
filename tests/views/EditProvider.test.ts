@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, type Ref } from "vue";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
 import {
+  type ConfigEntry,
   ConfigEntryType,
   EventType,
   ProviderFeature,
@@ -74,8 +75,11 @@ const {
     t: vi.fn((key: string) => key),
   },
   routerMock: {
+    back: vi.fn(),
     push: vi.fn(),
     replace: vi.fn(),
+    // the entry before the page, null on a page opened directly
+    options: { history: { state: { back: null as string | null } } },
   },
   toastMock: {
     error: vi.fn(),
@@ -145,6 +149,7 @@ vi.mock("@/helpers/utils", async (importOriginal) => {
         : undefined,
     // the real renderer, so the error banner's markdown is assertable
     markdownToHtml: actual.markdownToHtml,
+    providerMarkdownToHtml: actual.providerMarkdownToHtml,
     openActionUrlEntries: <T>(entries: T) => entries,
   };
 });
@@ -179,6 +184,7 @@ vi.mock("vue-router", async (importOriginal) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  routerMock.options.history.state.back = null;
   providersUpdated = undefined;
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
@@ -784,6 +790,44 @@ describe("EditProvider", () => {
     expect(unsubscribeMock).toHaveBeenCalledOnce();
   });
 
+  it("leaves out the settings the provider's own settings page shows", async () => {
+    const config = spotifyConfig(ProviderStatus.LOADED);
+    apiMock.getProviderConfig.mockResolvedValue({
+      ...config,
+      domain: "hass",
+      values: {
+        ...config.values,
+        power_controls: {
+          ...config.values.account,
+          key: "power_controls",
+          category: "player_controls",
+        },
+      },
+    });
+
+    const wrapper = shallowMount(EditProvider, {
+      props: {
+        instanceId: "hass--test",
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key,
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper
+        .findComponent({ name: "EditConfig" })
+        .props("configEntries")
+        .map(({ key, hidden }: ConfigEntry) => [key, hidden === true]),
+    ).toEqual([
+      ["account", false],
+      ["power_controls", true],
+    ]);
+  });
+
   it("merges fresh entry definitions while keeping a pending local edit", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(
@@ -1305,12 +1349,20 @@ describe("EditProvider", () => {
     expect(toastMock.success).not.toHaveBeenCalled();
   });
 
+  it("returns to where the user came from after saving", async () => {
+    routerMock.options.history.state.back = "/settings/players";
+
+    await mountSavedProvider();
+
+    expect(routerMock.back).toHaveBeenCalledOnce();
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
+
   it("sends an admin back to the music sources page after saving", async () => {
     const wrapper = await mountSavedProvider();
 
     expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
   });
@@ -1378,8 +1430,7 @@ describe("EditProvider", () => {
     });
 
     expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
   });
 
@@ -1408,8 +1459,7 @@ describe("EditProvider", () => {
 
     // the options are never shown; the member lands back on the list
     expect(routerMock.replace).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+      name: "musicsettings",
     });
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(false);
   });
@@ -1584,10 +1634,11 @@ describe("EditProvider actions and sections", () => {
     expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
     // unsaved edits have nothing left to save to, so they must not hold the way out
     expect(discardChanges).toHaveBeenCalled();
-    expect(routerMock.push).toHaveBeenCalledWith({
-      name: "providersettings",
-      query: { types: ProviderType.MUSIC },
+    // the page of the removed source is replaced, so back cannot return to it
+    expect(routerMock.replace).toHaveBeenCalledWith({
+      name: "musicsettings",
     });
+    expect(routerMock.push).not.toHaveBeenCalled();
   });
 
   it("leaves another source opened during a removal untouched", async () => {
@@ -1634,6 +1685,7 @@ describe("EditProvider actions and sections", () => {
     ]);
     expect(discardChanges).not.toHaveBeenCalled();
     expect(routerMock.push).not.toHaveBeenCalled();
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 
   it("shows the sections of the source with its access summary", async () => {

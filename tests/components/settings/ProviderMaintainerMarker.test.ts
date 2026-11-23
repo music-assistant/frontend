@@ -18,7 +18,7 @@ describe("ProviderMaintainerMarker", () => {
     });
 
     const marker = wrapper.get('[data-testid="community-marker"]');
-    expect(marker.attributes("role")).toBe("img");
+    expect(marker.element.tagName).toBe("BUTTON");
     expect(marker.attributes("aria-label")).toBe(
       "settings.provider_community_maintained",
     );

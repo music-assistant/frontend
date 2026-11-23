@@ -6,7 +6,7 @@
     :blur-backdrop="blurBackdrop"
     :height="400"
     :phone-height="360"
-    :editable-rows="false"
+    @edit-rows="emit('edit-rows')"
   >
     <template v-if="item" #main>
       <div class="podcast-episode-hero__main">
@@ -164,6 +164,7 @@ const emit = defineEmits<{
   (e: "previous"): void;
   (e: "next"): void;
   (e: "transcript"): void;
+  (e: "edit-rows"): void;
 }>();
 
 const router = useRouter();

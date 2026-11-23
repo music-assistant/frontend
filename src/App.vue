@@ -52,6 +52,7 @@ import HomeAssistantMenuButton from "@/components/HomeAssistantMenuButton.vue";
 import ServerOutdated from "@/components/ServerOutdated.vue";
 import { Toaster } from "@/components/ui/sonner";
 import { loadRoles } from "@/composables/roles";
+import { trackLiveSources } from "@/composables/useLiveSources";
 import { useReconnectGrace } from "@/composables/useReconnectGrace";
 import { initGlobalShortcutsSync } from "@/composables/useShortcuts";
 import { useThemePreference } from "@/composables/useThemePreference";
@@ -420,6 +421,7 @@ const completeInitialization = async () => {
     store.libraryPodcastsCount = await api.getLibraryPodcastsCount();
     store.libraryAudiobooksCount = await api.getLibraryAudiobooksCount();
     store.libraryGenresCount = await api.getLibraryGenresCount();
+    trackLiveSources();
   } else if (isDashboardViewer) {
     console.debug("[App] Dashboard viewer - fetching player/queue state only");
     // Dashboards render live player/queue state, which regular guests don't need
@@ -546,6 +548,12 @@ onMounted(async () => {
         }
       }
     },
+  );
+
+  // the theme follows its preference as soon as that changes
+  watch(
+    () => store.currentUser?.preferences?.theme,
+    () => setTheme(),
   );
 
   // Push UI locale changes to the server so server-provided strings (config labels, media/folder

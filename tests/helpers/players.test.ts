@@ -683,6 +683,8 @@ describe("getAppProtocolName", () => {
     id: "player",
     name: "Music Assistant Queue",
     passive: false,
+    is_input: false,
+    owner_player_id: null,
     can_play_pause: true,
     can_seek: true,
     can_next_previous: true,

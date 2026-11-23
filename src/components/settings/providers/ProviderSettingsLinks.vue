@@ -1,69 +1,11 @@
 <template>
-  <div
-    v-if="rows.length"
-    class="bg-card overflow-hidden rounded-xl border shadow-sm"
-  >
-    <component
-      :is="row.to ? RouterLink : row.action ? 'button' : 'div'"
-      v-for="row in rows"
-      :key="row.key"
-      v-bind="rowAttrs(row)"
-      :data-testid="`provider-settings-link-${row.key}`"
-      class="flex w-full items-center gap-4 border-b px-6 py-4 text-left no-underline last:border-b-0"
-      :class="{
-        'hover:bg-accent/50 focus-visible:ring-ring transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none':
-          row.to || row.action,
-      }"
-      @click="row.action?.()"
-    >
-      <component :is="row.icon" class="text-primary size-5 shrink-0" />
-      <div class="min-w-0 flex-1">
-        <div class="text-foreground text-sm font-medium">{{ row.label }}</div>
-        <!-- a problem wraps instead of being cut off, so its reason stays readable -->
-        <div
-          data-testid="provider-settings-description"
-          class="text-sm"
-          :class="
-            row.error ? 'text-destructive' : 'text-muted-foreground truncate'
-          "
-        >
-          {{ row.description }}
-        </div>
-        <!-- a phone has no room beside the label, so the state gets a line of its own -->
-        <div
-          v-if="row.state"
-          data-testid="provider-settings-state-below"
-          class="text-sm sm:hidden"
-          :class="stateClass(row)"
-        >
-          {{ row.state }}
-        </div>
-      </div>
-      <span
-        v-if="row.state"
-        data-testid="provider-settings-state"
-        class="hidden max-w-[45%] truncate text-sm sm:block"
-        :class="stateClass(row)"
-        :title="row.stateTitle ?? row.state"
-      >
-        {{ row.state }}
-      </span>
-      <component
-        :is="row.actionIcon"
-        v-if="row.actionIcon"
-        class="text-primary size-4 shrink-0"
-        :class="{ 'animate-spin': row.busy }"
-        aria-hidden="true"
-      />
-      <ChevronRight
-        v-else-if="row.to"
-        class="text-muted-foreground size-4 shrink-0"
-      />
-    </component>
-  </div>
+  <SettingsLinkRows :rows="rows" test-id-prefix="provider-settings" />
 </template>
 
 <script setup lang="ts">
+import SettingsLinkRows, {
+  type SettingsRow,
+} from "@/components/settings/SettingsLinkRows.vue";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import {
   getListedPlayerConfigs,
@@ -89,7 +31,6 @@ import {
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import {
-  ChevronRight,
   HardDrive,
   KeyRound,
   LibraryBig,
@@ -97,9 +38,7 @@ import {
   Speaker,
 } from "@lucide/vue";
 import { useDebounceFn } from "@vueuse/core";
-import type { Component } from "vue";
 import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
-import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 /**
  * The settings of a provider instance that live outside its options: each row
@@ -114,25 +53,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   access: [];
 }>();
-
-interface SettingsRow {
-  key: string;
-  icon: Component;
-  label: string;
-  description: string;
-  state?: string;
-  // the hover text of the state, the state itself by default
-  stateTitle?: string;
-  // the row reports a problem: the description gives its reason
-  error?: boolean;
-  // a navigation; a row without one acts on the spot, or only informs when it
-  // has no action either
-  to?: RouteLocationRaw;
-  action?: () => unknown;
-  // shown at the end of a row that acts on the spot, turning while it is busy
-  actionIcon?: Component;
-  busy?: boolean;
-}
 
 const { isProviderSyncing } = useBackgroundTasks();
 
@@ -262,22 +182,6 @@ const rows = computed(() => {
   }
   return items;
 });
-
-// a row without a navigation or an action only informs, so it is no control
-function rowAttrs(row: SettingsRow) {
-  if (row.to) return { to: row.to };
-  if (row.action) return { type: "button", disabled: row.busy };
-  return {};
-}
-
-// a state reporting a problem reads as one; a row that acts on the spot reads as
-// an action until it is busy
-function stateClass(row: SettingsRow) {
-  if (row.error) return "text-destructive";
-  return row.actionIcon && !row.busy
-    ? "text-primary font-medium"
-    : "text-muted-foreground";
-}
 
 // the storage location holding the folder and the subfolders leading to it, or
 // the bare path when no known location holds it

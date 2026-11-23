@@ -2,21 +2,13 @@
   <section class="p-4">
     <SettingsHeaderCard
       v-if="config && api.providerManifests[config.domain]"
-      :icon="getCoreIcon(config.domain)"
-      :title="getItemTitle(config)"
-      :description="getItemDescription(config)"
+      :icon="Settings2"
+      :title="moduleName"
+      :description="api.providerManifests[config.domain].description"
       :documentation-url="
         getExternalLinkUrl(api.providerManifests[config.domain].documentation)
       "
       @reset-to-defaults="resetToDefaults"
-    />
-
-    <ServerUrlsCard
-      v-if="config?.domain === 'webserver'"
-      ref="urlCard"
-      :base-url="config.values.base_url"
-      :external-url="config.values.external_url"
-      @update:value="onUrlUpdate"
     />
 
     <edit-config
@@ -43,31 +35,29 @@
 <script setup lang="ts">
 import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
+import { mergeConfigEntries } from "@/helpers/config_entry_ui";
+import { coreModuleName } from "@/helpers/core_modules";
+import { goBack } from "@/helpers/navigation";
+import { LOG_LEVEL_KEY } from "@/helpers/settings_pages";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import { ConfigValueType, CoreConfig } from "@/plugins/api/interfaces";
-import {
-  Database,
-  Globe,
-  Music,
-  RadioTower,
-  Settings2,
-  Speaker,
-  Tags,
-} from "@lucide/vue";
-import { computed, ref, watch, type Component } from "vue";
+import { Settings2 } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
-import ServerUrlsCard from "./ServerUrlsCard.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
+
+/**
+ * The settings of a core module that no settings page shows.
+ */
 
 // global refs
 const router = useRouter();
 const { t } = useI18n();
 const config = ref<CoreConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
-const urlCard = ref<InstanceType<typeof ServerUrlsCard>>();
 const loading = ref(false);
 
 // props
@@ -83,12 +73,15 @@ const allConfigEntries = computed(() => {
   return Object.values(config.value.values);
 });
 
-// the webserver entries the URL card edits in place of the form
-const urlCardEntries = computed(() => {
-  if (config.value?.domain !== "webserver") return [];
-  const { base_url, external_url } = config.value.values;
-  return [base_url, external_url];
-});
+const moduleName = computed(() =>
+  config.value
+    ? coreModuleName(
+        config.value.domain,
+        (key) => t(key),
+        api.providerManifests[config.value.domain]?.name,
+      )
+    : "",
+);
 
 // watchers
 watch(
@@ -101,54 +94,19 @@ watch(
   { immediate: true },
 );
 
-// hidden from the form, while EditConfig still saves and guards their values
+// Diagnostics sets the log level of every module; hidden from the form rather
+// than left out, so EditConfig still saves its value
 watch(
-  urlCardEntries,
-  (entries) => {
-    for (const entry of entries) entry.hidden = true;
+  () => config.value?.values[LOG_LEVEL_KEY],
+  (logLevel) => {
+    if (logLevel) logLevel.hidden = true;
   },
   { immediate: true },
 );
 
 // methods
-const getItemTitle = (item: CoreConfig) => {
-  // Try translation first, fall back to manifest
-  const translated = t(`settings.core_module.${item.domain}.name`);
-  // If translation returns the key itself, it doesn't exist - use manifest
-  return translated !== `settings.core_module.${item.domain}.name`
-    ? translated
-    : api.providerManifests[item.domain].name;
-};
-
-const getItemDescription = (item: CoreConfig) => {
-  const translated = t(`settings.core_module.${item.domain}.description`);
-  return translated !== `settings.core_module.${item.domain}.description`
-    ? translated
-    : api.providerManifests[item.domain].description;
-};
-
-const getCoreIcon = (domain: string): Component => {
-  const iconMap: Record<string, Component> = {
-    streams: RadioTower,
-    players: Speaker,
-    metadata: Tags,
-    music: Music,
-    webserver: Globe,
-    cache: Database,
-  };
-  return iconMap[domain] || Settings2;
-};
-
 const resetToDefaults = function () {
   editConfig.value?.resetToDefaults();
-  // the form's reset skips hidden entries, and these are hidden only because
-  // the URL card shows them
-  for (const entry of urlCardEntries.value) entry.value = entry.default_value;
-  urlCard.value?.reset();
-};
-
-const onUrlUpdate = function (key: string, value: string) {
-  config.value!.values[key].value = value;
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
@@ -157,7 +115,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveCoreConfig(config.value!.domain, values)
     .then(() => {
-      router.push({ name: "systemsettings" });
+      goBack(router, { name: "systemsettings" });
     })
     .catch(() => {
       // the api reports the failure itself
@@ -174,9 +132,12 @@ const onImmediateApply = async function (
   // Immediately apply a config value change to the backend
   // and refresh the local config with the server response
   const updatedConfig = await api.saveCoreConfig(config.value!.domain, values);
-  for (const [key, entry] of Object.entries(updatedConfig.values)) {
-    config.value!.values[key] = entry;
-  }
+  // the other values the user changed are still waiting for a save
+  config.value!.values = mergeConfigEntries(
+    config.value!.values,
+    updatedConfig.values,
+    Object.keys(values),
+  );
 };
 
 const { onAction } = useConfigAction({

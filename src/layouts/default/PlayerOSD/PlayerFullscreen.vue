@@ -35,9 +35,9 @@
         color="transparent"
       >
         <template #prepend>
-          <!-- on mobile the drag handle is the close affordance -->
+          <!-- kept next to the drag handle: kiosk WebViews can turn a swipe
+               down into a native pull-to-refresh -->
           <Button
-            v-if="!store.mobileLayout"
             variant="ghost"
             size="icon-sm"
             :aria-label="$t('tooltip.close_fullscreen')"
@@ -388,11 +388,7 @@
         <div class="media-controls">
           <div class="media-controls-item favorite-btn-wrapper">
             <!-- no hover box, like the transport buttons beside them -->
-            <FavoriteMenuBtn
-              variant="ghost-icon"
-              style="max-height: 30px; min-height: 0; min-width: 0"
-              icon-class="size-5.5"
-            />
+            <FavoriteMenuBtn variant="ghost-icon" icon-class="size-5.5" />
           </div>
           <!-- side slots keep their width when empty so the row never shifts -->
           <div class="media-controls-item side-slot">
@@ -401,7 +397,6 @@
               v-if="showSkip"
               :player-queue="store.activePlayerQueue"
               direction="back"
-              max-height="45px"
               :size="30"
               :stroke-width="(2 * 28) / 30"
             />
@@ -409,40 +404,40 @@
               v-else-if="$vuetify.display.mdAndUp"
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
-              max-height="30px"
               :size="24"
             />
           </div>
-          <PreviousBtn
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="45px"
-            :size="28"
-          />
+          <div
+            class="media-controls-item flex items-center justify-center max-[540px]:min-w-11"
+          >
+            <PreviousBtn
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              :size="28"
+            />
+          </div>
           <div class="play-btn-wrapper" :style="playBtnStyle">
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
-              class="media-controls-item"
-              :icon="{ staticWidth: '60px', staticHeight: '60px' }"
-              :spinner-size="73"
+              class="media-controls-item size-15 bg-(color:--text-color) dark:bg-(color:--text-color)"
               :size="30"
             />
           </div>
-          <NextBtn
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="45px"
-            :size="28"
-          />
+          <div
+            class="media-controls-item flex items-center justify-center max-[540px]:min-w-11"
+          >
+            <NextBtn
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              :size="28"
+            />
+          </div>
           <div class="media-controls-item side-slot">
             <SkipBtn
               v-if="showSkip"
               :player-queue="store.activePlayerQueue"
               direction="forward"
-              max-height="45px"
               :size="30"
               :stroke-width="(2 * 28) / 30"
             />
@@ -450,16 +445,11 @@
               v-else-if="$vuetify.display.mdAndUp"
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
-              max-height="35px"
               :size="26"
             />
           </div>
           <div class="media-controls-item queue-btn-wrapper">
-            <QueueBtn
-              variant="ghost-icon"
-              style="max-height: 30px; min-height: 0; min-width: 0"
-              :size="22"
-            />
+            <QueueBtn variant="ghost-icon" :size="22" />
           </div>
         </div>
 
@@ -525,6 +515,7 @@ import { useLyricsElapsedTime } from "@/composables/lyrics/useLyricsElapsedTime"
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
 import { useActiveTrackWaveform } from "@/composables/useActiveTrackWaveform";
 import { useCommandCenter } from "@/composables/useCommandCenter";
+import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -1212,7 +1203,19 @@ const onArtistClick = async function () {
   // Try to get the artist from the full media item (for library items)
   const mediaItem = store.curQueueItem?.media_item;
 
-  if (
+  if (mediaItem && "podcast" in mediaItem) {
+    store.showFullscreenPlayer = false;
+    if (isExternalItem(mediaItem.podcast)) {
+      return openExternalItem(mediaItem.podcast);
+    }
+    router.push({
+      name: "podcast",
+      params: {
+        itemId: mediaItem.podcast.item_id,
+        provider: mediaItem.podcast.provider,
+      },
+    });
+  } else if (
     mediaItem &&
     "artists" in mediaItem &&
     mediaItem.artists &&
@@ -1344,6 +1347,11 @@ const openQueueMenu = function (evt: Event) {
       hideShuffleRepeat: mdAndUp.value && !showSkip.value,
     },
   );
+  const currentMediaItem = store.curQueueItem?.media_item;
+  if (currentMediaItem) {
+    const sharePreviewItem = useShareLinkPreviewMenuItem(currentMediaItem);
+    if (sharePreviewItem) menuItems.push(sharePreviewItem);
+  }
   // playback speed only means something for spoken-word content, which is also
   // the only content anyone plays at anything but 1x
   if (speedSupported.value) {
@@ -1897,10 +1905,6 @@ onBeforeUnmount(() => {
 div,
 button {
   color: var(--text-color);
-}
-
-.play-btn-wrapper :deep(.play-btn-icon) {
-  background-color: var(--text-color) !important;
 }
 
 .player-bottom :deep([data-slot="slider-range"]) {

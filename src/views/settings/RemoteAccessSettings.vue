@@ -1,17 +1,12 @@
 <template>
-  <div class="p-2.5">
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="remote_access" />
     <div v-if="loading" class="loading-wrapper">
       <v-progress-circular indeterminate size="64" color="primary" />
     </div>
-    <div v-else-if="remoteAccessInfo" class="remote-access-wrapper">
+    <div v-else-if="remoteAccessInfo">
       <v-card class="hero-card mb-6" elevation="0" rounded="lg">
         <v-card-item class="hero-content">
-          <div class="hero-icon-wrapper">
-            <v-icon size="48" color="primary">mdi-cloud-lock</v-icon>
-          </div>
-          <v-card-title class="hero-title">
-            {{ $t("settings.remote_access_title") }}
-          </v-card-title>
           <p class="hero-description">
             {{ $t("settings.remote_access_explanation_intro") }}
           </p>
@@ -343,6 +338,7 @@
 <script setup lang="ts">
 import remoteAccessDiagram from "@/assets/remote-access-diagram.svg";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -486,10 +482,6 @@ watch(
   min-height: 400px;
 }
 
-.remote-access-wrapper {
-  padding: 24px 0;
-}
-
 .hero-card {
   border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
@@ -498,17 +490,6 @@ watch(
   padding: 32px;
   position: relative;
   z-index: 1;
-}
-
-.hero-icon-wrapper {
-  margin-bottom: 16px;
-}
-
-.hero-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: rgb(var(--v-theme-on-surface));
 }
 
 .hero-description {

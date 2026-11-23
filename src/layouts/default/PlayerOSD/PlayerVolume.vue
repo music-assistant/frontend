@@ -88,10 +88,13 @@
         expandable: expandOnTouch,
         expanded: showStepButtons,
         'relative-mode': isRelativeMode,
+        'pointer-hover': isPointerHovering,
       }"
       :style="{ width: width }"
       @click="onSliderClick"
       @mousedown="onMouseDown"
+      @pointerenter="onPointerEnter"
+      @pointerleave="onPointerLeave"
       @pointerdown.capture="onPointerDown"
       @pointermove.capture="onPointerMove"
       @pointerup="onPointerUp"
@@ -517,6 +520,7 @@ const isDrag = ref(false);
 const touchMoveCount = ref(0);
 const maxMovement = ref(0);
 const isTouching = ref(false);
+const isPointerHovering = ref(false);
 
 // Dragging state: blocks server sync only while actively dragging the slider
 const isDragging = ref(false);
@@ -971,6 +975,15 @@ const onPointerDown = (event: PointerEvent) => {
   pointerMoved = false;
 };
 
+// Only a hovering mouse or pen enables the slider; touch stays with the touch handlers
+const onPointerEnter = (event: PointerEvent) => {
+  if (event.pointerType !== "touch") isPointerHovering.value = true;
+};
+
+const onPointerLeave = (event: PointerEvent) => {
+  if (event.pointerType !== "touch") isPointerHovering.value = false;
+};
+
 const onPointerMove = (event: PointerEvent) => {
   if (pointerStartX === null) return;
   if (Math.abs(event.clientX - pointerStartX) > POINTER_DRAG_THRESHOLD) {
@@ -1373,24 +1386,24 @@ watch(
 
 /* --- Group volume popout styles are in the unscoped style block below --- */
 
-/* On touch devices the container owns the gesture, so the slider itself must
-   not swallow pointer events. Mouse input still reaches the slider, which in
-   absolute mode keeps click-to-position and keyboard control working. */
-@media (pointer: coarse) {
+/* The container owns touch gestures, so the slider takes pointer events only
+   while a mouse or pen hovers it. */
+.volume-slider,
+.volume-slider :deep(*) {
+  pointer-events: none;
+}
+
+.player-volume-container.pointer-hover:not(.relative-mode, .muted)
   .volume-slider,
-  .volume-slider :deep(*) {
-    pointer-events: none;
-  }
+.player-volume-container.pointer-hover:not(.relative-mode, .muted)
+  .volume-slider
+  :deep(*) {
+  pointer-events: auto;
 }
 
 /* Relative mode: the container owns pointer interaction on every device. */
 .player-volume-container.relative-mode {
   cursor: ew-resize;
-}
-
-.player-volume-container.relative-mode .volume-slider,
-.player-volume-container.relative-mode .volume-slider :deep(*) {
-  pointer-events: none;
 }
 </style>
 

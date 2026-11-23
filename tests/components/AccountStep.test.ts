@@ -89,9 +89,17 @@ function errorText(wrapper: Wrapper): string | null {
   return alert.exists() ? alert.text() : null;
 }
 
-function createButton(wrapper: Wrapper) {
-  return wrapper.get("[data-testid=onboarding-account-create]");
+function fieldsDisabled(wrapper: Wrapper): boolean[] {
+  return wrapper
+    .findAll("input")
+    .map((input) => input.attributes("disabled") != null);
 }
+
+// what the wizard's forward button submits while the form is the way on
+const CREATE_FORM = {
+  id: "form-onboarding-account",
+  labelKey: "onboarding.steps.account.create",
+};
 
 beforeEach(() => {
   createAccountMock.mockReset();
@@ -107,6 +115,12 @@ afterEach(() => {
 describe("AccountStep", () => {
   it("makes the account from the details, then waits for the app to sign in", async () => {
     const wrapper = mountStep();
+    // the wizard's forward button submits the form, which holds no button of
+    // its own
+    expect(wrapper.vm.forwardForm).toEqual(CREATE_FORM);
+    expect(wrapper.vm.ownsForwardAction).toBe(false);
+    expect(wrapper.find("form").attributes("id")).toBe(CREATE_FORM.id);
+    expect(wrapper.find("form button").exists()).toBe(false);
 
     await submitDetails(wrapper);
 
@@ -120,10 +134,13 @@ describe("AccountStep", () => {
       wrapper.get("[data-testid=onboarding-account-progress]").text(),
     ).toBe("onboarding.steps.account.signing_in");
     // the form is done: the account is there, whatever comes of the sign-in
-    expect(createButton(wrapper).attributes("disabled")).toBeDefined();
+    expect(fieldsDisabled(wrapper)).toEqual([true, true, true, true]);
+    // the wizard's forward button shows the wait
     expect(wrapper.vm.busy).toBe(true);
-    expect(wrapper.vm.ownsForwardAction).toBe(true);
+    expect(wrapper.vm.forwardForm).toEqual(CREATE_FORM);
+    // neither on nor back while the account is on its way
     await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
+    await expect(wrapper.vm.beforeLeave({ back: true })).resolves.toBe(false);
     expect(wrapper.emitted("advance")).toBeUndefined();
 
     await signIn();
@@ -133,11 +150,23 @@ describe("AccountStep", () => {
     expect(wrapper.emitted("advance")).toHaveLength(1);
     expect(wrapper.vm.busy).toBe(false);
     expect(wrapper.vm.ownsForwardAction).toBe(false);
+    expect(wrapper.vm.forwardForm).toBeUndefined();
     await expect(wrapper.vm.beforeLeave()).resolves.toBe(true);
     expect(wrapper.get("[data-testid=onboarding-account-ready]").text()).toBe(
       "onboarding.steps.account.ready",
     );
     expect(wrapper.find("form").exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("only lets the wizard go back to the welcome before the account is there", async () => {
+    const wrapper = mountStep();
+
+    await expect(wrapper.vm.beforeLeave({ back: true })).resolves.toBe(true);
+    // walking on without an account is never allowed
+    await expect(wrapper.vm.beforeLeave()).resolves.toBe(false);
+    expect(createAccountMock).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });
@@ -192,7 +221,8 @@ describe("AccountStep", () => {
 
     expect(errorText(wrapper)).toBe("Username must be at least 2 characters");
     // another go is open
-    expect(createButton(wrapper).attributes("disabled")).toBeUndefined();
+    expect(fieldsDisabled(wrapper)).toEqual([false, false, false, false]);
+    expect(wrapper.vm.forwardForm).toEqual(CREATE_FORM);
     expect(wrapper.vm.busy).toBe(false);
     expect(wrapper.emitted("advance")).toBeUndefined();
 
@@ -225,7 +255,11 @@ describe("AccountStep", () => {
     ).toBe(true);
     expect(wrapper.find("form").exists()).toBe(false);
     expect(wrapper.vm.busy).toBe(false);
+    // the way on is in the step, so the wizard's forward button stands down
+    expect(wrapper.vm.ownsForwardAction).toBe(true);
+    expect(wrapper.vm.forwardForm).toBeUndefined();
     expect(wrapper.emitted("advance")).toBeUndefined();
+    await expect(wrapper.vm.beforeLeave({ back: true })).resolves.toBe(false);
 
     wrapper.unmount();
   });
@@ -247,7 +281,10 @@ describe("AccountStep", () => {
     ).toBe(true);
     expect(wrapper.find("form").exists()).toBe(false);
     expect(errorText(wrapper)).toBeNull();
+    expect(wrapper.vm.ownsForwardAction).toBe(true);
+    expect(wrapper.vm.forwardForm).toBeUndefined();
     expect(wrapper.emitted("advance")).toBeUndefined();
+    await expect(wrapper.vm.beforeLeave({ back: true })).resolves.toBe(false);
 
     wrapper.unmount();
   });
@@ -265,13 +302,13 @@ describe("AccountStep", () => {
     expect(errorText(wrapper)).toBe("onboarding.steps.account.sign_in_failed");
     expect(wrapper.vm.busy).toBe(false);
     // there is no second account to make: a reload is the way on
-    expect(
-      wrapper.find("[data-testid=onboarding-account-create]").exists(),
-    ).toBe(false);
+    expect(wrapper.vm.forwardForm).toBeUndefined();
+    expect(wrapper.vm.ownsForwardAction).toBe(true);
     expect(
       wrapper.find("[data-testid=onboarding-account-reload]").exists(),
     ).toBe(true);
     expect(wrapper.emitted("advance")).toBeUndefined();
+    await expect(wrapper.vm.beforeLeave({ back: true })).resolves.toBe(false);
 
     wrapper.unmount();
   });

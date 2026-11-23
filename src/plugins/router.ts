@@ -1,7 +1,13 @@
+import {
+  AUDIOBOOK_ARTIST_LISTING_ROUTE,
+  AUDIOBOOK_ARTIST_ROUTE,
+} from "@/helpers/author_narrator";
 import { getDashboardViewerNavigationRedirect } from "@/helpers/dashboard_viewer_access";
 import { getGuestNavigationRedirect } from "@/helpers/guest_access";
 import { DASHBOARD_VIEWER_PATH_STORAGE_KEY } from "@/helpers/guest_session";
 import { returnedByHistory } from "@/helpers/navigation";
+import { AI_DOMAIN, type SettingsPageId } from "@/helpers/settings_pages";
+import { providerListRoute } from "@/helpers/settings_sections";
 import { parseStatisticsPeriod } from "@/helpers/statistics_period";
 import { $t } from "@/plugins/i18n";
 import { nextTick, watch } from "vue";
@@ -13,7 +19,7 @@ import {
 } from "vue-router";
 import { toast } from "vue-sonner";
 import { api, ConnectionState } from "./api";
-import { Scope } from "./api/interfaces";
+import { ProviderType, Scope } from "./api/interfaces";
 import { authManager } from "./auth";
 import { createHAHistory, isInHAAppPanel } from "./homeassistant_history";
 import { store } from "./store";
@@ -31,6 +37,27 @@ const paramsAndQueryProps = (route: {
   params: Record<string, string | string[]>;
   query: Record<string, string | (string | null)[] | null | undefined>;
 }) => ({ ...route.params, ...route.query });
+
+// the earlier addresses of the settings pages, which links and bookmarks may
+// still use, with the routes of the pages
+const MOVED_SETTINGS_PAGES: Readonly<Record<string, string>> = {
+  library: "librarysettings",
+  genremanagement: "genremanagement",
+  metadata: "metadataproviders",
+  "music/metadata/settings": "metadataproviders",
+  "audio-analysis": "audioanalysisproviders",
+  "music/audio-analysis/status": "audioanalysisproviders",
+  playback: "playbacksettings",
+  network: "networksettings",
+  "remote-access": "remoteaccesssettings",
+  storage: "storagesettings",
+  "home-assistant": "homeassistantsettings",
+  tasks: "backgroundtasks",
+  "tasks/settings": "backgroundtasks",
+  "system/tasks/settings": "backgroundtasks",
+  diagnostics: "diagnostics",
+  [`editcore/${AI_DOMAIN}`]: "aisettings",
+};
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -188,6 +215,17 @@ export const routes: RouteRecordRaw[] = [
                 ? { users: route.query.users.split(",") }
                 : {},
         }),
+      },
+      {
+        path: "/share",
+        name: "share",
+        component: () =>
+          import(/* webpackChunkName: "share" */ "@/views/ShareView.vue"),
+        props: (route) => ({
+          payload:
+            typeof route.query.payload === "string" ? route.query.payload : "",
+        }),
+        meta: { requiresScope: Scope.LIBRARY_READ },
       },
       {
         path: "/ai-radio",
@@ -436,6 +474,33 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
           },
+          // authors and narrators keep the audiobooks section active; the role
+          // only names the page, the views get no role prop
+          {
+            path: ":role(authors|narrators)/:provider/:itemId",
+            name: AUDIOBOOK_ARTIST_ROUTE,
+            component: () =>
+              import(
+                /* webpackChunkName: "artist" */ "@/views/ArtistDetails.vue"
+              ),
+            props: (route: { params: Record<string, string> }) => ({
+              provider: route.params.provider,
+              itemId: route.params.itemId,
+            }),
+          },
+          {
+            path: ":role(authors|narrators)/:provider/:itemId/:listing",
+            name: AUDIOBOOK_ARTIST_LISTING_ROUTE,
+            component: () =>
+              import(
+                /* webpackChunkName: "artistlisting" */ "@/views/ArtistListing.vue"
+              ),
+            props: (route: { params: Record<string, string> }) => ({
+              provider: route.params.provider,
+              itemId: route.params.itemId,
+              listing: route.params.listing,
+            }),
+          },
         ],
       },
       {
@@ -460,6 +525,14 @@ export const routes: RouteRecordRaw[] = [
             props: true,
           },
         ],
+      },
+      {
+        path: "/live-sources",
+        name: "livesources",
+        component: () =>
+          import(
+            /* webpackChunkName: "livesources" */ "@/views/LiveSources.vue"
+          ),
       },
       {
         path: "/genres",
@@ -513,16 +586,79 @@ export const routes: RouteRecordRaw[] = [
             props: true,
           },
           {
-            path: "providers",
-            name: "providersettings",
+            path: "profile/interface",
+            name: "profileinterface",
             component: () =>
               import(
-                /* webpackChunkName: "providersettings" */ "@/views/settings/Providers.vue"
+                /* webpackChunkName: "profileinterface" */ "@/views/profile/InterfaceSettings.vue"
               ),
-            props: true,
+            props: { storage: "account" },
+          },
+          {
+            path: "profile/device",
+            name: "profiledevice",
+            component: () =>
+              import(
+                /* webpackChunkName: "profileinterface" */ "@/views/profile/InterfaceSettings.vue"
+              ),
+            props: { storage: "device" },
+          },
+          {
+            path: "profile/security",
+            name: "profilesecurity",
+            component: () =>
+              import(
+                /* webpackChunkName: "profilesecurity" */ "@/views/profile/SecuritySettings.vue"
+              ),
+          },
+          {
+            path: "music",
+            name: "musicsettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "musicsettings" */ "@/views/settings/MusicSettings.vue"
+              ),
             // whoever may read the source settings opens the page; a member
             // manages the sources it owns from it
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_READ },
+          },
+          {
+            path: "music/library",
+            name: "librarysettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
+              ),
+            props: { page: "library" satisfies SettingsPageId },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
+            path: "music/genres",
+            name: "genremanagement",
+            component: () =>
+              import(
+                /* webpackChunkName: "genremanagement" */ "@/views/settings/GenreManagement.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.LIBRARY_MANAGE },
+          },
+          {
+            path: "music/metadata",
+            name: "metadataproviders",
+            component: () =>
+              import(
+                /* webpackChunkName: "metadatasettings" */ "@/views/settings/MetadataSettings.vue"
+              ),
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
+          },
+          {
+            path: "music/audio-analysis",
+            name: "audioanalysisproviders",
+            component: () =>
+              import(
+                /* webpackChunkName: "audioanalysissettings" */ "@/views/settings/AudioAnalysis.vue"
+              ),
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
           },
           {
             path: "marketplace",
@@ -533,17 +669,6 @@ export const routes: RouteRecordRaw[] = [
               ),
             // the Marketplace adds; whoever may not add anything has no use for it
             meta: { requiresScope: Scope.CONFIG_PROVIDERS_OWN },
-          },
-          {
-            path: "storage",
-            name: "storagesettings",
-            component: () =>
-              import(
-                /* webpackChunkName: "storagesettings" */ "@/views/settings/StorageSettings.vue"
-              ),
-            props: true,
-            // managing the storage is admin work; members pick folders in the picker
-            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
           },
           {
             path: "players",
@@ -557,6 +682,45 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
+            path: "players/playback",
+            name: "playbacksettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
+              ),
+            props: { page: "playback" satisfies SettingsPageId },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
+            path: "players/support",
+            name: "playerproviders",
+            component: () =>
+              import(
+                /* webpackChunkName: "providerlistsettings" */ "@/views/settings/ProviderListSettings.vue"
+              ),
+            props: { type: ProviderType.PLAYER },
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
+          },
+          {
+            path: "plugins",
+            name: "pluginproviders",
+            component: () =>
+              import(
+                /* webpackChunkName: "providerlistsettings" */ "@/views/settings/ProviderListSettings.vue"
+              ),
+            props: { type: ProviderType.PLUGIN },
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
+          },
+          {
+            path: "ai",
+            name: "aisettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "aisettings" */ "@/views/settings/AISettings.vue"
+              ),
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
             path: "system",
             name: "systemsettings",
             component: () =>
@@ -568,17 +732,17 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
-            path: "audio-analysis",
-            name: "audioanalysissettings",
+            path: "system/network",
+            name: "networksettings",
             component: () =>
               import(
-                /* webpackChunkName: "audioanalysissettings" */ "@/views/settings/AudioAnalysis.vue"
+                /* webpackChunkName: "networksettings" */ "@/views/settings/NetworkSettings.vue"
               ),
             props: true,
-            meta: { requiresScope: Scope.SYSTEM_MANAGE },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
-            path: "remote-access",
+            path: "system/network/remote-access",
             name: "remoteaccesssettings",
             component: () =>
               import(
@@ -588,13 +752,45 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
-            path: "frontend",
-            name: "frontendsettings",
+            path: "system/storage",
+            name: "storagesettings",
             component: () =>
               import(
-                /* webpackChunkName: "frontendsettings" */ "@/views/settings/FrontendConfig.vue"
+                /* webpackChunkName: "storagesettings" */ "@/views/settings/StorageSettings.vue"
               ),
             props: true,
+            // managing the storage is admin work; members pick folders in the picker
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
+          },
+          {
+            path: "system/home-assistant",
+            name: "homeassistantsettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "homeassistantsettings" */ "@/views/settings/HomeAssistantSettings.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.CONFIG_PROVIDERS_WRITE },
+          },
+          {
+            path: "system/tasks",
+            name: "backgroundtasks",
+            component: () =>
+              import(
+                /* webpackChunkName: "backgroundtasks" */ "@/views/settings/BackgroundTasks.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.SYSTEM_READ },
+          },
+          {
+            path: "system/diagnostics",
+            name: "diagnostics",
+            component: () =>
+              import(
+                /* webpackChunkName: "diagnostics" */ "@/views/settings/Diagnostics.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.SYSTEM_MANAGE },
           },
           {
             path: "users",
@@ -614,36 +810,6 @@ export const routes: RouteRecordRaw[] = [
                 /* webpackChunkName: "aboutsettings" */ "@/views/settings/About.vue"
               ),
             props: true,
-          },
-          {
-            path: "diagnostics",
-            name: "diagnostics",
-            component: () =>
-              import(
-                /* webpackChunkName: "diagnostics" */ "@/views/settings/Diagnostics.vue"
-              ),
-            props: true,
-            meta: { requiresScope: Scope.SYSTEM_MANAGE },
-          },
-          {
-            path: "tasks",
-            name: "backgroundtasks",
-            component: () =>
-              import(
-                /* webpackChunkName: "backgroundtasks" */ "@/views/settings/BackgroundTasks.vue"
-              ),
-            props: true,
-            meta: { requiresScope: Scope.SYSTEM_READ },
-          },
-          {
-            path: "genremanagement",
-            name: "genremanagement",
-            component: () =>
-              import(
-                /* webpackChunkName: "genremanagement" */ "@/views/settings/GenreManagement.vue"
-              ),
-            props: true,
-            meta: { requiresScope: Scope.LIBRARY_MANAGE },
           },
           {
             path: "editprovider/:instanceId",
@@ -716,6 +882,19 @@ export const routes: RouteRecordRaw[] = [
             props: true,
             meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
+          // the provider lists shared an earlier address, by the type in its
+          // query, which their own pages leave out
+          {
+            path: "providers",
+            redirect: (to) => ({
+              ...providerListRoute(String(to.query.types ?? "").split(",")[0]),
+              query: {},
+            }),
+          },
+          ...Object.entries(MOVED_SETTINGS_PAGES).map(([path, name]) => ({
+            path,
+            redirect: { name },
+          })),
         ],
       },
       {

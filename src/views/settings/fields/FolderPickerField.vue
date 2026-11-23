@@ -1,46 +1,34 @@
 <script setup lang="ts">
+import FolderPickerAddLocation from "@/components/settings/storage/FolderPickerAddLocation.vue";
 import FolderPickerBrowser from "@/components/settings/storage/FolderPickerBrowser.vue";
+import FolderPickerEmpty from "@/components/settings/storage/FolderPickerEmpty.vue";
 import FolderPickerLocations from "@/components/settings/storage/FolderPickerLocations.vue";
 import StoragePath from "@/components/settings/storage/StoragePath.vue";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { useStorageInfo } from "@/composables/useStorageInfo";
 import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
 import {
   findStoragePosition,
   joinStoragePath,
+  sameStoragePath,
   storageErrorText,
   type StoragePosition,
 } from "@/helpers/storage";
 import { api } from "@/plugins/api";
-import {
-  type ConfigValueType,
-  Scope,
-  type StorageLocation,
+import type {
+  ConfigValueType,
+  StorageLocation,
 } from "@/plugins/api/interfaces";
-import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import {
-  ExternalLink,
-  Folder,
-  FolderCheck,
-  HardDrive,
-  RefreshCw,
-} from "@lucide/vue";
+import { FolderCheck, RefreshCw } from "@lucide/vue";
 import { computed, onMounted, ref, useId } from "vue";
-import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 
 /**
- * Picks a folder on one of the server's media locations; the entry value is its
- * absolute path. There is deliberately no way to type a path.
+ * Picks a folder on one of the server's media locations: the folder that is open is
+ * the one picked, and the entry value is its absolute path. There is deliberately no
+ * way to type a path.
  */
 const props = defineProps<{
   entry: ConfigEntryUI;
@@ -50,9 +38,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{ "update:value": [value: ConfigValueType] }>();
 
-const router = useRouter();
 const labelId = useId();
-const { info, loading, failed, mediaLocations, refresh } = useStorageInfo();
+const {
+  info,
+  loading,
+  failed,
+  mediaLocations,
+  canManageStorage,
+  canAddShare,
+  canAddFolder,
+  refresh,
+} = useStorageInfo();
 
 // the folder being browsed; null while the locations are listed
 const position = ref<StoragePosition | null>(null);
@@ -62,11 +58,7 @@ const loadingFolders = ref(false);
 // after the user has moved on to another folder
 let folderRequest = 0;
 
-// the Storage page, where locations are added, is only open to who manages them
-const canManageStorage = computed(() =>
-  authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
-);
-const storageSettingsHref = router.resolve({ name: "storagesettings" }).href;
+const canAddLocation = computed(() => canAddShare.value || canAddFolder.value);
 
 const selectedPath = computed(() =>
   typeof props.entry.value === "string" && props.entry.value
@@ -100,6 +92,10 @@ const openFolder = async (target: StoragePosition): Promise<FolderResult> => {
     if (request !== folderRequest) return "superseded";
     subfolders.value = names;
     position.value = target;
+    // the folder on screen is the one the entry holds; a stored path that already
+    // names it is kept the way it is written
+    const path = joinStoragePath(target.location.path, target.segments);
+    if (!sameStoragePath(path, selectedPath.value)) emit("update:value", path);
     return "opened";
   } catch (error) {
     if (request !== folderRequest) return "superseded";
@@ -124,15 +120,24 @@ const onNavigate = (target: StoragePosition | null) => {
   else showLocations();
 };
 
-const openLocation = (location: StorageLocation) =>
-  openFolder({ location, segments: [] });
+// the location that holds the selected folder opens on that folder, or on its root
+// when that folder is gone
+const openLocation = async (location: StorageLocation) => {
+  const segments =
+    selectedPosition.value?.location.path === location.path
+      ? selectedPosition.value.segments
+      : [];
+  if (segments.length > 0) {
+    if ((await openFolder({ location, segments })) !== "failed") return;
+  }
+  await openFolder({ location, segments: [] });
+};
 
-const useCurrentFolder = () => {
-  if (!position.value) return;
-  emit(
-    "update:value",
-    joinStoragePath(position.value.location.path, position.value.segments),
-  );
+// a location added from the picker is the one to use; it is listed once the storage is
+// fetched again
+const pickAddedLocation = async (location: StorageLocation) => {
+  await refresh();
+  emit("update:value", location.path);
 };
 
 const reload = async () => {
@@ -166,38 +171,41 @@ onMounted(refresh);
 
 <template>
   <div class="flex w-full flex-col gap-2 py-1">
-    <span v-if="label" :id="labelId" class="text-muted-foreground text-sm">{{
-      label
-    }}</span>
+    <div class="flex items-center gap-2">
+      <span v-if="label" :id="labelId" class="text-muted-foreground text-sm">{{
+        label
+      }}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        class="ml-auto"
+        :disabled="disabled || loading || loadingFolders"
+        :aria-label="$t('refresh')"
+        :title="$t('refresh')"
+        data-testid="folder-picker-refresh"
+        @click="reload"
+      >
+        <RefreshCw :class="{ 'animate-spin': loading }" />
+      </Button>
+    </div>
     <div
       role="group"
       :aria-labelledby="label ? labelId : undefined"
       class="flex flex-col gap-3 rounded-md border p-3"
     >
+      <!-- a stored folder outside every location is only shown here -->
       <div
+        v-if="selectionOutsideLocations && selectedPath"
         class="bg-muted/50 flex items-start gap-2 rounded-md px-3 py-2"
-        data-testid="folder-picker-selection"
+        data-testid="folder-picker-outside"
       >
-        <FolderCheck
-          v-if="selectedPath"
-          class="text-primary mt-0.5 size-4 shrink-0"
-        />
-        <Folder v-else class="text-muted-foreground mt-0.5 size-4 shrink-0" />
+        <FolderCheck class="text-primary mt-0.5 size-4 shrink-0" />
         <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span class="text-muted-foreground text-xs">
-            {{ $t("settings.folder_picker.selected") }}
-          </span>
           <span class="text-sm font-medium">
-            <StoragePath v-if="selectedPath" :path="selectedPath" />
-            <template v-else>
-              {{ $t("settings.folder_picker.none_selected") }}
-            </template>
+            <StoragePath :path="selectedPath" />
           </span>
-          <span
-            v-if="selectionOutsideLocations"
-            class="text-muted-foreground text-xs"
-            data-testid="folder-picker-outside"
-          >
+          <span class="text-muted-foreground text-xs">
             {{ $t("settings.folder_picker.outside_locations") }}
           </span>
         </div>
@@ -209,74 +217,48 @@ onMounted(refresh);
         </span>
         <Spinner v-else class="size-6" />
       </div>
-      <Empty
+      <FolderPickerEmpty
         v-else-if="mediaLocations.length === 0"
-        class="border"
-        data-testid="folder-picker-empty"
+        :can-manage-storage="canManageStorage"
+        :can-add="canAddLocation"
       >
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <HardDrive />
-          </EmptyMedia>
-          <EmptyTitle>{{
-            $t("settings.folder_picker.empty_title")
-          }}</EmptyTitle>
-          <EmptyDescription>
-            {{
-              canManageStorage
-                ? $t("settings.folder_picker.empty_text")
-                : $t("settings.folder_picker.empty_text_member")
-            }}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+        <FolderPickerAddLocation
+          :can-add-share="canAddShare"
+          :can-add-folder="canAddFolder"
+          :share-types="info.supported_share_types"
+          :share-versions="info.supported_share_versions"
+          :disabled="disabled || loading"
+          class="justify-center"
+          @added="pickAddedLocation"
+        />
+      </FolderPickerEmpty>
       <FolderPickerBrowser
         v-else-if="position"
         :position="position"
         :subfolders="subfolders"
-        :selected-path="selectedPath"
         :loading="loadingFolders || loading"
         :disabled="disabled"
         @navigate="onNavigate"
-        @use="useCurrentFolder"
       />
-      <FolderPickerLocations
-        v-else
-        :locations="mediaLocations"
-        :selected-location-path="selectedPosition?.location.path"
-        :disabled="disabled || loadingFolders || loading"
-        @open="openLocation"
-      />
-
-      <div class="flex items-center gap-2">
-        <Button
-          v-if="canManageStorage"
-          as="a"
-          variant="link"
-          size="sm"
-          class="h-auto px-0"
-          :href="storageSettingsHref"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="folder-picker-manage"
-        >
-          {{ $t("settings.folder_picker.manage") }}
-          <ExternalLink />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          class="ml-auto"
-          :disabled="disabled || loading || loadingFolders"
-          :aria-label="$t('refresh')"
-          :title="$t('refresh')"
-          data-testid="folder-picker-refresh"
-          @click="reload"
-        >
-          <RefreshCw :class="{ 'animate-spin': loading }" />
-        </Button>
-      </div>
+      <template v-else>
+        <FolderPickerLocations
+          :locations="mediaLocations"
+          :selected-location-path="selectedPosition?.location.path"
+          :selected-path="selectedPath"
+          :disabled="disabled || loadingFolders || loading"
+          @open="openLocation"
+        />
+        <FolderPickerAddLocation
+          v-if="canAddLocation"
+          :can-add-share="canAddShare"
+          :can-add-folder="canAddFolder"
+          :share-types="info.supported_share_types"
+          :share-versions="info.supported_share_versions"
+          :disabled="disabled || loadingFolders || loading"
+          class="border-t pt-3"
+          @added="pickAddedLocation"
+        />
+      </template>
     </div>
   </div>
 </template>

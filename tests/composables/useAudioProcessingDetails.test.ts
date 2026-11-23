@@ -649,7 +649,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     const expected = linked
       ? {
           to: { name: "editqueue", params: { queueId: "queue-1" } },
-          label: "Open queue settings",
+          label: "Open playback settings",
         }
       : undefined;
 

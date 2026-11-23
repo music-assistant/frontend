@@ -8,11 +8,12 @@
       type="button"
       class="focus-visible:ring-ring bg-card flex items-start gap-3 rounded-xl border p-4 text-left transition-shadow focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       :class="
-        active === option.value
+        selected === option.value
           ? 'ring-primary ring-1'
           : 'hover:ring-primary/30 hover:ring-1'
       "
-      :aria-pressed="active === option.value"
+      :aria-pressed="selected === option.value"
+      :aria-busy="isSaving(option.value) || undefined"
       :disabled="busy"
       :data-testid="`${testIdPrefix}-${option.value}`"
       @click="emit('select', option.value)"
@@ -33,22 +34,24 @@
           {{ $t(option.descriptionKey) }}
         </span>
       </span>
-      <span
-        class="border-primary mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border"
+      <Spinner
+        v-if="isSaving(option.value)"
+        class="text-muted-foreground self-center"
+      />
+      <ChevronRight
+        v-else
+        class="text-muted-foreground size-4 shrink-0 self-center"
         aria-hidden="true"
-      >
-        <span
-          v-if="active === option.value"
-          class="bg-primary size-2.5 rounded-full"
-        ></span>
-      </span>
+      />
     </button>
   </div>
 </template>
 
 <script setup lang="ts" generic="T extends string">
 import { Badge } from "@/components/ui/badge";
-import { computed, type Component } from "vue";
+import { Spinner } from "@/components/ui/spinner";
+import { ChevronRight } from "@lucide/vue";
+import type { Component } from "vue";
 
 /** One card: the answer it stands for, and how it is put to the user. */
 export interface ChoiceCardOption<T extends string> {
@@ -56,13 +59,14 @@ export interface ChoiceCardOption<T extends string> {
   icon: Component;
   labelKey: string;
   descriptionKey: string;
-  // shown with a "Recommended" badge, and preselected until the user picks
+  // shown with a "Recommended" badge
   recommended?: boolean;
 }
 
 const props = defineProps<{
   options: ChoiceCardOption<T>[];
-  // the answer already on the account, so coming back to the step shows it
+  // the answer the cards show as chosen: the one on its way to the server, or
+  // the one already on the account, so coming back to the step shows it
   selected?: T;
   // the step is persisting an answer: the cards stay inert until it lands
   busy?: boolean;
@@ -75,10 +79,5 @@ const emit = defineEmits<{
   (e: "select", value: T): void;
 }>();
 
-// which card reads as chosen: the saved answer, or the recommended option
-// until one is saved, so the option the step defaults to shows preselected
-const active = computed(
-  () =>
-    props.selected ?? props.options.find((option) => option.recommended)?.value,
-);
+const isSaving = (value: T) => props.busy && props.selected === value;
 </script>
