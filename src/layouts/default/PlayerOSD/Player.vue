@@ -30,13 +30,7 @@
               :visible-components="{
                 repeat: { isVisible: getBreakpointValue('bp3') },
                 shuffle: { isVisible: getBreakpointValue('bp3') },
-                play: {
-                  isVisible: true,
-                  icon: {
-                    staticWidth: '48px',
-                    staticHeight: '48px',
-                  },
-                },
+                play: { isVisible: true, buttonClass: 'size-12' },
                 previous: { isVisible: getBreakpointValue('bp3') },
                 next: { isVisible: getBreakpointValue('bp3') },
               }"
@@ -99,10 +93,9 @@
               shuffle: { isVisible: false },
               play: {
                 isVisible: true,
-                icon: {
-                  staticWidth: '40px',
-                  staticHeight: '40px',
-                },
+                // full strength like the grouping button beside it: the faded
+                // rest only lifts on hover, which a touch device never reaches
+                buttonClass: 'size-10 opacity-100',
                 size: 18,
               },
               previous: { isVisible: false },
@@ -250,12 +243,6 @@ watch(
     :deep(.player-control-button[data-active="true"]),
     :deep(.player-control-button[data-state="open"]) {
       color: var(--primary) !important;
-    }
-    /* Icon.vue rests its buttons at 0.62 and only lifts them on hover, which a
-       touch device never reaches, so play looked faded next to the grouping
-       button beside it */
-    :deep(.icon-container--button:not(.icon-container--disabled)) {
-      opacity: 1;
     }
     /* play stays the primary action but is outlined here, so the compact row
        does not read as a solid block */

@@ -388,11 +388,7 @@
         <div class="media-controls">
           <div class="media-controls-item favorite-btn-wrapper">
             <!-- no hover box, like the transport buttons beside them -->
-            <FavoriteMenuBtn
-              variant="ghost-icon"
-              style="max-height: 30px; min-height: 0; min-width: 0"
-              icon-class="size-5.5"
-            />
+            <FavoriteMenuBtn variant="ghost-icon" icon-class="size-5.5" />
           </div>
           <!-- side slots keep their width when empty so the row never shifts -->
           <div class="media-controls-item side-slot">
@@ -401,7 +397,6 @@
               v-if="showSkip"
               :player-queue="store.activePlayerQueue"
               direction="back"
-              max-height="45px"
               :size="30"
               :stroke-width="(2 * 28) / 30"
             />
@@ -409,40 +404,37 @@
               v-else-if="$vuetify.display.mdAndUp"
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
-              max-height="30px"
               :size="24"
             />
           </div>
-          <PreviousBtn
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="45px"
-            :size="28"
-          />
+          <div class="media-controls-item transport-slot">
+            <PreviousBtn
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              :size="28"
+            />
+          </div>
           <div class="play-btn-wrapper" :style="playBtnStyle">
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
-              class="media-controls-item"
-              :icon="{ staticWidth: '60px', staticHeight: '60px' }"
+              class="size-15"
               :spinner-size="73"
               :size="30"
             />
           </div>
-          <NextBtn
-            :player="store.activePlayer"
-            :player-queue="store.activePlayerQueue"
-            class="media-controls-item"
-            max-height="45px"
-            :size="28"
-          />
+          <div class="media-controls-item transport-slot">
+            <NextBtn
+              :player="store.activePlayer"
+              :player-queue="store.activePlayerQueue"
+              :size="28"
+            />
+          </div>
           <div class="media-controls-item side-slot">
             <SkipBtn
               v-if="showSkip"
               :player-queue="store.activePlayerQueue"
               direction="forward"
-              max-height="45px"
               :size="30"
               :stroke-width="(2 * 28) / 30"
             />
@@ -450,16 +442,11 @@
               v-else-if="$vuetify.display.mdAndUp"
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
-              max-height="35px"
               :size="26"
             />
           </div>
           <div class="media-controls-item queue-btn-wrapper">
-            <QueueBtn
-              variant="ghost-icon"
-              style="max-height: 30px; min-height: 0; min-width: 0"
-              :size="22"
-            />
+            <QueueBtn variant="ghost-icon" :size="22" />
           </div>
         </div>
 
@@ -1799,7 +1786,8 @@ onBeforeUnmount(() => {
 
 .queue-btn-wrapper,
 .favorite-btn-wrapper,
-.side-slot {
+.side-slot,
+.transport-slot {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1866,8 +1854,9 @@ onBeforeUnmount(() => {
     margin: 0;
   }
 
-  /* reserve a button's width when empty so the row never shifts */
-  .side-slot {
+  /* reserve a button's width, also while empty, so the row never shifts */
+  .side-slot,
+  .transport-slot {
     min-width: 44px;
   }
 }
