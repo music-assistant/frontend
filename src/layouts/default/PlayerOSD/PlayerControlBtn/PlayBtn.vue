@@ -38,13 +38,12 @@
 import { $t } from "@/plugins/i18n";
 defineOptions({ inheritAttrs: false });
 import { CometSpinner } from "@/components/ui/spinner";
-import { useDelayedShow } from "@/composables/useDelayedShow";
 import { usePlayPauseCommand } from "@/composables/usePlayPauseCommand";
 import TransportBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/TransportBtn.vue";
 import { Player, PlayerQueue } from "@/plugins/api/interfaces";
 import { Pause, Play, Square } from "@lucide/vue";
-import { useElementSize } from "@vueuse/core";
-import { computed, toRef, useTemplateRef } from "vue";
+import { useElementSize, useTimeoutFn } from "@vueuse/core";
+import { computed, ref, toRef, useTemplateRef, watch } from "vue";
 
 // properties
 export interface Props {
@@ -82,9 +81,21 @@ const { isPlaying, showStop, isLoading, isDisabled, playPause } =
     toRef(compProps, "playerQueue"),
   );
 
-const showSpinner = useDelayedShow(
-  computed(() => !!compProps.player && isLoading.value),
+// shows once loading has lasted the delay, hides straight away
+const showSpinner = ref(false);
+const spinnerTimer = useTimeoutFn(
+  () => (showSpinner.value = true),
   SPINNER_SHOW_DELAY_MS,
+  { immediate: false },
+);
+watch(
+  () => !!compProps.player && isLoading.value,
+  (loading) => {
+    if (loading) return spinnerTimer.start();
+    spinnerTimer.stop();
+    showSpinner.value = false;
+  },
+  { immediate: true },
 );
 
 const playButtonLabel = computed(() => {
