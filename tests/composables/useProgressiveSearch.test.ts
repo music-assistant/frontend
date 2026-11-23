@@ -465,6 +465,50 @@ describe("useProgressiveSearch", () => {
     ]);
   });
 
+  it("searches nothing on a selection change once the search is reset", async () => {
+    const providers = ref<string[]>(["spotify"]);
+    const { search, mediaTypes } = setup({ providers });
+    await search("queen");
+    await flush();
+    await search("");
+    mockSearch.mockClear();
+    mockGetLibraryGenres.mockClear();
+
+    mediaTypes.value = [MediaType.ARTIST];
+    await flush();
+    mediaTypes.value = [MediaType.GENRE];
+    await flush();
+    mediaTypes.value = [];
+    await flush();
+    providers.value = [];
+    await flush();
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    expect(mockGetLibraryGenres).not.toHaveBeenCalled();
+  });
+
+  it("searches a newly selected media type for the active query", async () => {
+    const { search, mediaTypes } = setup();
+    await search("queen");
+    await flush();
+    mockSearch.mockClear();
+
+    mediaTypes.value = [MediaType.ARTIST];
+    await flush();
+
+    expect(
+      mockSearch.mock.calls.map(([term, types, , targets]) => [
+        term,
+        types,
+        targets?.[0],
+      ]),
+    ).toEqual([
+      ["queen", [MediaType.ARTIST], LIBRARY_SEARCH_TARGET],
+      ["queen", [MediaType.ARTIST], "fs1"],
+      ["queen", [MediaType.ARTIST], "spotify"],
+    ]);
+  });
+
   it("asks the library for genres on a genre-only search whatever the selection", async () => {
     const genres = [genreFixture("g1", "Rock")];
     mockGetLibraryGenres.mockResolvedValue(genres);
