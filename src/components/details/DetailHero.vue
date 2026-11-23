@@ -60,7 +60,7 @@
         >
           <div
             v-if="$slots.cover"
-            class="detail-hero-cover size-[200px] flex-none @max-3xl/detail-hero:size-[132px]"
+            class="detail-hero-cover size-[280px] flex-none @max-3xl/detail-hero:size-[180px]"
           >
             <slot name="cover"></slot>
           </div>
