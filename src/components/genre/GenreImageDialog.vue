@@ -142,7 +142,7 @@ const upload = async () => {
   uploadError.value = "";
   try {
     const data = await readFileAsBase64(file);
-    await api.setGenreImage(genre.value.item_id, data, file.name);
+    await api.setGenreImage(genre.value.item_id, data);
     toast.success(t("custom_image_updated"));
     open.value = false;
   } catch (error) {

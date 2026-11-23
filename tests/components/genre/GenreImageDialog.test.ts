@@ -78,11 +78,7 @@ describe("GenreImageDialog", () => {
     await findButton("settings.save")!.click();
     await flushPromises();
 
-    expect(apiMock.setGenreImage).toHaveBeenCalledWith(
-      "7",
-      BASE64_DATA,
-      "cover.png",
-    );
+    expect(apiMock.setGenreImage).toHaveBeenCalledWith("7", BASE64_DATA);
     expect(toast.success).toHaveBeenCalledWith("custom_image_updated");
     expect(dialog()).toBeNull();
   });

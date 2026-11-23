@@ -75,7 +75,6 @@ import {
   DSPConfigPreset,
   DSPIRMetadata,
   EventType,
-  ImageType,
   ItemMapping,
   ListingType,
   MediaItemBookmark,
@@ -1771,29 +1770,18 @@ export class MusicAssistantApi {
     });
   }
 
-  public setGenreImage(
-    item_id: string | number,
-    data: string,
-    file_hint?: string,
-    image_type: ImageType = ImageType.THUMB,
-  ): Promise<Genre> {
+  public setGenreImage(item_id: string | number, data: string): Promise<Genre> {
     return this.sendCommand(
       "music/genres/set_image",
-      { item_id, data, file_hint, image_type },
+      { item_id, data },
       // the server explains why an upload is rejected (size, format);
       // that message is surfaced inline in the dialog instead of a toast
       { suppressGlobalError: true },
     );
   }
 
-  public removeGenreImage(
-    item_id: string | number,
-    image_type: ImageType = ImageType.THUMB,
-  ): Promise<Genre> {
-    return this.sendCommand("music/genres/remove_image", {
-      item_id,
-      image_type,
-    });
+  public removeGenreImage(item_id: string | number): Promise<Genre> {
+    return this.sendCommand("music/genres/remove_image", { item_id });
   }
 
   public getGenresForMediaItem(
