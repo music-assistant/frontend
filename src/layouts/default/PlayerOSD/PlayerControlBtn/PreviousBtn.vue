@@ -1,13 +1,10 @@
 <template>
   <!-- prev button -->
-  <Icon
-    v-bind="{ ...icon, ...$attrs }"
+  <TransportBtn
+    v-bind="$attrs"
+    :icon-size="size"
     :disabled="!player || !canPrevious || isLoading"
-    :aria-label="
-      previousChapter ? $t('previous_chapter') : $t('previous_track')
-    "
-    :title="previousChapter ? $t('previous_chapter') : $t('previous_track')"
-    variant="button"
+    :label="previousChapter ? $t('previous_chapter') : $t('previous_track')"
     @click="
       previousChapter
         ? api.playerCommandSeek(player!.player_id, previousChapter.start)
@@ -15,15 +12,15 @@
     "
   >
     <SkipBack :size="size" />
-  </Icon>
+  </TransportBtn>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import Icon, { IconProps } from "@/components/Icon.vue";
 import { useActiveAudioSource } from "@/composables/activeAudioSource";
 import { useActiveSource } from "@/composables/activeSource";
 import { useChapterNavigation } from "@/composables/useChapterNavigation";
+import TransportBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/TransportBtn.vue";
 import api from "@/plugins/api";
 import { Player, PlayerFeature, PlayerQueue } from "@/plugins/api/interfaces";
 import { SkipBack } from "@lucide/vue";
@@ -33,12 +30,10 @@ import { computed, toRef } from "vue";
 export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
-  icon?: IconProps;
   size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
-  icon: undefined,
   size: 20,
 });
 

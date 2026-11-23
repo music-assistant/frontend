@@ -9,15 +9,11 @@
         v-if="showSkip"
         :player-queue="store.activePlayerQueue"
         direction="back"
-        class="media-controls-item"
-        :icon="visibleComponents.shuffle.icon"
       />
       <ShuffleBtn
         v-else
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
-        class="media-controls-item"
-        :icon="visibleComponents.shuffle.icon"
       />
     </div>
     <!-- prev button -->
@@ -28,8 +24,6 @@
       <PreviousBtn
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
-        class="media-controls-item"
-        :icon="visibleComponents.previous.icon"
       />
     </div>
     <!-- play/pause button -->
@@ -40,8 +34,7 @@
       <PlayBtn
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
-        class="media-controls-item"
-        :icon="visibleComponents.play.icon"
+        :class="visibleComponents.play.buttonClass"
         :size="visibleComponents.play.size"
       />
     </div>
@@ -53,9 +46,6 @@
       <NextBtn
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
-        :icon="visibleComponents.next.icon"
-        static-height="24px"
-        static-width="24px"
       />
     </div>
     <!-- repeat button -->
@@ -67,24 +57,17 @@
         v-if="showSkip"
         :player-queue="store.activePlayerQueue"
         direction="forward"
-        :icon="visibleComponents.repeat.icon"
-        static-height="24px"
-        static-width="24px"
       />
       <RepeatBtn
         v-else
         :player="store.activePlayer"
         :player-queue="store.activePlayerQueue"
-        :icon="visibleComponents.repeat.icon"
-        static-height="24px"
-        static-width="24px"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { IconProps } from "@/components/Icon.vue";
 import { useSkipControls } from "@/composables/useSkipControls";
 import RepeatBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatBtn.vue";
 import { store } from "@/plugins/store";
@@ -99,25 +82,22 @@ export interface Props {
   visibleComponents?: {
     repeat?: {
       isVisible?: boolean;
-      icon?: IconProps;
     };
     shuffle?: {
       isVisible?: boolean;
-      icon?: IconProps;
     };
     play?: {
       isVisible?: boolean;
-      icon?: IconProps;
-      /** glyph size in px; the button box comes from `icon` */
+      /** classes for the button box, such as its size */
+      buttonClass?: string;
+      /** glyph size in px */
       size?: number;
     };
     previous?: {
       isVisible?: boolean;
-      icon?: IconProps;
     };
     next?: {
       isVisible?: boolean;
-      icon?: IconProps;
     };
   };
 }

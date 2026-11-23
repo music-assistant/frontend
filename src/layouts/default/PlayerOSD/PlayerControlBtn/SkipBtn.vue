@@ -1,11 +1,10 @@
 <template>
   <!-- skip back / skip forward button -->
-  <Icon
-    v-bind="{ ...icon, ...$attrs }"
+  <TransportBtn
+    v-bind="$attrs"
+    :icon-size="size"
     :disabled="isDisabled"
-    :aria-label="label"
-    :title="label"
-    variant="button"
+    :label="label"
     @click="api.queueCommandSkip(playerQueue!.queue_id, offset)"
   >
     <SkipIcon
@@ -14,17 +13,17 @@
       :size="size"
       :stroke-width="strokeWidth"
     />
-  </Icon>
+  </TransportBtn>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import Icon, { IconProps } from "@/components/Icon.vue";
 import {
   SKIP_BACK_SECONDS,
   SKIP_FORWARD_SECONDS,
 } from "@/composables/useSkipControls";
 import SkipIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/SkipIcon.vue";
+import TransportBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/TransportBtn.vue";
 import api from "@/plugins/api";
 import { PlayerQueue } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
@@ -34,12 +33,10 @@ import { computed } from "vue";
 export interface Props {
   playerQueue: PlayerQueue | undefined;
   direction: "back" | "forward";
-  icon?: IconProps;
   size?: number;
   strokeWidth?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
-  icon: undefined,
   size: 20,
   strokeWidth: 2,
 });

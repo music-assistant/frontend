@@ -1,12 +1,12 @@
 <template>
   <!-- play/pause/stop button -->
-  <Icon
-    v-bind="{ ...icon, ...$attrs }"
-    class="play-btn-icon"
+  <TransportBtn
+    ref="button"
+    class="relative rounded-full bg-[#212121] text-[var(--play-icon-color,#fff)] dark:bg-white dark:text-[var(--play-icon-color,#212121)]"
+    v-bind="$attrs"
+    :icon-size="size"
     :disabled="isDisabled"
-    :aria-label="playButtonLabel"
-    :title="playButtonLabel"
-    variant="button"
+    :label="playButtonLabel"
     @click="playPause"
   >
     <Square
@@ -17,40 +17,58 @@
     />
     <Pause v-else-if="isPlaying" :size="size" fill="currentColor" />
     <Play v-else :size="size" fill="currentColor" class="play-icon-centered" />
-  </Icon>
-  <v-progress-circular
+  </TransportBtn>
+  <Spinner
     v-if="player && isLoading"
-    class="play-btn-spinner"
-    indeterminate
-    :size="compProps.spinnerSize"
-    :width="2"
+    class="pointer-events-none absolute top-1/2 left-1/2 z-1 size-(--spinner-size) -translate-1/2"
+    :style="{ '--spinner-size': `${spinnerSize}px` }"
+    :size="spinnerSize"
+    :stroke-width="SPINNER_STROKE_WIDTH"
+    absolute-stroke-width
   />
 </template>
 
 <script setup lang="ts">
 import { $t } from "@/plugins/i18n";
 defineOptions({ inheritAttrs: false });
-import Icon, { IconProps } from "@/components/Icon.vue";
+import { Spinner } from "@/components/ui/spinner";
 import { usePlayPauseCommand } from "@/composables/usePlayPauseCommand";
+import TransportBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/TransportBtn.vue";
 import { Player, PlayerQueue } from "@/plugins/api/interfaces";
 import { Pause, Play, Square } from "@lucide/vue";
-import { computed, toRef } from "vue";
+import { useElementSize } from "@vueuse/core";
+import { computed, toRef, useTemplateRef } from "vue";
 
 // properties
 export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
-  icon?: IconProps;
-  spinnerSize?: number;
   size?: number;
 }
 
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
-  icon: undefined,
-  spinnerSize: 46,
   size: 24,
 });
+
+// the spinner ring keeps a hairline stroke at every size
+const SPINNER_STROKE_WIDTH = 2;
+// space between the button's edge and the spinner ring
+const SPINNER_GAP = 3;
+// the spinner icon draws its ring at this share of its box
+const SPINNER_RING_SHARE = 0.75;
+
+const button = useTemplateRef("button");
+const { height: buttonSize } = useElementSize(button, undefined, {
+  box: "border-box",
+});
+
+// the ring's middle line runs the gap plus half the stroke outside the button
+const spinnerSize = computed(
+  () =>
+    (buttonSize.value + 2 * SPINNER_GAP + SPINNER_STROKE_WIDTH) /
+    SPINNER_RING_SHARE,
+);
 
 const { isPlaying, showStop, isLoading, isDisabled, playPause } =
   usePlayPauseCommand(
@@ -63,26 +81,3 @@ const playButtonLabel = computed(() => {
   return isPlaying.value ? $t("pause") : $t("play");
 });
 </script>
-
-<style>
-.play-btn-icon {
-  position: relative;
-  border-radius: 50%;
-  background-color: #212121;
-  color: var(--play-icon-color, #fff);
-}
-
-.v-theme--dark .play-btn-icon {
-  background-color: #fff;
-  color: var(--play-icon-color, #212121);
-}
-
-.play-btn-spinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 1;
-}
-</style>
