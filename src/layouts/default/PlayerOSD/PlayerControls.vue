@@ -36,6 +36,7 @@
         :player-queue="store.activePlayerQueue"
         :class="visibleComponents.play.buttonClass"
         :size="visibleComponents.play.size"
+        :spinner-gap="visibleComponents.play.spinnerGap"
       />
     </div>
     <!-- next button -->
@@ -92,6 +93,8 @@ export interface Props {
       buttonClass?: string;
       /** glyph size in px */
       size?: number;
+      /** space in px between the button's edge and the loading ring */
+      spinnerGap?: number;
     };
     previous?: {
       isVisible?: boolean;
