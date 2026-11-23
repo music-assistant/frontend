@@ -2,7 +2,7 @@
   <!-- play/pause/stop button -->
   <TransportBtn
     v-bind="$attrs"
-    class="play-btn-icon rounded-full"
+    class="relative rounded-full bg-[#212121] text-[var(--play-icon-color,#fff)] dark:bg-white dark:text-[var(--play-icon-color,#212121)]"
     :icon-size="size"
     :disabled="isDisabled"
     :label="playButtonLabel"
@@ -65,16 +65,3 @@ const playButtonLabel = computed(() => {
   return isPlaying.value ? $t("pause") : $t("play");
 });
 </script>
-
-<style>
-.play-btn-icon {
-  position: relative;
-  background-color: #212121;
-  color: var(--play-icon-color, #fff);
-}
-
-.v-theme--dark .play-btn-icon {
-  background-color: #fff;
-  color: var(--play-icon-color, #212121);
-}
-</style>

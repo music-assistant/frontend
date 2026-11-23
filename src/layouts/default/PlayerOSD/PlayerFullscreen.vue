@@ -420,7 +420,7 @@
             <PlayBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
-              class="media-controls-item size-15"
+              class="media-controls-item size-15 bg-(color:--text-color) dark:bg-(color:--text-color)"
               :spinner-size="73"
               :size="30"
             />
@@ -1894,10 +1894,6 @@ onBeforeUnmount(() => {
 div,
 button {
   color: var(--text-color);
-}
-
-.play-btn-wrapper :deep(.play-btn-icon) {
-  background-color: var(--text-color) !important;
 }
 
 .player-bottom :deep([data-slot="slider-range"]) {
