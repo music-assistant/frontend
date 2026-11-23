@@ -191,6 +191,19 @@ describe("SmartPlaylistSeedPicker search", () => {
     expect(wrapper.emitted("submit")).toBeUndefined();
   });
 
+  it("asks to type while the query is too short to submit", async () => {
+    const content = await openPopover(
+      mount(SmartPlaylistSeedPicker, {
+        props: { ...seedProps, searchQuery: " b " },
+        attachTo: document.body,
+      }),
+    );
+
+    expect(emptyState(content)).toBe(
+      $t("smart_playlist.picker_empty_search", { label: "album" }),
+    );
+  });
+
   it("prompts to press enter for a typed but unsubmitted query", async () => {
     const content = await openPopover(
       mount(SmartPlaylistSeedPicker, {
