@@ -73,9 +73,7 @@ async function flushPromises() {
 
 // MediaSearch searches only once the query is submitted
 async function submitSearch(wrapper: VueWrapper, term: string) {
-  const input = wrapper.find(
-    'input[placeholder="providers.music_quiz.search_music"]',
-  );
+  const input = wrapper.find('input[placeholder="type_to_search"]');
   await input.setValue(term);
   await input.trigger("keydown.enter");
 }
