@@ -1,6 +1,7 @@
 // Global, simple eventbus
 
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import type { MultiChannelLayouts } from "@/helpers/multi_channel";
 import mitt, { Emitter } from "mitt";
 import {
   ConfigValueType,
@@ -133,8 +134,20 @@ export type MultiChannelPlayerDialogEvent = {
   playerName: string;
   // the protocol of that speaker that moves into the multi-channel player
   protocol: PlayerProtocolInfo;
+  // the layouts the provider of that protocol offers
+  layouts: MultiChannelLayouts;
   // called with the id of the new player
   onCreated?: (playerId: string) => void;
+};
+
+export type MultiChannelSubwooferDialogEvent = {
+  // the multi-channel player the subwoofer joins
+  playerId: string;
+  playerName: string;
+  // the instance id of the provider that combines its speakers
+  provider: string;
+  // called once the subwoofer joined
+  onAdded?: () => void;
 };
 
 // finished: the flow ended on a FINISH step rather than an ABORT
@@ -180,6 +193,7 @@ export type Events = {
   playerRenameDialog: PlayerRenameDialogEvent;
   playerMergeDialog: PlayerMergeDialogEvent;
   multiChannelPlayerDialog: MultiChannelPlayerDialogEvent;
+  multiChannelSubwooferDialog: MultiChannelSubwooferDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

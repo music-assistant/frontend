@@ -36,6 +36,13 @@ const SETUP_REASON_LABELS: Record<string, string> = {
   provider_not_installed: "settings.player_not_available",
 };
 
+// the layouts of a multi-channel player that go by a name rather than by their numbers
+const CHANNEL_LAYOUT_LABELS: Partial<Record<ChannelLayout, string>> = {
+  [ChannelLayout.STEREO]: "channel_layout.stereo",
+  [ChannelLayout.LAYOUT_1_1]: "channel_layout.speaker_with_subwoofer",
+  [ChannelLayout.LAYOUT_2_1]: "channel_layout.stereo_with_subwoofer",
+};
+
 /**
  * Return the player that goes by the given id: the player with that id, or else
  * the player that was known under it before, such as one another player was
@@ -335,9 +342,16 @@ export const getPlayerTypeLabel = function (player: Player): string {
   const typeLabel = $t(`player_type.${player.type}`);
   const layout = player.channel_layout;
   if (!layout || layout === ChannelLayout.UNKNOWN) return typeLabel;
-  const layoutLabel =
-    layout === ChannelLayout.STEREO ? $t("channel_layout.stereo") : layout;
-  return `${typeLabel} · ${layoutLabel}`;
+  return `${typeLabel} · ${getChannelLayoutLabel(layout)}`;
+};
+
+/**
+ * The layout of the speakers of a multi-channel player as text, such as "Stereo pair" or
+ * "5.1".
+ */
+export const getChannelLayoutLabel = function (layout: ChannelLayout): string {
+  const label = CHANNEL_LAYOUT_LABELS[layout];
+  return label ? $t(label) : layout;
 };
 
 export const canEditPlayerGroup = function (player: Player): boolean {

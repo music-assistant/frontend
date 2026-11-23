@@ -1,6 +1,6 @@
 import { computed } from "vue";
 import { resolveExternalSource } from "@/composables/externalSource";
-import { sourceProviderId } from "@/composables/nowPlayingSource";
+import { sourceProviderId } from "@/helpers/provider_domain";
 import { store } from "@/plugins/store";
 import {
   AudioNormalizationMeasurementSource,

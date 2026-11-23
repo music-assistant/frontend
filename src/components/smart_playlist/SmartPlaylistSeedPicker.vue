@@ -41,8 +41,10 @@
           $t('smart_playlist.picker_search', { label: kindLabel.toLowerCase() })
         "
         class="mb-2 h-8 text-sm"
+        enterkeyhint="search"
         @update:model-value="emit('update:searchQuery', $event as string)"
         @keydown.stop
+        @keydown.enter="onEnterKey"
       />
       <div class="max-h-56 overflow-y-auto flex flex-col min-h-[80px]">
         <div v-if="isSearching" class="flex justify-center py-6">
@@ -105,6 +107,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SeedKind } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
+import { isImeComposition } from "@/helpers/keyboard";
 import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Plus } from "@lucide/vue";
@@ -118,6 +121,7 @@ const props = defineProps<{
   searchQuery: string;
   results: SearchItem[];
   isSearching: boolean;
+  isSubmitted: boolean;
   hasProvider: boolean;
   isFull: boolean;
   invalid?: boolean;
@@ -127,6 +131,7 @@ const emit = defineEmits<{
   "update:kind": [value: SeedKind];
   "update:searchQuery": [value: string];
   select: [item: SearchItem];
+  submit: [];
 }>();
 
 const popoverOpen = ref(false);
@@ -143,6 +148,12 @@ const resultGroups = computed(() => [
     items: props.results.filter((r) => r.provider !== "library"),
   },
 ]);
+
+function onEnterKey(event: KeyboardEvent) {
+  if (isImeComposition(event)) return;
+  event.preventDefault();
+  emit("submit");
+}
 
 function onPick(item: SearchItem) {
   emit("select", item);
@@ -172,13 +183,13 @@ const buttonLabel = computed(() => {
 });
 
 const emptyStateText = computed(() => {
-  if (props.searchQuery.length < 2) {
-    return $t("smart_playlist.picker_empty_search", {
-      label: kindLabel.value.toLowerCase(),
-    });
+  const label = kindLabel.value.toLowerCase();
+  if (props.searchQuery.trim().length < 2) {
+    return $t("smart_playlist.picker_empty_search", { label });
   }
-  return $t("smart_playlist.picker_empty_no_match", {
-    label: kindLabel.value.toLowerCase(),
-  });
+  if (props.isSubmitted) {
+    return $t("smart_playlist.picker_empty_no_match", { label });
+  }
+  return $t("command_center_press_enter");
 });
 </script>

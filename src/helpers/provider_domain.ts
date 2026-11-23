@@ -66,3 +66,9 @@ export function resolveProviderDomain(
   const domain = embeddedProviderDomain(idOrDomain);
   return domain in known.providerManifests ? domain : undefined;
 }
+
+/** Provider domain/instance id prefix of a source id, e.g. "spotify" from "spotify://...". */
+export function sourceProviderId(sourceId: string): string | undefined {
+  const separator = sourceId.indexOf("://");
+  return separator > 0 ? sourceId.slice(0, separator) : undefined;
+}

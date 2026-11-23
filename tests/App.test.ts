@@ -39,6 +39,7 @@ const {
   mockPruneStaleProviderFilters,
   mockRememberCurrentRemoteConnection,
   mockRunAfterPreferenceWrites,
+  mockTrackLiveSources,
   mockOnboardingOpen,
   onboardingPaused,
   mockRouterPush,
@@ -124,6 +125,7 @@ const {
     mockPruneStaleProviderFilters: vi.fn(),
     mockRememberCurrentRemoteConnection: vi.fn(),
     mockRunAfterPreferenceWrites: vi.fn(),
+    mockTrackLiveSources: vi.fn(),
     mockOnboardingOpen: vi.fn(),
     // whether the admin paused the setup, which a reconnect leaves paused
     onboardingPaused: { value: false },
@@ -202,6 +204,10 @@ vi.mock("@/composables/userPreferences", () => ({
   useUserPreferences: () => ({
     setPreference: mockSetPreference,
   }),
+}));
+
+vi.mock("@/composables/useLiveSources", () => ({
+  trackLiveSources: mockTrackLiveSources,
 }));
 
 vi.mock("@/composables/useShortcuts", () => ({
@@ -1522,6 +1528,7 @@ function expectLibraryCountsNotCalled() {
   expect(apiMock.getLibraryPodcastsCount).not.toHaveBeenCalled();
   expect(apiMock.getLibraryRadiosCount).not.toHaveBeenCalled();
   expect(apiMock.getLibraryTracksCount).not.toHaveBeenCalled();
+  expect(mockTrackLiveSources).not.toHaveBeenCalled();
 }
 
 function expectLibraryCountsCalled() {
@@ -1533,6 +1540,7 @@ function expectLibraryCountsCalled() {
   expect(apiMock.getLibraryPodcastsCount).toHaveBeenCalledOnce();
   expect(apiMock.getLibraryRadiosCount).toHaveBeenCalledOnce();
   expect(apiMock.getLibraryTracksCount).toHaveBeenCalledOnce();
+  expect(mockTrackLiveSources).toHaveBeenCalledOnce();
 }
 
 /**
