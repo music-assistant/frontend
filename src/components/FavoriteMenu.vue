@@ -1,8 +1,22 @@
 <template>
+  <!-- with nothing to favourite, adding to a playlist is the only action, so
+       it needs no menu -->
+  <Button
+    v-if="canEditLibrary && offersPlaylist && !offersFavorite"
+    type="button"
+    :variant="variant"
+    :size="size"
+    v-bind="$attrs"
+    :title="$t(labels.playlist)"
+    :aria-label="$t(labels.playlist)"
+    @click.stop="addToPlaylist"
+  >
+    <PlusCircle :class="iconClass" />
+  </Button>
   <!-- reka owns the open state; mirroring it here keeps the trigger's hover
        suppression in step with it -->
   <DropdownMenu
-    v-if="canEditLibrary && hasAnyAction"
+    v-else-if="canEditLibrary && hasAnyAction"
     @update:open="menuOpen = $event"
   >
     <DropdownMenuTrigger as-child>

@@ -1,5 +1,4 @@
 import { subscribeOwnFavorites } from "@/helpers/favorites";
-import { MediaType } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
 import { computed, effectScope, ref, watch } from "vue";
 
@@ -20,13 +19,9 @@ export function useCurrentItemFavorite() {
 let shared: ReturnType<typeof createCurrentItemFavorite> | undefined;
 
 function createCurrentItemFavorite() {
-  // a line-in or other live source has nothing to favourite or collect
-  const currentItem = computed(() => {
-    const item = store.curQueueItem?.media_item;
-    return !item || item.media_type === MediaType.AUDIO_SOURCE
-      ? undefined
-      : item;
-  });
+  const currentItem = computed(
+    () => store.curQueueItem?.media_item ?? undefined,
+  );
 
   // Held apart from media_item.favorite: the server replaces the whole queue
   // item on refresh, which would drop an optimistic change with it.
