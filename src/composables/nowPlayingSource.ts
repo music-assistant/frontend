@@ -1,6 +1,7 @@
 import { computed } from "vue";
 import { resolveExternalSource } from "@/composables/externalSource";
 import { getSourceLabel } from "@/helpers/players";
+import { sourceProviderId } from "@/helpers/provider_domain";
 import { store } from "@/plugins/store";
 
 /**
@@ -50,10 +51,4 @@ export function useNowPlayingSource() {
   });
 
   return { nowPlayingSource, albumSubtitle };
-}
-
-/** Provider domain/instance id prefix of a source id, e.g. "spotify" from "spotify://...". */
-export function sourceProviderId(sourceId: string): string | undefined {
-  const separator = sourceId.indexOf("://");
-  return separator > 0 ? sourceId.slice(0, separator) : undefined;
 }

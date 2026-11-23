@@ -127,17 +127,14 @@ import {
 } from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import {
+  liveSourceSubtitle,
   openLiveSourceMenu,
   startLiveSource,
   useLiveSources,
 } from "@/composables/useLiveSources";
 import { useListingView } from "@/composables/useListingView";
-import {
-  getLiveSourceIcon,
-  getLiveSourceOwnerName,
-} from "@/helpers/live_sources";
+import { getLiveSourceIcon } from "@/helpers/live_sources";
 import { getPlayerName } from "@/helpers/players";
-import { api } from "@/plugins/api";
 import { PlaybackState, type PlayerSource } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
@@ -181,7 +178,7 @@ const gridStyle = computed(() => ({
 const rowProps = (source: PlayerSource) => ({
   source,
   icon: getLiveSourceIcon(source),
-  ownerName: getLiveSourceOwnerName(source, api.players),
+  subtitle: liveSourceSubtitle(source),
   isPlaying:
     player.value?.active_source === source.id &&
     player.value.playback_state === PlaybackState.PLAYING,

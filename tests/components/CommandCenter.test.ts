@@ -129,6 +129,7 @@ vi.mock("@/composables/useLiveSources", async () => {
     useLiveSources: (playerId: MaybeRefOrGetter<string | undefined>) => ({
       sources: computed(() => (toValue(playerId) ? state.liveSources : [])),
     }),
+    liveSourceSubtitle: () => "Sendspin",
     startLiveSource: state.startLiveSourceSpy,
     openLiveSourceMenu: state.liveSourceMenuSpy,
   };
@@ -1613,6 +1614,7 @@ describe("CommandCenter", () => {
     // matched while typing, so there is no prompt to run the search
     await wrapper.get('[data-testid="palette-input"]').setValue("record");
     expect(wrapper.text()).toContain("live_sources");
+    expect(wrapper.text()).toContain("Sendspin");
     expect(wrapper.text()).not.toContain("TV");
     expect(wrapper.text()).not.toContain("command_center_press_enter");
 
