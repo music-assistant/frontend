@@ -105,6 +105,7 @@ import {
 } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SEARCH_MIN_LENGTH } from "@/composables/smart-playlist/useSmartPlaylistSearchHelpers";
 import type { SeedKind } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { isImeComposition } from "@/helpers/keyboard";
@@ -184,7 +185,7 @@ const buttonLabel = computed(() => {
 
 const emptyStateText = computed(() => {
   const label = kindLabel.value.toLowerCase();
-  if (props.searchQuery.trim().length < 2) {
+  if (props.searchQuery.trim().length < SEARCH_MIN_LENGTH) {
     return $t("smart_playlist.picker_empty_search", { label });
   }
   if (props.isSubmitted) {

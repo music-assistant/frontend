@@ -1,6 +1,8 @@
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
 
+export const SEARCH_MIN_LENGTH = 2;
+
 interface SubmitSearchOptions<T> {
   query: Ref<string>;
   results: Ref<T[]>;
@@ -20,7 +22,7 @@ export function setupSubmitSearch<T>({
   results,
   isSearching,
   searchFn,
-  minLength = 2,
+  minLength = SEARCH_MIN_LENGTH,
 }: SubmitSearchOptions<T>) {
   // the trimmed term the shown results or the running search belong to
   const submittedQuery = ref("");
