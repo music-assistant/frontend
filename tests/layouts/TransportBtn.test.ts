@@ -60,4 +60,20 @@ describe("TransportBtn", () => {
     expect(button.classes()).toContain("size-15");
     expect(button.classes()).not.toContain("size-10");
   });
+
+  it("acts once on a held Enter", async () => {
+    const button = mountButton().get("button");
+    const press = (repeat: boolean) => {
+      const event = new KeyboardEvent("keydown", {
+        key: "Enter",
+        repeat,
+        cancelable: true,
+      });
+      button.element.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+
+    expect(press(false)).toBe(false);
+    expect(press(true)).toBe(true);
+  });
 });

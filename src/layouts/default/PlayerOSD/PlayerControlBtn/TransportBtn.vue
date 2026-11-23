@@ -1,6 +1,7 @@
 <template>
   <!-- no variant or size: the look below replaces both, and a variant's hover
-       background would hide the play button's own fill -->
+       background would hide the play button's own fill. A held Enter acts
+       once, so a seek button sends a single skip -->
   <Button
     :variant="null"
     :size="null"
@@ -9,6 +10,7 @@
     :disabled="disabled"
     :title="label"
     :aria-label="label"
+    @keydown.enter="$event.repeat && $event.preventDefault()"
   >
     <slot></slot>
   </Button>
