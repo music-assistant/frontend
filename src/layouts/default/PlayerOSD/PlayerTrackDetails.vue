@@ -74,7 +74,10 @@
           @click.stop="onTitleClick"
         >
           <MarqueeText :sync="marqueeSync">
-            {{ store.activePlayer.current_media.title }}
+            {{
+              currentChapter?.chapter.name ??
+              store.activePlayer.current_media.title
+            }}
           </MarqueeText>
         </div>
         <!-- queue ended message: the queue is still there, it just finished -->
@@ -137,7 +140,7 @@
           >
             <div class="ma-line-clamp-1">
               <MarqueeText :sync="marqueeSync">
-                {{ currentChapter.chapter.name }}
+                {{ chapterSubtitle }}
               </MarqueeText>
             </div>
           </button>
@@ -232,6 +235,12 @@ const currentChapter = computed(() => {
     resolveActiveElapsedTime(),
     media.duration,
   );
+});
+
+// under the chapter: author (or podcast) and the book or episode
+const chapterSubtitle = computed(() => {
+  const media = store.activePlayer?.current_media;
+  return [media?.artist, media?.title].filter(Boolean).join(" • ");
 });
 
 const chapterTimerNeeded = computed(

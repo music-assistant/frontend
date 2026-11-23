@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockSetupDebouncedSearch } = vi.hoisted(() => ({
-  mockSetupDebouncedSearch: vi.fn(),
-}));
+const { mockSetupSubmitSearch } = await vi.hoisted(async () => {
+  const { ref } = await import("vue");
+  return {
+    mockSetupSubmitSearch: vi.fn((_options: unknown) => ({
+      submit: vi.fn(async () => {}),
+      isSubmitted: ref(false),
+    })),
+  };
+});
 
 vi.mock("@/composables/smart-playlist/useSmartPlaylistSearchHelpers", () => ({
-  setupDebouncedSearch: mockSetupDebouncedSearch,
+  setupSubmitSearch: mockSetupSubmitSearch,
 }));
 
 vi.mock("@/helpers/utils", () => ({
@@ -56,14 +62,46 @@ interface SearchFnArg {
 
 describe("useSmartPlaylistSeedItems", () => {
   beforeEach(() => {
-    mockSetupDebouncedSearch.mockClear();
+    mockSetupSubmitSearch.mockClear();
   });
 
   it("reports SIMILAR_TRACKS provider availability and wires four searches", () => {
     const seed = useSmartPlaylistSeedItems();
 
     expect(seed.hasSimilarTracksProvider.value).toBe(true);
-    expect(mockSetupDebouncedSearch).toHaveBeenCalledTimes(4);
+    expect(mockSetupSubmitSearch).toHaveBeenCalledTimes(4);
+  });
+
+  it("submitSearch submits only the active kind's search", () => {
+    const seed = useSmartPlaylistSeedItems();
+    const [trackSearch, artistSearch, albumSearch, playlistSearch] =
+      mockSetupSubmitSearch.mock.results.map((r) => r.value);
+
+    seed.activeKind.value = "album";
+    const done = seed.submitSearch();
+
+    expect(albumSearch.submit).toHaveBeenCalledTimes(1);
+    expect(done).toBe(albumSearch.submit.mock.results[0].value);
+    expect(trackSearch.submit).not.toHaveBeenCalled();
+    expect(artistSearch.submit).not.toHaveBeenCalled();
+    expect(playlistSearch.submit).not.toHaveBeenCalled();
+  });
+
+  it("isSearchSubmitted follows the active kind's search", () => {
+    const seed = useSmartPlaylistSeedItems();
+    const albumSearch = mockSetupSubmitSearch.mock.results[2].value;
+
+    seed.activeKind.value = "album";
+    expect(seed.isSearchSubmitted.value).toBe(false);
+
+    albumSearch.isSubmitted.value = true;
+    expect(seed.isSearchSubmitted.value).toBe(true);
+
+    seed.activeKind.value = "track";
+    expect(seed.isSearchSubmitted.value).toBe(false);
+
+    seed.activeKind.value = "album";
+    expect(seed.isSearchSubmitted.value).toBe(true);
   });
 
   it("addSeedFromSearch picks a SIMILAR_TRACKS-capable mapping URI and clears search state", () => {
@@ -193,7 +231,7 @@ describe("useSmartPlaylistSeedItems", () => {
     it("returns library/streaming results when a provider supplies SIMILAR_TRACKS", async () => {
       useSmartPlaylistSeedItems();
       const trackSearchFn = (
-        mockSetupDebouncedSearch.mock.calls[0][0] as SearchFnArg
+        mockSetupSubmitSearch.mock.calls[0][0] as SearchFnArg
       ).searchFn;
 
       vi.mocked(api.search).mockResolvedValueOnce({
@@ -237,7 +275,7 @@ describe("useSmartPlaylistSeedItems", () => {
       };
       useSmartPlaylistSeedItems();
       const trackSearchFn = (
-        mockSetupDebouncedSearch.mock.calls.at(-1)![0] as SearchFnArg
+        mockSetupSubmitSearch.mock.calls.at(-1)![0] as SearchFnArg
       ).searchFn;
 
       const results = await trackSearchFn("anything");
