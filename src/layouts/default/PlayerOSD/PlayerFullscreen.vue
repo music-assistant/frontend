@@ -407,7 +407,9 @@
               :size="24"
             />
           </div>
-          <div class="media-controls-item transport-slot">
+          <div
+            class="media-controls-item flex items-center justify-center max-[540px]:min-w-11"
+          >
             <PreviousBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
@@ -423,7 +425,9 @@
               :size="30"
             />
           </div>
-          <div class="media-controls-item transport-slot">
+          <div
+            class="media-controls-item flex items-center justify-center max-[540px]:min-w-11"
+          >
             <NextBtn
               :player="store.activePlayer"
               :player-queue="store.activePlayerQueue"
@@ -1786,8 +1790,7 @@ onBeforeUnmount(() => {
 
 .queue-btn-wrapper,
 .favorite-btn-wrapper,
-.side-slot,
-.transport-slot {
+.side-slot {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1854,9 +1857,8 @@ onBeforeUnmount(() => {
     margin: 0;
   }
 
-  /* reserve a button's width, also while empty, so the row never shifts */
-  .side-slot,
-  .transport-slot {
+  /* reserve a button's width when empty so the row never shifts */
+  .side-slot {
     min-width: 44px;
   }
 }
