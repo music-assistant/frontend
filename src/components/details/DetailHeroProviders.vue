@@ -4,8 +4,18 @@
     <span class="detail-hero-providers__pill">
       <template v-for="(provider, index) in providers" :key="provider.domain">
         <span v-if="index > 0" class="detail-hero-providers__sep">·</span>
-        <ProviderIcon :domain="provider.domain" :size="14" />
-        <span class="detail-hero-providers__name">{{ provider.name }}</span>
+        <!-- a service with a page for the item opens it in a new tab -->
+        <component
+          :is="provider.href ? 'a' : 'span'"
+          class="detail-hero-providers__service"
+          :href="provider.href"
+          :target="provider.href ? '_blank' : undefined"
+          :rel="provider.href ? 'noopener' : undefined"
+          :aria-label="provider.href ? provider.name : undefined"
+        >
+          <ProviderIcon :domain="provider.domain" :size="14" />
+          <span class="detail-hero-providers__name">{{ provider.name }}</span>
+        </component>
       </template>
     </span>
   </div>
@@ -13,6 +23,7 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { isWebUrl } from "@/helpers/utils";
 import { mappedServices } from "@/plugins/api/helpers";
 import type { MediaItem } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
@@ -24,7 +35,13 @@ export interface Props {
 const props = defineProps<Props>();
 
 // one entry per music service, however many accounts of it hold the item
-const providers = computed(() => mappedServices(props.item));
+// a local file's link is its path, which a browser cannot open
+const providers = computed(() =>
+  mappedServices(props.item).map((service) => ({
+    ...service,
+    href: isWebUrl(service.url) ? service.url : undefined,
+  })),
+);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 </script>
@@ -51,6 +68,21 @@ const isPhone = computed(() => isPhoneSizedScreen());
 }
 .detail-hero-providers__sep {
   opacity: 0.4;
+}
+.detail-hero-providers__service {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: inherit;
+  text-decoration: none;
+}
+a.detail-hero-providers__service:hover .detail-hero-providers__name {
+  text-decoration: underline;
+}
+a.detail-hero-providers__service:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .detail-hero--phone .detail-hero-providers {

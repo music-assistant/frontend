@@ -140,6 +140,15 @@ export const getProviderIconDomain = function (
   return item.provider;
 };
 
+/** A music service an item is mapped to. */
+export interface MappedService {
+  domain: string;
+  name: string;
+  // the first link to the item on the service, absent when none of its
+  // mappings has one
+  url?: string;
+}
+
 /**
  * The music services an item is mapped to, named after the service itself.
  *
@@ -149,19 +158,25 @@ export const getProviderIconDomain = function (
  */
 export function mappedServices(item: {
   provider_mappings: ProviderMapping[];
-}): Array<{ domain: string; name: string }> {
-  const seen = new Set<string>();
-  const services: Array<{ domain: string; name: string }> = [];
+}): MappedService[] {
+  const services = new Map<string, MappedService>();
   for (const mapping of item.provider_mappings) {
-    if (seen.has(mapping.provider_domain)) continue;
+    const known = services.get(mapping.provider_domain);
+    if (known) {
+      known.url ??= mapping.url || undefined;
+      continue;
+    }
     const name =
       api.getProviderManifest(mapping.provider_domain)?.name ||
       api.getProvider(mapping.provider_instance)?.name;
     if (!name) continue;
-    seen.add(mapping.provider_domain);
-    services.push({ domain: mapping.provider_domain, name });
+    services.set(mapping.provider_domain, {
+      domain: mapping.provider_domain,
+      name,
+      url: mapping.url || undefined,
+    });
   }
-  return services;
+  return [...services.values()];
 }
 
 /**
