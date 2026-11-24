@@ -455,6 +455,12 @@ const savedScrollTop = ref(0);
 // provider (the composable drops ids of providers that no longer exist)
 const savedSources = getPreference<string[]>(SOURCES_PREF_KEY, []);
 
+// the Pages scope lists no media, so the search keeps its media types until the
+// user leaves it
+const searchedMediaTypes = computed<MediaType[]>((previous) =>
+  pagesOnly.value ? (previous ?? []) : selectedMediaTypes.value,
+);
+
 const {
   loading,
   search,
@@ -463,7 +469,7 @@ const {
   providerTargets,
   selectedProviders,
 } = useProgressiveSearch({
-  mediaTypes: selectedMediaTypes,
+  mediaTypes: searchedMediaTypes,
   providers: computed(() =>
     Array.isArray(savedSources.value) ? savedSources.value : [],
   ),
@@ -483,8 +489,11 @@ const resultsMatchQuery = computed(
 );
 
 // only the submitted term drives the loading UI; a term typed over a still
-// pending search shows the submit prompt, not the old search's spinner
-const isSearching = computed(() => resultsMatchQuery.value && loading.value);
+// pending search shows the submit prompt, not the old search's spinner, and the
+// Pages scope has nothing to load
+const isSearching = computed(
+  () => !pagesOnly.value && resultsMatchQuery.value && loading.value,
+);
 
 // the footer's return-key hint reflects what enter does now: submit a typed
 // term (never in the Pages scope, where enter opens the highlighted page), or
