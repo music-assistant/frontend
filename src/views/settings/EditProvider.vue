@@ -342,6 +342,7 @@ import {
   canToggleSource,
   managesAllSources,
 } from "@/helpers/provider_permissions";
+import { goBack } from "@/helpers/navigation";
 import { confirmProviderRemoval } from "@/helpers/provider_removal";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { providerPageEntries } from "@/helpers/settings_pages";
@@ -545,12 +546,14 @@ onBeforeUnmount(() => {
 });
 
 // methods
+const providersRoute = function () {
+  return config.value
+    ? providerListingRoute(config.value, providerManifest.value?.provides)
+    : providerListRoute(ProviderType.MUSIC);
+};
+
 const backToProviders = function () {
-  router.push(
-    config.value
-      ? providerListingRoute(config.value, providerManifest.value?.provides)
-      : providerListRoute(ProviderType.MUSIC),
-  );
+  goBack(router, providersRoute());
 };
 
 const openSendspinSyncCalibration = function () {
@@ -660,7 +663,8 @@ const onRemove = function () {
       // the source is gone, and with it the page showing its settings; unsaved
       // edits have nothing left to save to, so they must not hold the way out
       editConfig.value?.discardChanges();
-      backToProviders();
+      // replaced, so going back never returns to the page of the removed source
+      router.replace(providersRoute());
     } catch (err) {
       toast.error(String(err));
     }

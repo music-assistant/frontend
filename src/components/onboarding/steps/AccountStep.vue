@@ -1,18 +1,22 @@
 <template>
   <section class="flex flex-col gap-4">
-    <p :id="DESCRIPTION_ID" class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.account.description") }}
-    </p>
-
     <!-- the account is there and the app is signed in with it: the step is
          done, and says so to whoever comes back to it -->
-    <p
-      v-if="ctx.signedIn"
-      class="text-sm"
-      data-testid="onboarding-account-ready"
-    >
-      {{ $t("onboarding.steps.account.ready", { name }) }}
-    </p>
+    <OnboardingList v-if="ctx.signedIn">
+      <Item size="sm" data-testid="onboarding-account-ready">
+        <ItemMedia variant="icon">
+          <UserRound />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>
+            {{ $t("onboarding.steps.account.ready", { name }) }}
+          </ItemTitle>
+        </ItemContent>
+        <ItemActions>
+          <Check class="text-primary size-4" aria-hidden="true" />
+        </ItemActions>
+      </Item>
+    </OnboardingList>
 
     <!-- there is an account, but this page is not signed in with it: the
          browser is on its way to the client that started the setup, or the
@@ -39,7 +43,7 @@
       :id="FORM_ID"
       class="flex flex-col gap-4"
       novalidate
-      :aria-describedby="DESCRIPTION_ID"
+      :aria-describedby="STEP_LEAD_ID"
       @submit.prevent="submit"
     >
       <FieldGroup>
@@ -127,28 +131,36 @@
 
 <script setup lang="ts">
 import FormTextField from "@/components/forms/FormTextField.vue";
+import OnboardingList from "@/components/onboarding/OnboardingList.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import {
   AccountSetupError,
   useFirstRunSetup,
 } from "@/composables/useFirstRunSetup";
 import { useOnboarding } from "@/composables/useOnboarding";
-import type {
-  OnboardingStepId,
-  StepForwardForm,
-  StepLeaveOptions,
+import {
+  STEP_LEAD_ID,
+  type OnboardingStepId,
+  type StepForwardForm,
+  type StepLeaveOptions,
 } from "@/helpers/onboarding";
 import { userDisplayName } from "@/helpers/provider_access";
 import { firstRunAccountSchema } from "@/lib/forms/profile";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
+import { Check, UserRound } from "@lucide/vue";
 import { useForm } from "@tanstack/vue-form";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 
-// what the form answers, for the screen readers that read it out first
-const DESCRIPTION_ID = "onboarding-account-description";
 const FORM_ID = "form-onboarding-account";
 // how long the app gets to sign in with the new account before the step says
 // it did not

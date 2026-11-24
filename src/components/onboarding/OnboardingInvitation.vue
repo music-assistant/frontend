@@ -1,78 +1,31 @@
 <template>
-  <div class="flex flex-col items-center gap-4">
-    <div
-      v-if="$slots.partner"
-      class="mt-4 flex items-center"
-      aria-hidden="true"
-      data-testid="onboarding-invitation-visual"
-      :data-linked="linked || undefined"
-    >
-      <span :class="MARK_CLASS">
-        <img src="@/assets/icon.svg" alt="" class="size-8" />
-      </span>
-      <span :class="lineClass"></span>
-      <span :class="knotClass">
-        <Check v-if="linked" class="size-4" />
-        <Link v-else class="size-4" />
-      </span>
-      <span :class="lineClass"></span>
-      <span :class="MARK_CLASS">
-        <slot name="partner"></slot>
-      </span>
-    </div>
+  <div class="flex flex-col gap-3">
+    <OnboardingList v-if="!setUp" data-testid="onboarding-invitation-features">
+      <Item v-for="feature in features" :key="feature.labelKey" size="sm">
+        <ItemMedia class="text-primary size-8 place-items-center">
+          <component :is="feature.icon" class="size-5" aria-hidden="true" />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle class="font-normal">{{ $t(feature.labelKey) }}</ItemTitle>
+        </ItemContent>
+      </Item>
+    </OnboardingList>
+    <slot v-else></slot>
 
     <p
-      class="text-muted-foreground max-w-xl text-center text-sm"
-      data-testid="onboarding-invitation-intro"
+      v-if="note"
+      class="text-muted-foreground text-center text-xs text-pretty"
+      data-testid="onboarding-invitation-note"
     >
-      {{ intro }}
+      {{ note }}
     </p>
-
-    <div v-if="!setUp" class="flex w-fit max-w-md flex-col gap-1.5">
-      <p
-        v-if="featuresTitle"
-        class="text-muted-foreground text-xs"
-        data-testid="onboarding-invitation-features-title"
-      >
-        {{ featuresTitle }}
-      </p>
-      <ul
-        class="flex flex-col gap-1.5"
-        data-testid="onboarding-invitation-features"
-      >
-        <li
-          v-for="feature in features"
-          :key="feature.labelKey"
-          class="flex items-center gap-3 text-sm"
-        >
-          <span
-            class="bg-primary/10 text-primary flex size-7 shrink-0 items-center justify-center rounded-md"
-          >
-            <component :is="feature.icon" class="size-4" aria-hidden="true" />
-          </span>
-          {{ $t(feature.labelKey) }}
-        </li>
-      </ul>
-    </div>
-
-    <div class="flex w-full max-w-md flex-col gap-3">
-      <slot></slot>
-      <p
-        v-if="optional && !setUp"
-        class="text-muted-foreground text-center text-xs"
-        data-testid="onboarding-invitation-optional"
-      >
-        {{ optional }}
-      </p>
-      <slot name="footer"></slot>
-    </div>
   </div>
 </template>
 
 <script lang="ts">
 import type { Component } from "vue";
 
-/** Something a step brings, shown as a line with its icon. */
+/** Something a step brings, shown as a row with its icon. */
 export interface InvitationFeature {
   icon: Component;
   labelKey: string;
@@ -80,41 +33,18 @@ export interface InvitationFeature {
 </script>
 
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
-import { Check, Link } from "@lucide/vue";
-import { computed } from "vue";
+import OnboardingList from "@/components/onboarding/OnboardingList.vue";
+import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
 
 /**
- * The layout of a setup wizard step that invites to set something up; once it
- * is set up, what it brings and the optional line make way for the slot.
+ * The body of a setup wizard step that invites to set something up: what it
+ * brings until it is set up, the slot (what is set up) after that, and a note
+ * under either.
  */
-const props = defineProps<{
-  intro: string;
+defineProps<{
   features: readonly InvitationFeature[];
-  // a caption over what it brings
-  featuresTitle?: string;
   setUp?: boolean;
-  // set up and working: the link between the two marks is made
-  linked?: boolean;
-  // that the step can be left for later, and where to find it then
-  optional?: string;
+  // one short line under the list, such as where to find the step later
+  note?: string;
 }>();
-
-const MARK_CLASS =
-  "bg-muted text-primary flex size-14 items-center justify-center rounded-2xl border [&>svg]:size-7";
-
-const lineClass = computed(() =>
-  cn(
-    "w-6 border-t-2 sm:w-10",
-    props.linked ? "border-primary" : "border-muted-foreground/40",
-  ),
-);
-const knotClass = computed(() =>
-  cn(
-    "flex size-8 items-center justify-center rounded-full border-2",
-    props.linked
-      ? "border-primary bg-primary text-primary-foreground"
-      : "border-muted-foreground/40 text-muted-foreground",
-  ),
-);
 </script>

@@ -6,6 +6,7 @@ import type {
   ConfiguredProvider,
   DiscoveredPlayer,
 } from "@/composables/useOnboarding";
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import { ProviderType, Scope } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -91,8 +92,15 @@ function mountStep() {
 
 type Step = ReturnType<typeof mountStep>;
 
+// the last row of the list
 function addButton(wrapper: Step) {
   return wrapper.find("[data-testid=onboarding-add-provider]");
+}
+
+// the step's own way forward, which the wizard shows as its main button
+function primaryAction(wrapper: Step) {
+  return (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
 }
 
 function rows(wrapper: Step) {
@@ -122,14 +130,10 @@ describe("PlayersStep", () => {
   it("invites to add player support when nothing is set up", () => {
     const wrapper = mountStep();
 
-    // with nothing to act on, the intro says what finds players
-    expect(
-      wrapper.find("[data-testid=onboarding-invitation-intro]").text(),
-    ).toBe("onboarding.steps.players.description_empty");
     expect(
       wrapper
         .find("[data-testid=onboarding-invitation-features]")
-        .findAll("li")
+        .findAll("[data-slot=item]")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.players.features.found_automatically",
@@ -144,14 +148,14 @@ describe("PlayersStep", () => {
     expect(
       wrapper.findAll("[data-testid=onboarding-player-provider]"),
     ).toHaveLength(0);
-    // adding one is the thing to do, so it is the step's centred action; the
+    // adding one is the thing to do, so it is the step's main action; the
     // step is not optional, so nothing says it can wait
-    expect(addButton(wrapper).text()).toBe("settings.add_player_provider");
-    expect(addButton(wrapper).classes()).toEqual(
-      expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
+    expect(primaryAction(wrapper)?.labelKey).toBe(
+      "settings.add_player_provider",
     );
+    expect(addButton(wrapper).exists()).toBe(false);
     expect(
-      wrapper.find("[data-testid=onboarding-invitation-optional]").exists(),
+      wrapper.find("[data-testid=onboarding-invitation-note]").exists(),
     ).toBe(false);
 
     wrapper.unmount();
@@ -181,10 +185,10 @@ describe("PlayersStep", () => {
     expect(providers).toHaveLength(1);
     expect(providers[0].text()).toContain("Sonos");
     expect(addButton(wrapper).text()).toBe("onboarding.steps.players.add_more");
-    expect(addButton(wrapper).classes()).toContain("bg-accent");
+    expect(primaryAction(wrapper)).toBeUndefined();
     // with something set up, the step follows what turns up instead of inviting
     expect(
-      wrapper.find("[data-testid=onboarding-invitation-intro]").exists(),
+      wrapper.find("[data-testid=onboarding-invitation-features]").exists(),
     ).toBe(false);
 
     wrapper.unmount();
@@ -241,11 +245,6 @@ describe("PlayersStep", () => {
       expect.stringContaining("AirPlay, Chromecast"),
     ]);
     expect(wrapper.text()).not.toContain("onboarding.steps.players.empty");
-    // with players to act on, the description says what can be done to them
-    expect(wrapper.text()).toContain("onboarding.steps.players.description");
-    expect(wrapper.text()).not.toContain(
-      "onboarding.steps.players.description_empty",
-    );
 
     wrapper.unmount();
   });
@@ -256,7 +255,8 @@ describe("PlayersStep", () => {
     const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
     expect(dialog.props("show")).toBe(false);
 
-    await addButton(wrapper).trigger("click");
+    primaryAction(wrapper)?.run();
+    await flushPromises();
 
     expect(dialog.props("show")).toBe(true);
     expect(dialog.props("providerType")).toBe(ProviderType.PLAYER);

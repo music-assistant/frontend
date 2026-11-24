@@ -1,5 +1,6 @@
 import SmartPlaylistRuleValuePicker from "@/components/smart_playlist/SmartPlaylistRuleValuePicker.vue";
 import SmartPlaylistSeedPicker from "@/components/smart_playlist/SmartPlaylistSeedPicker.vue";
+import { $t } from "@/plugins/i18n";
 import {
   enableAutoUnmount,
   flushPromises,
@@ -78,6 +79,7 @@ const pickers: Array<
       searchQuery: "",
       results: [track({ item_id: "1", name: "Blue in Green" })],
       isSearching: false,
+      isSubmitted: false,
       hasProvider: true,
       isFull: false,
     },
@@ -130,3 +132,99 @@ describe.each(pickers)(
     });
   },
 );
+
+describe("SmartPlaylistSeedPicker search", () => {
+  const seedProps = {
+    kind: "album" as const,
+    searchQuery: "blue",
+    results: [],
+    isSearching: false,
+    isSubmitted: false,
+    hasProvider: true,
+    isFull: false,
+  };
+
+  const emptyState = (content: Element) =>
+    content.querySelector("p")?.textContent?.trim();
+
+  beforeEach(() => {
+    storeMock.isTouchscreen = false;
+    document.body.innerHTML = "";
+  });
+
+  it("emits submit on enter in the search field", async () => {
+    const wrapper = mount(SmartPlaylistSeedPicker, {
+      props: seedProps,
+      attachTo: document.body,
+    });
+    const input = searchField(await openPopover(wrapper))!;
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+
+    expect(wrapper.emitted("submit")).toHaveLength(1);
+  });
+
+  it("ignores the enter that commits an IME composition", async () => {
+    const wrapper = mount(SmartPlaylistSeedPicker, {
+      props: seedProps,
+      attachTo: document.body,
+    });
+    const input = searchField(await openPopover(wrapper))!;
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        isComposing: true,
+        bubbles: true,
+      }),
+    );
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        keyCode: 229,
+        bubbles: true,
+      }),
+    );
+
+    expect(wrapper.emitted("submit")).toBeUndefined();
+  });
+
+  it("asks to type while the query is too short to submit", async () => {
+    const content = await openPopover(
+      mount(SmartPlaylistSeedPicker, {
+        props: { ...seedProps, searchQuery: " b " },
+        attachTo: document.body,
+      }),
+    );
+
+    expect(emptyState(content)).toBe(
+      $t("smart_playlist.picker_empty_search", { label: "album" }),
+    );
+  });
+
+  it("prompts to press enter for a typed but unsubmitted query", async () => {
+    const content = await openPopover(
+      mount(SmartPlaylistSeedPicker, {
+        props: seedProps,
+        attachTo: document.body,
+      }),
+    );
+
+    expect(emptyState(content)).toBe($t("command_center_press_enter"));
+  });
+
+  it("reports no match once the query is submitted", async () => {
+    const content = await openPopover(
+      mount(SmartPlaylistSeedPicker, {
+        props: { ...seedProps, isSubmitted: true },
+        attachTo: document.body,
+      }),
+    );
+
+    expect(emptyState(content)).toBe(
+      $t("smart_playlist.picker_empty_no_match", { label: "album" }),
+    );
+  });
+});

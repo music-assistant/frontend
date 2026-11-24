@@ -2,13 +2,14 @@
 // components in is the expensive part, and the import phase is not on a test's
 // clock.
 import OwnSourcesStep from "@/components/onboarding/steps/OwnSourcesStep.vue";
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import {
   ProviderSharing,
   ProviderType,
   type ProviderConfig,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerConfig } from "../fixtures/providerConfig";
 
@@ -87,6 +88,11 @@ function testId(wrapper: Wrapper, id: string) {
   return wrapper.find(`[data-testid=${id}]`);
 }
 
+// the step's own way forward, which the wizard shows as its main button
+const primaryAction = (wrapper: Wrapper) =>
+  (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
+
 describe("OwnSourcesStep", () => {
   beforeEach(() => {
     apiMock.providers = {};
@@ -97,12 +103,9 @@ describe("OwnSourcesStep", () => {
   it("invites the member to connect a source when they own none", () => {
     const wrapper = mountStep();
 
-    expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
-      "onboarding.steps.own_sources.intro",
-    );
     expect(
       testId(wrapper, "onboarding-invitation-features")
-        .findAll("li")
+        .findAll("[data-slot=item]")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.own_sources.features.accounts",
@@ -111,12 +114,11 @@ describe("OwnSourcesStep", () => {
     expect(wrapper.findAll("[data-testid=onboarding-own-source]")).toHaveLength(
       0,
     );
-    // adding one is the step's centred action, and it can wait
-    const add = testId(wrapper, "onboarding-add-provider");
-    expect(add.classes()).toEqual(
-      expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
+    // adding one is the step's main action, and it can wait
+    expect(primaryAction(wrapper)?.labelKey).toBe(
+      "onboarding.steps.own_sources.add",
     );
-    expect(testId(wrapper, "onboarding-invitation-optional").text()).toBe(
+    expect(testId(wrapper, "onboarding-invitation-note").text()).toBe(
       "onboarding.steps.own_sources.optional",
     );
 
@@ -135,16 +137,14 @@ describe("OwnSourcesStep", () => {
         .findAll("[data-testid=onboarding-own-source]")
         .map((row) => row.text()),
     ).toEqual(["Sam's Spotify", "tidal manifest"]);
-    expect(wrapper.text()).toContain("onboarding.steps.own_sources.connected");
     // set up: the invitation makes way, and adding another stays at hand
     expect(testId(wrapper, "onboarding-invitation-features").exists()).toBe(
       false,
     );
-    expect(testId(wrapper, "onboarding-invitation-optional").exists()).toBe(
-      false,
-    );
-    expect(testId(wrapper, "onboarding-add-provider").classes()).toContain(
-      "bg-accent",
+    expect(testId(wrapper, "onboarding-invitation-note").exists()).toBe(false);
+    expect(primaryAction(wrapper)).toBeUndefined();
+    expect(testId(wrapper, "onboarding-add-provider").text()).toBe(
+      "onboarding.steps.own_sources.add",
     );
 
     wrapper.unmount();
@@ -158,9 +158,8 @@ describe("OwnSourcesStep", () => {
     const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
     expect(dialog.props("show")).toBe(false);
 
-    await wrapper
-      .find("[data-testid=onboarding-add-provider]")
-      .trigger("click");
+    primaryAction(wrapper)?.run();
+    await flushPromises();
 
     expect(dialog.props("show")).toBe(true);
     // a member only ever adds a music source of their own, self-service and

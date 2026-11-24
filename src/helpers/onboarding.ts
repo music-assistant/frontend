@@ -1,5 +1,6 @@
 import { getProviderStatusTranslationKey } from "@/helpers/provider_config";
 import { ProviderType, type ProviderStatus } from "@/plugins/api/interfaces";
+import type { Component } from "vue";
 
 /**
  * Step model and orchestration for the onboarding wizard.
@@ -55,6 +56,21 @@ export interface StepForwardForm {
   // the id of the form element
   id: string;
   labelKey: string;
+}
+
+// the sentence under each step's title, which a step's own question points to
+export const STEP_LEAD_ID = "onboarding-step-lead";
+
+/**
+ * A step's own way forward while it is not set up, such as connecting Home
+ * Assistant: the wizard shows it as the footer's main button, with a skip
+ * beside it.
+ */
+export interface StepPrimaryAction {
+  labelKey: string;
+  icon: Component;
+  run: () => unknown;
+  busy?: boolean;
 }
 
 /** How much of the app a member wants to see, as the welcome asks it. */
@@ -314,7 +330,6 @@ export function applicableSteps(ctx: OnboardingContext): OnboardingStep[] {
 
 // the steps whose title is not under `onboarding.steps.<id>.title`
 const STEP_TITLE_KEYS: Partial<Record<OnboardingStepId, string>> = {
-  intent: "onboarding.steps.intent.question",
   core_settings: "onboarding.steps.core_settings.away_title",
   ai: "onboarding.steps.ai.enrich_title",
 };
@@ -328,6 +343,48 @@ export function stepTitleKey(
     return "onboarding.steps.plugins.phone_apps_title";
   }
   return STEP_TITLE_KEYS[id] ?? `onboarding.steps.${id}.title`;
+}
+
+// the steps whose lead is not under `onboarding.steps.<id>.intro`
+const STEP_LEAD_KEYS: Partial<Record<OnboardingStepId, string>> = {
+  account: "onboarding.steps.account.description",
+  music_sources: "onboarding.steps.music_sources.description",
+  plugins: "onboarding.steps.plugins.phone_apps_instructions",
+  finish: "onboarding.steps.finish.description",
+  welcome: "onboarding.steps.welcome.description",
+  your_players: "onboarding.steps.your_players.description",
+  your_music: "onboarding.steps.your_music.description",
+  all_set: "onboarding.steps.all_set.description",
+};
+
+/** The translation key for the sentence under a step's title in this setup. */
+export function stepLeadKey(
+  id: OnboardingStepId,
+  ctx: OnboardingContext,
+): string {
+  switch (id) {
+    case "players":
+      return ctx.playerCount > 0
+        ? "onboarding.steps.players.description"
+        : "onboarding.steps.players.description_empty";
+    case "core_settings":
+      return ctx.homeAssistantAddon
+        ? "onboarding.steps.core_settings.intro_addon"
+        : "onboarding.steps.core_settings.intro";
+    case "ai":
+      // the examples are only listed until an AI service is set up
+      return ctx.providers.some(
+        (provider) => provider.aiService && !provider.builtin,
+      )
+        ? "onboarding.steps.ai.intro"
+        : "onboarding.steps.ai.intro_examples";
+    case "finish":
+      return ctx.answers.intent === "phone_apps"
+        ? "onboarding.steps.finish.phone_apps_description"
+        : "onboarding.steps.finish.description";
+    default:
+      return STEP_LEAD_KEYS[id] ?? `onboarding.steps.${id}.intro`;
+  }
 }
 
 /** The steps not set up, including optional invitations. */

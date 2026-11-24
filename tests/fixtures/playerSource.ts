@@ -13,6 +13,8 @@ export function playerSource(
     id: "line-in",
     name: "Line In",
     passive: true,
+    is_input: false,
+    owner_player_id: null,
     can_play_pause: false,
     can_seek: false,
     can_next_previous: false,

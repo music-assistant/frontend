@@ -154,11 +154,10 @@ describe("sectionPages", () => {
     ]);
   });
 
-  it.each([
-    ["network", "remote_access"],
-    ["background_tasks", "task_settings"],
-  ])("leads %s to the %s page for an admin", (parent, key) => {
-    expect(pageKeys(parent, BUILTIN_ROLE_SCOPES.admin)).toEqual([key]);
+  it("leads the network to the remote access for an admin", () => {
+    expect(pageKeys("network", BUILTIN_ROLE_SCOPES.admin)).toEqual([
+      "remote_access",
+    ]);
   });
 
   it("leads anyone from the profile to the pages of its own", () => {
@@ -187,12 +186,14 @@ describe("sectionPages", () => {
     expect(pageKeys("players", [Scope.CONFIG_PLAYERS_WRITE])).toEqual([]);
   });
 
-  it.each(["plugin_providers", "metadata", "audio_analysis"])(
-    "leads nowhere from %s, which has no pages below it",
-    (parent) => {
-      expect(pageKeys(parent, BUILTIN_ROLE_SCOPES.admin)).toEqual([]);
-    },
-  );
+  it.each([
+    "plugin_providers",
+    "metadata",
+    "audio_analysis",
+    "background_tasks",
+  ])("leads nowhere from %s, which has no pages below it", (parent) => {
+    expect(pageKeys(parent, BUILTIN_ROLE_SCOPES.admin)).toEqual([]);
+  });
 });
 
 describe("settingsTrail", () => {
@@ -203,7 +204,7 @@ describe("settingsTrail", () => {
     ["audio_analysis", ["music", "audio_analysis"]],
     ["player_support", ["players", "player_support"]],
     ["remote_access", ["system", "network", "remote_access"]],
-    ["task_settings", ["system", "background_tasks", "task_settings"]],
+    ["background_tasks", ["system", "background_tasks"]],
     ["security", ["profile", "security"]],
   ])("leads down to %s from its section", (key, trail) => {
     expect(settingsTrail(key).map((page) => page.key)).toEqual(trail);
@@ -237,7 +238,6 @@ describe("settingsPageRoute", () => {
   it.each([
     ["playback", "playbacksettings"],
     ["network", "networksettings"],
-    ["task_settings", "tasksettings"],
     ["users", "usersettings"],
   ] as const)("opens the %s settings on their own route", (id, name) => {
     expect(settingsPageRoute(id)).toEqual({ name });
@@ -246,8 +246,9 @@ describe("settingsPageRoute", () => {
   it.each([
     ["metadata", "metadataproviders"],
     ["audio_analysis", "audioanalysisproviders"],
+    ["background_tasks", "backgroundtasks"],
   ] as const)(
-    "opens the %s settings on the page of the providers they go with",
+    "opens the %s settings on the page they fold open on",
     (id, name) => {
       expect(settingsPageRoute(id)).toEqual({ name });
     },
@@ -379,7 +380,6 @@ describe("settingsHeading", () => {
 
   it.each([
     ["remote_access", "network"],
-    ["task_settings", "background_tasks"],
     ["security", "profile"],
   ])(
     "colours %s, which a row leads to, as the page above it",

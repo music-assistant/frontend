@@ -1,22 +1,16 @@
 <template>
-  <OnboardingInvitation
-    :intro="$t('onboarding.steps.invite_members.intro')"
-    :features="FEATURES"
-    :set-up="hasHousehold"
-    :linked="hasHousehold"
-    :optional="optionalLine"
-  >
-    <template #partner>
-      <Users />
-    </template>
-
+  <div>
     <!-- a live region so a member who was just added is announced -->
-    <div class="flex flex-col gap-2" aria-live="polite">
-      <ItemGroup v-if="hasHousehold" class="gap-2">
+    <OnboardingInvitation
+      :features="FEATURES"
+      :set-up="hasHousehold"
+      :note="note"
+      aria-live="polite"
+    >
+      <OnboardingList>
         <Item
           v-for="member in members"
           :key="member.user_id"
-          variant="outline"
           size="sm"
           data-testid="onboarding-household-member"
         >
@@ -30,68 +24,40 @@
             </ItemDescription>
           </ItemContent>
         </Item>
-      </ItemGroup>
-
-      <!-- the household stayed unknown: the step says so rather than passing a
-           load that failed off as an empty house -->
-      <Empty
-        v-if="loadFailed"
-        class="border-border rounded-md border border-dashed py-6"
-      >
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <UserRound />
-          </EmptyMedia>
-          <EmptyTitle>
-            {{ $t("onboarding.steps.invite_members.load_failed") }}
-          </EmptyTitle>
-        </EmptyHeader>
-      </Empty>
-    </div>
-
-    <!-- the invitation while it is just the admin, a way to add another after -->
-    <Button
-      :variant="hasHousehold ? 'secondary' : 'default'"
-      :size="hasHousehold ? 'default' : 'lg'"
-      class="self-center"
-      data-testid="onboarding-add-member"
-      @click="showCreateUserDialog = true"
-    >
-      <UserPlus class="size-4" />
-      {{ $t("onboarding.add_member") }}
-    </Button>
+        <OnboardingAddRow
+          :icon="UserPlus"
+          :label="$t('onboarding.add_member')"
+          data-testid="onboarding-add-member"
+          @click="showCreateUserDialog = true"
+        />
+      </OnboardingList>
+    </OnboardingInvitation>
 
     <CreateUserDialog v-model="showCreateUserDialog" @created="loadUsers" />
-  </OnboardingInvitation>
+  </div>
 </template>
 
 <script setup lang="ts">
+import OnboardingAddRow from "@/components/onboarding/OnboardingAddRow.vue";
 import OnboardingInvitation, {
   type InvitationFeature,
 } from "@/components/onboarding/OnboardingInvitation.vue";
-import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import OnboardingList from "@/components/onboarding/OnboardingList.vue";
 import {
   Item,
   ItemContent,
   ItemDescription,
-  ItemGroup,
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
 import CreateUserDialog from "@/components/users/CreateUserDialog.vue";
 import { householdMembers, useOnboarding } from "@/composables/useOnboarding";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import type { OnboardingStepId, StepPrimaryAction } from "@/helpers/onboarding";
 import { roleDisplayName } from "@/helpers/roles";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import { LogIn, Music, Speaker, UserPlus, UserRound, Users } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { LogIn, Music, Speaker, UserPlus, UserRound } from "@lucide/vue";
+import { computed, markRaw, ref } from "vue";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
@@ -129,9 +95,27 @@ const FEATURES: readonly InvitationFeature[] = [
   { icon: Music, labelKey: "onboarding.steps.invite_members.features.music" },
 ];
 
-const optionalLine = computed(() =>
-  $t("onboarding.steps.invite_members.optional", {
+// the household stayed unknown: the note says so rather than passing a load
+// that failed off as an empty house
+const note = computed(() => {
+  if (loadFailed.value)
+    return $t("onboarding.steps.invite_members.load_failed");
+  if (hasHousehold.value) return undefined;
+  return $t("onboarding.steps.invite_members.optional", {
     users: $t("auth.user_management"),
-  }),
+  });
+});
+
+// while it is just the admin, adding a user is the step's main button
+const primaryAction = computed<StepPrimaryAction | undefined>(() =>
+  hasHousehold.value
+    ? undefined
+    : {
+        labelKey: "onboarding.add_member",
+        icon: markRaw(UserPlus),
+        run: () => (showCreateUserDialog.value = true),
+      },
 );
+
+defineExpose({ primaryAction });
 </script>

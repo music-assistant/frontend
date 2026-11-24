@@ -111,7 +111,9 @@
         "unknown": "Unknown"
     },
     "channel_layout": {
-        "stereo": "Stereo pair"
+        "stereo": "Stereo pair",
+        "speaker_with_subwoofer": "Speaker with subwoofer",
+        "stereo_with_subwoofer": "Stereo pair with subwoofer"
     },
     "players": "Players",
     "players_need_setup": "A new device was discovered that needs to be set up | {count} new devices were discovered that need to be set up",
@@ -133,6 +135,14 @@
     "queue_options": "Queue options",
     "queue_previous_items": "Played items",
     "radios": "Radio",
+    "live_sources": "Live sources",
+    "live_sources_page": {
+        "plays_on": "Plays on {0}",
+        "no_player": "Select a player to see what you can play on it live.",
+        "select_player": "Select a player",
+        "empty": "Nothing to play live",
+        "empty_description": "{0} has no live sources or inputs."
+    },
     "read_more": "read more",
     "refresh_item": "Refresh item",
     "remove_library": "Remove from library",
@@ -543,6 +553,7 @@
             },
             "follows_default": "Default · {engine}",
             "not_available": "Not available",
+            "engine_unavailable": "The selected engine is not available",
             "choose_models": "Choose the models to use",
             "assistant_access": "Access for AI assistants",
             "mcp_server": "Enable the built-in MCP server",
@@ -904,6 +915,7 @@
         },
         "player_providers_description": "Configure player support for your audio output devices",
         "metadata_description": "Metadata sources, language, online lookups, genres and the artwork cache",
+        "metadata_settings_description": "Language, online lookups, genres and the artwork cache",
         "plugin_providers_description": "Manage plugins that extend Music Assistant functionality",
         "restore_genres": "Restore Genres",
         "genre_statistics_description": "Browse and filter all genres in your library. Genres can be globally excluded and restored.",
@@ -916,12 +928,10 @@
         "audio_analysis_providers": "Audio analysis",
         "audio_analysis_description": "Analysis progress, failed tracks, analysis modules and settings",
         "audio_analysis_modules": "Analysis modules",
+        "audio_analysis_settings_description": "How many tracks are analyzed at the same time",
         "audio_analysis_coverage": {
-            "title": "Audio Analysis Coverage",
-            "col_pending": "Pending",
-            "col_stale": "Stale",
-            "unavailable": "unavailable",
-            "none": "—"
+            "up_to_date": "Up to date",
+            "waiting": "{count} waiting"
         },
         "provider_status_auth_required": "Authentication required",
         "provider_status_incompatible": "Not supported on this system",
@@ -936,9 +946,11 @@
         "provider_saved": "Settings saved",
         "provider_reloading": "Reloading…",
         "provider_removed": "\"{0}\" removed",
-        "queue_settings": "Queue settings",
+        "queue_settings": "Playback settings",
         "audio_analysis_failures": {
-            "title": "Audio Analysis Failures",
+            "failed_tracks": "Failed tracks",
+            "failed_tracks_description": "Tracks the analysis skips until you clear them",
+            "state_none": "None",
             "description": "Tracks that failed analysis are skipped on future scans. Delete an entry to clear the failure and let it be analyzed again.",
             "col_item": "Item",
             "col_reason": "Reason",
@@ -958,8 +970,8 @@
             "clear_error": "Couldn't clear failures. Please try again.",
             "load_error": "Couldn't load failures from the server."
         },
-        "queue_global_settings_hint": "These settings apply to this queue only. You can also configure the defaults that apply to all player queues.",
-        "queue_global_settings_link": "Open playback settings",
+        "queue_global_settings_hint": "These settings apply to this player only. You can also set the defaults for all players.",
+        "queue_global_settings_link": "Open the defaults",
         "protocol_provider_unavailable": "The player support for this output protocol is currently unavailable.",
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
         "protocol_configure_title": "Configure {name}",
@@ -1076,10 +1088,13 @@
         "multi_channel": {
             "make": "Make multi-channel player…",
             "make_title": "Make multi-channel player",
-            "make_description": "{0} and another speaker play as one player, each on its own channel.",
+            "make_description": "{0} and the speakers you pick play as one player, each on its own channel.",
+            "layout": "Layout",
             "channels": {
                 "front_left": "Left",
-                "front_right": "Right"
+                "front_right": "Right",
+                "front_center": "Center",
+                "lfe": "Subwoofer"
             },
             "this_speaker": "{0} (this speaker)",
             "channel": "Channel",
@@ -1096,7 +1111,16 @@
             "take_apart_title": "Take {0} apart?",
             "take_apart_confirmation": "{0} disappears, with its settings. Its speakers come back as players of their own, with default settings.",
             "take_apart_confirm": "Take apart",
-            "taken_apart": "{0} taken apart"
+            "taken_apart": "{0} taken apart",
+            "add_subwoofer": "Add subwoofer…",
+            "add_subwoofer_title": "Add subwoofer",
+            "add_subwoofer_description": "Pick the speaker that plays the bass of {0}.",
+            "add_subwoofer_note": "The {0} output of the subwoofer moves to {1}. A player without another output disappears, with its settings.",
+            "subwoofer_added": "Subwoofer added to {0}",
+            "remove_subwoofer": "Remove subwoofer",
+            "remove_subwoofer_title": "Remove the subwoofer from {0}?",
+            "remove_subwoofer_confirmation": "{0} comes back as a player of its own, with default settings.",
+            "subwoofer_removed": "Subwoofer removed from {0}"
         },
         "hide_unavailable_players": "Hide unavailable players",
         "remove_unavailable_players": "Remove unavailable players",
@@ -1104,7 +1128,7 @@
         "remove_unavailable_players_confirmation": "This removes one player whose device can no longer be found, along with its settings: | This removes {count} players whose devices can no longer be found, along with their settings:",
         "no_unavailable_players": "There are no unavailable players to remove",
         "unavailable_players_removed": "No unavailable players were found | Removed one unavailable player | Removed {count} unavailable players",
-        "queue_settings_description": "Playback settings for the queue this player plays from",
+        "queue_settings_description": "Crossfade, volume normalization and autoplay for this player",
         "dsp_description": "Filters and gain applied to everything this player plays",
         "player_options_description": "Options and readings the player itself offers",
         "music_sources_own": "Your sources",
@@ -2080,31 +2104,24 @@
             "create_intro": "Create a new quiz game to test your music knowledge!",
             "loading": "Loading...",
             "no_active_game": "No active game",
-            "game_removed": "Game no longer available",
             "game_ended": "Game Ended",
             "game_ended_detail": "The quiz you joined has ended.",
-            "game_no_longer_available": "This game is no longer available",
             "start": "Start Quiz",
-            "reveal": "Reveal Answer",
             "phase_reveal": "Reveal answer",
             "next": "Next Round",
             "finish": "Finish Quiz",
-            "reset": "Reset Quiz",
             "new_game": "New Game",
             "phase_waiting_for_players": "Waiting for players to join",
             "phase_answers_open": "Answers are open!",
             "phase_enjoy_track": "Enjoy the track!",
             "phase_finished": "Quiz finished",
-            "join_url_label": "Join URL",
             "players": "Players",
             "players_count": "{0} player(s)",
             "rounds_count": "{0} round(s)",
             "round_label": "Round",
-            "round": "Round",
             "enter_name": "Enter your name",
             "join": "Join Quiz",
             "waiting_for_start": "Waiting for the host to start the quiz...",
-            "waiting_for_answers": "Waiting for answers...",
             "choose_answer": "Choose your answer!",
             "answered": "Answer submitted! Waiting for others...",
             "answer_was": "The answer was",
@@ -2114,19 +2131,12 @@
             "ready": "Ready for next round",
             "waiting_for_next": "Waiting for next round...",
             "game_over": "Game Over!",
-            "final_scores": "Final Scores",
             "final_leaderboard": "Final leaderboard",
-            "setup_placeholder": "Setup form coming soon",
             "connection_lost": "Connection lost, reconnecting...",
             "rounds": "Rounds",
-            "suggestions": "Answer choices",
             "answer_seconds": "Answer time (seconds)",
-            "search_music": "Search your library",
-            "searching": "Searching...",
-            "no_sources_found": "No tracks or playlists found",
             "selected_music": "Selected music",
             "pick_at_least_one_source": "Pick at least one source",
-            "source_search_failed": "Couldn't search music sources",
             "playlist": "Playlist",
             "track_with_artist": "Track • {0}",
             "track": "Track",
@@ -2142,7 +2152,6 @@
             "qr_unavailable": "Could not render QR code",
             "copied": "Copied",
             "copy_link": "Copy link",
-            "join_link_copied": "Join link copied",
             "copy_join_link_failed": "Couldn't copy join link",
             "now_playing": "Now playing",
             "current_music": "Current music",
@@ -2183,8 +2192,6 @@
             "difficulty_hard": "Hard",
             "choose_game_type": "Choose a game type",
             "configure_game": "Configure your game",
-            "setup_step": "Step {0} of {1}",
-            "coming_soon": "Coming soon",
             "answer_choices": "Answer choices",
             "game_type_guess_the_song": "Guess the Song",
             "game_type_guess_the_song_description": "Play a track and be the first to pick its title from the options.",
@@ -2194,7 +2201,6 @@
             "end_game_confirm": "Are you sure you want to end this game? This will remove the current game for all players.",
             "end_game": "End game",
             "remove_music_source": "Remove {0}",
-            "timeline": "Timeline",
             "timeline_anchor": "Anchor",
             "timeline_revealed": "New",
             "timeline_place_help": "Choose where the playing song belongs, from older to newer.",
@@ -2892,6 +2898,23 @@
     "import_playlist_match_policy_same_recording_description": "Prefer an exact match, otherwise accept the same recording from a different release.",
     "import_playlist_match_policy_best_effort_title": "Best effort",
     "import_playlist_match_policy_best_effort_description": "Prefer an exact match, then the same recording, otherwise accept the closest available match.",
+    "share": {
+        "title": "Shared music",
+        "open_preview": "Share link…",
+        "preview_title": "Share {title}",
+        "preview_description": "Preview the item before copying its share link.",
+        "copy_share_link": "Copy share link",
+        "copy_provider_link": "Copy {0} link",
+        "copy_all": "Copy all",
+        "link_copied": "Share link copied",
+        "link_copy_failed": "Could not create or copy the share link.",
+        "preview_failed": "Could not create a share preview.",
+        "preview_loading": "Preparing share preview…",
+        "loading": "Finding this item in your library…",
+        "plugin_unavailable": "This link requires the Share Links plugin. Ask the server administrator to enable it.",
+        "resolve_failed": "Could not find this item in your library.",
+        "invalid_link": "This share link is invalid or incomplete."
+    },
     "party_mode": "Party",
     "edit_playlist": "Edit playlist",
     "share_playlist": "Share playlist",
@@ -3230,7 +3253,7 @@
     "admin_only": "Admin only",
     "done": "Done",
     "on_provider": "On {0}",
-    "open_queue_settings": "Open queue settings",
+    "open_queue_settings": "Open playback settings",
     "crossfade_enable": "Enable crossfade",
     "crossfade_disable": "Disable crossfade",
     "crossfade": "Crossfade",
@@ -3490,11 +3513,7 @@
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
         "needs_attention": "Needs attention",
-        "set_up": "Done",
         "still_to_do": "Still to do",
-        "explore_more": "Explore more",
-        "all_done": "You can finish setup now and add more features whenever you like.",
-        "listen_from_apps": "Try playing from your music apps",
         "spotify_connect_hint": "In Spotify Connect's settings, choose the speakers you want to use. Then open Spotify's device picker and select one of those speakers.",
         "airplay_receiver_hint": "In AirPlay Receiver's settings, choose the speakers you want to use. Then open the AirPlay audio picker on your Apple device and select the receiver for your speaker.",
         "players_count": "{count} player | {count} players",
@@ -3510,7 +3529,6 @@
         "welcome_title": "Welcome to Music Assistant",
         "welcome_description": "A quick look around Music Assistant.",
         "welcome_again": "Show the welcome again",
-        "what_you_picked": "What you picked",
         "more_count": "+{count} more",
         "steps": {
             "get_started": {
@@ -3539,17 +3557,18 @@
                 "ready": "Signed in as {name}."
             },
             "intent": {
-                "question": "How would you primarily like to use Music Assistant?",
-                "starting_point": "Choose your starting point. You can use every feature with either option.",
+                "title": "How would you like to use Music Assistant?",
+                "intro": "Choose your starting point.",
                 "summary_title": "Your setup choice",
                 "phone_apps": {
                     "title": "Connect my music apps to my speakers",
-                    "details": "Keep choosing music in apps like Spotify, or use AirPlay. Music Assistant works in the background to connect them to your speakers, without setting up a music library."
+                    "description": "Keep choosing music in apps like Spotify, or use AirPlay. Music Assistant links them to your speakers, no library needed."
                 },
                 "music_hub": {
                     "title": "The full Music Assistant experience",
-                    "details": "Bring your music services, local music and speakers together in one place. Browse, search and build playlists in Music Assistant. You can still play from Spotify Connect and AirPlay."
-                }
+                    "description": "Your music services, local music and speakers in one place. Browse, search and build playlists in Music Assistant."
+                },
+                "reassurance": "No worries: your choice only shapes this setup. You can add any feature later in the settings."
             },
             "music_sources": {
                 "title": "Add your music sources",
@@ -3589,15 +3608,15 @@
             },
             "core_settings": {
                 "away_title": "Listen away from home",
-                "home_network_intro": "Music Assistant always works securely on your home network. With remote access, you can also listen with the Music Assistant app when you're away from home.",
-                "home_network_intro_addon": "Music Assistant runs as a Home Assistant app: wherever you can open Home Assistant, you can open Music Assistant too. With remote access, you can also listen with the Music Assistant app when you're away from home.",
+                "intro": "Music Assistant always works securely on your home network. Remote access lets you listen with the app when you're away, too.",
+                "intro_addon": "Wherever you can open Home Assistant, you can open Music Assistant too. Remote access also lets you listen with the app when you're away.",
                 "optional": "Optional: you can also turn it on later under Settings › {system} › {network}, where you can set up your own reverse proxy too.",
                 "remote": {
-                    "home_assistant": "When your Home Assistant has Home Assistant Link, remote access uses it automatically, so it works on any network.",
                     "features": {
                         "secure": "Secure and encrypted",
                         "no_setup": "No port forwarding or VPN",
-                        "anywhere": "Connect from anywhere with your remote access ID"
+                        "anywhere": "Connect from anywhere with your remote access ID",
+                        "home_assistant_link": "Uses Home Assistant Link when your Home Assistant has it"
                     },
                     "turn_on": "Turn on remote access",
                     "turn_off": "Turn off",
@@ -3624,7 +3643,7 @@
             "ai": {
                 "enrich_title": "Enrich Music Assistant with AI",
                 "intro": "Bring the power of AI to Music Assistant.",
-                "examples": "A few examples, with more to come:",
+                "intro_examples": "Bring the power of AI to Music Assistant. A few examples, with more to come:",
                 "features": {
                     "announcements": "Speak announcements",
                     "ai_radio": "Host AI Radio",
@@ -3682,8 +3701,7 @@
                     "library": "Your playlists and library, alongside everyone else's"
                 },
                 "optional": "Optional: you can also add them later under Settings › {music}.",
-                "add": "Add a music source",
-                "connected": "Your music sources"
+                "add": "Add a music source"
             },
             "all_set": {
                 "title": "You're all set",

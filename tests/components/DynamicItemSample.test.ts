@@ -59,9 +59,6 @@ function mountSample(itemDetails: Playlist | Radio) {
     props: { itemDetails, provider: "spotify" },
     global: {
       mocks: { $t: (key: string) => key },
-      // the decorative badge icon needs a real Vuetify instance to render;
-      // it's irrelevant to this component's branching logic
-      stubs: { VIcon: true },
     },
   });
 }
@@ -91,6 +88,9 @@ describe("DynamicItemSample", () => {
       wrapper.findAll(".listview-item-stub").map((item) => item.text()),
     ).toEqual(["Track one", "Track two"]);
     expect(wrapper.text()).toContain("smart_playlist.dynamic_sample_heading");
+    expect(wrapper.find("svg.lucide-shuffle").attributes("aria-hidden")).toBe(
+      "true",
+    );
   });
 
   it("loads and renders tracks from a dynamic radio", async () => {

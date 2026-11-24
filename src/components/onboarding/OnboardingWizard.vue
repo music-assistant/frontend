@@ -1,68 +1,54 @@
 <template>
   <div
-    class="flex min-h-0 w-full flex-1 flex-col gap-5"
+    class="flex min-h-0 w-full flex-1 flex-col"
     data-testid="onboarding-wizard"
   >
-    <header class="flex shrink-0 flex-col gap-3">
-      <p class="text-muted-foreground text-sm">{{ $t(trackTitleKey) }}</p>
-      <template v-if="ready && currentStep">
-        <!-- decorative: the title below names the app -->
-        <img
-          v-if="currentId === 'get_started'"
-          :src="logoSrc"
-          alt=""
-          class="mx-auto my-4 h-10 w-auto max-w-full"
-          data-testid="onboarding-logo"
-        />
-        <!-- as tall as the back button, so the title stays put without it -->
-        <div class="flex min-h-9 min-w-0 items-center gap-2">
-          <Button
-            v-if="canGoBack"
-            variant="ghost"
-            size="icon"
-            class="-ml-2 shrink-0"
-            :disabled="moving || stepBusy"
-            :aria-label="$t('back')"
-            :title="$t('back')"
-            data-testid="onboarding-back"
-            @click="back"
-          >
-            <ArrowLeft class="size-4" />
-          </Button>
-          <h1
-            ref="stepHeading"
-            class="text-xl font-semibold outline-none"
-            :class="{ 'mx-auto text-center': currentId === 'get_started' }"
-            tabindex="-1"
-            data-testid="onboarding-heading"
-          >
-            {{ stepTitle }}
-          </h1>
-        </div>
-        <div v-if="progressIndex >= 0" class="flex items-center gap-3">
-          <OnboardingProgress
-            class="min-w-0 flex-1"
-            :steps="progressSteps"
-            :current="progressIndex"
-            @navigate="jumpTo"
-          />
-          <span
-            class="text-muted-foreground sr-only shrink-0 text-sm sm:not-sr-only"
-            data-testid="onboarding-step-counter"
-          >
-            {{
-              $t("onboarding.step_counter", {
-                current: progressIndex + 1,
-                total: progressSteps.length,
-              })
-            }}
-          </span>
-        </div>
-      </template>
+    <!-- Back and the progress share the row with the dialog's close button,
+         which the right padding keeps clear; the row is always there, so the
+         step under it never moves up when there is no Back -->
+    <header class="flex h-8 shrink-0 items-center gap-3 pr-8">
+      <Button
+        v-if="ready && canGoBack"
+        variant="ghost"
+        size="icon"
+        class="-ml-2 size-8 shrink-0"
+        :disabled="moving || stepBusy"
+        :aria-label="$t('back')"
+        :title="$t('back')"
+        data-testid="onboarding-back"
+        @click="back"
+      >
+        <ArrowLeft class="size-4" />
+      </Button>
+      <OnboardingProgress
+        v-if="ready && progressIndex >= 0"
+        class="min-w-0 flex-1"
+        :class="{ 'ml-6': !canGoBack }"
+        :steps="progressSteps"
+        :current="progressIndex"
+        @navigate="jumpTo"
+      />
+      <span
+        v-if="ready && progressIndex >= 0"
+        class="sr-only"
+        data-testid="onboarding-step-counter"
+      >
+        {{
+          $t("onboarding.step_counter", {
+            current: progressIndex + 1,
+            total: progressSteps.length,
+          })
+        }}
+      </span>
     </header>
 
-    <!-- only the step scrolls; keyed so each step starts at the top -->
-    <ScrollFade :key="currentId ?? undefined" class="-mx-1 flex flex-col px-1">
+    <!-- only the step scrolls; keyed so each step starts at the top. The header
+         and the step sit as one group a little above the middle (2 : 3), and
+         start at the top once they no longer fit -->
+    <ScrollFade
+      :key="currentId ?? undefined"
+      class="-mx-1 mt-4 flex flex-col px-1 pb-1"
+    >
       <div
         v-if="!ready"
         class="flex min-h-40 items-center justify-center"
@@ -71,41 +57,109 @@
         <Spinner class="size-6" />
       </div>
 
-      <component
-        :is="stepView.component"
-        v-else-if="stepView"
-        ref="stepRef"
-        v-bind="stepView.props"
-        @advance="next"
-        @navigate="goTo"
-        @finish="finishOnboarding()"
-      />
+      <template v-else-if="stepView">
+        <div class="grow-[2] basis-0" aria-hidden="true"></div>
+        <div class="flex shrink-0 flex-col gap-6">
+          <div class="flex flex-col items-center gap-3 text-center">
+            <span
+              class="bg-primary/10 text-primary relative grid size-10 shrink-0 place-items-center rounded-xl"
+              aria-hidden="true"
+              data-testid="onboarding-step-icon"
+            >
+              <img
+                v-if="stepView.icon === 'logo'"
+                src="@/assets/icon.svg"
+                alt=""
+                class="size-6"
+              />
+              <component :is="stepView.icon" v-else class="size-5" />
+              <span
+                v-if="stepSetUp"
+                class="bg-primary text-primary-foreground ring-background absolute -right-1 -bottom-1 grid size-4 place-items-center rounded-full ring-2"
+                data-testid="onboarding-step-done"
+              >
+                <Check class="size-2.5" :stroke-width="3.5" />
+              </span>
+            </span>
+            <div class="flex flex-col gap-1">
+              <h1
+                ref="stepHeading"
+                class="text-lg leading-7 font-semibold text-balance outline-none sm:text-xl"
+                tabindex="-1"
+                data-testid="onboarding-heading"
+              >
+                {{ stepTitle }}
+              </h1>
+              <p
+                :id="STEP_LEAD_ID"
+                class="text-muted-foreground text-sm text-pretty"
+                data-testid="onboarding-lead"
+              >
+                {{ stepLead }}
+              </p>
+            </div>
+          </div>
+
+          <component
+            :is="stepView.component"
+            ref="stepRef"
+            v-bind="stepView.props"
+            @advance="next"
+            @navigate="goTo"
+            @finish="finishOnboarding()"
+          />
+        </div>
+        <div class="grow-[3] basis-0" aria-hidden="true"></div>
+      </template>
     </ScrollFade>
 
+    <!-- one main button, always the last; on a phone the buttons stack with
+         the main one on top -->
     <footer
       v-if="ready && showForwardAction"
-      class="flex shrink-0 flex-col items-center justify-end gap-2 sm:flex-row"
+      class="mt-4 flex shrink-0 flex-col-reverse gap-1 sm:flex-row sm:justify-end sm:gap-2"
     >
-      <Button
-        v-if="offerTour"
-        variant="outline"
-        class="w-full sm:w-auto"
-        :disabled="finishing"
-        data-testid="onboarding-tour"
-        @click="finishOnboarding(true)"
-      >
-        <Route class="size-4" aria-hidden="true" />
-        {{ $t("tour.start") }}
-      </Button>
-      <Button
-        v-if="isSummary"
-        class="w-full sm:w-auto"
-        :disabled="finishing"
-        data-testid="onboarding-finish"
-        @click="finishOnboarding()"
-      >
-        {{ $t("onboarding.finish") }}
-      </Button>
+      <template v-if="primaryAction">
+        <Button
+          variant="ghost"
+          class="w-full sm:w-auto"
+          :disabled="moving || stepBusy"
+          data-testid="onboarding-skip"
+          @click="next"
+        >
+          {{ $t("onboarding.skip") }}
+        </Button>
+        <Button
+          class="w-full sm:w-auto"
+          :loading="primaryAction.busy"
+          data-testid="onboarding-primary-action"
+          @click="primaryAction.run()"
+        >
+          <component :is="primaryAction.icon" class="size-4" />
+          {{ $t(primaryAction.labelKey) }}
+        </Button>
+      </template>
+      <template v-else-if="isSummary">
+        <Button
+          v-if="offerTour"
+          variant="ghost"
+          class="w-full sm:w-auto"
+          :disabled="finishing"
+          data-testid="onboarding-tour"
+          @click="finishOnboarding(true)"
+        >
+          <Route class="size-4" aria-hidden="true" />
+          {{ $t("tour.start") }}
+        </Button>
+        <Button
+          class="w-full sm:w-auto"
+          :disabled="finishing"
+          data-testid="onboarding-finish"
+          @click="finishOnboarding()"
+        >
+          {{ $t("onboarding.finish") }}
+        </Button>
+      </template>
       <Button
         v-else-if="forwardForm"
         type="submit"
@@ -120,7 +174,6 @@
       <Button
         v-else
         class="w-full sm:w-auto"
-        :variant="skipping ? 'secondary' : 'default'"
         :disabled="moving || stepBusy"
         data-testid="onboarding-next"
         @click="next"
@@ -151,18 +204,39 @@ import YourPlayersStep from "@/components/onboarding/steps/YourPlayersStep.vue";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useOnboarding } from "@/composables/useOnboarding";
-import { isDark } from "@/composables/useThemePreference";
 import { useTour } from "@/composables/useTour";
 import {
   firstStep,
+  STEP_LEAD_ID,
+  stepLeadKey,
   stepTitleKey,
   type OnboardingStepId,
   type StepForwardForm,
   type StepLeaveOptions,
+  type StepPrimaryAction,
 } from "@/helpers/onboarding";
+import { userDisplayName } from "@/helpers/provider_access";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { ArrowLeft, Route } from "@lucide/vue";
+import { store } from "@/plugins/store";
+import {
+  Armchair,
+  ArrowLeft,
+  Check,
+  Compass,
+  Globe,
+  Headphones,
+  House,
+  Library,
+  Music,
+  PartyPopper,
+  Route,
+  Smartphone,
+  Sparkles,
+  Speaker,
+  UserRound,
+  Users,
+} from "@lucide/vue";
 import {
   computed,
   markRaw,
@@ -187,33 +261,61 @@ const {
 } = useOnboarding();
 const { start: startTour } = useTour();
 
+// each step's view, and the icon its header shows; the welcome of a fresh
+// server shows the app's own logo
 const STEP_VIEWS: Record<
   OnboardingStepId,
-  { component: Component; props?: Record<string, unknown> }
+  {
+    component: Component;
+    icon: Component | "logo";
+    props?: Record<string, unknown>;
+  }
 > = {
-  get_started: { component: markRaw(GetStartedStep) },
-  account: { component: markRaw(AccountStep) },
-  intent: { component: markRaw(IntentStep) },
+  get_started: { component: markRaw(GetStartedStep), icon: "logo" },
+  account: { component: markRaw(AccountStep), icon: markRaw(UserRound) },
+  intent: { component: markRaw(IntentStep), icon: markRaw(Compass) },
   music_sources: {
     component: markRaw(ProvidersStep),
+    icon: markRaw(Music),
     props: { providerType: ProviderType.MUSIC },
   },
-  players: { component: markRaw(PlayersStep) },
+  players: { component: markRaw(PlayersStep), icon: markRaw(Speaker) },
   plugins: {
     component: markRaw(ProvidersStep),
+    icon: markRaw(Smartphone),
     props: { providerType: ProviderType.PLUGIN },
   },
-  core_settings: { component: markRaw(CoreSettingsStep) },
-  home_assistant: { component: markRaw(HomeAssistantStep) },
-  ai: { component: markRaw(AIStep) },
-  invite_members: { component: markRaw(InviteMembersStep) },
-  finish: { component: markRaw(FinishStep), props: { stepId: "finish" } },
-  welcome: { component: markRaw(WelcomeStep) },
-  your_players: { component: markRaw(YourPlayersStep) },
-  your_music: { component: markRaw(YourMusicStep) },
-  own_sources: { component: markRaw(OwnSourcesStep) },
+  core_settings: {
+    component: markRaw(CoreSettingsStep),
+    icon: markRaw(Globe),
+  },
+  home_assistant: {
+    component: markRaw(HomeAssistantStep),
+    icon: markRaw(House),
+  },
+  ai: { component: markRaw(AIStep), icon: markRaw(Sparkles) },
+  invite_members: {
+    component: markRaw(InviteMembersStep),
+    icon: markRaw(Users),
+  },
+  finish: {
+    component: markRaw(FinishStep),
+    icon: markRaw(PartyPopper),
+    props: { stepId: "finish" },
+  },
+  welcome: { component: markRaw(WelcomeStep), icon: markRaw(Armchair) },
+  your_players: { component: markRaw(YourPlayersStep), icon: markRaw(Speaker) },
+  your_music: { component: markRaw(YourMusicStep), icon: markRaw(Library) },
+  own_sources: {
+    component: markRaw(OwnSourcesStep),
+    icon: markRaw(Headphones),
+  },
   // the same summary, told as the end of the welcome instead of the setup
-  all_set: { component: markRaw(FinishStep), props: { stepId: "all_set" } },
+  all_set: {
+    component: markRaw(FinishStep),
+    icon: markRaw(PartyPopper),
+    props: { stepId: "all_set" },
+  },
 };
 
 // Do not announce a setup length before the user confirms their choice.
@@ -222,13 +324,6 @@ const PRE_SETUP_STEPS: ReadonlySet<OnboardingStepId> = new Set([
   "account",
   "intent",
 ]);
-
-// the logo with light lettering is the one for a dark theme
-const logoSrc = computed(() =>
-  isDark.value
-    ? new URL("@/assets/logo/logo.svg", import.meta.url).href
-    : new URL("@/assets/logo/logo-dark.svg", import.meta.url).href,
-);
 
 // the steps that move on under a label of their own instead of Next
 const FORWARD_LABEL_KEYS: Partial<Record<OnboardingStepId, string>> = {
@@ -261,6 +356,9 @@ interface StepInstance {
   ownsForwardAction?: boolean;
   // a step with a form of its own, which the wizard's forward button submits
   forwardForm?: StepForwardForm;
+  // a step's own way forward while it is not set up, which the footer shows
+  // as its main button, with a skip beside it
+  primaryAction?: StepPrimaryAction;
 }
 
 const stepRef = ref<StepInstance | null>(null);
@@ -274,6 +372,7 @@ const leaveStep = async (options?: StepLeaveOptions) =>
 // Next and Back wait for the selected answer to reach the server.
 const stepBusy = computed(() => stepRef.value?.busy ?? false);
 const forwardForm = computed(() => stepRef.value?.forwardForm);
+const primaryAction = computed(() => stepRef.value?.primaryAction);
 
 // steps the user has been past, so a review stays ticked after going back
 const passedSteps = ref(new Set<OnboardingStepId>());
@@ -309,10 +408,20 @@ const progressIndex = computed(() =>
 const stepTitle = computed(() =>
   currentId.value ? $t(stepTitleKey(currentId.value, ctx.value.answers)) : "",
 );
-// the eyebrow above the step says which wizard this is: the server's setup, or
-// the welcome someone who lives here is being given
-const trackTitleKey = computed(() =>
-  ctx.value.isMember ? "onboarding.welcome_title" : "onboarding.title",
+// the welcome greets the member by name; every other lead ignores the name
+const stepLead = computed(() =>
+  currentId.value
+    ? $t(stepLeadKey(currentId.value, ctx.value), {
+        name: store.currentUser ? userDisplayName(store.currentUser) : "",
+      })
+    : "",
+);
+// a step that is set up wears a tick on its icon
+const stepSetUp = computed(
+  () =>
+    currentStep.value?.kind === "step" &&
+    currentStep.value.id !== "get_started" &&
+    currentStep.value.isDone(ctx.value),
 );
 
 const isSummary = computed(() => currentStep.value?.kind === "summary");
@@ -328,6 +437,7 @@ const stepView = computed(() => {
   const view = STEP_VIEWS[id];
   return {
     component: view.component,
+    icon: view.icon,
     // the summary is the only step that finishes the wizard, so it is the only
     // one that has to know a finish is on its way out
     props: isSummary.value
@@ -341,14 +451,8 @@ const stepView = computed(() => {
 const showForwardAction = computed(
   () => currentStep.value != null && !stepRef.value?.ownsForwardAction,
 );
-// an optional step that is not set up yet offers a skip instead of Next
-const skipping = computed(() => {
-  const step = currentStep.value;
-  return !!step?.optional && !step.isDone(ctx.value);
-});
 const forwardLabel = computed(() => {
   if (forwardForm.value) return $t(forwardForm.value.labelKey);
-  if (skipping.value) return $t("onboarding.skip");
   return $t(
     (currentId.value && FORWARD_LABEL_KEYS[currentId.value]) ??
       "onboarding.next",

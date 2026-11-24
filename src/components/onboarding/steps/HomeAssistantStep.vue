@@ -1,31 +1,16 @@
 <template>
   <OnboardingInvitation
-    :intro="$t('onboarding.steps.home_assistant.intro')"
     :features="FEATURES"
     :set-up="!!connection"
-    :linked="connection && !connection.needsAttention"
-    :optional="optionalLine"
+    :note="connection ? undefined : optionalLine"
   >
-    <template #partner>
-      <ProviderIcon :domain="HASS_DOMAIN" :size="32" />
-    </template>
-
-    <ConfiguredProviderItem
-      v-if="connection"
-      :provider="connection"
-      data-testid="onboarding-home-assistant-connection"
-    />
-
-    <Button
-      v-else
-      size="lg"
-      class="self-center"
-      data-testid="onboarding-home-assistant-connect"
-      @click="connect"
-    >
-      <Plug class="size-4" />
-      {{ $t("onboarding.steps.home_assistant.connect") }}
-    </Button>
+    <OnboardingList>
+      <ConfiguredProviderItem
+        v-if="connection"
+        :provider="connection"
+        data-testid="onboarding-home-assistant-connection"
+      />
+    </OnboardingList>
   </OnboardingInvitation>
 </template>
 
@@ -34,16 +19,15 @@ import ConfiguredProviderItem from "@/components/onboarding/ConfiguredProviderIt
 import OnboardingInvitation, {
   type InvitationFeature,
 } from "@/components/onboarding/OnboardingInvitation.vue";
-import ProviderIcon from "@/components/ProviderIcon.vue";
-import { Button } from "@/components/ui/button";
+import OnboardingList from "@/components/onboarding/OnboardingList.vue";
 import { configuredProviders } from "@/composables/useOnboarding";
 import { HASS_DOMAIN } from "@/helpers/home_assistant";
-import type { OnboardingStepId } from "@/helpers/onboarding";
+import type { OnboardingStepId, StepPrimaryAction } from "@/helpers/onboarding";
 import { ProviderType } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { CloudCog, LogIn, Plug, SlidersHorizontal, Speaker } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, markRaw } from "vue";
 
 // the wizard hands the same listeners to every step; declaring them all keeps
 // the ones this step does not raise off its root element
@@ -88,4 +72,17 @@ const optionalLine = computed(() =>
 const connect = function () {
   eventbus.emit("setupFlowDialog", { kind: "provider", domain: HASS_DOMAIN });
 };
+
+// until it is connected, connecting is the step's main button
+const primaryAction = computed<StepPrimaryAction | undefined>(() =>
+  connection.value
+    ? undefined
+    : {
+        labelKey: "onboarding.steps.home_assistant.connect",
+        icon: markRaw(Plug),
+        run: connect,
+      },
+);
+
+defineExpose({ primaryAction });
 </script>

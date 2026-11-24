@@ -1,69 +1,44 @@
 <template>
-  <section class="flex flex-col gap-4">
-    <p class="text-muted-foreground text-sm">
-      {{ $t("onboarding.steps.your_music.description") }}
-    </p>
-
+  <OnboardingList>
     <template v-if="sources.length > 0">
-      <ItemGroup class="gap-2">
-        <Item
-          v-for="source in listed"
-          :key="source.instance_id"
-          variant="outline"
-          size="sm"
-          data-testid="onboarding-music-source"
-        >
-          <ItemMedia variant="icon">
-            <!-- the name right next to it already says which source it is -->
-            <ProviderIcon
-              :domain="source.domain"
-              :size="20"
-              aria-hidden="true"
-            />
-          </ItemMedia>
-          <ItemContent>
-            <ItemTitle>{{ source.name }}</ItemTitle>
-          </ItemContent>
-        </Item>
-      </ItemGroup>
+      <Item
+        v-for="source in listed"
+        :key="source.instance_id"
+        size="sm"
+        data-testid="onboarding-music-source"
+      >
+        <ItemMedia variant="icon">
+          <!-- the name right next to it already says which source it is -->
+          <ProviderIcon :domain="source.domain" :size="20" aria-hidden="true" />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle>{{ source.name }}</ItemTitle>
+        </ItemContent>
+      </Item>
 
       <!-- the sources are named up to a point; the rest are counted, so a
            home with a dozen of them still reads as a short step -->
-      <p
-        v-if="more > 0"
-        class="text-muted-foreground text-sm"
-        data-testid="onboarding-more-sources"
-      >
-        {{ $t("onboarding.more_count", { count: more }) }}
-      </p>
+      <Item v-if="more > 0" size="sm" data-testid="onboarding-more-sources">
+        <ItemMedia class="size-8" />
+        <ItemContent class="text-muted-foreground text-sm">
+          {{ $t("onboarding.more_count", { count: more }) }}
+        </ItemContent>
+      </Item>
     </template>
 
-    <Empty v-else class="border-border rounded-md border border-dashed py-6">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Music />
-        </EmptyMedia>
-        <EmptyTitle>{{ $t("onboarding.steps.your_music.empty") }}</EmptyTitle>
-      </EmptyHeader>
-    </Empty>
-  </section>
+    <OnboardingPlaceholderRow
+      v-else
+      :icon="Music"
+      :title="$t('onboarding.steps.your_music.empty')"
+    />
+  </OnboardingList>
 </template>
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import {
-  Item,
-  ItemContent,
-  ItemGroup,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
+import OnboardingList from "@/components/onboarding/OnboardingList.vue";
+import OnboardingPlaceholderRow from "@/components/onboarding/OnboardingPlaceholderRow.vue";
+import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
 import type { OnboardingStepId } from "@/helpers/onboarding";
 import { isBuiltinProvider } from "@/helpers/provider_config";
 import { api } from "@/plugins/api";

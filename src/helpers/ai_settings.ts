@@ -80,9 +80,7 @@ export function engineUsageRows(
       };
     }
     // the picker on the row names the kind of engine itself
-    return engineName
-      ? { ...row, description: "" }
-      : { ...row, description: $t("settings.ai.not_available"), error: true };
+    return { ...row, description: "" };
   });
 }
 
@@ -101,6 +99,19 @@ export function hasEnginePicker(
     !setting.in_setup_data &&
     engines.some((engine) => engine.kind === setting.kind)
   );
+}
+
+/**
+ * Whether the engine a setting selects is one of the available engines.
+ *
+ * @param setting - The engine setting.
+ * @param engines - The available engines.
+ */
+export function selectsAvailableEngine(
+  setting: AIEngineUsage,
+  engines: readonly AIEngine[],
+): boolean {
+  return engineNameOf(setting, engines) !== undefined;
 }
 
 /**

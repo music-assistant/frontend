@@ -89,8 +89,11 @@ const {
     t: vi.fn((key: string) => key),
   },
   routerMock: {
+    back: vi.fn(),
     push: vi.fn(),
     replace: vi.fn(),
+    // the entry before the page, null on a page opened directly
+    options: { history: { state: { back: null as string | null } } },
   },
   toastMock: {
     error: vi.fn(),
@@ -195,6 +198,7 @@ vi.mock("vue-router", async (importOriginal) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  routerMock.options.history.state.back = null;
   providersUpdated = undefined;
   authMock.hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
   store.currentUser = undefined;
@@ -1443,6 +1447,15 @@ describe("EditProvider", () => {
     expect(toastMock.success).not.toHaveBeenCalled();
   });
 
+  it("returns to where the user came from after saving", async () => {
+    routerMock.options.history.state.back = "/settings/players";
+
+    await mountSavedProvider();
+
+    expect(routerMock.back).toHaveBeenCalledOnce();
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
+
   it("sends an admin back to the music sources page after saving", async () => {
     const wrapper = await mountSavedProvider();
 
@@ -1719,9 +1732,11 @@ describe("EditProvider actions and sections", () => {
     expect(apiMock.removeProviderConfig).toHaveBeenCalledWith("spotify--test");
     // unsaved edits have nothing left to save to, so they must not hold the way out
     expect(discardChanges).toHaveBeenCalled();
-    expect(routerMock.push).toHaveBeenCalledWith({
+    // the page of the removed source is replaced, so back cannot return to it
+    expect(routerMock.replace).toHaveBeenCalledWith({
       name: "musicsettings",
     });
+    expect(routerMock.push).not.toHaveBeenCalled();
   });
 
   it("leaves another source opened during a removal untouched", async () => {
@@ -1768,6 +1783,7 @@ describe("EditProvider actions and sections", () => {
     ]);
     expect(discardChanges).not.toHaveBeenCalled();
     expect(routerMock.push).not.toHaveBeenCalled();
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 
   it("shows the sections of the source with its access summary", async () => {

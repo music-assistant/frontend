@@ -45,7 +45,7 @@ beforeEach(() => {
 });
 
 describe("SettingsPageFormView on the playback defaults", () => {
-  it.each(["library", "metadata", "playback", "task_settings"] as const)(
+  it.each(["library", "metadata", "playback"] as const)(
     "heads the %s settings with the header of their page",
     async (page) => {
       apiMock.getCoreConfig.mockImplementation(async (domain) =>
@@ -201,7 +201,7 @@ describe("SettingsPageFormView on the task settings", () => {
       ]),
     );
 
-    expect(await formEntries("task_settings")).toEqual([
+    expect(await formEntries("background_tasks")).toEqual([
       { key: "max_concurrent_tasks", category: "generic" },
     ]);
     expect(apiMock.getCoreConfig).toHaveBeenCalledExactlyOnceWith("tasks");

@@ -2,7 +2,10 @@
   <!-- a query container, so the floating Save button of a form can line up
        with the column below -->
   <div class="@container">
-    <Toolbar :icon="Settings">
+    <Toolbar
+      :icon="isOverview ? Settings : ArrowLeft"
+      :icon-action="isOverview ? undefined : back"
+    >
       <template #title>
         <ToolbarHeading
           :title="t('settings.settings')"
@@ -61,6 +64,7 @@ import ToolbarHeading, {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
+import { provideSettingsPageBack } from "@/composables/useSettingsPageBack";
 import { provideSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
@@ -78,7 +82,7 @@ import {
 import { api } from "@/plugins/api";
 import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { Settings } from "@lucide/vue";
+import { ArrowLeft, Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
@@ -97,6 +101,9 @@ const editedProviderName = provideEditedProviderName();
 
 // the page on screen puts what it offers in the menu of its header
 provideSettingsPageMenu();
+
+// the page on screen may handle back itself, such as closing a panel first
+const pageBack = provideSettingsPageBack();
 
 const settingsViewMode = ref<"list" | "card">("card");
 const savedSettingsViewMode = getPreference<"list" | "card">(
@@ -231,11 +238,6 @@ const isOverview = computed(() => {
   return router.currentRoute.value.name === "settings";
 });
 
-useEscapeBack(
-  () => goBack(router, { name: "settings" }),
-  () => !isOverview.value,
-);
-
 // the list the provider of an instance shows in, which its manifest decides so
 // a disabled instance, which is not loaded, shows in the same one
 const providerListOf = function (instanceId: string) {
@@ -325,7 +327,7 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
         const section = match(name)
           .with("editplayerdsp", () => t("settings.category.dsp"))
           .with("editplayeroptions", () => t("settings.category.options"))
-          .with("editqueue", () => t("settings.queue_settings"))
+          .with("editqueue", () => t("settings.playback.title"))
           .otherwise(() => undefined);
         if (section) items.push({ title: section, disabled: true });
         return items;
@@ -347,4 +349,16 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
     })
     .otherwise(() => []);
 });
+
+// back to where the user came from; a page opened directly goes one level up,
+// to the nearest page above it that the user may open
+const back = function () {
+  if (pageBack.value?.()) return;
+  const parent = breadcrumbItems.value
+    .slice(0, -1)
+    .findLast((item) => item.to)?.to;
+  goBack(router, parent ?? { name: "settings" });
+};
+
+useEscapeBack(back, () => !isOverview.value);
 </script>

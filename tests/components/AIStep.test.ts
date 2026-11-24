@@ -1,5 +1,6 @@
 import AIStep from "@/components/onboarding/steps/AIStep.vue";
 import type { ConfiguredProvider } from "@/composables/useOnboarding";
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import {
   type AIEngine,
   AIEngineKind,
@@ -53,6 +54,16 @@ vi.mock("@/components/ProviderIcon.vue", () => ({
   },
 }));
 
+// the settings dialog is covered where it lives; here it only has to say
+// whether the row opened it
+vi.mock("@/components/settings/providers/ProviderSettingsDialog.vue", () => ({
+  default: {
+    name: "ProviderSettingsDialog",
+    props: { open: Boolean, instanceId: String },
+    template: "<div />",
+  },
+}));
+
 function configured(
   domain: string,
   overrides: Partial<ConfiguredProvider> = {},
@@ -85,13 +96,16 @@ function testId(wrapper: Wrapper, id: string) {
   return wrapper.find(`[data-testid=${id}]`);
 }
 
-const linked = (wrapper: Wrapper) =>
-  testId(wrapper, "onboarding-invitation-visual").attributes("data-linked");
+// the step's own way forward, which the wizard shows as its main button
+const primaryAction = (wrapper: Wrapper) =>
+  (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
 
 describe("AIStep", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     onboardingState.services.value = [];
+    apiMock.providerManifests = {};
     apiMock.getAIEngines.mockResolvedValue([]);
     apiMock.getAIUsage.mockResolvedValue([]);
   });
@@ -99,16 +113,9 @@ describe("AIStep", () => {
   it("lists a few examples of what AI brings", async () => {
     const wrapper = await mountStep();
 
-    expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
-      "onboarding.steps.ai.intro",
-    );
-    // a selection: more of Music Assistant uses AI over time
-    expect(testId(wrapper, "onboarding-invitation-features-title").text()).toBe(
-      "onboarding.steps.ai.examples",
-    );
     expect(
       testId(wrapper, "onboarding-invitation-features")
-        .findAll("li")
+        .findAll("[data-slot=item]")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.ai.features.announcements",
@@ -140,18 +147,30 @@ describe("AIStep", () => {
       "OpenAIsettings.ai.engine_count.text · settings.ai.engine_count.image",
       "Home Assistantsettings.ai.engine_count.speech",
     ]);
-    // set up, so the link is made and nothing is left to invite to
-    expect(linked(wrapper)).toBe("true");
+    // set up, so nothing is left to invite to and the wizard moves on
     expect(testId(wrapper, "onboarding-invitation-features").exists()).toBe(
       false,
     );
-    expect(testId(wrapper, "onboarding-invitation-optional").exists()).toBe(
-      false,
-    );
-    // a way to add another, without the weight of the first invitation
+    expect(testId(wrapper, "onboarding-invitation-note").exists()).toBe(false);
+    expect(primaryAction(wrapper)).toBeUndefined();
+    // a way to add another: the list's last row
     const add = wrapper.get("[data-testid=onboarding-add-ai-service]");
     expect(add.text()).toBe("settings.ai.add_service");
-    expect(add.classes()).toContain("bg-accent");
+  });
+
+  it("shows a working service for its status, without opening its settings", async () => {
+    onboardingState.services.value = [
+      configured("hass", { name: "Home Assistant" }),
+    ];
+
+    const wrapper = await mountStep();
+
+    const service = wrapper.get("[data-testid=onboarding-ai-service]");
+    expect(service.element.tagName).not.toBe("BUTTON");
+    await service.trigger("click");
+    expect(
+      wrapper.findComponent({ name: "ProviderSettingsDialog" }).exists(),
+    ).toBe(false);
   });
 
   it("flags a service that is set up but does not work", async () => {
@@ -170,7 +189,26 @@ describe("AIStep", () => {
     expect(service.find("[aria-label]").attributes("aria-label")).toBe(
       "settings.provider_status_auth_required",
     );
-    expect(linked(wrapper)).toBeUndefined();
+  });
+
+  it("keeps Reconfigure on a service that has to sign in again", async () => {
+    apiMock.providerManifests = { openai_compatible: { has_setup_flow: true } };
+    onboardingState.services.value = [
+      configured("openai_compatible", {
+        name: "OpenAI",
+        needsAttention: true,
+        status: ProviderStatus.AUTH_REQUIRED,
+      }),
+    ];
+
+    const wrapper = await mountStep();
+
+    expect(
+      wrapper
+        .get("[data-testid=onboarding-ai-service]")
+        .find("[data-testid=onboarding-provider-reconfigure]")
+        .exists(),
+    ).toBe(true);
   });
 
   it("invites to add an AI service while none is set up, as optional", async () => {
@@ -179,15 +217,14 @@ describe("AIStep", () => {
     expect(wrapper.find("[data-testid=onboarding-ai-service]").exists()).toBe(
       false,
     );
-    const add = wrapper.get("[data-testid=onboarding-add-ai-service]");
-    expect(add.text()).toBe("settings.ai.add_service");
-    expect(add.classes()).toEqual(
-      expect.arrayContaining(["self-center", "bg-primary", "h-10"]),
-    );
-    expect(testId(wrapper, "onboarding-invitation-optional").text()).toBe(
+    expect(primaryAction(wrapper)?.labelKey).toBe("settings.ai.add_service");
+    // the wizard's footer holds it, so the step has no button of its own
+    expect(
+      wrapper.find("[data-testid=onboarding-add-ai-service]").exists(),
+    ).toBe(false);
+    expect(testId(wrapper, "onboarding-invitation-note").text()).toBe(
       "onboarding.steps.ai.optional",
     );
-    expect(linked(wrapper)).toBeUndefined();
   });
 
   it("opens the add flow on the AI and speech services", async () => {
@@ -195,9 +232,8 @@ describe("AIStep", () => {
     const dialog = wrapper.findComponent({ name: "AddProviderDialog" });
     expect(dialog.props("show")).toBe(false);
 
-    await wrapper
-      .get("[data-testid=onboarding-add-ai-service]")
-      .trigger("click");
+    primaryAction(wrapper)?.run();
+    await flushPromises();
 
     expect(dialog.props()).toMatchObject({
       show: true,

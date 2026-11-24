@@ -37,6 +37,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useConfigAction } from "@/composables/useConfigAction";
 import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import { coreModuleName } from "@/helpers/core_modules";
+import { goBack } from "@/helpers/navigation";
 import { LOG_LEVEL_KEY } from "@/helpers/settings_pages";
 import { getExternalLinkUrl } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -114,7 +115,7 @@ const onSubmit = async function (values: Record<string, ConfigValueType>) {
   api
     .saveCoreConfig(config.value!.domain, values)
     .then(() => {
-      router.push({ name: "systemsettings" });
+      goBack(router, { name: "systemsettings" });
     })
     .catch(() => {
       // the api reports the failure itself

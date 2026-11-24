@@ -9,7 +9,6 @@
         :allowed-media-types="MUSIC_QUIZ_SOURCE_MEDIA_TYPES"
         :default-selected-media-types="MUSIC_QUIZ_DEFAULT_SOURCE_MEDIA_TYPES"
         :exclude-uris="selectedSourceUris"
-        :placeholder="$t('providers.music_quiz.search_music')"
         @select="onSourceSelect"
       />
     </Field>

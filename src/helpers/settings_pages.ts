@@ -38,13 +38,13 @@ export interface SettingsPage {
 export type SettingsPageId =
   | "ai"
   | "audio_analysis"
+  | "background_tasks"
   | "diagnostics"
   | "home_assistant"
   | "library"
   | "metadata"
   | "network"
   | "playback"
-  | "task_settings"
   | "users";
 
 export const STREAMS_DOMAIN = "streams";
@@ -85,6 +85,9 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
         categories: [AUDIO_ANALYSIS_CATEGORY],
       },
     ],
+  },
+  background_tasks: {
+    sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
   },
   diagnostics: {
     sources: [
@@ -153,9 +156,6 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
       },
       { owner: coreOwner(PLAYERS_DOMAIN) },
     ],
-  },
-  task_settings: {
-    sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
   },
   users: {
     sources: [

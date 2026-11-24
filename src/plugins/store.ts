@@ -44,6 +44,8 @@ interface Store {
   libraryPodcastsCount?: number;
   libraryAudiobooksCount?: number;
   libraryGenresCount?: number;
+  // whether the user can start a live source on any player
+  hasLiveSources: boolean;
   isTouchscreen: boolean;
   deviceType: DeviceType;
   forceMobileLayout?: boolean;
@@ -89,6 +91,7 @@ export const store: Store = reactive({
   libraryPlaylistsCount: undefined,
   libraryRadiosCount: undefined,
   libraryGenresCount: undefined,
+  hasLiveSources: false,
   isTouchscreen: isTouchscreenDevice(),
   deviceType: DEVICE_TYPE,
   // a tablet has the screen for a desktop layout and is laid out for touch all

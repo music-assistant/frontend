@@ -1,8 +1,8 @@
 <template>
   <section class="p-4">
     <SettingsHeaderCard
-      :icon="SlidersHorizontal"
-      :title="$t('settings.queue_settings')"
+      :icon="CirclePlay"
+      :title="$t('settings.playback.title')"
       :description="queueName"
       :documentation-url="documentationUrl"
       @reset-to-defaults="resetToDefaults"
@@ -52,14 +52,14 @@ import { mergeConfigEntries } from "@/helpers/config_entry_ui";
 import { goBack } from "@/helpers/navigation";
 import { settingsPageRoute } from "@/helpers/settings_sections";
 import { getExternalLinkUrl } from "@/helpers/utils";
-import { Info, SlidersHorizontal } from "@lucide/vue";
+import { CirclePlay, Info } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import EditConfig from "./EditConfig.vue";
 import SettingsHeaderCard from "./SettingsHeaderCard.vue";
 
 const QUEUE_DOCS_URL =
-  "https://music-assistant.io/settings/individual-player/#queue-settings";
+  "https://music-assistant.io/settings/individual-player/#playback-settings";
 
 // global refs
 const router = useRouter();

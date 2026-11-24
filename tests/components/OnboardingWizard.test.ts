@@ -137,7 +137,11 @@ vi.mock("@/helpers/player_settings_actions", () => ({
 }));
 
 vi.mock("@/components/users/CreateUserDialog.vue", () => ({
-  default: { props: ["modelValue"], template: "<div />" },
+  default: {
+    name: "CreateUserDialog",
+    props: ["modelValue"],
+    template: "<div />",
+  },
 }));
 
 // the icon reaches for a Vuetify theme this bare mount does not set up
@@ -284,6 +288,9 @@ function signInAsMember(scopes: readonly Scope[] = MEMBER_WITHOUT_OWN_SCOPES) {
   });
 }
 
+// the footer's way on: Next, or Skip for now on a step not set up yet
+const FORWARD = "[data-testid=onboarding-next], [data-testid=onboarding-skip]";
+
 function heading(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
   return wrapper.find("[data-testid=onboarding-heading]").text();
 }
@@ -344,7 +351,7 @@ async function mountFirstRunWizard({ attach = false } = {}) {
 
 /** Past the first run's welcome, onto the account step. */
 async function getStarted(wrapper: Awaited<ReturnType<typeof mountWizard>>) {
-  await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+  await wrapper.find(FORWARD).trigger("click");
   await flushPromises();
   expect(heading(wrapper)).toBe("onboarding.steps.account.title");
 }
@@ -457,7 +464,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const wrapper = await mountWizard();
     await flushPromises();
 
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
     // nothing to go back to on the first step
     expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(false);
 
@@ -475,14 +482,14 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     expect(wrapper.find("[aria-current=step]").attributes("aria-label")).toBe(
       title,
     );
-    expect(wrapper.find("[data-testid=onboarding-add-provider]").text()).toBe(
+    expect(wrapper.find("[data-testid=onboarding-primary-action]").text()).toBe(
       "onboarding.steps.plugins.connect",
     );
-    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
-      "onboarding.next",
+    expect(wrapper.find("[data-testid=onboarding-skip]").text()).toBe(
+      "onboarding.skip",
     );
 
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
 
@@ -586,12 +593,11 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       wrapper.find("[data-testid=onboarding-summary-pending]").exists(),
     ).toBe(false);
     expect(wrapper.text()).not.toContain("onboarding.still_to_do");
-    expect(wrapper.text()).toContain("onboarding.all_done");
     // the recap names the choice made, not the question that asked for it
     const choice = wrapper.findAll("[data-testid=onboarding-summary-done]")[0];
     expect(choice.text()).toContain("onboarding.steps.intent.summary_title");
     expect(choice.text()).toContain("onboarding.steps.intent.phone_apps.title");
-    expect(choice.text()).not.toContain("onboarding.steps.intent.question");
+    expect(choice.text()).not.toContain("onboarding.steps.intent.title");
     expect(wrapper.text()).toContain(
       "onboarding.steps.finish.phone_apps_description",
     );
@@ -618,7 +624,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       ["onboarding.steps.plugins.phone_apps_title", "2/3"],
       ["onboarding.steps.finish.title", "3/3"],
     ]) {
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await wrapper.find(FORWARD).trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe(title);
       expect(stepCount(wrapper)).toBe(count);
@@ -628,7 +634,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await wrapper.find("[data-testid=onboarding-back]").trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.plugins.phone_apps_title");
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
     await wrapper.find("[data-testid=onboarding-finish]").trigger("click");
     await flushPromises();
@@ -671,8 +677,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         .findAll("[data-testid=onboarding-receiver-instructions]")
         .map((item) => item.text()),
     ).toEqual([
-      "onboarding.spotify_connect_hint",
-      "onboarding.airplay_receiver_hint",
+      expect.stringContaining("onboarding.spotify_connect_hint"),
+      expect.stringContaining("onboarding.airplay_receiver_hint"),
     ]);
 
     providerConfigs.list[0].enabled = false;
@@ -691,21 +697,19 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     try {
       await flushPromises();
 
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await wrapper.find(FORWARD).trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.home_assistant.title");
       expect(stepCount(wrapper)).toBe("3/4");
       expect(
-        wrapper
-          .find("[data-testid=onboarding-home-assistant-connect]")
-          .exists(),
-      ).toBe(true);
+        wrapper.find("[data-testid=onboarding-primary-action]").text(),
+      ).toBe("onboarding.steps.home_assistant.connect");
       // optional, so it can be skipped on the way to the finish
-      expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+      expect(wrapper.find("[data-testid=onboarding-skip]").text()).toBe(
         "onboarding.skip",
       );
 
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await wrapper.find(FORWARD).trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
     } finally {
@@ -728,18 +732,16 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         ["onboarding.steps.home_assistant.title", "3/7"],
         ["onboarding.steps.core_settings.away_title", "4/7"],
       ]) {
-        await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+        await wrapper.find(FORWARD).trigger("click");
         await flushPromises();
         expect(heading(wrapper)).toBe(title);
         expect(stepCount(wrapper)).toBe(count);
       }
       // connected one step earlier, so remote access can say it goes through
       // Home Assistant Link
-      expect(
-        wrapper
-          .find("[data-testid=onboarding-remote-access-home-assistant]")
-          .exists(),
-      ).toBe(true);
+      expect(wrapper.text()).toContain(
+        "onboarding.steps.core_settings.remote.features.home_assistant_link",
+      );
     } finally {
       wrapper.unmount();
     }
@@ -779,16 +781,13 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         await flushPromises();
 
         expect(heading(wrapper)).toBe("onboarding.steps.get_started.title");
-        expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
-          true,
-        );
+        // the app's own logo in the step's icon
+        expect(
+          wrapper.find("[data-testid=onboarding-step-icon] img").exists(),
+        ).toBe(true);
         expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
           false,
         );
-        // centred under the logo, like the rest of the welcome
-        expect(
-          wrapper.find("[data-testid=onboarding-heading]").classes(),
-        ).toContain("text-center");
         expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
           "onboarding.steps.get_started.start",
         );
@@ -796,13 +795,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
         await getStarted(wrapper);
 
-        // the logo and the centred heading belong to the welcome alone
-        expect(wrapper.find("[data-testid=onboarding-logo]").exists()).toBe(
-          false,
-        );
+        // the logo belongs to the welcome alone
         expect(
-          wrapper.find("[data-testid=onboarding-heading]").classes(),
-        ).not.toContain("text-center");
+          wrapper.find("[data-testid=onboarding-step-icon] img").exists(),
+        ).toBe(false);
 
         expect(wrapper.find("form#form-onboarding-account").exists()).toBe(
           true,
@@ -886,7 +882,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
         signInAsNewAdmin();
         await flushPromises();
-        expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
       } finally {
         wrapper.unmount();
         vi.unstubAllGlobals();
@@ -901,7 +897,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         signInAsNewAdmin();
         await flushPromises();
 
-        expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
         expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
           false,
         );
@@ -911,7 +907,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
         await wrapper.find("[data-testid=onboarding-back]").trigger("click");
         await flushPromises();
-        expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
         expect(wrapper.find("[data-testid=onboarding-back]").exists()).toBe(
           false,
         );
@@ -934,14 +930,14 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(apiMock.getProviderConfigs).toHaveBeenCalledOnce();
       expect(apiMock.getAllUsers).toHaveBeenCalledOnce();
       expect(apiMock.subscribe_multi).toHaveBeenCalledOnce();
-      expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+      expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
       expect(stepCount(wrapper)).toBeNull();
 
       // the numbered setup starts after the choice, the account not counted
       await pickIntent(wrapper, "music_hub");
       expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
       expect(stepCount(wrapper)).toBe("1/6");
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await wrapper.find(FORWARD).trigger("click");
       await flushPromises();
       expect(stepCount(wrapper)).toBe("2/6");
       // the music source that is set up counts, now that it can be seen
@@ -962,7 +958,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         await getStarted(wrapper);
         signInAsNewAdmin();
         await flushPromises();
-        expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
         expect(stepCount(wrapper)).toBeNull();
 
         await pickIntent(wrapper, "phone_apps");
@@ -973,7 +969,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
           ["onboarding.steps.plugins.phone_apps_title", "2/3"],
           ["onboarding.steps.finish.title", "3/3"],
         ]) {
-          await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+          await wrapper.find(FORWARD).trigger("click");
           await flushPromises();
           expect(heading(wrapper)).toBe(title);
           expect(stepCount(wrapper)).toBe(count);
@@ -995,7 +991,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
         await pickIntent(wrapper, "music_hub");
         expect(setUserPreferenceMock).toHaveBeenCalledOnce();
-        expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+        expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
       } finally {
         wrapper.unmount();
       }
@@ -1051,12 +1047,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
         wrapper = await mountWizard({ fresh: false, step: "finish" });
         await flushPromises();
-        const account = wrapper
-          .findAll("[data-testid=onboarding-summary-done]")
-          .find((row) => row.text().includes("onboarding.steps.account.title"));
-        expect(account).toBeDefined();
-        expect(account!.attributes("disabled")).toBeDefined();
-        await account!.trigger("click");
+        // the account cannot be undone and comes before everything else, so
+        // the recap neither looks back at it nor ever lists it as to do
+        expect(wrapper.text()).not.toContain("onboarding.steps.account.title");
         expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
       } finally {
         wrapper.unmount();
@@ -1092,7 +1085,89 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     expect(wrapper.find("[data-testid=onboarding-loading]").exists()).toBe(
       false,
     );
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
+
+    wrapper.unmount();
+  });
+
+  it("shows a step's own action as the main button, with a skip beside it", async () => {
+    const wrapper = await mountWizard({ step: "invite_members" });
+    await flushPromises();
+
+    const footer = wrapper.find("footer");
+    // one main button, and it is the last one
+    expect(footer.findAll("button").at(-1)!.attributes("data-testid")).toBe(
+      "onboarding-primary-action",
+    );
+    expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(false);
+
+    const dialog = wrapper.findComponent({ name: "CreateUserDialog" });
+    expect(dialog.props("modelValue")).toBe(false);
+    await wrapper
+      .find("[data-testid=onboarding-primary-action]")
+      .trigger("click");
+    expect(dialog.props("modelValue")).toBe(true);
+    expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
+
+    await wrapper.find("[data-testid=onboarding-skip]").trigger("click");
+    await flushPromises();
+    expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
+
+    wrapper.unmount();
+  });
+
+  it("moves on with Next once the step is set up", async () => {
+    addMember("sam-1");
+
+    const wrapper = await mountWizard({ step: "invite_members" });
+    await flushPromises();
+
+    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+      "onboarding.next",
+    );
+    expect(wrapper.find("[data-testid=onboarding-skip]").exists()).toBe(false);
+    expect(
+      wrapper.find("[data-testid=onboarding-primary-action]").exists(),
+    ).toBe(false);
+    // and the step's icon says it is done
+    expect(wrapper.find("[data-testid=onboarding-step-done]").exists()).toBe(
+      true,
+    );
+
+    wrapper.unmount();
+  });
+
+  it("puts the step's lead under its title", async () => {
+    const wrapper = await mountWizard({ step: "intent" });
+    await flushPromises();
+
+    const lead = wrapper.find("[data-testid=onboarding-lead]");
+    expect(lead.text()).toBe("onboarding.steps.intent.intro");
+    // the question the cards answer is the lead the cards point to
+    expect(wrapper.find("[role=group]").attributes("aria-labelledby")).toBe(
+      lead.attributes("id"),
+    );
+    expect(
+      wrapper.find("[data-testid=onboarding-intent-reassurance]").text(),
+    ).toBe("onboarding.steps.intent.reassurance");
+
+    wrapper.unmount();
+  });
+
+  it("recaps what is still to do before the optional extras", async () => {
+    preferenceState.intent.value = "music_hub";
+
+    const wrapper = await mountWizard({ step: "finish" });
+    await flushPromises();
+
+    const rows = wrapper
+      .findAll("[data-testid^=onboarding-summary-]")
+      .map((row) => row.attributes("data-testid"));
+    const lastPending = rows.lastIndexOf("onboarding-summary-pending");
+    const firstOptional = rows.indexOf("onboarding-summary-optional");
+    expect(lastPending).toBeGreaterThanOrEqual(0);
+    expect(firstOptional).toBeGreaterThan(lastPending);
+    expect(wrapper.text()).toContain("onboarding.still_to_do");
 
     wrapper.unmount();
   });
@@ -1102,10 +1177,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await flushPromises();
 
     expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
-    expect(wrapper.find("[data-testid=onboarding-add-member]").exists()).toBe(
-      true,
+    expect(wrapper.find("[data-testid=onboarding-primary-action]").text()).toBe(
+      "onboarding.add_member",
     );
-    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+    expect(wrapper.find("[data-testid=onboarding-skip]").text()).toBe(
       "onboarding.skip",
     );
 
@@ -1119,8 +1194,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await flushPromises();
 
     expect(heading(wrapper)).toBe("onboarding.steps.players.title");
-    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
-      "onboarding.next",
+    // nothing set up yet: adding player support is the way on, or a skip
+    expect(wrapper.find("[data-testid=onboarding-primary-action]").text()).toBe(
+      "settings.add_player_provider",
     );
 
     wrapper.unmount();
@@ -1193,7 +1269,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         .find("[data-testid=onboarding-intent-music_hub]")
         .attributes("disabled"),
     ).toBeDefined();
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
 
     landIntent();
     await flushPromises();
@@ -1214,7 +1290,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     // the api has told the user; walking on would leave the question behind
     // with no answer on the account
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
 
     // the card is there to try again with, and it does not land either
     await pickIntent(wrapper, "phone_apps");
@@ -1223,7 +1299,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       "onboarding.intent",
       "phone_apps",
     );
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
 
     wrapper.unmount();
   });
@@ -1239,7 +1315,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await pickIntent(wrapper, "phone_apps");
 
     // the wizard stays on the question, which shows the answer the account holds
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
     expect(
       wrapper
         .find("[data-testid=onboarding-intent-music_hub]")
@@ -1275,7 +1351,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     // back on the question, the answer given reads as chosen, and the wizard
     // stays there until a card is picked: going back answers nothing
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
     expect(
       wrapper
         .find("[data-testid=onboarding-intent-phone_apps]")
@@ -1304,7 +1380,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // through, not jumped over, so the wizard does not land on the review
     expect(heading(wrapper)).toBe("onboarding.steps.music_sources.title");
 
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
 
     // and one more step is the players, still one at a time
@@ -1322,7 +1398,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     // walk a couple of steps along: intent -> music sources -> players
     await pickIntent(wrapper, "music_hub");
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.players.title");
 
@@ -1348,7 +1424,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await flushPromises();
 
     await pickIntent(wrapper, "music_hub");
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.players.title");
 
@@ -1361,7 +1437,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     // and back from the first counted step is the setup choice again
     await wrapper.find("[data-testid=onboarding-back]").trigger("click");
     await flushPromises();
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
     expect(stepCount(wrapper)).toBeNull();
 
     wrapper.unmount();
@@ -1386,7 +1462,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
       await wrapper.find("[data-testid=onboarding-back]").trigger("click");
       await flushPromises();
-      expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+      expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
       expect(stepCount(wrapper)).toBeNull();
     }
     wrapper.unmount();
@@ -1427,7 +1503,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const pending = wrapper.find("[data-testid=onboarding-summary-pending]");
     expect(pending.element.tagName).toBe("BUTTON");
     await pending.trigger("click");
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
 
     wrapper.unmount();
   });
@@ -1464,7 +1540,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
           await row!.trigger("click");
           await flushPromises();
           expect(heading(wrapper)).toBe(
-            id === "intent" ? "onboarding.steps.intent.question" : title,
+            id === "intent" ? "onboarding.steps.intent.title" : title,
           );
           if (id === "intent") expect(stepCount(wrapper)).toBeNull();
         } finally {
@@ -1574,7 +1650,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const wrapper = await mountWizard({ step: "nope" as OnboardingStepId });
     await flushPromises();
 
-    expect(heading(wrapper)).toBe("onboarding.steps.intent.question");
+    expect(heading(wrapper)).toBe("onboarding.steps.intent.title");
 
     wrapper.unmount();
   });
@@ -1645,27 +1721,27 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const wrapper = await mountWizard({ step: "core_settings" });
     await flushPromises();
 
-    // a review is nothing to set up, so it is shown rather than skipped, and
-    // moving on from it is all the footer offers
+    // a review is nothing to tick off, so it is shown rather than skipped;
+    // turning remote access on is its main action, with a skip beside it
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.away_title");
-    expect(
-      wrapper.find("[data-testid=onboarding-remote-access-turn-on]").exists(),
-    ).toBe(true);
-    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
-      "onboarding.next",
+    expect(wrapper.find("[data-testid=onboarding-primary-action]").text()).toBe(
+      "onboarding.steps.core_settings.remote.turn_on",
+    );
+    expect(wrapper.find("[data-testid=onboarding-skip]").text()).toBe(
+      "onboarding.skip",
     );
 
     // the AI and the household are done, but a done step is still walked
     // through
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.ai.enrich_title");
 
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
 
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
     expect(heading(wrapper)).toBe("onboarding.steps.finish.title");
 
@@ -1680,7 +1756,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     const wrapper = await mountWizard({ step: "players" });
     await flushPromises();
 
-    await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+    await wrapper.find(FORWARD).trigger("click");
     await flushPromises();
 
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.away_title");
@@ -1697,10 +1773,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
 
     // the only thing left to do is the one thing the wizard never insists on
     expect(heading(wrapper)).toBe("onboarding.steps.invite_members.title");
-    expect(wrapper.find("[data-testid=onboarding-add-member]").exists()).toBe(
-      true,
+    expect(wrapper.find("[data-testid=onboarding-primary-action]").text()).toBe(
+      "onboarding.add_member",
     );
-    expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+    expect(wrapper.find("[data-testid=onboarding-skip]").text()).toBe(
       "onboarding.skip",
     );
 
@@ -1726,9 +1802,9 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
     await flushPromises();
 
     expect(heading(wrapper)).toBe("onboarding.steps.core_settings.away_title");
-    expect(
-      wrapper.find("[data-testid=onboarding-remote-access-turn-on]").exists(),
-    ).toBe(true);
+    expect(wrapper.find("[data-testid=onboarding-primary-action]").text()).toBe(
+      "onboarding.steps.core_settings.remote.turn_on",
+    );
 
     wrapper.unmount();
   });
@@ -1753,7 +1829,7 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(invitation.text()).toContain("onboarding.steps.own_sources.title");
       await invitation.trigger("click");
       expect(heading(wrapper)).toBe("onboarding.steps.own_sources.title");
-      expect(wrapper.find("[data-testid=onboarding-next]").text()).toBe(
+      expect(wrapper.find("[data-testid=onboarding-skip]").text()).toBe(
         "onboarding.skip",
       );
       wrapper.unmount();
@@ -1764,8 +1840,8 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       expect(heading(wrapper)).toBe("onboarding.steps.welcome.title");
-      // the eyebrow above it is the welcome's, not the setup's
-      expect(wrapper.text()).toContain("onboarding.welcome_title");
+      // the step's title says it all: there is no eyebrow above it
+      expect(wrapper.text()).not.toContain("onboarding.welcome_title");
       expect(wrapper.text()).not.toContain("onboarding.title");
 
       wrapper.unmount();
@@ -1778,10 +1854,10 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       await flushPromises();
 
       expect(heading(wrapper)).toBe("onboarding.steps.own_sources.title");
-      // the step carries its own add-a-source button, wired to the dialog
+      // adding a source is the step's main action, in the wizard's footer
       expect(
-        wrapper.find("[data-testid=onboarding-add-provider]").exists(),
-      ).toBe(true);
+        wrapper.find("[data-testid=onboarding-primary-action]").text(),
+      ).toBe("onboarding.steps.own_sources.add");
 
       wrapper.unmount();
     });
@@ -1806,18 +1882,17 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
         "onboarding.next",
       );
 
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await wrapper.find(FORWARD).trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.your_music.title");
 
-      await wrapper.find("[data-testid=onboarding-next]").trigger("click");
+      await wrapper.find(FORWARD).trigger("click");
       await flushPromises();
       expect(heading(wrapper)).toBe("onboarding.steps.all_set.title");
       expect(stepCount(wrapper)).toBe("4/4");
 
       // the summary looks back at the one thing the welcome asked, and the
       // answer they gave is the only one written
-      expect(wrapper.text()).toContain("onboarding.what_you_picked");
       expect(wrapper.text()).toContain("onboarding.steps.welcome.expert.label");
       expect(expertAnswers()).toEqual([true]);
       expect(wrapper.find("[data-testid=onboarding-next]").exists()).toBe(
@@ -1922,7 +1997,6 @@ describe("Onboarding wizard", { timeout: 20_000 }, () => {
       expect(done[0].text()).toContain(
         "onboarding.steps.welcome.standard.label",
       );
-      expect(wrapper.text()).toContain("onboarding.what_you_picked");
 
       wrapper.unmount();
     });

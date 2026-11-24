@@ -53,7 +53,8 @@ const MOVED_SETTINGS_PAGES: Readonly<Record<string, string>> = {
   storage: "storagesettings",
   "home-assistant": "homeassistantsettings",
   tasks: "backgroundtasks",
-  "tasks/settings": "tasksettings",
+  "tasks/settings": "backgroundtasks",
+  "system/tasks/settings": "backgroundtasks",
   diagnostics: "diagnostics",
   [`editcore/${AI_DOMAIN}`]: "aisettings",
 };
@@ -214,6 +215,17 @@ export const routes: RouteRecordRaw[] = [
                 ? { users: route.query.users.split(",") }
                 : {},
         }),
+      },
+      {
+        path: "/share",
+        name: "share",
+        component: () =>
+          import(/* webpackChunkName: "share" */ "@/views/ShareView.vue"),
+        props: (route) => ({
+          payload:
+            typeof route.query.payload === "string" ? route.query.payload : "",
+        }),
+        meta: { requiresScope: Scope.LIBRARY_READ },
       },
       {
         path: "/ai-radio",
@@ -556,6 +568,14 @@ export const routes: RouteRecordRaw[] = [
         ],
       },
       {
+        path: "/live-sources",
+        name: "livesources",
+        component: () =>
+          import(
+            /* webpackChunkName: "livesources" */ "@/views/LiveSources.vue"
+          ),
+      },
+      {
         path: "/genres",
         children: [
           {
@@ -802,16 +822,6 @@ export const routes: RouteRecordRaw[] = [
               ),
             props: true,
             meta: { requiresScope: Scope.SYSTEM_READ },
-          },
-          {
-            path: "system/tasks/settings",
-            name: "tasksettings",
-            component: () =>
-              import(
-                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
-              ),
-            props: { page: "task_settings" satisfies SettingsPageId },
-            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
             path: "system/diagnostics",

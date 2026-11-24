@@ -1,8 +1,10 @@
 import { store } from "@/plugins/store";
 import { onBeforeUnmount, onMounted } from "vue";
 
+// the input of a Vuetify select takes no typing (inputmode="none"), so once its
+// list is closed Escape is free to go back
 const EDITABLE =
-  'input, select, textarea, [contenteditable]:not([contenteditable="false"])';
+  'input:not([inputmode="none"]), select, textarea, [contenteditable]:not([contenteditable="false"])';
 const OVERLAY =
   '.v-overlay--active, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-slot="popover-content"]';
 const HIDDEN =

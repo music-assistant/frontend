@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { browsePathLevels, parentBrowsePath } from "./browse_path";
+import {
+  browseLevelTitle,
+  browsePathLevels,
+  parentBrowsePath,
+} from "./browse_path";
 
 describe("parentBrowsePath", () => {
   it("goes up one folder", () => {
@@ -142,5 +146,44 @@ describe("browsePathLevels", () => {
 
   it("has no levels for an empty path", () => {
     expect(browsePathLevels("")).toEqual([]);
+  });
+});
+
+describe("browseLevelTitle", () => {
+  const names = (folders: Record<string, string> = {}) => ({
+    discover: "Discover",
+    folderName: (path: string) => folders[path],
+    providerName: (providerId: string) =>
+      providerId === "fs--abc" ? "My music" : providerId,
+  });
+  const titles = (path: string, folders?: Record<string, string>) =>
+    browsePathLevels(path).map((level) =>
+      browseLevelTitle(level, names(folders)),
+    );
+
+  it("names a provider level by its provider", () => {
+    expect(titles("fs--abc://Rock")).toEqual(["My music", "Rock"]);
+  });
+
+  it("keeps the provider name over the name of its listed folder", () => {
+    expect(titles("fs--abc://", { "fs--abc://": "Old name" })).toEqual([
+      "My music",
+    ]);
+  });
+
+  it("names a folder that stands for no provider as the server listed it", () => {
+    expect(
+      titles("live_sources://", { "live_sources://": "Live sources" }),
+    ).toEqual(["Live sources"]);
+  });
+
+  it("falls back to the path segment while the folder is not known", () => {
+    expect(titles("live_sources://")).toEqual(["live_sources"]);
+  });
+
+  it("names the Discover levels", () => {
+    expect(
+      titles("discover://recs/row", { "discover://recs/row": "New rows" }),
+    ).toEqual(["Discover", "recs", "New rows"]);
   });
 });

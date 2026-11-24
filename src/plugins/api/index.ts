@@ -30,6 +30,7 @@ import {
   type Artist,
   type AuthToken,
   type BackgroundTask,
+  type ChannelLayout,
   type CommandMessage,
   type ErrorResultMessage,
   type EventMessage,
@@ -46,6 +47,7 @@ import {
   type Player,
   type PlayerOptionValueType,
   type PlayerQueue,
+  type PlayerSource,
   type Playlist,
   type PlaylistAccess,
   type ProviderInstance,
@@ -1358,6 +1360,25 @@ export class MusicAssistantApi {
     });
   }
 
+  public generateShareLink(uri: string): Promise<string> {
+    return this.sendCommand(
+      "share/generate",
+      { uri },
+      { suppressGlobalError: true },
+    );
+  }
+
+  public resolveSharedItem(
+    encoded: string,
+    allow_search = true,
+  ): Promise<MediaItemType | null> {
+    return this.sendCommand(
+      "share/resolve",
+      { encoded, allow_search },
+      { suppressGlobalError: true },
+    );
+  }
+
   public migratePlaylist(
     db_playlist_id: string | number,
     destination_provider: string,
@@ -2224,6 +2245,23 @@ export class MusicAssistantApi {
     return this.statisticsApi.getDecadeDistribution(period, limit, users);
   }
 
+  /**
+   * The live sources the user can start, each with the player it belongs to.
+   *
+   * @param playerId - The player to start them on, which adds the inputs it can
+   *   switch to; omit for the live sources of all players.
+   */
+  public getLiveSources(
+    playerId?: string,
+    options?: CommandOptions,
+  ): Promise<PlayerSource[]> {
+    return this.sendCommand(
+      "music/live_sources",
+      { player_id: playerId },
+      options,
+    );
+  }
+
   public async getSoundEffects(): Promise<SoundEffect[]> {
     // Fetch all sound effect items from providers that offer them.
     return this.sendCommand("music/sound_effects");
@@ -2896,6 +2934,42 @@ export class MusicAssistantApi {
   }
 
   /**
+   * Add a speaker to a multi-channel player, on a channel of its own. The output of the
+   * speaker on the provider of that player moves into it.
+   *
+   * @param playerId The player id of the multi-channel player.
+   * @param speaker The player id of the speaker.
+   * @param channel The channel the speaker plays.
+   */
+  public addMultiChannelSpeaker(
+    playerId: string,
+    speaker: string,
+    channel: SpeakerChannel,
+  ): Promise<void> {
+    return this.sendCommand("players/add_multi_channel_speaker", {
+      player_id: playerId,
+      speaker,
+      channel,
+    });
+  }
+
+  /**
+   * Remove a speaker from a multi-channel player, which comes back as a player of its own.
+   *
+   * @param playerId The player id of the multi-channel player.
+   * @param number The number of the speaker, as its config entries name it (speaker_<number>_*).
+   */
+  public removeMultiChannelSpeaker(
+    playerId: string,
+    number: number,
+  ): Promise<void> {
+    return this.sendCommand("players/remove_multi_channel_speaker", {
+      player_id: playerId,
+      number,
+    });
+  }
+
+  /**
    * Return the ids of the players whose output on a provider can be a speaker of a new
    * multi-channel player.
    *
@@ -2908,6 +2982,24 @@ export class MusicAssistantApi {
   ): Promise<string[]> {
     return this.sendCommand(
       "players/multi_channel_candidates",
+      { provider },
+      options,
+    );
+  }
+
+  /**
+   * Return the layouts a provider combines speakers into, each with its channels in order,
+   * by the value of the layout (such as "2.1").
+   *
+   * @param provider The instance id of the provider that combines the speakers.
+   * @param options Options for the command, such as keeping a failure quiet.
+   */
+  public getMultiChannelLayouts(
+    provider: string,
+    options?: CommandOptions,
+  ): Promise<Partial<Record<ChannelLayout, SpeakerChannel[]>>> {
+    return this.sendCommand(
+      "players/multi_channel_layouts",
       { provider },
       options,
     );

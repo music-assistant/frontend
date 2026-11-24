@@ -56,15 +56,17 @@
 
         <SmartPlaylistSeedPicker
           :kind="kind"
-          :search-query="searchQuery"
-          :results="results"
-          :is-searching="isSearching"
+          :search-query="seedItems.searchQuery.value"
+          :results="seedItems.searchResults.value"
+          :is-searching="seedItems.isSearching.value"
+          :is-submitted="seedItems.isSearchSubmitted.value"
           :has-provider="seedItems.hasSimilarTracksProvider.value"
           :is-full="seedItems.isFull.value"
           :invalid="invalid && !seedItems.hasSeed.value"
           @update:kind="onChangeKind"
           @update:search-query="onSearchUpdate"
-          @select="onSelect"
+          @select="seedItems.addSeedFromSearch($event, kind)"
+          @submit="seedItems.submitSearch()"
         >
           <template #item-sub="{ item }">
             <span
@@ -90,7 +92,7 @@ import {
   useSmartPlaylistSeedItems,
   type SeedKind,
 } from "@/composables/smart-playlist/useSmartPlaylistSeedItems";
-import type { Album, Artist, Playlist, Track } from "@/plugins/api/interfaces";
+import type { Album, Artist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Disc3, ListMusic, Mic2, Music, Sparkles, X } from "@lucide/vue";
 import { computed, toRef, type Component } from "vue";
@@ -105,84 +107,12 @@ const seedItems = toRef(props, "seedItems");
 
 const kind = computed(() => seedItems.value.activeKind.value);
 
-const searchQuery = computed(() => {
-  switch (kind.value) {
-    case "track":
-      return seedItems.value.trackSearch.value;
-    case "artist":
-      return seedItems.value.artistSearch.value;
-    case "album":
-      return seedItems.value.albumSearch.value;
-    case "playlist":
-      return seedItems.value.playlistSearch.value;
-  }
-  return "";
-});
-
-const results = computed(() => {
-  switch (kind.value) {
-    case "track":
-      return seedItems.value.trackResults.value;
-    case "artist":
-      return seedItems.value.artistResults.value;
-    case "album":
-      return seedItems.value.albumResults.value;
-    case "playlist":
-      return seedItems.value.playlistResults.value;
-  }
-  return [];
-});
-
-const isSearching = computed(() => {
-  switch (kind.value) {
-    case "track":
-      return seedItems.value.isTrackSearching.value;
-    case "artist":
-      return seedItems.value.isArtistSearching.value;
-    case "album":
-      return seedItems.value.isAlbumSearching.value;
-    case "playlist":
-      return seedItems.value.isPlaylistSearching.value;
-  }
-  return false;
-});
-
 function onChangeKind(next: SeedKind) {
   seedItems.value.activeKind.value = next;
 }
 
 function onSearchUpdate(q: string) {
-  switch (kind.value) {
-    case "track":
-      seedItems.value.trackSearch.value = q;
-      break;
-    case "artist":
-      seedItems.value.artistSearch.value = q;
-      break;
-    case "album":
-      seedItems.value.albumSearch.value = q;
-      break;
-    case "playlist":
-      seedItems.value.playlistSearch.value = q;
-      break;
-  }
-}
-
-function onSelect(item: { item_id: string; name: string }) {
-  switch (kind.value) {
-    case "track":
-      seedItems.value.addSeedFromSearch(item as Track, "track");
-      break;
-    case "artist":
-      seedItems.value.addSeedFromSearch(item as Artist, "artist");
-      break;
-    case "album":
-      seedItems.value.addSeedFromSearch(item as Album, "album");
-      break;
-    case "playlist":
-      seedItems.value.addSeedFromSearch(item as Playlist, "playlist");
-      break;
-  }
+  seedItems.value.searchQuery.value = q;
 }
 
 function iconFor(k: SeedKind): Component {

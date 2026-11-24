@@ -2,6 +2,7 @@ import HomeAssistantStep from "@/components/onboarding/steps/HomeAssistantStep.v
 import type { ConfiguredProvider } from "@/composables/useOnboarding";
 import { ProviderStatus, ProviderType } from "@/plugins/api/interfaces";
 import { eventbus } from "@/plugins/eventbus";
+import type { StepPrimaryAction } from "@/helpers/onboarding";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -64,8 +65,10 @@ function testId(wrapper: Wrapper, id: string) {
   return wrapper.find(`[data-testid=${id}]`);
 }
 
-const linked = (wrapper: Wrapper) =>
-  testId(wrapper, "onboarding-invitation-visual").attributes("data-linked");
+// the step's own way forward, which the wizard shows as its main button
+const primaryAction = (wrapper: Wrapper) =>
+  (wrapper.vm as unknown as { primaryAction?: StepPrimaryAction })
+    .primaryAction;
 
 describe("HomeAssistantStep", () => {
   beforeEach(() => {
@@ -77,27 +80,12 @@ describe("HomeAssistantStep", () => {
     vi.restoreAllMocks();
   });
 
-  it("pairs the Home Assistant mark with Music Assistant's", () => {
-    const wrapper = mountStep();
-
-    const visual = testId(wrapper, "onboarding-invitation-visual");
-    expect(visual.find("img[src*=icon]").exists()).toBe(true);
-    expect(visual.findComponent({ name: "ProviderIcon" }).props("domain")).toBe(
-      "hass",
-    );
-    expect(linked(wrapper)).toBeUndefined();
-    wrapper.unmount();
-  });
-
   it("lists what connecting brings", () => {
     const wrapper = mountStep();
 
-    expect(testId(wrapper, "onboarding-invitation-intro").text()).toBe(
-      "onboarding.steps.home_assistant.intro",
-    );
     expect(
       testId(wrapper, "onboarding-invitation-features")
-        .findAll("li")
+        .findAll("[data-slot=item]")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.home_assistant.features.players",
@@ -108,13 +96,15 @@ describe("HomeAssistantStep", () => {
     wrapper.unmount();
   });
 
-  it("offers Connect as the step's centred action, and says it is optional", () => {
+  it("offers Connect as the step's main action, and says it is optional", () => {
     const wrapper = mountStep();
 
-    const connect = testId(wrapper, "onboarding-home-assistant-connect");
-    expect(connect.text()).toBe("onboarding.steps.home_assistant.connect");
-    expect(connect.classes()).toContain("self-center");
-    expect(testId(wrapper, "onboarding-invitation-optional").text()).toBe(
+    expect(primaryAction(wrapper)?.labelKey).toBe(
+      "onboarding.steps.home_assistant.connect",
+    );
+    // the wizard's footer holds it, so the step has no button of its own
+    expect(wrapper.find("button").exists()).toBe(false);
+    expect(testId(wrapper, "onboarding-invitation-note").text()).toBe(
       "onboarding.steps.home_assistant.optional",
     );
     wrapper.unmount();
@@ -131,9 +121,7 @@ describe("HomeAssistantStep", () => {
         .find("[data-testid=onboarding-home-assistant-connection]")
         .exists(),
     ).toBe(false);
-    await wrapper
-      .find("[data-testid=onboarding-home-assistant-connect]")
-      .trigger("click");
+    primaryAction(wrapper)?.run();
 
     expect(emit).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "provider",
@@ -153,17 +141,12 @@ describe("HomeAssistantStep", () => {
     );
     expect(connection.text()).toBe("Home Assistant");
     expect(connection.find("[aria-label]").exists()).toBe(false);
-    expect(
-      wrapper.find("[data-testid=onboarding-home-assistant-connect]").exists(),
-    ).toBe(false);
+    expect(primaryAction(wrapper)).toBeUndefined();
     // set up, so there is nothing left to invite to or leave for later
     expect(testId(wrapper, "onboarding-invitation-features").exists()).toBe(
       false,
     );
-    expect(testId(wrapper, "onboarding-invitation-optional").exists()).toBe(
-      false,
-    );
-    expect(linked(wrapper)).toBe("true");
+    expect(testId(wrapper, "onboarding-invitation-note").exists()).toBe(false);
     wrapper.unmount();
   });
 
@@ -181,8 +164,6 @@ describe("HomeAssistantStep", () => {
         .find("[data-testid=onboarding-home-assistant-connection] [aria-label]")
         .attributes("aria-label"),
     ).toBe("settings.provider_status_auth_required");
-    // set up, but not working, so not linked
-    expect(linked(wrapper)).toBeUndefined();
     wrapper.unmount();
   });
 
