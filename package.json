@@ -78,7 +78,7 @@
         "eslint-plugin-vue": "10.11.1",
         "husky": "^9.1.7",
         "jsdom": "^31.0.1",
-        "lint-staged": "^17.6.0",
+        "lint-staged": "^17.6.1",
         "material-design-icons-iconfont": "6.7.0",
         "oxlint": "^1.93.0",
         "prettier": "3.10.1",
