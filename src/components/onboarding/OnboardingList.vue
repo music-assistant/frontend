@@ -5,7 +5,7 @@
     class="bg-card overflow-hidden rounded-xl border [&_[data-slot=item]]:rounded-none [&_[data-slot=item]]:border-0 [&_[data-slot=item]]:py-2 [&>*:not(:last-child)]:border-b [&>*:not(:last-child)]:border-border"
     data-testid="onboarding-list"
   >
-    <slot></slot>
+    <slot />
   </ItemGroup>
 </template>
 

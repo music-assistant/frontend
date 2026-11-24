@@ -25,6 +25,6 @@ const forwardedProps = useForwardProps(delegatedProps);
       )
     "
   >
-    <slot></slot>
+    <slot />
   </TagsInputItem>
 </template>

@@ -35,6 +35,6 @@ function handleInputGroupAddonClick(e: MouseEvent) {
     :class="cn(inputGroupAddonVariants({ align: props.align }), props.class)"
     @click="handleInputGroupAddonClick"
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>

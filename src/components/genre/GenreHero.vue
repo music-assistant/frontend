@@ -7,7 +7,7 @@
   >
     <template #toolbar-append>
       <DetailHeroFavorite v-if="item" :item="item" />
-      <slot name="toolbar-append"></slot>
+      <slot name="toolbar-append" />
     </template>
 
     <template v-if="item" #main>

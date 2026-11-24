@@ -80,6 +80,6 @@ onUnmounted(() => {
       }
     "
   >
-    <slot></slot>
+    <slot />
   </ListboxItem>
 </template>

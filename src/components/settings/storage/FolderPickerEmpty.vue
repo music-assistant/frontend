@@ -74,7 +74,7 @@ const runsAsHomeAssistantApp = computed(
       </EmptyDescription>
     </EmptyHeader>
     <EmptyContent v-if="canManageStorage && canAdd">
-      <slot></slot>
+      <slot />
     </EmptyContent>
   </Empty>
 </template>

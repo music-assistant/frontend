@@ -7,14 +7,14 @@
   >
     <!-- above the title line, e.g. a heading shared by several shelves -->
     <div v-if="$slots.heading" class="mb-[10px] px-[var(--ed-gutter)]">
-      <slot name="heading"></slot>
+      <slot name="heading" />
     </div>
     <div class="ed-shelf__head">
       <slot name="header">
         <div class="ed-shelf__titles">
           <div class="ed-shelf__title-row">
             <h2 class="ed-shelf__title">{{ title }}</h2>
-            <slot name="title-append"></slot>
+            <slot name="title-append" />
           </div>
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
@@ -30,7 +30,7 @@
           :size="20"
         />
         <div v-if="$slots.actions || viewAllTo" class="ed-shelf__actions">
-          <slot name="actions"></slot>
+          <slot name="actions" />
           <ViewAllLink v-if="viewAllTo" :to="viewAllTo" :name="title" />
         </div>
       </div>
@@ -70,7 +70,7 @@
         @click.capture="onClickCapture"
         @dragstart.prevent
       >
-        <slot></slot>
+        <slot />
       </div>
 
       <!-- next -->

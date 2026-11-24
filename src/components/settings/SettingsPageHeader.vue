@@ -29,7 +29,7 @@
       v-if="$slots.actions || menuItems.length"
       class="flex shrink-0 items-center gap-1"
     >
-      <slot name="actions"></slot>
+      <slot name="actions" />
       <OverflowMenu v-if="menuItems.length" :items="menuItems">
         <Button
           variant="ghost"

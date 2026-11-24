@@ -9,7 +9,7 @@
     data-testid="settings-fold-rows"
     @update:model-value="setOpen"
   >
-    <slot></slot>
+    <slot />
   </Accordion>
 </template>
 
