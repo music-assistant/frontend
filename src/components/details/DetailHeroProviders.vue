@@ -10,7 +10,7 @@
           class="detail-hero-providers__service"
           :href="provider.href"
           :target="provider.href ? '_blank' : undefined"
-          :rel="provider.href ? 'noopener' : undefined"
+          :rel="provider.href ? 'noopener noreferrer' : undefined"
           :aria-label="provider.href ? provider.name : undefined"
         >
           <ProviderIcon :domain="provider.domain" :size="14" />
@@ -96,6 +96,10 @@ a.detail-hero-providers__service:focus-visible {
   .detail-hero-providers__name,
   .detail-hero-providers__sep {
     display: none;
+  }
+  /* with the names gone, a link shows it is pointed at by dimming */
+  a.detail-hero-providers__service:hover {
+    opacity: 0.8;
   }
   .detail-hero-providers__pill {
     height: auto;

@@ -13,7 +13,7 @@ vi.mock("@/plugins/api/helpers", () => ({
   mappedServices: mockMappedServices,
 }));
 
-// the real helpers module loads the whole api client
+// the real utils module pulls in the api client
 vi.mock("@/helpers/utils", () => ({
   isWebUrl: (url?: string) => /^https?:\/\//.test(url ?? ""),
 }));
@@ -69,6 +69,7 @@ describe("DetailHeroProviders", () => {
     const link = wrapper.get("a.detail-hero-providers__service");
     expect(link.attributes("href")).toBe("https://tidal.com/artist/1");
     expect(link.attributes("target")).toBe("_blank");
+    expect(link.attributes("rel")).toBe("noopener noreferrer");
     expect(link.attributes("aria-label")).toBe("Tidal");
   });
 
