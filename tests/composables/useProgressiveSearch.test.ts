@@ -115,7 +115,7 @@ describe("useProgressiveSearch", () => {
     const composable = scope.run(() =>
       useProgressiveSearch({ ...options, mediaTypes }),
     )!;
-    return { ...composable, mediaTypes };
+    return { ...composable, mediaTypes, scope };
   };
 
   beforeEach(() => {
@@ -390,6 +390,24 @@ describe("useProgressiveSearch", () => {
       "Late",
     ]);
     expect(loading.value).toBe(false);
+  });
+
+  it("does not retry a slow provider once its scope is disposed", async () => {
+    vi.useFakeTimers();
+    mockSearch.mockImplementation(
+      () =>
+        new Promise<SearchResults>((resolve) =>
+          setTimeout(() => resolve(emptyResults()), 8000),
+        ),
+    );
+    const { search, scope } = setup({ providers: ref(["spotify"]) });
+
+    await search("late");
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+
+    scope.stop();
+    await vi.advanceTimersByTimeAsync(8000 + 2500);
+    expect(mockSearch).toHaveBeenCalledTimes(1);
   });
 
   it("searches only the library for a genre-only search", async () => {
