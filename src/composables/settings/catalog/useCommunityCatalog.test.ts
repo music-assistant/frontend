@@ -487,13 +487,18 @@ describe("useCommunityCatalog", () => {
           state: CommunityProviderState.INSTALLED,
           installed_version: "1.2.0",
         }),
+        communityProvider("pop", {
+          state: CommunityProviderState.UNAVAILABLE,
+          installed_version: "0.1.0",
+          update_version: "0.1.1",
+        }),
         communityProvider("news"),
       ]);
 
       await catalog.refresh();
 
       expect(toastMock.success).toHaveBeenCalledWith(
-        "settings.catalog.community.updates_waiting 2",
+        "settings.catalog.community.updates_waiting 3",
       );
     });
 
@@ -546,6 +551,67 @@ describe("useCommunityCatalog", () => {
       await flushPromises();
 
       expect(catalog.updateCount.value).toBe(2);
+    });
+
+    describe("one that does not run", () => {
+      const broken = communityProvider("pop", {
+        state: CommunityProviderState.UNAVAILABLE,
+        installed_version: "0.1.0",
+        latest_version: "0.1.1",
+        update_version: "0.1.1",
+      });
+      // what the server lists once 0.1.1 is installed and waits for a restart
+      const afterRestartNeeded = communityProvider("pop", {
+        state: CommunityProviderState.UNAVAILABLE,
+        installed_version: "0.1.0",
+        latest_version: "0.1.1",
+        pending_version: "0.1.1",
+      });
+
+      beforeEach(() => {
+        apiMock.getCommunityProviders.mockResolvedValue([current, broken]);
+      });
+
+      it("counts its update", async () => {
+        const { catalog } = mountCatalog();
+        await flushPromises();
+
+        expect(catalog.updateCount.value).toBe(2);
+      });
+
+      it("updates it with the others, and says a restart finishes it", async () => {
+        apiMock.updateCommunityProviders.mockResolvedValue([
+          updated,
+          afterRestartNeeded,
+        ]);
+        const { catalog } = mountCatalog();
+        await flushPromises();
+
+        const result = catalog.updateAll();
+        expect(catalog.isUpdating("pop")).toBe(true);
+        await result;
+
+        expect(toastMock.success).toHaveBeenCalledWith(
+          "settings.catalog.community.updated_all_restart",
+        );
+        expect(toastMock.error).not.toHaveBeenCalled();
+      });
+
+      it("says a restart finishes its update", async () => {
+        apiMock.updateCommunityProviders.mockResolvedValue([
+          current,
+          afterRestartNeeded,
+        ]);
+        const { catalog } = mountCatalog();
+        await flushPromises();
+
+        await catalog.update(broken);
+
+        expect(toastMock.success).toHaveBeenCalledWith(
+          "settings.catalog.community.restart_hint 0.1.1",
+        );
+        expect(toastMock.error).not.toHaveBeenCalled();
+      });
     });
 
     it("updates one by its domain, with progress, and reports it", async () => {

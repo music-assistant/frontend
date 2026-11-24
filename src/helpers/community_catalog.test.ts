@@ -93,6 +93,23 @@ describe("updates of one from the community catalog", () => {
     );
   });
 
+  it.each([
+    CommunityProviderState.INSTALLED,
+    CommunityProviderState.UNAVAILABLE,
+    CommunityProviderState.BLOCKED,
+  ])("%s has an update when the server offers a version", (state) => {
+    expect(
+      hasCommunityUpdate(
+        communityProvider("radio", { state, update_version: "1.2.0" }),
+      ),
+    ).toBe(true);
+    expect(
+      hasCommunityUpdate(
+        communityProvider("radio", { state, update_version: null }),
+      ),
+    ).toBe(false);
+  });
+
   it("offers to try a failed version again only while it is the one on offer", () => {
     const installed = (overrides: Partial<CommunityProvider>) =>
       communityProvider("radio", {
@@ -152,6 +169,28 @@ describe("getCommunityUpdateOutcome", () => {
     });
 
     expect(getCommunityUpdateOutcome(pending, "1.2.0")).toBe("restart");
+  });
+
+  it("waits for a restart also when the one updated does not run", () => {
+    const pending = after({
+      state: CommunityProviderState.UNAVAILABLE,
+      pending_version: "1.2.0",
+    });
+
+    expect(getCommunityUpdateOutcome(pending, "1.2.0")).toBe("restart");
+  });
+
+  it("is no restart without a version, or for another version", () => {
+    const pending = after({
+      state: CommunityProviderState.UNAVAILABLE,
+      pending_version: "1.2.0",
+    });
+
+    expect(getCommunityUpdateOutcome(pending, null)).toBe("failed");
+    expect(getCommunityUpdateOutcome(pending, "1.3.0")).toBe("failed");
+    expect(
+      getCommunityUpdateOutcome(after({ pending_version: null }), null),
+    ).toBe("failed");
   });
 
   it("failed when the server put the previous version back, skipped it or no longer lists it", () => {
