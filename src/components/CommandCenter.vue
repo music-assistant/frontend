@@ -474,8 +474,8 @@ const queryActive = computed(
   () => query.value.trim().length >= MIN_QUERY_LENGTH,
 );
 
-// the fetched results belong to the last submitted term; while the box holds a
-// different term (typed but not searched yet) those results stay hidden
+// the fetched results belong to the last submitted term, so they only show
+// while the box holds that term
 const resultsMatchQuery = computed(
   () =>
     activeSearchTerm.value.length >= MIN_QUERY_LENGTH &&
@@ -540,10 +540,7 @@ const togglePagesOnly = function () {
 // search runs on demand (the button or the return key), not while typing
 const runSearch = function () {
   const trimmed = query.value.trim();
-  if (pagesOnly.value || trimmed.length < MIN_QUERY_LENGTH) {
-    search("");
-    return;
-  }
+  if (pagesOnly.value || trimmed.length < MIN_QUERY_LENGTH) return;
   search(trimmed);
 };
 
@@ -991,6 +988,12 @@ watch(isOpen, (opened) => {
     const el = listRef.value?.$el as HTMLElement | undefined;
     if (el && savedScrollTop.value) el.scrollTop = savedScrollTop.value;
   });
+});
+
+// drop the submitted search as soon as the box holds another term, so no filter
+// change, provider update or retry searches for results that stay hidden
+watch(query, () => {
+  if (activeSearchTerm.value && !resultsMatchQuery.value) search("");
 });
 
 // a new search lands at the top; a reopened search keeps its saved offset

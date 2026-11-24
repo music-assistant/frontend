@@ -1053,6 +1053,47 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("drops the submitted search once the query no longer matches it", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await typeQuery(wrapper, "bohemian");
+    const input = wrapper.get('[data-testid="palette-input"]');
+
+    // case and surrounding whitespace do not make it another term
+    await input.setValue(" Bohemian ");
+    expect(state.searchSpy).not.toHaveBeenCalledWith("");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    await input.setValue("bohemian r");
+    expect(state.searchSpy).toHaveBeenLastCalledWith("");
+    expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
+
+    // typing the term again asks to submit it again
+    await input.setValue("bohemian");
+    expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
+    expect(wrapper.text()).toContain("command_center_press_enter");
+    await submitSearch(wrapper);
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("drops the submitted search when the query is cleared", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "bohemian");
+    await wrapper.get("button.command-center-clear").trigger("click");
+    expect(state.searchSpy).toHaveBeenLastCalledWith("");
+
+    wrapper.unmount();
+  });
+
   it("runs the search on the return key while the results are stale", async () => {
     state.resultsByType[MediaType.TRACK] = [
       makeTrack("t1", "Bohemian Rhapsody"),
