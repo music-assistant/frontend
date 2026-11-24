@@ -2004,10 +2004,10 @@ export interface CommunityProvider {
   state: CommunityProviderState;
   installed_version: string | null;
   latest_version: string | null;
+  // the version an update installs, whatever the state
+  update_version: string | null;
   // the version that becomes active at the next start of the server
   pending_version: string | null;
-  // the version an update would install, in any state; an older server does not send it
-  update_version?: string | null;
   // a version that failed to load here; installed again only when asked for by domain
   failed_version: string | null;
   // ISO dates: when it entered the catalog, and when latest_version was released

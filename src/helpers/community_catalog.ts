@@ -59,7 +59,6 @@ export const isCommunityProblem = (provider: CommunityProvider): boolean =>
 
 /** Whether a newer version is on offer for one that is installed, also when it does not run. */
 export const hasCommunityUpdate = (provider: CommunityProvider): boolean =>
-  provider.state === CommunityProviderState.UPDATE_AVAILABLE ||
   !!provider.update_version;
 
 /**

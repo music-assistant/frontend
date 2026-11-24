@@ -478,10 +478,12 @@ describe("useCommunityCatalog", () => {
         communityProvider("radio", {
           state: CommunityProviderState.UPDATE_AVAILABLE,
           installed_version: "1.1.0",
+          update_version: "1.2.0",
         }),
         communityProvider("fm", {
           state: CommunityProviderState.UPDATE_AVAILABLE,
           installed_version: "0.1.0",
+          update_version: "1.2.0",
         }),
         communityProvider("jazz", {
           state: CommunityProviderState.INSTALLED,
@@ -519,6 +521,7 @@ describe("useCommunityCatalog", () => {
       state: CommunityProviderState.UPDATE_AVAILABLE,
       installed_version: "1.1.0",
       latest_version: "1.2.0",
+      update_version: "1.2.0",
     });
     const updated = communityProvider("radio", {
       state: CommunityProviderState.INSTALLED,
@@ -528,6 +531,7 @@ describe("useCommunityCatalog", () => {
       state: CommunityProviderState.UPDATE_AVAILABLE,
       installed_version: "0.1.0",
       latest_version: "0.2.0",
+      update_version: "0.2.0",
     });
     const otherUpdated = communityProvider("dj", {
       state: CommunityProviderState.INSTALLED,

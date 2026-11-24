@@ -83,31 +83,19 @@ describe("the state of one from the community catalog", () => {
 
 describe("updates of one from the community catalog", () => {
   it.each([
-    [CommunityProviderState.UPDATE_AVAILABLE, true],
-    [CommunityProviderState.INSTALLED, false],
-    [CommunityProviderState.RESTART_REQUIRED, false],
-    [CommunityProviderState.AVAILABLE, false],
-  ])("%s has an update: %s", (state, update) => {
-    expect(hasCommunityUpdate(communityProvider("radio", { state }))).toBe(
-      update,
-    );
-  });
-
-  it.each([
-    CommunityProviderState.INSTALLED,
-    CommunityProviderState.UNAVAILABLE,
-    CommunityProviderState.BLOCKED,
-  ])("%s has an update when the server offers a version", (state) => {
+    [CommunityProviderState.UPDATE_AVAILABLE, "1.2.0", true],
+    [CommunityProviderState.UNAVAILABLE, "1.2.0", true],
+    [CommunityProviderState.BLOCKED, "1.2.0", true],
+    [CommunityProviderState.UNAVAILABLE, null, false],
+    [CommunityProviderState.INSTALLED, null, false],
+    [CommunityProviderState.RESTART_REQUIRED, null, false],
+    [CommunityProviderState.AVAILABLE, null, false],
+  ])("%s with %s on offer has an update: %s", (state, version, update) => {
     expect(
       hasCommunityUpdate(
-        communityProvider("radio", { state, update_version: "1.2.0" }),
+        communityProvider("radio", { state, update_version: version }),
       ),
-    ).toBe(true);
-    expect(
-      hasCommunityUpdate(
-        communityProvider("radio", { state, update_version: null }),
-      ),
-    ).toBe(false);
+    ).toBe(update);
   });
 
   it("offers to try a failed version again only while it is the one on offer", () => {
