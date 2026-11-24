@@ -101,6 +101,8 @@
                 buttonClass:
                   'size-10 opacity-100 border-2 border-current bg-transparent dark:bg-transparent',
                 size: 18,
+                // the thin outline makes the usual gap look loose
+                spinnerGap: 1,
               },
               previous: { isVisible: false },
               next: { isVisible: false },
