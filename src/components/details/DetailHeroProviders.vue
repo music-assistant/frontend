@@ -7,14 +7,17 @@
         <!-- a service with a page for the item opens it in a new tab -->
         <component
           :is="provider.href ? 'a' : 'span'"
-          class="detail-hero-providers__service"
+          class="detail-hero-providers__service inline-flex items-center gap-[5px]"
+          :class="{ [LINK_CLASS]: provider.href }"
           :href="provider.href"
           :target="provider.href ? '_blank' : undefined"
           :rel="provider.href ? 'noopener noreferrer' : undefined"
           :aria-label="provider.href ? provider.name : undefined"
         >
           <ProviderIcon :domain="provider.domain" :size="14" />
-          <span class="detail-hero-providers__name">{{ provider.name }}</span>
+          <span class="detail-hero-providers__name group-hover:underline">{{
+            provider.name
+          }}</span>
         </component>
       </template>
     </span>
@@ -33,6 +36,9 @@ export interface Props {
   item: MediaItem;
 }
 const props = defineProps<Props>();
+
+const LINK_CLASS =
+  "group text-inherit no-underline focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--v-theme-primary))]";
 
 // one entry per music service, however many accounts of it hold the item
 // a local file's link is its path, which a browser cannot open
@@ -68,21 +74,6 @@ const isPhone = computed(() => isPhoneSizedScreen());
 }
 .detail-hero-providers__sep {
   opacity: 0.4;
-}
-.detail-hero-providers__service {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: inherit;
-  text-decoration: none;
-}
-a.detail-hero-providers__service:hover .detail-hero-providers__name {
-  text-decoration: underline;
-}
-a.detail-hero-providers__service:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-  border-radius: 4px;
 }
 
 .detail-hero--phone .detail-hero-providers {
