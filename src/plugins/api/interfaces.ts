@@ -2004,6 +2004,8 @@ export interface CommunityProvider {
   state: CommunityProviderState;
   installed_version: string | null;
   latest_version: string | null;
+  // the version an update installs, whatever the state
+  update_version: string | null;
   // the version that becomes active at the next start of the server
   pending_version: string | null;
   // a version that failed to load here; installed again only when asked for by domain
