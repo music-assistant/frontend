@@ -20,6 +20,6 @@ const forwardedProps = useForwardProps(delegatedProps);
     :class="cn('w-full border-collapse space-x-1', props.class)"
     v-bind="forwardedProps"
   >
-    <slot></slot>
+    <slot />
   </CalendarGrid>
 </template>

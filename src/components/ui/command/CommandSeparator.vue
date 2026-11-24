@@ -18,6 +18,6 @@ const delegatedProps = reactiveOmit(props, "class");
     v-bind="delegatedProps"
     :class="cn('bg-border -mx-1 h-px', props.class)"
   >
-    <slot></slot>
+    <slot />
   </Separator>
 </template>

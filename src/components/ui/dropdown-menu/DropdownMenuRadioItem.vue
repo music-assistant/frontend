@@ -44,6 +44,6 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         </slot>
       </DropdownMenuItemIndicator>
     </span>
-    <slot></slot>
+    <slot />
   </DropdownMenuRadioItem>
 </template>

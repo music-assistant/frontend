@@ -16,6 +16,6 @@ const props = withDefaults(defineProps<InputGroupButtonProps>(), {
     :variant="props.variant"
     :class="cn(inputGroupButtonVariants({ size: props.size }), props.class)"
   >
-    <slot></slot>
+    <slot />
   </Button>
 </template>

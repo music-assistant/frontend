@@ -29,7 +29,7 @@
     </template>
 
     <template v-if="$slots.append || menuItems?.length" #append>
-      <slot name="append"></slot>
+      <slot name="append" />
       <Button
         v-for="menuItem of directItems"
         :key="menuItem.label"

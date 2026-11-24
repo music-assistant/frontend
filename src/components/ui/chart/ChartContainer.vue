@@ -57,7 +57,7 @@ provideChartContext({
       '--vis-font-family': 'var(--font-sans)',
     }"
   >
-    <slot :id="uniqueId" :config="config"></slot>
+    <slot :id="uniqueId" :config="config" />
     <ChartStyle :id="chartId" />
   </div>
 </template>

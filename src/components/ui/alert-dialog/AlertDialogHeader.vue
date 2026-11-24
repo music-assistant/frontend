@@ -17,6 +17,6 @@ const props = defineProps<{
       cn('flex flex-col gap-2 max-sm:text-center sm:text-left', props.class)
     "
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>

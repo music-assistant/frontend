@@ -59,7 +59,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         )
       "
     >
-      <slot></slot>
+      <slot />
 
       <DialogClose
         v-if="showCloseButton"

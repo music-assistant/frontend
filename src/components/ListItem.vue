@@ -8,10 +8,10 @@
     @input="(v: Event) => $emit('input', v)"
   >
     <template v-for="(_, name) in $slots" #[name]>
-      <slot :name="name"></slot>
+      <slot :name="name" />
     </template>
     <template v-if="$slots.append || showMenuBtn" #append>
-      <slot name="append"></slot>
+      <slot name="append" />
       <Button
         v-if="showMenuBtn"
         variant="icon"

@@ -47,6 +47,6 @@ onUnmounted(() => {
     >
       {{ heading }}
     </ListboxGroupLabel>
-    <slot></slot>
+    <slot />
   </ListboxGroup>
 </template>

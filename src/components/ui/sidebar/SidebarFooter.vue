@@ -30,6 +30,6 @@ const isCollapsed = computed(() => state.value === "collapsed");
       )
     "
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>
