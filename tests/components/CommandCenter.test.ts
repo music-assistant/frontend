@@ -1851,8 +1851,6 @@ describe("CommandCenter", () => {
   });
 
   it("lets enter play a live source that loads after a reopen", async () => {
-    // vue ignores a dom event stamped before its listener under fake timers
-    vi.useRealTimers();
     state.storeMock.activePlayerId = "p1";
     // the real listbox, so the highlight and enter run as in the app
     const wrapper = mount(CommandCenter, {
@@ -1872,6 +1870,9 @@ describe("CommandCenter", () => {
         },
       },
     });
+    // vue ignores a handler attached in the same instant as the event, and the
+    // clock is frozen here
+    const settleClock = () => vi.advanceTimersByTime(1);
     const pressEnter = async () => {
       wrapper
         .get('[data-slot="command-input"]')
@@ -1889,9 +1890,11 @@ describe("CommandCenter", () => {
     await flushPromises();
     useCommandCenter().open();
     await flushPromises();
+    settleClock();
     // the list loads only once the palette is open again
     state.liveSources = [playerSource({ id: "phono", name: "Record player" })];
     await flushPromises();
+    settleClock();
 
     await pressEnter();
     expect(state.startLiveSourceSpy).toHaveBeenCalledWith(
