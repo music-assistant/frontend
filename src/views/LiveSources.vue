@@ -3,22 +3,17 @@
     <!-- spaced as the headers of the other listings -->
     <header class="flex h-[55px] shrink-0 items-center ps-[30px] pe-[11px]">
       <AudioLines class="size-6 shrink-0 opacity-80" aria-hidden="true" />
-      <div
-        class="ms-[23px] flex min-w-0 flex-1 flex-col justify-center leading-[1.2]"
+      <h1
+        class="m-0 ms-[23px] flex min-w-0 flex-1 items-baseline text-xl leading-6 font-normal"
       >
-        <h1 class="m-0 flex items-baseline text-xl leading-6 font-normal">
-          {{ $t("live_sources") }}
-          <span
-            v-if="player && !loading && !failed"
-            class="ms-2 text-base text-muted-foreground"
-          >
-            {{ sources.length }}
-          </span>
-        </h1>
-        <p v-if="subtitle" class="m-0 truncate text-[0.7rem] opacity-60">
-          {{ subtitle }}
-        </p>
-      </div>
+        {{ $t("live_sources") }}
+        <span
+          v-if="player && !loading && !failed"
+          class="ms-2 text-base text-muted-foreground"
+        >
+          {{ sources.length }}
+        </span>
+      </h1>
       <ListingSortMenu
         :options="[]"
         sort-by=""
@@ -152,11 +147,6 @@ const GRID_CLASS = "-m-1 grid gap-4";
 const player = computed(() => store.activePlayer);
 const playerName = computed(() =>
   player.value ? getPlayerName(player.value) : "",
-);
-const subtitle = computed(() =>
-  player.value
-    ? $t("live_sources_page.plays_on", [playerName.value])
-    : undefined,
 );
 
 const { sources, loading, failed, reload } = useLiveSources(
