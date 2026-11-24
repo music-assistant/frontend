@@ -1424,6 +1424,26 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("lists no recent searches while scoped to pages", async () => {
+    state.prefs["search.recent"] = ["discotheque", "queen"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    expect(groupHeadings(wrapper)).toEqual(["recent_searches", "pages"]);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["pages"]);
+
+    // a single letter that a recent search holds too
+    await wrapper.get('[data-testid="palette-input"]').setValue("d");
+    expect(groupHeadings(wrapper)).toEqual(["pages"]);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["recent_searches", "pages"]);
+
+    wrapper.unmount();
+  });
+
   it("reruns the search when the pages scope is left, not when it is chosen", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();

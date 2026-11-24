@@ -814,7 +814,7 @@ const { onHold, onTouchStart, swallowClickAfterHold } =
 const recentSearches = getPreference<string[]>(RECENT_SEARCHES_PREF_KEY, []);
 
 const recentResults = computed(() => {
-  if (queryActive.value) return [];
+  if (pagesOnly.value || queryActive.value) return [];
 
   const term = query.value.trim().toLowerCase();
   const recents = recentSearches.value.slice(0, MAX_RECENT_SEARCHES);
