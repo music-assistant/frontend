@@ -201,24 +201,16 @@
       @click:clear="onClear"
     />
 
-    <!-- multi-value string combobox -->
-    <v-combobox
+    <StringListField
       v-else-if="kind === 'string_list'"
-      :model-value="confEntry.value as string[]"
-      :menu-props="{ zIndex: 10000 }"
-      multiple
-      chips
-      :clearable="true"
-      :disabled="isFieldDisabled"
       :label="displayLabel()"
+      :value="confEntry.value"
+      :disabled="isFieldDisabled"
       :required="confEntry.required"
-      :rules="[
-        (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
-      ]"
-      variant="outlined"
-      density="comfortable"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
+      :error="validation.error.value"
+      @update:value="onUpdateValue($event)"
+      @clear="onClear"
+      @blur="validation.touch"
     />
 
     <TextField
@@ -262,6 +254,7 @@ import LabelField from "./fields/LabelField.vue";
 import PairingCodeField from "./fields/PairingCodeField.vue";
 import RadioGroupField from "./fields/RadioGroupField.vue";
 import SelectField from "./fields/SelectField.vue";
+import StringListField from "./fields/StringListField.vue";
 import TextField from "./fields/TextField.vue";
 import { useConfigFieldValidation } from "@/composables/useConfigFormValidation";
 import {

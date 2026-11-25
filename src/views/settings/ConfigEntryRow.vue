@@ -145,6 +145,7 @@ const MIGRATED_KINDS: ReadonlySet<string> = new Set([
   "text",
   "secret",
   "number",
+  "string_list",
 ]);
 const isMigrated = computed(() => MIGRATED_KINDS.has(kind.value));
 
@@ -156,6 +157,7 @@ const asideOffset = computed(() => {
     case "text":
     case "secret":
     case "number":
+    case "string_list":
       return props.confEntry.label === "" ? "mt-1" : "mt-8";
     case "slider":
       return "min-[601px]:self-center";
