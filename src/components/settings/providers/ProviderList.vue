@@ -35,7 +35,7 @@
         @remove="removeSource(item)"
       >
         <template v-if="$slots.details" #details>
-          <slot name="details" :config="item"></slot>
+          <slot name="details" :config="item" />
         </template>
       </ProviderRow>
     </template>

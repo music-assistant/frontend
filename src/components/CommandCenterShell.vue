@@ -37,7 +37,7 @@ const asSheet = computed(() => store.mobileLayout);
         {{ props.description }}
       </SheetDescription>
       <Command class="flex min-h-0 flex-1 flex-col">
-        <slot></slot>
+        <slot />
       </Command>
     </SheetContent>
   </Sheet>
@@ -51,7 +51,7 @@ const asSheet = computed(() => store.mobileLayout);
     :focus-input-on-open="true"
     content-class="top-[8%] flex translate-y-0 flex-col gap-0 sm:max-w-5xl"
   >
-    <slot></slot>
+    <slot />
   </CommandDialog>
 </template>
 

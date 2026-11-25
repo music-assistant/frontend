@@ -160,10 +160,10 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         class="flex items-center gap-1 absolute top-0 inset-x-0 justify-between"
       >
         <CalendarPrevButton>
-          <slot name="calendar-prev-icon"></slot>
+          <slot name="calendar-prev-icon" />
         </CalendarPrevButton>
         <CalendarNextButton>
-          <slot name="calendar-next-icon"></slot>
+          <slot name="calendar-next-icon" />
         </CalendarNextButton>
       </nav>
 

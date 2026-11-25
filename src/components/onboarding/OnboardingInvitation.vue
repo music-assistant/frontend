@@ -10,7 +10,7 @@
         </ItemContent>
       </Item>
     </OnboardingList>
-    <slot v-else></slot>
+    <slot v-else />
 
     <p
       v-if="note"

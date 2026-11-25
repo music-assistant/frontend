@@ -94,6 +94,6 @@ provideCommandContext({
       )
     "
   >
-    <slot></slot>
+    <slot />
   </ListboxRoot>
 </template>

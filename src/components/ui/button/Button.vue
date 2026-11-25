@@ -40,6 +40,6 @@ const props = withDefaults(defineProps<Props>(), {
   >
     <!-- as-child hands the button's classes to the first child, so that can't be a spinner -->
     <Spinner v-if="loading && !asChild" />
-    <slot></slot>
+    <slot />
   </Primitive>
 </template>

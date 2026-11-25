@@ -28,6 +28,8 @@ const state = vi.hoisted(() => ({
   providers: {} as Record<string, { supported_artist_types: string[] }>,
   prefs: {} as Record<string, unknown>,
   searchSpy: vi.fn(),
+  // called with the media types whenever those would rerun the search
+  rerunSpy: vi.fn(),
   setPreferenceSpy: vi.fn(),
   routerPush: vi.fn(),
   route: { fullPath: "/" },
@@ -73,7 +75,7 @@ vi.mock("@/helpers/media_item_actions", () => ({
 vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@/composables/useProgressiveSearch")>();
-  const { computed, ref } = await import("vue");
+  const { computed, ref, watch } = await import("vue");
   const resultsVersion = ref(0);
   state.bumpResults = () => {
     resultsVersion.value += 1;
@@ -84,8 +86,16 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
   state.loading = ref(false);
   return {
     ...actual,
-    useProgressiveSearch: (options: { providers?: Ref<string[]> }) => {
+    useProgressiveSearch: (options: {
+      mediaTypes: Ref<MediaType[]>;
+      providers?: Ref<string[]>;
+    }) => {
       state.providersRef = options.providers;
+      // the real composable reruns the search when the media types change
+      watch(
+        () => options.mediaTypes.value.join(","),
+        (mediaTypes) => state.rerunSpy(mediaTypes),
+      );
       // the real composable records the submitted term here; the palette shows
       // the fetched results only while the box still holds that same term
       const activeSearchTerm = ref("");
@@ -1053,6 +1063,47 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("drops the submitted search once the query no longer matches it", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await typeQuery(wrapper, "bohemian");
+    const input = wrapper.get('[data-testid="palette-input"]');
+
+    // case and surrounding whitespace do not make it another term
+    await input.setValue(" Bohemian ");
+    expect(state.searchSpy).not.toHaveBeenCalledWith("");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    await input.setValue("bohemian r");
+    expect(state.searchSpy).toHaveBeenLastCalledWith("");
+    expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
+
+    // typing the term again asks to submit it again
+    await input.setValue("bohemian");
+    expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
+    expect(wrapper.text()).toContain("command_center_press_enter");
+    await submitSearch(wrapper);
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("drops the submitted search when the query is cleared", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "bohemian");
+    await wrapper.get("button.command-center-clear").trigger("click");
+    expect(state.searchSpy).toHaveBeenLastCalledWith("");
+
+    wrapper.unmount();
+  });
+
   it("runs the search on the return key while the results are stale", async () => {
     state.resultsByType[MediaType.TRACK] = [
       makeTrack("t1", "Bohemian Rhapsody"),
@@ -1369,6 +1420,71 @@ describe("CommandCenter", () => {
     // pages are matched against the menu, so nothing goes out over the wire
     expect(state.searchSpy).not.toHaveBeenCalledWith("settings");
     expect(wrapper.text()).toContain("settings.settings");
+
+    wrapper.unmount();
+  });
+
+  it("lists no recent searches while scoped to pages", async () => {
+    state.prefs["search.recent"] = ["discotheque", "queen"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    expect(groupHeadings(wrapper)).toEqual(["recent_searches", "pages"]);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["pages"]);
+
+    // a single letter that a recent search holds too
+    await wrapper.get('[data-testid="palette-input"]').setValue("d");
+    expect(groupHeadings(wrapper)).toEqual(["pages"]);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["recent_searches", "pages"]);
+
+    wrapper.unmount();
+  });
+
+  it("reruns the search when the pages scope is left, not when it is chosen", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    const artistChip = wrapper
+      .findAll("button.command-center-chip")
+      .find((chip) => chip.text() === "artists")!;
+    await artistChip.trigger("click");
+    await typeQuery(wrapper, "queen");
+    state.rerunSpy.mockClear();
+
+    // the results of the searched type are still there to go back to
+    await pagesChip(wrapper).trigger("click");
+    await artistChip.trigger("click");
+    expect(state.rerunSpy).not.toHaveBeenCalled();
+
+    // going back to all types takes a search, which waits until then
+    await pagesChip(wrapper).trigger("click");
+    expect(state.rerunSpy).not.toHaveBeenCalled();
+    await pagesChip(wrapper).trigger("click");
+    expect(state.rerunSpy.mock.calls).toEqual([[""]]);
+
+    wrapper.unmount();
+  });
+
+  it("shows no search spinner while scoped to pages", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    const spinners = () => wrapper.findAll('[data-testid="palette-spinner"]');
+
+    state.loading.value = true;
+    await typeQuery(wrapper, "disco");
+    expect(spinners()).toHaveLength(1);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(spinners()).toHaveLength(0);
+
+    // the search is still out, so it spins again for the results
+    await pagesChip(wrapper).trigger("click");
+    expect(spinners()).toHaveLength(1);
 
     wrapper.unmount();
   });
@@ -1810,8 +1926,6 @@ describe("CommandCenter", () => {
   });
 
   it("lets enter play a live source that loads after a reopen", async () => {
-    // vue ignores a dom event stamped before its listener under fake timers
-    vi.useRealTimers();
     state.storeMock.activePlayerId = "p1";
     // the real listbox, so the highlight and enter run as in the app
     const wrapper = mount(CommandCenter, {
@@ -1831,6 +1945,9 @@ describe("CommandCenter", () => {
         },
       },
     });
+    // vue ignores a handler attached in the same instant as the event, and the
+    // clock is frozen here
+    const settleClock = () => vi.advanceTimersByTime(1);
     const pressEnter = async () => {
       wrapper
         .get('[data-slot="command-input"]')
@@ -1848,9 +1965,11 @@ describe("CommandCenter", () => {
     await flushPromises();
     useCommandCenter().open();
     await flushPromises();
+    settleClock();
     // the list loads only once the palette is open again
     state.liveSources = [playerSource({ id: "phono", name: "Record player" })];
     await flushPromises();
+    settleClock();
 
     await pressEnter();
     expect(state.startLiveSourceSpy).toHaveBeenCalledWith(

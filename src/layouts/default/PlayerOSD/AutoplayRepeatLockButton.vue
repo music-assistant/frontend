@@ -9,7 +9,7 @@
           :aria-describedby="descriptionId"
           @click.stop.prevent="open = true"
         >
-          <slot></slot>
+          <slot />
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" class="z-[10001] max-w-[240px]">

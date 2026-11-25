@@ -6,7 +6,7 @@
         name="custom"
         :entries="customEntries"
         :set-value="setCustomValue"
-      ></slot>
+      />
       <EditConfig
         ref="editConfig"
         :config-entries="entries"

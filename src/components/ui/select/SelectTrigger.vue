@@ -32,7 +32,7 @@ const forwardedProps = useForwardProps(delegatedProps);
       )
     "
   >
-    <slot></slot>
+    <slot />
     <SelectIcon as-child>
       <ChevronDown class="size-4 opacity-50" />
     </SelectIcon>

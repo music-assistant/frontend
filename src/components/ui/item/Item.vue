@@ -48,7 +48,7 @@ const role = computed(() => props.role ?? undefined);
       :class="cn(itemVariants({ variant, size }), props.class)"
       v-bind="$attrs"
     >
-      <slot></slot>
+      <slot />
     </Primitive>
   </div>
   <Primitive
@@ -60,6 +60,6 @@ const role = computed(() => props.role ?? undefined);
     :class="cn(itemVariants({ variant, size }), props.class)"
     v-bind="$attrs"
   >
-    <slot></slot>
+    <slot />
   </Primitive>
 </template>

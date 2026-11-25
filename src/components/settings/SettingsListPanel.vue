@@ -61,11 +61,11 @@
         </DropdownMenu>
       </div>
       <div v-if="$slots.filters" class="basis-full">
-        <slot name="filters"></slot>
+        <slot name="filters" />
       </div>
     </header>
     <div class="px-4 md:px-5">
-      <slot></slot>
+      <slot />
     </div>
   </Card>
 </template>

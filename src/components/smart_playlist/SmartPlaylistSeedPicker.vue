@@ -75,7 +75,7 @@
                 </div>
                 <div class="flex flex-col min-w-0 flex-1">
                   <span class="truncate font-medium">{{ item.name }}</span>
-                  <slot name="item-sub" :item="item"></slot>
+                  <slot name="item-sub" :item="item" />
                 </div>
               </button>
             </div>

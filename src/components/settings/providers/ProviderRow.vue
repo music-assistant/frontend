@@ -55,7 +55,7 @@
       <ItemDescription v-else-if="description">
         {{ description }}
       </ItemDescription>
-      <slot name="details"></slot>
+      <slot name="details" />
       <ProviderLabels v-if="labels?.length" :labels="labels" />
       <ItemDescription v-if="accessSummary" data-testid="provider-access">
         {{ accessSummary }}
@@ -215,7 +215,7 @@
       >
         {{ description }}
       </p>
-      <slot name="details"></slot>
+      <slot name="details" />
       <!-- at the bottom, so the labels line up across the cards of a row -->
       <ProviderLabels v-if="labels?.length" :labels="labels" class="mt-auto" />
     </div>

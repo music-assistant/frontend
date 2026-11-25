@@ -16,7 +16,7 @@
     class="grid gap-4 lg:grid-cols-2"
   >
     <HintTextProgress :statuses="roundPlayerStatuses" />
-    <slot name="leaderboard"></slot>
+    <slot name="leaderboard" />
   </div>
 </template>
 

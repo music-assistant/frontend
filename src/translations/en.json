@@ -137,7 +137,6 @@
     "radios": "Radio",
     "live_sources": "Live sources",
     "live_sources_page": {
-        "plays_on": "Plays on {0}",
         "no_player": "Select a player to see what you can play on it live.",
         "select_player": "Select a player",
         "empty": "Nothing to play live",

@@ -40,7 +40,7 @@
       :menu-items="menuItems"
     >
       <template #append>
-        <slot name="toolbar-append"></slot>
+        <slot name="toolbar-append" />
       </template>
     </Toolbar>
 
@@ -57,14 +57,14 @@
             artworkLayout,
         }"
       >
-        <slot name="main"></slot>
+        <slot name="main" />
       </div>
       <div
         v-if="$slots.aside"
         class="detail-hero__aside"
         :class="{ 'items-center text-center': artworkLayout }"
       >
-        <slot name="aside"></slot>
+        <slot name="aside" />
       </div>
     </div>
 
@@ -78,7 +78,7 @@
       @back="backButtonClick"
     >
       <template #append>
-        <slot name="toolbar-append"></slot>
+        <slot name="toolbar-append" />
       </template>
     </DetailHeroStickyBar>
   </header>
