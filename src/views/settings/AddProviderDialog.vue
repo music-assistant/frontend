@@ -25,6 +25,7 @@
           v-model="selectedProviderStages"
           :title="$t('settings.stage.label')"
           :options="providerStageOptions"
+          align="end"
         />
       </div>
 

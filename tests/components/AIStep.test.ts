@@ -115,7 +115,7 @@ describe("AIStep", () => {
 
     expect(
       testId(wrapper, "onboarding-invitation-features")
-        .findAll("[data-slot=item]")
+        .findAll("li")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.ai.features.announcements",

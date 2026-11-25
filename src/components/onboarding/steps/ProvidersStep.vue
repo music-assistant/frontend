@@ -2,17 +2,31 @@
   <div>
     <OnboardingInvitation :features="features" :set-up="configured.length > 0">
       <OnboardingList>
-        <ConfiguredProviderItem
-          v-for="provider in configured"
-          :key="provider.instance_id"
-          :provider="provider"
-          data-testid="onboarding-configured-provider"
-        />
         <OnboardingAddRow
           :label="$t(addLabelKey)"
           data-testid="onboarding-add-provider"
           @click="showAddProviderDialog = true"
         />
+        <ConfiguredProviderItem
+          v-for="provider in shown"
+          :key="provider.instance_id"
+          :provider="provider"
+          data-testid="onboarding-configured-provider"
+        />
+        <Button
+          v-if="hiddenCount > 0 || showAll"
+          variant="ghost"
+          class="text-muted-foreground w-full rounded-none"
+          data-testid="onboarding-show-all-providers"
+          :aria-expanded="showAll"
+          @click="showAll = !showAll"
+        >
+          {{
+            showAll
+              ? $t("show_less")
+              : $t("onboarding.show_all", { count: configured.length })
+          }}
+        </Button>
       </OnboardingList>
     </OnboardingInvitation>
 
@@ -31,6 +45,7 @@ import OnboardingInvitation, {
   type InvitationFeature,
 } from "@/components/onboarding/OnboardingInvitation.vue";
 import OnboardingList from "@/components/onboarding/OnboardingList.vue";
+import { Button } from "@/components/ui/button";
 import {
   configuredAudioSourcePlugins,
   configuredProviders,
@@ -47,7 +62,7 @@ import {
   Plus,
   Radio,
 } from "@lucide/vue";
-import { computed, markRaw, ref } from "vue";
+import { computed, markRaw, ref, watch } from "vue";
 
 const props = defineProps<{
   providerType: ProviderType;
@@ -72,6 +87,27 @@ const configured = computed(() =>
   connectingApps.value
     ? configuredAudioSourcePlugins()
     : configuredProviders(props.providerType),
+);
+
+// a long list is cut short, with the ones needing attention first so they
+// are never the ones hidden
+const COLLAPSED_COUNT = 5;
+const showAll = ref(false);
+const sorted = computed(() =>
+  [...configured.value].sort(
+    (a, b) => Number(b.needsAttention) - Number(a.needsAttention),
+  ),
+);
+const shown = computed(() =>
+  showAll.value ? sorted.value : sorted.value.slice(0, COLLAPSED_COUNT),
+);
+const hiddenCount = computed(() => sorted.value.length - shown.value.length);
+// one just added would land past the cut, so the whole list opens to show it
+watch(
+  () => configured.value.length,
+  (count, previous) => {
+    if (count > previous) showAll.value = true;
+  },
 );
 
 const addLabelKey = computed(() =>

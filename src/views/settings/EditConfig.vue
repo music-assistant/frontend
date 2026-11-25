@@ -235,6 +235,8 @@ export interface Props {
   // Whether the advanced entries show, for a host that decides it; without one, the choice
   // the user made with the advanced toggle applies.
   showAdvancedSettings?: boolean;
+  // Start with the advanced toggle off and leave the saved choice alone
+  advancedSettingsOff?: boolean;
 }
 
 const emit = defineEmits<{
@@ -279,7 +281,7 @@ const showAdvancedSettings = computed(
   () =>
     props.showAdvancedSettings ??
     advancedSettingsChoice.value ??
-    advancedSettingsPreference.value,
+    (props.advancedSettingsOff ? false : advancedSettingsPreference.value),
 );
 
 // computed props
@@ -487,6 +489,7 @@ const onEntryAction = function (entry: ConfigEntryUI) {
 
 const setShowAdvancedSettings = function (show: boolean) {
   advancedSettingsChoice.value = show;
+  if (props.advancedSettingsOff) return;
   void setUserPreference(ADVANCED_SETTINGS_PREFERENCE, show);
 };
 

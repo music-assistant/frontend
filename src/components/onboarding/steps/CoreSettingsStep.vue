@@ -63,6 +63,7 @@
           </Button>
         </ItemActions>
       </Item>
+      <RemoteAccessQrItem v-if="rawRemoteId" :remote-id="rawRemoteId" />
       <Item
         v-if="homeAssistantConnected"
         size="sm"
@@ -86,6 +87,7 @@ import OnboardingInvitation, {
   type InvitationFeature,
 } from "@/components/onboarding/OnboardingInvitation.vue";
 import OnboardingList from "@/components/onboarding/OnboardingList.vue";
+import RemoteAccessQrItem from "@/components/onboarding/RemoteAccessQrItem.vue";
 import { Button } from "@/components/ui/button";
 import {
   Item,
@@ -128,8 +130,16 @@ const FEATURES: readonly InvitationFeature[] = [
 ];
 
 const { ctx } = useOnboarding();
-const { enabled, remoteId, loadingId, busy, load, setEnabled, copyId } =
-  useRemoteAccess();
+const {
+  enabled,
+  remoteId,
+  rawRemoteId,
+  loadingId,
+  busy,
+  load,
+  setEnabled,
+  copyId,
+} = useRemoteAccess();
 
 // what this admin may do here: a custom role can run the setup without being
 // allowed to switch remote access

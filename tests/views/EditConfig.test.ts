@@ -615,6 +615,31 @@ describe("EditConfig", () => {
     expect(renderedKeys(wrapper)).toEqual(["port"]);
   });
 
+  it("starts with the advanced entries hidden and keeps the saved choice when asked", async () => {
+    storeMock.currentUser = {
+      preferences: { "settings.showAdvancedSettings": true },
+    };
+
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [
+          entry({ key: "server", type: ConfigEntryType.STRING }),
+          entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+        ],
+        disabled: false,
+        advancedSettingsOff: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await nextTick();
+
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(setUserPreference).not.toHaveBeenCalled();
+  });
+
   it("lets the host decide over the user's choice", () => {
     storeMock.currentUser = {
       preferences: { "settings.showAdvancedSettings": true },

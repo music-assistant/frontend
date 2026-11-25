@@ -31,6 +31,7 @@
           :disabled="!config.enabled"
           :provider-domain="config.domain"
           inline-save
+          advanced-settings-off
           @submit="save"
           @action="onAction"
           @immediate-apply="applyNow"
