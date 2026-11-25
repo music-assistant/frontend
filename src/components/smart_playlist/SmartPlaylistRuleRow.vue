@@ -5,7 +5,12 @@
       invalid ? 'border-destructive ring-1 ring-destructive/40' : '',
     ]"
   >
-    <div class="flex min-w-0 flex-wrap items-center gap-2">
+    <div
+      :class="[
+        'flex min-w-0 items-center gap-2',
+        rule.field === 'track_year' ? 'flex-wrap' : '',
+      ]"
+    >
       <component
         :is="fieldIcon(rule.field)"
         class="h-3.5 w-3.5 shrink-0 text-muted-foreground"

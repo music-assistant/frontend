@@ -27,9 +27,17 @@
       class="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200"
     >
       <Info class="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-      <p class="leading-relaxed">
-        {{ $t("smart_playlist.seed_filters_hint") }}
-      </p>
+      <div class="space-y-1">
+        <p class="leading-relaxed">
+          {{ $t("smart_playlist.seed_filters_hint") }}
+        </p>
+        <p
+          v-if="rules.some((rule) => rule.field === 'track_year')"
+          class="leading-relaxed"
+        >
+          {{ $t("smart_playlist.track_year_hint") }}
+        </p>
+      </div>
     </div>
 
     <div v-if="rules.length" class="flex flex-col gap-1.5">

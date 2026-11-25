@@ -16,6 +16,34 @@ const favoriteRule: RuleRow = {
   values: [],
 };
 
+describe("smart playlist track release year", () => {
+  it.each(["library", "seed"] as const)(
+    "shows the missing-date warning only when the rule is present in %s mode",
+    async (mode) => {
+      const wrapper = mount(SmartPlaylistRulesList, {
+        props: {
+          mode,
+          rules: [],
+          logic: "AND",
+          availableFields: [],
+          genreOptions: [],
+          albumTypeOptions: [],
+          invalidRuleUids: new Set<string>(),
+        },
+      });
+      const warning =
+        "Many music sources do not provide a track release date. Tracks without one are excluded by this filter.";
+      expect(wrapper.text()).not.toContain(warning);
+      await wrapper.setProps({
+        rules: [{ ...favoriteRule, uid: "track-year", field: "track_year" }],
+      });
+      expect(wrapper.text()).toContain(warning);
+      await wrapper.setProps({ rules: [] });
+      expect(wrapper.text()).not.toContain(warning);
+    },
+  );
+});
+
 describe("smart playlist favorites", () => {
   it("offers include and exclude and emits the selected operator", async () => {
     const wrapper = mount(SmartPlaylistRuleRow, {
