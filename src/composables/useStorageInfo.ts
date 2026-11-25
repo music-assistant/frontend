@@ -1,16 +1,19 @@
 import { storageErrorText } from "@/helpers/storage";
 import { api } from "@/plugins/api";
 import {
+  Scope,
   type StorageInfo,
   type StorageLocation,
   StorageUsage,
 } from "@/plugins/api/interfaces";
+import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
 
 /**
- * The storage the server reports to the current user, fetched on `refresh`.
+ * The storage the server reports to the current user, fetched on `refresh`, and what
+ * this user can add to it on this server.
  *
  * A failed refresh keeps what an earlier one loaded and reports the failure in a toast.
  */
@@ -26,6 +29,20 @@ export function useStorageInfo() {
       info.value?.locations.filter(
         (location) => location.usage === StorageUsage.MEDIA,
       ) ?? [],
+  );
+
+  // adding and changing storage locations is admin work
+  const canManageStorage = computed(() =>
+    authManager.hasScope(Scope.CONFIG_PROVIDERS_WRITE),
+  );
+  const canAddShare = computed(
+    () =>
+      canManageStorage.value &&
+      !!info.value?.can_mount_shares &&
+      info.value.supported_share_types.length > 0,
+  );
+  const canAddFolder = computed(
+    () => canManageStorage.value && !!info.value?.can_add_local_folder,
   );
 
   const refresh = async (): Promise<void> => {
@@ -45,5 +62,14 @@ export function useStorageInfo() {
     }
   };
 
-  return { info, loading, failed, mediaLocations, refresh };
+  return {
+    info,
+    loading,
+    failed,
+    mediaLocations,
+    canManageStorage,
+    canAddShare,
+    canAddFolder,
+    refresh,
+  };
 }

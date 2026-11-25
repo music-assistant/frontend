@@ -132,13 +132,13 @@ import {
   resolveShowPlayerId,
   slugify,
 } from "@/helpers/ai_radio";
+import { resolvePlayer } from "@/helpers/players";
 import { getMediaItemImage } from "@/helpers/utils";
 import { Scope, type AIRadioStation } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import api from "@/plugins/api";
 import { MoreVertical, Play, Sparkles, Square } from "@lucide/vue";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
@@ -203,7 +203,7 @@ async function onPlay() {
   const playerId = resolveShowPlayerId(
     props.show,
     store.activePlayerId,
-    api.players,
+    resolvePlayer,
   );
   if (!playerId) {
     toast.error($t("providers.ai_radio.card.no_player"));

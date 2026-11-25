@@ -7,27 +7,31 @@
   >
     <!-- above the title line, e.g. a heading shared by several shelves -->
     <div v-if="$slots.heading" class="mb-[10px] px-[var(--ed-gutter)]">
-      <slot name="heading"></slot>
+      <slot name="heading" />
     </div>
     <div class="ed-shelf__head">
       <slot name="header">
         <div class="ed-shelf__titles">
           <div class="ed-shelf__title-row">
             <h2 class="ed-shelf__title">{{ title }}</h2>
-            <slot name="title-append"></slot>
+            <slot name="title-append" />
           </div>
           <span v-if="subtitle" class="ed-shelf__subtitle">{{ subtitle }}</span>
         </div>
       </slot>
-      <div v-if="provider || $slots.actions" class="ed-shelf__aside">
+      <div
+        v-if="provider || $slots.actions || viewAllTo"
+        class="ed-shelf__aside"
+      >
         <ProviderIcon
           v-if="provider"
           class="ed-shelf__provider"
           :domain="provider"
           :size="20"
         />
-        <div v-if="$slots.actions" class="ed-shelf__actions">
-          <slot name="actions"></slot>
+        <div v-if="$slots.actions || viewAllTo" class="ed-shelf__actions">
+          <slot name="actions" />
+          <ViewAllLink v-if="viewAllTo" :to="viewAllTo" :name="title" />
         </div>
       </div>
     </div>
@@ -66,7 +70,7 @@
         @click.capture="onClickCapture"
         @dragstart.prevent
       >
-        <slot></slot>
+        <slot />
       </div>
 
       <!-- next -->
@@ -98,6 +102,8 @@ import { useDragScroll } from "@/composables/useDragScroll";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import ViewAllLink from "@/components/ViewAllLink.vue";
+import type { RouteLocationRaw } from "vue-router";
 
 interface Props {
   title?: string;
@@ -107,6 +113,8 @@ interface Props {
   navCenter?: number;
   dimmed?: boolean;
   tilesPerView?: number;
+  // adds a "View all" link, e.g. to the full listing of the shelf's items
+  viewAllTo?: RouteLocationRaw;
 }
 const props = withDefaults(defineProps<Props>(), {
   title: "",
@@ -116,6 +124,7 @@ const props = withDefaults(defineProps<Props>(), {
   navCenter: 92,
   dimmed: false,
   tilesPerView: 0,
+  viewAllTo: undefined,
 });
 
 const CARD_PAD = 16;

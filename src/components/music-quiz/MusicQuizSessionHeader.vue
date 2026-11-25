@@ -48,7 +48,7 @@
       </div>
     </div>
     <div v-if="$slots.actions" class="flex shrink-0 justify-end">
-      <slot name="actions"></slot>
+      <slot name="actions" />
     </div>
   </section>
 </template>

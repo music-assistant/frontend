@@ -4,6 +4,7 @@ import {
   embeddedProviderDomains,
   type KnownProviders,
   resolveProviderDomain,
+  sourceProviderId,
 } from "./provider_domain";
 
 const known: KnownProviders = {
@@ -89,5 +90,15 @@ describe("embeddedProviderDomains", () => {
     ["filesystem_nfs", ["filesystem_nfs", "filesystem_local"]],
   ])("reads %s as %j", (id, domains) => {
     expect(embeddedProviderDomains(id)).toEqual(domains);
+  });
+});
+
+describe("sourceProviderId", () => {
+  it.each([
+    ["sendspin--abc://audio_source/x", "sendspin--abc"],
+    ["spotify://track/1", "spotify"],
+    ["line_in", undefined],
+  ])("reads %s as %s", (id, providerId) => {
+    expect(sourceProviderId(id)).toBe(providerId);
   });
 });

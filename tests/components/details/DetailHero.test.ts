@@ -7,12 +7,21 @@ import {
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
+import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
 import { track } from "../../fixtures/track";
+
+// the entries providers add, as reactive as the providers they come from
+const { declared } = await vi.hoisted(async () => {
+  const { reactive } = await import("vue");
+  return { declared: reactive({ labels: [] as string[] }) };
+});
 
 vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => true }));
 vi.mock("@/layouts/default/ItemContextMenu.vue", () => ({
-  getContextMenuItems: vi.fn(async () => []),
+  getContextMenuItems: vi.fn(async () => [{ label: "show_info" }]),
+  getDeclaredContextMenuItems: () =>
+    declared.labels.map((label) => ({ label })),
 }));
 vi.mock("@/composables/userPreferences", () => ({
   useUserPreferences: () => ({ getPreference: () => ref([]) }),
@@ -218,6 +227,27 @@ describe("DetailHero menu", () => {
         label: string;
       }>
     ).map((item) => item.label);
+
+  it("follows the entries providers add, without building the menu again", async () => {
+    declared.labels = [];
+    vi.mocked(getContextMenuItems).mockClear();
+    const wrapper = mount(DetailHero, {
+      props: { item: track({ name: "Happy Hits" }) },
+      global: { mocks: { $t: (key: string) => key } },
+    });
+    await flushPromises();
+    expect(menuLabels(wrapper)).toEqual(["show_info", "edit_rows"]);
+
+    declared.labels = ["provider_menu_action/demo/ask"];
+    await nextTick();
+
+    expect(menuLabels(wrapper)).toEqual([
+      "show_info",
+      "provider_menu_action/demo/ask",
+      "edit_rows",
+    ]);
+    expect(getContextMenuItems).toHaveBeenCalledTimes(1);
+  });
 
   it("adds Edit rows once the page becomes editable", async () => {
     const wrapper = mount(DetailHero, {

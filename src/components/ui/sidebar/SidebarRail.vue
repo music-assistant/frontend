@@ -37,6 +37,6 @@ const sidebarToggleLabel = computed(() =>
     "
     @click="toggleSidebar"
   >
-    <slot></slot>
+    <slot />
   </button>
 </template>

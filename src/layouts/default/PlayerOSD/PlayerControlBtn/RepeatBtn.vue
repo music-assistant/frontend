@@ -1,28 +1,27 @@
 <template>
   <!-- repeat button -->
-  <Icon
-    v-bind="{ ...icon, ...$attrs }"
+  <!-- in dynamic mode the disabled button still takes the pointer, so its
+       tooltip can explain why -->
+  <TransportBtn
+    v-bind="$attrs"
+    :icon-size="size"
     :disabled="isDisabled"
-    :color="
-      getValueFromSources(icon?.color, [
-        [repeatMode !== RepeatMode.OFF, 'primary'],
-      ])
-    "
+    :label="repeatButtonLabel"
     :title="repeatTitle"
-    :aria-label="repeatButtonLabel"
-    :data-dynamic="isDynamic || undefined"
-    variant="button"
+    :class="{
+      'text-primary': repeatMode !== RepeatMode.OFF,
+      'disabled:pointer-events-auto': isDynamic,
+    }"
     @click="cycleRepeatMode"
   >
     <RepeatIcon :mode="repeatMode" :size="size" />
-  </Icon>
+  </TransportBtn>
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false });
-import Icon, { IconProps } from "@/components/Icon.vue";
 import RepeatIcon from "@/layouts/default/PlayerOSD/PlayerControlBtn/RepeatIcon.vue";
-import { getValueFromSources } from "@/helpers/utils";
+import TransportBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/TransportBtn.vue";
 import { useExternalSource } from "@/composables/externalSource";
 import { resolveActiveSourceId } from "@/composables/activeSource";
 import api from "@/plugins/api";
@@ -38,11 +37,9 @@ export interface Props {
   // state shown and the source the command is aimed at are both derived from
   // this pair
   playerQueue: PlayerQueue | undefined;
-  icon?: IconProps;
   size?: number;
 }
 const compProps = withDefaults(defineProps<Props>(), {
-  icon: undefined,
   size: 20,
 });
 
@@ -124,12 +121,3 @@ function cycleRepeatMode() {
   );
 }
 </script>
-
-<style scoped>
-/* Disabled icons drop pointer events (so no tooltip), but in dynamic mode we
-   want the title to explain why repeat is unavailable. Re-enable hover just for
-   that case; the Icon still guards the click itself. */
-.icon-container--disabled[data-dynamic] {
-  pointer-events: auto;
-}
-</style>

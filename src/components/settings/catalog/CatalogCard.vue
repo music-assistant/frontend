@@ -1,41 +1,31 @@
 <template>
-  <Card
-    class="relative h-full gap-4 rounded-(--radius-xl) card-hover p-5 max-md:p-4"
+  <CatalogBannerCard
+    :domain="entry.manifest.domain"
+    :icon="entry.community?.icon"
+    :name="entry.manifest.name"
+    openable
     data-testid="catalog-card"
     :data-domain="entry.manifest.domain"
+    @open="emit('open')"
   >
-    <div class="flex items-start gap-4">
-      <CatalogIcon
-        :domain="entry.manifest.domain"
-        :icon="entry.community?.icon"
-        :size="48"
-      />
-      <div class="min-w-0 flex-1">
-        <h3 class="m-0 text-base leading-snug font-semibold">
-          <!-- the name stretches over the card, so the whole card opens the
-               detail while the actions below stay their own controls -->
-          <button
-            type="button"
-            class="cursor-pointer text-left outline-none after:absolute after:inset-0 after:rounded-(--radius-xl) focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
-            data-testid="catalog-card-open"
-            @click="emit('open')"
-          >
-            {{ entry.manifest.name }}
-          </button>
-        </h3>
-        <p class="m-0 mt-0.5 text-xs text-muted-foreground">
-          {{ typeLabel }}
-        </p>
-      </div>
-    </div>
-
-    <p
-      class="m-0 line-clamp-2 flex-1 text-sm leading-normal text-muted-foreground"
-    >
-      {{ entry.manifest.description }}
-    </p>
-
-    <div class="flex flex-wrap items-center gap-1.5">
+    <template v-if="dismissible" #corner>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        class="size-8 rounded-full bg-black/25 text-white hover:bg-black/40 hover:text-white"
+        :aria-label="
+          $t('settings.catalog.dont_suggest_named', {
+            name: entry.manifest.name,
+          })
+        "
+        :title="$t('settings.catalog.dont_suggest')"
+        data-testid="catalog-card-dismiss"
+        @click="emit('dismiss')"
+      >
+        <X class="size-4" aria-hidden="true" />
+      </Button>
+    </template>
+    <template #badges>
       <Badge
         v-if="community"
         variant="community"
@@ -53,10 +43,35 @@
         <Check class="size-3" aria-hidden="true" />
         {{ $t("settings.catalog.added") }}
       </Badge>
+      <Badge v-if="badge" variant="info" data-testid="catalog-card-badge">
+        {{ badge }}
+      </Badge>
+    </template>
+    <!-- takes the free room, so the labels line up across the cards of a row -->
+    <div class="flex-1">
+      <p
+        class="m-0 mt-0.5 text-xs text-muted-foreground"
+        data-testid="catalog-card-type"
+      >
+        {{ typeLabel }}
+      </p>
+      <p
+        class="m-0 mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground"
+      >
+        {{ entry.manifest.description }}
+      </p>
     </div>
-
-    <div class="flex items-center justify-between gap-3">
+    <ProviderLabels :labels="labels" class="mt-3" />
+    <template #footer>
       <span
+        v-if="pairedWith"
+        class="min-w-0 truncate text-xs text-primary"
+        data-testid="catalog-card-paired"
+      >
+        {{ $t("settings.catalog.goes_well_with", { name: pairedWith }) }}
+      </span>
+      <span
+        v-else
         class="min-w-0 truncate text-xs text-muted-foreground"
         data-testid="catalog-card-credit"
       >
@@ -97,20 +112,20 @@
           </template>
         </Button>
       </div>
-    </div>
-  </Card>
+    </template>
+  </CatalogBannerCard>
 </template>
 
 <script setup lang="ts">
-import CatalogIcon from "@/components/settings/catalog/CatalogIcon.vue";
+import CatalogBannerCard from "@/components/settings/catalog/CatalogBannerCard.vue";
+import ProviderLabels from "@/components/settings/providers/ProviderLabels.vue";
 import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useCatalogEntryDetails } from "@/composables/settings/catalog/useCatalogEntryDetails";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
 import { $t } from "@/plugins/i18n";
-import { Check, Plus } from "@lucide/vue";
+import { Check, Plus, X } from "@lucide/vue";
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 
@@ -118,6 +133,12 @@ interface Props {
   entry: CatalogEntry;
   // whether it is being installed from the community catalog
   installing?: boolean;
+  // the name of what it goes well with, said in place of who maintains it
+  pairedWith?: string | null;
+  // whether the user may ask not to have it suggested any more
+  dismissible?: boolean;
+  // why it is suggested, as the label of a badge
+  badge?: string;
 }
 
 const props = defineProps<Props>();
@@ -125,9 +146,10 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: "open"): void;
   (e: "add"): void;
+  (e: "dismiss"): void;
 }>();
 
-const { typeLabel, community, isSetUp, manageRoute, maintainers } =
+const { typeLabel, community, labels, isSetUp, manageRoute, maintainers } =
   useCatalogEntryDetails(() => props.entry);
 
 const credit = computed(() =>

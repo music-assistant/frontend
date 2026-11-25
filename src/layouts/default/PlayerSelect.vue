@@ -128,9 +128,9 @@
 
       <div
         ref="playerList"
-        class="player-volume-scroller min-h-0 flex-1 overflow-y-auto pb-6"
+        class="player-volume-scroller min-h-0 flex-1 overflow-y-auto pb-3"
       >
-        <!-- outranks the selected player badge on the cards scrolling underneath -->
+        <!-- keeps search controls above the cards scrolling underneath -->
         <div
           v-if="showSearch"
           class="bg-background sticky top-0 z-20 px-3 pt-3 pb-2"
@@ -164,7 +164,6 @@
             :show-group-controls="true"
             :show-disabled-group-control="true"
             :show-group-member-names="showGroupMemberNames"
-            group-member-layout="subtitle-list"
             :stack-media-details="true"
             :allow-power-control="true"
             :group-control-expanded="
@@ -209,6 +208,7 @@ import {
   fullscreenPlayerSelectAnchor,
   playerBarEndAnchor,
 } from "@/helpers/player_bar";
+import { keepPlayerOrder } from "@/helpers/player_order";
 import {
   canEditPlayerGroup,
   getPlayerDisplayName,
@@ -282,6 +282,12 @@ const orderedPlayers = useOrderedPlayers({
   activePlayersFirst: showActivePlayersFirst,
   includePausedAsActive: true,
 });
+// the order is taken when the panel opens, so cards stay under the finger
+// while players start, stop or get selected
+const panelOrder = ref<string[]>([]);
+const panelPlayers = computed(() =>
+  keepPlayerOrder(orderedPlayers.value, panelOrder.value),
+);
 
 const showSearch = computed(
   () => orderedPlayers.value.length > SEARCH_PLAYER_THRESHOLD,
@@ -298,10 +304,10 @@ const popoutAnchor = computed(() =>
 );
 
 const filteredPlayers = computed(() => {
-  if (!showSearch.value) return orderedPlayers.value;
+  if (!showSearch.value) return panelPlayers.value;
   const query = playerSearchQuery.value.trim().toLocaleLowerCase();
-  if (!query) return orderedPlayers.value;
-  return orderedPlayers.value.filter((player) =>
+  if (!query) return panelPlayers.value;
+  return panelPlayers.value.filter((player) =>
     getPlayerDisplayName(player).toLocaleLowerCase().includes(query),
   );
 });
@@ -316,6 +322,7 @@ watch(
         activeElement instanceof HTMLElement && activeElement !== document.body
           ? activeElement
           : null;
+      takePanelOrder();
       expandActivePlayerGroupControls();
       void scrollSelectedPlayerIntoView();
       return;
@@ -334,6 +341,8 @@ watch(
     });
   },
 );
+
+watch([showSelectedPlayerFirst, showActivePlayersFirst], takePanelOrder);
 
 watch(showSelectedPlayerFirst, (showFirst) => {
   if (!showFirst && store.showPlayersMenu) {
@@ -372,7 +381,10 @@ onMounted(() => {
   document.addEventListener("keydown", markKeyboardInteraction, true);
   document.addEventListener("pointerdown", markPointerInteraction, true);
   checkDefaultPlayer();
-  if (store.showPlayersMenu) void scrollSelectedPlayerIntoView();
+  if (store.showPlayersMenu) {
+    takePanelOrder();
+    void scrollSelectedPlayerIntoView();
+  }
 });
 
 onBeforeUnmount(() => {
@@ -571,6 +583,10 @@ function selectBuiltinPlayer() {
 
 function isSelectablePlayerId(playerId: string | null | undefined) {
   return !!playerId && isSelectablePlayer(api.players[playerId]);
+}
+
+function takePanelOrder() {
+  panelOrder.value = orderedPlayers.value.map((player) => player.player_id);
 }
 
 async function scrollSelectedPlayerIntoView() {

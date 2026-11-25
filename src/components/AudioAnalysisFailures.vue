@@ -1,136 +1,140 @@
 <template>
-  <Card data-test="aa-failures">
-    <CardHeader>
-      <CardTitle>{{ $t("settings.audio_analysis_failures.title") }}</CardTitle>
-      <CardDescription>
+  <SettingsFoldRow
+    value="failures"
+    :icon="TriangleAlert"
+    :label="$t('settings.audio_analysis_failures.failed_tracks')"
+    :description="
+      $t('settings.audio_analysis_failures.failed_tracks_description')
+    "
+    :state="state"
+    :warning="total > 0"
+  >
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <p class="text-muted-foreground m-0 min-w-0 flex-[1_1_15rem] text-sm">
         {{ $t("settings.audio_analysis_failures.description") }}
-      </CardDescription>
-      <CardAction v-if="total > 0">
-        <AlertDialog>
-          <AlertDialogTrigger as-child>
-            <Button variant="outline" size="sm" :disabled="clearingAll">
+      </p>
+      <AlertDialog v-if="total > 0">
+        <AlertDialogTrigger as-child>
+          <Button variant="outline" size="sm" :disabled="clearingAll">
+            {{ $t("settings.audio_analysis_failures.clear_all") }}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {{ $t("settings.audio_analysis_failures.clear_all_confirm") }}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {{
+                $t("settings.audio_analysis_failures.clear_all_description", [
+                  total,
+                ])
+              }}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
+            <AlertDialogAction @click="onClearAll">
               {{ $t("settings.audio_analysis_failures.clear_all") }}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {{ $t("settings.audio_analysis_failures.clear_all_confirm") }}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {{
-                  $t("settings.audio_analysis_failures.clear_all_description", [
-                    total,
-                  ])
-                }}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{{ $t("cancel") }}</AlertDialogCancel>
-              <AlertDialogAction @click="onClearAll">
-                {{ $t("settings.audio_analysis_failures.clear_all") }}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </CardAction>
-    </CardHeader>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
 
-    <CardContent>
-      <div
-        v-if="loading && total === 0"
-        class="flex justify-center py-6"
-        data-test="aa-failures-loading"
-      >
-        <Spinner class="size-5" />
-      </div>
+    <div
+      v-if="loading && total === 0"
+      class="flex justify-center py-6"
+      data-test="aa-failures-loading"
+    >
+      <Spinner class="size-5" />
+    </div>
 
-      <p
-        v-else-if="error !== null && total === 0"
-        class="text-destructive text-sm"
-        data-test="aa-failures-error"
-      >
-        {{ $t("settings.audio_analysis_failures.load_error") }}
-      </p>
+    <p
+      v-else-if="error !== null && total === 0"
+      class="text-destructive text-sm"
+      data-test="aa-failures-error"
+    >
+      {{ $t("settings.audio_analysis_failures.load_error") }}
+    </p>
 
-      <p
-        v-else-if="total === 0"
-        class="text-muted-foreground text-sm"
-        data-test="aa-failures-empty"
-      >
-        {{ $t("settings.audio_analysis_failures.none") }}
-      </p>
+    <p
+      v-else-if="total === 0"
+      class="text-muted-foreground text-sm"
+      data-test="aa-failures-empty"
+    >
+      {{ $t("settings.audio_analysis_failures.none") }}
+    </p>
 
-      <div v-else class="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader class="bg-muted">
-            <TableRow>
-              <TableHead>
-                {{ $t("settings.audio_analysis_failures.col_item") }}
-              </TableHead>
-              <TableHead>
-                {{ $t("settings.audio_analysis_failures.col_reason") }}
-              </TableHead>
-              <TableHead>
-                {{ $t("settings.audio_analysis_failures.col_retry") }}
-              </TableHead>
-              <TableHead class="w-0 text-right">
-                <span class="sr-only">
-                  {{ $t("settings.audio_analysis_failures.col_actions") }}
-                </span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow
-              v-for="row in pageRows"
-              :key="rowId(row)"
-              data-test="aa-failure-row"
-            >
-              <TableCell>
-                <div class="font-medium">{{ row.name }}</div>
-                <div class="text-muted-foreground font-mono text-xs">
-                  <span v-if="row.artist">{{ row.artist }} · </span>
-                  {{ row.provider }} · {{ row.itemId }}
-                </div>
-              </TableCell>
-              <TableCell class="text-muted-foreground">{{
-                row.reason
-              }}</TableCell>
-              <TableCell>
-                <Badge :variant="retryVariant(row)" class="tabular-nums">
-                  {{ retryLabel(row) }}
-                </Badge>
-              </TableCell>
-              <TableCell class="text-right">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  :disabled="pendingKey === rowId(row)"
-                  :aria-label="$t('settings.audio_analysis_failures.delete')"
-                  :title="$t('settings.audio_analysis_failures.delete')"
-                  @click="onClearOne(row)"
-                >
-                  <Spinner v-if="pendingKey === rowId(row)" class="size-3.5" />
-                  <Trash2 v-else class="size-3.5" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+    <div v-else class="overflow-hidden rounded-lg border">
+      <Table>
+        <TableHeader class="bg-muted">
+          <TableRow>
+            <TableHead>
+              {{ $t("settings.audio_analysis_failures.col_item") }}
+            </TableHead>
+            <TableHead>
+              {{ $t("settings.audio_analysis_failures.col_reason") }}
+            </TableHead>
+            <TableHead>
+              {{ $t("settings.audio_analysis_failures.col_retry") }}
+            </TableHead>
+            <TableHead class="w-0 text-right">
+              <span class="sr-only">
+                {{ $t("settings.audio_analysis_failures.col_actions") }}
+              </span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
+            v-for="row in pageRows"
+            :key="rowId(row)"
+            data-test="aa-failure-row"
+          >
+            <TableCell>
+              <div class="font-medium">{{ row.name }}</div>
+              <div class="text-muted-foreground font-mono text-xs">
+                <span v-if="row.artist">{{ row.artist }} · </span>
+                {{ row.provider }} · {{ row.itemId }}
+              </div>
+            </TableCell>
+            <TableCell class="text-muted-foreground">{{
+              row.reason
+            }}</TableCell>
+            <TableCell>
+              <Badge :variant="retryVariant(row)" class="tabular-nums">
+                {{ retryLabel(row) }}
+              </Badge>
+            </TableCell>
+            <TableCell class="text-right">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :disabled="pendingKey === rowId(row)"
+                :aria-label="$t('settings.audio_analysis_failures.delete')"
+                :title="$t('settings.audio_analysis_failures.delete')"
+                @click="onClearOne(row)"
+              >
+                <Spinner v-if="pendingKey === rowId(row)" class="size-3.5" />
+                <Trash2 v-else class="size-3.5" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
 
-        <TablePagination
-          v-if="pageCount > 1"
-          :info="$t('settings.audio_analysis_failures.count', [total])"
-          :page="page"
-          :total-pages="pageCount"
-          :has-next-page="hasNextPage"
-          @prev="prev"
-          @next="next"
-        />
-      </div>
-    </CardContent>
-  </Card>
+      <TablePagination
+        v-if="pageCount > 1"
+        :info="$t('settings.audio_analysis_failures.count', [total])"
+        :page="page"
+        :total-pages="pageCount"
+        :has-next-page="hasNextPage"
+        @prev="prev"
+        @next="next"
+      />
+    </div>
+  </SettingsFoldRow>
 </template>
 
 <script setup lang="ts">
@@ -144,6 +148,7 @@ import { serverNow } from "@/composables/useServerTime";
 import { formatRelativeTime } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { api } from "@/plugins/api";
+import SettingsFoldRow from "@/components/settings/SettingsFoldRow.vue";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -157,14 +162,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -175,10 +172,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { Trash2 } from "@lucide/vue";
-import { onMounted, ref, watch } from "vue";
+import { Trash2, TriangleAlert } from "@lucide/vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 
+/**
+ * The tracks the audio analysis failed on, as a row of a `SettingsFoldRows`
+ * card, where they can be cleared to be analyzed again.
+ */
 const {
   pageRows,
   total,
@@ -186,6 +187,7 @@ const {
   pageCount,
   hasNextPage,
   loading,
+  loaded,
   error,
   refresh,
   next,
@@ -196,6 +198,14 @@ const {
 
 const pendingKey = ref<string | null>(null);
 const clearingAll = ref(false);
+
+// nothing until the failures are known
+const state = computed(() => {
+  if (!loaded.value) return undefined;
+  return total.value > 0
+    ? String(total.value)
+    : $t("settings.audio_analysis_failures.state_none");
+});
 
 function retryVariant(row: FailureRow): "warning" | "secondary" | "outline" {
   const status = classifyRetry(row.nextRetry, Math.floor(serverNow()));

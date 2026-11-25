@@ -11,7 +11,7 @@
     >
       {{ title }}
     </h2>
-    <slot></slot>
+    <slot />
     <span
       v-if="meta"
       class="detail-section-title__meta text-[13px] whitespace-nowrap text-[color:rgba(var(--v-theme-on-surface),0.6)]"

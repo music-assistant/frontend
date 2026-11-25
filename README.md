@@ -37,6 +37,7 @@ pnpm dev
 This will launch an auto-reload development environment (usually at http://localhost:3000)
 Open the url in the browser and a popup will ask the location of the MA server.
 You can either connect to a locally launched dev server or an existing running server on port 8095.
+A server that has not been set up yet has no account to sign in with: create the first admin account through the server's own address (for example `http://localhost:8095`), then sign in from the dev frontend.
 
 ### Type-Check, Compile and Minify for Production
 

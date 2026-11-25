@@ -25,7 +25,7 @@ const props = defineProps<{
       class="bg-background text-muted-foreground relative mx-auto block w-fit px-2"
       data-slot="field-separator-content"
     >
-      <slot></slot>
+      <slot />
     </span>
   </div>
 </template>

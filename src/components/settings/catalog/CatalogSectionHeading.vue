@@ -11,7 +11,7 @@
       <ChevronRight class="size-4" aria-hidden="true" />
     </RouterLink>
     <!-- actions on what the section lists -->
-    <slot></slot>
+    <slot />
   </div>
 </template>
 

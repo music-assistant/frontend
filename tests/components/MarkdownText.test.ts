@@ -32,6 +32,24 @@ describe("MarkdownText", () => {
     expect(link.attributes("target")).toBe("_blank");
   });
 
+  it("draws no image by default", () => {
+    const wrapper = mount(MarkdownText, {
+      props: { text: "![logo](https://example.com/a.png)" },
+    });
+
+    expect(wrapper.find("img").exists()).toBe(false);
+  });
+
+  it("draws an image when allowed", () => {
+    const wrapper = mount(MarkdownText, {
+      props: { text: "![logo](https://example.com/a.png)", allowImages: true },
+    });
+
+    expect(wrapper.find("img").attributes("src")).toBe(
+      "https://example.com/a.png",
+    );
+  });
+
   it("renders nothing for empty text", () => {
     expect(mount(MarkdownText, { props: { text: null } }).text()).toBe("");
   });

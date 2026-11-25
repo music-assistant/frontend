@@ -164,6 +164,6 @@ const onSubmit = async function () {
     members.value,
     dynamic.value,
   );
-  router.push({ name: "playersettings" });
+  goBack(router, { name: "playersettings" });
 };
 </script>

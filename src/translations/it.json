@@ -243,11 +243,9 @@
             "description": "Forzare il layout mobile (con il menu di navigazione in basso), anche su schermi più grandi."
         },
         "players_description": "Configura e gestisci i tuoi dispositivi di output audio",
-        "frontend_description": "Personalizza il tema e l'aspetto dell'interfaccia utente",
         "profile_description": "Gestisci impostazioni e preferenze tuo account personale",
         "users": "Utenti",
         "users_description": "Gestisci account utenti, ruoli e autorizzazioni",
-        "audio_analysis": "Analisi audio",
         "category": {
             "audiobooks": "Audiolibri"
         },
@@ -444,8 +442,6 @@
         "setup_failed": "Impostazione fallita. Per favore prova di nuovo.",
         "setup_error": "Si è presentato un errore durante il setup.",
         "profile": "Profilo",
-        "account_settings": "Impostazioni Account",
-        "manage_your_profile_info": "Gestisci informazioni ed impostazioni del tuo profilo",
         "change_password": "Cambia password",
         "update_your_password": "Aggiorna password tuo account",
         "old_password": "Password corrente",

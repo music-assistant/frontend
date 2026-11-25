@@ -17,29 +17,24 @@
         <ChevronRight class="size-4" aria-hidden="true" />
       </RouterLink>
     </div>
+    <ProviderLabelFilter
+      v-if="labels.length"
+      v-model="label"
+      :labels="labels"
+    />
 
     <template v-if="matches.length">
-      <!-- a phone lists compact rows, a wider screen cards -->
-      <div v-if="isPhone" class="flex flex-col gap-2">
-        <CatalogListRow
-          v-for="entry in shown"
-          :key="entry.manifest.domain"
-          :entry="entry"
-          :installing="installing.has(entry.manifest.domain)"
-          @open="emit('open', entry)"
-          @add="emit('add', entry)"
-        />
-      </div>
-      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <CatalogGrid>
         <CatalogCard
           v-for="entry in shown"
           :key="entry.manifest.domain"
           :entry="entry"
           :installing="installing.has(entry.manifest.domain)"
+          :badge="getBadgeLabel(entry)"
           @open="emit('open', entry)"
           @add="emit('add', entry)"
         />
-      </div>
+      </CatalogGrid>
       <div
         v-if="shown.length < matches.length"
         class="flex flex-col items-center gap-2 pt-2"
@@ -83,7 +78,8 @@
 <script setup lang="ts">
 import FacetedFilter from "@/components/FacetedFilter.vue";
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
-import CatalogListRow from "@/components/settings/catalog/CatalogListRow.vue";
+import CatalogGrid from "@/components/settings/catalog/CatalogGrid.vue";
+import ProviderLabelFilter from "@/components/settings/providers/ProviderLabelFilter.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -91,6 +87,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import {
+  type CatalogBadge,
+  getReleaseLine,
+  sortSuggestedFirst,
+} from "@/helpers/catalog_recommendations";
 import {
   ADDABLE_PROVIDER_STAGES,
   CATALOG_PAGE_SIZE,
@@ -100,9 +101,14 @@ import {
   getTypeSettingsRoute,
 } from "@/helpers/provider_catalog";
 import { getProviderStageTranslationKey } from "@/helpers/provider_config";
+import {
+  getFilterLabels,
+  getProviderLabels,
+  type ProviderLabel,
+} from "@/helpers/provider_labels";
+import { api } from "@/plugins/api";
 import { $t } from "@/plugins/i18n";
 import { ChevronRight, SearchX } from "@lucide/vue";
-import { useMediaQuery } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 
@@ -115,6 +121,8 @@ interface Props {
   type?: CatalogType;
   // the domains being installed from the community catalog
   installing: ReadonlySet<string>;
+  // why an entry is suggested, by its domain; these lead the list
+  badges: ReadonlyMap<string, CatalogBadge>;
 }
 
 const props = defineProps<Props>();
@@ -124,10 +132,10 @@ const emit = defineEmits<{
   (e: "add", entry: CatalogEntry): void;
 }>();
 
-const isPhone = useMediaQuery("(max-width: 767px)");
-
 // the stages picked in the filter, kept by the page for the number on its tab
 const stages = defineModel<string[]>("stages", { required: true });
+// the label picked, kept by the page for the same reason
+const label = defineModel<ProviderLabel | null>("label", { required: true });
 const limit = ref(CATALOG_PAGE_SIZE);
 
 const stageOptions = computed(() =>
@@ -137,17 +145,41 @@ const stageOptions = computed(() =>
   })),
 );
 
+// the entries of a type can be filtered on what they offer, not a search
+// through every type
+const labels = computed(() =>
+  props.type
+    ? getFilterLabels(
+        props.entries.map((entry) => getProviderLabels(entry.manifest)),
+      )
+    : [],
+);
+
 const matches = computed(() =>
-  filterCatalogEntries(props.entries, {
-    query: props.query,
-    stages: stages.value,
-  }),
+  sortSuggestedFirst(
+    filterCatalogEntries(props.entries, {
+      query: props.query,
+      stages: stages.value,
+      label: label.value,
+    }),
+    props.badges,
+  ),
 );
 
 const shown = computed(() => matches.value.slice(0, limit.value));
 
+// the release line of the server, which names what is new in it
+const releaseLine = computed(() =>
+  getReleaseLine(api.serverInfo.value?.server_version ?? ""),
+);
+
+const getBadgeLabel = (entry: CatalogEntry) => {
+  const badge = props.badges.get(entry.manifest.domain);
+  return badge ? $t(badge.label, { version: releaseLine.value }) : undefined;
+};
+
 // another search or filter starts again at the first page
-watch([() => props.query, stages], () => {
+watch([() => props.query, stages, label], () => {
   limit.value = CATALOG_PAGE_SIZE;
 });
 </script>

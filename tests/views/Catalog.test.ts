@@ -1,3 +1,5 @@
+import { SETTINGS_COLORS } from "@/helpers/settings_colors";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import Catalog from "@/views/settings/Catalog.vue";
 import { ApiCommandError } from "@/plugins/api/errors";
 import {
@@ -7,6 +9,7 @@ import {
   CommunityProviderState,
   type CoreConfig,
   EventType,
+  ProviderOffering,
   type ProviderConfig,
   ProviderIconVariant,
   type ProviderManifest,
@@ -249,6 +252,20 @@ afterEach(() => {
 });
 
 describe("Catalog", () => {
+  it("heads the Marketplace with its own header, in the orange of its banner, with Installed beside the title", async () => {
+    const wrapper = await mountCatalog();
+
+    const header = wrapper.getComponent(SettingsPageHeader);
+    expect(header.props("page")).toBe("catalog");
+    expect(header.get("h1").text()).toBe("settings.catalog.title");
+    expect(
+      header.get('[data-testid="settings-page-icon"]').attributes("style"),
+    ).toContain(`color: ${SETTINGS_COLORS.orange}`);
+    expect(
+      header.find('[data-testid="catalog-installed-button"]').exists(),
+    ).toBe(true);
+  });
+
   it("offers Discover and a tab per type with something to add, with its count", async () => {
     await mountCatalog();
 
@@ -257,6 +274,231 @@ describe("Catalog", () => {
       "settings.music_sources2",
       "settings.playerproviders2",
     ]);
+  });
+
+  describe("with plugins through which apps play to Music Assistant", () => {
+    beforeEach(() => {
+      for (const manifest of [
+        providerManifest({
+          domain: "airplay_receiver",
+          name: "AirPlay Receiver",
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.AUDIO_SOURCE],
+        }),
+        providerManifest({
+          domain: "party",
+          name: "Party",
+          type: ProviderType.PLUGIN,
+        }),
+      ]) {
+        apiMock.providerManifests[manifest.domain] = manifest;
+      }
+    });
+
+    it("counts them with the music sources, with no tab of their own", async () => {
+      await mountCatalog();
+
+      expect(tabLabels()).toEqual([
+        "settings.catalog.discover",
+        "settings.music_sources3",
+        "settings.playerproviders2",
+        "settings.plugins1",
+      ]);
+    });
+
+    it("lists them on the music sources tab and labels them as live sources", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      expect(cardNames("[data-testid='catalog-list']").sort()).toEqual([
+        "AirPlay Receiver",
+        "SoundCloud",
+        "Spotify",
+      ]);
+      expect(cardLabels("airplay_receiver")).toEqual(["live"]);
+      expect(cardLabels("spotify")).toEqual([]);
+    });
+
+    it("leaves the plugins tab to the other plugins", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
+    });
+
+    it("offers no chips while the live sources are the only label", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      expect(
+        document.querySelector("[data-testid='provider-label-filter']"),
+      ).toBeNull();
+    });
+  });
+
+  describe("with music sources saying in their manifest what they offer", () => {
+    beforeEach(() => {
+      const withOfferings = (domain: string, provides: ProviderOffering[]) => {
+        apiMock.providerManifests[domain] = {
+          ...apiMock.providerManifests[domain],
+          provides,
+        };
+      };
+      withOfferings("spotify", [
+        ProviderOffering.TRACK,
+        ProviderOffering.PODCAST,
+      ]);
+      withOfferings("soundcloud", [ProviderOffering.TRACK]);
+      apiMock.providerManifests.airplay_receiver = providerManifest({
+        domain: "airplay_receiver",
+        name: "AirPlay Receiver",
+        type: ProviderType.PLUGIN,
+        provides: [ProviderOffering.AUDIO_SOURCE],
+      });
+    });
+
+    it("labels each card with what it offers", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      expect(cardLabels("spotify")).toEqual(["library", "podcasts"]);
+      expect(cardLabels("soundcloud")).toEqual(["library"]);
+      expect(cardLabels("airplay_receiver")).toEqual(["live"]);
+    });
+
+    it("offers a chip for every label of the music sources, after All", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      expect(chipStates()).toEqual([
+        ["all", "true"],
+        ["library", "false"],
+        ["podcasts", "false"],
+        ["live", "false"],
+      ]);
+    });
+
+    it("narrows the tab down to the chip picked, and counts that on the tab", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      await pickChip("live");
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual([
+        "AirPlay Receiver",
+      ]);
+      expect(tabLabels()).toContain("settings.music_sources1");
+
+      await pickChip("all");
+
+      expect(cardNames("[data-testid='catalog-list']")).toHaveLength(3);
+      expect(tabLabels()).toContain("settings.music_sources3");
+    });
+
+    it("combines the chip with the search", async () => {
+      await mountList(ProviderType.MUSIC);
+
+      await pickChip("library");
+      await search("sound");
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["SoundCloud"]);
+    });
+
+    it("offers no chips on the search results of every type", async () => {
+      await mountCatalog();
+
+      await search("s");
+
+      expect(cardNames("[data-testid='catalog-list']").length).toBeGreaterThan(
+        0,
+      );
+      expect(
+        document.querySelector("[data-testid='provider-label-filter']"),
+      ).toBeNull();
+    });
+  });
+
+  describe("with plugins saying in their manifest what they deliver", () => {
+    beforeEach(() => {
+      for (const manifest of [
+        providerManifest({
+          domain: "lastfm",
+          name: "Last.fm",
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.SCROBBLE],
+        }),
+        providerManifest({
+          domain: "party",
+          name: "Party",
+          type: ProviderType.PLUGIN,
+          provides: [ProviderOffering.FUN],
+        }),
+        // a plugin naming nothing it delivers
+        providerManifest({
+          domain: "mystery",
+          name: "Mystery",
+          type: ProviderType.PLUGIN,
+        }),
+      ]) {
+        apiMock.providerManifests[manifest.domain] = manifest;
+      }
+    });
+
+    it("labels each card with what it delivers, and none with other", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      expect(cardLabels("lastfm")).toEqual(["scrobble"]);
+      expect(cardLabels("party")).toEqual(["fun"]);
+      expect(cardLabels("mystery")).toEqual([]);
+    });
+
+    it("offers a chip for every label of the plugins, after All and with Other last", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      expect(chipStates()).toEqual([
+        ["all", "true"],
+        ["scrobble", "false"],
+        ["fun", "false"],
+        ["other", "false"],
+      ]);
+    });
+
+    it("narrows the tab down to the chip picked, and counts that on the tab", async () => {
+      await mountList(ProviderType.PLUGIN);
+
+      await pickChip("other");
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Mystery"]);
+      expect(tabLabels()).toContain("settings.plugins1");
+
+      await pickChip("all");
+
+      expect(cardNames("[data-testid='catalog-list']")).toHaveLength(3);
+      expect(tabLabels()).toContain("settings.plugins3");
+    });
+
+    it("opens on the chip the route picks", async () => {
+      routeMock.query = { types: "plugin", label: "fun" };
+
+      await mountCatalog();
+
+      expect(chipStates()).toEqual([
+        ["all", "false"],
+        ["scrobble", "false"],
+        ["fun", "true"],
+        ["other", "false"],
+      ]);
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
+      expect(tabLabels()).toContain("settings.plugins1");
+    });
+
+    it("keeps the chip the route picks while the plugins come in", async () => {
+      routeMock.query = { types: "plugin", label: "fun" };
+      const manifests = { ...apiMock.providerManifests };
+      for (const domain of Object.keys(manifests)) {
+        delete apiMock.providerManifests[domain];
+      }
+
+      await mountCatalog();
+      Object.assign(apiMock.providerManifests, manifests);
+      await flushPromises();
+
+      expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
+    });
   });
 
   it("counts what is set up on the Installed button, and opens the Installed view with it", async () => {
@@ -552,13 +794,13 @@ describe("Catalog", () => {
 
     await mountCatalog();
 
+    // Sonos is suggested, so it leads
     expect(cardNames("[data-testid='catalog-list']")).toEqual([
-      "Chromecast",
       "Sonos",
+      "Chromecast",
     ]);
     expect(linkTarget("[data-testid='catalog-manage-link']")).toEqual({
-      name: "providersettings",
-      query: { types: "player" },
+      name: "playerproviders",
     });
   });
 
@@ -709,14 +951,17 @@ describe("Catalog", () => {
       ProviderType.PLAYER,
     ]);
     expect(
-      linkTarget("[data-testid='catalog-installed-row']", groups[1]),
+      linkTarget(
+        "[data-testid='catalog-installed-card'] [data-testid='catalog-card-open']",
+        groups[1],
+      ),
     ).toEqual({
       name: "editprovider",
       params: { instanceId: "chromecast--a" },
     });
     expect(
       linkTarget("[data-testid='catalog-manage-link']", groups[1]),
-    ).toEqual({ name: "providersettings", query: { types: "player" } });
+    ).toEqual({ name: "playerproviders" });
     expect(document.querySelector("[data-testid='catalog-list']")).toBeNull();
   });
 
@@ -830,10 +1075,6 @@ describe("Catalog lists of a type", () => {
     }
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("shows 24 at a time, with Show more and how many of all are shown", async () => {
     const wrapper = await mountList();
 
@@ -884,54 +1125,24 @@ describe("Catalog lists of a type", () => {
     ).toBeNull();
   });
 
-  it("lists compact rows on a phone, each opening its details", async () => {
-    onPhone();
-    await mountList("player");
-
-    expect(document.querySelector("[data-testid='catalog-card']")).toBeNull();
-    const rows = [
-      ...document.querySelectorAll("[data-testid='catalog-list-row']"),
-    ];
-    expect(rows.map((row) => row.getAttribute("data-domain"))).toEqual([
-      "chromecast",
-      "sonos",
-    ]);
-    // one set up that allows no other says so instead of offering Add
-    expect(
-      rows[0].querySelector("[data-testid='catalog-card-add']"),
-    ).toBeNull();
-    expect(rows[0].textContent).toContain("settings.catalog.added");
-    expect(rows[1].textContent).toContain("settings.catalog.type.player");
-
-    rows[1]
-      .querySelector<HTMLElement>("[data-testid='catalog-card-open']")!
-      .click();
-    await flushPromises();
-
-    expect(
-      document.querySelector("[data-testid='catalog-detail']")?.textContent,
-    ).toContain("Sonos");
-  });
-
-  it("warns of the stage of an entry on its compact row", async () => {
+  it("warns of the stage of an entry on its card", async () => {
     apiMock.providerManifests.source13 = {
       ...apiMock.providerManifests.source13,
       stage: ProviderStage.ALPHA,
     };
-    onPhone();
     await mountList();
 
-    const row = (domain: string) =>
-      document.querySelector(
-        `[data-testid='catalog-list-row'][data-domain='${domain}']`,
-      )!;
-    expect(row("source13").textContent).toContain(
+    const card = (domain: string) =>
+      cardFor(domain, "[data-testid='catalog-list']");
+    expect(card("source13").textContent).toContain(
       "settings.stage.options.alpha",
     );
-    expect(row("soundcloud").textContent).toContain(
+    expect(card("soundcloud").textContent).toContain(
       "settings.stage.options.beta",
     );
-    expect(row("source14").textContent).not.toContain("settings.stage.options");
+    expect(card("source14").textContent).not.toContain(
+      "settings.stage.options",
+    );
   });
 
   it("scrolls the active tab to the middle of the strip of tabs", async () => {
@@ -988,6 +1199,126 @@ describe("Catalog lists of a type", () => {
   });
 });
 
+describe("Catalog badges on the lists", () => {
+  beforeEach(() => {
+    apiMock.serverInfo.value = { server_version: "2.11.0b3" };
+    for (const index of [10, 11, 12]) {
+      apiMock.providerManifests[`source${index}`] = providerManifest({
+        domain: `source${index}`,
+        name: `Source ${index}`,
+      });
+    }
+    recommendations = [
+      suggest("source12", CatalogRecommendationReason.POPULAR),
+      suggest("soundcloud", CatalogRecommendationReason.POPULAR),
+      suggest("source11", CatalogRecommendationReason.NEW),
+      suggest("source12", CatalogRecommendationReason.DISCOVERED),
+      // set up already, though another one can be added
+      suggest("spotify", CatalogRecommendationReason.DISCOVERED),
+    ];
+  });
+
+  it("says why each is suggested and lists those first, the strongest reason first", async () => {
+    await mountList();
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "Source 12",
+      "Source 11",
+      "SoundCloud",
+      "Source 10",
+      "Spotify",
+    ]);
+    // every label is given the release line, as the rows of Discover are
+    expect(badges("[data-testid='catalog-list']")).toEqual({
+      source12: "settings.catalog.discovered_title 2.11",
+      source11: "settings.catalog.new_in_version 2.11",
+      soundcloud: "settings.catalog.popular 2.11",
+    });
+    expect(
+      cardFor("spotify").querySelector("[data-testid='catalog-card-added']"),
+    ).not.toBeNull();
+  });
+
+  it("keeps the suggested ones first in a search over every type", async () => {
+    await mountCatalog();
+    await search("o");
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "Source 12",
+      "Source 11",
+      "SoundCloud",
+      "Chromecast",
+      "Sonos",
+      "Source 10",
+      "Spotify",
+    ]);
+  });
+
+  it("puts no badge on what the user let go, nor lists it first", async () => {
+    storeMock.currentUser.preferences["catalog.dismissedSuggestions"] = [
+      "source12",
+    ];
+
+    await mountList();
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "Source 11",
+      "SoundCloud",
+      "Source 10",
+      "Source 12",
+      "Spotify",
+    ]);
+    expect(Object.keys(badges("[data-testid='catalog-list']"))).toEqual([
+      "source11",
+      "soundcloud",
+    ]);
+  });
+
+  it("lists by name without badges when the server gives no suggestions", async () => {
+    apiMock.getCatalogRecommendations.mockRejectedValue(
+      new ApiCommandError("Invalid command: catalog/recommendations", 9),
+    );
+
+    await mountList();
+
+    expect(cardNames("[data-testid='catalog-list']")).toEqual([
+      "SoundCloud",
+      "Source 10",
+      "Source 11",
+      "Source 12",
+      "Spotify",
+    ]);
+    expect(badges("[data-testid='catalog-list']")).toEqual({});
+  });
+
+  it("keeps the badges off Discover", async () => {
+    await mountCatalog();
+
+    expect(
+      document.querySelector("[data-testid='catalog-discover']"),
+    ).not.toBeNull();
+    expect(document.querySelector("[data-testid='catalog-card-badge']")).toBe(
+      null,
+    );
+  });
+
+  // the badge on each card of a list that has one, by its domain
+  function badges(container: string): Record<string, string> {
+    return Object.fromEntries(
+      [
+        ...document.querySelectorAll(
+          `${container} [data-testid='catalog-card']`,
+        ),
+      ].flatMap((card) => {
+        const badge = card.querySelector("[data-testid='catalog-card-badge']");
+        return badge
+          ? [[card.getAttribute("data-domain"), badge.textContent?.trim()]]
+          : [];
+      }),
+    );
+  }
+});
+
 describe("Catalog icons drawn in white only", () => {
   beforeEach(() => {
     for (const [domain, icon] of [
@@ -1028,7 +1359,7 @@ describe("Catalog icons drawn in white only", () => {
     expect(
       tileOf(
         document.querySelector(
-          "[data-testid='catalog-new'] [data-testid='catalog-tile'][data-domain='sonos']",
+          "[data-testid='catalog-new'] [data-testid='catalog-card'][data-domain='sonos']",
         ),
       ),
     ).toBe("dark");
@@ -1044,7 +1375,7 @@ describe("Catalog icons drawn in white only", () => {
     ).toBe("dark");
   });
 
-  it("keeps a coloured icon, and a community icon that is not white, as it is", async () => {
+  it("puts a coloured icon, and a community icon that is not white, on a light tile", async () => {
     communityEnabled = true;
     community = [
       RADIO,
@@ -1057,8 +1388,8 @@ describe("Catalog icons drawn in white only", () => {
     ];
     await mountList();
 
-    expect(tileOf(cardFor("spotify"))).toBeUndefined();
-    expect(tileOf(cardFor("radio"))).toBeUndefined();
+    expect(tileOf(cardFor("spotify"))).toBe("light");
+    expect(tileOf(cardFor("radio"))).toBe("light");
     expect(tileOf(cardFor("fm"))).toBe("dark");
     expect(
       cardFor("fm")
@@ -1140,7 +1471,7 @@ describe("Catalog suggestions from the server", () => {
 
     expect(rowKeys()).toEqual(["discovered", "complements"]);
     const tile = document.querySelector(
-      "[data-testid='catalog-complements'] [data-testid='catalog-tile']",
+      "[data-testid='catalog-complements'] [data-testid='catalog-card']",
     )!;
     expect(
       tile.querySelector("[data-testid='catalog-card-paired']")?.textContent,
@@ -1148,12 +1479,12 @@ describe("Catalog suggestions from the server", () => {
     expect(
       tile.querySelector("[data-testid='catalog-card-credit']"),
     ).toBeNull();
-    // a tile of another row keeps its type
+    // a card of another row says who maintains it
     expect(
       document.querySelector(
         "[data-testid='catalog-discovered'] [data-testid='catalog-card-credit']",
       )?.textContent,
-    ).toContain("settings.catalog.type.music");
+    ).toContain("settings.catalog.by_team");
   });
 
   it("picks what is found first, then what goes well, then what is popular", async () => {
@@ -1219,9 +1550,14 @@ describe("Catalog suggestions from the server", () => {
       apiMock.updateUser.mockResolvedValue(undefined);
     });
 
+    // Vue ignores a handler attached in the same instant as the event, and
+    // the clock is frozen here
+    const settleClock = () => vi.setSystemTime(Date.now() + 1);
+
     it("stops suggesting it from its tile, and keeps it in its list", async () => {
       recommendations = [...FOUR_FOUND, GOES_WELL];
       await mountCatalog();
+      settleClock();
       const dismiss = document.querySelector<HTMLElement>(
         "[data-domain='soundcloud'] [data-testid='catalog-card-dismiss']",
       )!;
@@ -1247,6 +1583,7 @@ describe("Catalog suggestions from the server", () => {
     it("says so, names it, and brings it back with Undo", async () => {
       recommendations = [...FOUR_FOUND, GOES_WELL];
       await mountCatalog();
+      settleClock();
 
       document
         .querySelector<HTMLElement>(
@@ -1290,6 +1627,7 @@ describe("Catalog suggestions from the server", () => {
       apiMock.updateUser.mockRejectedValue(new Error("refused"));
       vi.spyOn(console, "error").mockImplementation(() => {});
       await mountCatalog();
+      settleClock();
 
       document
         .querySelector<HTMLElement>(
@@ -1327,7 +1665,7 @@ describe("Catalog suggestions from the server", () => {
         ...document.querySelectorAll("[data-testid='catalog-card-dismiss']"),
       ].map((button) =>
         button
-          .closest("[data-testid='catalog-tile']")!
+          .closest("[data-testid='catalog-card']")!
           .getAttribute("data-domain"),
       );
       expect(dismissible).toHaveLength(4);
@@ -1512,12 +1850,14 @@ describe("Catalog for a member", () => {
 
       await mountCatalog();
 
-      const row = document.querySelector(
-        "[data-testid='catalog-installed-row']",
+      const card = document.querySelector(
+        "[data-testid='catalog-installed-card']",
       )!;
-      expect(row.textContent).toContain("Shared Spotify");
-      expect(row.tagName).toBe("DIV");
-      expect(row.hasAttribute("data-to")).toBe(false);
+      expect(card.textContent).toContain("Shared Spotify");
+      expect(
+        card.querySelector("[data-testid='catalog-card-open']"),
+      ).toBeNull();
+      expect(card.querySelector("[data-to]")).toBeNull();
     });
 
     it("links its own source next to the shared one", async () => {
@@ -1537,7 +1877,11 @@ describe("Catalog for a member", () => {
 
       await mountCatalog();
 
-      expect(linkTarget("[data-testid='catalog-installed-row']")).toEqual({
+      expect(
+        linkTarget(
+          "[data-testid='catalog-installed-card'] [data-testid='catalog-card-open']",
+        ),
+      ).toEqual({
         name: "editprovider",
         params: { instanceId: "spotify--own" },
       });
@@ -1791,16 +2135,16 @@ describe("Catalog with the community catalog", () => {
       expect(icon?.getAttribute("src")).toBe(COMMUNITY_ICON);
     });
 
-    it("shows the icon by its domain for an icon that is not a data URI", async () => {
+    it("never loads an icon that is not a data URI", async () => {
       community = [{ ...RADIO, icon: "https://tracker.example/icon.png" }];
 
       await mountCatalog();
 
       const card = cardFor("radio", "[data-testid='catalog-list']");
+      expect(card.querySelector("img")).toBeNull();
       expect(
-        card.querySelector("[data-testid='catalog-icon-image']"),
-      ).toBeNull();
-      expect(card.querySelector("provider-icon-stub")).not.toBeNull();
+        card.querySelector("[data-testid='catalog-icon-tile']"),
+      ).not.toBeNull();
     });
 
     it("shows its maintainers, code, documentation, help and version in the details", async () => {
@@ -2496,6 +2840,7 @@ describe("Catalog with the community catalog", () => {
         RADIO,
         communityProvider("old", {
           state: CommunityProviderState.UPDATE_AVAILABLE,
+          update_version: "1.2.0",
           notice: "moved",
         }),
       ];
@@ -2532,6 +2877,7 @@ describe("Catalog with updates from the community catalog", () => {
       state: CommunityProviderState.UPDATE_AVAILABLE,
       installed_version: from,
       latest_version: to,
+      update_version: to,
       manifest: providerManifest({ domain, name }),
     });
 
@@ -2601,6 +2947,7 @@ describe("Catalog with updates from the community catalog", () => {
                 ...provider,
                 state: CommunityProviderState.INSTALLED,
                 installed_version: "1.2.0",
+                update_version: null,
               }
             : provider,
         ),
@@ -2783,6 +3130,7 @@ describe("Catalog with updates from the community catalog", () => {
         ...RADIO,
         state: CommunityProviderState.UPDATE_AVAILABLE,
         installed_version: "1.1.0",
+        update_version: "1.2.0",
       },
     ];
     apiMock.updateCommunityProviders.mockResolvedValue(community);
@@ -2813,6 +3161,7 @@ describe("Catalog with updates from the community catalog", () => {
         ...RADIO,
         state: CommunityProviderState.UPDATE_AVAILABLE,
         installed_version: "1.1.0",
+        update_version: "1.2.0",
       },
       updatable("dj", "DJ", "0.1.0", "0.2.0"),
     ];
@@ -2844,6 +3193,7 @@ describe("Catalog with updates from the community catalog", () => {
         ...RADIO,
         state: CommunityProviderState.UPDATE_AVAILABLE,
         installed_version: "1.1.0",
+        update_version: "1.2.0",
         released: "soon",
       },
     ];
@@ -3161,13 +3511,13 @@ function continueNote() {
 
 function installedRows(): Element[] {
   return [
-    ...document.querySelectorAll("[data-testid='community-installed-row']"),
+    ...document.querySelectorAll("[data-testid='community-installed-card']"),
   ];
 }
 
 function installedRow(domain: string): Element {
   const row = document.querySelector(
-    `[data-testid='community-installed-row'][data-domain='${domain}']`,
+    `[data-testid='community-installed-card'][data-domain='${domain}']`,
   );
   if (!row) throw new Error(`no installed row for ${domain}`);
   return row;
@@ -3211,16 +3561,6 @@ async function mountCatalog() {
   });
   await flushPromises();
   return wrapper;
-}
-
-// a screen as narrow as a phone's
-function onPhone() {
-  vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: query === "(max-width: 767px)",
-    media: query,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-  }));
 }
 
 // the list of a type, on its tab
@@ -3267,6 +3607,36 @@ function cardNames(container: string) {
       `${container} [data-testid='catalog-card-open']`,
     ),
   ].map((name) => name.textContent?.trim());
+}
+
+// the labels on the card of an entry
+function cardLabels(domain: string) {
+  return [
+    ...cardFor(domain).querySelectorAll(
+      "[data-testid='provider-labels'] [data-label]",
+    ),
+  ].map((label) => label.getAttribute("data-label"));
+}
+
+// each chip filtering on what the sources offer, with whether it is picked
+function chipStates() {
+  return [
+    ...document.querySelectorAll(
+      "[data-testid='provider-label-filter'] [data-label]",
+    ),
+  ].map((chip) => [
+    chip.getAttribute("data-label"),
+    chip.getAttribute("aria-pressed"),
+  ]);
+}
+
+async function pickChip(label: string) {
+  document
+    .querySelector<HTMLElement>(
+      `[data-testid='provider-label-filter'] [data-label='${label}']`,
+    )!
+    .click();
+  await flushPromises();
 }
 
 function cardFor(domain: string, container = "body"): Element {

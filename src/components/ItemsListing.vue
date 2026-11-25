@@ -110,7 +110,7 @@
           >
             <SearchInput
               ref="searchInputRef"
-              v-model="params.search"
+              v-model="searchText"
               :clearable="!libraryToolbar"
               class="listing-search listing-search--inline"
               :placeholder="searchLabel"
@@ -164,7 +164,7 @@
 
     <v-divider v-if="!detailRow" />
 
-    <slot name="header"></slot>
+    <slot name="header" />
 
     <div v-if="props.toolBarTabs !== undefined" class="content-tabs">
       <Tabs
@@ -190,7 +190,7 @@
     >
       <SearchInput
         ref="searchInputRef"
-        v-model="params.search"
+        v-model="searchText"
         clearable
         class="listing-search listing-search--row min-w-0 flex-1"
         :placeholder="searchLabel"
@@ -536,11 +536,11 @@ import {
 } from "@/composables/useListingFilters";
 import { useListingCount } from "@/composables/useListingCount";
 import { useListingSaves } from "@/composables/useListingSaves";
+import { useListingSearch } from "@/composables/useListingSearch";
 import { useListingWindow } from "@/composables/useListingWindow";
 import { useTopListingRow } from "@/composables/useTopListingRow";
 import { useCurrentLetter } from "@/composables/useCurrentLetter";
-import { canSavePlaylistMoves } from "@/composables/usePlaylistTrackReorder";
-import { useTrackReorderRows } from "@/composables/useTrackReorderRows";
+import { usePlaylistTrackReorder } from "@/composables/usePlaylistTrackReorder";
 import type {
   LoadDataParams,
   LoadPagedDataFn,
@@ -575,6 +575,7 @@ import {
   providerServiceName,
 } from "@/plugins/api/helpers";
 import {
+  ArtistType,
   EventMessage,
   EventType,
   ItemMapping,
@@ -831,6 +832,7 @@ const {
   sortOptionsLoaded,
   tempHide,
 } = useItemsListing(props, getActiveTab);
+const { searchText, discardTyped } = useListingSearch(params);
 // the first load waits for the sort options; until then the scroller must not
 // load a page of its own
 const loadPending = computed(
@@ -1010,7 +1012,7 @@ const applyQueryGenreFilter = function () {
   return changed;
 };
 const closeSearch = function () {
-  params.value.search = "";
+  searchText.value = "";
   showSearch.value = false;
 };
 const focusSearch = function () {
@@ -1602,7 +1604,7 @@ const providerFilterSubItems = () =>
 const redirectSearch = function () {
   const mediaType = listingMediaType.value;
   openCommandCenter({
-    query: params.value.search,
+    query: searchText.value,
     mediaTypes:
       mediaType && SEARCHABLE_MEDIA_TYPES.includes(mediaType)
         ? [mediaType]
@@ -1653,8 +1655,6 @@ const canDragTracks = computed(
     displayedSort.value.sortField === SortField.POSITION &&
     displayedSort.value.sortDirection !== SortDirection.DESC &&
     !hasActiveFilters.value &&
-    // a move made while reconnecting could not be saved nor read back
-    canSavePlaylistMoves() &&
     listsPlaylistFromStart(pagedItems.value),
 );
 const trackRowColumns = computed<TrackColumn[]>(() =>
@@ -1681,7 +1681,7 @@ const {
   draggedCount,
   rowDragStyle: trackRowDragStyle,
   rowDragClass: trackRowDragClass,
-} = useTrackReorderRows({
+} = usePlaylistTrackReorder({
   listEl: listRowsEl,
   items: pagedItems,
   // albums re-read their rows the same way, but only a playlist's edits are held
@@ -1858,6 +1858,13 @@ const musicProviders = computed(() => {
         return provider.available;
       }
       if (provider.type !== ProviderType.MUSIC) return false;
+      // audiobook providers offer artists as authors/narrators only
+      if (
+        props.itemtype === "artists" &&
+        !provider.supported_artist_types.includes(ArtistType.SINGER)
+      ) {
+        return false;
+      }
       // If we have required feature(s) for this itemtype, filter by them
       if (requiredFeatures) {
         return requiredFeatures.some((feature) =>
@@ -2510,6 +2517,8 @@ watch(
     selectedItems.value = [];
     selectionAnchor = undefined;
     showCheckboxes.value = false;
+    // and what was being typed was meant for it
+    discardTyped();
     if (loading.value == true) return;
     // completely reset if the path changes
     pagedItems.value = [];

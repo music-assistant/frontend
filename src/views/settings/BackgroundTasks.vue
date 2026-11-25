@@ -1,70 +1,88 @@
 <template>
-  <div>
-    <div class="tasks-header w-100">
-      <BackgroundTaskFilters @update:search="searchQuery = $event" />
+  <div class="flex flex-col gap-6 p-6 max-md:gap-5 max-md:px-3 max-md:py-4">
+    <SettingsPageHeader page="background_tasks" />
+    <SettingsFoldRows v-if="canEditSettings">
+      <SettingsPageFoldRow
+        page="background_tasks"
+        :label="t('background_tasks.settings.title')"
+        :description="t('background_tasks.settings.description')"
+      />
+    </SettingsFoldRows>
 
-      <Button
-        v-if="canManageTasks"
-        class="clear-finished-btn"
-        variant="outline"
-        @click="clearFinishedTasks"
-      >
-        <Trash2 class="size-4" />
-        {{ t("background_tasks.clear_finished") }}
-      </Button>
-    </div>
+    <!-- the filters, the count and the tasks stay together as one block -->
+    <div>
+      <div class="tasks-header w-100">
+        <BackgroundTaskFilters @update:search="searchQuery = $event" />
 
-    <div class="pl-5 font-weight-medium">
-      {{
-        t("background_tasks.total", filteredTasks.length, {
-          named: { count: filteredTasks.length },
-        })
-      }}
-    </div>
-
-    <div
-      class="mt-4 px-5 py-2.5"
-      :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
-    >
-      <div v-if="showInitialLoading" class="flex justify-center py-16">
-        <Spinner class="size-12" />
+        <div class="flex shrink-0 items-center gap-2">
+          <SettingsViewModeToggle
+            :mode="viewMode"
+            @toggle="tasksViewMode.toggleViewMode()"
+          />
+          <Button
+            v-if="canManageTasks"
+            class="clear-finished-btn"
+            variant="outline"
+            @click="clearFinishedTasks"
+          >
+            <Trash2 class="size-4" />
+            {{ t("background_tasks.clear_finished") }}
+          </Button>
+        </div>
       </div>
 
-      <ItemGroup
-        v-else-if="viewMode === 'list' && filteredTasks.length"
-        class="gap-2"
-      >
-        <BackgroundTaskItem
-          v-for="task in filteredTasks"
-          :key="task.id"
-          :task="task"
-          variant="list"
-          @click="showTaskDetails"
-          @menu="onMenu"
-        />
-      </ItemGroup>
+      <div class="font-weight-medium">
+        {{
+          t("background_tasks.total", filteredTasks.length, {
+            named: { count: filteredTasks.length },
+          })
+        }}
+      </div>
 
       <div
-        v-else-if="filteredTasks.length"
-        class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        class="mt-4 py-2.5"
+        :class="{ 'bg-background dark:bg-transparent': viewMode !== 'list' }"
       >
-        <BackgroundTaskItem
-          v-for="task in filteredTasks"
-          :key="task.id"
-          :task="task"
-          variant="card"
-          @click="showTaskDetails"
-          @menu="onMenu"
-        />
-      </div>
+        <div v-if="showInitialLoading" class="flex justify-center py-16">
+          <Spinner class="size-12" />
+        </div>
 
-      <Empty v-else class="border">
-        <EmptyMedia variant="icon">
-          <ListChecks />
-        </EmptyMedia>
-        <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
-        <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
-      </Empty>
+        <ItemGroup
+          v-else-if="viewMode === 'list' && filteredTasks.length"
+          class="gap-2"
+        >
+          <BackgroundTaskItem
+            v-for="task in filteredTasks"
+            :key="task.id"
+            :task="task"
+            variant="list"
+            @click="showTaskDetails"
+            @menu="onMenu"
+          />
+        </ItemGroup>
+
+        <div
+          v-else-if="filteredTasks.length"
+          class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        >
+          <BackgroundTaskItem
+            v-for="task in filteredTasks"
+            :key="task.id"
+            :task="task"
+            variant="card"
+            @click="showTaskDetails"
+            @menu="onMenu"
+          />
+        </div>
+
+        <Empty v-else class="border">
+          <EmptyMedia variant="icon">
+            <ListChecks />
+          </EmptyMedia>
+          <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
+          <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
+        </Empty>
+      </div>
     </div>
 
     <BackgroundTaskDetailsDialog
@@ -91,6 +109,10 @@ import BackgroundTaskDetailsDialog from "@/components/settings/background-tasks/
 import BackgroundTaskFilters from "@/components/settings/background-tasks/BackgroundTaskFilters.vue";
 import BackgroundTaskItem from "@/components/settings/background-tasks/BackgroundTaskItem.vue";
 import BackgroundTaskScheduleDialog from "@/components/settings/background-tasks/BackgroundTaskScheduleDialog.vue";
+import SettingsFoldRows from "@/components/settings/SettingsFoldRows.vue";
+import SettingsPageFoldRow from "@/components/settings/SettingsPageFoldRow.vue";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
+import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -109,6 +131,7 @@ import {
   isScheduledTask,
 } from "@/composables/background-tasks/useBackgroundTaskDisplay";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
+import { canEditSettingsPage } from "@/helpers/settings_pages";
 import { copyToClipboard } from "@/helpers/utils";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { api } from "@/plugins/api";
@@ -121,7 +144,17 @@ import {
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
-import { ListChecks, Trash2 } from "@lucide/vue";
+import {
+  Ban,
+  CalendarCheck,
+  CalendarX,
+  FileText,
+  ListChecks,
+  Play,
+  RefreshCw,
+  Timer,
+  Trash2,
+} from "@lucide/vue";
 import { computed, inject, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -146,6 +179,9 @@ const { t } = useI18n();
 const viewMode = computed(() => tasksViewMode.viewMode.value);
 const canManageTasks = computed(() =>
   authManager.hasScope(Scope.SYSTEM_MANAGE),
+);
+const canEditSettings = canEditSettingsPage("background_tasks", (scope) =>
+  authManager.hasScope(scope),
 );
 const {
   loading,
@@ -487,14 +523,14 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void showTaskDetails(task);
       },
-      icon: "mdi-file-document-outline",
+      icon: FileText,
     },
     {
       label: "background_tasks.edit_schedule",
       action: () => {
         openScheduleDialog(task);
       },
-      icon: "mdi-timer-edit-outline",
+      icon: Timer,
       hide: !canManageTasks.value || !canEditTaskSchedule(task),
     },
     {
@@ -502,7 +538,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void runTask(task);
       },
-      icon: "mdi-play",
+      icon: Play,
       hide: !canManageTasks.value || !canRunTaskManually(task),
     },
     {
@@ -512,9 +548,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void toggleTaskEnabled(task);
       },
-      icon: task.schedule?.enabled
-        ? "mdi-calendar-remove"
-        : "mdi-calendar-check",
+      icon: task.schedule?.enabled ? CalendarX : CalendarCheck,
       hide: !canManageTasks.value || !isScheduledTask(task),
     },
     {
@@ -522,7 +556,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void retryTask(task);
       },
-      icon: "mdi-refresh",
+      icon: RefreshCw,
       hide:
         !canManageTasks.value || !(task.allow_retry && isRetryableTask(task)),
     },
@@ -531,7 +565,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void cancelTask(task);
       },
-      icon: "mdi-cancel",
+      icon: Ban,
       hide:
         !canManageTasks.value || !(task.allow_cancel && isCancelableTask(task)),
     },
@@ -540,7 +574,7 @@ const onMenu = (event: Event, task: BackgroundTask) => {
       action: () => {
         void removeTask(task);
       },
-      icon: "mdi-delete",
+      icon: Trash2,
       color: "error",
       hide: !canManageTasks.value || !canRemoveTask(task),
     },
@@ -567,12 +601,7 @@ const getPriority = (task: BackgroundTask) => {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 20px 20px 6px 20px;
-}
-
-.clear-finished-btn {
-  flex-shrink: 0;
-  align-self: center;
+  padding-bottom: 6px;
 }
 
 .tasks-header :deep(.filters-container) {
@@ -586,8 +615,7 @@ const getPriority = (task: BackgroundTask) => {
   }
 
   .clear-finished-btn {
-    width: 100%;
-    align-self: stretch;
+    flex: 1;
   }
 }
 </style>

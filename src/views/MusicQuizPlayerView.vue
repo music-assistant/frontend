@@ -112,7 +112,11 @@
         :score="activeState.you.score"
         :score-delta="playerRoundScoreLabel"
         :round-results="playerRoundResults"
-      />
+      >
+        <template v-if="showVolumeControl" #actions>
+          <MusicQuizVolumeControl />
+        </template>
+      </MusicQuizPlayerHeader>
 
       <MusicQuizPlayerStage
         :state="activeState"
@@ -172,6 +176,7 @@ import MusicQuizPlayerHeader, {
 import MusicQuizPlayerStage from "@/components/music-quiz/MusicQuizPlayerStage.vue";
 import MusicQuizSessionHeader from "@/components/music-quiz/MusicQuizSessionHeader.vue";
 import MusicQuizUnsupportedGame from "@/components/music-quiz/MusicQuizUnsupportedGame.vue";
+import MusicQuizVolumeControl from "@/components/music-quiz/MusicQuizVolumeControl.vue";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -196,7 +201,7 @@ import api, { ConnectionState } from "@/plugins/api";
 import { EventType } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
-import { webPlayer } from "@/plugins/web_player";
+import { isPlaybackMode, webPlayer } from "@/plugins/web_player";
 import { ArrowLeft, CircleStop, Clock3 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -253,6 +258,14 @@ const listenInEnabled = computed(() => {
     supportsMusicQuizListenIn(definition.game, currentState)
   );
 });
+// the volume control sets the output of this tab's own web player
+const showVolumeControl = computed(
+  () =>
+    listenInEnabled.value &&
+    activeState.value?.mode === "remote" &&
+    isPlaybackMode(webPlayer.tabMode) &&
+    !!webPlayer.player_id,
+);
 const unsupportedGame = computed(() => {
   const activeGame = state.value ?? info.value;
   return !!activeGame && !resolvedDefinition.value;
@@ -335,6 +348,45 @@ const playerRoundScoreLabel = computed(() =>
 const playerRoundResults = computed<MusicQuizRoundResult[]>(() => {
   const currentState = activeState.value;
   if (!currentState || currentState.phase !== "reveal") return [];
+  // hint-text players have no single locked answer, only whether they solved it
+  if (currentState.answer_type === "hint_text") {
+    const {
+      solved,
+      title_points,
+      first_bonus,
+      artist_bonus,
+      active_from_round,
+    } = currentState.you;
+    if (solved === undefined) return [];
+    // late joiners only play from the next round, so this one is not theirs to fail
+    const round = currentState.current_round;
+    if (!round || active_from_round > round.round_index) return [];
+    const results: MusicQuizRoundResult[] = [
+      {
+        key: "answer",
+        label: $t("providers.music_quiz.round_result_answer"),
+        correct: solved,
+        points: title_points ?? 0,
+      },
+    ];
+    if (first_bonus) {
+      results.push({
+        key: "first",
+        label: $t("providers.music_quiz.title_reveal_first_bonus_result"),
+        correct: true,
+        points: first_bonus,
+      });
+    }
+    if (artist_bonus?.done) {
+      results.push({
+        key: "artist",
+        label: $t("providers.music_quiz.timeline_artist_bonus"),
+        correct: artist_bonus.correct ?? false,
+        points: artist_bonus.points ?? 0,
+      });
+    }
+    return results;
+  }
   const answer = currentState.you.answer;
   if (!answer) return [];
   // "bonuses" is required on timeline answers, unlike the optional bonus_results

@@ -13,16 +13,16 @@
 
     <template v-if="item" #main>
       <div
-        class="flex w-full min-w-0 items-end gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3"
+        class="flex w-full min-w-0 items-end gap-6 @max-3xl/detail-hero:flex-col @max-3xl/detail-hero:items-stretch @max-3xl/detail-hero:gap-3"
       >
         <div
-          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] max-md:size-[132px]"
+          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:size-[132px]"
         >
-          <MediaItemThumb :item="item" :size="coverSize" :rounded="false" />
+          <MediaItemThumb :item="item" :rounded="false" />
         </div>
         <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
           <h1
-            class="m-0 line-clamp-2 text-[44px] font-medium leading-[1.2] tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] max-md:text-[30px] max-md:tracking-[-0.7px]"
+            class="m-0 line-clamp-2 text-[44px] font-medium leading-[1.2] tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-[30px] @max-3xl/detail-hero:tracking-[-0.7px]"
           >
             {{ item.name }}
             <span v-if="item.version" class="text-white/70">
@@ -30,26 +30,12 @@
             </span>
           </h1>
           <div
-            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] max-md:text-sm"
+            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
           >
-            <div
-              v-if="authors.length"
-              class="flex min-w-0 items-center gap-2"
-              :title="$t('authors')"
-            >
-              <PenLine :size="16" class="flex-none" aria-hidden="true" />
-              <span class="sr-only">{{ $t("authors") }}:</span>
-              <span class="min-w-0 truncate">{{ authors.join(" / ") }}</span>
-            </div>
-            <div
-              v-if="narrators.length"
-              class="flex min-w-0 items-center gap-2"
-              :title="$t('narrators')"
-            >
-              <Mic :size="16" class="flex-none" aria-hidden="true" />
-              <span class="sr-only">{{ $t("narrators") }}:</span>
-              <span class="min-w-0 truncate">{{ narrators.join(" / ") }}</span>
-            </div>
+            <AudiobookCredits
+              :authors="item.authors"
+              :narrators="item.narrators"
+            />
             <div v-if="item.duration > 0" class="flex items-center gap-2">
               <Timer :size="16" class="flex-none" aria-hidden="true" />
               {{ formatDuration(item.duration) }}
@@ -86,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import AudiobookCredits from "@/components/audiobook/AudiobookCredits.vue";
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
@@ -95,14 +82,9 @@ import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { Progress } from "@/components/ui/progress";
 import { getPlayedState } from "@/helpers/played_state";
-import {
-  formatDuration,
-  getAuthorsNarratorsArray,
-  getImageThumbForItem,
-} from "@/helpers/utils";
+import { formatDuration, getImageThumbForItem } from "@/helpers/utils";
 import { ImageType, type Audiobook } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
-import { Mic, PenLine, Timer } from "@lucide/vue";
+import { Timer } from "@lucide/vue";
 import { computed } from "vue";
 
 export interface Props {
@@ -111,13 +93,6 @@ export interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{ (e: "edit-rows"): void }>();
 
-const coverSize = computed(() => (isPhoneSizedScreen() ? 132 : 200));
-const authors = computed(() =>
-  getAuthorsNarratorsArray(props.item?.authors ?? []),
-);
-const narrators = computed(() =>
-  getAuthorsNarratorsArray(props.item?.narrators ?? []),
-);
 const wideArt = computed(
   () =>
     getImageThumbForItem(props.item, ImageType.FANART) ||

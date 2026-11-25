@@ -1,10 +1,10 @@
 <template>
-  <div>
+  <!-- a query container, so the floating Save button of a form can line up
+       with the column below -->
+  <div class="@container">
     <Toolbar
-      :icon="Settings"
-      :menu-items="toolbarMenuItems"
-      :enforce-overflow-menu="true"
-      :menu-active="toolbarMenuActive"
+      :icon="isOverview ? Settings : ArrowLeft"
+      :icon-action="isOverview ? undefined : back"
     >
       <template #title>
         <ToolbarHeading
@@ -14,93 +14,75 @@
         />
       </template>
       <template #append>
-        <Button
+        <SettingsViewModeToggle
           v-if="viewModeToggle"
-          variant="ghost"
-          size="icon"
-          :title="getToggleViewModeLabel(viewModeToggle.mode)"
-          :aria-label="getToggleViewModeLabel(viewModeToggle.mode)"
-          @click="viewModeToggle.toggle()"
-        >
-          <List v-if="viewModeToggle.mode === 'list'" class="size-5" />
-          <LayoutGrid v-else class="size-5" />
-        </Button>
+          :mode="viewModeToggle.mode"
+          @toggle="viewModeToggle.toggle()"
+        />
       </template>
     </Toolbar>
 
     <Separator />
 
-    <div v-if="isOverview" class="p-5 max-md:px-3 max-md:py-4">
-      <div v-if="settingsViewMode === 'card'" class="flex flex-col gap-4">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <SettingsSectionLink
-            v-for="section in featuredSections"
-            :key="section.name"
-            :section="section"
-            variant="card"
-          />
-        </div>
-        <div
-          class="grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] md:gap-4 min-[960px]:grid-cols-2 xl:grid-cols-3"
-        >
-          <SettingsSectionLink
-            v-for="section in regularSections"
-            :key="section.name"
-            :section="section"
-            variant="card"
-          />
+    <!-- on a wide window every settings page keeps to a centred column -->
+    <div
+      class="mx-auto max-w-(--settings-column-width)"
+      data-testid="settings-column"
+    >
+      <div v-if="isOverview" class="p-5 max-md:px-3 max-md:py-4">
+        <SettingsOverview
+          :sections="settingsSections"
+          :view-mode="settingsViewMode"
+        />
+
+        <div v-if="canOpenOnboarding" class="mt-2 flex justify-center">
+          <Button
+            variant="link"
+            class="text-muted-foreground"
+            data-testid="run-onboarding"
+            @click="launchOnboarding"
+          >
+            {{ t(onboardingLinkKey) }}
+          </Button>
         </div>
       </div>
 
-      <nav v-else :aria-label="t('settings.settings')">
-        <ItemGroup>
-          <SettingsSectionLink
-            v-for="section in listSections"
-            :key="section.name"
-            :section="section"
-            variant="list"
-          />
-        </ItemGroup>
-      </nav>
-
-      <div v-if="canOpenOnboarding" class="mt-2 flex justify-center">
-        <Button
-          variant="link"
-          class="text-muted-foreground"
-          data-testid="run-onboarding"
-          @click="launchOnboarding"
-        >
-          {{ t(onboardingLinkKey) }}
-        </Button>
-      </div>
+      <router-view v-else v-slot="{ Component }">
+        <component :is="Component" v-if="Component" />
+      </router-view>
     </div>
-
-    <router-view v-else v-slot="{ Component }">
-      <component :is="Component" v-if="Component" />
-    </router-view>
   </div>
 </template>
 
 <script setup lang="ts">
-import SettingsSectionLink from "@/components/settings/SettingsSectionLink.vue";
+import SettingsOverview from "@/components/settings/SettingsOverview.vue";
+import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import ToolbarHeading, {
   type ToolbarHeadingItem,
 } from "@/components/ToolbarHeading.vue";
 import { Button } from "@/components/ui/button";
-import { ItemGroup } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
 import { provideEditedProviderName } from "@/composables/useEditedProviderName";
-import { provideSettingsToolbarMenu } from "@/composables/useSettingsToolbarMenu";
+import { provideSettingsPageBack } from "@/composables/useSettingsPageBack";
+import { provideSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { hasOnboardingTrack, isAdminTrack } from "@/helpers/onboarding_access";
 import { embeddedProviderDomain } from "@/helpers/provider_domain";
-import { availableSettingsSections } from "@/helpers/settings_sections";
+import { coreModuleName } from "@/helpers/core_modules";
+import { providerListType } from "@/helpers/settings_pages";
+import {
+  availableSettingsSections,
+  providerListName,
+  providerOwnPage,
+  routeSettingsPage,
+  settingsTrail,
+} from "@/helpers/settings_sections";
 import { api } from "@/plugins/api";
-import { ProviderType, Scope } from "@/plugins/api/interfaces";
+import { Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { LayoutGrid, List, Settings } from "@lucide/vue";
+import { ArrowLeft, Settings } from "@lucide/vue";
 import { match } from "ts-pattern";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import { goBack } from "@/helpers/navigation";
@@ -117,38 +99,17 @@ const { getPreference, setPreference } = useUserPreferences();
 // it cannot disagree with its heading
 const editedProviderName = provideEditedProviderName();
 
-// the page on screen puts what it offers in the toolbar's overflow menu
-const toolbarMenuItems = provideSettingsToolbarMenu();
-// an option that is on shows on the menu button
-const toolbarMenuActive = computed(() =>
-  toolbarMenuItems.value.some((item) => item.active),
-);
+// the page on screen puts what it offers in the menu of its header
+provideSettingsPageMenu();
+
+// the page on screen may handle back itself, such as closing a panel first
+const pageBack = provideSettingsPageBack();
 
 const settingsViewMode = ref<"list" | "card">("card");
 const savedSettingsViewMode = getPreference<"list" | "card">(
   "settings.overview.viewMode",
   "card",
 );
-
-type SettingsViewMode = "list" | "card";
-
-const getSettingsViewModeLabel = function (mode: SettingsViewMode) {
-  return mode === "list" ? t("view.list") : t("view.card");
-};
-
-const getNextSettingsViewMode = function (
-  mode: SettingsViewMode,
-): SettingsViewMode {
-  return mode === "list" ? "card" : "list";
-};
-
-const getToggleViewModeLabel = function (mode: SettingsViewMode) {
-  const nextMode = getNextSettingsViewMode(mode);
-  return t("tooltip.view_mode_switch", [
-    getSettingsViewModeLabel(mode),
-    getSettingsViewModeLabel(nextMode),
-  ]);
-};
 
 watch(
   () => savedSettingsViewMode.value,
@@ -166,10 +127,6 @@ const toggleSettingsViewMode = function () {
 };
 
 const playersViewMode = ref<"list" | "card">("list");
-const isPlayersPage = computed(() => {
-  const name = router.currentRoute.value.name?.toString() || "";
-  return name.includes("players") || name === "addgroup";
-});
 
 const savedPlayersViewMode = getPreference<"list" | "card">(
   "settings.players.viewMode",
@@ -197,10 +154,6 @@ provide("playersViewMode", {
 });
 
 const providersViewMode = ref<"list" | "card">("card");
-const isProvidersPage = computed(() => {
-  const name = router.currentRoute.value.name?.toString() || "";
-  return name.includes("providers");
-});
 
 const savedProvidersViewMode = getPreference<"list" | "card">(
   "settings.providers.viewMode",
@@ -229,9 +182,6 @@ provide("providersViewMode", {
 });
 
 const tasksViewMode = ref<"list" | "card">("list");
-const isTasksPage = computed(
-  () => router.currentRoute.value.name?.toString() === "backgroundtasks",
-);
 
 const savedTasksViewMode = getPreference<"list" | "card">(
   "settings.tasks.viewMode",
@@ -258,50 +208,13 @@ provide("tasksViewMode", {
   toggleViewMode: toggleTasksViewMode,
 });
 
-const isSystemPage = computed(
-  () => router.currentRoute.value.name?.toString() === "systemsettings",
+// the overview has the toolbar's view mode toggle; the lists of the pages below
+// it have theirs in their own header
+const viewModeToggle = computed(() =>
+  isOverview.value
+    ? { mode: settingsViewMode.value, toggle: toggleSettingsViewMode }
+    : undefined,
 );
-
-const systemViewMode = ref<"list" | "card">("list");
-const savedSystemViewMode = getPreference<"list" | "card">(
-  "settings.system.viewMode",
-  "list",
-);
-
-watch(
-  () => savedSystemViewMode.value,
-  (savedViewMode) => {
-    if (savedViewMode === "list" || savedViewMode === "card") {
-      systemViewMode.value = savedViewMode;
-    }
-  },
-  { immediate: true },
-);
-
-const toggleSystemViewMode = function () {
-  systemViewMode.value = systemViewMode.value === "list" ? "card" : "list";
-  setPreference("settings.system.viewMode", systemViewMode.value);
-};
-
-provide("systemViewMode", {
-  viewMode: systemViewMode,
-  toggleViewMode: toggleSystemViewMode,
-});
-
-// the page on screen owns the toolbar's view mode toggle, if it has one
-const viewModeToggle = computed(() => {
-  if (isOverview.value)
-    return { mode: settingsViewMode.value, toggle: toggleSettingsViewMode };
-  if (isPlayersPage.value)
-    return { mode: playersViewMode.value, toggle: togglePlayersViewMode };
-  if (isProvidersPage.value)
-    return { mode: providersViewMode.value, toggle: toggleProvidersViewMode };
-  if (isTasksPage.value)
-    return { mode: tasksViewMode.value, toggle: toggleTasksViewMode };
-  if (isSystemPage.value)
-    return { mode: systemViewMode.value, toggle: toggleSystemViewMode };
-  return undefined;
-});
 
 // Onboarding is reachable again from here: the setup wizard for the admin who
 // sets every kind of provider up, and the welcome for everyone else who lives
@@ -320,228 +233,77 @@ const settingsSections = computed(() =>
   availableSettingsSections((scope) => authManager.hasScope(scope)),
 );
 
-const providerSectionNames = [
-  "catalog",
-  "music_providers",
-  "player_providers",
-  "metadata_providers",
-  "plugin_providers",
-  "audio_analysis_providers",
-];
-
-const featuredSectionNames = ["music_providers", "players"];
-
-const featuredSections = computed(() =>
-  settingsSections.value.filter((section) =>
-    featuredSectionNames.includes(section.name),
-  ),
-);
-
-const regularSections = computed(() =>
-  settingsSections.value.filter(
-    (section) => !featuredSectionNames.includes(section.name),
-  ),
-);
-
-// the list groups the providers first, then the players, then the rest
-const listSections = computed(() => {
-  const sections = settingsSections.value;
-  return [
-    ...sections.filter((section) =>
-      providerSectionNames.includes(section.name),
-    ),
-    ...sections.filter((section) => section.name === "players"),
-    ...sections.filter(
-      (section) =>
-        !providerSectionNames.includes(section.name) &&
-        section.name !== "players",
-    ),
-  ];
-});
-
 // computed properties
 const isOverview = computed(() => {
   return router.currentRoute.value.name === "settings";
 });
 
-useEscapeBack(
-  () => goBack(router, { name: "settings" }),
-  () => !isOverview.value,
-);
+// the list the provider of an instance shows in, which its manifest decides so
+// a disabled instance, which is not loaded, shows in the same one
+const providerListOf = function (instanceId: string) {
+  const manifest = api.providerManifests[embeddedProviderDomain(instanceId)];
+  const type = manifest?.type ?? api.getProvider(instanceId)?.type;
+  return type && providerListType(type, manifest?.provides);
+};
 
-const activeTab = computed(() => {
-  const name = router.currentRoute.value.name?.toString() || "";
-  if (name === "profile") {
-    return "profile";
-  }
-  if (
-    name.includes("player") ||
-    name.includes("queue") ||
-    name === "addgroup"
-  ) {
-    return "players";
-  }
-  if (
-    name.includes("system") ||
-    name.includes("core") ||
-    name.includes("serverlog") ||
-    name === "backgroundtasks" ||
-    name === "diagnostics" ||
-    name === "genremanagement" ||
-    name === "audioanalysissettings" ||
-    name === "storagesettings"
-  ) {
-    return "system";
-  }
-  if (name.includes("frontend")) {
-    return "frontend";
-  }
-  if (name.includes("remoteaccess")) {
-    return "remote_access";
-  }
-  if (name.includes("user")) {
-    return "users";
-  }
-  if (name.includes("about")) {
-    return "about";
-  }
-  // the Catalog carries a types query of its own, for the tab it opens on
-  if (name === "catalog") {
-    return "catalog";
-  }
+// the page managing the provider of an instance: its own settings page, or the
+// page listing it, the music sources while its type is unknown
+const providerPageOf = function (instanceId: string) {
+  return (
+    providerOwnPage(embeddedProviderDomain(instanceId))?.key ??
+    providerListName(providerListOf(instanceId)) ??
+    "music"
+  );
+};
 
-  const typesQuery = router.currentRoute.value.query.types as
-    string | undefined;
-  const firstType = typesQuery ? typesQuery.split(",")[0].trim() : undefined;
-  if (firstType === "music") return "music_providers";
-  if (firstType === "player") return "player_providers";
-  if (firstType === "metadata") return "metadata_providers";
-  if (firstType === "plugin") return "plugin_providers";
-  if (firstType === "audio_analysis") return "audio_analysis_providers";
+// the crumbs of a page of the settings menu and the pages above it, each a link
+// for whoever may open it; the page on screen is the last one
+const pageCrumbs = function (
+  key: string,
+  { current = false } = {},
+): ToolbarHeadingItem[] {
+  const trail = settingsTrail(key);
+  return trail.map((page, index) => {
+    if (current && index === trail.length - 1) {
+      return { title: t(page.label), disabled: true };
+    }
+    const mayOpen =
+      !page.requiresScope || authManager.hasScope(page.requiresScope);
+    return {
+      title: t(page.label),
+      disabled: false,
+      to: mayOpen ? page.route : undefined,
+    };
+  });
+};
 
-  if (name === "editprovider") {
-    const instanceId = router.currentRoute.value.params.instanceId as string;
-    // disabled instances are not loaded, so fall back to the manifest type
-    const providerType =
-      api.getProvider(instanceId)?.type ||
-      api.providerManifests[embeddedProviderDomain(instanceId)]?.type;
-    if (providerType === ProviderType.MUSIC) return "music_providers";
-    if (providerType === ProviderType.PLAYER) return "player_providers";
-    if (providerType === ProviderType.METADATA) return "metadata_providers";
-    if (providerType === ProviderType.PLUGIN) return "plugin_providers";
-    if (providerType === ProviderType.AUDIO_ANALYSIS)
-      return "audio_analysis_providers";
-  }
-
-  return "music_providers";
-});
-
-const breadcrumbItems = computed(() => {
+const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
+  // "Settings" heads the toolbar on its own line, so the trail starts below it
+  if (isOverview.value) return [];
   const route = router.currentRoute.value;
   const name = route.name?.toString() || "";
+  const page = routeSettingsPage(name);
+  if (page) return pageCrumbs(page.key, { current: true });
+
   // without config.players.write only the player options open, so the crumbs
   // leading to the players and their settings are plain text
   const canConfigurePlayers = authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE);
 
-  // "Settings" heads the toolbar on its own line, so the trail starts below it
-  const items: ToolbarHeadingItem[] = [];
-
-  if (!isOverview.value) {
-    const currentTab = activeTab.value;
-    if (currentTab === "profile") {
-      items.push({
-        title: t("auth.profile"),
-        disabled: name === "profile",
-        to: { name: "profile" },
-      });
-    } else if (currentTab === "players") {
-      items.push({
-        title: t("settings.players"),
-        disabled: name === "playersettings",
-        to: canConfigurePlayers ? { name: "playersettings" } : undefined,
-      });
-    } else if (currentTab === "system") {
-      if (!(
-        name === "backgroundtasks" &&
-        !authManager.hasScope(Scope.CONFIG_CORE_WRITE)
-      )) {
-        items.push({
-          title: t("settings.system"),
-          disabled: name === "systemsettings",
-          to: { name: "systemsettings" },
-        });
-      }
-    } else if (currentTab === "remote_access") {
-      items.push({
-        title: t("settings.remote_access"),
-        disabled: name === "remoteaccesssettings",
-        to: { name: "remoteaccesssettings" },
-      });
-    } else if (currentTab === "frontend") {
-      items.push({
-        title: t("settings.frontend"),
-        disabled: name === "frontendsettings",
-        to: { name: "frontendsettings" },
-      });
-    } else if (currentTab === "users") {
-      items.push({
-        title: t("settings.users"),
-        disabled: name === "usersettings",
-        to: { name: "usersettings" },
-      });
-    } else if (currentTab === "catalog") {
-      items.push({ title: t("settings.catalog.title"), disabled: true });
-    } else if (currentTab === "music_providers") {
-      items.push({
-        title: t("settings.music_sources"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "music" } },
-      });
-    } else if (currentTab === "player_providers") {
-      items.push({
-        title: t("settings.playerproviders"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "player" } },
-      });
-    } else if (currentTab === "metadata_providers") {
-      items.push({
-        title: t("settings.metadataproviders"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "metadata" } },
-      });
-    } else if (currentTab === "plugin_providers") {
-      items.push({
-        title: t("settings.plugins"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "plugin" } },
-      });
-    } else if (currentTab === "audio_analysis_providers") {
-      items.push({
-        title: t("settings.audio_analysis_providers"),
-        disabled: name === "providersettings",
-        to: { name: "providersettings", query: { types: "audio_analysis" } },
-      });
-    } else if (currentTab === "about") {
-      items.push({
-        title: t("settings.about"),
-        disabled: name === "aboutsettings",
-        to: { name: "aboutsettings" },
-      });
-    }
-  }
-
-  match(name)
+  return match(name)
     .with("editprovider", () => {
-      items.push({
-        title:
-          editedProviderName.value ||
-          api.getProviderName(route.params.instanceId as string),
-        disabled: true,
-      });
+      const instanceId = route.params.instanceId as string;
+      return [
+        ...pageCrumbs(providerPageOf(instanceId)),
+        {
+          title: editedProviderName.value || api.getProviderName(instanceId),
+          disabled: true,
+        },
+      ];
     })
-    .with("addgroup", () => {
-      items.push({ title: t("settings.add_group_player"), disabled: true });
-    })
+    .with("addgroup", () => [
+      ...pageCrumbs("players"),
+      { title: t("settings.add_group_player"), disabled: true },
+    ])
     .with(
       "editplayer",
       "editplayerdsp",
@@ -551,68 +313,52 @@ const breadcrumbItems = computed(() => {
         // a queue is identified by the player id of the player owning it
         const playerId = (route.params.playerId ||
           route.params.queueId) as string;
-        items.push({
-          // a disabled player is never registered, so it has no name to show
-          title: api.players[playerId]?.name || t("settings.player_settings"),
-          disabled: name === "editplayer",
-          to: canConfigurePlayers
-            ? { name: "editplayer", params: { playerId } }
-            : undefined,
-        });
+        const items: ToolbarHeadingItem[] = [
+          ...pageCrumbs("players"),
+          {
+            // a disabled player is never registered, so it has no name to show
+            title: api.players[playerId]?.name || t("settings.player_settings"),
+            disabled: name === "editplayer",
+            to: canConfigurePlayers
+              ? { name: "editplayer", params: { playerId } }
+              : undefined,
+          },
+        ];
         const section = match(name)
           .with("editplayerdsp", () => t("settings.category.dsp"))
           .with("editplayeroptions", () => t("settings.category.options"))
-          .with("editqueue", () => t("settings.queue_settings"))
+          .with("editqueue", () => t("settings.playback.title"))
           .otherwise(() => undefined);
         if (section) items.push({ title: section, disabled: true });
+        return items;
       },
     )
     .with("editcore", () => {
       const domain = route.params.domain as string;
-      const translated = t(`settings.core_module.${domain}.name`);
-      const moduleName =
-        translated !== `settings.core_module.${domain}.name`
-          ? translated
-          : api.providerManifests[domain]?.name || domain;
-      items.push({
-        title: moduleName,
-        disabled: true,
-      });
+      return [
+        ...pageCrumbs("system"),
+        {
+          title: coreModuleName(
+            domain,
+            (key) => t(key),
+            api.providerManifests[domain]?.name,
+          ),
+          disabled: true,
+        },
+      ];
     })
-    .with("diagnostics", () => {
-      items.push({
-        title: t("settings.diagnostics"),
-        disabled: true,
-      });
-    })
-    .with("backgroundtasks", () => {
-      items.push({
-        title: t("background_tasks.title"),
-        disabled: true,
-      });
-    })
-    .with("genremanagement", () => {
-      items.push({
-        title: t("settings.genre_management"),
-        disabled: true,
-      });
-    })
-    .with("storagesettings", () => {
-      items.push({
-        title: t("settings.storage.title"),
-        disabled: true,
-      });
-    })
-    .with("audioanalysissettings", () => {
-      items.push({
-        title: t("settings.audio_analysis"),
-        disabled: true,
-      });
-    })
-    .otherwise(() => {
-      return;
-    });
-
-  return items;
+    .otherwise(() => []);
 });
+
+// back to where the user came from; a page opened directly goes one level up,
+// to the nearest page above it that the user may open
+const back = function () {
+  if (pageBack.value?.()) return;
+  const parent = breadcrumbItems.value
+    .slice(0, -1)
+    .findLast((item) => item.to)?.to;
+  goBack(router, parent ?? { name: "settings" });
+};
+
+useEscapeBack(back, () => !isOverview.value);
 </script>

@@ -25,13 +25,6 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 
 const playerCommandShuffle = vi.mocked(api.playerCommandShuffle);
 
-// Vuetify is not installed in the test app, and Icon.vue renders its icon
-// inside a v-badge it never imports itself.
-const stubs = {
-  VIcon: { template: "<i><slot /></i>" },
-  VBadge: { template: "<div><slot /></div>" },
-};
-
 function player(overrides: Partial<Player> = {}): Player {
   return {
     player_id: "player-1",
@@ -66,15 +59,14 @@ function mountButton(
 ) {
   return mount(ShuffleBtn, {
     props: { player: undefined, playerQueue: undefined, ...props },
-    global: { stubs },
   });
 }
 
 const button = (wrapper: ReturnType<typeof mountButton>) =>
-  wrapper.get(".icon-container");
+  wrapper.get("button");
 
 const isDisabled = (wrapper: ReturnType<typeof mountButton>) =>
-  button(wrapper).classes().includes("icon-container--disabled");
+  button(wrapper).attributes("disabled") !== undefined;
 
 enableAutoUnmount(afterEach);
 

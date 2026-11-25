@@ -16,7 +16,7 @@
       class="pointer-events-none absolute -bottom-1/3 -left-[8%] aspect-square w-2/5 rounded-full bg-white/10"
       aria-hidden="true"
     ></span>
-    <slot></slot>
+    <slot />
   </div>
 </template>
 

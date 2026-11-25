@@ -32,6 +32,7 @@ export function providerManifest(
     tier: ProviderTier.CORE,
     support_url: null,
     icon_images: [],
+    provides: [],
     ...overrides,
   };
 }

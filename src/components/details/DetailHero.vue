@@ -40,7 +40,7 @@
       :menu-items="menuItems"
     >
       <template #append>
-        <slot name="toolbar-append"></slot>
+        <slot name="toolbar-append" />
       </template>
     </Toolbar>
 
@@ -57,14 +57,14 @@
             artworkLayout,
         }"
       >
-        <slot name="main"></slot>
+        <slot name="main" />
       </div>
       <div
         v-if="$slots.aside"
         class="detail-hero__aside"
         :class="{ 'items-center text-center': artworkLayout }"
       >
-        <slot name="aside"></slot>
+        <slot name="aside" />
       </div>
     </div>
 
@@ -78,7 +78,7 @@
       @back="backButtonClick"
     >
       <template #append>
-        <slot name="toolbar-append"></slot>
+        <slot name="toolbar-append" />
       </template>
     </DetailHeroStickyBar>
   </header>
@@ -92,7 +92,10 @@ import { useUserPreferences } from "@/composables/userPreferences";
 import { useEscapeBack } from "@/composables/useEscapeBack";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
-import { getContextMenuItems } from "@/layouts/default/ItemContextMenu.vue";
+import {
+  getContextMenuItems,
+  getDeclaredContextMenuItems,
+} from "@/layouts/default/ItemContextMenu.vue";
 import { getImageThumbForItem } from "@/helpers/utils";
 import {
   ImageType,
@@ -102,7 +105,7 @@ import {
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
-import { computed, ref, watch } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import { useRouter } from "vue-router";
 
 export interface Props {
@@ -138,7 +141,23 @@ const emit = defineEmits<{
 const STICKY_BAR_HEIGHT = 56;
 
 const router = useRouter();
-const menuItems = ref<ContextMenuItem[]>([]);
+// the item's own menu entries, with the item they were built for
+const builtMenu = shallowRef<{
+  item: MediaItemType;
+  items: ContextMenuItem[];
+}>();
+// the entries providers add follow the providers while the page is open
+const menuItems = computed<ContextMenuItem[]>(() => {
+  if (!builtMenu.value) return [];
+  const { item, items } = builtMenu.value;
+  return [
+    ...items,
+    ...getDeclaredContextMenuItems([item]),
+    ...(props.editableRows
+      ? [{ label: "edit_rows", icon: Rows3, action: () => emit("edit-rows") }]
+      : []),
+  ];
+});
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
@@ -186,10 +205,6 @@ const backdropStyle = computed(() =>
 );
 
 watch(() => props.item, buildMenu, { immediate: true });
-watch(
-  () => props.editableRows,
-  () => buildMenu(props.item),
-);
 
 // pinning or unpinning the item in the sidebar changes its menu entry
 const { getPreference } = useUserPreferences();
@@ -202,27 +217,24 @@ const backButtonClick = function () {
 
 useEscapeBack(backButtonClick);
 
-/** The item's overflow menu, plus "Edit rows" last on an editable page. */
+/** Build the item's own menu entries. */
 async function buildMenu(item?: MediaItemType) {
   if (!item) {
-    menuItems.value = [];
+    builtMenu.value = undefined;
     return;
   }
   const items = await getContextMenuItems([item], item);
   // a slower response for a previous item must not replace the current one
   if (props.item?.uri !== item.uri) return;
-  menuItems.value = props.editableRows
-    ? [
-        ...items,
-        { label: "edit_rows", icon: Rows3, action: () => emit("edit-rows") },
-      ]
-    : items;
+  builtMenu.value = { item, items };
 }
 </script>
 
 <style scoped>
 .detail-hero {
   position: relative;
+  /* its heroes lay out by the room it has, which the sidebar narrows */
+  container: detail-hero / inline-size;
   display: flex;
   flex-direction: column;
   /* the design height; taller content grows the hero */
@@ -306,8 +318,7 @@ async function buildMenu(item?: MediaItemType) {
   opacity: 1;
 }
 
-/* sits at the bottom of the hero, above the artwork layers. A container so its
-   controls collapse to the room the hero actually has, which the sidebar narrows */
+/* sits at the bottom of the hero, above the artwork layers */
 .detail-hero__body {
   position: relative;
   margin: auto 28px 24px;
@@ -315,7 +326,6 @@ async function buildMenu(item?: MediaItemType) {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  container: detail-hero / inline-size;
 }
 .detail-hero__main {
   display: flex;
@@ -342,6 +352,18 @@ async function buildMenu(item?: MediaItemType) {
   display: none;
 }
 
+/* a narrow hero stacks the facts under the rest, as on a phone */
+@container detail-hero (width < 48rem) {
+  .detail-hero__body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .detail-hero__aside {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
 /* the bottom margin clears the strip where the hero fades into the page */
 .detail-hero--phone .detail-hero__body {
   margin: auto 16px 28px;

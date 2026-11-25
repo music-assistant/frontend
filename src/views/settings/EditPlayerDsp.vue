@@ -92,15 +92,6 @@
           <div
             class="flex min-h-12 items-center gap-1 border-b bg-muted px-2 py-1.5"
           >
-            <Button
-              v-if="mobileLayout"
-              variant="ghost"
-              size="icon-sm"
-              :aria-label="$t('back')"
-              @click="selectedStage = null"
-            >
-              <ArrowLeft />
-            </Button>
             <h3 class="min-w-0 flex-1 truncate px-2 font-medium">
               {{ stageTitle(selectedStage) }}
             </h3>
@@ -370,7 +361,6 @@ import { DEFAULT_HIGH_PASS_FREQUENCY } from "@/components/dsp/highLowPass";
 import DSPHelp from "@/components/dsp/DSPHelp.vue";
 import {
   ArrowDown,
-  ArrowLeft,
   ArrowUp,
   Download,
   Save,
@@ -404,6 +394,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { useDSPPresets } from "@/composables/useDSPPresets";
+import { useSettingsPageBack } from "@/composables/useSettingsPageBack";
 import {
   areDSPConfigsEqual,
   areDSPSettingsEqual,
@@ -432,6 +423,12 @@ const newPresetName = ref("");
 // The app's own definition of a mobile layout, which also covers tablets and
 // the force-mobile setting, rather than Vuetify's width-only breakpoint.
 const mobileLayout = computed(() => store.mobileLayout);
+// on a phone the open stage fills the page, so back returns to the stages first
+useSettingsPageBack(() => {
+  if (!mobileLayout.value || selectedStage.value === null) return false;
+  selectedStage.value = null;
+  return true;
+});
 let updatedFromServer = false;
 // Last config received from the server, used to tell whether a local edit
 // still matches the selected preset.

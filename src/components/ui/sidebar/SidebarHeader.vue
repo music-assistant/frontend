@@ -13,6 +13,6 @@ const props = defineProps<{
     data-sidebar="header"
     :class="cn('flex flex-col gap-2 p-2', props.class)"
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>

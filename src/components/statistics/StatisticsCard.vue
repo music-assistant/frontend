@@ -13,20 +13,23 @@
       class="flex flex-wrap items-end justify-between gap-2"
     >
       <div class="flex min-w-0 flex-col gap-1">
-        <h2
-          :class="
-            prominent
-              ? 'm-0 text-base font-semibold'
-              : 'm-0 text-[13px] font-normal text-muted-foreground'
-          "
-        >
-          {{ title }}
-        </h2>
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h2
+            :class="
+              prominent
+                ? 'm-0 text-base font-semibold'
+                : 'm-0 text-[13px] font-normal text-muted-foreground'
+            "
+          >
+            {{ title }}
+          </h2>
+          <slot name="title-info" />
+        </div>
         <p v-if="subtitle" class="m-0 text-[13px] text-muted-foreground">
           {{ subtitle }}
         </p>
       </div>
-      <slot name="header"></slot>
+      <slot name="header" />
     </header>
     <div v-if="loading" :class="cn('flex flex-col gap-3', minHeightClass)">
       <Skeleton class="h-6 w-2/5" />
@@ -56,7 +59,7 @@
     >
       {{ emptyText ?? $t("statistics_section_empty") }}
     </p>
-    <slot v-else></slot>
+    <slot v-else />
   </section>
 </template>
 

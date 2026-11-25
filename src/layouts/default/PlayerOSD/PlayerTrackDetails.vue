@@ -36,7 +36,7 @@
           <PlayerIcon
             :icon="store.activePlayer?.icon"
             :grouped="
-              store.activePlayer?.type == PlayerType.PLAYER &&
+              isSpeakerPlayer(store.activePlayer) &&
               !!store.activePlayer?.group_members.length
             "
             :size="props.compact ? 22 : 32"
@@ -74,7 +74,10 @@
           @click.stop="onTitleClick"
         >
           <MarqueeText :sync="marqueeSync">
-            {{ store.activePlayer.current_media.title }}
+            {{
+              currentChapter?.chapter.name ??
+              store.activePlayer.current_media.title
+            }}
           </MarqueeText>
         </div>
         <!-- queue ended message: the queue is still there, it just finished -->
@@ -137,7 +140,7 @@
           >
             <div class="ma-line-clamp-1">
               <MarqueeText :sync="marqueeSync">
-                {{ currentChapter.chapter.name }}
+                {{ chapterSubtitle }}
               </MarqueeText>
             </div>
           </button>
@@ -195,24 +198,24 @@ import PlayerIcon from "@/components/PlayerIcon.vue";
 import QualityDetailsBtn from "@/components/QualityDetailsBtn.vue";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { openCurrentTrackDetails } from "@/helpers/now_playing";
-import { getPlayerDisplayName } from "@/helpers/players";
+import { getPlayerDisplayName, isSpeakerPlayer } from "@/helpers/players";
 import { isQueueEnded } from "@/helpers/queue_position";
 import { resolveActiveElapsedTime } from "@/helpers/activeElapsedTime";
-import { resolveCurrentChapter } from "@/helpers/chapters";
+import {
+  isChapteredMediaType,
+  resolveCurrentChapter,
+} from "@/helpers/chapters";
 import { ImageColorPalette, getMediaImageUrl } from "@/helpers/utils";
-import { MediaType, PlaybackState, PlayerType } from "@/plugins/api/interfaces";
+import { MediaType, PlaybackState } from "@/plugins/api/interfaces";
 import { getBreakpointValue } from "@/plugins/breakpoint";
 import { store } from "@/plugins/store";
 import { computed, onUnmounted, ref, watch } from "vue";
-import { useUserPreferences } from "@/composables/userPreferences";
 import { useActiveAudioPath } from "@/composables/useActiveAudioPath";
 import { useNowPlayingSource } from "@/composables/nowPlayingSource";
 import NowPlayingSourceBadge from "./NowPlayingSourceBadge.vue";
 import PlayerFullscreen from "./PlayerFullscreen.vue";
 
 const marqueeSync = new MarqueeTextSync();
-const { getPreference } = useUserPreferences();
-const showChapterProgress = getPreference("audiobook_chapter_progress", true);
 
 const nowTick = ref(0);
 let chapterTimer: ReturnType<typeof setInterval> | null = null;
@@ -221,8 +224,7 @@ const currentChapter = computed(() => {
   const media = store.activePlayer?.current_media;
   const queueItem = store.curQueueItem;
   if (
-    !showChapterProgress.value ||
-    media?.media_type !== MediaType.AUDIOBOOK ||
+    !isChapteredMediaType(media?.media_type) ||
     (media.queue_item_id !== null &&
       media.queue_item_id !== queueItem?.queue_item_id)
   ) {
@@ -235,9 +237,14 @@ const currentChapter = computed(() => {
   );
 });
 
+// under the chapter: author (or podcast) and the book or episode
+const chapterSubtitle = computed(() => {
+  const media = store.activePlayer?.current_media;
+  return [media?.artist, media?.title].filter(Boolean).join(" • ");
+});
+
 const chapterTimerNeeded = computed(
   () =>
-    showChapterProgress.value &&
     store.activePlayer?.playback_state === PlaybackState.PLAYING &&
     !!currentChapter.value,
 );

@@ -6,6 +6,11 @@
     :empty="segments.length === 0"
     :empty-text="$t('statistics_genre_empty')"
   >
+    <template #title-info>
+      <StatisticsLibraryInfo
+        :explanation="$t('statistics_library_based_genres')"
+      />
+    </template>
     <span class="text-[22px] font-bold">{{ segments[0]?.name }}</span>
     <div
       class="flex h-3.5 gap-0.5 overflow-hidden rounded-full"
@@ -45,6 +50,7 @@
 
 <script setup lang="ts">
 import StatisticsCard from "@/components/statistics/StatisticsCard.vue";
+import StatisticsLibraryInfo from "@/components/statistics/StatisticsLibraryInfo.vue";
 import {
   shareSegments,
   type ShareSegment,

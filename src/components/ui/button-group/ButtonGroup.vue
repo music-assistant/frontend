@@ -19,6 +19,6 @@ const props = defineProps<{
       cn(buttonGroupVariants({ orientation: props.orientation }), props.class)
     "
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>

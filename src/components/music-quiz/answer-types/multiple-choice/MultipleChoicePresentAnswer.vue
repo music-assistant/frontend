@@ -25,12 +25,12 @@
           :answered-count="answeredCount"
           scrollable
         />
-        <slot name="leaderboard"></slot>
+        <slot name="leaderboard" />
       </div>
     </div>
   </template>
   <template v-else-if="state.phase === 'reveal'">
-    <slot name="leaderboard"></slot>
+    <slot name="leaderboard" />
   </template>
 </template>
 

@@ -56,7 +56,11 @@ import ToolbarHeading, {
   type ToolbarHeadingItem,
 } from "@/components/ToolbarHeading.vue";
 import { Button } from "@/components/ui/button";
-import { parentBrowsePath } from "@/helpers/browse_path";
+import {
+  browseLevelTitle,
+  browsePathLevels,
+  parentBrowsePath,
+} from "@/helpers/browse_path";
 import api from "@/plugins/api";
 import {
   ListingType,
@@ -83,30 +87,17 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
   const path = props.path;
   if (isRoot.value || !path) return [];
 
-  // a browse path reads as "<provider>://<folder>/<folder>", where the provider
-  // prefix is a level of its own that lists that provider's top-level folders
-  const [providerPart, folderPart] = path.includes("://")
-    ? path.split("://")
-    : ["", path];
-  const prefix = providerPart ? `${providerPart}://` : "";
-  const folders = folderPart.split("/").filter((folder) => folder.length > 0);
-
-  const items: ToolbarHeadingItem[] = [];
-  if (providerPart) {
-    items.push({
-      title: api.getProviderName(providerPart),
-      disabled: folders.length === 0,
-      to: browseRoute(prefix),
-    });
-  }
-  folders.forEach((folder, index) => {
-    items.push({
-      title: folder,
-      disabled: index === folders.length - 1,
-      to: browseRoute(prefix + folders.slice(0, index + 1).join("/")),
-    });
-  });
-  return items;
+  const names = {
+    discover: t("discover"),
+    folderName,
+    providerName: (providerId: string) => api.getProviderName(providerId),
+  };
+  const levels = browsePathLevels(path);
+  return levels.map((level, index) => ({
+    title: browseLevelTitle(level, names),
+    disabled: index === levels.length - 1,
+    to: browseRoute(level.path),
+  }));
 });
 
 watch(
@@ -146,6 +137,13 @@ const loadItems = async function (params: LoadDataParams) {
       : hasOnlyFolders.value && pageHasOnlyFolders;
   return items;
 };
+
+// the name of a folder listed so far; reads the current folder reactively so
+// the breadcrumbs pick up its name once a deep link has looked it up
+const folderName = (path: string): string | undefined =>
+  currentFolder.value?.path === path
+    ? currentFolder.value.name
+    : knownFolders.get(path)?.name;
 
 const browseRoute = (path: string) => ({
   name: "browse",

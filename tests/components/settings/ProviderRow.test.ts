@@ -249,6 +249,24 @@ describe("ProviderRow", () => {
     },
   );
 
+  it.each(VARIANTS)(
+    "does not open the provider when its status icon is tapped (%s)",
+    async (variant) => {
+      const wrapper = mountRow({
+        variant,
+        manageable: true,
+        statusIcon: "disabled",
+        statusLabel: "Disabled",
+      });
+
+      await wrapper
+        .get('[data-testid="provider-status-icon"]')
+        .trigger("click");
+
+      expect(wrapper.emitted("open")).toBeUndefined();
+    },
+  );
+
   it.each(VARIANTS)("shows no status icon by default (%s)", (variant) => {
     const wrapper = mountRow({ variant });
 
@@ -391,6 +409,26 @@ describe("ProviderRow", () => {
   );
 
   it.each(VARIANTS)(
+    "shows the details it is given under the description (%s)",
+    (variant) => {
+      const wrapper = mountRow(
+        { variant, description: "A great music service" },
+        { details: '<span data-testid="details">Up to date</span>' },
+      );
+
+      const description = wrapper
+        .findAll("p")
+        .find((element) => element.text() === "A great music service")!;
+      const details = wrapper.get('[data-testid="details"]');
+      expect(details.text()).toBe("Up to date");
+      expect(
+        description.element.compareDocumentPosition(details.element) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    },
+  );
+
+  it.each(VARIANTS)(
     "dims the row when the source is disabled (%s)",
     (variant) => {
       const wrapper = mountRow({
@@ -415,6 +453,46 @@ describe("ProviderRow", () => {
       expect(
         wrapper.get('[data-testid="provider-row"]').classes(),
       ).not.toContain("opacity-60");
+    },
+  );
+
+  it.each(VARIANTS)(
+    "says what the source offers, setting the live sources apart (%s)",
+    (variant) => {
+      const wrapper = mountRow({ variant, labels: ["library", "live"] });
+
+      const labels = wrapper.findAll(
+        '[data-testid="provider-labels"] [data-label]',
+      );
+      expect(labels.map((label) => label.text())).toEqual([
+        "settings.source_labels.library",
+        "settings.source_labels.live",
+      ]);
+      expect(labels[0].classes()).not.toContain("bg-orange-500/15");
+      expect(labels[1].classes()).toContain("bg-orange-500/15");
+    },
+  );
+
+  it.each(VARIANTS)("says what the plugin delivers (%s)", (variant) => {
+    const wrapper = mountRow({ variant, labels: ["ai", "fun"] });
+
+    expect(
+      wrapper
+        .findAll('[data-testid="provider-labels"] [data-label]')
+        .map((label) => label.text()),
+    ).toEqual(["settings.plugin_labels.ai", "settings.plugin_labels.fun"]);
+  });
+
+  it.each(VARIANTS)(
+    "shows no labels for a provider that offers none, or only other (%s)",
+    (variant) => {
+      for (const labels of [[], undefined, ["other" as const]]) {
+        const wrapper = mountRow({ variant, labels });
+
+        expect(wrapper.find('[data-testid="provider-labels"]').exists()).toBe(
+          false,
+        );
+      }
     },
   );
 
@@ -505,8 +583,10 @@ let holdHandler: (event: Event) => void;
 
 function mountRow(
   overrides: Partial<InstanceType<typeof ProviderRow>["$props"]> = {},
+  slots: Record<string, string> = {},
 ) {
   return mount(ProviderRow, {
+    slots,
     props: {
       config: providerConfig(),
       variant: "list",

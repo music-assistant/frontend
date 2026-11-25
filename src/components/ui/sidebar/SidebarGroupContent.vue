@@ -13,6 +13,6 @@ const props = defineProps<{
     data-sidebar="group-content"
     :class="cn('w-full text-sm', props.class)"
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>

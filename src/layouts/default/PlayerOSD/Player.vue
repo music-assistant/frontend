@@ -30,13 +30,7 @@
               :visible-components="{
                 repeat: { isVisible: getBreakpointValue('bp3') },
                 shuffle: { isVisible: getBreakpointValue('bp3') },
-                play: {
-                  isVisible: true,
-                  icon: {
-                    staticWidth: '48px',
-                    staticHeight: '48px',
-                  },
-                },
+                play: { isVisible: true, buttonClass: 'size-12' },
                 previous: { isVisible: getBreakpointValue('bp3') },
                 next: { isVisible: getBreakpointValue('bp3') },
               }"
@@ -94,16 +88,21 @@
           <PlayerBarGroupControl floating />
           <!-- player mobile control buttons -->
           <PlayerControls
+            :style="{ '--play-icon-color': floatingControlColor }"
             :visible-components="{
               repeat: { isVisible: false },
               shuffle: { isVisible: false },
               play: {
                 isVisible: true,
-                icon: {
-                  staticWidth: '40px',
-                  staticHeight: '40px',
-                },
+                // full strength like the grouping button beside it: the faded
+                // rest only lifts on hover, which a touch device never reaches.
+                // Play stays the primary action but is outlined here, so the
+                // compact row does not read as a solid block
+                buttonClass:
+                  'size-10 opacity-100 border-2 border-current bg-transparent dark:bg-transparent',
                 size: 18,
+                // the thin outline makes the usual gap look loose
+                spinnerGap: 1,
               },
               previous: { isVisible: false },
               next: { isVisible: false },
@@ -250,21 +249,6 @@ watch(
     :deep(.player-control-button[data-active="true"]),
     :deep(.player-control-button[data-state="open"]) {
       color: var(--primary) !important;
-    }
-    /* Icon.vue rests its buttons at 0.62 and only lifts them on hover, which a
-       touch device never reaches, so play looked faded next to the grouping
-       button beside it */
-    :deep(.icon-container--button:not(.icon-container--disabled)) {
-      opacity: 1;
-    }
-    /* play stays the primary action but is outlined here, so the compact row
-       does not read as a solid block */
-    :deep(.play-btn-icon) {
-      min-width: 40px;
-      min-height: 40px;
-      border: 2px solid currentColor;
-      background-color: transparent;
-      color: v-bind(floatingControlColor);
     }
     .mediacontrols-bottom-right {
       margin-right: 0;

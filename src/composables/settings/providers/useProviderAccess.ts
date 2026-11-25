@@ -89,7 +89,7 @@ export function useProviderAccess(options: UseProviderAccessOptions) {
 
   const loadShareCandidates = async function () {
     try {
-      memberShareCandidates.value = await api.getShareCandidates();
+      memberShareCandidates.value = await api.getShareCandidates(true);
     } catch {
       toast.error($t("auth.users_load_failed"));
     }

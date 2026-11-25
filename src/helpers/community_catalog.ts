@@ -57,9 +57,9 @@ export const isCommunityRunning = (provider: CommunityProvider): boolean =>
 export const isCommunityProblem = (provider: CommunityProvider): boolean =>
   PROBLEM_STATES.includes(provider.state);
 
-/** Whether a newer version is on offer for one that is installed. */
+/** Whether a newer version is on offer for one that is installed, also when it does not run. */
 export const hasCommunityUpdate = (provider: CommunityProvider): boolean =>
-  provider.state === CommunityProviderState.UPDATE_AVAILABLE;
+  !!provider.update_version;
 
 /**
  * Whether the version on offer is one that failed to load here, so it can be
@@ -86,12 +86,7 @@ export const getCommunityUpdateOutcome = (
   provider: CommunityProvider | undefined,
   version: string | null,
 ): CommunityUpdateOutcome => {
-  if (
-    provider?.state === CommunityProviderState.RESTART_REQUIRED &&
-    provider.pending_version === version
-  ) {
-    return "restart";
-  }
+  if (version && provider?.pending_version === version) return "restart";
   return provider?.installed_version === version ? "updated" : "failed";
 };
 
