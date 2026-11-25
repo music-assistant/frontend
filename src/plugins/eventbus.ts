@@ -26,6 +26,11 @@ export type ContextMenuDialogEvent = {
   posX?: number;
   posY?: number;
   showPlayMenuHeader?: boolean;
+  // the button that opened the menu: the menu sits beside it, and pressing it
+  // again closes the menu
+  trigger?: HTMLElement;
+  // a submenu replaces the menu, with a row back to it
+  inPlaceSubmenus?: boolean;
 };
 
 export type CreatePlaylistEvent = {

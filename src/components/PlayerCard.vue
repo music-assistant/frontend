@@ -189,7 +189,7 @@
           :class="{ '-ml-1': showGroupControl || canPlayPause }"
           :disabled="menuDisabled"
           :aria-label="$t('tooltip.more_options')"
-          @click.stop="openPlayerMenu"
+          @click.stop="openPlayerMenu($event, $event.currentTarget)"
         >
           <EllipsisVertical class="size-5" />
         </Button>
@@ -421,7 +421,8 @@ watch(
   },
 );
 
-function openPlayerMenu(event: Event) {
+// a menu opened from the menu button sits beside it instead of at the pointer
+function openPlayerMenu(event: Event, trigger?: EventTarget | null) {
   event.stopPropagation();
   if (menuDisabled.value) return;
   const position = getEventPosition(event);
@@ -433,6 +434,8 @@ function openPlayerMenu(event: Event) {
         }),
     posX: position.x,
     posY: position.y,
+    trigger: trigger instanceof HTMLElement ? trigger : undefined,
+    inPlaceSubmenus: true,
   });
 }
 

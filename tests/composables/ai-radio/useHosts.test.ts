@@ -126,9 +126,9 @@ describe("useHosts queue dj prefetch", () => {
 
     // First build of the menu after page load, i.e. the one that used to show
     // an empty host list with a wrongly checked "Off".
-    const aiDj = getPlayerMenuItems(player, queue, { context: "queue" }).find(
-      (item) => item.label === "ai_dj",
-    );
+    const aiDj = getPlayerMenuItems(player, queue, { context: "queue" })
+      .find((item) => item.label === "queue")
+      ?.subItems?.find((item) => item.label === "ai_dj");
 
     expect(aiDj?.subItems?.map((item) => item.label)).toEqual([
       "Robo DJ",

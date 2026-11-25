@@ -520,6 +520,7 @@ import { setStatusBarColorOverride } from "@/composables/useStatusBarColor";
 import { isDark } from "@/composables/useThemePreference";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useVisualizer } from "@/composables/visualizer/useVisualizer";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { playbackSpeedSupported } from "@/helpers/elapsed";
 import { expertModeSetting } from "@/helpers/expert_mode";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
@@ -1339,32 +1340,19 @@ const speedSupported = computed(() =>
 
 const openQueueMenu = function (evt: Event) {
   if (!store.activePlayer) return;
-  const menuItems = getPlayerMenuItems(
-    store.activePlayer,
-    store.activePlayerQueue,
-    {
-      context: "queue",
-      hideShuffleRepeat: mdAndUp.value && !showSkip.value,
-    },
-  );
-  const currentMediaItem = store.curQueueItem?.media_item;
-  if (currentMediaItem) {
-    const sharePreviewItem = useShareLinkPreviewMenuItem(currentMediaItem);
-    if (sharePreviewItem) menuItems.push(sharePreviewItem);
-  }
   // playback speed only means something for spoken-word content, which is also
   // the only content anyone plays at anything but 1x
-  if (speedSupported.value) {
-    menuItems.push({
-      label: "change_playback_speed",
-      action: () => {
-        playbackSpeedDialogOpen.value = true;
-      },
-      icon: "mdi-speedometer",
-    });
-  }
-  // The waveform toggle slots in above the visualizer popout entry (which
-  // comes from getPlayerMenuItems), keeping the display entries grouped.
+  const playbackItems: ContextMenuItem[] = speedSupported.value
+    ? [
+        {
+          label: "change_playback_speed",
+          action: () => {
+            playbackSpeedDialogOpen.value = true;
+          },
+          icon: "mdi-speedometer",
+        },
+      ]
+    : [];
   const waveformItem = {
     label: "settings.show_waveform.label",
     action: () => {
@@ -1386,31 +1374,39 @@ const openQueueMenu = function (evt: Event) {
     selected: showChapterProgress.value,
     close_on_click: false,
   };
-  const displayItems = chapterQueueItem.value
+  const displayItems: ContextMenuItem[] = chapterQueueItem.value
     ? [chapterProgressItem, waveformItem]
     : [waveformItem];
-  const visualizerEntryIndex = menuItems.findIndex(
-    (item) => item.label === "settings.visualizer_enabled.label",
-  );
-  if (visualizerEntryIndex === -1) {
-    menuItems.push(...displayItems);
-  } else {
-    menuItems.splice(visualizerEntryIndex, 0, ...displayItems);
-  }
-  // While lyrics/transcript are open, surface the sync-offset stepper at the
-  // top of the overflow menu.
+  // While lyrics/transcript are open, the sync-offset stepper leads the
+  // display entries.
   if (showLyrics.value) {
-    menuItems.unshift({
+    displayItems.unshift({
       label: isEpisode.value ? "transcript_offset" : "lyrics_offset",
       // markRaw: the menu items land in a reactive array; a bare component
       // definition there would be needlessly made reactive.
       component: markRaw(LyricsOffsetMenuControl),
     });
   }
+  const currentMediaItem = store.curQueueItem?.media_item;
+  const sharePreviewItem = currentMediaItem
+    ? useShareLinkPreviewMenuItem(currentMediaItem)
+    : undefined;
+  const menuItems = getPlayerMenuItems(
+    store.activePlayer,
+    store.activePlayerQueue,
+    {
+      context: "queue",
+      hideShuffleRepeat: mdAndUp.value && !showSkip.value,
+      playbackItems,
+      displayItems,
+      extraItems: sharePreviewItem ? [sharePreviewItem] : [],
+    },
+  );
   eventbus.emit("contextmenu", {
     items: menuItems,
-    posX: (evt as PointerEvent).clientX,
-    posY: (evt as PointerEvent).clientY,
+    trigger:
+      evt.currentTarget instanceof HTMLElement ? evt.currentTarget : undefined,
+    inPlaceSubmenus: true,
   });
 };
 

@@ -823,6 +823,8 @@ describe("PlayerCard", () => {
       expect.objectContaining({
         posX: 1,
         posY: 2,
+        trigger: expect.any(HTMLElement),
+        inPlaceSubmenus: true,
       }),
     );
   });

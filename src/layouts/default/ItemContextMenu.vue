@@ -11,12 +11,12 @@
       data-item-context-menu
       :reference="reference"
       align="end"
-      :side-offset="0"
+      :side-offset="trigger ? TRIGGER_GAP : 0"
       class="z-[999999] min-w-[300px] max-w-[350px] max-h-[min(85vh,var(--reka-dropdown-menu-content-available-height))] overflow-y-auto"
       @close-auto-focus="onCloseAutoFocus"
     >
       <!-- play menu header -->
-      <template v-if="showPlayMenuHeader">
+      <template v-if="showPlayMenuHeader && !currentSubmenu">
         <DropdownMenuSub>
           <DropdownMenuSubTrigger class="gap-3 py-2">
             <PlayerIcon :icon="store.activePlayer?.icon" :size="32" />
@@ -40,7 +40,7 @@
               :key="player.label"
               @select="onSelect($event, player)"
             >
-              <MenuItemIcon :icon="player.icon" />
+              <ContextMenuItemIcon :icon="player.icon" />
               <span class="flex-1 truncate min-w-0">{{ player.label }}</span>
               <Check v-if="player.selected" class="ml-auto size-4" />
             </DropdownMenuItem>
@@ -49,95 +49,39 @@
         <DropdownMenuSeparator />
       </template>
 
-      <template v-for="menuItem of visibleItems" :key="menuItem.label">
-        <!-- custom inline control (e.g. a stepper); renders its own row and
-             manages its own interaction without closing the menu -->
-        <component
-          :is="menuItem.component"
-          v-if="menuItem.component"
-          v-bind="menuItem.componentProps"
-        />
-        <!-- item whose submenu popout is a custom control -->
-        <DropdownMenuSub v-else-if="menuItem.subComponent">
-          <DropdownMenuSubTrigger class="gap-3">
-            <MenuItemIcon :icon="menuItem.icon" />
-            <span class="flex-1 truncate min-w-0">{{
-              menuItemLabel(menuItem)
-            }}</span>
-          </DropdownMenuSubTrigger>
-          <!-- fixed width so popout content truncates on phones; flex column
-               so the component can keep a static header and scroll the rest.
-               capped at the popper's available height (not a viewport fraction)
-               so growing content scrolls instead of shifting the popout up -->
-          <DropdownMenuSubContent
-            align="start"
-            :align-offset="-5"
-            :side-offset="6"
-            class="max-h-[min(70vh,var(--reka-dropdown-menu-content-available-height))] w-[min(92vw,350px)] flex flex-col"
-          >
-            <component
-              :is="menuItem.subComponent"
-              v-bind="menuItem.componentProps"
-            />
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <!-- item with submenu -->
-        <DropdownMenuSub
-          v-else-if="menuItem.subItems && menuItem.subItems.length"
-        >
-          <DropdownMenuSubTrigger
-            :class="[
-              'gap-3',
-              { 'text-destructive': menuItem.color === 'error' },
-            ]"
-          >
-            <MenuItemIcon :icon="menuItem.icon" />
-            <span class="flex-1 truncate min-w-0">{{
-              menuItemLabel(menuItem)
-            }}</span>
-          </DropdownMenuSubTrigger>
-          <!-- capped as the menu itself, so a long entry is cut off on a phone -->
-          <DropdownMenuSubContent
-            align="start"
-            :align-offset="-5"
-            :side-offset="6"
-            class="max-h-[70vh] max-w-[min(92vw,350px)] overflow-y-auto"
-          >
-            <template
-              v-for="subMenuItem of menuItem.subItems.filter((x) => !x.hide)"
-              :key="subMenuItem.label"
-            >
-              <DropdownMenuItem
-                :disabled="subMenuItem.disabled === true"
-                :variant="
-                  subMenuItem.color === 'error' ? 'destructive' : 'default'
-                "
-                @select="onSelect($event, subMenuItem)"
-              >
-                <MenuItemIcon :icon="subMenuItem.icon" />
-                <span class="flex-1 truncate min-w-0">{{
-                  menuItemLabel(subMenuItem)
-                }}</span>
-                <Check v-if="subMenuItem.selected" class="ml-auto size-4" />
-              </DropdownMenuItem>
-              <DropdownMenuSeparator v-if="subMenuItem.separatorAfter" />
-            </template>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <!-- leaf item -->
+      <!-- a submenu that replaces the menu -->
+      <template v-if="currentSubmenu">
         <DropdownMenuItem
-          v-else
-          :disabled="menuItem.disabled === true"
-          :variant="menuItem.color === 'error' ? 'destructive' : 'default'"
-          @select="onSelect($event, menuItem)"
+          class="gap-3 text-muted-foreground"
+          :aria-label="$t('back')"
+          @select="closeSubmenu"
         >
-          <MenuItemIcon :icon="menuItem.icon" />
+          <ChevronLeft class="size-5 shrink-0" />
           <span class="flex-1 truncate min-w-0">{{
-            menuItemLabel(menuItem)
+            menuItemLabel(currentSubmenu)
           }}</span>
-          <Check v-if="menuItem.selected" class="ml-auto size-4" />
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <component
+          :is="currentSubmenu.subComponent"
+          v-if="currentSubmenu.subComponent"
+          v-bind="currentSubmenu.componentProps"
+        />
+        <ContextMenuEntries
+          v-else
+          :items="currentSubmenu.subItems ?? []"
+          in-place-submenus
+          @select="onSelect"
+          @open-submenu="openSubmenu"
+        />
       </template>
+      <ContextMenuEntries
+        v-else
+        :items="items"
+        :in-place-submenus="inPlaceSubmenus"
+        @select="onSelect"
+        @open-submenu="openSubmenu"
+      />
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
@@ -156,36 +100,44 @@ import {
 import { ContextMenuDialogEvent, eventbus } from "@/plugins/eventbus";
 import api from "@/plugins/api";
 import { store } from "@/plugins/store";
-import { Check } from "@lucide/vue";
-import { computed, h, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
-import { VIcon } from "vuetify/components";
+import { Check, ChevronLeft } from "@lucide/vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+} from "vue";
+import ContextMenuEntries from "./ContextMenuEntries.vue";
+import { ContextMenuItemIcon } from "./ContextMenuItemIcon";
+
+// px between the menu and the button that opened it
+const TRIGGER_GAP = 4;
 
 const show = ref<boolean>(false);
 const items = ref<ContextMenuItem[]>([]);
 const posX = ref(0);
 const posY = ref(0);
 const showPlayMenuHeader = ref<boolean>(false);
-
-const visibleItems = computed(() => items.value.filter((x) => !x.hide));
+const trigger = shallowRef<HTMLElement>();
+const inPlaceSubmenus = ref(false);
+// the submenus opened in place, the innermost last
+const openedSubmenus = ref<ContextMenuItem[]>([]);
+const currentSubmenu = computed(() => openedSubmenus.value.at(-1));
 
 const reference = computed(() => {
+  if (trigger.value) return trigger.value;
   const rect = new DOMRect(posX.value, posY.value, 0, 0);
   return { getBoundingClientRect: () => rect };
 });
 
+// pressing the trigger of the open menu closes it in closeOnOutsidePointer, so
+// the click that follows must not open it again
+let closedByTrigger: HTMLElement | undefined;
+
 // a modal menu blocks the page behind it; the players menu keeps it clickable
 const modal = computed(() => !store.showPlayersMenu);
-
-const MenuItemIcon = (props: { icon?: string | Component; size?: number }) => {
-  if (!props.icon) return null;
-  return typeof props.icon === "string"
-    ? h(VIcon, {
-        icon: props.icon,
-        size: props.size ?? 20,
-        class: "shrink-0",
-      })
-    : h(props.icon, { class: "size-5 shrink-0 scale-90" });
-};
 
 const playerSubItems = computed<ContextMenuItem[]>(() => {
   const sortedPlayers = Object.values(api.players)
@@ -221,10 +173,17 @@ let usingKeyboard = false;
 
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
+    if (evt.trigger && evt.trigger === closedByTrigger) {
+      closedByTrigger = undefined;
+      return;
+    }
     items.value = evt.items;
     posX.value = evt.posX || 0;
     posY.value = evt.posY || 0;
     showPlayMenuHeader.value = evt.showPlayMenuHeader || false;
+    trigger.value = evt.trigger;
+    inPlaceSubmenus.value = evt.inPlaceSubmenus === true;
+    openedSubmenus.value = [];
     nextTick(() => {
       if (!show.value) {
         dialogActiveBeforeOpen = store.dialogActive;
@@ -271,8 +230,12 @@ const onCloseAutoFocus = function (event: Event) {
 };
 
 function closeOnOutsidePointer(event: PointerEvent) {
+  closedByTrigger = undefined;
   if (!show.value) return;
   const target = event.target;
+  if (target instanceof Node && trigger.value?.contains(target)) {
+    closedByTrigger = trigger.value;
+  }
   // Submenu popouts (and any Select a menu row may host) render outside
   // [data-item-context-menu]; touching one to scroll it must not read as an
   // outside press and close the menu.
@@ -302,6 +265,28 @@ function markKeyboardInteraction() {
 
 function markPointerInteraction() {
   usingKeyboard = false;
+}
+
+function openSubmenu(evt: Event, menuItem: ContextMenuItem) {
+  evt.preventDefault();
+  openedSubmenus.value = [...openedSubmenus.value, menuItem];
+  focusFirstEntry();
+}
+
+function closeSubmenu(evt: Event) {
+  evt.preventDefault();
+  openedSubmenus.value = openedSubmenus.value.slice(0, -1);
+  focusFirstEntry();
+}
+
+// the row that held focus is gone once the entries are replaced
+function focusFirstEntry() {
+  if (!usingKeyboard) return;
+  nextTick(() => {
+    document
+      .querySelector<HTMLElement>("[data-item-context-menu] [role='menuitem']")
+      ?.focus();
+  });
 }
 
 const onSelect = function (evt: Event, menuItem: ContextMenuItem) {

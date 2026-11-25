@@ -1998,6 +1998,10 @@
     "link_to_genre_description": "Select a genre to link the selected items to.",
     "link_to_genre_success": "Successfully linked to genre",
     "link_to_genre_failed": "Failed to link to genre",
+    "player_menu": {
+        "playback": "Playback",
+        "display": "Display"
+    },
     "player_options": {
         "open": "Open player options",
         "settable": "Settable player options for player {0}",

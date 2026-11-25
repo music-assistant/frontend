@@ -5,6 +5,7 @@ import {
   getPlayerSetupMenuItem,
 } from "@/helpers/player_menu_items";
 import {
+  PlaybackState,
   PLAYER_CONTROL_NONE,
   PlayerFeature,
   PlayerType,
@@ -105,7 +106,7 @@ vi.mock("@/helpers/player_group_playback", () => ({
 }));
 
 vi.mock("@/helpers/sleep_timer", () => ({
-  getSleepTimerMenuItem: vi.fn(),
+  getSleepTimerMenuItem: () => ({ label: "sleep_timer" }),
   sleepTimerActive: () => false,
 }));
 
@@ -156,6 +157,17 @@ function makePlayer(overrides: Partial<Player> = {}): Player {
     ...overrides,
   } as Player;
 }
+
+/** Every entry of the menu, its submenus' entries included, in menu order. */
+function allEntries(menuItems: ContextMenuItem[]): ContextMenuItem[] {
+  return menuItems.flatMap((item) => [
+    item,
+    ...allEntries(item.subItems ?? []),
+  ]);
+}
+
+const menuEntries = (...args: Parameters<typeof getPlayerMenuItems>) =>
+  allEntries(getPlayerMenuItems(...args));
 
 function makeQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
   return playerQueue({ queue_id: "kitchen", ...overrides });
@@ -238,7 +250,7 @@ describe("getPlayerMenuItems power", () => {
       power_control: "power",
       powered: true,
     });
-    const powerItem = getPlayerMenuItems(player, undefined, {
+    const powerItem = menuEntries(player, undefined, {
       context: "queue",
     }).find((item) => item.label === "power_off_player");
 
@@ -249,11 +261,130 @@ describe("getPlayerMenuItems power", () => {
 
   it("leaves power to the player card's own button", () => {
     const player = makePlayer({ power_control: "power", powered: true });
-    const labels = getPlayerMenuItems(player, undefined, {
+    const labels = menuEntries(player, undefined, {
       context: "player",
     }).map((item) => item.label);
 
     expect(labels).not.toContain("power_off_player");
+  });
+});
+
+describe("getPlayerMenuItems sound mode", () => {
+  it.each(["queue", "player"] as const)(
+    "lists sound modes in the %s menu",
+    (context) => {
+      const player = makePlayer({
+        sound_mode_list: [
+          { id: "movie", name: "Movie", passive: false },
+          { id: "music", name: "Music", passive: false },
+        ],
+        active_sound_mode: "music",
+      });
+      const labels = menuEntries(player, undefined, { context }).map(
+        (item) => item.label,
+      );
+
+      expect(labels).toContain("select_sound_mode");
+    },
+  );
+});
+
+describe("getPlayerMenuItems structure", () => {
+  // a player and queue that every entry applies to
+  const fullPlayer = () =>
+    makePlayer({
+      power_control: "power",
+      powered: true,
+      playback_state: PlaybackState.PLAYING,
+      source_list: [
+        playerSource({ id: "kitchen", name: "Kitchen", passive: false }),
+        playerSource({ id: "line_in", name: "Line-in", passive: false }),
+      ],
+      active_source: "kitchen",
+      sound_mode_list: [
+        { id: "movie", name: "Movie", passive: false },
+        { id: "music", name: "Music", passive: false },
+      ],
+      active_sound_mode: "music",
+    });
+
+  beforeEach(() => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    aiRadioAvailableRef.value = true;
+    announcementAvailableRef.value = true;
+    hostsRef.value = [makeHost()];
+  });
+
+  it("groups the fullscreen menu", () => {
+    const menuItems = getPlayerMenuItems(
+      fullPlayer(),
+      makeQueue({ active: true, items: 3 }),
+      {
+        context: "queue",
+        playbackItems: [{ label: "change_playback_speed" }],
+        displayItems: [{ label: "settings.show_waveform.label" }],
+        extraItems: [{ label: "share.open_preview" }],
+      },
+    );
+    const subLabels = (label: string) =>
+      menuItems
+        .find((item) => item.label === label)
+        ?.subItems?.map((item) => item.label);
+
+    expect(menuItems.map((item) => item.label)).toEqual([
+      "power_off_player",
+      "play_announcement",
+      "share.open_preview",
+      "player_menu.playback",
+      "queue",
+      "sleep_timer",
+      "select_source",
+      "select_sound_mode",
+      "player_menu.display",
+      "open_settings",
+    ]);
+    expect(subLabels("player_menu.playback")).toEqual([
+      "stop_playback",
+      "shuffle_enable",
+      "select_repeat_mode",
+      "change_playback_speed",
+    ]);
+    expect(subLabels("queue")).toEqual([
+      "transfer_queue",
+      "queue_clear",
+      "add_queue_to_playlist",
+      "ai_dj",
+    ]);
+    expect(subLabels("player_menu.display")).toEqual([
+      "settings.show_waveform.label",
+      "settings.visualizer_enabled.label",
+    ]);
+  });
+
+  it("keeps the player menu to the player's own entries", () => {
+    const menuItems = getPlayerMenuItems(
+      fullPlayer(),
+      makeQueue({ active: true, items: 3 }),
+      { context: "player" },
+    );
+
+    expect(menuItems.map((item) => item.label)).toEqual([
+      "play_announcement",
+      "transfer_queue",
+      "select_source",
+      "select_sound_mode",
+      "open_settings",
+    ]);
+  });
+
+  it("leaves out a group with no entries", () => {
+    const menuItems = getPlayerMenuItems(makePlayer(), undefined, {
+      context: "queue",
+    });
+    const labels = menuItems.map((item) => item.label);
+
+    expect(labels).not.toContain("player_menu.playback");
+    expect(labels).not.toContain("queue");
   });
 });
 
@@ -280,7 +411,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
     "offers one way into the settings from the %s menu",
     (context) => {
       // a player that used to grow a shortcut for every one of these
-      const menuItems = getPlayerMenuItems(
+      const menuItems = menuEntries(
         makePlayer({
           has_setup_flow: true,
           options: [{ key: "eq", name: "EQ" } as PlayerOption],
@@ -300,7 +431,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
   );
 
   it("opens the player settings page from the player menu", () => {
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "player",
     });
     const settingsItem = openSettingsItem(menuItems);
@@ -314,15 +445,18 @@ describe("getPlayerMenuItems settings shortcuts", () => {
   });
 
   it("picks a settings page from the fullscreen player", () => {
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
-      context: "queue",
-    });
+    const menuItems = menuEntries(
+      makePlayer({ options: [{ key: "eq", name: "EQ" } as PlayerOption] }),
+      makeQueue(),
+      { context: "queue" },
+    );
     const subItems = openSettingsItem(menuItems)?.subItems ?? [];
 
     expect(subItems.map((item) => item.label)).toEqual([
       "settings.queue_settings",
       "settings.player_settings",
       "settings.category.dsp",
+      "settings.category.options",
     ]);
     for (const subItem of subItems) subItem.action?.();
 
@@ -330,13 +464,14 @@ describe("getPlayerMenuItems settings shortcuts", () => {
       "/settings/editqueue/kitchen",
       "/settings/editplayer/kitchen",
       "/settings/editplayer/kitchen/dsp",
+      "/settings/editplayer/kitchen/options",
     ]);
     expect(storeMock.showFullscreenPlayer).toBe(false);
     expect(storeMock.showPlayersMenu).toBe(false);
   });
 
   it("leaves out the DSP settings for a group player", () => {
-    const menuItems = getPlayerMenuItems(
+    const menuItems = menuEntries(
       makePlayer({ type: PlayerType.GROUP }),
       makeQueue(),
       { context: "queue" },
@@ -348,7 +483,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
   });
 
   it("leaves out the queue settings while playing from another source", () => {
-    const menuItems = getPlayerMenuItems(makePlayer(), undefined, {
+    const menuItems = menuEntries(makePlayer(), undefined, {
       context: "queue",
     });
 
@@ -360,7 +495,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
   it("keeps the settings out of a member's menu", () => {
     hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.user));
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "player",
     });
 
@@ -372,7 +507,7 @@ describe("getPlayerMenuItems settings shortcuts", () => {
       scopeChecker([...BUILTIN_ROLE_SCOPES.guest, Scope.CONFIG_PLAYERS_WRITE]),
     );
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "player",
     });
 
@@ -386,7 +521,7 @@ describe("getPlayerMenuItems add queue to playlist", () => {
   });
 
   const labels = () =>
-    getPlayerMenuItems(makePlayer(), makeQueue({ items: 3 }), {
+    menuEntries(makePlayer(), makeQueue({ items: 3 }), {
       context: "queue",
     }).map((item) => item.label);
 
@@ -408,7 +543,7 @@ describe("getPlayerMenuItems play announcement", () => {
   });
 
   it("omits the entry when no tts engine is set up", () => {
-    const menuItems = getPlayerMenuItems(makePlayer(), undefined, {
+    const menuItems = menuEntries(makePlayer(), undefined, {
       context: "player",
     });
 
@@ -420,7 +555,7 @@ describe("getPlayerMenuItems play announcement", () => {
   it("omits the entry for a protocol player", () => {
     announcementAvailableRef.value = true;
 
-    const menuItems = getPlayerMenuItems(
+    const menuItems = menuEntries(
       makePlayer({ type: PlayerType.PROTOCOL }),
       undefined,
       { context: "player" },
@@ -436,7 +571,7 @@ describe("getPlayerMenuItems play announcement", () => {
     // PlayerFeature.PLAY_ANNOUNCEMENT
     announcementAvailableRef.value = true;
 
-    const menuItems = getPlayerMenuItems(
+    const menuItems = menuEntries(
       makePlayer({ supported_features: [] }),
       undefined,
       { context: "player" },
@@ -450,7 +585,7 @@ describe("getPlayerMenuItems play announcement", () => {
     const player = makePlayer();
 
     for (const context of ["player", "queue"] as const) {
-      const menuItems = getPlayerMenuItems(player, makeQueue(), { context });
+      const menuItems = menuEntries(player, makeQueue(), { context });
       const announcement = menuItems.find(
         (item) => item.label === "play_announcement",
       );
@@ -473,7 +608,7 @@ describe("getPlayerMenuItems ai dj", () => {
   it("omits the ai_dj entry without an available ai_radio provider", () => {
     hostsRef.value = [makeHost()];
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
 
@@ -485,7 +620,7 @@ describe("getPlayerMenuItems ai dj", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost()];
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
 
@@ -500,7 +635,7 @@ describe("getPlayerMenuItems ai dj", () => {
     ];
     queueDjStatusRef.value = { kitchen: djEntry("host-1") };
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
     const aiDj = menuItems.find((item) => item.label === "ai_dj");
@@ -526,7 +661,7 @@ describe("getPlayerMenuItems ai dj", () => {
     hostsRef.value = [makeHost()];
     queueDjStatusRef.value = {};
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
     const aiDj = menuItems.find((item) => item.label === "ai_dj");
@@ -541,7 +676,7 @@ describe("getPlayerMenuItems ai dj", () => {
     hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
     queueDjStatusRef.value = { kitchen: djEntry("host-1", "show-1") };
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
     const aiDj = menuItems.find((item) => item.label === "ai_dj_show_on_air");
@@ -558,7 +693,7 @@ describe("getPlayerMenuItems ai dj", () => {
     hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
     queueDjStatusRef.value = { "other-queue": djEntry("host-1", "show-1") };
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
     const aiDj = menuItems.find((item) => item.label === "ai_dj");
@@ -578,7 +713,7 @@ describe("getPlayerMenuItems ai dj", () => {
     hostsRef.value = [];
     queueDjStatusRef.value = { kitchen: djEntry("deleted-host", "show-1") };
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
     const aiDj = menuItems.find(
@@ -596,7 +731,7 @@ describe("getPlayerMenuItems ai dj", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
     menuItems
@@ -612,7 +747,7 @@ describe("getPlayerMenuItems ai dj", () => {
     hostsRef.value = [makeHost({ id: "host-1" })];
     queueDjStatusRef.value = { kitchen: djEntry("host-1") };
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
     menuItems
@@ -629,7 +764,7 @@ describe("getPlayerMenuItems ai dj", () => {
     hostsRef.value = [makeHost({ id: "host-1", name: "Robo DJ" })];
     setQueueDj.mockRejectedValueOnce(new Error("Connection lost"));
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "queue",
     });
     await menuItems
@@ -644,40 +779,11 @@ describe("getPlayerMenuItems ai dj", () => {
     aiRadioAvailableRef.value = true;
     hostsRef.value = [makeHost()];
 
-    const menuItems = getPlayerMenuItems(makePlayer(), makeQueue(), {
+    const menuItems = menuEntries(makePlayer(), makeQueue(), {
       context: "player",
     });
 
     expect(menuItems.map((item) => item.label)).not.toContain("ai_dj");
-  });
-
-  it("lists ai_dj after select_source", () => {
-    aiRadioAvailableRef.value = true;
-    hostsRef.value = [makeHost()];
-    const player = makePlayer({
-      source_list: [
-        playerSource({
-          id: "kitchen",
-          name: "Kitchen",
-          passive: false,
-          can_play_pause: true,
-          can_seek: true,
-          can_next_previous: true,
-        }),
-        playerSource({ id: "line_in", name: "Line-in", passive: false }),
-      ],
-      active_source: "kitchen",
-    });
-
-    const menuItems = getPlayerMenuItems(player, makeQueue(), {
-      context: "queue",
-    });
-    const labels = menuItems.map((item) => item.label);
-
-    expect(labels.indexOf("select_source")).toBeGreaterThan(-1);
-    expect(labels.indexOf("ai_dj")).toBeGreaterThan(
-      labels.indexOf("select_source"),
-    );
   });
 });
 
@@ -702,7 +808,7 @@ describe("getPlayerMenuItems select source", () => {
       ],
     });
 
-    const selectSource = getPlayerMenuItems(player, undefined, {
+    const selectSource = menuEntries(player, undefined, {
       context: "player",
     }).find((item) => item.label === "select_source");
 
@@ -720,7 +826,7 @@ describe("visualizer menu entry", () => {
     const player = makePlayer();
     api.players = { kitchen: player } as unknown as typeof api.players;
 
-    const menuItems = getPlayerMenuItems(player, undefined, {
+    const menuItems = menuEntries(player, undefined, {
       context: "queue",
     });
 
@@ -731,7 +837,7 @@ describe("visualizer menu entry", () => {
     const player = makePlayer();
     api.players = { kitchen: player } as unknown as typeof api.players;
 
-    const menuItems = getPlayerMenuItems(player, undefined, {
+    const menuItems = menuEntries(player, undefined, {
       context: "queue",
     });
 
@@ -761,7 +867,7 @@ describe("shuffle and repeat", () => {
   }
 
   function labels(player: Player, queue?: PlayerQueue): string[] {
-    return getPlayerMenuItems(player, queue, { context: "queue" }).map(
+    return menuEntries(player, queue, { context: "queue" }).map(
       (item) => item.label,
     );
   }
@@ -771,7 +877,7 @@ describe("shuffle and repeat", () => {
     label: string,
     queue?: PlayerQueue,
   ): ContextMenuItem | undefined {
-    return getPlayerMenuItems(player, queue, { context: "queue" }).find(
+    return menuEntries(player, queue, { context: "queue" }).find(
       (item) => item.label === label,
     );
   }
@@ -996,7 +1102,7 @@ describe("transfer queue", () => {
     api.players = Object.fromEntries(
       players.map((p) => [p.player_id, p]),
     ) as unknown as typeof api.players;
-    const menuItems = getPlayerMenuItems(
+    const menuItems = menuEntries(
       makePlayer(),
       makeQueue({ active: true, items: 3 }),
       { context: "queue" },
@@ -1139,7 +1245,7 @@ describe("transfer queue", () => {
       ].map((p) => [p.player_id, p]),
     ) as unknown as typeof api.players;
     const items =
-      getPlayerMenuItems(
+      menuEntries(
         target({ player_id: "this_browser", synced_to: "kitchen" }),
         makeQueue({ queue_id: "kitchen", active: true, items: 3 }),
         { context: "queue" },

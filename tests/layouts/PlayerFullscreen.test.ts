@@ -1,4 +1,5 @@
 import { EMPTY_COLOR_PALETTE } from "@/helpers/utils";
+import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import BookmarkDialog from "@/components/BookmarkDialog.vue";
 import LyricsViewer from "@/components/LyricsViewer.vue";
 import { useLyricsOffset } from "@/composables/lyrics/useLyricsOffset";
@@ -911,11 +912,14 @@ describe("PlayerFullscreen overflow menu", () => {
     // the bus is typed per event, so the payload only takes a shape here
     const calls = emit.mock.calls as unknown as [
       string,
-      { items: { label: string }[] },
+      { items: ContextMenuItem[] },
     ][];
     const call = calls.find(([event]) => event === "contextmenu");
     if (!call) throw new Error("the overflow button opened no menu");
-    return call[1].items.map((item) => item.label);
+    // submenus included
+    const labels = (items: ContextMenuItem[]): string[] =>
+      items.flatMap((item) => [item.label, ...labels(item.subItems ?? [])]);
+    return labels(call[1].items);
   }
 
   // the playback speed is a per-item setting, so it only belongs to the

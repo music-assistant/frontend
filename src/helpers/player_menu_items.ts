@@ -27,8 +27,15 @@ import { useAudioOverlay } from "@/composables/useAudioOverlay";
 import { visualizerProviderAvailable } from "@/plugins/visualizer-relay";
 import { visualizerEnabledForPlayer } from "@/composables/visualizer/useVisualizer";
 import VisualizerMenuControl from "@/layouts/default/PlayerOSD/VisualizerMenuControl.vue";
-import { Droplet, Megaphone, Sparkles } from "@lucide/vue";
-import { h, markRaw } from "vue";
+import {
+  CirclePlay,
+  Droplet,
+  ListMusic,
+  Megaphone,
+  MonitorPlay,
+  Sparkles,
+} from "@lucide/vue";
+import { h, markRaw, type Component } from "vue";
 import { useHosts } from "@/composables/ai-radio/useHosts";
 import { authManager } from "@/plugins/auth";
 import router from "@/plugins/router";
@@ -78,48 +85,45 @@ export const getPlayerMenuItems = (
     // controls for them are currently visible (they are responsive and hidden
     // on small screens, so the overflow menu remains the fallback on mobile).
     hideShuffleRepeat?: boolean;
+    // queue context only: the fullscreen player's own entries
+    playbackItems?: ContextMenuItem[];
+    displayItems?: ContextMenuItem[];
+    // placed above the submenus
+    extraItems?: ContextMenuItem[];
   },
 ): ContextMenuItem[] => {
-  const menuItems: ContextMenuItem[] = [];
-  const isQueue = options.context === "queue";
-  const isPlayer = options.context === "player";
   const hideShuffleRepeat = options.hideShuffleRepeat === true;
+  const isActive =
+    player?.playback_state == "playing" || player?.playback_state == "paused";
 
-  // power off/on (queue menu only; the player card has a power button)
-  if (isQueue && player?.power_control != PLAYER_CONTROL_NONE) {
-    menuItems.push({
-      label: player.powered ? "power_off_player" : "power_on_player",
-      labelArgs: [],
-      action: () => {
-        return togglePlayerPower(player);
-      },
-      icon: "mdi-power",
-    });
-  }
+  const powerItem: ContextMenuItem | undefined =
+    player?.power_control != PLAYER_CONTROL_NONE
+      ? {
+          label: player.powered ? "power_off_player" : "power_on_player",
+          labelArgs: [],
+          action: () => {
+            return togglePlayerPower(player);
+          },
+          icon: "mdi-power",
+        }
+      : undefined;
 
-  // stop playback (both menus)
-  if (
-    player?.playback_state == "playing" ||
-    player?.playback_state == "paused"
-  ) {
-    menuItems.push({
-      label: "stop_playback",
-      labelArgs: [],
-      action: () => {
-        api.playerCommandStop(player.player_id);
-      },
-      icon: "mdi-stop",
-    });
-  }
+  const stopItem: ContextMenuItem | undefined = isActive
+    ? {
+        label: "stop_playback",
+        labelArgs: [],
+        action: () => {
+          api.playerCommandStop(player.player_id);
+        },
+        icon: "mdi-stop",
+      }
+    : undefined;
 
-  // sleep timer (both menus); available while playing/paused or already running
-  if (
-    player?.playback_state == "playing" ||
-    player?.playback_state == "paused" ||
-    sleepTimerActive(player)
-  ) {
-    menuItems.push(getSleepTimerMenuItem(player));
-  }
+  // available while playing/paused or already running
+  const sleepTimerItem =
+    isActive || sleepTimerActive(player)
+      ? getSleepTimerMenuItem(player)
+      : undefined;
 
   const isDynamic = playerQueue?.is_dynamic === true;
   // an external source orders its own session, so it takes these instead of the
@@ -135,12 +139,13 @@ export const getPlayerMenuItems = (
   // menu sat open, rather than let it land on whatever took the player since.
   const commandSourceId = resolveActiveSourceId(player);
 
-  // shuffle (queue menu only; hidden when the dedicated control is visible)
-  if (isQueue && (shuffleSource || orderableQueue) && !hideShuffleRepeat) {
+  // shuffle (hidden when the dedicated control is visible)
+  let shuffleItem: ContextMenuItem | undefined;
+  if ((shuffleSource || orderableQueue) && !hideShuffleRepeat) {
     const shuffleEnabled = shuffleSource
       ? shuffleSource.shuffle_enabled === true
       : orderableQueue!.shuffle_enabled;
-    menuItems.push({
+    shuffleItem = {
       label: shuffleEnabled ? "shuffle_disable" : "shuffle_enable",
       labelArgs: [],
       action: () => {
@@ -153,16 +158,17 @@ export const getPlayerMenuItems = (
         api.playerCommandShuffle(player.player_id, !enabled, commandSourceId);
       },
       icon: shuffleEnabled ? "mdi-shuffle-disabled" : "mdi-shuffle",
-    });
+    };
   }
 
-  // repeat (queue menu only; hidden when the dedicated control is visible)
-  if (isQueue && (repeatSource || orderableQueue) && !hideShuffleRepeat) {
+  // repeat (hidden when the dedicated control is visible)
+  let repeatItem: ContextMenuItem | undefined;
+  if ((repeatSource || orderableQueue) && !hideShuffleRepeat) {
     // a source that has not reported its mode reads as off
     const repeatMode = repeatSource
       ? (repeatSource.repeat_mode ?? RepeatMode.OFF)
       : orderableQueue!.repeat_mode;
-    menuItems.push({
+    repeatItem = {
       label: "select_repeat_mode",
       labelArgs: [],
       // keys spelled out so they stay greppable for the translation sync
@@ -181,42 +187,45 @@ export const getPlayerMenuItems = (
         selected: repeatMode == mode,
       })),
       icon: "mdi-repeat",
-    });
+    };
   }
 
-  // audio overlay (queue menu only; when a provider offering sound effects is
-  // available). Opens the overlay dialog to pick a sound and set the volume;
-  // a check marks it as active.
+  // audio overlay (when a provider offering sound effects is available).
+  // Opens the overlay dialog to pick a sound and set the volume; a check
+  // marks it as active.
   const { overlayAvailable, openOverlayDialog } = useAudioOverlay();
-  if (isQueue && playerQueue && overlayAvailable.value) {
-    menuItems.push({
-      label: "audio_overlay",
-      labelArgs: [],
-      action: () => {
-        openOverlayDialog(playerQueue.queue_id);
-      },
-      icon: "mdi-waveform",
-      selected: playerQueue.overlay_enabled,
-    });
-  }
+  const overlayItem: ContextMenuItem | undefined =
+    playerQueue && overlayAvailable.value
+      ? {
+          label: "audio_overlay",
+          labelArgs: [],
+          action: () => {
+            openOverlayDialog(playerQueue.queue_id);
+          },
+          icon: "mdi-waveform",
+          selected: playerQueue.overlay_enabled,
+        }
+      : undefined;
 
-  // play announcement (both menus; the server announces on any player, natively or
+  // play announcement (the server announces on any player, natively or
   // through its own fallback, so this only needs a TTS engine to speak the message)
+  let announcementItem: ContextMenuItem | undefined;
   if (player.type !== PlayerType.PROTOCOL) {
     const { announcementAvailable, openAnnouncementDialog } = useAnnouncement();
     if (announcementAvailable.value) {
-      menuItems.push({
+      announcementItem = {
         label: "play_announcement",
         labelArgs: [],
         action: () => {
           openAnnouncementDialog(player.player_id);
         },
         icon: markRaw(Megaphone),
-      });
+      };
     }
   }
 
-  // transfer queue (both menus; only when the queue is the active source)
+  // transfer queue (only when the queue is the active source)
+  let transferItem: ContextMenuItem | undefined;
   if (playerQueue?.active && playerQueue.items > 0) {
     const targets = Object.values(api.players)
       .filter(
@@ -239,7 +248,7 @@ export const getPlayerMenuItems = (
             { sensitivity: "base" },
           ),
       );
-    menuItems.push({
+    transferItem = {
       label: "transfer_queue",
       icon: "mdi-swap-horizontal",
       subItems: targets.map((p, index) => {
@@ -269,88 +278,89 @@ export const getPlayerMenuItems = (
           },
         };
       }),
-    });
+    };
   }
 
-  // clear queue (both menus; only when the queue has items)
-  if (playerQueue?.items && playerQueue.items > 0) {
-    menuItems.push({
-      label: "queue_clear",
-      labelArgs: [],
-      action: () => {
-        api.queueCommandClear(playerQueue!.queue_id);
-      },
-      icon: "mdi-cancel",
-    });
-  }
+  // clear queue (only when the queue has items)
+  const clearItem: ContextMenuItem | undefined =
+    playerQueue?.items && playerQueue.items > 0
+      ? {
+          label: "queue_clear",
+          labelArgs: [],
+          action: () => {
+            api.queueCommandClear(playerQueue!.queue_id);
+          },
+          icon: "mdi-cancel",
+        }
+      : undefined;
 
-  // add queue to a new or existing playlist (queue menu only)
-  if (
-    isQueue &&
+  // add queue to a new or existing playlist
+  const addToPlaylistItem: ContextMenuItem | undefined =
     playerQueue?.items &&
     playerQueue.items > 0 &&
     authManager.hasScope(Scope.LIBRARY_WRITE)
-  ) {
-    menuItems.push({
-      label: "add_queue_to_playlist",
-      labelArgs: [],
-      action: () => {
-        eventbus.emit("playlistdialog", {
-          items: [],
-          queueId: playerQueue!.queue_id,
-        });
-      },
-      icon: "mdi-playlist-plus",
-    });
-  }
+      ? {
+          label: "add_queue_to_playlist",
+          labelArgs: [],
+          action: () => {
+            eventbus.emit("playlistdialog", {
+              items: [],
+              queueId: playerQueue!.queue_id,
+            });
+          },
+          icon: "mdi-playlist-plus",
+        }
+      : undefined;
 
-  // select source (both menus; only when more than one source is selectable)
+  // select source (only when more than one source is selectable)
   const selectableSources = player.source_list.filter(
     (s) => !s.passive || s.id == player.active_source,
   );
-  if (!player.synced_to && selectableSources.length > 1) {
-    menuItems.push({
-      label: "select_source",
-      labelArgs: [],
-      icon: "mdi-import",
-      subItems: selectableSources
-        .map((s) => {
-          return {
-            label: getSourceLabel(player, s),
-            labelArgs: [],
-            disabled: s.id == player.active_source,
-            selected: s.id == player.active_source,
-            action: () => {
-              api.playerCommandGroupSelectSource(player.player_id, s.id);
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
-    });
-  }
+  const sourceItem: ContextMenuItem | undefined =
+    !player.synced_to && selectableSources.length > 1
+      ? {
+          label: "select_source",
+          labelArgs: [],
+          icon: "mdi-import",
+          subItems: selectableSources
+            .map((s) => {
+              return {
+                label: getSourceLabel(player, s),
+                labelArgs: [],
+                disabled: s.id == player.active_source,
+                selected: s.id == player.active_source,
+                action: () => {
+                  api.playerCommandGroupSelectSource(player.player_id, s.id);
+                },
+              };
+            })
+            .sort((a, b) =>
+              a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
+            ),
+        }
+      : undefined;
 
-  // Queue-only AI DJ entry, built from useHosts'/useShows' prefetched caches.
+  // AI DJ entry, built from useHosts'/useShows' prefetched caches.
   // A queue runs exactly one host at a time, so while a show is on air its
   // host is that host: render it as a single disabled row rather than the
   // hosts submenu, which would otherwise show the (now irrelevant) sticky
   // queue-DJ assignment.
+  let aiDjItem: ContextMenuItem | undefined;
   const { hosts, queueDjStatus, aiRadioAvailable } = useHosts();
-  if (isQueue && playerQueue && aiRadioAvailable.value && canUseQueueDj()) {
+  if (playerQueue && aiRadioAvailable.value && canUseQueueDj()) {
     const queueId = playerQueue.queue_id;
     const queueDj = queueDjStatus.value[queueId];
     if (queueDj?.station_id) {
       const host = hosts.value.find((h) => h.id === queueDj.host_id);
-      menuItems.push({
+      aiDjItem = {
         label: host ? "ai_dj_show_on_air" : "ai_dj_show_on_air_unknown",
         labelArgs: host ? [host.name] : [],
         icon: markRaw(Sparkles),
         disabled: true,
-      });
+      };
     } else {
       const activeHostId = queueDj?.host_id;
-      menuItems.push({
+      aiDjItem = {
         label: "ai_dj",
         labelArgs: [],
         icon: markRaw(Sparkles),
@@ -368,102 +378,165 @@ export const getPlayerMenuItems = (
             action: () => assignQueueDj(queueId, null),
           },
         ],
-      });
+      };
     }
   }
 
-  // select sound mode (player menu only; only when more than one is selectable)
+  // select sound mode (only when more than one is selectable)
   const selectableSoundModes = player.sound_mode_list.filter(
     (s) => !s.passive || s.id == player.active_sound_mode,
   );
-  if (isPlayer && selectableSoundModes.length > 1) {
-    menuItems.push({
-      label: "select_sound_mode",
-      labelArgs: [],
-      icon: "mdi-music-note-eighth",
-      subItems: selectableSoundModes
-        .map((s) => {
-          return {
-            label: s.name,
+  const soundModeItem: ContextMenuItem | undefined =
+    selectableSoundModes.length > 1
+      ? {
+          label: "select_sound_mode",
+          labelArgs: [],
+          icon: "mdi-music-note-eighth",
+          subItems: selectableSoundModes
+            .map((s) => {
+              return {
+                label: s.name,
+                labelArgs: [],
+                disabled: s.id === player.active_sound_mode,
+                selected: s.id === player.active_sound_mode,
+                action: () => {
+                  api.playerCommandSelectSoundMode(player.player_id, s.id);
+                },
+              };
+            })
+            .sort((a, b) =>
+              a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
+            ),
+        }
+      : undefined;
+
+  // MilkDrop visualizer popout; the droplet fills while enabled for this
+  // player (live, since the enabled preference is reactive store state)
+  const visualizerItem: ContextMenuItem | undefined =
+    visualizerProviderAvailable()
+      ? {
+          label: "settings.visualizer_enabled.label",
+          icon: markRaw(() =>
+            h(Droplet, {
+              fill: visualizerEnabledForPlayer(player.player_id)
+                ? "currentColor"
+                : "none",
+            }),
+          ),
+          subComponent: markRaw(VisualizerMenuControl),
+          componentProps: { playerId: player.player_id },
+        }
+      : undefined;
+
+  // open the settings (for a role that changes player settings)
+  const canOpenSettings = authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE);
+  const openSettings = (path: string) => () => {
+    store.showFullscreenPlayer = false;
+    store.showPlayersMenu = false;
+    router.push(path);
+  };
+
+  if (options.context === "player") {
+    // the player settings page links on to the other sections from there
+    return presentItems([
+      announcementItem,
+      transferItem,
+      sourceItem,
+      soundModeItem,
+      canOpenSettings
+        ? {
+            label: "open_settings",
             labelArgs: [],
-            disabled: s.id === player.active_sound_mode,
-            selected: s.id === player.active_sound_mode,
-            action: () => {
-              api.playerCommandSelectSoundMode(player.player_id, s.id);
-            },
-          };
-        })
-        .sort((a, b) =>
-          a.label.toUpperCase() > b.label?.toUpperCase() ? 1 : -1,
-        ),
-    });
+            action: openSettings(`/settings/editplayer/${player.player_id}`),
+            icon: "mdi-cog-outline",
+          }
+        : undefined,
+    ]);
   }
 
-  // MilkDrop visualizer popout (both menus), kept just above the settings
-  // entry; the droplet fills while enabled for this player (live, since the
-  // enabled preference is reactive store state)
-  if (visualizerProviderAvailable()) {
-    menuItems.push({
-      label: "settings.visualizer_enabled.label",
-      icon: markRaw(() =>
-        h(Droplet, {
-          fill: visualizerEnabledForPlayer(player.player_id)
-            ? "currentColor"
-            : "none",
-        }),
-      ),
-      subComponent: markRaw(VisualizerMenuControl),
-      componentProps: { playerId: player.player_id },
-    });
-  }
-
-  // open the settings (both menus, for a role that changes player settings)
-  if (authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)) {
-    const openSettings = (path: string) => () => {
-      store.showFullscreenPlayer = false;
-      store.showPlayersMenu = false;
-      router.push(path);
-    };
-    if (isPlayer) {
-      // the player settings page links on to the other sections from there
-      menuItems.push({
-        label: "open_settings",
-        labelArgs: [],
-        action: openSettings(`/settings/editplayer/${player.player_id}`),
-        icon: "mdi-cog-outline",
-      });
-    } else {
-      const subItems: ContextMenuItem[] = [];
-      if (playerQueue) {
-        subItems.push({
-          label: "settings.queue_settings",
-          labelArgs: [],
-          action: openSettings(`/settings/editqueue/${playerQueue.queue_id}`),
-        });
-      }
+  let settingsItem: ContextMenuItem | undefined;
+  if (canOpenSettings) {
+    const subItems: ContextMenuItem[] = [];
+    if (playerQueue) {
       subItems.push({
-        label: "settings.player_settings",
+        label: "settings.queue_settings",
         labelArgs: [],
-        action: openSettings(`/settings/editplayer/${player.player_id}`),
-      });
-      if (player.type !== PlayerType.GROUP) {
-        subItems.push({
-          label: "settings.category.dsp",
-          labelArgs: [],
-          action: openSettings(`/settings/editplayer/${player.player_id}/dsp`),
-        });
-      }
-      menuItems.push({
-        label: "open_settings",
-        labelArgs: [],
-        icon: "mdi-cog-outline",
-        subItems,
+        action: openSettings(`/settings/editqueue/${playerQueue.queue_id}`),
       });
     }
+    subItems.push({
+      label: "settings.player_settings",
+      labelArgs: [],
+      action: openSettings(`/settings/editplayer/${player.player_id}`),
+    });
+    if (player.type !== PlayerType.GROUP) {
+      subItems.push({
+        label: "settings.category.dsp",
+        labelArgs: [],
+        action: openSettings(`/settings/editplayer/${player.player_id}/dsp`),
+      });
+    }
+    if (player.options.length > 0) {
+      subItems.push({
+        label: "settings.category.options",
+        labelArgs: [],
+        action: openSettings(
+          `/settings/editplayer/${player.player_id}/options`,
+        ),
+      });
+    }
+    settingsItem = {
+      label: "open_settings",
+      labelArgs: [],
+      icon: "mdi-cog-outline",
+      subItems,
+    };
   }
 
-  return menuItems;
+  return presentItems([
+    powerItem,
+    announcementItem,
+    ...(options.extraItems ?? []),
+    groupItem(
+      "player_menu.playback",
+      markRaw(CirclePlay),
+      presentItems([
+        stopItem,
+        shuffleItem,
+        repeatItem,
+        ...(options.playbackItems ?? []),
+        overlayItem,
+      ]),
+    ),
+    groupItem(
+      "queue",
+      markRaw(ListMusic),
+      presentItems([transferItem, clearItem, addToPlaylistItem, aiDjItem]),
+    ),
+    sleepTimerItem,
+    sourceItem,
+    soundModeItem,
+    groupItem(
+      "player_menu.display",
+      markRaw(MonitorPlay),
+      presentItems([...(options.displayItems ?? []), visualizerItem]),
+    ),
+    settingsItem,
+  ]);
 };
+
+const presentItems = (
+  items: (ContextMenuItem | undefined)[],
+): ContextMenuItem[] =>
+  items.filter((item): item is ContextMenuItem => item !== undefined);
+
+/** A submenu of the given entries, left out when there are none. */
+const groupItem = (
+  label: string,
+  icon: Component,
+  subItems: ContextMenuItem[],
+): ContextMenuItem | undefined =>
+  subItems.length > 0 ? { label, labelArgs: [], icon, subItems } : undefined;
 
 /** Whether the player is (or streams to) the web player this tab plays audio on. */
 function playsInThisTab(
