@@ -419,15 +419,6 @@ export const getPlayerMenuItems = (
           action: openSettings(`/settings/editplayer/${player.player_id}/dsp`),
         });
       }
-      if (player.options.length > 0) {
-        subItems.push({
-          label: "settings.category.options",
-          labelArgs: [],
-          action: openSettings(
-            `/settings/editplayer/${player.player_id}/options`,
-          ),
-        });
-      }
       menuItems.push({
         label: "open_settings",
         labelArgs: [],
