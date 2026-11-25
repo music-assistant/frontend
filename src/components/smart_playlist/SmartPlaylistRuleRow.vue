@@ -5,7 +5,7 @@
       invalid ? 'border-destructive ring-1 ring-destructive/40' : '',
     ]"
   >
-    <div class="flex min-w-0 items-center gap-2">
+    <div class="flex min-w-0 flex-wrap items-center gap-2">
       <component
         :is="fieldIcon(rule.field)"
         class="h-3.5 w-3.5 shrink-0 text-muted-foreground"
@@ -15,7 +15,10 @@
         @update:model-value="(v) => emit('change-field', v as RuleField)"
       >
         <SelectTrigger
-          class="h-7 w-[110px] shrink-0 text-xs font-medium border-0 bg-transparent px-2 shadow-none hover:bg-accent"
+          :class="[
+            'h-7 shrink-0 text-xs font-medium border-0 bg-transparent px-2 shadow-none hover:bg-accent',
+            rule.field === 'track_year' ? 'w-[160px]' : 'w-[110px]',
+          ]"
         >
           <SelectValue />
         </SelectTrigger>
@@ -44,7 +47,8 @@
       >
         <SelectTrigger
           :class="[
-            'h-7 w-[110px] shrink-0 text-xs border-0 bg-transparent px-2 shadow-none',
+            'h-7 shrink-0 text-xs border-0 bg-transparent px-2 shadow-none',
+            rule.field === 'track_year' ? 'w-[90px]' : 'w-[110px]',
             hasFixedOperator ? 'cursor-default opacity-70' : 'hover:bg-accent',
           ]"
         >
@@ -53,7 +57,9 @@
         <SelectContent>
           <SelectItem value="is" class="text-xs">
             {{
-              rule.field === "year" || rule.field === "duration"
+              rule.field === "year" ||
+              rule.field === "track_year" ||
+              rule.field === "duration"
                 ? $t("smart_playlist.op_between")
                 : $t("smart_playlist.op_is")
             }}
@@ -120,10 +126,12 @@
         </SelectContent>
       </Select>
 
-      <template v-else-if="rule.field === 'year'">
+      <template
+        v-else-if="rule.field === 'year' || rule.field === 'track_year'"
+      >
         <NumberField
           :model-value="rule.yearFrom"
-          class="w-[80px]"
+          :class="rule.field === 'track_year' ? 'w-[72px]' : 'w-[80px]'"
           :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
           @update:model-value="
             (v) => emit('change-year', { from: v, to: rule.yearTo })
@@ -140,7 +148,7 @@
         <span class="text-xs text-muted-foreground">–</span>
         <NumberField
           :model-value="rule.yearTo"
-          class="w-[80px]"
+          :class="rule.field === 'track_year' ? 'w-[72px]' : 'w-[80px]'"
           :format-options="{ useGrouping: false, maximumFractionDigits: 0 }"
           @update:model-value="
             (v) => emit('change-year', { from: rule.yearFrom, to: v })
@@ -317,7 +325,7 @@ const emit = defineEmits<{
 
 // these fields only take "is" (between for a range), so their operator cannot be changed
 const hasFixedOperator = computed(() =>
-  ["year", "duration", "folder"].includes(props.rule.field),
+  ["year", "track_year", "duration", "folder"].includes(props.rule.field),
 );
 
 const fieldOptions = computed(() => {
@@ -330,6 +338,7 @@ const fieldOptions = computed(() => {
     { value: "favorite", label: $t("smart_playlist.field_favorite") },
     { value: "explicit", label: $t("smart_playlist.field_explicit") },
     { value: "year", label: $t("smart_playlist.field_year") },
+    { value: "track_year", label: $t("smart_playlist.field_track_year") },
     { value: "duration", label: $t("smart_playlist.field_duration") },
     { value: "last_played", label: $t("smart_playlist.field_last_played") },
   ];

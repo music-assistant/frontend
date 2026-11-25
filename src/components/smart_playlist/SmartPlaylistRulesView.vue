@@ -315,6 +315,23 @@ const ruleRows = computed<RuleViewRow[]>(() => {
     });
   }
 
+  const trackFrom = r.track_year_from;
+  const trackTo = r.track_year_to;
+  if (trackFrom != null || trackTo != null) {
+    let value: string;
+    if (trackFrom != null && trackTo != null)
+      value = `${trackFrom} – ${trackTo}`;
+    else if (trackFrom != null) value = `≥ ${trackFrom}`;
+    else value = `≤ ${trackTo}`;
+    rows.push({
+      key: "track-year",
+      icon: fieldIcon("track_year"),
+      label: $t("smart_playlist.field_track_year"),
+      exclude: false,
+      value,
+    });
+  }
+
   return rows;
 });
 </script>

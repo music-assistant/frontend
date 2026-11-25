@@ -23,6 +23,7 @@ export function fieldIcon(field: RuleField): Component {
     .with("folder", () => Folder)
     .with("favorite", () => Heart)
     .with("year", () => CalendarRange)
+    .with("track_year", () => CalendarRange)
     .with("explicit", () => ExplicitIcon)
     .with("duration", () => Timer)
     .with("last_played", () => History)

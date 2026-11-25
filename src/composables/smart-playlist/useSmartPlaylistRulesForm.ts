@@ -21,6 +21,7 @@ export type RuleField =
   | "favorite"
   | "explicit"
   | "year"
+  | "track_year"
   | "duration"
   | "last_played";
 
@@ -138,8 +139,8 @@ export function useSmartPlaylistRulesForm(
 
   function addRule(field: RuleField) {
     const list = rules.value;
-    if (field === "year") {
-      const row = newRule("year", "is");
+    if (field === "year" || field === "track_year") {
+      const row = newRule(field, "is");
       row.yearFrom = undefined;
       row.yearTo = undefined;
       list.push(row);
@@ -171,6 +172,7 @@ export function useSmartPlaylistRulesForm(
       field === "favorite" ||
       field === "explicit" ||
       field === "year" ||
+      field === "track_year" ||
       field === "duration" ||
       field === "last_played"
     ) {
@@ -328,6 +330,12 @@ export function useSmartPlaylistRulesForm(
       const row = newRule("year", "is");
       row.yearFrom = yearFrom;
       row.yearTo = yearTo;
+      fresh.push(row);
+    }
+    if (initial.track_year_from != null || initial.track_year_to != null) {
+      const row = newRule("track_year", "is");
+      row.yearFrom = initial.track_year_from ?? undefined;
+      row.yearTo = initial.track_year_to ?? undefined;
       fresh.push(row);
     }
 
@@ -495,6 +503,7 @@ export function useSmartPlaylistRulesForm(
     const albumTypeInclude = pickRuleValues("album_type", "is");
     const albumTypeExclude = pickRuleValues("album_type", "is_not");
     const yr = yearRule();
+    const trackYear = rules.value.find((r) => r.field === "track_year");
     const fav = favoriteRule();
     const explRule = explicitRule();
     const explicit =
@@ -535,6 +544,8 @@ export function useSmartPlaylistRulesForm(
       limit: DEFAULT_LIMIT,
       year_from: yr?.yearFrom ?? undefined,
       year_to: yr?.yearTo ?? undefined,
+      track_year_from: trackYear?.yearFrom ?? undefined,
+      track_year_to: trackYear?.yearTo ?? undefined,
       album_types: albumTypeInclude
         .map((v) => ALBUM_TYPE_ID_TO_VALUE[v.id as number])
         .filter((x): x is string => !!x),
@@ -592,6 +603,7 @@ export function useSmartPlaylistRulesForm(
           "favorite",
           "explicit",
           "year",
+          "track_year",
           "duration",
           "last_played",
         ] as RuleField[]
@@ -607,6 +619,7 @@ export function useSmartPlaylistRulesForm(
         "favorite",
         "explicit",
         "year",
+        "track_year",
         "duration",
         "last_played",
       ] as RuleField[]
@@ -630,7 +643,7 @@ export function useSmartPlaylistRulesForm(
   const seedInvalid = ref(false);
 
   function ruleIsEmpty(r: RuleRow): boolean {
-    if (r.field === "year")
+    if (r.field === "year" || r.field === "track_year")
       return r.yearFrom === undefined && r.yearTo === undefined;
     if (r.field === "duration")
       return r.minDuration === undefined && r.maxDuration === undefined;
@@ -667,7 +680,7 @@ export function useSmartPlaylistRulesForm(
 
     for (const r of rules.value) {
       if (
-        r.field === "year" &&
+        (r.field === "year" || r.field === "track_year") &&
         r.yearFrom !== undefined &&
         r.yearTo !== undefined &&
         r.yearFrom > r.yearTo

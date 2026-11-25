@@ -44,6 +44,28 @@ const baseRules: SmartPlaylistRules = {
   limit: 100,
 };
 
+describe("track release year", () => {
+  it("round-trips the track release year independently of the album year", async () => {
+    const form = createForm({
+      ...baseRules,
+      year_from: 1990,
+      track_year_from: 1950,
+      track_year_to: 1959,
+    });
+    await flushPromises();
+    expect(form.rules.value.map((row) => row.field)).toEqual([
+      "year",
+      "track_year",
+    ]);
+    expect(form.getFinalRules()).toMatchObject({
+      year_from: 1990,
+      track_year_from: 1950,
+      track_year_to: 1959,
+    });
+    expect(form.hasChanges.value).toBe(false);
+  });
+});
+
 describe("smart playlist favorite rules", () => {
   it("keeps older unrestricted rules unrestricted", async () => {
     const form = createForm(baseRules);

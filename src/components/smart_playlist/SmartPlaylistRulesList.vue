@@ -95,7 +95,10 @@
             }}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" class="w-[160px] z-[10001]">
+        <DropdownMenuContent
+          align="start"
+          class="w-max max-w-[calc(100vw-2rem)] z-[10001]"
+        >
           <DropdownMenuItem
             v-for="field in availableFields"
             :key="field"
@@ -169,6 +172,7 @@ function fieldLabel(field: RuleField): string {
     .with("favorite", () => $t("smart_playlist.field_favorite"))
     .with("explicit", () => $t("smart_playlist.field_explicit"))
     .with("year", () => $t("smart_playlist.field_year"))
+    .with("track_year", () => $t("smart_playlist.field_track_year"))
     .with("duration", () => $t("smart_playlist.field_duration"))
     .with("last_played", () => $t("smart_playlist.field_last_played"))
     .exhaustive();
