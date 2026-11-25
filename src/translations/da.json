@@ -258,9 +258,6 @@
             "players": {
                 "name": "Afspillere"
             },
-            "remote_access": {
-                "name": "Fjernadgang"
-            },
             "streams": {
                 "name": "Streams"
             },

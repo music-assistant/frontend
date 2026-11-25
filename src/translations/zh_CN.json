@@ -275,7 +275,6 @@
             "description": "即使在大屏幕上，也强制使用移动版布局（菜单导航位于底部）。"
         },
         "players_description": "配置和管理音频输出设备",
-        "frontend_description": "自定义用户界面主题和外观",
         "profile_description": "管理个人账户设置和偏好",
         "users": "用户",
         "users_description": "管理用户帐户、角色和权限",
@@ -295,41 +294,29 @@
         "proud_part_of": "自豪地成为",
         "core_module": {
             "cache": {
-                "name": "缓存",
-                "description": "配置负责处理应用程序数据缓存的核心模块"
+                "name": "缓存"
             },
             "metadata": {
-                "name": "元数据",
-                "description": "配置核心元数据管理模块"
+                "name": "元数据"
             },
             "music": {
-                "name": "音乐",
-                "description": "核心音乐（媒体库）管理模块的配置"
+                "name": "音乐"
             },
             "players": {
-                "name": "播放器",
-                "description": "配置核心播放器管理模块"
+                "name": "播放器"
             },
             "player_queues": {
-                "name": "播放器队列",
-                "description": "配置核心播放器队列管理模块"
-            },
-            "remote_access": {
-                "name": "远程访问",
-                "description": "启用对 Music Assistant 服务器的远程访问"
+                "name": "播放器队列"
             },
             "streams": {
-                "name": "流",
-                "description": "音频流和处理引擎的配置"
+                "name": "流"
             },
             "webserver": {
-                "name": "Web服务器",
-                "description": "配置网络服务器和应用程序接口"
+                "name": "Web服务器"
             }
         },
         "remote_access": "远程访问",
         "remote_access_description": "无论身在何处，都能安全访问 Music Assistant",
-        "remote_access_title": "安全远程访问",
         "remote_access_explanation_intro": "远程访问功能让您可以从世界任何地方安全地连接到您的 Music Assistant 服务器。",
         "remote_access_explanation_ha_cloud": "为了获得最佳体验和可靠性，需要订阅 Home Assistant Cloud。",
         "remote_access_feature_webrtc": "基于 WebRTC 技术的点对点连接",
@@ -366,7 +353,6 @@
         "remote_access_protocol_basic": "使用公共 STUN 服务器的 WebRTC（在复杂的网络设置中可能无法使用）。",
         "remote_access_protocol_optimized": "通过 Home Assistant Cloud 优化的 STUN\/TURN 服务器实现 WebRTC（适用于所有网络设置）。",
         "remote_access_encryption_description": "使用 DTLS-SRTP 进行端到端加密，确保数据的私密性和安全性。",
-        "frontend": "用户界面",
         "view_players": "查看播放器",
         "players_total": "{0} 个播放器{1}",
         "api_docs": "API 文档",
@@ -441,9 +427,7 @@
         "add_plugin_provider": "添加插件",
         "music_sources": "音乐源",
         "plugins": "插件",
-        "music_providers_description": "管理您的音乐流媒体服务和本地媒体库",
         "player_providers_description": "管理音频输出设备的提供程序",
-        "metadata_providers_description": "管理封面图和附加信息的元数据提供程序",
         "plugin_providers_description": "管理可扩展 Music Assistant 功能的插件",
         "restore_genres": "恢复流派",
         "genre_statistics_description": "浏览和过滤媒体库中的所有流派。可在全局范围内排除和恢复流派。",
@@ -452,21 +436,6 @@
         "add_player_providers": "增加更多播放器提供程序",
         "add_audio_analysis_provider": "添加音频分析提供程序",
         "audio_analysis_providers": "音频分析",
-        "audio_analysis_providers_description": "管理用于分析音频的提供程序",
-        "audio_analysis": "音频分析",
-        "audio_analysis_coverage": {
-            "title": "音频分析覆盖范围",
-            "col_pending": "待定",
-            "col_stale": "陈旧",
-            "unavailable": "不可用",
-            "none": "—"
-        },
-        "audio_analysis_description": "跟踪各服务提供程序的音频分析覆盖情况",
-        "audio_analysis_concurrency": {
-            "title": "后台分析并发性",
-            "description": "控制每晚后台扫描时并发分析的轨道数量。此设置位于 Streams 核心配置中。",
-            "open_settings": "打开流设置"
-        },
         "provider_status_auth_required": "需要身份验证",
         "provider_status_incompatible": "此系统不支持此功能",
         "provider_status_error": "安装失败",
@@ -480,7 +449,6 @@
         "provider_removed": "提供程序已被删除",
         "queue_settings": "队列设置",
         "audio_analysis_failures": {
-            "title": "音频分析失败",
             "description": "分析失败的曲目将在后续扫描中被跳过。删除条目即可清除失败记录，并允许其重新分析",
             "col_item": "项目",
             "col_reason": "理由",
@@ -598,7 +566,6 @@
         },
         "set_custom_name": "设置自定义名称",
         "storage": {
-            "title": "存储",
             "description": "音乐可能来自的文件夹、驱动器和网络共享",
             "load_failed": "无法加载存储",
             "music_locations_empty": "目前还没有包含音乐的文件夹、驱动器或网络共享。",
@@ -654,18 +621,14 @@
         },
         "folder_picker": {
             "selected": "已选择文件夹",
-            "none_selected": "未选择文件夹",
             "locations": "存储位置",
             "all_locations": "所有位置",
             "breadcrumb": "文件夹路径",
             "open_folder": "打开 {name}",
             "no_subfolders": "此文件夹没有子文件夹。",
             "use_folder": "使用此文件夹",
-            "folder_selected": "已选中",
             "browse_failed": "无法打开文件夹",
-            "empty_text": "目前尚无可供选择的文件夹、驱动器或网络共享。请选择“管理存储”以添加一个。",
-            "empty_text_member": "目前尚无可供选择的文件夹、驱动器或网络共享。请联系管理员添加一个。",
-            "manage": "管理存储"
+            "empty_text_member": "目前尚无可供选择的文件夹、驱动器或网络共享。请联系管理员添加一个。"
         },
         "sync_in_progress": "正在同步...",
         "library_sync": "媒体库同步",
@@ -785,7 +748,6 @@
         "toggle_subplayers": "切换子播放器",
         "restore_genre": "恢复流派",
         "remove_rule": "删除规则",
-        "change_avatar": "更换头像",
         "revoke_session": "撤销会话",
         "revoke_token": "撤销令牌",
         "user_options": "用户选项",
@@ -1029,8 +991,6 @@
         "setup_failed": "安装失败，请重试。",
         "setup_error": "安装过程中发生错误",
         "profile": "简介",
-        "account_settings": "账户设置",
-        "manage_your_profile_info": "管理个人资料信息和设置",
         "change_password": "更改密码",
         "update_your_password": "更新账户密码",
         "old_password": "当前密码",
@@ -1092,7 +1052,6 @@
         "change_role": "角色变更",
         "avatar_url": "头像网址",
         "avatar_url_hint": "输入头像图片的网址",
-        "change_avatar": "更改头像",
         "profile_updated": "个人资料已成功更新",
         "ingress_password_note": "在 Home Assistant 之外访问 Music Assistant 时，您需要此密码才能登录。",
         "copy_new_token_hint": "请复制您的访问令牌。此令牌将不会再次显示。",
@@ -1196,7 +1155,6 @@
     "narrators": "旁白",
     "queue_move_end": "移至结尾",
     "discover": "发现",
-    "save_queue_as_playlist": "将队列保存为播放列表",
     "playlist_created": "已创建播放列表",
     "open_playlist": "打开播放列表",
     "add": "添加",
@@ -1352,31 +1310,24 @@
             "create_intro": "创建一款新的问答游戏来测试你的音乐知识！",
             "loading": "加载中...",
             "no_active_game": "没有正在进行的游戏",
-            "game_removed": "游戏已下架",
             "game_ended": "游戏结束",
             "game_ended_detail": "本次问答游戏已结束。",
-            "game_no_longer_available": "该游戏已下架",
             "start": "开始测验",
-            "reveal": "显示答案",
             "phase_reveal": "显示答案",
             "next": "下一轮",
             "finish": "完成测验",
-            "reset": "重置测验",
             "new_game": "新游戏",
             "phase_waiting_for_players": "等待播放器加入",
             "phase_answers_open": "答案已公布！",
             "phase_enjoy_track": "尽情享受音乐吧！",
             "phase_finished": "测验结束",
-            "join_url_label": "加入链接",
             "players": "播放器",
             "players_count": "{0} 个播放器",
             "rounds_count": "{0} 轮次",
             "round_label": "轮次",
-            "round": "轮次",
             "enter_name": "请输入您的姓名",
             "join": "参加测验",
             "waiting_for_start": "等待主持人开始问答游戏……",
-            "waiting_for_answers": "等待答复……",
             "choose_answer": "请选择答案！",
             "answered": "答案已提交！正在等待其他人的回答……",
             "answer_was": "答案是",
@@ -1386,19 +1337,12 @@
             "ready": "准备好迎接下一轮了",
             "waiting_for_next": "等待下一轮……",
             "game_over": "游戏结束！",
-            "final_scores": "最终比分",
             "final_leaderboard": "最终排名榜",
-            "setup_placeholder": "设置表单即将推出",
             "connection_lost": "连接已断开，正在重新连接...",
             "rounds": "回合",
-            "suggestions": "答案选项",
             "answer_seconds": "答题时间（秒）",
-            "search_music": "搜索您的音乐库",
-            "searching": "正在搜索……",
-            "no_sources_found": "未找到任何歌曲或播放列表",
             "selected_music": "精选音乐",
             "pick_at_least_one_source": "至少选择一个来源",
-            "source_search_failed": "无法搜索音乐来源",
             "playlist": "播放列表",
             "track_with_artist": "歌曲 • {0}",
             "track": "歌曲",
@@ -1414,7 +1358,6 @@
             "qr_unavailable": "无法渲染二维码",
             "copied": "已复制",
             "copy_link": "复制链接",
-            "join_link_copied": "加入链接已复制",
             "copy_join_link_failed": "无法复制加入链接",
             "now_playing": "正在播放",
             "current_music": "当前播放的音乐",
@@ -1455,8 +1398,6 @@
             "difficulty_hard": "难",
             "choose_game_type": "选择游戏类型",
             "configure_game": "配置您的游戏",
-            "setup_step": "来自 {1}的第 {0} 步",
-            "coming_soon": "即将推出",
             "answer_choices": "答案选项",
             "game_type_guess_the_song": "猜歌名",
             "game_type_guess_the_song_description": "播放一首歌曲，并第一个从选项中选出歌曲名称",
@@ -1466,7 +1407,6 @@
             "end_game_confirm": "您确定要结束本局游戏吗？此操作将删除所有播放器的当前游戏。",
             "end_game": "游戏结束",
             "remove_music_source": "删除 {0}",
-            "timeline": "时间线",
             "timeline_anchor": "锚",
             "timeline_revealed": "新",
             "timeline_place_help": "选择当前播放歌曲所属的选项。",

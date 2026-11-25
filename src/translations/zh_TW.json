@@ -60,7 +60,9 @@
         "visualizer": "視覺化工具",
         "light": "淡色",
         "unknown": "未知",
-        "source": "音訊輸入"
+        "source": "音訊輸入",
+        "multi_channel": "多聲道",
+        "controller": "控制器"
     },
     "players": "播放器",
     "playlist": "播放列表",
@@ -125,7 +127,8 @@
                 "auto": "自動 (依預設值)",
                 "light": "淡色",
                 "dark": "深色"
-            }
+            },
+            "automatic": "自動"
         },
         "language": {
             "label": "語言",
@@ -266,7 +269,7 @@
                 "help": "提高或降低通過管線中此節點的所有內容的音量。"
             },
             "balance": {
-                "help": "將聲音向左側或右側喇叭偏移。"
+                "help": "將聲音向左側或右側揚聲器偏移。"
             },
             "stereo_width": {
                 "help": "調整立體聲音場寬度。中心偏左會縮窄至單聲道，偏右則會加寬聲音。僅適用於立體聲音訊。",
@@ -286,7 +289,7 @@
                 }
             },
             "convolution": {
-                "help": "卷積將錄製的脈衝響應套用至音訊，用於房間或喇叭校正及耳機模擬。增益應為負值或零，因為脈衝響應會改變整體音量。",
+                "help": "卷積將錄製的脈衝響應套用至音訊，用於房間或揚聲器校正及耳機模擬。增益應為負值或零，因為脈衝響應會改變整體音量。",
                 "impulse_response": "脈衝響應",
                 "none": "未選取任何項目",
                 "missing": "無法使用的脈衝響應",
@@ -304,10 +307,11 @@
                 "remove_confirm": "刪除 \"{0}\"？任何在任意播放器或預設中使用它的卷積濾波器，都將被重設為無脈衝響應。",
                 "mono": "單聲道",
                 "stereo": "立體聲",
-                "channel_count": "{0} 聲道"
+                "channel_count": "{0} 聲道",
+                "too_large_remote": "此檔案太大，無法透過遠端存取上傳。"
             },
             "safety_limiter": {
-                "help": "捕捉可能導致削波並損壞喇叭的峰值。請將其置於處理鏈的最末端。",
+                "help": "捕捉可能導致削波並損壞揚聲器的峰值。請將其置於處理鏈的最末端。",
                 "ceiling": "天花板"
             },
             "compressor": {
@@ -330,7 +334,7 @@
                 }
             },
             "high_low_pass": {
-                "help": "移除截止頻率一側的所有內容。常用於防止深沉低音影響小型喇叭。",
+                "help": "移除截止頻率一側的所有內容。常用於防止深沉低音影響小型揚聲器。",
                 "mode_label": "模式",
                 "mode": {
                     "high_pass": "高通",
@@ -372,12 +376,11 @@
             "label": "強制行動版版面",
             "description": "強制使用行動版版面設定（底部顯示選單導覽），即使在較大的螢幕上也適用。"
         },
-        "players_description": "設定並管理音訊輸出裝置",
-        "frontend_description": "自訂使用者介面主題及外觀",
-        "profile_description": "管理您的個人帳號設定與偏好",
+        "players_description": "您的播放器、燈光、螢幕與音訊輸入，及播放方式",
+        "profile_description": "您的帳號、密碼、工作階段與介面偏好設定",
         "users": "使用者",
         "users_description": "管理使用者帳戶、角色與權限",
-        "system_description": "設定 Music Assistant 伺服器設定與核心模組",
+        "system_description": "伺服器網路、儲存、Home Assistant、後台任務與診斷",
         "system": "系統",
         "about": "關於",
         "about_description": "版本資訊、製作人員及更多內容",
@@ -393,41 +396,32 @@
         "proud_part_of": "榮耀推出",
         "core_module": {
             "cache": {
-                "name": "暫存快取",
-                "description": "設定負責處理應用程式資料快取的核心模組"
+                "name": "暫存快取"
             },
             "metadata": {
-                "name": "詮釋資料",
-                "description": "核心詮釋資料管理模組設定"
+                "name": "詮釋資料"
             },
             "music": {
-                "name": "音樂",
-                "description": "核心音樂（資料庫）管理模組設定"
+                "name": "音樂"
             },
             "players": {
-                "name": "播放器",
-                "description": "核心播放器管理模組設定"
+                "name": "播放器"
             },
             "player_queues": {
-                "name": "播放器列隊",
-                "description": "主要播放器列隊管理模組的配置"
-            },
-            "remote_access": {
-                "name": "遠端存取",
-                "description": "啟用對 Music Assistant 伺服器的遠端存取"
+                "name": "播放器列隊"
             },
             "streams": {
-                "name": "串流",
-                "description": "音訊串流和處理引擎設定"
+                "name": "串流"
             },
             "webserver": {
-                "name": "網頁伺服器",
-                "description": "網頁伺服器與 API 的設定"
+                "name": "網頁伺服器"
+            },
+            "statistics": {
+                "name": "統計數據"
             }
         },
         "remote_access": "遠端存取",
         "remote_access_description": "從任何地方安全存取 Music Assistant",
-        "remote_access_title": "遠端安全存取",
         "remote_access_explanation_intro": "遠端存取功能讓您可以從世界任何地方安全地連接到您的Music Assistant伺服器。",
         "remote_access_explanation_ha_cloud": "為了獲得最佳體驗和可靠性，需要訂閱 Home Assistant Link。",
         "remote_access_feature_webrtc": "基於 WebRTC 技術的點對點連線",
@@ -462,9 +456,8 @@
         "remote_access_disabled_success": "遠端存取已停用",
         "remote_access_signaling_server_description": "由 Open Home Foundation 託管的雲端訊號伺服器。",
         "remote_access_protocol_basic": "WebRTC 搭配公共 STUN 伺服器（在複雜的網路環境中可能無法正常運作）。",
-        "remote_access_protocol_optimized": "WebRTC 搭配 Home Assistant Cloud 最佳化的 STUN\/TURN 伺服器（適用於所有網路環境）。",
+        "remote_access_protocol_optimized": "WebRTC 搭配 Home Assistant Link 最佳化的 STUN\/TURN 伺服器（適用於所有網路環境）。",
         "remote_access_encryption_description": "使用 DTLS-SRTP 的端對端加密，確保資料保持私密且安全。",
-        "frontend": "使用者介面",
         "view_players": "檢視播放器",
         "players_total": "共 {count} 個播放器 | 共 {count} 個播放器",
         "api_docs": "API 文件",
@@ -505,7 +498,7 @@
                 "disabled": "已停用"
             },
             "option_descriptions": {
-                "active_player": "控制 Music Assistant 中目前選取的播放器，包括家中其他地方的喇叭。",
+                "active_player": "控制 Music Assistant 中目前選取的播放器，包括家中其他地方的揚聲器。",
                 "web_player": "僅控制此裝置上內建網頁播放器所播放的音訊。",
                 "disabled": "不要將 Music Assistant 的播放控制項目公開給瀏覽器或作業系統控制。"
             }
@@ -547,9 +540,7 @@
         "add_plugin_provider": "新增外掛程式",
         "music_sources": "音樂來源",
         "plugins": "外掛程式",
-        "music_providers_description": "管理您的音樂串流服務與本機資料庫",
         "player_providers_description": "設定音訊輸出裝置的播放器支援",
-        "metadata_providers_description": "管理封面與附加資訊資料來源",
         "plugin_providers_description": "管理擴充 Music Assistant 功能的外掛程式",
         "restore_genres": "回復類型",
         "genre_statistics_description": "瀏覽並篩選資料庫中的所有類型。類型可以全域排除與回復。",
@@ -558,21 +549,6 @@
         "add_player_providers": "新增更多播放器支援",
         "add_audio_analysis_provider": "新增音訊分析",
         "audio_analysis_providers": "音訊分析",
-        "audio_analysis_providers_description": "管理分析您音訊的提供者",
-        "audio_analysis": "音訊分析",
-        "audio_analysis_coverage": {
-            "title": "音訊分析覆蓋範圍",
-            "col_pending": "待處理",
-            "col_stale": "過期",
-            "unavailable": "不可用",
-            "none": "—"
-        },
-        "audio_analysis_description": "追蹤各來源提供者的音訊分析覆蓋率",
-        "audio_analysis_concurrency": {
-            "title": "背景分析並行數",
-            "description": "控制每晚背景掃描期間同時分析的曲目數量。此設定位於 Streams 核心配置中。",
-            "open_settings": "開啟串流設定"
-        },
         "provider_status_auth_required": "需要身份驗證",
         "provider_status_incompatible": "此系統不支援此功能",
         "provider_status_error": "安裝失敗",
@@ -584,9 +560,8 @@
         "provider_saved": "設定已儲存",
         "provider_reloading": "正在重新載入...",
         "provider_removed": "\"{0}\" 已移除",
-        "queue_settings": "佇列設定",
+        "queue_settings": "播放設定",
         "audio_analysis_failures": {
-            "title": "音訊分析失敗",
             "description": "分析失敗的曲目將在未來的掃描中被略過。刪除項目以清除失敗記錄，並讓其重新接受分析。",
             "col_item": "項目",
             "col_reason": "原因",
@@ -604,10 +579,13 @@
             "cleared_one": "故障已清除 — 將重新分析該曲目。",
             "cleared_many": "已清除 {0} 個失敗。",
             "clear_error": "無法清除失敗記錄。請再試一次。",
-            "load_error": "無法從伺服器載入失敗資訊。"
+            "load_error": "無法從伺服器載入失敗資訊。",
+            "failed_tracks": "失敗的曲目",
+            "failed_tracks_description": "追蹤分析略過的項目，直到您清除為止",
+            "state_none": "無"
         },
-        "queue_global_settings_hint": "這些設定僅適用於此佇列。您也可以設定適用於所有播放器佇列的預設值。",
-        "queue_global_settings_link": "開啟全域佇列設定",
+        "queue_global_settings_hint": "這些設定僅適用於此播放器。您也可以設定適用於所有播放器的預設值。",
+        "queue_global_settings_link": "開啟預設設定",
         "protocol_provider_unavailable": "目前無法使用支援此輸出通訊協定的播放器。",
         "protocol_multi_info": "此播放器支援多種輸出協定。Music Assistant 將它們整合為單一播放器。請在下方選擇一種協定來設定其使用方式。",
         "protocol_configure_title": "設定 {name}",
@@ -618,7 +596,7 @@
         },
         "download_diagnostics": "下載診斷資訊",
         "diagnostics": "診斷",
-        "diagnostics_description": "檢視伺服器記錄並下載診斷報告以進行疑難排解",
+        "diagnostics_description": "伺服器日誌、日誌等級與疑難排除診斷報告",
         "customize_menu": {
             "label": "自訂選單",
             "description": "將導覽選單切換至編輯模式，以顯示、隱藏、重新排序及重新命名其項目。"
@@ -702,7 +680,7 @@
         },
         "delete_player_title": "要刪除 {0}？",
         "delete_player_confirmation": "此播放器將從 Music Assistant 中移除。其設定將會遺失，且只能透過重新設定來恢復。",
-        "queue_settings_description": "此播放器播放佇列的播放設定",
+        "queue_settings_description": "此播放器支援淡入淡出、音量標準化與自動播放功能",
         "dsp_description": "套用至此播放器所有播放內容的濾鏡與增益",
         "player_options_description": "播放器本身提供的選項與讀取內容",
         "volume_slider_mode": {
@@ -720,8 +698,8 @@
         "player_option_error": "設定播放器選項時發生錯誤：{key} {value}",
         "server_logs_load_failed": "載入伺服器日誌失敗",
         "audiobook_chapter_progress": {
-            "label": "顯示有聲書章節進度",
-            "description": "顯示目前有聲書章節的已播放時間和剩餘時間，而非整本有聲書的時間。"
+            "label": "顯示章節進度",
+            "description": "顯示有聲書或 Podcast 目前章節播放進度與剩餘時間，而不是顯示整個節目或 Podcast 的時間。"
         },
         "provider_status_retired": "已退休",
         "player_status": {
@@ -735,8 +713,6 @@
         "server_internal_url": "內部網址",
         "server_external_url": "外部網址",
         "server_remote_access": "遠端存取",
-        "audio_analysis_status_hint": "在狀態頁面上查看每個提供者的分析進度及任何失敗情況。",
-        "audio_analysis_status_link": "開啟音訊分析狀態",
         "music_sources_empty_title": "尚無音樂來源",
         "music_sources_empty": "連結音樂服務帳號或新增本機資料庫以開始收聽。",
         "source_access": {
@@ -778,8 +754,7 @@
         "music_sources_shared": "與您分享",
         "music_sources_shared_empty": "目前尚未有任何音樂來源與您共享。",
         "storage": {
-            "title": "儲存空間",
-            "description": "音樂可來自以下資料夾、磁碟機和網路共用",
+            "description": "音樂資料夾、磁碟機、網路共用和伺服器存儲",
             "load_failed": "無法載入儲存空間",
             "music_locations": "音樂位置",
             "music_locations_empty_title": "尚無音樂位置",
@@ -860,11 +835,11 @@
                 "path": "資料夾路徑",
                 "path_hint": "資料夾的完整路徑，例如 \/home\/me\/Music"
             },
-            "use_as_source": "作為音樂來源使用"
+            "use_as_source": "作為音樂來源使用",
+            "title": "儲存空間"
         },
         "folder_picker": {
             "selected": "已選取的資料夾",
-            "none_selected": "未選取資料夾",
             "outside_locations": "此資料夾不在任何儲存位置中。除非選擇其他位置，否則將保持選取狀態。",
             "locations": "儲存位置",
             "all_locations": "所有位置",
@@ -872,13 +847,12 @@
             "open_folder": "開啟 {name}",
             "no_subfolders": "此資料夾沒有子資料夾。",
             "use_folder": "使用此資料夾",
-            "folder_selected": "已選取",
-            "holds_selection": "已選取的資料夾於此",
             "browse_failed": "無法開啟資料夾",
             "empty_title": "目前沒有可選擇的項目",
-            "empty_text": "目前沒有可選擇的資料夾、磁碟機或網路共享。請選取 \"管理儲存空間\" 以進行新增。",
             "empty_text_member": "目前沒有可選擇的資料夾、磁碟機或網路共享。請聯絡管理員進行新增。",
-            "manage": "管理儲存空間"
+            "empty_text_add": "目前沒有可選擇的資料夾、磁碟機或網路共享位置。請新增存放檔案的位置。",
+            "empty_text_container": "目前沒有可選擇的資料夾、磁碟機或網路共享位置。請將存放檔案的資料夾對應至 Music Assistant 容器並重新啟動。",
+            "chosen_hint": "此資料夾正在使用中，包括其中的子資料夾。"
         },
         "remove_provider_confirm_music": "移除 \"{0}\"？此來源提供的所有音樂將從您的資料庫中移除，包括其播放記錄。此操作無法復原。",
         "remove_provider_confirm_player": "移除 \"{0}\"？其播放器與設定也將一併移除。此操作無法復原。",
@@ -924,7 +898,7 @@
         "hide_unavailable_players": "隱藏移除無法使用的播放器",
         "remove_unavailable_players": "移除無法使用的播放器",
         "remove_unavailable_players_title": "移除無法使用的播放器？",
-        "remove_unavailable_players_confirmation": "將移除 1 個裝置已無法找到的播放器及其設定。 | 將移除 {count} 個裝置已無法找到的播放器及其設定。",
+        "remove_unavailable_players_confirmation": "將移除 1 個裝置已無法找到的播放器及其設定： | 將移除 {count} 個裝置已無法找到的播放器及其設定：",
         "no_unavailable_players": "沒有無法使用播放器需要移除",
         "unavailable_players_removed": "找不到無法使用的播放器 | 已移除 1 個無法使用的播放器 | 已移除 {count} 個無法使用的播放器",
         "catalog": {
@@ -1031,7 +1005,8 @@
                 "moved_message_not_running": "它現在由自己的維護者負責管理，而非 Music Assistant 團隊。Music Assistant 為由社群目錄中進行安裝。",
                 "dismiss": "關閉",
                 "new_title": "社群目錄新增內容",
-                "updated_title": "最近更新"
+                "updated_title": "最近更新",
+                "new_badge": "新增"
             },
             "search": "搜尋 Marketplace",
             "search_results": "搜尋結果",
@@ -1051,9 +1026,168 @@
             "dont_suggest_failed": "無法停止建議 {name}",
             "suggested_again_toast": "再次建議 {name}",
             "suggest_again_failed": "無法再次建議 {name}",
-            "undo": "復原"
+            "undo": "復原",
+            "fits_your_setup": "適合您的設定"
         },
-        "provider_status_unavailable": "無法使用"
+        "provider_status_unavailable": "無法使用",
+        "merge_player": "合併至另一個播放器…",
+        "merge_player_title": "將 {0} 合併至另一個播放器",
+        "merge_player_description": "對於顯示為兩個播放器的裝置，請選擇保留的播放器。",
+        "merge_player_pick": "選擇播放器",
+        "merge_player_confirmation": "{0} 消失，其輸出移至 {1}。僅 {0} 擁有的設定將被保留。其佇列已清除。",
+        "merge_player_confirmation_outputs": "{0} 已消失，其輸出（{2}）移至 {1}。僅 {0} 擁有的設定將被保留，其佇列已清除。",
+        "merge_player_confirm": "合併",
+        "player_merged": "播放器已合併",
+        "split_off_output": "作為獨立播放器分離",
+        "split_off_output_title": "要從 {1} 分割出 {0} 嗎？",
+        "split_off_output_confirmation": "{0} 已不再是 {1} 的一部分，並以預設設定作為獨立的新播放器顯示。{1} 保留其名稱、設定和佇列。",
+        "split_off": "分割",
+        "output_split_off": "{0} 現在是獨立的播放器",
+        "action_link_refused": "此連結未開啟，因為它指向 Music Assistant 本身。",
+        "settings_load_failed": "無法載入這些設定",
+        "network": {
+            "title": "網路",
+            "description": "遠端存取、位址、通訊埠與探索",
+            "web": "網頁介面與 API",
+            "streaming": "音訊串流",
+            "discovery": "探索"
+        },
+        "providers_active": "{count} 個使用中 | {count} 個使用中",
+        "playback": {
+            "title": "播放",
+            "description": "淡入淡出、音量標準化、自動播放，以及按下播放時的行為"
+        },
+        "library": {
+            "title": "資料庫設定",
+            "description": "哪個來源播放曲目及資料庫維護",
+            "source_selection": "來源選擇",
+            "maintenance": "資料庫維護"
+        },
+        "log_levels": "日誌等級",
+        "home_assistant": {
+            "title": "Home Assistant",
+            "description": "與 Home Assistant 的連線及其為 Music Assistant 帶來的功能",
+            "not_connected": "未連線至 Home Assistant",
+            "connect_description": "連接至 Home Assistant，在其媒體播放器上播放、使用其帳號登入，並將其裝置轉換為播放器控制介面。",
+            "connect": "連線",
+            "connection": "連線",
+            "connection_description": "重新設定、停用或移除連線",
+            "connection_addon": "Music Assistant 以 Home Assistant 應用程式的形式運行，將其連接",
+            "state_connected": "已連線",
+            "state_connecting": "連線中",
+            "state_disabled": "已停用",
+            "state_needs_attention": "需要關注",
+            "players": "Home Assistant 播放器",
+            "players_description": "在 Home Assistant 的媒體播放器上播放",
+            "players_add": "新增",
+            "sign_in": "使用 Home Assistant 登入",
+            "remote_access_description": "Home Assistant Link 讓遠端存取在任何網路環境中都能運作",
+            "remote_access_ha_cloud": "Home Assistant Link",
+            "remote_access_without_ha_cloud": "不使用 Home Assistant Link",
+            "ai": "來自 Home Assistant 的 AI",
+            "ai_description": "來自 Home Assistant 的 AI 任務與語音",
+            "ai_none": "無",
+            "players_choose": "選擇",
+            "sign_in_new_users": "沒有帳號的 Home Assistant 使用者，在首次登入時將會自動建立帳號",
+            "remote_access_details": "遠端 ID 與 QR 碼"
+        },
+        "music": "音樂",
+        "music_description": "您的音樂來源、資料庫、中繼資料和音訊分析",
+        "source_labels": {
+            "library": "資料庫",
+            "radio": "電台",
+            "podcasts": "Podcast",
+            "audiobooks": "有聲書",
+            "live": "即時來源"
+        },
+        "ai": {
+            "title": "AI",
+            "description": "Music Assistant 使用的 AI 引擎、使用這些引擎的功能，以及 AI 助理的存取權限",
+            "no_engines": "尚無 AI 引擎",
+            "no_engines_description": "新增 AI 服務，用於撰寫播放列表描述、語音播報、主持 AI 電台等更多功能。",
+            "add_service": "新增 AI 服務",
+            "usage": "哪些功能使用 AI",
+            "services": "AI 服務",
+            "kind": {
+                "text": "AI 引擎",
+                "speech": "文字轉語音引擎",
+                "image": "圖像引擎"
+            },
+            "engine_count": {
+                "text": "{count} 段文字 | {count} 段文字",
+                "speech": "{count} 則演講 | {count} 則演講",
+                "image": "{count} 張圖像 | {count} 張圖像"
+            },
+            "follows_default": "預設 · {engine}",
+            "not_available": "無法使用",
+            "choose_models": "選擇要使用的模型",
+            "assistant_access": "AI 助理存取權限",
+            "assistant_access_enabled": "內建 MCP 伺服器已開啟",
+            "assistant_access_disabled": "內建 MCP 伺服器已關閉",
+            "mcp_server": "啟用內建 MCP 伺服器",
+            "mcp_server_description": "讓 AI 助理（如 Home Assistant Assist、Claude 和 ChatGPT）搜尋您的音樂並控制播放。",
+            "engine_unavailable": "所選的引擎無法使用"
+        },
+        "provider_labels": {
+            "filter": "依提供內容篩選",
+            "all": "全部"
+        },
+        "plugin_labels": {
+            "ai": "AI",
+            "tts": "文字轉語音",
+            "scrobble": "擷取",
+            "assistant": "助理",
+            "visualizer": "燈光與視覺效果",
+            "recommendations": "混音與推薦",
+            "fun": "趣味與遊戲",
+            "other": "其他"
+        },
+        "multi_channel": {
+            "make": "建立多聲道播放器…",
+            "make_title": "建立多聲道播放器",
+            "make_description": "{0} 和您選擇的揚聲器會視為同一個播放器播放，並各自使用不同聲道。",
+            "channels": {
+                "front_left": "左聲道",
+                "front_right": "右聲道",
+                "front_center": "中心",
+                "lfe": "重低音"
+            },
+            "this_speaker": "{0} （此揚聲器）",
+            "channel": "聲道",
+            "output_delay": "輸出延遲（毫秒）",
+            "pick_speaker": "選擇揚聲器",
+            "swap": "交換聲道",
+            "no_speakers": "沒有其他可新增的揚聲器。揚聲器開啟並連線後會顯示在這裡。",
+            "name": "名稱",
+            "make_note": "每位揚聲器的 {0} 輸出將移至新播放器。沒有其他輸出的播放器及其設定將會消失。",
+            "created": "{0} 已建立",
+            "speaker_online": "線上",
+            "speaker_offline": "離線",
+            "take_apart": "拆解",
+            "take_apart_title": "要拆解 {0} ？",
+            "take_apart_confirmation": "{0} 將連同其設定一併消失。其揚聲器將以獨立播放器的形式恢復，並套用預設設定。",
+            "take_apart_confirm": "拆解",
+            "taken_apart": "{0} 已拆解",
+            "layout": "佈局",
+            "add_subwoofer": "新增重低音喇叭⋯",
+            "add_subwoofer_title": "新增重低音喇叭",
+            "add_subwoofer_description": "選擇播放 {0} 低音揚聲器。",
+            "add_subwoofer_note": "重低音揚聲器的 {0} 輸出移至 {1}。沒有其他輸出的播放器將連同其設定一併消失。",
+            "subwoofer_added": "重低音揚聲器已新增至 {0}",
+            "remove_subwoofer": "移除重低音揚聲器",
+            "remove_subwoofer_title": "要從 {0} 移除重低音揚聲器？",
+            "remove_subwoofer_confirmation": "{0} 以獨立播放器的形式返回，並使用預設設定。",
+            "subwoofer_removed": "重低音揚聲器已從 {0} 移除"
+        },
+        "metadata_description": "詮釋資料來源、語言、線上搜尋、類型與封面暫存",
+        "audio_analysis_description": "分析進度、失敗的音軌、分析模組與設定",
+        "audio_analysis_modules": "分析模組",
+        "metadata_settings_description": "語言、線上查詢、類型與封面暫存",
+        "audio_analysis_settings_description": "同時分析的音軌數量",
+        "audio_analysis_coverage": {
+            "up_to_date": "最新狀態",
+            "waiting": "{count} 位等待中"
+        }
     },
     "show_info": "顯示資訊",
     "show_select_boxes": "顯示選取方塊",
@@ -1161,7 +1295,6 @@
         "toggle_subplayers": "切換子播放器",
         "restore_genre": "回復類型",
         "remove_rule": "移除規則",
-        "change_avatar": "更換頭像",
         "revoke_session": "撤銷工作階段",
         "revoke_token": "撤銷權杖",
         "user_options": "使用者選項",
@@ -1422,8 +1555,6 @@
         "setup_failed": "設定失敗。請再試一次。",
         "setup_error": "設定過程中發生錯誤",
         "profile": "個人設定檔",
-        "account_settings": "帳號設定",
-        "manage_your_profile_info": "管理個人設定檔與設定",
         "change_password": "修改密碼",
         "update_your_password": "修改您的帳號密碼",
         "old_password": "目前密碼",
@@ -1485,7 +1616,6 @@
         "change_role": "變更角色",
         "avatar_url": "頭像網址",
         "avatar_url_hint": "輸入頭像圖片網址",
-        "change_avatar": "更換頭像",
         "profile_updated": "個人設定檔已成功更新",
         "ingress_password_note": "在 Home Assistant 以外存取 Music Assistant 時才需要使用此密碼登入。",
         "copy_new_token_hint": "複製存取權杖。此權杖將不會再次顯示。",
@@ -1552,7 +1682,17 @@
         },
         "username_max_length": "使用者名稱最多為 50 個字元",
         "display_name_max_length": "顯示名稱最多為 100 個字元",
-        "password_max_length": "密碼最多為 128 個字元"
+        "password_max_length": "密碼最多為 128 個字元",
+        "profile_pages": {
+            "theme_language": "主題與語言",
+            "interface": "介面",
+            "interface_description": "在每台裝置上跟隨帳號的偏好設定",
+            "device": "此裝置",
+            "device_description": "僅適用於此裝置的設定",
+            "security": "安全性",
+            "security_description": "密碼、使用中工作階段與存取權杖"
+        },
+        "edit_profile": "編輯個人設定"
     },
     "login": {
         "subtitle": "連接到你的音樂伺服器",
@@ -1633,7 +1773,8 @@
     "map_provider_mapping": "將此來源項目關聯至目前項目",
     "player_tip": {
         "currently_playing": "目前正播放於",
-        "click_to_change": "點擊下方以變更輸出裝置"
+        "click_to_change": "點擊下方以變更輸出裝置",
+        "selected": "已選取"
     },
     "more_options": "更多選項",
     "edit": "編輯",
@@ -1643,7 +1784,6 @@
     "narrators": "旁白",
     "queue_move_end": "移至結尾",
     "discover": "探索",
-    "save_queue_as_playlist": "將佇列儲存為播放列表",
     "playlist_created": "已建立播放列表",
     "open_playlist": "開啟播放列表",
     "add": "新增",
@@ -1803,31 +1943,24 @@
             "create_intro": "建立一個新的問答遊戲來測試您的音樂知識！",
             "loading": "載入中...",
             "no_active_game": "沒有進行中的遊戲",
-            "game_removed": "遊戲已無法使用",
             "game_ended": "遊戲結束",
             "game_ended_detail": "您參加的測驗已結束。",
-            "game_no_longer_available": "此遊戲已無法使用",
             "start": "開始測驗",
-            "reveal": "顯示答案",
             "phase_reveal": "顯示答案",
             "next": "下一回合 ",
             "finish": "完成測驗",
-            "reset": "重置測驗",
             "new_game": "新遊戲",
             "phase_waiting_for_players": "等待玩家加入",
             "phase_answers_open": "答案公開！",
             "phase_enjoy_track": "盡情享受音樂吧！",
             "phase_finished": "測驗結束",
-            "join_url_label": "加入連結",
             "players": "玩家",
             "players_count": "{0} 位玩家",
             "rounds_count": "{0} 個回合",
             "round_label": "回合",
-            "round": "回合",
             "enter_name": "請輸入您的姓名",
             "join": "加入測驗",
             "waiting_for_start": "等待主持人開始測驗...",
-            "waiting_for_answers": "等待答案…",
             "choose_answer": "請選擇您的答案！",
             "answered": "答案已提交！等待其他人...",
             "answer_was": "答案是",
@@ -1837,19 +1970,12 @@
             "ready": "準備好進行下一回合",
             "waiting_for_next": "等待下一回合 ",
             "game_over": "遊戲結束！",
-            "final_scores": "最終積分",
             "final_leaderboard": "最終排行榜",
-            "setup_placeholder": "設定表單即將推出",
             "connection_lost": "連線中斷，正在重新連線...",
             "rounds": "回合",
-            "suggestions": "答案選項",
             "answer_seconds": "回應時間（秒）",
-            "search_music": "搜尋您的資料庫",
-            "searching": "正在搜尋…",
-            "no_sources_found": "找不到曲目或播放列表",
             "selected_music": "已選音樂",
             "pick_at_least_one_source": "至少選擇一個來源",
-            "source_search_failed": "無法搜尋音樂來源",
             "playlist": "播放列表",
             "track_with_artist": "曲目 • {0}",
             "track": "曲目",
@@ -1865,7 +1991,6 @@
             "qr_unavailable": "無法顯示 QR 碼",
             "copied": "已複製",
             "copy_link": "複製連結",
-            "join_link_copied": "參與連結已複製",
             "copy_join_link_failed": "無法複製參與連結",
             "now_playing": "正在播放",
             "current_music": "目前音樂",
@@ -1906,8 +2031,6 @@
             "difficulty_hard": "困難",
             "choose_game_type": "選擇遊戲類型",
             "configure_game": "設定您的遊戲",
-            "setup_step": "第 {0} 步，共 {1} 步",
-            "coming_soon": "即將推出",
             "answer_choices": "答案選項",
             "game_type_guess_the_song": "猜歌曲",
             "game_type_guess_the_song_description": "播放一首曲目，搶先從選項中選出正確的歌曲名稱。",
@@ -1917,7 +2040,6 @@
             "end_game_confirm": "確定要結束此遊戲嗎？這將會為所有玩家移除目前的遊戲。",
             "end_game": "結束遊戲",
             "remove_music_source": "移除 {0}",
-            "timeline": "時間軸",
             "timeline_anchor": "錨點",
             "timeline_revealed": "新增",
             "timeline_place_help": "選擇正在播放的歌曲所屬的時期，從較舊到較新。",
@@ -2029,7 +2151,43 @@
             "how_to_play_trivia_description": "回答音樂相關的問答題。在時間結束前選出您認為正確的答案。",
             "landing_continue": "繼續",
             "timeline_result_placement": "位置",
-            "round_result_answer": "回答"
+            "round_result_answer": "回答",
+            "game_type_title_reveal": "歌曲揭曉",
+            "game_type_title_reveal_description": "播放一首曲目，並在歌曲名稱的字母逐一揭曉時輸入其標題。",
+            "how_to_play_title_reveal_description": "聆聽正在播放的歌曲並輸入其標題。隨著時間推移會逐漸顯示更多字母，小錯字也沒關係，但猜得越快，獲得的分數就越多。",
+            "title_reveal_hint_speed": "提示速度",
+            "title_reveal_hint_speed_slow": "慢速（少量字母）",
+            "title_reveal_hint_speed_normal": "正常",
+            "title_reveal_hint_speed_fast": "快速（多字母）",
+            "title_reveal_typo_tolerance": "拼字錯誤容忍度",
+            "title_reveal_typo_tolerance_strict": "嚴格",
+            "title_reveal_typo_tolerance_normal": "正常",
+            "title_reveal_typo_tolerance_lenient": "寬鬆",
+            "title_reveal_mask_label": "歌曲名稱：{0}，還有 {1} 個字母尚未揭曉",
+            "title_reveal_hints_progress": "已顯示 {0} \/ {1} 個提示",
+            "title_reveal_typos_allowed": "最多允許 {count} 個錯字 | 最多允許 {count} 個錯字",
+            "title_reveal_exact_spelling": "需要完全相符的拼寫",
+            "title_reveal_guess_label": "歌曲名稱",
+            "title_reveal_guess_placeholder": "輸入歌曲名稱…",
+            "title_reveal_submit_guess": "猜測",
+            "title_reveal_attempts_left": "剩餘 {count} 次猜測機會 | 剩餘 {count} 次猜測機會",
+            "title_reveal_your_guesses": "您的猜測",
+            "title_reveal_close": "就差一點！",
+            "title_reveal_solved": "你答對了！",
+            "title_reveal_points": "+{0} 點",
+            "title_reveal_solved_players": "猜對了",
+            "title_reveal_not_solved": "這一輪你沒有猜到歌曲名稱",
+            "title_reveal_first_bonus": "第一！+{0}",
+            "title_reveal_first_bonus_result": "首次猜對",
+            "title_reveal_artist_bonus_setting": "藝人額外加分題",
+            "title_reveal_artist_bonus_setting_help": "猜出歌曲名稱後，玩家可以再嘗試猜一次演出者，以獲得額外加分。",
+            "title_reveal_artist_bonus_label": "加分題：這位藝術人是誰？",
+            "title_reveal_artist_bonus_help": "一次額外加分的機會。",
+            "title_reveal_artist_placeholder": "輸入藝人…",
+            "title_reveal_artist_skip": "跳過",
+            "title_reveal_artist_correct": "{0} 答對了！+{1}",
+            "title_reveal_artist_wrong": "不完全是，應該是 {0}",
+            "title_reveal_artist_skipped": "已跳過，原因為 {0}"
         },
         "ai_radio": {
             "title": "AI 廣播",
@@ -2338,7 +2496,11 @@
             "log_download_started": "任務日誌下載已開始。",
             "log_download_failed": "沒有可供下在載的任務日誌。"
         },
-        "report_title": "任務報告"
+        "report_title": "任務報告",
+        "settings": {
+            "title": "任務設定",
+            "description": "同時執行的任務數量"
+        }
     },
     "not_found_headline": "糟糕，此頁面已移除。",
     "not_found_subtext": "要找的曲目在音樂來源之間遺失了。請返回或尋找新的內容。",
@@ -2469,7 +2631,7 @@
     "artist_all_albums": "所有專輯",
     "artist_all_tracks": "所有曲目",
     "on_provider": "開啟{0}",
-    "open_queue_settings": "開啟佇列設定",
+    "open_queue_settings": "開啟播放設定",
     "crossfade_enable": "啟用交叉淡化",
     "crossfade_disable": "停用交叉淡化",
     "crossfade": "交叉交叉淡化",
@@ -2806,99 +2968,62 @@
         "skip": "暫時跳過",
         "finish": "完成",
         "finish_failed": "無法完成。請再試一次。",
-        "nothing_configured": "尚未設定任何內容",
         "needs_attention": "需要關注",
-        "set_up": "完成",
         "still_to_do": "仍待完成",
-        "all_done": "現在可以完成設定，並可隨時根據需要添加更多功能。",
         "players_count": "{count} 個播放器 | {count} 個播放器",
         "run_again": "再次執行設定精靈",
         "steps": {
-            "intent": {
-                "title": "您想如何使用 Music Assistant？",
-                "description": "選擇您的起始點。兩種選擇都可以使用所有功能。",
-                "phone_apps": {
-                    "label": "將我的音樂應用連接到喇叭",
-                    "description": "繼續在 Spotify 等應用程式中選擇音樂，或使用 AirPlay。Music Assistant 會在背景運行，將它們連接到您的喇叭，無需設定音樂資料庫。",
-                    "preview": "接下來，我們將新增您的喇叭、連結音樂應用程式，並向您說明如何開始聆聽。"
-                },
-                "music_hub": {
-                    "label": "完整體驗 Music Assistant",
-                    "description": "將您的音樂服務、本地音樂與喇叭集中到同一處。在 Music Assistant 中瀏覽、搜尋和建立播放列表。仍然可以使用 Spotify Connect 和 AirPlay 播放音樂。",
-                    "preview": "接下來，我們將連結您的音樂服務並新增喇叭，然後探索更多功能。"
-                },
-                "summary_title": "您的設定選擇"
-            },
             "music_sources": {
                 "title": "新增您的音樂來源",
-                "description": "連結串流服務或您的本地音樂檔案，讓 Music Assistant 有內容可以播放。"
+                "description": "連結串流服務或您的本地音樂檔案，讓 Music Assistant 有內容可以播放。",
+                "features": {
+                    "streaming": "串流服務，例如 Spotify 或 Tidal",
+                    "files": "您自己的音樂檔案，位於此伺服器或網路共享資料夾中",
+                    "radio": "廣播電台與 Podcast"
+                }
             },
             "players": {
                 "title": "新增您的播放器",
                 "description": "Music Assistant 已找到的播放器。關閉您不想使用的播放器，並依喜好重新命名。",
-                "description_empty": "Music Assistant 會透過您新增的播放器支援功能來偵測喇叭，例如 Sonos、Chromecast 或 AirPlay。",
+                "description_empty": "Music Assistant 會透過您新增的播放器支援功能來偵測揚聲器，例如 Sonos、Chromecast 或 AirPlay。",
                 "empty": "尚未找到任何播放器",
-                "no_provider_hint": "新增播放器支援後，喇叭會顯示在這裡。",
-                "discovering_hint": "搜尋播放器可能需要一點時間。請確認喇叭已開啟，且與 Music Assistant 連接至同一個網路。",
+                "no_provider_hint": "新增播放器支援後，揚聲器會顯示在這裡。",
+                "discovering_hint": "搜尋播放器可能需要一點時間。請確認揚聲器已開啟，且與 Music Assistant 連接至同一個網路。",
                 "add_more": "新增更多播放器",
                 "rename": "重新命名 {name}",
-                "discovered_by": "發現："
+                "discovered_by": "發現：",
+                "features": {
+                    "found_automatically": "在您的網路上自動找到",
+                    "one_place": "從一個地方在所有裝置上播放",
+                    "groups": "將它們組成群組一起播放"
+                }
             },
             "plugins": {
                 "title": "新增外掛程式",
-                "description": "外掛程式可為 Music Assistant 新增額外功能，例如派對模式、Spotify Connect 和 AirPlay 接收器。可以隨時在之後新增這些功能。",
                 "phone_apps_title": "連結您的音樂應用程式",
-                "phone_apps_description": "新增 Spotify Connect 或 AirPlay 接收器，然後開啟其設定以選擇喇叭。其他外掛程式也可在此取得。",
-                "connect": "連線至音樂應用程式"
+                "connect": "連線至音樂應用程式",
+                "phone_apps_instructions": "新增 Spotify Connect 或 AirPlay 接收器，然後選取它來選擇播放的揚聲器。",
+                "features": {
+                    "apps": "繼續在您熟悉的應用程式中選擇音樂",
+                    "spotify_connect": "透過 Spotify Connect 播放 Spotify 音樂",
+                    "airplay": "透過 AirPlay 從您的 Apple 裝置播放"
+                }
             },
             "finish": {
                 "title": "完成設定",
                 "description": "做得好。以下是快速摘要，之後可以在設定中變更任何內容。",
-                "phone_apps_description": "以下是您的喇叭和應用程式連線摘要。可以稍後在設定中新增資料庫和其他功能。"
-            },
-            "core_settings": {
-                "title": "存取 Music Assistant",
-                "load_failed": "無法載入伺服器設定。可以稍後從設定中進行變更。",
-                "intro": "Music Assistant 會在您的家庭網路中自動運作。如果想在外出時收聽音樂，請設定遠端存取。",
-                "internal_address": "內部位址",
-                "internal_address_hint": "家中的應用程式和裝置連接 Music Assistant 的地方。",
-                "stream_address": "串流伺服器位址",
-                "stream_address_hint": "您的播放器擷取音訊的來源位置。",
-                "address_unknown": "無法使用",
-                "check": {
-                    "checking": "檢查中...",
-                    "reachable": "可從此裝置連線",
-                    "unreachable": "此裝置無法連線",
-                    "unchecked": "無法從此裝置進行確認"
-                },
-                "unreachable_hint": "若此處的位址沒有回應，您的播放器可能也無法回應。若播放失敗，請在下方使用編輯進行變更。",
-                "override_hint": "您只需在更複雜的網路環境中變更這些設定，例如在反向代理伺服器後方或跨 VLAN 的情況下。可以稍後在設定 › {system}中的{webserver}和{streams}找到這些設定。",
-                "remote": {
-                    "title": "在家以外進行收聽",
-                    "description": "當您不在家時，有兩種方式可以連線至 Music Assistant。這兩種方式也可以稍後再設定。",
-                    "builtin": {
-                        "title": "內建遠端存取",
-                        "easiest": "最簡單",
-                        "description": "安全且加密，無需通訊埠轉發或 VPN。開啟後，使用遠端存取 ID 從任何地方進行連線。",
-                        "switch": "遠端存取",
-                        "id": "您的遠端存取 ID",
-                        "copy": "複製遠端存取 ID",
-                        "hint": "在 Music Assistant 應用程式或 app.music-assistant.io 中使用。QR 碼位於設定 › {remote_access}下。"
-                    },
-                    "proxy": {
-                        "title": "您自己的反向代理",
-                        "description": "在伺服器前端執行反向代理，並將從外部存取該代理的位址輸入為外部位址。",
-                        "set_external": "設定外部位址"
-                    }
-                },
-                "network_details": "伺服器與網路詳細資訊",
-                "external_address": "外部位址",
-                "external_address_hint": "從家外部透過反向代理存取 Music Assistant 的位址。"
+                "phone_apps_description": "以下是您的揚聲器和應用程式連線摘要。可以稍後在設定中新增資料庫和其他功能。"
             },
             "invite_members": {
                 "title": "新增使用者",
-                "description": "您家中的每個人都可以擁有自己的帳號，並使用您授權給他們的播放器和音樂來源。",
-                "load_failed": "無法載入使用者。可以稍後從設定中進行新增。"
+                "load_failed": "無法載入使用者。可以稍後從設定中進行新增。",
+                "intro": "為家中每位成員建立專屬帳號。",
+                "features": {
+                    "sign_in": "他們自己的登入帳號",
+                    "players": "授予存取權限的播放器",
+                    "music": "他們自己的音樂服務，與您的並列"
+                },
+                "optional": "選填：也可以稍後在設定 › {users}中新增使用者。"
             },
             "welcome": {
                 "title": "就像在自己家一樣舒適",
@@ -2920,10 +3045,35 @@
             },
             "own_sources": {
                 "title": "連結您自己的帳號",
-                "description": "新增您自己的音樂服務，讓播放列表與資料庫與其他人的一起顯示。可以隨時在設定中完成此操作。",
                 "add": "新增音樂來源",
-                "empty": "您尚未連結任何自己的音樂來源。",
-                "connected": "您的音樂來源"
+                "intro": "新增您自己使用的音樂服務。",
+                "features": {
+                    "accounts": "您自己的串流帳號，例如 Spotify",
+                    "library": "您的播放列表與資料庫，與其他所有人的並列呈現"
+                },
+                "optional": "選填：也可以稍後在設定 › {music}中新增。"
+            },
+            "core_settings": {
+                "remote": {
+                    "builtin": {
+                        "id": "您的遠端存取 ID",
+                        "copy": "複製遠端存取 ID",
+                        "hint": "在 Music Assistant 應用程式或 app.music-assistant.io 中使用。QR 碼位於設定 ›{system} › {network} › {remote_access} 下。"
+                    },
+                    "features": {
+                        "secure": "安全且加密",
+                        "no_setup": "無需轉發通訊埠或 VPN",
+                        "anywhere": "使用您的遠端存取 ID 從任何地方連線",
+                        "home_assistant_link": "當您的 Home Assistant 具有 Home Assistant Link 時使用它"
+                    },
+                    "turn_on": "開啟遠端存取",
+                    "turn_off": "關閉",
+                    "on": "遠端存取已開啟"
+                },
+                "away_title": "在外收聽",
+                "optional": "選用：也可以稍後在設定 › {system} › {network}中開啟，並可在此設定自己的反向代理。",
+                "intro": "Music Assistant 始終在您的家庭網路上安全運作。遠端存取功能讓您在外出時也能透過應用程式收聽音樂。",
+                "intro_addon": "無論在哪裡都可以開啟 Home Assistant，也可以開啟 Music Assistant。遠端存取，讓您在外出時也能透過應用程式收聽音樂。"
             },
             "your_players": {
                 "title": "您的播放器",
@@ -2948,13 +3098,61 @@
                 "sign_in_here": "改為在此登入",
                 "reload": "重新載入頁面",
                 "ready": "以 {name} 身分登入。"
+            },
+            "intent": {
+                "summary_title": "您的設定選擇",
+                "phone_apps": {
+                    "title": "將我的音樂應用連接到揚聲器",
+                    "description": "繼續在 Spotify 等應用程式中選擇音樂，或使用 AirPlay。Music Assistant 將它們連結到您的揚聲器，無需建立資料庫。"
+                },
+                "music_hub": {
+                    "title": "完整體驗 Music Assistant",
+                    "description": "您的音樂服務、本地音樂和揚聲器集於一處。在 Music Assistant 中瀏覽、搜尋並建立播放列表。"
+                },
+                "title": "您想如何使用 Music Assistant？",
+                "intro": "選擇您的起點。",
+                "reassurance": "別擔心：您的選擇只會影響此次設定。可以稍後在設定中新增任何功能。"
+            },
+            "home_assistant": {
+                "title": "連接 Home Assistant",
+                "connect": "連線至 Home Assistant",
+                "intro": "連接 Home Assistant，以充分發揮 Music Assistant 的更多功能。",
+                "features": {
+                    "players": "在 Home Assistant 的媒體播放器上播放",
+                    "controls": "使用 Home Assistant 實體控制您的播放器",
+                    "sign_in": "使用您的 Home Assistant 帳號登入",
+                    "remote_access": "透過 Home Assistant Link 遠端存取 Music Assistant"
+                },
+                "optional": "選用：也可以稍後在設定 › {system} › {home_assistant}下進行連線。"
+            },
+            "get_started": {
+                "title": "歡迎使用 Music Assistant",
+                "start": "開始使用",
+                "intro": "讓我們一步一步來完成設定。",
+                "features": {
+                    "account": "建立您的帳號",
+                    "intent": "選擇如何使用 Music Assistant",
+                    "music": "新增您的音樂和揚聲器",
+                    "extras": "如有需要，可新增 Home Assistant 等額外功能"
+                }
+            },
+            "ai": {
+                "enrich_title": "以 AI 豐富 Music Assistant",
+                "intro": "將 AI 的力量帶入 Music Assistant。",
+                "features": {
+                    "announcements": "朗讀公告",
+                    "ai_radio": "主持 AI 廣播",
+                    "smart_playlists": "建立智慧播放列表",
+                    "music_quiz": "執行音樂問答",
+                    "playlist_covers": "建立播放列表封面"
+                },
+                "optional": "選用：也可以稍後在設定 › {ai}下新增 AI 服務。",
+                "intro_examples": "將 AI 的強大功能帶入 Music Assistant。以下是幾個範例，更多功能即將推出："
             }
         },
         "add_member": "新增使用者",
-        "just_you_so_far": "目前只有你。",
         "welcome_title": "歡迎使用 Music Assistant",
         "welcome_again": "再次顯示歡迎畫面",
-        "what_you_picked": "您的選擇",
         "description": "逐步設定 Music Assistant。",
         "step_completed": "{step}，已完成",
         "welcome_description": "快速瀏覽 Music Assistant。",
@@ -2966,11 +3164,8 @@
         "dismiss": "關閉",
         "music_sources_count": "{count} 個音樂來源 | {count} 個音樂來源",
         "plugins_count": "{count} 個外掛程式 | {count} 個外掛程式",
-        "continue": "繼續",
-        "explore_more": "探索更多",
-        "listen_from_apps": "試試從您的音樂應用程式播放",
-        "spotify_connect_hint": "在 Spotify Connect 的設定中，選擇想要使用的喇叭。然後開啟 Spotify 的裝置選擇器，並選取其中一個喇叭。",
-        "airplay_receiver_hint": "在 AirPlay 接收器的設定中，選擇想使用的喇叭。然後在 Apple 裝置上開啟 AirPlay 音訊選擇器，並選取喇叭的接收器。"
+        "spotify_connect_hint": "在 Spotify Connect 的設定中，選擇想要使用的揚聲器。然後開啟 Spotify 的裝置選擇器，並選取其中一個揚聲器。",
+        "airplay_receiver_hint": "在 AirPlay 接收器的設定中，選擇想使用的揚聲器。然後在 Apple 裝置上開啟 AirPlay 音訊選擇器，並選取揚聲器的接收器。"
     },
     "share_playlist": "共享播放列表",
     "playlist_access": {
@@ -3024,7 +3219,7 @@
             },
             "profile": {
                 "title": "您的個人設定檔",
-                "description": "您的名稱、頭像和密碼都在這裡。也可以在選單中重新排列選單、登出或再次瀏覽導覽。"
+                "description": "您的名稱、頭像、密碼與介面偏好設定都在這裡。也可以在選單中重新排列選單、登出或再次瀏覽導覽。"
             },
             "player_bar": {
                 "title": "播放器列",
@@ -3276,5 +3471,65 @@
     "view_all_count": "查看全部（{count} 個）",
     "energy_level": "活力",
     "source_auto": "自動",
-    "edit_rows_subtitle_audiobook": "適用於每個有聲書頁面"
+    "edit_rows_subtitle_audiobook": "適用於每個有聲書頁面",
+    "chapter_of": "第 {current} 章，共 {total} 章",
+    "chapter_progress_show_audiobook": "顯示整本有聲書",
+    "chapter_progress_show_episode": "顯示完整集數",
+    "chapter_progress_show_chapter": "僅顯示此章節",
+    "transfer_queue_no_audio": "此裝置尚不支援音訊功能。",
+    "discography_types_empty": "沒有所選類型的版本。",
+    "favorites_song_add": "將歌曲加入收藏夾",
+    "favorites_song_remove": "從收藏夾中移除歌曲",
+    "favorites_song_added": "已將 {name} 加入您的收藏夾",
+    "favorites_station_add": "將電台加入收藏",
+    "favorites_station_remove": "從收藏中移除電台",
+    "favorites_station_dislike": "不喜歡此電台",
+    "favorites_station_dislike_remove": "移除不喜歡電台",
+    "add_song_playlist": "新增歌曲至播放列表...",
+    "add_station_playlist": "將電台加入播放列表...",
+    "radio_song_not_found": "在音樂來源中找不到 {name}",
+    "add_queue_to_playlist": "將佇列新增至播放列表...",
+    "channel_layout": {
+        "stereo": "立體聲對",
+        "speaker_with_subwoofer": "附重低音的揚聲器",
+        "stereo_with_subwoofer": "立體聲對與重低音揚聲器"
+    },
+    "provider_pages": {
+        "heading": "附加項目",
+        "home_network": "此頁面是透過 Music Assistant 的家庭網路位址開啟的，因此只有在身處家中時才能載入。",
+        "unavailable": "此頁面只能在您的家庭網路上開啟，但 Music Assistant 的家庭網路位址未知。"
+    },
+    "audio_inputs": "音訊輸入",
+    "metadata": "詮釋資料",
+    "controllers": "控制器",
+    "statistics_library_based_albums": "包含連結至已具有專輯資訊之資料庫曲目的播放次數。其他播放次數可能會遺漏。",
+    "statistics_library_based_genres": "包含與具有曲風資訊的資料庫曲目相關聯的播放紀錄。其他播放紀錄可能會遺漏。",
+    "statistics_library_based_decades": "包含與具有專輯發行年份的資料庫曲目相關聯的播放紀錄。其他播放紀錄可能未包含在內。",
+    "statistics_library_based_listening_time": "根據已連結至已知時長之音樂庫曲目的完整播放次數計算。其他播放次數可能未納入計算。",
+    "edit_rows_subtitle_podcast_episode": "適用於每個 Podcast 單集頁面",
+    "share": {
+        "title": "共享音樂",
+        "open_preview": "共享連結…",
+        "preview_title": "共享 {title}",
+        "preview_description": "在複製共享連結之前預覽項目。",
+        "copy_share_link": "複製共享連結",
+        "copy_provider_link": "複製 {0} 連結",
+        "copy_all": "全部複製",
+        "link_copied": "共享連結已複製",
+        "link_copy_failed": "無法建立或複製共享連結。",
+        "preview_failed": "無法建立共享預覽。",
+        "preview_loading": "正在準備共享預覽…",
+        "loading": "正在資料庫中尋找此項目…",
+        "plugin_unavailable": "此連結需要 Share Links 外掛程式。請要求伺服器管理員啟用它。",
+        "resolve_failed": "在您的資料庫中找不到此項目。",
+        "invalid_link": "此共享連結無效或不完整。"
+    },
+    "live_sources": "即時來源",
+    "live_sources_page": {
+        "plays_on": "在 {0} 上播放",
+        "no_player": "選擇播放器，查看可以即時播放的內容。",
+        "select_player": "選擇播放器",
+        "empty": "沒有可播放的直播內容",
+        "empty_description": "{0} 沒有直播來源或輸入。"
+    }
 }

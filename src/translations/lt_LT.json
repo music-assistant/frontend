@@ -252,7 +252,6 @@
             "description": "Priverstinai naudokite mobilųjį išdėstymą (su meniu naršymu apačioje), net ir didesniuose ekranuose."
         },
         "players_description": "Garso išvesties įrenginių konfigūravimas ir valdymas",
-        "frontend_description": "Tinkinkite vartotojo sąsajos temą ir išvaizdą",
         "profile_description": "Tvarkykite asmeninius paskyros nustatymus ir nuostatas",
         "users": "Vartotojai",
         "users_description": "Tvarkyti naudotojų paskyras, vaidmenis ir leidimus",
@@ -272,41 +271,29 @@
         "proud_part_of": "Didžiuojasi savo dalimi",
         "core_module": {
             "cache": {
-                "name": "Talpykla",
-                "description": "Pagrindinio modulio, kuris tvarko duomenų kaupimą talpykloje visoje programoje, konfigūracija"
+                "name": "Talpykla"
             },
             "metadata": {
-                "name": "Metaduomenys",
-                "description": "Pagrindinio metaduomenų valdymo modulio konfigūracija"
+                "name": "Metaduomenys"
             },
             "music": {
-                "name": "Muzika",
-                "description": "Pagrindinio muzikos (bibliotekos) valdymo modulio konfigūracija"
+                "name": "Muzika"
             },
             "players": {
-                "name": "Grotuvai",
-                "description": "Pagrindinio grotuvo valdymo modulio konfigūracija"
+                "name": "Grotuvai"
             },
             "player_queues": {
-                "name": "Grotuvo eilės",
-                "description": "Pagrindinio grotuvo eilių valdymo modulio konfigūracija"
-            },
-            "remote_access": {
-                "name": "Nuotolinė prieiga",
-                "description": "Įgalina nuotolinę prieigą prie jūsų Music Assistant serverio"
+                "name": "Grotuvo eilės"
             },
             "streams": {
-                "name": "Srautai",
-                "description": "Garso srautinio perdavimo ir apdorojimo modulio konfigūracija"
+                "name": "Srautai"
             },
             "webserver": {
-                "name": "Žiniatinklio serveris",
-                "description": "Žiniatinklio serverio ir API konfigūracija"
+                "name": "Žiniatinklio serveris"
             }
         },
         "remote_access": "Nuotolinė prieiga",
         "remote_access_description": "Saugi prieiga prie Music Assistant iš bet kurios vietos",
-        "remote_access_title": "Saugi nuotolinė prieiga",
         "remote_access_explanation_intro": "Nuotolinė prieiga leidžia saugiai prisijungti prie Music Assistant serverio iš bet kurios pasaulio vietos.",
         "remote_access_explanation_ha_cloud": "Norint gauti geriausią patirtį ir patikimumą, reikalinga Home Assistant Cloud prenumerata.",
         "remote_access_feature_webrtc": "Paremta WebRTC technologija, skirta „peer-to-peer“ ryšiams",
@@ -343,7 +330,6 @@
         "remote_access_protocol_basic": "WebRTC su viešaisiais STUN serveriais (gali neveikti sudėtingose tinklo konfigūracijose).",
         "remote_access_protocol_optimized": "WebRTC su optimizuotais STUN\/TURN serveriais iš Home Assistant Cloud (veikia visose tinklo konfigūracijose).",
         "remote_access_encryption_description": "Išsamus šifravimas naudojant DTLS-SRTP užtikrina, kad jūsų duomenys išliktų privatūs ir saugūs.",
-        "frontend": "Vartotojo sąsaja",
         "view_players": "Peržiūrėti grotuvus",
         "players_total": "{0} bendras grotuvas{1}",
         "api_docs": "API dokumentacija",
@@ -411,9 +397,7 @@
         "add_plugin_provider": "Pridėti papildinį",
         "music_sources": "Muzikos šaltiniai",
         "plugins": "Įskiepiai",
-        "music_providers_description": "Tvarkykite savo muzikos transliacijos paslaugas ir vietines bibliotekas",
         "player_providers_description": "Garso išvesties įrenginių teikėjų konfigūravimas",
-        "metadata_providers_description": "Tvarkyti metaduomenų teikėjus, skirtus iliustracijoms ir papildomai informacijai",
         "plugin_providers_description": "Tvarkyti papildinius, kurie išplečia Music Assistant funkcijas",
         "restore_genres": "Atkurti žanrus",
         "genre_statistics_description": "Naršykite ir filtruokite visus savo bibliotekos žanrus. Žanrus galima pašalinti ir atkurti visame pasaulyje.",
@@ -422,16 +406,6 @@
         "add_player_providers": "Pridėti daugiau grotuvų tiekėjų",
         "add_audio_analysis_provider": "Pridėti garso analizės teikėją",
         "audio_analysis_providers": "Garso analizė",
-        "audio_analysis_providers_description": "Tvarkykite garso įrašus analizuojančius paslaugų teikėjus",
-        "audio_analysis": "Garso analizė",
-        "audio_analysis_coverage": {
-            "title": "Garso analizės aprėptis",
-            "col_pending": "Laukiama",
-            "col_stale": "Pasenęs",
-            "unavailable": "nepasiekiamas",
-            "none": "—"
-        },
-        "audio_analysis_description": "Stebėkite garso analizės aprėptį tarp savo paslaugų teikėjų",
         "player_status": {
             "available": "Pasiekiamas"
         }
@@ -635,8 +609,6 @@
         "setup_failed": "Sąranka nepavyko. Bandykite dar kartą.",
         "setup_error": "Sąrankos metu įvyko klaida",
         "profile": "Profilis",
-        "account_settings": "Paskyros nustatymai",
-        "manage_your_profile_info": "Tvarkykite savo profilio informaciją ir nustatymus",
         "change_password": "Keisti slaptažodį",
         "update_your_password": "Atnaujinkite savo paskyros slaptažodį",
         "old_password": "Dabartinis slaptažodis",
@@ -698,7 +670,6 @@
         "change_role": "Keisti vaidmenį",
         "avatar_url": "Avataro URL",
         "avatar_url_hint": "Įveskite avataro paveikslėlio URL",
-        "change_avatar": "Keisti avatarą",
         "profile_updated": "Profilis sėkmingai atnaujintas",
         "ingress_password_note": "Kai prie Music Assistant prisijungiate ne per Home Assistant, jums reikės šio slaptažodžio prisijungimui.",
         "copy_new_token_hint": "Nukopijuokite prieigos raktą. Jis daugiau nebus rodomas.",
@@ -781,7 +752,6 @@
     "narrators": "Pasakotojai",
     "queue_move_end": "Perkelti į pabaigą",
     "discover": "Atraskite",
-    "save_queue_as_playlist": "Išsaugoti eilę kaip grojaraštį",
     "playlist_created": "Grojaraštis sukurtas",
     "open_playlist": "Atidaryti grojaraštį",
     "add": "Pridėti",

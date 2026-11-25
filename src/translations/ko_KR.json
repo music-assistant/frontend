@@ -368,7 +368,6 @@
             "description": "큰 화면에서도 모바일 레이아웃(하단 메뉴 내비게이션)을 강제로 사용합니다."
         },
         "players_description": "오디오 출력 기기 설정 및 관리",
-        "frontend_description": "사용자 인터페이스 테마와 모양 설정",
         "profile_description": "개인 계정 설정 및 환경설정 관리",
         "users": "사용자",
         "users_description": "사용자 계정, 역할, 권한 관리",
@@ -388,41 +387,29 @@
         "proud_part_of": "자랑스러운 일원:",
         "core_module": {
             "cache": {
-                "name": "캐시",
-                "description": "애플리케이션 전반의 데이터 캐싱을 담당하는 핵심 모듈 설정"
+                "name": "캐시"
             },
             "metadata": {
-                "name": "메타데이터",
-                "description": "핵심 메타데이터 관리 모듈 설정"
+                "name": "메타데이터"
             },
             "music": {
-                "name": "음악",
-                "description": "핵심 음악(라이브러리) 관리 모듈 설정"
+                "name": "음악"
             },
             "players": {
-                "name": "플레이어",
-                "description": "핵심 플레이어 관리 모듈 설정"
+                "name": "플레이어"
             },
             "player_queues": {
-                "name": "플레이어 대기열",
-                "description": "핵심 플레이어 대기열 관리 모듈 설정"
-            },
-            "remote_access": {
-                "name": "원격 접속",
-                "description": "Music Assistant 서버에 원격으로 접속할 수 있게 합니다"
+                "name": "플레이어 대기열"
             },
             "streams": {
-                "name": "스트림",
-                "description": "오디오 스트리밍 및 처리 엔진 설정"
+                "name": "스트림"
             },
             "webserver": {
-                "name": "웹서버",
-                "description": "웹서버 및 API 설정"
+                "name": "웹서버"
             }
         },
         "remote_access": "원격 접속",
         "remote_access_description": "어디서나 안전하게 Music Assistant에 접속",
-        "remote_access_title": "보안 원격 접속",
         "remote_access_explanation_intro": "원격 접속을 사용하면 전 세계 어디서나 Music Assistant 서버에 안전하게 연결할 수 있습니다.",
         "remote_access_explanation_ha_cloud": "최상의 사용 환경과 안정성을 위해서는 Home Assistant Cloud 구독이 필요합니다.",
         "remote_access_feature_webrtc": "WebRTC 기술 기반의 P2P 연결",
@@ -459,7 +446,6 @@
         "remote_access_protocol_basic": "공용 STUN 서버를 사용하는 WebRTC (복잡한 네트워크 환경에서는 작동하지 않을 수 있음).",
         "remote_access_protocol_optimized": "Home Assistant Cloud의 최적화된 STUN\/TURN 서버를 사용하는 WebRTC (모든 네트워크 환경에서 작동).",
         "remote_access_encryption_description": "DTLS-SRTP를 이용한 종단 간 암호화로 데이터가 안전하게 보호됩니다.",
-        "frontend": "사용자 인터페이스",
         "view_players": "플레이어 보기",
         "players_total": "총 {count}개 플레이어 | 총 {count}개 플레이어",
         "api_docs": "API 문서",
@@ -542,9 +528,7 @@
         "add_plugin_provider": "플러그인 추가",
         "music_sources": "음악 소스",
         "plugins": "플러그인",
-        "music_providers_description": "음악 스트리밍 서비스와 로컬 라이브러리 관리",
         "player_providers_description": "오디오 출력 기기용 플레이어 공급자 설정",
-        "metadata_providers_description": "아트워크와 추가 정보를 위한 메타데이터 공급자 관리",
         "plugin_providers_description": "Music Assistant 기능을 확장하는 플러그인 관리",
         "restore_genres": "장르 복원",
         "genre_statistics_description": "라이브러리의 모든 장르를 탐색하고 필터링합니다. 장르는 전역으로 제외하거나 복원할 수 있습니다.",
@@ -553,21 +537,6 @@
         "add_player_providers": "플레이어 공급자 더 추가",
         "add_audio_analysis_provider": "오디오 분석 공급자 추가",
         "audio_analysis_providers": "오디오 분석",
-        "audio_analysis_providers_description": "오디오를 분석하는 공급자 관리",
-        "audio_analysis": "오디오 분석",
-        "audio_analysis_coverage": {
-            "title": "오디오 분석 현황",
-            "col_pending": "대기 중",
-            "col_stale": "오래됨",
-            "unavailable": "사용 불가",
-            "none": "—"
-        },
-        "audio_analysis_description": "공급자별 오디오 분석 현황 추적",
-        "audio_analysis_concurrency": {
-            "title": "백그라운드 분석 동시 실행 수",
-            "description": "야간 백그라운드 스캔 중 동시에 분석할 트랙 수를 설정합니다. 이 설정은 스트림 핵심 설정에 있습니다.",
-            "open_settings": "스트림 설정 열기"
-        },
         "provider_status_auth_required": "인증 필요",
         "provider_status_incompatible": "이 시스템에서 지원되지 않음",
         "provider_status_error": "설정 실패",
@@ -581,7 +550,6 @@
         "provider_removed": "\"{0}\" 제거됨",
         "queue_settings": "대기열 설정",
         "audio_analysis_failures": {
-            "title": "오디오 분석 실패",
             "description": "분석에 실패한 트랙은 이후 스캔에서 건너뜁니다. 항목을 삭제하면 실패 기록이 지워지고 다시 분석됩니다.",
             "col_item": "항목",
             "col_reason": "사유",
@@ -727,8 +695,6 @@
         "server_internal_url": "내부 URL",
         "server_external_url": "외부 URL",
         "server_remote_access": "원격 접속",
-        "audio_analysis_status_hint": "공급자별 분석 진행 상황과 실패 항목은 상태 페이지에서 확인할 수 있습니다.",
-        "audio_analysis_status_link": "오디오 분석 상태 열기",
         "music_sources_empty_title": "아직 음악 소스가 없습니다",
         "music_sources_empty": "음악 서비스 계정을 연결하거나 로컬 라이브러리를 추가해 음악을 들어보세요.",
         "source_access": {
@@ -769,7 +735,6 @@
         "music_sources_shared": "나와 공유됨",
         "music_sources_shared_empty": "아직 나와 공유된 음악 소스가 없습니다.",
         "storage": {
-            "title": "저장소",
             "description": "음악을 가져올 수 있는 폴더, 드라이브, 네트워크 공유",
             "load_failed": "저장소를 불러올 수 없습니다",
             "music_locations": "음악 위치",
@@ -855,7 +820,6 @@
         },
         "folder_picker": {
             "selected": "선택한 폴더",
-            "none_selected": "선택된 폴더 없음",
             "outside_locations": "이 폴더는 어떤 저장소 위치에도 속하지 않습니다. 다른 폴더를 고르기 전까지 선택된 상태로 유지됩니다.",
             "locations": "저장소 위치",
             "all_locations": "모든 위치",
@@ -863,13 +827,9 @@
             "open_folder": "{name} 열기",
             "no_subfolders": "이 폴더에는 하위 폴더가 없습니다.",
             "use_folder": "이 폴더 사용",
-            "folder_selected": "선택됨",
-            "holds_selection": "선택한 폴더가 여기에 있습니다",
             "browse_failed": "폴더를 열 수 없습니다",
             "empty_title": "아직 선택할 항목이 없습니다",
-            "empty_text": "선택할 수 있는 폴더, 드라이브, 네트워크 공유가 아직 없습니다. \"저장소 관리\"를 선택해 추가하세요.",
-            "empty_text_member": "선택할 수 있는 폴더, 드라이브, 네트워크 공유가 아직 없습니다. 관리자에게 추가를 요청하세요.",
-            "manage": "저장소 관리"
+            "empty_text_member": "선택할 수 있는 폴더, 드라이브, 네트워크 공유가 아직 없습니다. 관리자에게 추가를 요청하세요."
         },
         "remove_provider_confirm_music": "\"{0}\"을(를) 제거하시겠습니까? 이 소스가 제공하는 모든 음악과 재생 기록이 라이브러리에서 제거됩니다. 되돌릴 수 없습니다.",
         "remove_provider_confirm_player": "\"{0}\"을(를) 제거하시겠습니까? 해당 플레이어와 설정도 함께 제거됩니다. 되돌릴 수 없습니다.",
@@ -973,7 +933,6 @@
         "toggle_subplayers": "하위 플레이어 표시\/숨기기",
         "restore_genre": "장르 복원",
         "remove_rule": "규칙 제거",
-        "change_avatar": "아바타 변경",
         "revoke_session": "세션 취소",
         "revoke_token": "토큰 취소",
         "user_options": "사용자 옵션",
@@ -1226,8 +1185,6 @@
         "setup_failed": "설정에 실패했습니다. 다시 시도하세요.",
         "setup_error": "설정 중 오류가 발생했습니다",
         "profile": "프로필",
-        "account_settings": "계정 설정",
-        "manage_your_profile_info": "프로필 정보 및 설정 관리",
         "change_password": "비밀번호 변경",
         "update_your_password": "계정 비밀번호 변경",
         "old_password": "현재 비밀번호",
@@ -1289,7 +1246,6 @@
         "change_role": "역할 변경",
         "avatar_url": "아바타 URL",
         "avatar_url_hint": "아바타 이미지 URL을 입력하세요",
-        "change_avatar": "아바타 변경",
         "profile_updated": "프로필이 업데이트되었습니다",
         "ingress_password_note": "Home Assistant 밖에서 Music Assistant에 접속할 때 이 비밀번호로 로그인해야 합니다.",
         "copy_new_token_hint": "액세스 토큰을 복사하세요. 다시 표시되지 않습니다.",
@@ -1445,7 +1401,6 @@
     "narrators": "낭독자",
     "queue_move_end": "맨 끝으로 이동",
     "discover": "둘러보기",
-    "save_queue_as_playlist": "대기열을 재생목록으로 저장",
     "playlist_created": "재생목록이 생성되었습니다",
     "open_playlist": "재생목록 열기",
     "add": "추가",
@@ -1601,31 +1556,24 @@
             "create_intro": "새 퀴즈 게임을 만들어 음악 지식을 테스트해 보세요!",
             "loading": "불러오는 중...",
             "no_active_game": "진행 중인 게임 없음",
-            "game_removed": "더 이상 사용할 수 없는 게임",
             "game_ended": "게임 종료",
             "game_ended_detail": "참여한 퀴즈가 종료되었습니다.",
-            "game_no_longer_available": "이 게임은 더 이상 사용할 수 없습니다",
             "start": "퀴즈 시작",
-            "reveal": "정답 공개",
             "phase_reveal": "정답 공개",
             "next": "다음 라운드",
             "finish": "퀴즈 종료",
-            "reset": "퀴즈 초기화",
             "new_game": "새 게임",
             "phase_waiting_for_players": "참가자를 기다리는 중",
             "phase_answers_open": "답변을 받는 중!",
             "phase_enjoy_track": "곡을 즐기세요!",
             "phase_finished": "퀴즈 종료",
-            "join_url_label": "참여 URL",
             "players": "참가자",
             "players_count": "참가자 {0}명",
             "rounds_count": "{0}라운드",
             "round_label": "라운드",
-            "round": "라운드",
             "enter_name": "이름을 입력하세요",
             "join": "퀴즈 참여",
             "waiting_for_start": "호스트가 퀴즈를 시작하기를 기다리는 중...",
-            "waiting_for_answers": "답변을 기다리는 중...",
             "choose_answer": "정답을 고르세요!",
             "answered": "답변 제출 완료! 다른 참가자를 기다리는 중...",
             "answer_was": "정답은",
@@ -1635,19 +1583,12 @@
             "ready": "다음 라운드 준비 완료",
             "waiting_for_next": "다음 라운드를 기다리는 중...",
             "game_over": "게임 종료!",
-            "final_scores": "최종 점수",
             "final_leaderboard": "최종 순위",
-            "setup_placeholder": "설정 화면 준비 중",
             "connection_lost": "연결이 끊어졌습니다. 다시 연결하는 중...",
             "rounds": "라운드 수",
-            "suggestions": "보기 개수",
             "answer_seconds": "답변 시간 (초)",
-            "search_music": "라이브러리에서 검색",
-            "searching": "검색중...",
-            "no_sources_found": "트랙이나 재생목록이 없습니다",
             "selected_music": "선택한 음악",
             "pick_at_least_one_source": "소스를 하나 이상 선택하세요",
-            "source_search_failed": "음악 소스를 검색할 수 없습니다",
             "playlist": "재생목록",
             "track_with_artist": "트랙 • {0}",
             "track": "트랙",
@@ -1663,7 +1604,6 @@
             "qr_unavailable": "QR 코드를 표시할 수 없습니다",
             "copied": "복사됨",
             "copy_link": "링크 복사",
-            "join_link_copied": "참여 링크가 복사되었습니다",
             "copy_join_link_failed": "참여 링크를 복사할 수 없습니다",
             "now_playing": "지금 재생 중",
             "current_music": "현재 음악",
@@ -1704,8 +1644,6 @@
             "difficulty_hard": "어려움",
             "choose_game_type": "게임 유형 선택",
             "configure_game": "게임 설정",
-            "setup_step": "{1}단계 중 {0}단계",
-            "coming_soon": "출시 예정",
             "answer_choices": "보기 개수",
             "game_type_guess_the_song": "노래 맞히기",
             "game_type_guess_the_song_description": "트랙을 틀어주면 보기 중에서 제목을 가장 먼저 고르세요.",
@@ -1715,7 +1653,6 @@
             "end_game_confirm": "이 게임을 종료하시겠습니까? 모든 참가자의 현재 게임이 삭제됩니다.",
             "end_game": "게임 종료",
             "remove_music_source": "{0} 제거",
-            "timeline": "타임라인",
             "timeline_anchor": "기준",
             "timeline_revealed": "새 곡",
             "timeline_place_help": "재생 중인 곡이 들어갈 위치를 오래된 순에서 최신 순으로 고르세요.",
@@ -2591,26 +2528,11 @@
         "skip": "나중에 하기",
         "finish": "마침",
         "finish_failed": "완료할 수 없습니다. 다시 시도하세요.",
-        "nothing_configured": "아직 설정된 항목이 없습니다",
         "needs_attention": "확인 필요",
-        "set_up": "완료",
         "still_to_do": "남은 작업",
-        "all_done": "목록의 모든 항목이 설정되었습니다.",
         "players_count": "플레이어 {count}개 | 플레이어 {count}개",
         "run_again": "설정 마법사 다시 실행",
         "steps": {
-            "intent": {
-                "title": "Music Assistant 사용 방식 선택",
-                "description": "Music Assistant가 먼저 할 일을 정합니다. 무엇을 고르든 모든 기능은 그대로 사용할 수 있습니다.",
-                "phone_apps": {
-                    "label": "휴대폰 앱에서 재생",
-                    "description": "Spotify, AirPlay 등 앱에서 집 안의 스피커로 스트리밍합니다."
-                },
-                "music_hub": {
-                    "label": "음악 허브로 사용",
-                    "description": "스트리밍 서비스와 로컬 음악을 하나의 라이브러리로 모읍니다."
-                }
-            },
             "music_sources": {
                 "title": "음악 소스 추가",
                 "description": "Music Assistant가 재생할 음악이 있도록 스트리밍 서비스나 로컬 음악 파일을 연결하세요."
@@ -2626,52 +2548,14 @@
                 "rename": "{name} 이름 변경"
             },
             "plugins": {
-                "title": "플러그인 추가",
-                "description": "플러그인은 파티, Spotify Connect, AirPlay 리시버 같은 추가 기능을 Music Assistant에 더합니다. 언제든 나중에 추가할 수 있습니다."
+                "title": "플러그인 추가"
             },
             "finish": {
                 "title": "설정 마치기",
                 "description": "설정을 잘 마쳤습니다. 간단히 정리했으며, 모든 항목은 나중에 설정에서 바꿀 수 있습니다."
             },
-            "core_settings": {
-                "title": "서버 설정 확인",
-                "load_failed": "서버 설정을 불러올 수 없습니다. 나중에 설정에서 변경할 수 있습니다.",
-                "intro": "Music Assistant가 현재 사용 중인 주소입니다. 자동으로 정해지며 보통은 맞으니 그냥 넘어가셔도 됩니다.",
-                "internal_address": "내부 주소",
-                "internal_address_hint": "집 안의 앱과 기기가 Music Assistant에 접속하는 주소입니다.",
-                "stream_address": "스트림 서버 주소",
-                "stream_address_hint": "플레이어가 오디오를 가져오는 주소입니다.",
-                "address_unknown": "사용 불가",
-                "check": {
-                    "checking": "확인 중...",
-                    "reachable": "이 기기에서 접속 가능",
-                    "unreachable": "이 기기에서 접속 불가",
-                    "unchecked": "이 기기에서 확인할 수 없음"
-                },
-                "unreachable_hint": "여기서 응답하지 않는 주소는 플레이어에서도 응답하지 않을 수 있습니다. 재생이 안 되면 고급 설정에서 지정하세요.",
-                "override_hint": "리버스 프록시 뒤에 있거나 여러 VLAN에 걸친 복잡한 네트워크에서만 변경하면 됩니다. 나중에 설정 › {system}의 {webserver}와 {streams}에서 찾을 수 있습니다.",
-                "remote": {
-                    "title": "집 밖에서 듣기",
-                    "description": "외출 중에 Music Assistant에 접속하는 두 가지 방법입니다. 둘 다 나중에 설정할 수도 있습니다.",
-                    "builtin": {
-                        "title": "내장 원격 접속",
-                        "easiest": "가장 쉬움",
-                        "description": "포트 포워딩이나 VPN 없이 안전하게 암호화됩니다. 켜고 나서 원격 접속 ID로 어디서나 연결하세요.",
-                        "switch": "원격 접속",
-                        "id": "내 원격 접속 ID",
-                        "copy": "원격 접속 ID 복사",
-                        "hint": "Music Assistant 앱이나 app.music-assistant.io에서 사용하세요. QR 코드는 설정 › {remote_access}에 있습니다."
-                    },
-                    "proxy": {
-                        "title": "직접 운영하는 리버스 프록시",
-                        "description": "서버 앞에 리버스 프록시를 두고, 외부에서 접속하는 주소를 외부 주소로 입력하세요.",
-                        "set_external": "외부 주소 설정"
-                    }
-                }
-            },
             "invite_members": {
                 "title": "사용자 추가",
-                "description": "집 안의 모든 사람이 자기 계정을 가지며, 허용한 플레이어와 음악 소스를 사용할 수 있습니다.",
                 "load_failed": "사용자를 불러올 수 없습니다. 나중에 설정에서 추가할 수 있습니다."
             },
             "welcome": {
@@ -2694,10 +2578,16 @@
             },
             "own_sources": {
                 "title": "내 계정 연결",
-                "description": "내 음악 서비스를 추가하면 내 재생목록과 라이브러리가 다른 사람들 것과 함께 표시됩니다. 언제든 나중에 설정에서 할 수 있습니다.",
-                "add": "음악 소스 추가",
-                "empty": "아직 연결한 내 음악 소스가 없습니다.",
-                "connected": "내 음악 소스"
+                "add": "음악 소스 추가"
+            },
+            "core_settings": {
+                "remote": {
+                    "builtin": {
+                        "id": "내 원격 접속 ID",
+                        "copy": "원격 접속 ID 복사",
+                        "hint": "Music Assistant 앱이나 app.music-assistant.io에서 사용하세요. QR 코드는 설정 › {remote_access}에 있습니다."
+                    }
+                }
             },
             "your_players": {
                 "title": "내 플레이어",
@@ -2725,10 +2615,8 @@
             }
         },
         "add_member": "사용자 추가",
-        "just_you_so_far": "아직은 나 혼자입니다.",
         "welcome_title": "Music Assistant에 오신 것을 환영합니다",
         "welcome_again": "환영 화면 다시 보기",
-        "what_you_picked": "선택한 항목",
         "description": "Music Assistant를 한 단계씩 설정합니다.",
         "step_completed": "{step}, 완료됨",
         "welcome_description": "Music Assistant를 간단히 둘러봅니다.",

@@ -253,7 +253,6 @@
             "description": "Wymuś układ mobilny (z menu nawigacyjnym na dole), nawet na większych ekranach."
         },
         "players_description": "Konfiguruj i zarządzaj urządzeniami wyjścia audio",
-        "frontend_description": "Dostosuj motyw i wygląd interfejsu użytkownika",
         "profile_description": "Zarządzaj ustawieniami i preferencjami swojego konta",
         "users": "Użytkownicy",
         "users_description": "Zarządzaj kontami użytkowników, rolami i uprawnieniami",
@@ -273,41 +272,29 @@
         "proud_part_of": "Dumna część",
         "core_module": {
             "cache": {
-                "name": "Pamięć podręczna",
-                "description": "Konfiguracja modułu podstawowego, który obsługuje buforowanie danych w całej aplikacji"
+                "name": "Pamięć podręczna"
             },
             "metadata": {
-                "name": "Metadane",
-                "description": "Konfiguracja podstawowego modułu zarządzania metadanymi"
+                "name": "Metadane"
             },
             "music": {
-                "name": "Muzyka",
-                "description": "Konfiguracja podstawowego modułu zarządzania muzyką (biblioteką)"
+                "name": "Muzyka"
             },
             "players": {
-                "name": "Odtwarzacze",
-                "description": "Konfiguracja głównego modułu zarządzania odtwarzacza"
+                "name": "Odtwarzacze"
             },
             "player_queues": {
-                "name": "Kolejki odtwarzacza",
-                "description": "Konfiguracja podstawowego modułu zarządzania kolejką odtwarzacza"
-            },
-            "remote_access": {
-                "name": "Dostęp zdalny",
-                "description": "Umożliwia zdalny dostęp do serwera Music Assistant"
+                "name": "Kolejki odtwarzacza"
             },
             "streams": {
-                "name": "Strumienie",
-                "description": "Konfiguracja silnika strumieniowania i przetwarzania dźwięku"
+                "name": "Strumienie"
             },
             "webserver": {
-                "name": "Serwer WWW",
-                "description": "Konfiguracja serwera WWW i interfejsu API"
+                "name": "Serwer WWW"
             }
         },
         "remote_access": "Dostęp zdalny",
         "remote_access_description": "Bezpiecznie uzyskuj dostęp do Music Assistant z dowolnego miejsca",
-        "remote_access_title": "Bezpieczny dostęp zdalny",
         "remote_access_explanation_intro": "Zdalny dostęp umożliwia bezpieczne połączenie z serwerem Music Assistant z dowolnego miejsca na świecie.",
         "remote_access_explanation_ha_cloud": "Aby uzyskać najlepsze wrażenia i niezawodność, wymagana jest subskrypcja Home Assistant Cloud.",
         "remote_access_feature_webrtc": "Oparte na technologii WebRTC dla połączeń peer-to-peer",
@@ -344,7 +331,6 @@
         "remote_access_protocol_basic": "WebRTC z publicznymi serwerami STUN (może nie działać w złożonych konfiguracjach sieci).",
         "remote_access_protocol_optimized": "WebRTC ze zoptymalizowanymi serwerami STUN\/TURN od Home Assistant Cloud (działa we wszystkich konfiguracjach sieci).",
         "remote_access_encryption_description": "Szyfrowanie end-to-end przy użyciu DTLS-SRTP zapewnia prywatność i bezpieczeństwo danych.",
-        "frontend": "Interfejs użytkownika",
         "view_players": "Pokaż odtwarzacze",
         "players_total": "{0} łącznie odtwarzaczy{1}",
         "api_docs": "Dokumentacja API",
@@ -413,9 +399,7 @@
         "add_player_provider": "Dodaj dostawcę odtwarzacza",
         "add_metadata_provider": "Dodaj dostawcę metadanych",
         "music_sources": "Źródła muzyki",
-        "music_providers_description": "Zarządzaj usługami strumieniowego przesyłania muzyki i lokalnymi bibliotekami",
         "player_providers_description": "Skonfiguruj dostawców dla swoich urządzeń wyjściowych audio",
-        "metadata_providers_description": "Zarządzaj dostawcami metadanych dla grafik i dodatkowych informacji",
         "plugin_providers_description": "Zarządzaj wtyczkami rozszerzającymi funkcjonalność Music Assistant",
         "restore_genres": "Przywróć gatunki",
         "genre_statistics_description": "Przeglądaj i filtruj wszystkie gatunki w swojej bibliotece. Gatunki można globalnie wykluczać i przywracać.",
@@ -424,19 +408,6 @@
         "add_player_providers": "Dodaj więcej dostawców odtwarzaczy",
         "add_audio_analysis_provider": "Dodaj dostawcę analizy dźwięku",
         "audio_analysis_providers": "Analiza dźwięku",
-        "audio_analysis_providers_description": "Zarządzaj dostawcami analizującymi Twój dźwięk",
-        "audio_analysis": "Analiza dźwięku",
-        "audio_analysis_coverage": {
-            "title": "Zakres analizy dźwięku",
-            "unavailable": "niedostępne",
-            "none": "—"
-        },
-        "audio_analysis_description": "Śledź zasięg analizy audio u swoich dostawców",
-        "audio_analysis_concurrency": {
-            "title": "Współbieżność analizy w tle",
-            "description": "Kontroluj liczbę ścieżek analizowanych jednocześnie podczas nocnego skanowania w tle. To ustawienie znajduje się w konfiguracji głównej strumieni.",
-            "open_settings": "Otwórz ustawienia Strumieni"
-        },
         "provider_status_auth_required": "Wymagane uwierzytelnienie",
         "provider_status_incompatible": "Nieobsługiwane w tym systemie",
         "provider_status_error": "Konfiguracja nie powiodła się",
@@ -450,7 +421,6 @@
         "provider_removed": "Dostawca usunięty",
         "queue_settings": "Ustawienia kolejki",
         "audio_analysis_failures": {
-            "title": "Awarie Analizy Audio",
             "description": "Ścieżki, które nie przeszły analizy, są pomijane podczas przyszłych skanowań. Usuń wpis, aby usunąć błąd i umożliwić ponowną analizę.",
             "col_item": "Pozycja",
             "col_reason": "Powód",
@@ -565,7 +535,6 @@
         "toggle_subplayers": "Przełącz pod-odtwarzacze",
         "restore_genre": "Przywróć gatunek",
         "remove_rule": "Usuń regułę",
-        "change_avatar": "Zmień awatar",
         "revoke_session": "Unieważnij sesję",
         "revoke_token": "Unieważnij token",
         "user_options": "Opcje użytkownika",
@@ -705,8 +674,6 @@
         "setup_failed": "Konfiguracja nie powiodła się. Spróbuj ponownie.",
         "setup_error": "Wystąpił błąd podczas konfiguracji",
         "profile": "Profil",
-        "account_settings": "Ustawienia konta",
-        "manage_your_profile_info": "Zarządzaj informacjami i ustawieniami swojego profilu",
         "change_password": "Zmień hasło",
         "update_your_password": "Zaktualizuj hasło do swojego konta",
         "old_password": "Aktualne hasło",
@@ -768,7 +735,6 @@
         "change_role": "Zmień rolę",
         "avatar_url": "Adres URL awatara",
         "avatar_url_hint": "Wprowadź adres URL obrazu awatara",
-        "change_avatar": "Zmień awatar",
         "profile_updated": "Profil zaktualizowany pomyślnie",
         "ingress_password_note": "Aby uzyskać dostęp do Music Assistant poza aplikacją Home Assistant, będziesz potrzebować tego hasła, aby się zalogować.",
         "copy_new_token_hint": "Skopiuj swój token dostępu. Nie będzie on już widoczny.",
@@ -851,7 +817,6 @@
     "narrators": "Narratorzy",
     "queue_move_end": "Przenieś na koniec",
     "discover": "Odkrywaj",
-    "save_queue_as_playlist": "Zapisz kolejkę jako listę odtwarzania",
     "playlist_created": "Utworzono listę odtwarzania",
     "open_playlist": "Otwórz listę odtwarzania",
     "add": "Dodaj",
