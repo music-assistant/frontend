@@ -140,7 +140,12 @@ const kind = computed(() =>
 
 // fields already on shadcn-vue have no Vuetify message area below them, so their row
 // keeps its own gap
-const MIGRATED_KINDS: ReadonlySet<string> = new Set(["select"]);
+const MIGRATED_KINDS: ReadonlySet<string> = new Set([
+  "select",
+  "text",
+  "secret",
+  "number",
+]);
 const isMigrated = computed(() => MIGRATED_KINDS.has(kind.value));
 
 // lines the badge and help button up with the control: a labelled field has its
@@ -148,6 +153,9 @@ const isMigrated = computed(() => MIGRATED_KINDS.has(kind.value));
 const asideOffset = computed(() => {
   switch (kind.value) {
     case "select":
+    case "text":
+    case "secret":
+    case "number":
       return props.confEntry.label === "" ? "mt-1" : "mt-8";
     case "slider":
       return "min-[601px]:self-center";

@@ -370,6 +370,51 @@ describe("ConfigEntryField", () => {
     expect(wrapper.emitted("update:value")).toEqual([[""]]);
   });
 
+  it("stores a typed number as a number", async () => {
+    const wrapper = mountField(numberEntry(ConfigEntryType.INTEGER));
+
+    await wrapper.get("input").setValue("9000");
+
+    expect(wrapper.emitted("update:value")).toEqual([[9000]]);
+  });
+
+  // clearing a value an action filled in is how the action is offered again
+  it("lets the read-only value of an action be cleared", async () => {
+    const wrapper = mountField(
+      entry({
+        key: "token",
+        type: ConfigEntryType.STRING,
+        action: "authenticate",
+        value: "abc",
+      }),
+    );
+
+    expect(wrapper.get("input").attributes("readonly")).toBeDefined();
+    await wrapper.get(CLEAR_BUTTON).trigger("click");
+
+    expect(wrapper.emitted("update:value")).toEqual([[null]]);
+  });
+
+  it("shows the default again after an emptied required field is left", async () => {
+    const wrapper = mountField(
+      entry({
+        key: "name",
+        type: ConfigEntryType.STRING,
+        required: true,
+        default_value: "Fallback",
+        value: "Fallback",
+      }),
+    );
+
+    await wrapper.get("input").setValue("");
+    await wrapper.get("input").trigger("blur");
+
+    expect(wrapper.emitted("update:value")).toEqual([["Fallback"]]);
+    expect(wrapper.get<HTMLInputElement>("input").element.value).toBe(
+      "Fallback",
+    );
+  });
+
   it("emits the value of the option picked in a dropdown", async () => {
     const wrapper = mountField(dropdownEntry());
 
