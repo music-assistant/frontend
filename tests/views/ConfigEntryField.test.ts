@@ -378,6 +378,16 @@ describe("ConfigEntryField", () => {
     expect(wrapper.emitted("update:value")).toEqual([[9000]]);
   });
 
+  it("emits the value of the option picked in a dropdown", async () => {
+    const wrapper = mountField(dropdownEntry());
+
+    wrapper
+      .getComponent({ name: "SelectRoot" })
+      .vm.$emit("update:modelValue", "1");
+
+    expect(wrapper.emitted("update:value")).toEqual([["mp3"]]);
+  });
+
   // clearing a value an action filled in is how the action is offered again
   it("lets the read-only value of an action be cleared", async () => {
     const wrapper = mountField(
@@ -453,16 +463,6 @@ describe("ConfigEntryField", () => {
 
     expect(wrapper.emitted("update:value")).toEqual([[null]]);
     expect(wrapper.get<HTMLInputElement>("input").element.value).toBe("");
-  });
-
-  it("emits the value of the option picked in a dropdown", async () => {
-    const wrapper = mountField(dropdownEntry());
-
-    wrapper
-      .getComponent({ name: "SelectRoot" })
-      .vm.$emit("update:modelValue", "1");
-
-    expect(wrapper.emitted("update:value")).toEqual([["mp3"]]);
   });
 
   it("flags a required dropdown once it is cleared", async () => {
@@ -580,16 +580,20 @@ function controlStates(wrapper: VueWrapper): boolean[] {
 }
 
 /**
- * The disabled state of each control in the slider row: the value input Vuetify renders
- * for the slider, plus the number field's own input and its two step buttons.
+ * The disabled state of each control in the slider row: the slider, plus the number
+ * field's own input and its two step buttons.
  */
 function sliderRowStates(wrapper: VueWrapper): Record<string, boolean> {
   const numberFieldParts = wrapper
-    .findAll(".config-slider-input [data-slot]")
+    .findAll(
+      '[data-slot="input"], [data-slot="decrement"], [data-slot="increment"]',
+    )
     .map((el) => [el.attributes("data-slot") as string, isDisabled(el)]);
 
   return {
-    slider: isDisabled(wrapper.get(".config-slider input")),
+    slider:
+      wrapper.get('[data-slot="slider"]').attributes("data-disabled") !==
+      undefined,
     ...Object.fromEntries(numberFieldParts),
   };
 }

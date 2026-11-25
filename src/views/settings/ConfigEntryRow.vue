@@ -1,9 +1,8 @@
 <template>
   <div
-    class="config-entry"
+    class="config-entry mb-4 flex items-start gap-2 last:mb-0 has-[+.config-entry-hass-picker]:mb-2"
     :class="{
-      'mb-4 last:mb-0': isMigrated,
-      'config-entry-advanced': confEntry.advanced,
+      'opacity-90': confEntry.advanced,
       'config-entry-hass-picker': isHassControlPickerEntry(confEntry),
     }"
   >
@@ -134,74 +133,25 @@ const hasDescription = computed(() => !!props.confEntry.description?.trim());
 const helpLink = computed(() => getExternalLinkUrl(props.confEntry.help_link));
 const hasHelpLink = computed(() => !!helpLink.value);
 
-const kind = computed(() =>
-  configFieldKind(props.confEntry, props.providerDomain),
-);
-
-// fields already on shadcn-vue have no Vuetify message area below them, so their row
-// keeps its own gap
-const MIGRATED_KINDS: ReadonlySet<string> = new Set([
-  "select",
-  "text",
-  "secret",
-  "number",
-  "string_list",
-]);
-const isMigrated = computed(() => MIGRATED_KINDS.has(kind.value));
-
 // lines the badge and help button up with the control: a labelled field has its
 // label above the control
 const asideOffset = computed(() => {
-  switch (kind.value) {
+  switch (configFieldKind(props.confEntry, props.providerDomain)) {
     case "select":
     case "text":
     case "secret":
     case "number":
     case "string_list":
       return props.confEntry.label === "" ? "mt-1" : "mt-8";
+    case "boolean":
+      return "mt-0.5";
+    case "action":
+      // the button's own margin plus half of what it is taller than the help button
+      return "mt-[15px]";
     case "slider":
       return "min-[601px]:self-center";
     default:
-      return "mt-2";
+      return "mt-0";
   }
 });
 </script>
-
-<style scoped>
-.config-entry {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.config-entry:has(+ .config-entry-hass-picker) {
-  margin-bottom: 12px;
-}
-
-.config-entry:has(+ .config-entry-hass-picker)
-  :deep(.v-input__details:not(:has(.v-messages__message))) {
-  display: none;
-}
-
-.config-entry-hass-picker {
-  margin-top: -8px;
-  margin-bottom: 16px;
-}
-
-.config-entry:last-child {
-  margin-bottom: 0;
-}
-
-/* Add extra top margin for entries that follow a checkbox (which is shorter) */
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-text-field),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-slider),
-.config-entry:has(.v-checkbox) + .config-entry:has(.v-combobox) {
-  margin-top: 16px;
-}
-
-/* Advanced entry styling */
-.config-entry-advanced {
-  opacity: 0.9;
-}
-</style>
