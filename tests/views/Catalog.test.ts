@@ -18,6 +18,7 @@ import {
   ProviderTier,
   ProviderType,
   type Scope,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import {
   type ContextMenuDialogEvent,
@@ -1825,6 +1826,7 @@ describe("Catalog for a member", () => {
             owner: null,
             sharing: ProviderSharing.EVERYONE,
             shared_users: [],
+            shared_playback: SharedPlayback.WITHOUT_OWN,
           },
         }),
       ];
@@ -1871,6 +1873,7 @@ describe("Catalog for a member", () => {
             owner: "jane",
             sharing: ProviderSharing.PRIVATE,
             shared_users: [],
+            shared_playback: SharedPlayback.WITHOUT_OWN,
           },
         }),
       );

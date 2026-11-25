@@ -3166,6 +3166,7 @@ export class MusicAssistantApi {
         owner: access.owner,
         sharing: access.sharing,
         shared_users: access.shared_users,
+        shared_playback: access.shared_playback,
       },
       { suppressGlobalError: true },
     );
