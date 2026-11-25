@@ -85,8 +85,8 @@ export const getPlayerMenuItems = (
   const isPlayer = options.context === "player";
   const hideShuffleRepeat = options.hideShuffleRepeat === true;
 
-  // power off/on (player menu only)
-  if (isPlayer && player?.power_control != PLAYER_CONTROL_NONE) {
+  // power off/on (queue menu only; the player card has a power button)
+  if (isQueue && player?.power_control != PLAYER_CONTROL_NONE) {
     menuItems.push({
       label: player.powered ? "power_off_player" : "power_on_player",
       labelArgs: [],

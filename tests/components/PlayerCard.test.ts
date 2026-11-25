@@ -14,27 +14,30 @@ import { store } from "@/plugins/store";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiMock, emitContextMenu, hasScope } = vi.hoisted(() => ({
-  apiMock: {
-    players: {} as Record<string, Player>,
-    queues: {} as Record<
-      string,
-      {
-        active?: boolean;
-        extra_attributes?: {
-          play_action_in_progress?: boolean;
-        };
-        items?: number;
-      }
-    >,
-    playerCommandPlayPause:
-      vi.fn<MusicAssistantApi["playerCommandPlayPause"]>(),
-    playerCommandPowerToggle:
-      vi.fn<MusicAssistantApi["playerCommandPowerToggle"]>(),
-  },
-  emitContextMenu: vi.fn(),
-  hasScope: vi.fn<(scope: Scope) => boolean>(),
-}));
+const { apiMock, emitContextMenu, hasScope, togglePlayerPower } = vi.hoisted(
+  () => ({
+    apiMock: {
+      players: {} as Record<string, Player>,
+      queues: {} as Record<
+        string,
+        {
+          active?: boolean;
+          extra_attributes?: {
+            play_action_in_progress?: boolean;
+          };
+          items?: number;
+        }
+      >,
+      playerCommandPlayPause:
+        vi.fn<MusicAssistantApi["playerCommandPlayPause"]>(),
+    },
+    emitContextMenu: vi.fn(),
+    hasScope: vi.fn<(scope: Scope) => boolean>(),
+    togglePlayerPower: vi.fn<(player: Player) => void>(),
+  }),
+);
+
+vi.mock("@/helpers/player_group_playback", () => ({ togglePlayerPower }));
 
 vi.mock("@/plugins/api", () => ({
   default: apiMock,
@@ -770,6 +773,21 @@ describe("PlayerCard", () => {
     expect(wrapper.find('[aria-label="pause"]').exists()).toBe(true);
   });
 
+  it.each([true, false])(
+    "shows the power button while powered is %s",
+    async (powered) => {
+      vi.clearAllMocks();
+      const player = createPlayer({ powered });
+      const button = mountPlayerCard(player).get(
+        '[aria-label="tooltip.toggle_power"]',
+      );
+
+      expect(button.attributes("aria-pressed")).toBe(String(powered));
+      await button.trigger("click");
+      expect(togglePlayerPower).toHaveBeenCalledExactlyOnceWith(player);
+    },
+  );
+
   it("keeps card controls separate from player selection", async () => {
     vi.clearAllMocks();
     const player = createPlayer({
@@ -791,9 +809,7 @@ describe("PlayerCard", () => {
     await wrapper.find(".volume-control").trigger("click");
 
     expect(wrapper.emitted("click")).toHaveLength(1);
-    expect(apiMock.playerCommandPowerToggle).toHaveBeenCalledWith(
-      player.player_id,
-    );
+    expect(togglePlayerPower).toHaveBeenCalledWith(player);
     expect(apiMock.playerCommandPlayPause).toHaveBeenCalledWith(
       player.player_id,
     );
@@ -857,6 +873,7 @@ describe("PlayerCard", () => {
     const count = wrapper.get("[data-player-group-count]");
 
     expect(actions).toEqual([
+      "tooltip.toggle_power",
       "play",
       "tooltip.group_members: 1",
       "tooltip.more_options",
@@ -908,7 +925,7 @@ describe("PlayerCard", () => {
       await action.trigger("click");
     }
 
-    expect(apiMock.playerCommandPowerToggle).not.toHaveBeenCalled();
+    expect(togglePlayerPower).not.toHaveBeenCalled();
     expect(apiMock.playerCommandPlayPause).not.toHaveBeenCalled();
     expect(wrapper.emitted("toggle-member-controls")).toBeUndefined();
     expect(emitContextMenu).not.toHaveBeenCalled();

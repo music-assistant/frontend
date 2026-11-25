@@ -239,12 +239,21 @@ describe("getPlayerMenuItems power", () => {
       powered: true,
     });
     const powerItem = getPlayerMenuItems(player, undefined, {
-      context: "player",
+      context: "queue",
     }).find((item) => item.label === "power_off_player");
 
     powerItem?.action?.();
 
     expect(togglePlayerPower).toHaveBeenCalledWith(player);
+  });
+
+  it("leaves power to the player card's own button", () => {
+    const player = makePlayer({ power_control: "power", powered: true });
+    const labels = getPlayerMenuItems(player, undefined, {
+      context: "player",
+    }).map((item) => item.label);
+
+    expect(labels).not.toContain("power_off_player");
   });
 });
 

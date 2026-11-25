@@ -132,15 +132,14 @@
       <div class="player-card-actions flex shrink-0 items-center">
         <Button
           v-if="
-            player.power_control !== PLAYER_CONTROL_NONE &&
-            allowPowerControl &&
-            !player.powered
+            player.power_control !== PLAYER_CONTROL_NONE && allowPowerControl
           "
           variant="ghost"
           size="icon-sm"
           :disabled="!player.available"
           :aria-label="$t('tooltip.toggle_power')"
-          @click.stop="api.playerCommandPowerToggle(player.player_id)"
+          :aria-pressed="player.powered === true"
+          @click.stop="togglePlayerPower(player)"
         >
           <Power class="size-5" />
         </Button>
@@ -226,6 +225,7 @@ import {
   getEventPosition,
   useHoldToOpenMenu,
 } from "@/composables/useHoldToOpenMenu";
+import { togglePlayerPower } from "@/helpers/player_group_playback";
 import { getPlayerMenuItems } from "@/helpers/player_menu_items";
 import { getSetupRequiredPlayerMenuItems } from "@/helpers/player_settings_actions";
 import {
