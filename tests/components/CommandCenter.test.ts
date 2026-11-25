@@ -268,7 +268,7 @@ const CommandItemStub = {
   props: ["value"],
   emits: ["select"],
   template:
-    '<button data-testid="palette-item" @click="$emit(\'select\')"><slot /></button>',
+    '<button role="option" data-testid="palette-item" @click="$emit(\'select\')"><slot /></button>',
 };
 
 // reka renders the sources menu into a portal; these stubs keep it inline and
@@ -1833,8 +1833,8 @@ describe("CommandCenter", () => {
 
     await typeQuery(wrapper, "bohemian");
     expect(wrapper.text()).toContain("Bohemian Rhapsody");
-    // no synthetic ArrowDown: there is no enter contract to prepare for
-    expect(seen).not.toContain("ArrowDown");
+    // no synthetic Home: there is no enter contract to prepare for
+    expect(seen).not.toContain("Home");
 
     wrapper.unmount();
   });
@@ -1886,7 +1886,7 @@ describe("CommandCenter", () => {
     input.addEventListener("keydown", (event) => seen.push(event.key));
 
     await typeQuery(wrapper, "bohemian");
-    expect(seen).toContain("ArrowDown");
+    expect(seen).toContain("Home");
 
     const blurSpy = vi.spyOn(input, "blur");
     input.dispatchEvent(
@@ -1912,8 +1912,8 @@ describe("CommandCenter", () => {
     input.addEventListener("keydown", (event) => seen.push(event.key));
 
     await typeQuery(wrapper, "bohemian");
-    // the synthetic ArrowDown that highlights the top hit for enter to open
-    expect(seen).toContain("ArrowDown");
+    // the synthetic Home that highlights the top hit for enter to open
+    expect(seen).toContain("Home");
 
     const blurSpy = vi.spyOn(input, "blur");
     input.dispatchEvent(
