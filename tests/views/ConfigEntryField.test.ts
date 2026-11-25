@@ -69,6 +69,9 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
   ],
 ];
 
+const DROPDOWN = '[data-field-kind="select"]';
+const CLEAR_BUTTON = 'button[aria-label^="settings.clear_value"]';
+
 // the fields that render their own header above the control and expose a labelled group
 const HEADED_FIELDS: [string, ConfigEntryUI][] = [
   ["pairing code", pairingCodeEntry()],
@@ -101,8 +104,11 @@ describe("ConfigEntryField", () => {
       const wrapper = mountField(confEntry);
 
       if (branchText) expect(wrapper.text()).toContain(branchText);
-      expect(controlStates(wrapper)).toEqual([false]);
-      expect(controlStates(mountField(confEntry, true))).toEqual([true]);
+      // a field can render a clear or reveal button next to its input
+      expect(new Set(controlStates(wrapper))).toEqual(new Set([false]));
+      expect(new Set(controlStates(mountField(confEntry, true)))).toEqual(
+        new Set([true]),
+      );
     },
   );
 
@@ -143,7 +149,7 @@ describe("ConfigEntryField", () => {
     expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
       true,
     );
-    expect(wrapper.find(".v-select").exists()).toBe(false);
+    expect(wrapper.find(DROPDOWN).exists()).toBe(false);
   });
 
   it("leaves the same key on another provider as a plain dropdown", () => {
@@ -152,7 +158,7 @@ describe("ConfigEntryField", () => {
     expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
       false,
     );
-    expect(wrapper.find(".v-select").exists()).toBe(true);
+    expect(wrapper.find(DROPDOWN).exists()).toBe(true);
   });
 
   it("leaves out the clear button of a dropdown that must keep its value", () => {
@@ -166,7 +172,7 @@ describe("ConfigEntryField", () => {
       value: "front_left",
     });
     const clearable = (wrapper: VueWrapper) =>
-      wrapper.getComponent({ name: "VSelect" }).props("clearable");
+      wrapper.find(CLEAR_BUTTON).exists();
 
     expect(clearable(mountField(dropdown))).toBe(true);
     expect(
@@ -193,7 +199,7 @@ describe("ConfigEntryField", () => {
       }),
     );
 
-    expect(wrapper.get(".v-select").text()).toContain(
+    expect(wrapper.get(DROPDOWN).text()).toContain(
       "switch.registered_moments_ago",
     );
   });
@@ -201,7 +207,7 @@ describe("ConfigEntryField", () => {
   it("expands the options of an expanded_options entry, descriptions and all", () => {
     const wrapper = mountField(expandedOptionsEntry());
 
-    expect(wrapper.find(".v-select").exists()).toBe(false);
+    expect(wrapper.find(DROPDOWN).exists()).toBe(false);
     expect(optionButtons(wrapper)).toHaveLength(2);
     // the whole point of the branch: no option (or its description) is hidden behind a click
     expect(wrapper.text()).toContain("FLAC");
@@ -242,7 +248,7 @@ describe("ConfigEntryField", () => {
       value: [],
     });
 
-    expect(wrapper.find(".v-select").exists()).toBe(true);
+    expect(wrapper.find(DROPDOWN).exists()).toBe(true);
     expect(optionButtons(wrapper)).toHaveLength(0);
   });
 
@@ -363,6 +369,29 @@ describe("ConfigEntryField", () => {
 
     expect(wrapper.emitted("update:value")).toEqual([[""]]);
   });
+
+  it("emits the value of the option picked in a dropdown", async () => {
+    const wrapper = mountField(dropdownEntry());
+
+    wrapper
+      .getComponent({ name: "SelectRoot" })
+      .vm.$emit("update:modelValue", "1");
+
+    expect(wrapper.emitted("update:value")).toEqual([["mp3"]]);
+  });
+
+  it("flags a required dropdown once it is cleared", async () => {
+    const wrapper = mountField({ ...dropdownEntry(), required: true });
+    expect(wrapper.text()).not.toContain("settings.invalid_input");
+
+    await wrapper.get(CLEAR_BUTTON).trigger("click");
+    await wrapper.setProps({
+      confEntry: { ...dropdownEntry(), required: true, value: null },
+    });
+
+    expect(wrapper.emitted("update:value")).toEqual([[null]]);
+    expect(wrapper.text()).toContain("settings.invalid_input");
+  });
 });
 
 function entry(
@@ -414,6 +443,18 @@ function expandedOptionsEntry(): ConfigEntryUI {
   });
 }
 
+function dropdownEntry(): ConfigEntryUI {
+  return entry({
+    key: "output_codec",
+    type: ConfigEntryType.STRING,
+    options: [
+      { title: "FLAC", value: "flac" },
+      { title: "MP3", value: "mp3" },
+    ],
+    value: "flac",
+  });
+}
+
 function pairingCodeEntry(format: string | null = "###-###"): ConfigEntryUI {
   return entry({ key: "pin", type: ConfigEntryType.PAIRING_CODE, format });
 }
@@ -442,10 +483,9 @@ function mountField(
 /**
  * The disabled state of every control the field rendered, in document order.
  *
- * Elements carrying the `hidden` attribute are left out, since a v-select mirrors its
- * value into a hidden native select that no user can reach. Everything else counts, so
- * a control that escapes the field's disabled state fails the assertion rather than
- * being filtered away.
+ * Elements carrying the `hidden` attribute are left out, since no user can reach them.
+ * Everything else counts, so a control that escapes the field's disabled state fails
+ * the assertion rather than being filtered away.
  */
 function controlStates(wrapper: VueWrapper): boolean[] {
   return wrapper
