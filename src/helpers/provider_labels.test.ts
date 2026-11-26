@@ -4,6 +4,7 @@ import { providerManifest } from "../../tests/fixtures/providerManifest";
 import {
   getFilterLabels,
   getProviderLabels,
+  getShownLabels,
   isProviderLabel,
 } from "./provider_labels";
 
@@ -56,6 +57,17 @@ describe("what a provider offers", () => {
 
   it("gives no labels without a manifest", () => {
     expect(getProviderLabels(undefined)).toEqual([]);
+  });
+});
+
+describe("the labels shown for a provider", () => {
+  it("are its labels in their order", () => {
+    expect(getShownLabels(["library", "radio"])).toEqual(["library", "radio"]);
+  });
+
+  it("leave out other, which says nothing about a plugin", () => {
+    expect(getShownLabels(["ai", "other"])).toEqual(["ai"]);
+    expect(getShownLabels(["other"])).toEqual([]);
   });
 });
 

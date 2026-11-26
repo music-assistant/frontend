@@ -90,6 +90,48 @@ describe("CatalogBannerCard", () => {
     ).toBe("colour");
   });
 
+  it("draws a banner in the colours of the theme or a red one in place of the icon's colour", () => {
+    registerIcon("spotify", SVG_GREEN);
+
+    const muted = mountCard({ tone: "muted" }).get(
+      "[data-testid='catalog-art']",
+    );
+    expect(muted.attributes("data-art")).toBe("light");
+    expect(
+      mountCard({ tone: "error" })
+        .get("[data-testid='catalog-art']")
+        .attributes("data-art"),
+    ).toBe("error");
+  });
+
+  it("puts what it is given on the banner", () => {
+    const wrapper = mountCard(
+      {},
+      { banner: "<span data-testid='status'>Setup failed</span>" },
+    );
+
+    expect(
+      wrapper
+        .get("[data-testid='catalog-art']")
+        .find("[data-testid='status']")
+        .text(),
+    ).toBe("Setup failed");
+  });
+
+  it("shows the name it is given in place of its own", () => {
+    const wrapper = mountCard(
+      { openable: true },
+      { name: "<button data-testid='own-name'>Spotify</button>" },
+    );
+
+    expect(wrapper.get("h3").find("[data-testid='own-name']").exists()).toBe(
+      true,
+    );
+    expect(wrapper.find("[data-testid='catalog-card-open']").exists()).toBe(
+      false,
+    );
+  });
+
   it("puts an icon drawn in white only on a dark tile", () => {
     registerIcon("spotify", SVG_WHITE);
 

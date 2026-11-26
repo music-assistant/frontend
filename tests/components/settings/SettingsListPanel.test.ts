@@ -52,6 +52,19 @@ describe("SettingsListPanel", () => {
     expect(wrapper.emitted("toggle-view-mode")).toHaveLength(1);
   });
 
+  it("ends the row of the search and filters with the switch of the view", () => {
+    const wrapper = mountPanel(
+      { title: "Music sources", viewMode: "list", actions: [action()] },
+      { filters: '<input data-testid="search" />', default: "<ul />" },
+    );
+
+    const toggles = wrapper.findAllComponents(SettingsViewModeToggle);
+    expect(toggles).toHaveLength(1);
+    const filtersRow = wrapper.get('[data-testid="search"]').element
+      .parentElement!.parentElement!;
+    expect(filtersRow.lastElementChild).toBe(toggles[0].element);
+  });
+
   it("has no switch for a list without views", () => {
     const wrapper = mountPanel({ title: "Players" });
 

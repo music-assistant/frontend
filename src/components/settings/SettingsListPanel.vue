@@ -15,7 +15,7 @@
       </div>
       <div class="flex shrink-0 items-center gap-1">
         <SettingsViewModeToggle
-          v-if="viewMode"
+          v-if="viewMode && !$slots.filters"
           :mode="viewMode"
           small
           @toggle="emit('toggle-view-mode')"
@@ -60,8 +60,21 @@
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div v-if="$slots.filters" class="basis-full">
-        <slot name="filters" />
+      <!-- the switch of the view ends the row of the search and filters -->
+      <div
+        v-if="$slots.filters"
+        class="flex min-w-0 basis-full items-start gap-3"
+      >
+        <div class="min-w-0 flex-1">
+          <slot name="filters" />
+        </div>
+        <SettingsViewModeToggle
+          v-if="viewMode"
+          :mode="viewMode"
+          small
+          class="mt-0.5"
+          @toggle="emit('toggle-view-mode')"
+        />
       </div>
     </header>
     <div class="px-4 md:px-5">
@@ -100,8 +113,8 @@ import { EllipsisVertical } from "@lucide/vue";
 
 /**
  * A list of a settings page in a panel of its own, whose header holds the title
- * of the list with how many it holds, its search and filters, the switch
- * between its list and card view, and its actions.
+ * of the list with how many it holds and its actions, then its search and
+ * filters, ended by the switch between its list and card view.
  */
 defineProps<{
   title: string;
