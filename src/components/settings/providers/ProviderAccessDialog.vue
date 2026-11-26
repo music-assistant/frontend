@@ -78,6 +78,34 @@
               :placeholder="$t('settings.source_access.select_members')"
             />
           </Field>
+
+          <Field v-if="showsSharedPlayback">
+            <FieldLabel for="provider-access-shared-playback">
+              {{ $t("settings.source_access.shared_playback") }}
+            </FieldLabel>
+            <Select v-model="sharedPlayback">
+              <SelectTrigger
+                id="provider-access-shared-playback"
+                class="w-full"
+              >
+                <SelectValue>
+                  {{ $t(getSharedPlaybackTranslationKey(sharedPlayback)) }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="option in playbackOptions"
+                  :key="option"
+                  :value="option"
+                >
+                  {{ $t(getSharedPlaybackTranslationKey(option)) }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldDescription>
+              {{ $t(getSharedPlaybackHintTranslationKey(sharedPlayback)) }}
+            </FieldDescription>
+          </Field>
         </FieldGroup>
       </form>
       <DialogFooter>
@@ -125,8 +153,11 @@ import {
   effectiveProviderAccess,
   getProviderSharingHintTranslationKey,
   getProviderSharingTranslationKey,
+  getSharedPlaybackHintTranslationKey,
+  getSharedPlaybackTranslationKey,
   ownerCandidates,
   servesNobody,
+  sharedPlaybackOptions,
   userDisplayName,
 } from "@/helpers/provider_access";
 import { providerDisplayName } from "@/helpers/provider_config";
@@ -135,6 +166,7 @@ import {
   type ProviderAccess,
   type ProviderConfig,
   ProviderSharing,
+  SharedPlayback,
   type User,
   type UserSummary,
 } from "@/plugins/api/interfaces";
@@ -171,6 +203,7 @@ const { t } = useI18n();
 const owner = ref(HOUSEHOLD_OWNER);
 const sharing = ref(ProviderSharing.EVERYONE);
 const sharedUsers = ref<string[]>([]);
+const sharedPlayback = ref(SharedPlayback.WITHOUT_OWN);
 const saving = ref(false);
 
 const canChangeOwner = computed(
@@ -237,6 +270,19 @@ const sharingOptions = computed(() =>
   }),
 );
 
+// only an account of a streaming service plays for others in place of their
+// own, and only once it is shared with someone
+const showsSharedPlayback = computed(
+  () =>
+    !!props.config &&
+    api.providers[props.config.instance_id]?.is_streaming_provider === true &&
+    sharing.value !== ProviderSharing.PRIVATE,
+);
+
+const playbackOptions = computed(() =>
+  sharedPlaybackOptions(recordOwner.value !== null),
+);
+
 const currentAccess = computed(() =>
   effectiveProviderAccess(props.config?.access ?? null),
 );
@@ -252,6 +298,7 @@ const formAccess = computed<ProviderAccess>(() => ({
   sharing: sharing.value,
   shared_users:
     sharing.value === ProviderSharing.SELECTED ? sharedUsers.value : [],
+  shared_playback: sharedPlayback.value,
 }));
 
 const ownedByViewer = computed(
@@ -271,6 +318,9 @@ watch(selectedOwner, (ownerId) => {
     // instead, unless it is stored private without one already
     if (!sharingOptions.value.includes(sharing.value))
       sharing.value = ProviderSharing.MEMBERS;
+    // and so does keeping it to its owner
+    if (sharedPlayback.value === SharedPlayback.NEVER)
+      sharedPlayback.value = SharedPlayback.WITHOUT_OWN;
     return;
   }
   // the owner uses the source anyway, so it leaves the shared list once picked
@@ -300,5 +350,6 @@ const resetForm = () => {
   owner.value = access.owner ?? HOUSEHOLD_OWNER;
   sharing.value = access.sharing;
   sharedUsers.value = [...access.shared_users];
+  sharedPlayback.value = access.shared_playback;
 };
 </script>
