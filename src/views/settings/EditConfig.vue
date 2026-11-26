@@ -194,6 +194,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { provideConfigFormValidation } from "@/composables/useConfigFormValidation";
+import { expertModeSetting } from "@/helpers/expert_mode";
 import { isSpeakerChannelEntry } from "@/helpers/multi_channel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
@@ -205,10 +206,7 @@ import {
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
-import {
-  setUserPreference,
-  useUserPreferences,
-} from "@/composables/userPreferences";
+import { setUserPreference } from "@/composables/userPreferences";
 import { Save } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
@@ -281,10 +279,10 @@ const props = withDefaults(defineProps<Props>(), {
   showAdvancedSettings: undefined,
 });
 
-// one choice for every settings form, kept on the user's profile
-const advancedSettingsPreference = useUserPreferences().getPreference(
-  ADVANCED_SETTINGS_PREFERENCE,
-  false,
+// one choice for every settings form, kept on the user's profile; until it is
+// made, the advanced entries show in expert mode
+const advancedSettingsPreference = computed(() =>
+  expertModeSetting(ADVANCED_SETTINGS_PREFERENCE),
 );
 // what was chosen here, which holds for this form even when the profile could not
 // be updated

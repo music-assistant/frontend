@@ -28,6 +28,7 @@ const { apiMock, routerMock, setUserPreference, storeMock } = vi.hoisted(
     storeMock: {
       frameless: false,
       mobileLayout: false,
+      roleScopes: {},
       currentUser: undefined as
         { preferences: Record<string, unknown> } | undefined,
     },
@@ -597,6 +598,35 @@ describe("EditConfig", () => {
 
     expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
     expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+  });
+
+  it("shows the advanced entries in expert mode until the user chooses", () => {
+    storeMock.currentUser = { preferences: { expert_mode: true } };
+
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+  });
+
+  it("hides the advanced entries in expert mode once the user chose to", () => {
+    storeMock.currentUser = {
+      preferences: {
+        expert_mode: true,
+        "settings.showAdvancedSettings": false,
+      },
+    };
+
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(false);
   });
 
   it("keeps the choice made here when the profile keeps the old one", async () => {
