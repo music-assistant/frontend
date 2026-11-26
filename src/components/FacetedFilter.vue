@@ -54,7 +54,7 @@
     </PopoverTrigger>
     <PopoverContent
       class="w-[220px] p-0"
-      align="start"
+      :align="align ?? 'start'"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <div class="faceted-filter-content">
@@ -158,6 +158,12 @@ const props = defineProps<{
   /** On/off switches shown above the options. */
   toggles?: FacetedToggle[];
   class?: HTMLAttributes["class"];
+  /**
+   * The edge of the trigger the menu lines up with. A trigger at the end of a
+   * row grows towards its start as filters are picked, so its menu lines up
+   * with the end, or it slides away under the pointer.
+   */
+  align?: "start" | "end";
 }>();
 
 const emit = defineEmits<{

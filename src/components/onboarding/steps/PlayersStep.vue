@@ -8,6 +8,17 @@
       <div class="min-h-64">
         <!-- a live region so a player that was just found is announced -->
         <OnboardingList aria-live="polite">
+          <!-- the picker adds a provider either way; only where nothing is set
+             up yet is it named -->
+          <OnboardingAddRow
+            :label="
+              providers.length > 0
+                ? $t('onboarding.steps.players.add_more')
+                : $t('settings.add_player_provider')
+            "
+            data-testid="onboarding-add-provider"
+            @click="showAddProviderDialog = true"
+          />
           <DiscoveredPlayerItem
             v-for="player in players"
             :key="player.player_id"
@@ -31,17 +42,6 @@
                 ? 'onboarding-players-discovering'
                 : 'onboarding-players-empty'
             "
-          />
-          <!-- the picker adds a provider either way; only where nothing is set
-             up yet is it named -->
-          <OnboardingAddRow
-            :label="
-              providers.length > 0
-                ? $t('onboarding.steps.players.add_more')
-                : $t('settings.add_player_provider')
-            "
-            data-testid="onboarding-add-provider"
-            @click="showAddProviderDialog = true"
           />
         </OnboardingList>
       </div>

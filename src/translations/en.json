@@ -3313,6 +3313,7 @@
         "step_completed": "{step}, completed",
         "next": "Next",
         "skip": "Skip for now",
+        "show_all": "Show all {count}",
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
         "needs_attention": "Needs attention",
@@ -3427,7 +3428,7 @@
                     "builtin": {
                         "id": "Your remote access ID",
                         "copy": "Copy the remote access ID",
-                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {system} › {network} › {remote_access}."
+                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. You can find it again under Settings › {system} › {network} › {remote_access}."
                     }
                 }
             },

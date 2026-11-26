@@ -10,26 +10,31 @@ import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Ref } from "vue";
 
-const { apiMock, authMock, copyMock, onboardingState, toastMock } = vi.hoisted(
-  () => ({
-    apiMock: {
-      configureRemoteAccess:
-        vi.fn<MusicAssistantApi["configureRemoteAccess"]>(),
-      getRemoteAccessInfo: vi.fn<MusicAssistantApi["getRemoteAccessInfo"]>(),
-      // replaced with a real ref by the api mock factory below
-      serverInfo: { value: undefined } as Ref<ServerInfoMessage | undefined>,
-    },
-    authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
-    copyMock: vi.fn<(text: string) => Promise<boolean>>(),
-    // the part of the onboarding context this step reads
-    onboardingState: {
-      homeAssistantAddon: false,
-      homeAssistantConfigured: false,
-      homeAssistantConnected: false,
-    },
-    toastMock: { error: vi.fn(), success: vi.fn() },
-  }),
-);
+const {
+  apiMock,
+  authMock,
+  copyMock,
+  onboardingState,
+  renderQrMock,
+  toastMock,
+} = vi.hoisted(() => ({
+  renderQrMock: vi.fn(async () => {}),
+  apiMock: {
+    configureRemoteAccess: vi.fn<MusicAssistantApi["configureRemoteAccess"]>(),
+    getRemoteAccessInfo: vi.fn<MusicAssistantApi["getRemoteAccessInfo"]>(),
+    // replaced with a real ref by the api mock factory below
+    serverInfo: { value: undefined } as Ref<ServerInfoMessage | undefined>,
+  },
+  authMock: { hasScope: vi.fn<(scope: Scope) => boolean>() },
+  copyMock: vi.fn<(text: string) => Promise<boolean>>(),
+  // the part of the onboarding context this step reads
+  onboardingState: {
+    homeAssistantAddon: false,
+    homeAssistantConfigured: false,
+    homeAssistantConnected: false,
+  },
+  toastMock: { error: vi.fn(), success: vi.fn() },
+}));
 
 vi.mock("@/plugins/api", async () => {
   const { ref } = await vi.importActual<typeof import("vue")>("vue");
@@ -51,6 +56,8 @@ vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
 vi.mock("@/helpers/utils", () => ({ copyToClipboard: copyMock }));
+
+vi.mock("@/helpers/qr", () => ({ renderQrCode: renderQrMock }));
 
 enableAutoUnmount(afterEach);
 
@@ -113,7 +120,7 @@ const note = (wrapper: Wrapper) =>
 // that invites, and of the one that shows it on
 const homeAssistantLine = (wrapper: Wrapper) =>
   wrapper
-    .findAll("[data-slot=item]")
+    .findAll("li, [data-slot=item]")
     .find(
       (row) =>
         row.text() ===
@@ -145,7 +152,7 @@ describe("CoreSettingsStep", () => {
 
     expect(
       testId(wrapper, "onboarding-invitation-features")
-        .findAll("[data-slot=item]")
+        .findAll("li")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.core_settings.remote.features.secure",
@@ -219,6 +226,19 @@ describe("CoreSettingsStep", () => {
         testId(wrapper, "onboarding-remote-access-id-loading").exists(),
       ).toBe(false);
       expect(shownId(wrapper).text()).toContain(REMOTE_ID_GROUPED);
+    });
+
+    it("shows a QR code that opens the web app with the id", async () => {
+      const wrapper = await mountStep();
+
+      expect(testId(wrapper, "onboarding-remote-access-qr").exists()).toBe(
+        true,
+      );
+      expect(renderQrMock).toHaveBeenCalledWith(
+        expect.any(HTMLCanvasElement),
+        `https://app.music-assistant.io/?remote_id=${REMOTE_ID}`,
+        expect.any(Number),
+      );
     });
 
     it("copies the id as it is read out", async () => {
