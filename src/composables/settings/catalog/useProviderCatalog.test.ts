@@ -4,6 +4,7 @@ import {
   ProviderSharing,
   ProviderType,
   type Scope,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -216,6 +217,7 @@ describe("useProviderCatalog for a member", () => {
           owner: "jane",
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       providerConfig({
@@ -225,6 +227,7 @@ describe("useProviderCatalog for a member", () => {
           owner: null,
           sharing: ProviderSharing.EVERYONE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
     ]);
