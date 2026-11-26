@@ -1844,7 +1844,13 @@ const buildEnqueueMenuItems = function (
   tracksSortDirection?: SortDirection,
 ): ContextMenuItem[] {
   const expert = expertMode();
-  const options = expert
+  // left unset, playing now follows the server's own default
+  const playNow =
+    defaultEnqueueOption === QueueOption.PLAY ||
+    defaultEnqueueOption === QueueOption.REPLACE
+      ? defaultEnqueueOption
+      : undefined;
+  const options: (QueueOption | undefined)[] = expert
     ? [
         QueueOption.PLAY,
         QueueOption.NEXT,
@@ -1852,36 +1858,33 @@ const buildEnqueueMenuItems = function (
         QueueOption.REPLACE,
         QueueOption.REPLACE_NEXT,
       ]
-    : [
-        defaultEnqueueOption === QueueOption.REPLACE
-          ? QueueOption.REPLACE
-          : QueueOption.PLAY,
-        QueueOption.NEXT,
-        QueueOption.ADD,
-      ];
-  return options.map((option) => ({
-    label: $t(
-      (!expert && STANDARD_QUEUE_OPTION_LABELS[option]) ||
-        `queue_option.${option}`,
-    ),
-    action: () => {
-      const uris = items.map((x) => x.uri);
-      if (tracksSortField) {
-        api.playMedia(uris, option, {
-          sort_field: tracksSortField,
-          sort_direction: tracksSortDirection,
-        });
-      } else if (tracksSortBy) {
-        api.playMedia(uris, option, { sort_by: tracksSortBy });
-      } else {
-        api.playMedia(uris, option);
-      }
-    },
-    icon: queueOptionIconMap[option],
-    labelArgs: [],
-    disabled: !store.activePlayer,
-    selected: option === defaultEnqueueOption,
-  }));
+    : [playNow, QueueOption.NEXT, QueueOption.ADD];
+  return options.map((option) => {
+    const shownAs = option ?? QueueOption.PLAY;
+    return {
+      label: $t(
+        (!expert && STANDARD_QUEUE_OPTION_LABELS[shownAs]) ||
+          `queue_option.${shownAs}`,
+      ),
+      action: () => {
+        const uris = items.map((x) => x.uri);
+        if (tracksSortField) {
+          api.playMedia(uris, option, {
+            sort_field: tracksSortField,
+            sort_direction: tracksSortDirection,
+          });
+        } else if (tracksSortBy) {
+          api.playMedia(uris, option, { sort_by: tracksSortBy });
+        } else {
+          api.playMedia(uris, option);
+        }
+      },
+      icon: queueOptionIconMap[shownAs],
+      labelArgs: [],
+      disabled: !store.activePlayer,
+      selected: option !== undefined && option === defaultEnqueueOption,
+    };
+  });
 };
 
 /**

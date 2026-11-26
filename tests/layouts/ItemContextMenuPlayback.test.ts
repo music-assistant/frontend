@@ -297,16 +297,19 @@ describe("the play menu in the standard experience", () => {
     expect(options.map((x) => x.selected)).toEqual([true, false, false]);
   });
 
-  it("keeps the queue when playing now for a role that may not read the default", async () => {
+  it("leaves playing now to the server for a role that may not read the default", async () => {
     vi.mocked(authManager.hasScope).mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.guest),
     );
 
-    expect(queueOptionsOf(await enqueueOptions())).toEqual([
-      QueueOption.PLAY,
+    const options = await enqueueOptions();
+
+    expect(queueOptionsOf(options)).toEqual([
+      undefined,
       QueueOption.NEXT,
       QueueOption.ADD,
     ]);
+    expect(options.map((x) => x.selected)).toEqual([false, false, false]);
   });
 
   it("plays the configured default from the top of the menu", async () => {
