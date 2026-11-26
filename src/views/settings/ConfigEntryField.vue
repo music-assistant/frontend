@@ -1,10 +1,7 @@
 <template>
-  <div class="config-field">
+  <div class="config-field" :data-field-kind="kind">
     <!-- divider value -->
-    <div
-      v-if="confEntry.type == ConfigEntryType.DIVIDER"
-      class="config-divider"
-    >
+    <div v-if="kind === 'divider'" class="config-divider">
       <v-divider />
       <v-label v-if="confEntry.label" class="divider-label">
         {{ confEntry.label }}
@@ -12,22 +9,13 @@
     </div>
 
     <!-- label value -->
-    <LabelField
-      v-else-if="confEntry.type == ConfigEntryType.LABEL"
-      :text="displayLabel()"
-    />
+    <LabelField v-else-if="kind === 'label'" :text="displayLabel()" />
 
     <!-- alert value -->
-    <AlertField
-      v-else-if="confEntry.type == ConfigEntryType.ALERT"
-      :text="displayLabel()"
-    />
+    <AlertField v-else-if="kind === 'alert'" :text="displayLabel()" />
 
     <!-- image value (presentational, e.g. a pairing QR code) -->
-    <div
-      v-else-if="confEntry.type == ConfigEntryType.IMAGE"
-      class="config-image"
-    >
+    <div v-else-if="kind === 'image'" class="config-image">
       <img
         v-if="imageSrc"
         :src="imageSrc"
@@ -38,10 +26,7 @@
 
     <!-- action type -->
     <v-btn
-      v-else-if="
-        confEntry.type == ConfigEntryType.ACTION ||
-        (confEntry.action && !confEntry.value)
-      "
+      v-else-if="kind === 'action'"
       color="primary"
       class="action-btn"
       :disabled="isFieldDisabled"
@@ -63,7 +48,7 @@
 
     <!-- Home Assistant control entities: current selection plus an entity picker -->
     <HassControlsField
-      v-else-if="isHassControlsEntry"
+      v-else-if="kind === 'hass_controls'"
       :entry="confEntry"
       :label="displayLabel()"
       :disabled="isFieldDisabled"
@@ -72,7 +57,7 @@
 
     <!-- boolean value: checkbox -->
     <v-checkbox
-      v-else-if="confEntry.type == ConfigEntryType.BOOLEAN"
+      v-else-if="kind === 'boolean'"
       :model-value="confEntry.value"
       :label="displayLabel()"
       color="primary"
@@ -84,9 +69,7 @@
 
     <!-- int/float value in range: slider control -->
     <div
-      v-else-if="
-        isNumberEntry && confEntry.range && confEntry.range.length == 2
-      "
+      v-else-if="kind === 'slider' && confEntry.range"
       class="config-slider-wrapper"
     >
       <v-label class="config-slider-label">
@@ -132,7 +115,7 @@
 
     <!-- password value -->
     <v-text-field
-      v-else-if="confEntry.type == ConfigEntryType.SECURE_STRING"
+      v-else-if="kind === 'secret'"
       :model-value="confEntry.value"
       :label="displayLabel()"
       :required="confEntry.required"
@@ -160,7 +143,7 @@
 
     <!-- pairing code: one box per code character -->
     <PairingCodeField
-      v-else-if="confEntry.type == ConfigEntryType.PAIRING_CODE"
+      v-else-if="kind === 'pairing_code'"
       :entry="confEntry"
       :label="displayLabel()"
       :disabled="isFieldDisabled"
@@ -169,7 +152,7 @@
 
     <!-- folder on one of the server's storage locations -->
     <FolderPickerField
-      v-else-if="confEntry.type == ConfigEntryType.FOLDER"
+      v-else-if="kind === 'folder'"
       :entry="confEntry"
       :label="displayLabel()"
       :disabled="isFieldDisabled"
@@ -178,11 +161,7 @@
 
     <!-- value with all options expanded: one button per option -->
     <RadioGroupField
-      v-else-if="
-        confEntry.options.length > 0 &&
-        confEntry.expanded_options &&
-        !confEntry.multi_value
-      "
+      v-else-if="kind === 'expanded_options'"
       :label="displayLabel()"
       :options="displayOptions"
       :value="confEntry.value"
@@ -192,7 +171,7 @@
 
     <!-- value with dropdown -->
     <v-select
-      v-else-if="confEntry.options.length > 0"
+      v-else-if="kind === 'select'"
       :model-value="confEntry.value"
       :menu-props="{ zIndex: 10000 }"
       :chips="confEntry.multi_value"
@@ -223,7 +202,7 @@
 
     <!-- int value without range -->
     <v-text-field
-      v-else-if="isNumberEntry"
+      v-else-if="kind === 'number'"
       :model-value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
@@ -242,7 +221,7 @@
 
     <!-- icon picker -->
     <IconPicker
-      v-else-if="confEntry.type == ConfigEntryType.ICON"
+      v-else-if="kind === 'icon'"
       :model-value="confEntry.value as string"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
@@ -253,9 +232,7 @@
 
     <!-- multi-value string combobox -->
     <v-combobox
-      v-else-if="
-        confEntry.type == ConfigEntryType.STRING && confEntry.multi_value
-      "
+      v-else-if="kind === 'string_list'"
       :model-value="confEntry.value as string[]"
       :menu-props="{ zIndex: 10000 }"
       multiple
@@ -317,12 +294,15 @@ import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
 import PairingCodeField from "./fields/PairingCodeField.vue";
 import RadioGroupField from "./fields/RadioGroupField.vue";
+import { useConfigFieldValidation } from "@/composables/useConfigFormValidation";
 import {
   ConfigEntryUI,
-  HASS_CONTROL_KEYS,
   isHassControlPickerEntry,
 } from "@/helpers/config_entry_ui";
-import { HASS_DOMAIN } from "@/helpers/home_assistant";
+import {
+  configFieldKind,
+  isRequiredValueMissing,
+} from "@/helpers/config_field";
 import { isEmbeddedImage } from "@/helpers/utils";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
@@ -340,22 +320,21 @@ const props = withDefaults(
   { disabled: false, providerDomain: undefined, clearable: true },
 );
 
-// only the Home Assistant provider's own control lists get the entity picker, not any
-// other provider that happens to use the same key names
-const isHassControlsEntry = computed(
-  () =>
-    props.providerDomain === HASS_DOMAIN &&
-    HASS_CONTROL_KEYS.has(props.confEntry.key),
+const kind = computed(() =>
+  configFieldKind(props.confEntry, props.providerDomain),
 );
 
 const isFieldDisabled = computed(() => {
   return props.disabled || props.confEntry.read_only;
 });
 
-const isNumberEntry = computed(
+// a disabled field can not be filled in, so it never blocks a save, as for the
+// save button
+const validation = useConfigFieldValidation(
   () =>
-    props.confEntry.type == ConfigEntryType.INTEGER ||
-    props.confEntry.type == ConfigEntryType.FLOAT,
+    !isFieldDisabled.value &&
+    isRequiredValueMissing(props.confEntry, kind.value),
+  () => $t("settings.invalid_input"),
 );
 
 // Only surface an <img> when a source is actually available; otherwise the
@@ -389,6 +368,7 @@ const displayActionLabel = () =>
   props.confEntry.action_label || props.confEntry.label || props.confEntry.key;
 
 const onUpdateValue = (value: ConfigValueType) => {
+  validation.touch();
   // When value is cleared (null/undefined/empty array), emit the default value instead
   // For non-required text fields, allow empty strings as a valid value
   if (
@@ -398,7 +378,7 @@ const onUpdateValue = (value: ConfigValueType) => {
     (Array.isArray(value) && value.length === 0)
   ) {
     emit("update:value", props.confEntry.default_value);
-  } else if (value === "" && isNumberEntry.value) {
+  } else if (value === "" && kind.value === "number") {
     // an emptied number field has no value, so the server falls back to the default
     emit("update:value", null);
   } else {
@@ -407,6 +387,7 @@ const onUpdateValue = (value: ConfigValueType) => {
 };
 
 const onClear = () => {
+  validation.touch();
   emit("update:value", null);
 };
 
