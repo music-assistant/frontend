@@ -1148,6 +1148,11 @@
             "filter": "Filter on what they offer",
             "all": "All"
         },
+        "provider_columns": {
+            "name": "Name",
+            "offers": "Offers",
+            "access": "Who can use it"
+        },
         "source_labels": {
             "library": "Library",
             "radio": "Radio",

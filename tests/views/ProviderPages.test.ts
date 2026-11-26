@@ -220,6 +220,7 @@ const ProviderRowStub = {
   props: [
     "config",
     "variant",
+    "columns",
     "manageable",
     "reconfigurable",
     "syncing",
@@ -704,6 +705,22 @@ describe("Providers", () => {
     expect(onlyRow(wrapper).props("accessSummary")).toBeNull();
   });
 
+  it("gives a list of providers that offer nothing and serve nobody no columns", async () => {
+    pageType = ProviderType.PLAYER;
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      type: ProviderType.PLAYER,
+    });
+
+    expect(wrapper.find('[data-testid="provider-columns"]').exists()).toBe(
+      false,
+    );
+    expect(onlyRow(wrapper).props("columns")).toEqual({
+      offers: false,
+      access: false,
+    });
+  });
+
   it("lists remove as the last menu item, marked as destructive", async () => {
     // a player provider also gets its conditional items, which must stay above
     pageType = ProviderType.PLAYER;
@@ -1153,6 +1170,24 @@ describe("Providers labelled with what they offer", () => {
     expect(rowFor(wrapper, "airplay_receiver--1").props("labels")).toEqual([
       "live",
     ]);
+  });
+
+  it("gives the list a column for what its sources offer and who can use them", async () => {
+    const wrapper = await mountWithConfigs(labelledSources());
+
+    expect(
+      wrapper
+        .findAll('[data-testid="provider-columns"] span')
+        .map((column) => column.text()),
+    ).toEqual([
+      "settings.provider_columns.name",
+      "settings.provider_columns.offers",
+      "settings.provider_columns.access",
+    ]);
+    expect(rowFor(wrapper, "spotify--own").props("columns")).toEqual({
+      offers: true,
+      access: true,
+    });
   });
 
   it("offers a chip for every label a listed source has, after All", async () => {

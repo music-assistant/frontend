@@ -3,7 +3,13 @@
     class="relative h-full gap-0 overflow-hidden rounded-(--radius-lg) p-0"
     :class="{ 'card-hover': to || openable }"
   >
-    <CatalogArt :color="color" class="h-10 shrink-0" />
+    <CatalogArt
+      :color="tone === 'muted' ? null : color"
+      :error="tone === 'error'"
+      class="h-10 shrink-0"
+    >
+      <slot name="banner" />
+    </CatalogArt>
     <!-- an action on the banner, above the name that covers the card -->
     <div v-if="$slots.corner" class="absolute top-1 right-1.5 z-10">
       <slot name="corner" />
@@ -22,30 +28,32 @@
             <h3
               class="m-0 max-w-full min-w-0 truncate text-base leading-[22px] font-semibold"
             >
-              <!-- the name stretches over the card, so the whole card opens it
-                   while the actions on it stay their own controls -->
-              <RouterLink
-                v-if="to"
-                :to="to"
-                :class="STRETCHED_CLASS"
-                class="text-inherit no-underline"
-                data-testid="catalog-card-open"
-              >
-                {{ name }}
-              </RouterLink>
-              <!-- the heading would hide a button that does not fit whole, so
-                   the button cuts its own text short -->
-              <button
-                v-else-if="openable"
-                type="button"
-                :class="STRETCHED_CLASS"
-                class="block max-w-full cursor-pointer truncate text-left"
-                data-testid="catalog-card-open"
-                @click="emit('open')"
-              >
-                {{ name }}
-              </button>
-              <template v-else>{{ name }}</template>
+              <slot name="name">
+                <!-- the name stretches over the card, so the whole card opens it
+                     while the actions on it stay their own controls -->
+                <RouterLink
+                  v-if="to"
+                  :to="to"
+                  :class="STRETCHED_CLASS"
+                  class="text-inherit no-underline"
+                  data-testid="catalog-card-open"
+                >
+                  {{ name }}
+                </RouterLink>
+                <!-- the heading would hide a button that does not fit whole, so
+                     the button cuts its own text short -->
+                <button
+                  v-else-if="openable"
+                  type="button"
+                  :class="STRETCHED_CLASS"
+                  class="block max-w-full cursor-pointer truncate text-left"
+                  data-testid="catalog-card-open"
+                  @click="emit('open')"
+                >
+                  {{ name }}
+                </button>
+                <template v-else>{{ name }}</template>
+              </slot>
             </h3>
             <slot name="badges" />
           </div>
@@ -85,12 +93,31 @@ interface Props {
   to?: RouteLocationRaw;
   // whether the card emits open, for a card that opens its details
   openable?: boolean;
+  // a banner in the colours of the theme, or a pale red one for an error, in
+  // place of the colour of the icon
+  tone?: "muted" | "error";
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: "open"): void;
+}>();
+
+defineSlots<{
+  // on the banner, beside the icon
+  banner?(): unknown;
+  // an action on the corner of the banner
+  corner?(): unknown;
+  // in place of the name, for a card that opens it in its own way
+  name?(): unknown;
+  // beside the name
+  badges?(): unknown;
+  // under the name
+  subtitle?(): unknown;
+  default?(): unknown;
+  // the status on the left of the bottom of the card, its actions on the right
+  footer?(): unknown;
 }>();
 
 const STRETCHED_CLASS =
