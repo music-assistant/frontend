@@ -1,39 +1,36 @@
 <template>
-  <div class="config-field" :data-field-kind="kind">
-    <!-- divider value -->
-    <div v-if="kind === 'divider'" class="config-divider">
-      <v-divider />
-      <v-label v-if="confEntry.label" class="divider-label">
+  <div class="min-w-0 flex-1" :data-field-kind="kind">
+    <div v-if="kind === 'divider'" class="py-2">
+      <Separator />
+      <span v-if="confEntry.label" class="mt-3 block text-sm font-semibold">
         {{ confEntry.label }}
-      </v-label>
+      </span>
     </div>
 
-    <!-- label value -->
-    <LabelField v-else-if="kind === 'label'" :text="displayLabel()" />
+    <LabelField v-else-if="kind === 'label'" :text="displayLabel" />
 
-    <!-- alert value -->
-    <AlertField v-else-if="kind === 'alert'" :text="displayLabel()" />
+    <AlertField v-else-if="kind === 'alert'" :text="displayLabel" />
 
-    <!-- image value (presentational, e.g. a pairing QR code) -->
-    <div v-else-if="kind === 'image'" class="config-image">
+    <!-- presentational, e.g. a pairing QR code -->
+    <div v-else-if="kind === 'image'" class="flex justify-center py-2">
       <img
         v-if="imageSrc"
         :src="imageSrc"
-        :alt="displayLabel()"
+        :alt="displayLabel"
         loading="lazy"
+        class="max-h-[260px] max-w-full rounded-lg"
       />
     </div>
 
-    <!-- action type -->
-    <v-btn
+    <Button
       v-else-if="kind === 'action'"
-      color="primary"
-      class="action-btn"
+      type="button"
+      class="my-2 mb-5 h-auto min-h-[50px] w-full whitespace-normal"
       :disabled="isFieldDisabled"
       @click="$emit('action')"
     >
-      {{ displayActionLabel() }}
-    </v-btn>
+      {{ displayActionLabel }}
+    </Button>
 
     <!-- Home Assistant entity picker for a single player control -->
     <HassControlPickerField
@@ -50,73 +47,38 @@
     <HassControlsField
       v-else-if="kind === 'hass_controls'"
       :entry="confEntry"
-      :label="displayLabel()"
+      :label="displayLabel"
       :disabled="isFieldDisabled"
       @update:value="onUpdateValue($event)"
     />
 
-    <!-- boolean value: checkbox -->
-    <v-checkbox
+    <label
       v-else-if="kind === 'boolean'"
-      :model-value="confEntry.value"
-      :label="displayLabel()"
-      color="primary"
-      :disabled="isFieldDisabled"
-      hide-details
-      density="comfortable"
-      @update:model-value="$emit('update:value', $event)"
-    />
-
-    <!-- int/float value in range: slider control -->
-    <div
-      v-else-if="kind === 'slider' && confEntry.range"
-      class="config-slider-wrapper"
+      class="flex min-h-10 cursor-pointer items-center gap-3 py-2 text-sm has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
     >
-      <v-label class="config-slider-label">
-        {{ displayLabel() }}
-      </v-label>
-      <div class="config-slider-block">
-        <v-slider
-          :model-value="confEntry.value as number"
-          :disabled="isFieldDisabled"
-          :required="confEntry.required"
-          :min="confEntry.range[0]"
-          :max="confEntry.range[1]"
-          :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
-          hide-details
-          color="primary"
-          class="config-slider"
-          @update:model-value="$emit('update:value', $event)"
-        />
+      <Checkbox
+        :model-value="confEntry.value === true"
+        :disabled="isFieldDisabled"
+        @update:model-value="$emit('update:value', $event === true)"
+      />
+      {{ displayLabel }}
+    </label>
 
-        <div class="config-slider-input">
-          <NumberField
-            :model-value="confEntry.value as number"
-            :disabled="isFieldDisabled"
-            :min="confEntry.range[0]"
-            :max="confEntry.range[1]"
-            :step="confEntry.type == ConfigEntryType.FLOAT ? 0.5 : 1"
-            :format-options="{
-              maximumFractionDigits:
-                confEntry.type == ConfigEntryType.FLOAT ? 1 : 0,
-            }"
-            class="w-[100px]"
-            @update:model-value="$emit('update:value', $event ?? null)"
-          >
-            <NumberFieldContent>
-              <NumberFieldInput />
-              <NumberFieldDecrement />
-              <NumberFieldIncrement />
-            </NumberFieldContent>
-          </NumberField>
-        </div>
-      </div>
-    </div>
+    <SliderField
+      v-else-if="kind === 'slider' && confEntry.range"
+      :label="displayLabel"
+      :value="confEntry.value"
+      :min="confEntry.range[0]"
+      :max="confEntry.range[1]"
+      :float="confEntry.type === ConfigEntryType.FLOAT"
+      :disabled="isFieldDisabled"
+      @update:value="$emit('update:value', $event)"
+    />
 
     <TextField
       v-else-if="kind === 'secret'"
       type="password"
-      :label="displayLabel()"
+      :label="displayLabel"
       :value="confEntry.value"
       :readonly="!!confEntry.action"
       :disabled="isFieldDisabled"
@@ -131,11 +93,11 @@
       @toggle-password="emit('togglePassword')"
     />
 
-    <!-- pairing code: one box per code character -->
+    <!-- one box per code character -->
     <PairingCodeField
       v-else-if="kind === 'pairing_code'"
       :entry="confEntry"
-      :label="displayLabel()"
+      :label="displayLabel"
       :disabled="isFieldDisabled"
       @update:value="onUpdateValue($event)"
     />
@@ -144,15 +106,15 @@
     <FolderPickerField
       v-else-if="kind === 'folder'"
       :entry="confEntry"
-      :label="displayLabel()"
+      :label="displayLabel"
       :disabled="isFieldDisabled"
       @update:value="onUpdateValue($event)"
     />
 
-    <!-- value with all options expanded: one button per option -->
+    <!-- one button per option -->
     <RadioGroupField
       v-else-if="kind === 'expanded_options'"
-      :label="displayLabel()"
+      :label="displayLabel"
       :options="displayOptions"
       :value="confEntry.value"
       :disabled="isFieldDisabled"
@@ -161,7 +123,7 @@
 
     <SelectField
       v-else-if="kind === 'select'"
-      :label="displayLabel()"
+      :label="displayLabel"
       :options="displayOptions"
       :value="confEntry.value"
       :multiple="!!confEntry.multi_value"
@@ -178,7 +140,7 @@
       v-else-if="kind === 'number'"
       type="number"
       :step="confEntry.type === ConfigEntryType.FLOAT ? 'any' : undefined"
-      :label="displayLabel()"
+      :label="displayLabel"
       :value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
@@ -190,20 +152,19 @@
       @blur="validation.touch"
     />
 
-    <!-- icon picker -->
     <IconPicker
       v-else-if="kind === 'icon'"
       :model-value="confEntry.value as string"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
-      :label="displayLabel()"
+      :label="displayLabel"
       @update:model-value="onUpdateValue($event)"
       @click:clear="onClear"
     />
 
     <StringListField
       v-else-if="kind === 'string_list'"
-      :label="displayLabel()"
+      :label="displayLabel"
       :value="confEntry.value"
       :disabled="isFieldDisabled"
       :required="confEntry.required"
@@ -216,7 +177,7 @@
     <TextField
       v-else
       type="text"
-      :label="displayLabel()"
+      :label="displayLabel"
       :value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :readonly="!!confEntry.action"
@@ -232,30 +193,10 @@
 </template>
 
 <script setup lang="ts">
-import {
-  NumberField,
-  NumberFieldContent,
-  NumberFieldDecrement,
-  NumberFieldIncrement,
-  NumberFieldInput,
-} from "@/components/ui/number-field";
-import {
-  ConfigEntry,
-  ConfigEntryType,
-  ConfigValueType,
-  SECURE_STRING_SUBSTITUTE,
-} from "@/plugins/api/interfaces";
 import IconPicker from "@/components/IconPicker.vue";
-import AlertField from "./fields/AlertField.vue";
-import FolderPickerField from "./fields/FolderPickerField.vue";
-import HassControlPickerField from "./fields/HassControlPickerField.vue";
-import HassControlsField from "./fields/HassControlsField.vue";
-import LabelField from "./fields/LabelField.vue";
-import PairingCodeField from "./fields/PairingCodeField.vue";
-import RadioGroupField from "./fields/RadioGroupField.vue";
-import SelectField from "./fields/SelectField.vue";
-import StringListField from "./fields/StringListField.vue";
-import TextField from "./fields/TextField.vue";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { useConfigFieldValidation } from "@/composables/useConfigFormValidation";
 import {
   ConfigEntryUI,
@@ -267,8 +208,24 @@ import {
   isRequiredValueMissing,
 } from "@/helpers/config_field";
 import { isEmbeddedImage } from "@/helpers/utils";
+import {
+  ConfigEntryType,
+  ConfigValueType,
+  SECURE_STRING_SUBSTITUTE,
+} from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { computed } from "vue";
+import AlertField from "./fields/AlertField.vue";
+import FolderPickerField from "./fields/FolderPickerField.vue";
+import HassControlPickerField from "./fields/HassControlPickerField.vue";
+import HassControlsField from "./fields/HassControlsField.vue";
+import LabelField from "./fields/LabelField.vue";
+import PairingCodeField from "./fields/PairingCodeField.vue";
+import RadioGroupField from "./fields/RadioGroupField.vue";
+import SelectField from "./fields/SelectField.vue";
+import SliderField from "./fields/SliderField.vue";
+import StringListField from "./fields/StringListField.vue";
+import TextField from "./fields/TextField.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -283,13 +240,26 @@ const props = withDefaults(
   { disabled: false, providerDomain: undefined, clearable: true },
 );
 
+const emit = defineEmits<{
+  (e: "togglePassword"): void;
+  (e: "action"): void;
+  (e: "update:value", value: ConfigValueType): void;
+  // set the value of another entry on the same form
+  (
+    e: "setEntryValue",
+    key: string,
+    value: ConfigValueType,
+    label?: string,
+  ): void;
+}>();
+
 const kind = computed(() =>
   configFieldKind(props.confEntry, props.providerDomain),
 );
 
-const isFieldDisabled = computed(() => {
-  return props.disabled || props.confEntry.read_only;
-});
+const isFieldDisabled = computed(
+  () => props.disabled || !!props.confEntry.read_only,
+);
 
 // a disabled field can not be filled in, so it never blocks a save, as for the
 // save button
@@ -308,27 +278,33 @@ const imageSrc = computed(() => {
   return typeof src === "string" && isEmbeddedImage(src) ? src : undefined;
 });
 
-const emit = defineEmits<{
-  (e: "togglePassword"): void;
-  (e: "action"): void;
-  (e: "update:value", value: ConfigValueType): void;
-  // set the value of another entry on the same form
-  (
-    e: "setEntryValue",
-    key: string,
-    value: ConfigValueType,
-    label?: string,
-  ): void;
-}>();
+// a stored secret only reads back as a placeholder, which there is no use in showing
+const canRevealPassword = computed(
+  () =>
+    props.showPasswordValues ||
+    !(
+      typeof props.confEntry.value === "string" &&
+      props.confEntry.value.includes(SECURE_STRING_SUBSTITUTE)
+    ),
+);
 
 // Labels arrive display-ready: server-provided entries are resolved server-side for the
 // connection locale, and frontend-only entries are translated where they are constructed.
-// This field just surfaces them, so there is no translation lookup here.
 // An empty label is a deliberate "no label"; only a missing one falls back to the key.
-const displayLabel = () => props.confEntry.label ?? props.confEntry.key;
+const displayLabel = computed(
+  () => props.confEntry.label ?? props.confEntry.key,
+);
 
-const displayActionLabel = () =>
-  props.confEntry.action_label || props.confEntry.label || props.confEntry.key;
+const displayActionLabel = computed(
+  () =>
+    props.confEntry.action_label ||
+    props.confEntry.label ||
+    props.confEntry.key,
+);
+
+const displayOptions = computed(() =>
+  configFieldOptions(props.confEntry, $t("settings.default")),
+);
 
 const onUpdateValue = (value: ConfigValueType) => {
   validation.touch();
@@ -353,95 +329,4 @@ const onClear = () => {
   validation.touch();
   emit("update:value", null);
 };
-
-// a stored secret only reads back as a placeholder, which there is no use in showing
-const canRevealPassword = computed(
-  () =>
-    props.showPasswordValues ||
-    !(
-      typeof props.confEntry.value === "string" &&
-      props.confEntry.value.includes(SECURE_STRING_SUBSTITUTE)
-    ),
-);
-
-const displayOptions = computed(() =>
-  configFieldOptions(props.confEntry, $t("settings.default")),
-);
 </script>
-
-<style scoped>
-.config-field {
-  flex: 1;
-  min-width: 0;
-}
-
-.config-divider {
-  padding: 8px 0;
-}
-
-.config-image {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0;
-}
-
-.config-image img {
-  max-width: 100%;
-  max-height: 260px;
-  border-radius: 8px;
-}
-
-.divider-label {
-  display: block;
-  margin-top: 12px;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.action-btn {
-  margin: 8px 0;
-  margin-bottom: 20px;
-  width: 100%;
-  height: 50px;
-}
-
-.config-slider-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.config-slider-label {
-  font-size: 0.875rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  margin-bottom: 0;
-}
-
-.config-slider-block {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-.config-slider-input {
-  flex-shrink: 0;
-}
-
-@media (min-width: 601px) {
-  .config-slider-wrapper {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .config-slider-label {
-    flex-shrink: 0;
-    margin-bottom: 0;
-  }
-
-  .config-slider-block {
-    flex: 1;
-  }
-}
-</style>

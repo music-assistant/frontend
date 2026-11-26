@@ -1,10 +1,10 @@
 <template>
-  <v-form
+  <!-- saving goes through the Save button, so Enter in a field does not submit -->
+  <form
     v-if="entries"
-    ref="form"
-    v-model="valid"
-    :disabled="disabled"
+    novalidate
     :class="{ 'floating-save-clearance': showSaveAction && !inlineSave }"
+    @submit.prevent
   >
     <component
       :is="flat ? 'div' : Card"
@@ -138,7 +138,7 @@
         {{ $t("settings.save") }}
       </Button>
     </div>
-  </v-form>
+  </form>
   <!-- Unsaved changes confirmation dialog -->
   <!-- any way out of this dialog has to answer the navigation it is holding -->
   <AlertDialog :open="showUnsavedDialog" @update:open="onUnsavedDialogOpen">
@@ -265,8 +265,6 @@ const emit = defineEmits<{
 
 // global refs
 const entries = ref<ConfigEntryUI[]>();
-const valid = ref(false);
-const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
 const { validate } = provideConfigFormValidation();
 const showPasswordValues = ref(false);
 const oldValues = ref<Record<string, ConfigValueType>>({});
@@ -460,14 +458,9 @@ watch(
 );
 
 // methods
-// the fields still on Vuetify check themselves through the v-form
-const isFormValid = async function () {
-  const { valid } = await form.value!.validate();
-  return validate() && valid;
-};
 const submit = async function () {
   // submit button is pressed
-  if (await isFormValid()) {
+  if (validate()) {
     allowNavigation.value = true;
     emit("submit", getSaveValues());
   }

@@ -8,9 +8,6 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { h, nextTick } from "vue";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
-import { createVuetify } from "vuetify";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
 import {
   ConfigEntryType,
   type ConfigEntry,
@@ -712,7 +709,7 @@ describe("EditConfig", () => {
     expect(renderedKeys(wrapper)).toEqual(["clear_cache"]);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
     // nothing floats, so no room is kept for it either
-    expect(wrapper.get("v-form-stub").classes()).not.toContain(
+    expect(wrapper.get("form").classes()).not.toContain(
       "floating-save-clearance",
     );
   });
@@ -789,9 +786,7 @@ describe("EditConfig", () => {
       entry({ key: "server", type: ConfigEntryType.STRING }),
     ]);
 
-    expect(wrapper.get("v-form-stub").classes()).toContain(
-      "floating-save-clearance",
-    );
+    expect(wrapper.get("form").classes()).toContain("floating-save-clearance");
   });
 
   it.each([
@@ -806,7 +801,7 @@ describe("EditConfig", () => {
         inlineSave,
       );
 
-      expect(wrapper.get("v-form-stub").classes()).not.toContain(
+      expect(wrapper.get("form").classes()).not.toContain(
         "floating-save-clearance",
       );
     },
@@ -1037,15 +1032,7 @@ function mountForSave(
 ) {
   return shallowMount(EditConfig, {
     props: { configEntries, disabled: false, ...extraProps },
-    global: {
-      renderStubDefaultSlot: true,
-      stubs: {
-        VForm: {
-          template: "<form><slot /></form>",
-          methods: { validate: async () => ({ valid: true }) },
-        },
-      },
-    },
+    global: { renderStubDefaultSlot: true },
   });
 }
 
@@ -1117,7 +1104,7 @@ async function mountInRouter() {
     {
       attachTo: document.body,
       global: {
-        plugins: [router, createVuetify({ components, directives })],
+        plugins: [router],
         stubs: {
           ConfigEntryRow: true,
           ProtocolConfigSection: true,
