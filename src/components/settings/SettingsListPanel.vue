@@ -1,7 +1,7 @@
 <template>
-  <Card class="gap-4 py-4 md:gap-5 md:py-5">
+  <Card class="gap-5 py-5 md:gap-6 md:py-6">
     <header
-      class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-3 px-4 md:px-5"
+      class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-4 px-4 md:px-5"
     >
       <div class="col-start-1 row-start-1 min-w-0">
         <h2 class="m-0 flex items-baseline gap-2 text-base font-semibold">
