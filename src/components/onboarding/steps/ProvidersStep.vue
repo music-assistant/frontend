@@ -13,20 +13,22 @@
           :provider="provider"
           data-testid="onboarding-configured-provider"
         />
-        <Button
-          v-if="sorted.length > COLLAPSED_COUNT"
-          variant="ghost"
-          class="text-muted-foreground w-full rounded-none"
-          data-testid="onboarding-show-all-providers"
-          :aria-expanded="showAll"
-          @click="showAll = !showAll"
-        >
-          {{
-            showAll
-              ? $t("show_less")
-              : $t("onboarding.show_all", { count: configured.length })
-          }}
-        </Button>
+        <!-- the list takes list items only, so the button gets one of its own -->
+        <div v-if="sorted.length > COLLAPSED_COUNT" role="listitem">
+          <Button
+            variant="ghost"
+            class="text-muted-foreground w-full rounded-none"
+            data-testid="onboarding-show-all-providers"
+            :aria-expanded="showAll"
+            @click="showAll = !showAll"
+          >
+            {{
+              showAll
+                ? $t("show_less")
+                : $t("onboarding.show_all", { count: configured.length })
+            }}
+          </Button>
+        </div>
       </OnboardingList>
     </OnboardingInvitation>
 
@@ -101,7 +103,6 @@ const sorted = computed(() =>
 const shown = computed(() =>
   showAll.value ? sorted.value : sorted.value.slice(0, COLLAPSED_COUNT),
 );
-const hiddenCount = computed(() => sorted.value.length - shown.value.length);
 // one just added would land past the cut, so the whole list opens to show it
 watch(
   () => configured.value.length,
