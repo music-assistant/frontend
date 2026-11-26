@@ -3,42 +3,21 @@
     :item="item"
     :backdrop="backdrop"
     blur-backdrop
-    :height="400"
-    :phone-height="360"
     :editable-rows="false"
   >
-    <template v-if="item" #main>
-      <div
-        class="flex w-full min-w-0 items-end gap-6 @max-3xl/detail-hero:flex-col @max-3xl/detail-hero:items-stretch @max-3xl/detail-hero:gap-3"
-      >
-        <div
-          class="detail-hero-cover size-[200px] flex-none @max-3xl/detail-hero:size-[132px]"
-        >
-          <MediaCollectionThumb :item="item" />
-        </div>
+    <!-- the stack of covers carries its own shape and shadow -->
+    <template v-if="item" #cover>
+      <MediaCollectionThumb :item="item" />
+    </template>
 
-        <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
-          <h1
-            class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-[30px] @max-3xl/detail-hero:tracking-[-0.7px]"
-          >
-            {{ item.name }}
-          </h1>
+    <template v-if="item" #meta>
+      <AudiobookCredits :authors="authors" :narrators="narrators" />
+      <DetailHeroFacts :icon="BookAudio" :facts="facts" />
+    </template>
 
-          <div
-            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
-          >
-            <AudiobookCredits :authors="authors" :narrators="narrators" />
-            <DetailHeroFacts :icon="BookAudio" :facts="facts" />
-          </div>
-
-          <div
-            class="flex min-w-0 items-center gap-2 @max-3xl/detail-hero:gap-2.5"
-          >
-            <DetailHeroPlayButton :item="item" />
-            <DetailHeroPlayedState v-if="playedState" :item="item" />
-          </div>
-        </div>
-      </div>
+    <template v-if="item" #actions>
+      <DetailHeroPlayButton :item="item" />
+      <DetailHeroPlayedState v-if="playedState" :item="item" />
     </template>
   </DetailHero>
 </template>

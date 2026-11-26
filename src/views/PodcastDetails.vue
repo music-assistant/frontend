@@ -68,7 +68,7 @@ import DetailAdminCard from "@/components/details/DetailAdminCard.vue";
 import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
-import { podcastBackdrop } from "@/components/podcast/podcastData";
+import { heroBackdrop } from "@/helpers/hero_backdrop";
 import PodcastHero from "@/components/podcast/PodcastHero.vue";
 import {
   PODCAST_ROWS,
@@ -117,7 +117,7 @@ const rowMeta = computed<Partial<Record<PodcastRowId, string>>>(() => ({
 
 const backdrop = computed(() =>
   itemDetails.value
-    ? podcastBackdrop(itemDetails.value)
+    ? heroBackdrop(itemDetails.value)
     : { url: undefined, blurred: false },
 );
 
