@@ -351,13 +351,16 @@ describe("who maintains a provider", () => {
     ).toBe("https://github.com/jane/spotify/issues");
   });
 
-  it("sends help for one from the community catalog to its repository without a support link", () => {
+  it("sends help for one from the community catalog to its issues without a support link", () => {
     expect(
       getProviderHelpUrl(
         providerManifest({ domain: "radio" }),
         "https://github.com/jane/radio",
       ),
-    ).toBe("https://github.com/jane/radio");
+    ).toBe("https://github.com/jane/radio/issues");
+  });
+
+  it("sends help for one from the community catalog to its support link", () => {
     expect(
       getProviderHelpUrl(
         providerManifest({
