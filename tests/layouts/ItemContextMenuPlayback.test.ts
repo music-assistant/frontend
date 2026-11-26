@@ -10,6 +10,7 @@ import {
   SortField,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { $t } from "@/plugins/i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { album } from "../fixtures/album";
 import { audioSource } from "../fixtures/audioSource";
@@ -268,30 +269,35 @@ describe("the play menu in the standard experience", () => {
     return items.find((x) => x.label == "enqueue")?.subItems ?? [];
   };
 
-  it("keeps the queue, leaving out the options that replace it", async () => {
+  it("offers three ways, under plain names", async () => {
     apiMock.getCoreConfigValue.mockResolvedValue(QueueOption.PLAY);
 
-    expect(queueOptionsOf(await enqueueOptions())).toEqual([
-      QueueOption.PLAY,
-      QueueOption.NEXT,
-      QueueOption.ADD,
-    ]);
-  });
-
-  it("keeps the configured default when it replaces the queue", async () => {
     const options = await enqueueOptions();
 
     expect(queueOptionsOf(options)).toEqual([
       QueueOption.PLAY,
       QueueOption.NEXT,
       QueueOption.ADD,
-      QueueOption.REPLACE,
     ]);
-    expect(options.filter((x) => x.selected)).toHaveLength(1);
-    expect(options[3].selected).toBe(true);
+    expect(options.map((x) => x.label)).toEqual([
+      $t("play_now"),
+      $t("play_next"),
+      $t("queue_option.add"),
+    ]);
   });
 
-  it("leaves out the options that replace the queue for a role that may not read the default", async () => {
+  it("plays now the way the configured default does", async () => {
+    const options = await enqueueOptions();
+
+    expect(queueOptionsOf(options)).toEqual([
+      QueueOption.REPLACE,
+      QueueOption.NEXT,
+      QueueOption.ADD,
+    ]);
+    expect(options.map((x) => x.selected)).toEqual([true, false, false]);
+  });
+
+  it("keeps the queue when playing now for a role that may not read the default", async () => {
     vi.mocked(authManager.hasScope).mockImplementation(
       scopeChecker(BUILTIN_ROLE_SCOPES.guest),
     );
@@ -316,23 +322,31 @@ describe("the play menu in the standard experience", () => {
     await showPlayMenuForMediaItem(track());
 
     expect(queueOptionsOf(emittedMenus[0].items)).toEqual([
-      QueueOption.PLAY,
+      QueueOption.REPLACE,
       QueueOption.NEXT,
       QueueOption.ADD,
-      QueueOption.REPLACE,
     ]);
   });
 
-  it("offers every option to the expert", async () => {
+  it("offers every option to the expert, under its full name", async () => {
     storeMock.currentUser = { preferences: { expert_mode: true } };
     apiMock.getCoreConfigValue.mockResolvedValue(QueueOption.PLAY);
 
-    expect(queueOptionsOf(await enqueueOptions())).toEqual([
+    const options = await enqueueOptions();
+
+    expect(queueOptionsOf(options)).toEqual([
       QueueOption.PLAY,
       QueueOption.NEXT,
       QueueOption.ADD,
       QueueOption.REPLACE,
       QueueOption.REPLACE_NEXT,
+    ]);
+    expect(options.map((x) => x.label)).toEqual([
+      $t("queue_option.play"),
+      $t("queue_option.next"),
+      $t("queue_option.add"),
+      $t("queue_option.replace"),
+      $t("queue_option.replace_next"),
     ]);
   });
 });

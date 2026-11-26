@@ -183,7 +183,7 @@ describe("play shuffled action behaviour", () => {
     const theAlbum = album({ item_id: "a1" });
     await showPlayMenuForMediaItem(theAlbum);
     emittedItems()
-      .find((x) => x.label === `queue_option.${QueueOption.PLAY}`)
+      .find((x) => x.label === "play_now")
       ?.action?.();
 
     expect(mockApi.playMedia).toHaveBeenCalledWith(
