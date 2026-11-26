@@ -27,6 +27,7 @@ import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import { handleMediaItemClick } from "@/helpers/media_item_actions";
 import { MediaType, type MediaItemType } from "@/plugins/api/interfaces";
 import { eventbus, type ContextMenuDialogEvent } from "@/plugins/eventbus";
+import { store } from "@/plugins/store";
 import { flushPromises, mount } from "@vue/test-utils";
 import type { DirectiveBinding } from "vue";
 import { artist } from "../../fixtures/artist";
@@ -127,6 +128,18 @@ describe("DetailHeroGenres", () => {
     );
   });
 
+  // as on a native button: holding Space down must not open it over and over
+  it("opens the genre when Space is released", async () => {
+    const wrapper = await mountGenres();
+    const name = wrapper.find(".detail-hero-genres__genre");
+
+    await name.trigger("keydown", { key: " " });
+    expect(handleMediaItemClick).not.toHaveBeenCalled();
+
+    await name.trigger("keyup", { key: " " });
+    expect(handleMediaItemClick).toHaveBeenCalledTimes(1);
+  });
+
   it("opens no menu for a role that cannot manage the library", async () => {
     mockHasScope.mockReturnValue(false);
     const menus = openedMenus();
@@ -167,7 +180,7 @@ describe("DetailHeroGenres", () => {
       return wrapper;
     }
     const dialogGenres = () =>
-      [...document.querySelectorAll("[role=dialog] button[title]")].map(
+      [...document.querySelectorAll(".detail-hero-genres-dialog__genre")].map(
         (button) => button.textContent?.trim(),
       );
 
@@ -213,6 +226,39 @@ describe("DetailHeroGenres", () => {
           .querySelector("[role=dialog] [role=status]")
           ?.textContent?.trim(),
       ).toBe("No items found.");
+      wrapper.unmount();
+    });
+
+    // the long press that opened a menu earlier must not eat a later pick
+    it("opens a genre picked in the dialog after a long press", async () => {
+      const wrapper = await mountGenres(artist(), many);
+      await wrapper.find(".detail-hero-genres__genre").trigger("hold");
+      await wrapper.find(".detail-hero-genres__all").trigger("click");
+      await flushPromises();
+
+      document
+        .querySelector<HTMLButtonElement>(".detail-hero-genres-dialog__genre")!
+        .click();
+
+      expect(handleMediaItemClick).toHaveBeenCalledWith(
+        expect.objectContaining({ item_id: "0" }),
+        expect.any(Number),
+        expect.any(Number),
+      );
+      wrapper.unmount();
+    });
+
+    // the app's back gesture and shortcuts hold off while a dialog is open
+    it("marks a dialog open while it shows", async () => {
+      store.dialogActive = false;
+      const wrapper = await openAll();
+      expect(store.dialogActive).toBe(true);
+
+      document
+        .querySelector<HTMLButtonElement>("[data-slot=dialog-close]")!
+        .click();
+      await flushPromises();
+      expect(store.dialogActive).toBe(false);
       wrapper.unmount();
     });
 

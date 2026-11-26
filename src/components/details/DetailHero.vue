@@ -66,11 +66,12 @@
           </div>
           <!-- the title spans the whole width; the facts on the right sit
                beside the lines and buttons under it, and give up width to
-               keep the buttons on one row in a medium-width hero -->
+               keep the buttons on one row in a medium-width hero. A phone
+               stacks them, even a landscape one wider than a narrow hero -->
           <div
             class="grid min-w-0 flex-1 gap-x-6 gap-y-2.5 pb-1 has-[>.detail-hero\_\_aside:empty]:grid-cols-1 @max-5xl/detail-hero:gap-x-4 @max-3xl/detail-hero:grid-cols-1"
             :class="
-              $slots.aside
+              $slots.aside && !isPhone
                 ? 'grid-cols-[minmax(0,1fr)_fit-content(13rem)] @max-5xl/detail-hero:grid-cols-[minmax(0,1fr)_fit-content(11rem)]'
                 : 'grid-cols-1'
             "

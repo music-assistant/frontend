@@ -6,6 +6,11 @@
     :editable-rows="editableRows"
     @edit-rows="emit('edit-rows')"
   >
+    <!-- the name is all a genre hero has, so it shows whole -->
+    <template v-if="item" #title>
+      <DetailHeroTitle :item="item" :clamp="false" />
+    </template>
+
     <template #toolbar-append>
       <DetailHeroFavorite v-if="item" :item="item" />
       <slot name="toolbar-append" />
@@ -36,6 +41,7 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
+import DetailHeroTitle from "@/components/details/DetailHeroTitle.vue";
 import { heroBackdrop } from "@/helpers/hero_backdrop";
 import { Scope, type Genre } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";

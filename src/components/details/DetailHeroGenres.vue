@@ -1,26 +1,34 @@
 <template>
-  <div v-if="genres.length" class="detail-hero-genres">
+  <div
+    v-if="genres.length"
+    class="detail-hero-genres flex max-w-full min-w-0 flex-col [align-items:inherit] gap-0.5 text-[14px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)]"
+  >
     <!-- at most two lines, so the genres stay beside the rest and never push
-         the title up; the whole list opens in a dialog -->
+         the title up; the whole list opens in a dialog. Clipped rather than
+         hidden: a hidden box still scrolls to a focused name, and the margin
+         leaves room for the focus ring. Blink drops the ellipsis of a
+         right-aligned clamp, and a clamped list fills its column anyway -->
     <p
       ref="list"
-      class="detail-hero-genres__list"
-      :class="{ 'detail-hero-genres__list--clamped': isClamped }"
+      class="detail-hero-genres__list m-0 max-w-full [display:-webkit-box] [overflow:clip] [overflow-clip-margin:4px] [overflow-wrap:anywhere] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] [line-clamp:2]"
+      :class="{ 'text-left': isClamped }"
     >
       <!-- the names flow as text, so a long one wraps onto the next line
            instead of taking a line to itself; a button would keep each name in
-           one box. The comma stays with the genre before it -->
+           one box. The comma stays with the genre before it. Space acts on
+           release, as on a native button, so holding it does not repeat -->
       <template v-for="(genre, index) in genres" :key="genre.item_id">
         <template v-if="index > 0">{{ " " }}</template>
         <span
           v-hold="(e: Event) => onHold(e, genre)"
           role="button"
           tabindex="0"
-          class="detail-hero-genres__genre"
+          :class="['detail-hero-genres__genre cursor-pointer', LINK_CLASSES]"
           :inert="index >= visibleCount"
           @click="(e: MouseEvent) => genreClick(e, genre)"
           @keydown.enter.prevent="(e: KeyboardEvent) => genreKey(e, genre)"
-          @keydown.space.prevent="(e: KeyboardEvent) => genreKey(e, genre)"
+          @keydown.space.prevent
+          @keyup.space.prevent="(e: KeyboardEvent) => genreKey(e, genre)"
           @contextmenu.prevent="(e: MouseEvent) => showGenreMenu(e, genre)"
           @touchstart.passive="onTouchStart"
           >{{ genre.name }}</span><template v-if="index < genres.length - 1"
@@ -28,10 +36,14 @@
         >
       </template>
     </p>
+    <!-- the link reads as text, so the button chrome goes -->
     <button
       v-if="isClamped"
       type="button"
-      class="detail-hero-genres__all"
+      :class="[
+        'detail-hero-genres__all max-w-full min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-[13px] font-semibold text-inherit',
+        LINK_CLASSES,
+      ]"
       @click="showAll = true"
     >
       {{ $t("all_genres", { count: genres.length }) }}
@@ -40,7 +52,7 @@
       v-model:open="showAll"
       :genres="genres"
       :item-name="item.name"
-      @select="(e: MouseEvent, genre: Genre) => genreClick(e, genre)"
+      @select="handleMediaItemClick"
       @menu="showGenreMenu"
     />
   </div>
@@ -69,6 +81,9 @@ export interface Props {
   item: MediaItemType;
 }
 const props = defineProps<Props>();
+
+const LINK_CLASSES =
+  "hover:underline focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--v-theme-primary))]";
 
 const genres = ref<Genre[]>([]);
 
@@ -159,67 +174,3 @@ const showGenreMenu = function (event: Event, genre: Genre) {
   });
 };
 </script>
-
-<style scoped>
-.detail-hero-genres {
-  display: flex;
-  flex-direction: column;
-  align-items: inherit;
-  gap: 2px;
-  min-width: 0;
-  /* as a flex child it would size to its longest name, not the column */
-  max-width: 100%;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-}
-.detail-hero-genres__list {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  /* clip rather than hide: a hidden box still scrolls to a focused name, and
-     the margin leaves room for the focus ring */
-  overflow: clip;
-  overflow-clip-margin: 4px;
-  overflow-wrap: anywhere;
-  max-width: 100%;
-  margin: 0;
-}
-/* Blink drops the ellipsis of a right-aligned clamp; a clamped list fills its
-   column anyway */
-.detail-hero-genres__list--clamped {
-  text-align: left;
-}
-.detail-hero-genres__genre {
-  cursor: pointer;
-}
-/* the link reads as text, so the button chrome goes */
-.detail-hero-genres__all {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.detail-hero-genres__all {
-  font-size: 13px;
-  font-weight: 600;
-}
-.detail-hero-genres__genre:hover,
-.detail-hero-genres__all:hover {
-  text-decoration: underline;
-}
-.detail-hero-genres__genre:focus-visible,
-.detail-hero-genres__all:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-</style>

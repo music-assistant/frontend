@@ -3,6 +3,7 @@
     <DialogContent
       class="sm:max-w-[560px]"
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
+      @close-auto-focus="restoreFocus"
     >
       <DialogHeader>
         <DialogTitle>{{ $t("genres") }}</DialogTitle>
@@ -25,7 +26,7 @@
         {{ $t("no_content") }}
       </p>
       <!-- the padding keeps the focus ring of an outer chip inside the
-           scrolling box -->
+           scrolling box; a long name wraps, as touch has no tooltip -->
       <div
         v-else
         class="-m-1 flex max-h-[50vh] flex-wrap content-start gap-2 overflow-y-auto p-1"
@@ -35,8 +36,7 @@
           :key="genre.item_id"
           v-hold="(e: Event) => onHold(e, genre)"
           type="button"
-          class="hover:bg-accent focus-visible:ring-ring/50 max-w-full truncate rounded-full border px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
-          :title="genreLabel(genre)"
+          class="detail-hero-genres-dialog__genre hover:bg-accent focus-visible:ring-ring/50 max-w-full rounded-2xl border px-3 py-1 text-left text-sm [overflow-wrap:anywhere] outline-none focus-visible:ring-[3px]"
           @click="(e: MouseEvent) => genreClick(e, genre)"
           @contextmenu.prevent="(e: MouseEvent) => emit('menu', e, genre)"
           @touchstart.passive="onTouchStart"
@@ -61,7 +61,8 @@ import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
 import { preventOnScreenKeyboardOnOpen } from "@/helpers/dialog_focus";
 import { MediaType, type Genre } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { computed, ref, watch } from "vue";
+import { store } from "@/plugins/store";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 
 export interface Props {
   genres: Genre[];
@@ -70,7 +71,7 @@ export interface Props {
 const props = defineProps<Props>();
 const open = defineModel<boolean>("open", { required: true });
 const emit = defineEmits<{
-  select: [event: MouseEvent, genre: Genre];
+  select: [genre: Genre, posX: number, posY: number];
   menu: [event: Event, genre: Genre];
 }>();
 
@@ -104,7 +105,44 @@ const genreLabel = function (genre: Genre) {
 };
 
 const filter = ref("");
-watch(open, () => (filter.value = ""));
+
+// the dialog can open over another that stays open behind it, so closing it
+// restores the flag rather than clearing it for the one underneath
+let dialogActiveBeforeOpen = false;
+// it has no trigger element, so on close focus goes back to what opened it
+let focusBeforeOpen: HTMLElement | null = null;
+
+watch(open, (value, previous) => {
+  filter.value = "";
+  if (value && !previous) {
+    dialogActiveBeforeOpen = store.dialogActive;
+    focusBeforeOpen =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+  }
+  store.dialogActive = value || (dialogActiveBeforeOpen && store.dialogActive);
+});
+
+onBeforeUnmount(() => {
+  if (open.value) {
+    store.dialogActive = dialogActiveBeforeOpen && store.dialogActive;
+  }
+});
+
+const restoreFocus = function (event: Event) {
+  event.preventDefault();
+  const target = focusBeforeOpen;
+  focusBeforeOpen = null;
+  if (!target) return;
+  // deferred like reka's own restore, so the dialog has let go of focus
+  setTimeout(() => {
+    // a picked genre may have moved focus on purpose, such as into its menu
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    if (target.isConnected) target.focus();
+  }, 0);
+};
 
 const filteredGenres = computed(() => {
   const query = filter.value.trim().toLowerCase();
@@ -121,7 +159,15 @@ const { onHold, onTouchStart, swallowClickAfterHold } = useHoldToOpenMenu<
 const genreClick = function (event: MouseEvent, genre: Genre) {
   // the click a long-press leaves behind opened the menu, it is not a tap
   if (swallowClickAfterHold(event)) return;
+  // a click from the keyboard has no pointer position, so a menu it opens
+  // goes under the chip instead
+  let { clientX: x, clientY: y } = event;
+  if (event.detail === 0) {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    x = rect.left;
+    y = rect.bottom;
+  }
   open.value = false;
-  emit("select", event, genre);
+  emit("select", genre, x, y);
 };
 </script>
