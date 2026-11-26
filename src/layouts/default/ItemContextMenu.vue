@@ -337,6 +337,7 @@ import {
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 import { runWithConcurrency } from "@/helpers/concurrency";
+import { expertMode } from "@/helpers/expert_mode";
 import {
   FAVORITABLE_MEDIA_TYPES,
   favoriteState,
@@ -1820,10 +1821,15 @@ const getDefaultEnqueueOption = async function (
   )) as QueueOption;
 };
 
+// the ways to start or queue items that replace the queue, which the standard
+// experience leaves out of the menu unless one of them is the configured default
+const REPLACE_QUEUE_OPTIONS = [QueueOption.REPLACE, QueueOption.REPLACE_NEXT];
+
 /**
  * Menu entries for every way the given items can be started or queued, with the
- * configured default, when known, marked as selected. tracksSortBy orders the
- * tracks of an album or playlist the way its page shows them.
+ * configured default, when known, marked as selected. The standard experience
+ * offers only those that keep the queue, plus the configured default. tracksSortBy
+ * orders the tracks of an album or playlist the way its page shows them.
  */
 const buildEnqueueMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
@@ -1832,13 +1838,20 @@ const buildEnqueueMenuItems = function (
   tracksSortField?: SortField,
   tracksSortDirection?: SortDirection,
 ): ContextMenuItem[] {
-  return [
+  const expert = expertMode();
+  const options = [
     QueueOption.PLAY,
     QueueOption.NEXT,
     QueueOption.ADD,
     QueueOption.REPLACE,
     QueueOption.REPLACE_NEXT,
-  ].map((option) => ({
+  ].filter(
+    (option) =>
+      expert ||
+      option === defaultEnqueueOption ||
+      !REPLACE_QUEUE_OPTIONS.includes(option),
+  );
+  return options.map((option) => ({
     label: $t(`queue_option.${option}`),
     action: () => {
       const uris = items.map((x) => x.uri);

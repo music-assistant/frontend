@@ -33,6 +33,8 @@ const { apiMock, emittedMenus, storeMock } = vi.hoisted(() => ({
   storeMock: {
     activePlayer: { player_id: "player-1" },
     activePlayerId: "player-1",
+    currentUser: undefined as
+      { preferences: Record<string, unknown> } | undefined,
   },
 }));
 
@@ -66,7 +68,18 @@ beforeEach(() => {
   vi.mocked(authManager.hasScope).mockImplementation(
     scopeChecker(BUILTIN_ROLE_SCOPES.user),
   );
+  // every enqueue option is the expert's; the standard menu has its own tests
+  storeMock.currentUser = { preferences: { expert_mode: true } };
 });
+
+/** The queue option each of these menu entries plays with, in their order. */
+function queueOptionsOf(entries: ContextMenuItem[]): unknown[] {
+  return entries.map((entry) => {
+    apiMock.playMedia.mockClear();
+    entry.action?.();
+    return apiMock.playMedia.mock.calls[0]?.[1];
+  });
+}
 
 describe("getPlaybackContextMenuItems", () => {
   it("offers a single play action for an audio source", async () => {
@@ -241,4 +254,85 @@ describe("the play menu for a role that may not read the core settings", () => {
       expect(options.some((x) => x.selected)).toBe(false);
     },
   );
+});
+
+describe("the play menu in the standard experience", () => {
+  beforeEach(() => {
+    storeMock.currentUser = { preferences: {} };
+  });
+
+  const enqueueOptions = async () => {
+    const items = await getPlaybackContextMenuItems([
+      track({ provider_mappings: mappings }),
+    ]);
+    return items.find((x) => x.label == "enqueue")?.subItems ?? [];
+  };
+
+  it("keeps the queue, leaving out the options that replace it", async () => {
+    apiMock.getCoreConfigValue.mockResolvedValue(QueueOption.PLAY);
+
+    expect(queueOptionsOf(await enqueueOptions())).toEqual([
+      QueueOption.PLAY,
+      QueueOption.NEXT,
+      QueueOption.ADD,
+    ]);
+  });
+
+  it("keeps the configured default when it replaces the queue", async () => {
+    const options = await enqueueOptions();
+
+    expect(queueOptionsOf(options)).toEqual([
+      QueueOption.PLAY,
+      QueueOption.NEXT,
+      QueueOption.ADD,
+      QueueOption.REPLACE,
+    ]);
+    expect(options.filter((x) => x.selected)).toHaveLength(1);
+    expect(options[3].selected).toBe(true);
+  });
+
+  it("leaves out the options that replace the queue for a role that may not read the default", async () => {
+    vi.mocked(authManager.hasScope).mockImplementation(
+      scopeChecker(BUILTIN_ROLE_SCOPES.guest),
+    );
+
+    expect(queueOptionsOf(await enqueueOptions())).toEqual([
+      QueueOption.PLAY,
+      QueueOption.NEXT,
+      QueueOption.ADD,
+    ]);
+  });
+
+  it("plays the configured default from the top of the menu", async () => {
+    const items = await getPlaybackContextMenuItems([
+      track({ provider_mappings: mappings }),
+    ]);
+
+    expect(items[0].label).toBe("play_now");
+    expect(queueOptionsOf([items[0]])).toEqual([QueueOption.REPLACE]);
+  });
+
+  it("offers the same options in the play menu", async () => {
+    await showPlayMenuForMediaItem(track());
+
+    expect(queueOptionsOf(emittedMenus[0].items)).toEqual([
+      QueueOption.PLAY,
+      QueueOption.NEXT,
+      QueueOption.ADD,
+      QueueOption.REPLACE,
+    ]);
+  });
+
+  it("offers every option to the expert", async () => {
+    storeMock.currentUser = { preferences: { expert_mode: true } };
+    apiMock.getCoreConfigValue.mockResolvedValue(QueueOption.PLAY);
+
+    expect(queueOptionsOf(await enqueueOptions())).toEqual([
+      QueueOption.PLAY,
+      QueueOption.NEXT,
+      QueueOption.ADD,
+      QueueOption.REPLACE,
+      QueueOption.REPLACE_NEXT,
+    ]);
+  });
 });
