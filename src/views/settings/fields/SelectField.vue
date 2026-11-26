@@ -43,7 +43,10 @@
             <span v-else class="min-w-0 truncate">{{ selectedTitles[0] }}</span>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent class="max-w-(--reka-select-content-available-width)">
+        <!-- the field width plus the 1px border, around an inner list as wide as the field -->
+        <SelectContent
+          class="max-w-[calc(var(--reka-select-trigger-width)+2px)]"
+        >
           <SelectItem
             v-for="(option, index) of options"
             :key="index"
@@ -54,7 +57,7 @@
               <span>{{ option.title }}</span>
               <span
                 v-if="optionHint(option)"
-                class="text-muted-foreground text-xs"
+                class="text-muted-foreground max-w-prose text-xs"
               >
                 {{ optionHint(option) }}
               </span>
