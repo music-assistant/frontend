@@ -33,8 +33,8 @@
     "enter_url": "Gib die URL ein, die manuell zur Datenbank hinzugefügt werden soll.",
     "goto_album": "Album {0} ansehen",
     "goto_artist": "Interpreten {0} ansehen",
-    "items_selected": "{0} Einträge ausgewählt",
-    "items_total": "{0} Einträge",
+    "items_selected": "{0} Eintrag\/Einträge ausgewählt",
+    "items_total": "{0} Eintrag\/Einträge",
     "library": "Bibliothek",
     "loading": "Daten werden vom Server abgerufen.",
     "mass": "Music Assistant",
@@ -55,12 +55,14 @@
     "player_type": {
         "group": "Gruppe",
         "player": "Wiedergabegerät",
-        "stereo_pair": "Stereo-Paar",
+        "stereo_pair": "Stereopaar",
         "display": "Bildschirm",
         "visualizer": "Visualizer",
         "light": "Licht",
         "unknown": "Unbekannt",
-        "source": "Audioeingang"
+        "source": "Audioeingang",
+        "multi_channel": "Mehrkanal",
+        "controller": "Controller"
     },
     "players": "Wiedergabegeräte",
     "playlist": "Wiedergabeliste",
@@ -125,7 +127,8 @@
                 "auto": "Automatisch (entsprechend der Systemeinstellung)",
                 "light": "Hell",
                 "dark": "Dunkel"
-            }
+            },
+            "automatic": "Automatisch"
         },
         "language": {
             "label": "Sprache",
@@ -304,7 +307,8 @@
                 "remove_confirm": "„{0}“ löschen? Alle Faltungsfilter, die diesen Wert verwenden – unabhängig vom Wiedergabegerät oder Preset –, werden auf keine Impulsantwort zurückgesetzt.",
                 "mono": "Mono",
                 "stereo": "Stereo",
-                "channel_count": "{0} Kanäle"
+                "channel_count": "{0} Kanäle",
+                "too_large_remote": "Diese Datei ist zu groß, um sie per Fernzugriff hochzuladen."
             },
             "safety_limiter": {
                 "help": "Fängt Frequenzspitzen ab, die sonst übersteuern und deine Lautsprecher beschädigen könnten. Platziere es als letztes Element in der Signalkette.",
@@ -372,12 +376,11 @@
             "label": "Mobiles Layout erzwingen",
             "description": "Erzwingt das mobile Layout (mit der Menünavigation am unteren Rand), auch auf größeren Bildschirmen."
         },
-        "players_description": "Konfiguriere und verwalte deine Audioausgabegeräte",
-        "frontend_description": "Anpassen von Thema und Aussehen der Benutzeroberfläche",
-        "profile_description": "Verwalte deine persönlichen Kontoeinstellungen und Präferenzen.",
+        "players_description": "Deine Wiedergabegeräte, Beleuchtung, Bildschirme und Audioeingänge sowie deren Funktionsweise",
+        "profile_description": "Dein Konto, dein Passwort, deine Sitzungen und deine Einstellungen für die Benutzeroberfläche",
         "users": "Benutzer",
         "users_description": "Benutzerkonten, Rollen und Berechtigungen verwalten",
-        "system_description": "Konfigurieren der Servereinstellungen und Kernmodule von Music Assistant",
+        "system_description": "Netzwerk, Speicher, Home Assistant, Hintergrundaufgaben und Diagnose des Servers",
         "system": "System",
         "about": "Über",
         "about_description": "Versionsinformationen, Mitwirkende und mehr",
@@ -393,50 +396,41 @@
         "proud_part_of": "Stolzer Teil der",
         "core_module": {
             "cache": {
-                "name": "Cache",
-                "description": "Konfiguration des Kernmoduls, das das Caching von Daten innerhalb der Anwendung übernimmt."
+                "name": "Cache"
             },
             "metadata": {
-                "name": "Metadaten",
-                "description": "Konfiguration des Core-Metadatenverwaltungsmoduls"
+                "name": "Metadaten"
             },
             "music": {
-                "name": "Musik",
-                "description": "Konfiguration des Kernmoduls für Musikverwaltung (Bibliotheksverwaltung)"
+                "name": "Musik"
             },
             "players": {
-                "name": "Wiedergabegeräte",
-                "description": "Konfiguration des Kern-Wiedergabegeräte-Verwaltungsmoduls"
+                "name": "Wiedergabegeräte"
             },
             "player_queues": {
-                "name": "Wiedergabegeräte-Warteschlangen",
-                "description": "Konfiguration für die Kern-Wiedergabegeräte-Warteschlangenverwaltung"
-            },
-            "remote_access": {
-                "name": "Fernzugriffsstatus",
-                "description": "Ermöglicht den Fernzugriff auf deinen Music Assistant-Server."
+                "name": "Wiedergabegeräte-Warteschlangen"
             },
             "streams": {
-                "name": "Streams",
-                "description": "Konfiguration der Audio-Streaming- und Verarbeitungs-Engine"
+                "name": "Streams"
             },
             "webserver": {
-                "name": "Webserver",
-                "description": "Konfiguration des Webservers und der API"
+                "name": "Webserver"
+            },
+            "statistics": {
+                "name": "Statistiken"
             }
         },
         "remote_access": "Fernzugriff",
         "remote_access_description": "Sicherer Zugriff auf Music Assistant von überall",
-        "remote_access_title": "Sicherer Fernzugriff",
         "remote_access_explanation_intro": "Mit Remote Access kannst du dich von überall auf der Welt sicher mit deinem Music Assistant-Server verbinden.",
-        "remote_access_explanation_ha_cloud": "Für ein optimales Nutzungserlebnis und höchste Zuverlässigkeit ist ein Home Assistant Cloud-Abonnement erforderlich.",
+        "remote_access_explanation_ha_cloud": "Für ein optimales Nutzungserlebnis und höchste Zuverlässigkeit ist ein Home Assistant Link-Abonnement erforderlich.",
         "remote_access_feature_webrtc": "Basierend auf der WebRTC-Technologie für Peer-to-Peer-Verbindungen",
         "remote_access_feature_encrypted": "Ende-zu-Ende verschlüsselt – deine Daten bleiben privat.",
         "remote_access_feature_no_port_forwarding": "Keine Portweiterleitung oder VPN benötigt",
-        "remote_access_mode_optimized": "Optimierter Modus (HA Cloud)",
+        "remote_access_mode_optimized": "Optimierter Modus (HA Link)",
         "remote_access_mode_basic": "Betrieb im Basismodus",
-        "remote_access_mode_basic_description": "Die Verwendung öffentlicher STUN-Server kann in komplexen Netzwerkumgebungen zu Problemen führen. Für ein optimales Nutzungserlebnis empfehlen wir ein Upgrade auf Home Assistant Cloud.",
-        "remote_access_upgrade_to_optimized": "Upgrade auf Home Assistant Cloud",
+        "remote_access_mode_basic_description": "Verwendung öffentlicher STUN-Server. Dies funktioniert möglicherweise nicht in komplexen Netzwerkkonfigurationen. Für ein optimales Erlebnis empfehlen wir ein Upgrade auf Home Assistant Link.",
+        "remote_access_upgrade_to_optimized": "Upgrade auf Home Assistant Link",
         "remote_access_status": "Fernzugriffsstatus",
         "remote_access_enabled": "Fernzugriff ist aktiviert",
         "remote_access_disabled": "Fernzugriff ist deaktiviert",
@@ -462,9 +456,8 @@
         "remote_access_disabled_success": "Fernzugriff wurde deaktiviert.",
         "remote_access_signaling_server_description": "Signalisierungsserver in der Cloud, gehostet von der Open Home Foundation.",
         "remote_access_protocol_basic": "WebRTC mit öffentlichen STUN-Servern (funktioniert möglicherweise nicht in komplexen Netzwerkkonfigurationen).",
-        "remote_access_protocol_optimized": "WebRTC mit optimierten STUN\/TURN-Servern von Home Assistant Cloud (funktioniert in allen Netzwerkkonfigurationen).",
+        "remote_access_protocol_optimized": "WebRTC mit optimierten STUN\/TURN-Servern von Home Assistant Link (funktioniert in allen Netzwerkkonfigurationen).",
         "remote_access_encryption_description": "Die Ende-zu-Ende-Verschlüsselung mit DTLS-SRTP gewährleistet, dass deine Daten privat und sicher bleiben.",
-        "frontend": "Benutzeroberfläche",
         "view_players": "Wiedergabegeräte ansehen",
         "players_total": "{count} Wiedergabegerät insgesamt | {count} Wiedergabegeräte insgesamt",
         "api_docs": "API-Dokumentation",
@@ -547,9 +540,7 @@
         "add_plugin_provider": "Plugin hinzufügen",
         "music_sources": "Musikquellen",
         "plugins": "Plugins",
-        "music_providers_description": "Verwalte deine Musikstreaming-Dienste und lokalen Bibliotheken.",
         "player_providers_description": "Konfiguriere die Wiedergabegeräte-Unterstützung für deine Audioausgabegeräte",
-        "metadata_providers_description": "Verwalte, woher Bildmaterial und zusätzliche Informationen stammen",
         "plugin_providers_description": "Plugins verwalten, die die Funktionen von Music Assistant erweitern",
         "restore_genres": "Genres wiederherstellen",
         "genre_statistics_description": "Durchsuche und filtere alle Genres in deiner Bibliothek. Genres können global ausgeschlossen und wieder hinzugefügt werden.",
@@ -558,21 +549,6 @@
         "add_player_providers": "Mehr Unterstützung für Wiedergabegeräte hinzufügen",
         "add_audio_analysis_provider": "Audioanalyse hinzufügen",
         "audio_analysis_providers": "Audioanalyse",
-        "audio_analysis_providers_description": "Verwalte Anbieter, die deine Audiodaten analysieren",
-        "audio_analysis": "Audioanalyse",
-        "audio_analysis_coverage": {
-            "title": "Abdeckung der Audioanalyse",
-            "col_pending": "Ausstehend",
-            "col_stale": "Veraltet",
-            "unavailable": "nicht verfügbar",
-            "none": "—"
-        },
-        "audio_analysis_description": "Verfolge die Abdeckung der Audioanalyse bei deinen Anbietern.",
-        "audio_analysis_concurrency": {
-            "title": "Gleichzeitige Hintergrundanalysen",
-            "description": "Steuere, wie viele Titel während des nächtlichen Hintergrundscans gleichzeitig analysiert werden. Diese Einstellung befindet sich in der Streams-Kernkonfiguration.",
-            "open_settings": "Streams-Einstellungen öffnen"
-        },
         "provider_status_auth_required": "Authentifizierung erforderlich",
         "provider_status_incompatible": "Auf diesem System nicht unterstützt.",
         "provider_status_error": "Einrichtung fehlgeschlagen",
@@ -584,9 +560,8 @@
         "provider_saved": "Einstellungen gespeichert",
         "provider_reloading": "Wird neu geladen…",
         "provider_removed": "„{0}“ wurde entfernt",
-        "queue_settings": "Warteschlangeneinstellungen",
+        "queue_settings": "Wiedergabeeinstellungen",
         "audio_analysis_failures": {
-            "title": "Audioanalysefehler",
             "description": "Titel, deren Analyse fehlgeschlagen ist, werden bei zukünftigen Scans übersprungen. Lösche einen Eintrag, um den Fehler zu beheben und eine erneute Analyse zu ermöglichen.",
             "col_item": "Element",
             "col_reason": "Grund",
@@ -604,10 +579,13 @@
             "cleared_one": "Fehler behoben – der Titel wird erneut analysiert.",
             "cleared_many": "{0} Fehler wurden behoben.",
             "clear_error": "Fehler konnten nicht behoben werden. Bitte versuche es erneut.",
-            "load_error": "Fehler konnten nicht vom Server geladen werden."
+            "load_error": "Fehler konnten nicht vom Server geladen werden.",
+            "failed_tracks": "Fehlgeschlagene Titel",
+            "failed_tracks_description": "Titel, die bis zum Entfernen von der Analyse übersprungen werden",
+            "state_none": "Keine"
         },
-        "queue_global_settings_hint": "Diese Einstellungen gelten nur für diese Warteschlange. Du kannst auch die Standardeinstellungen konfigurieren, die für alle Wiedergabegeräte-Warteschlangen gelten.",
-        "queue_global_settings_link": "Globale Warteschlangeneinstellungen öffnen",
+        "queue_global_settings_hint": "Diese Einstellungen gelten nur für dieses Wiedergabegerät. Du kannst auch die Standardeinstellungen für alle Wiedergabegeräte festlegen.",
+        "queue_global_settings_link": "Standardwerte öffnen",
         "protocol_provider_unavailable": "Die Wiedergabegeräte-Unterstützung für dieses Ausgabeprotokoll ist derzeit nicht verfügbar.",
         "protocol_multi_info": "Dieses Wiedergabegerät unterstützt mehrere Ausgabeprotokolle. Music Assistant kombiniert diese zu einem einzigen Wiedergabegerät. Wähle unten ein Protokoll aus, um dessen Verwendung zu konfigurieren.",
         "protocol_configure_title": "Konfigurieren {name}",
@@ -618,7 +596,7 @@
         },
         "download_diagnostics": "Diagnosedaten herunterladen",
         "diagnostics": "Diagnostik",
-        "diagnostics_description": "Serverprotokolle anzeigen und einen Diagnosebericht zur Fehlerbehebung herunterladen",
+        "diagnostics_description": "Serverprotokolle, Protokollstufen und ein Diagnosebericht zur Fehlerbehebung",
         "customize_menu": {
             "label": "Menü anpassen",
             "description": "Versetze das Navigationsmenü in den Bearbeitungsmodus, um seine Einträge anzuzeigen, auszublenden, neu anzuordnen und umzubenennen."
@@ -702,7 +680,7 @@
         },
         "delete_player_title": "{0} löschen?",
         "delete_player_confirmation": "Dieses Wiedergabegerät wird aus Music Assistant entfernt. Seine Einstellungen gehen dabei verloren, und es kann nur durch eine erneute Einrichtung wiederhergestellt werden.",
-        "queue_settings_description": "Wiedergabeeinstellungen für die Warteschlange, aus der dieses Wiedergabegerät abspielt",
+        "queue_settings_description": "Überblendung, Lautstärkenormalisierung und automatische Wiedergabe für dieses Wiedergabegerät",
         "dsp_description": "Filter und Verstärkung werden auf alles angewendet, was dieses Wiedergabegerät abspielt.",
         "player_options_description": "Optionen und Lesarten, die das Wiedergabegerät selbst bietet",
         "volume_slider_mode": {
@@ -735,8 +713,6 @@
         "server_internal_url": "Interne URL",
         "server_external_url": "Externe URL",
         "server_remote_access": "Fernzugriff",
-        "audio_analysis_status_hint": "Auf der Statusseite kannst du den Fortschritt der Analyse pro Anbieter sowie eventuelle Fehler verfolgen.",
-        "audio_analysis_status_link": "Status der Audioanalyse öffnen",
         "music_sources_empty_title": "Noch keine Musikquellen",
         "music_sources_empty": "Verbinde ein Musikdienstkonto oder füge eine lokale Bibliothek hinzu, um mit dem Hören zu beginnen.",
         "source_access": {
@@ -778,8 +754,7 @@
         "music_sources_shared": "Mit dir geteilt",
         "music_sources_shared_empty": "Es wurden noch keine Musikquellen mit dir geteilt.",
         "storage": {
-            "title": "Speicherung",
-            "description": "Die Ordner, Laufwerke und Netzwerkfreigaben, aus denen deine Musik stammen kann",
+            "description": "Musikordner, Laufwerke, Netzwerkfreigaben und der Speicherplatz des Servers",
             "load_failed": "Der Speicher konnte nicht geladen werden.",
             "music_locations": "Musikorte",
             "music_locations_empty_title": "Noch keine Musikstandorte",
@@ -834,7 +809,7 @@
             "cannot_mount_host_title": "Netzwerkfreigaben auf diesem Server einbinden",
             "cannot_mount_host_text": "Dieser Server kann selbst keine Verbindung zu einer Netzwerkfreigabe herstellen. Binde die Freigabe auf dem Server ein und füge anschließend den entsprechenden Ordner mit „{button}“ hinzu.",
             "cannot_mount_ha_title": "Netzwerkanteile können momentan nicht hinzugefügt werden.",
-            "cannot_mount_ha_text": "Home Assistant stellt derzeit keine Netzwerkfreigaben für Music Assistant her. Aktualisiere die Music Assistant-App in Home Assistant und starte sie neu. Eine Netzwerkfreigabe, die du in Home Assistant unter „Einstellungen“ › „System“ › „Speicher“ mit der Verwendung „Medien“ hinzufügest, wird auch hier angezeigt.",
+            "cannot_mount_ha_text": "Home Assistant stellt derzeit keine Netzwerkfreigaben für Music Assistant her. Aktualisiere die Music Assistant-App in Home Assistant und starte sie neu. Eine Netzwerkfreigabe, die du in Home Assistant unter Einstellungen → System → Speicher mit der Verwendung Medien hinzufügst, wird auch hier angezeigt.",
             "cannot_mount_link": "So richtest du das ein",
             "share_dialog": {
                 "edit_title": "Netzwerkfreigabe bearbeiten",
@@ -860,11 +835,11 @@
                 "path": "Ordnerpfad",
                 "path_hint": "Der vollständige Pfad des Ordners, zum Beispiel \/home\/me\/Music"
             },
-            "use_as_source": "Als Musikquelle verwenden"
+            "use_as_source": "Als Musikquelle verwenden",
+            "title": "Speicherung"
         },
         "folder_picker": {
             "selected": "Ausgewählter Ordner",
-            "none_selected": "Kein Ordner ausgewählt",
             "outside_locations": "Dieser Ordner befindet sich in keinem der Speicherorte. Er bleibt ausgewählt, bis du einen anderen auswählst.",
             "locations": "Speicherorte",
             "all_locations": "Alle Standorte",
@@ -872,13 +847,12 @@
             "open_folder": "{name} öffnen",
             "no_subfolders": "Dieser Ordner enthält keine Unterordner.",
             "use_folder": "Verwende diesen Ordner",
-            "folder_selected": "Ausgewählt",
-            "holds_selection": "Der ausgewählte Ordner befindet sich hier",
             "browse_failed": "Der Ordner konnte nicht geöffnet werden.",
             "empty_title": "Noch nichts zur Auswahl",
-            "empty_text": "Es ist noch kein Ordner, kein Laufwerk und keine Netzwerkfreigabe zur Auswahl vorhanden. Wähle „Speicher verwalten“, um einen hinzuzufügen.",
             "empty_text_member": "Es ist noch kein Ordner, kein Laufwerk und keine Netzwerkfreigabe zur Auswahl vorhanden. Bitte einen Administrator, eine hinzuzufügen.",
-            "manage": "Speicher verwalten"
+            "empty_text_add": "Es steht noch kein Ordner, Laufwerk oder Netzwerkfreigabe zur Auswahl. Füge den Ordner hinzu, in dem sich deine Dateien befinden.",
+            "empty_text_container": "Es steht noch kein Ordner, Laufwerk oder Netzwerkfreigabe zur Auswahl. Ordne den Ordner, in dem sich deine Dateien befinden, dem Music Assistant-Container zu und starte diesen neu.",
+            "chosen_hint": "Dieser Ordner wird verwendet, einschließlich der darin enthaltenen Unterordner."
         },
         "remove_provider_confirm_music": "„{0}“ entfernen? Alle Titel, die diese Quelle bereitstellt, werden zusammen mit ihrem Wiedergabeverlauf aus deiner Bibliothek entfernt. Dieser Vorgang kann nicht rückgängig gemacht werden.",
         "remove_provider_confirm_player": "„{0}“ entfernen? Seine Wiedergabegeräte und ihre Einstellungen werden ebenfalls entfernt. Dieser Vorgang kann nicht rückgängig gemacht werden.",
@@ -1031,7 +1005,8 @@
                 "moved_message_not_running": "Es wird nun von seinen eigenen Betreuern gepflegt, nicht mehr vom Music Assistant-Team. Music Assistant hat es aus dem Community-Katalog installiert.",
                 "dismiss": "Zurückweisen",
                 "new_title": "Neu im Community-Katalog",
-                "updated_title": "Kürzlich aktualisiert"
+                "updated_title": "Kürzlich aktualisiert",
+                "new_badge": "Neu"
             },
             "search": "Den Marktplatz durchsuchen",
             "search_results": "Suchergebnisse",
@@ -1051,9 +1026,168 @@
             "dont_suggest_failed": "Konnte nicht aufhören {name} vorzuschlagen",
             "suggested_again_toast": "{name} wird erneut vorgeschlagen",
             "suggest_again_failed": "Konnte {name} nicht erneut empfehlen.",
-            "undo": "Rückgängig"
+            "undo": "Rückgängig",
+            "fits_your_setup": "Passt zu deiner Konfiguration"
         },
-        "provider_status_unavailable": "Nicht verfügbar"
+        "provider_status_unavailable": "Nicht verfügbar",
+        "merge_player": "Mit einem anderen Wiedergabegerät verschmelzen…",
+        "merge_player_title": "{0} in ein anderes Wiedergabegerät zusammenführen",
+        "merge_player_description": "Bei einem Gerät, das zwei Wiedergabegeräte anzeigt, wähle das Wiedergabegerät aus, das bleibt.",
+        "merge_player_pick": "Wähle ein Wiedergabegerät aus",
+        "merge_player_confirmation": "{0} verschwindet und seine Ausgänge werden auf {1} verschoben. Es werden nur die Einstellungen beibehalten, über die {0} verfügt. Seine Warteschlange wird geleert.",
+        "merge_player_confirmation_outputs": "{0} verschwindet und seine Ausgänge ({2}) werden nach {1} verschoben. Es werden nur die Einstellungen beibehalten, über die {0} verfügt. Seine Warteschlange wird geleert.",
+        "merge_player_confirm": "Zusammenführen",
+        "player_merged": "Wiedergabegeräte zusammengeführt",
+        "split_off_output": "Als eigenes Wiedergabegerät abspalten",
+        "split_off_output_title": "{0} von {1} abtrennen?",
+        "split_off_output_confirmation": "{0} ist nicht mehr Teil von {1} und wird als eigenständiges neues Wiedergabegerät mit Standardeinstellungen angezeigt. {1} behält seinen Namen, seine Einstellungen und seine Wiedergabeliste bei.",
+        "split_off": "Abspalten",
+        "output_split_off": "{0} ist nun ein eigenständiger Akteur.",
+        "action_link_refused": "Der Link wurde nicht geöffnet, da er direkt zu Music Assistant selbst führt.",
+        "settings_load_failed": "Diese Einstellungen konnten nicht geladen werden",
+        "network": {
+            "title": "Netzwerk",
+            "description": "Fernzugriff, Adressen, Ports und Erkennung",
+            "web": "Weboberfläche und API",
+            "streaming": "Audio-Streaming",
+            "discovery": "Entdeckung"
+        },
+        "providers_active": "{count} aktiv | {count} aktiv",
+        "playback": {
+            "title": "Wiedergabe",
+            "description": "Crossfade, Lautstärkenormalisierung, automatische Wiedergabe und was passiert, wenn man auf „Play“ drückt"
+        },
+        "library": {
+            "title": "Bibliotheks-Einstellungen",
+            "description": "Welche Quelle spielt einen Titel ab und sorgt für die Pflege der Bibliothek?",
+            "source_selection": "Quellenauswahl",
+            "maintenance": "Bibliothekspflege"
+        },
+        "log_levels": "Protokollierungsstufen",
+        "home_assistant": {
+            "title": "Home Assistant",
+            "description": "Die Anbindung an Home Assistant und welche Vorteile dies für Music Assistant mit sich bringt",
+            "not_connected": "Nicht mit Home Assistant verbunden",
+            "connect_description": "Stelle eine Verbindung zu Home Assistant her, um Inhalte auf dessen Wiedergabegeräten abzuspielen, sich mit dessen Konten anzumelden und dessen Geräte als Fernbedienungen zu nutzen.",
+            "connect": "Verbinden",
+            "connection": "Verbindung",
+            "connection_description": "Die Verbindung neu konfigurieren, deaktivieren oder entfernen",
+            "connection_addon": "Music Assistant läuft als Home Assistant-App, wodurch eine Verbindung hergestellt wird",
+            "state_connected": "Verbunden",
+            "state_connecting": "Verbinden",
+            "state_disabled": "Deaktiviert",
+            "state_needs_attention": "Dieser Anbieter erfordert Aufmerksamkeit",
+            "players": "Home Assistant-Wiedergabegeräte",
+            "players_description": "Auf den Wiedergabegeräten von Home Assistant abspielen",
+            "players_add": "Hinzufügen",
+            "sign_in": "Mit Home Assistant anmelden",
+            "remote_access_description": "Mit Home Assistant Link funktioniert der Fernzugriff in jedem Netzwerk",
+            "remote_access_ha_cloud": "Home Assistant Link",
+            "remote_access_without_ha_cloud": "Ohne Home Assistant Link",
+            "ai": "KI von Home Assistant",
+            "ai_description": "KI-Aufgaben und Stimmen aus Home Assistant",
+            "ai_none": "Keine",
+            "players_choose": "Auswählen",
+            "sign_in_new_users": "Home Assistant-Benutzer, die noch kein Konto haben, erhalten eines, wenn sie sich zum ersten Mal anmelden.",
+            "remote_access_details": "Remote-ID und QR-Code"
+        },
+        "music": "Musik",
+        "music_description": "Deine Musikquellen, Bibliothek, Metadaten und Audioanalyse",
+        "source_labels": {
+            "library": "Bibliothek",
+            "radio": "Radio",
+            "podcasts": "Podcasts",
+            "audiobooks": "Hörbücher",
+            "live": "Live-Quellen"
+        },
+        "ai": {
+            "title": "KI",
+            "description": "Die KI-Engines, die Music Assistant nutzt, wofür sie eingesetzt werden und der Zugriff auf KI-Assistenten",
+            "no_engines": "Noch keine KI-Engines",
+            "no_engines_description": "Füge einen KI-Dienst hinzu, um Wiedergabelisten-Beschreibungen zu verfassen, Ansagen vorzulesen, KI-Radio zu moderieren und vieles mehr.",
+            "add_service": "KI-Dienst hinzufügen",
+            "usage": "Was verwendet KI",
+            "services": "KI-Dienste",
+            "kind": {
+                "text": "KI-Engine",
+                "speech": "Text-zu-Sprache-Engine",
+                "image": "Bild-Engine"
+            },
+            "engine_count": {
+                "text": "{count} Text | {count} Texte",
+                "speech": "{count} Stimme | {count} Stimmen",
+                "image": "{count} Bild | {count} Bilder"
+            },
+            "follows_default": "Standard · {engine}",
+            "not_available": "Nicht verfügbar",
+            "choose_models": "Wähle die zu verwendenden Modelle aus",
+            "assistant_access": "Zugriff für KI-Assistenten",
+            "assistant_access_enabled": "Der integrierte MCP-Server ist aktiviert.",
+            "assistant_access_disabled": "Der integrierte MCP-Server ist ausgeschaltet",
+            "mcp_server": "Den integrierten MCP-Server aktivieren",
+            "mcp_server_description": "Lass KI-Assistenten wie Home Assistant Assist, Claude und ChatGPT deine Musik durchsuchen und die Wiedergabe steuern.",
+            "engine_unavailable": "Die ausgewählte Engine ist nicht verfügbar"
+        },
+        "provider_labels": {
+            "filter": "Nach dem Angebot filtern",
+            "all": "Alle"
+        },
+        "plugin_labels": {
+            "ai": "KI",
+            "tts": "Text-zu-Sprache",
+            "scrobble": "Scrobbeln",
+            "assistant": "Assistenten",
+            "visualizer": "Licht & visuelle Effekte",
+            "recommendations": "Mixes & Empfehlungen",
+            "fun": "Spaß & Spiele",
+            "other": "Andere"
+        },
+        "multi_channel": {
+            "make": "Ein Mehrkanal-Wiedergabegerät erstellen…",
+            "make_title": "Mehrkanal-Wiedergabegerät erstellen",
+            "make_description": "{0} und die von dir ausgewählten Lautsprecher spielen als ein einziger Lautsprecher, wobei jeder auf einem eigenen Kanal läuft.",
+            "channels": {
+                "front_left": "Links",
+                "front_right": "Rechts",
+                "front_center": "Center",
+                "lfe": "Subwoofer"
+            },
+            "this_speaker": "{0} (dieser Lautsprecher)",
+            "channel": "Kanal",
+            "output_delay": "Ausgabeverzögerung (ms)",
+            "pick_speaker": "Wähle einen Lautsprecher aus",
+            "swap": "Tausche die Kanäle",
+            "no_speakers": "Es gibt keinen weiteren Lautsprecher hinzuzufügen. Ein Lautsprecher wird hier angezeigt, solange er eingeschaltet und angeschlossen ist.",
+            "name": "Name",
+            "make_note": "Der {0}-Ausgang jedes Lautsprechers wird auf das neue Wiedergabegerät umgeleitet. Ein Wiedergabegerät ohne weiteren Ausgang verschwindet zusammen mit seinen Einstellungen.",
+            "created": "{0} erstellt",
+            "speaker_online": "Online",
+            "speaker_offline": "Offline",
+            "take_apart": "Auseinandernehmen",
+            "take_apart_title": "{0} auseinandernehmen?",
+            "take_apart_confirmation": "{0} verschwindet mitsamt seinen Einstellungen. Die Lautsprecher werden wieder als eigenständige Wiedergabegeräte mit den Standardeinstellungen angezeigt.",
+            "take_apart_confirm": "Auseinandernehmen",
+            "taken_apart": "{0} auseinandergenommen",
+            "layout": "Layout",
+            "add_subwoofer": "Subwoofer hinzufügen...",
+            "add_subwoofer_title": "Subwoofer hinzufügen",
+            "add_subwoofer_description": "Wähle den Lautsprecher aus, der den Bass von {0} wiedergibt.",
+            "add_subwoofer_note": "Der Ausgang {0} des Subwoofers wird auf {1} umgestellt. Ein Wiedergabegerät ohne weiteren Ausgang verschwindet zusammen mit seinen Einstellungen.",
+            "subwoofer_added": "Subwoofer zu {0} hinzugefügt",
+            "remove_subwoofer": "Subwoofer entfernen",
+            "remove_subwoofer_title": "Subwoofer aus {0} entfernen?",
+            "remove_subwoofer_confirmation": "{0} wird als eigenständiges Element mit den Standardeinstellungen wiederhergestellt.",
+            "subwoofer_removed": "Subwoofer aus {0} entfernt"
+        },
+        "metadata_description": "Metadatenquellen, Sprache, Online-Abfragen, Genres und der Cover-Cache",
+        "audio_analysis_description": "Analysefortschritt, fehlgeschlagene Titel, Analysemodule und Einstellungen",
+        "audio_analysis_modules": "Analysemodule",
+        "metadata_settings_description": "Sprache, Online-Abfragen, Genres und der Cache für Bildmaterial",
+        "audio_analysis_settings_description": "Anzahl der Titel die gleichzeitig analysiert werden",
+        "audio_analysis_coverage": {
+            "up_to_date": "Aktuell",
+            "waiting": "{count} warten"
+        }
     },
     "show_info": "Zeige Informationen",
     "show_select_boxes": "Auswahlboxen einblenden",
@@ -1161,7 +1295,6 @@
         "toggle_subplayers": "Unterwiedergabegeräte umschalten",
         "restore_genre": "Genre wiederherstellen",
         "remove_rule": "Regel entfernen",
-        "change_avatar": "Avatar ändern",
         "revoke_session": "Sitzung widerrufen",
         "revoke_token": "Token widerrufen",
         "user_options": "Benutzeroptionen",
@@ -1422,8 +1555,6 @@
         "setup_failed": "Einrichtung fehlgeschlagen. Bitte versuche es erneut.",
         "setup_error": "Bei der Einrichtung ist ein Fehler aufgetreten",
         "profile": "Profil",
-        "account_settings": "Kontoeinstellungen",
-        "manage_your_profile_info": "Verwalte deine Profilinformationen und Einstellungen",
         "change_password": "Passwort ändern",
         "update_your_password": "Aktualisiere dein Kontopasswort.",
         "old_password": "Aktuelles Passwort",
@@ -1485,7 +1616,6 @@
         "change_role": "Rolle ändern",
         "avatar_url": "Avatar-URL",
         "avatar_url_hint": "URL zum Avatarbild eingeben",
-        "change_avatar": "Avatar ändern",
         "profile_updated": "Profil erfolgreich aktualisiert",
         "ingress_password_note": "Wenn du auf Music Assistant außerhalb von Home Assistant zugreifst, benötigst du dieses Passwort, um dich anzumelden.",
         "copy_new_token_hint": "Kopiere deinen Zugriffstoken. Es wird nicht erneut angezeigt.",
@@ -1552,7 +1682,17 @@
         },
         "username_max_length": "Der Benutzername darf maximal 50 Zeichen lang sein.",
         "display_name_max_length": "Der Anzeigename darf maximal 100 Zeichen lang sein.",
-        "password_max_length": "Das Passwort darf maximal 128 Zeichen lang sein."
+        "password_max_length": "Das Passwort darf maximal 128 Zeichen lang sein.",
+        "profile_pages": {
+            "theme_language": "Thema und Sprache",
+            "interface": "Schnittstelle",
+            "interface_description": "Einstellungen, die auf jedem Gerät mit deinem Konto synchronisiert werden",
+            "device": "Dieses Gerät",
+            "device_description": "Einstellungen, die nur auf diesem Gerät gelten",
+            "security": "Sicherheit",
+            "security_description": "Passwort, aktive Sitzungen und Zugriffstoken"
+        },
+        "edit_profile": "Profil bearbeiten"
     },
     "login": {
         "subtitle": "Verbinde dich mit deinem Musikserver",
@@ -1644,7 +1784,6 @@
     "narrators": "Erzähler",
     "queue_move_end": "Zum Ende bewegen",
     "discover": "Entdecken",
-    "save_queue_as_playlist": "Warteschlange als Wiedergabeliste speichern",
     "playlist_created": "Wiedergabeliste erstellt",
     "open_playlist": "Wiedergabeliste öffnen",
     "add": "Hinzufügen",
@@ -1797,38 +1936,31 @@
             "share_invitation": "Einladung teilen",
             "share_named_title": "Verbinden {0}",
             "share_title": "Mach mit bei der Music Assistant Party!",
-            "skip_votes": "{0}\/{1} uberspringen"
+            "skip_votes": "{0}\/{1} überspringen"
         },
         "music_quiz": {
             "title": "Musikquiz",
             "create_intro": "Erstelle ein neues Quizspiel, um dein Musikwissen zu testen!",
             "loading": "Wird geladen...",
             "no_active_game": "Kein aktives Spiel",
-            "game_removed": "Spiel nicht mehr verfügbar",
             "game_ended": "Spiel beendet",
             "game_ended_detail": "Das Quiz, an dem du teilgenommen hast, ist beendet.",
-            "game_no_longer_available": "Dieses Spiel ist nicht mehr verfügbar.",
             "start": "Quiz starten",
-            "reveal": "Antwort anzeigen",
             "phase_reveal": "Antwort anzeigen",
             "next": "Nächste Runde",
             "finish": "Quiz beenden",
-            "reset": "Quiz zurücksetzen",
             "new_game": "Neues Spiel",
             "phase_waiting_for_players": "Warten auf weitere Spieler",
             "phase_answers_open": "Die Antworten sind jetzt verfügbar!",
             "phase_enjoy_track": "Viel Spaß mit dem Song!",
             "phase_finished": "Quiz beendet",
-            "join_url_label": "Beitritts-URL",
             "players": "Spieler",
             "players_count": "{0} Spieler",
             "rounds_count": "{0} Runde(n)",
             "round_label": "Runde",
-            "round": "Runde",
             "enter_name": "Gib deinen Namen ein",
             "join": "Quiz beitreten",
             "waiting_for_start": "Warten auf den Moderator, bis das Quiz beginnt...",
-            "waiting_for_answers": "Warten auf Antworten...",
             "choose_answer": "Wähle deine Antwort!",
             "answered": "Antwort gesendet! Warte auf weitere...",
             "answer_was": "Die Antwort war",
@@ -1838,19 +1970,12 @@
             "ready": "Bereit für die nächste Runde",
             "waiting_for_next": "Warten auf die nächste Runde...",
             "game_over": "Spiel vorbei!",
-            "final_scores": "Endergebnisse",
             "final_leaderboard": "Endgültige Rangliste",
-            "setup_placeholder": "Das Einrichtungsformular folgt in Kürze.",
             "connection_lost": "Verbindung unterbrochen, wird wiederhergestellt...",
             "rounds": "Runden",
-            "suggestions": "Antwortmöglichkeiten",
             "answer_seconds": "Antwortzeit (Sekunden)",
-            "search_music": "Durchsuche deine Bibliothek",
-            "searching": "Suche…",
-            "no_sources_found": "Keine Titel oder Wiedergabelisten gefunden",
             "selected_music": "Ausgewählte Musik",
             "pick_at_least_one_source": "Wähle mindestens eine Quelle aus",
-            "source_search_failed": "Musikquellen konnten nicht durchsucht werden.",
             "playlist": "Wiedergabeliste",
             "track_with_artist": "Titel • {0}",
             "track": "Titel",
@@ -1866,7 +1991,6 @@
             "qr_unavailable": "QR-Code konnte nicht gerendert werden",
             "copied": "Kopiert",
             "copy_link": "Link kopieren",
-            "join_link_copied": "Beitrittslink kopiert",
             "copy_join_link_failed": "Beitrittslink konnte nicht kopiert werden",
             "now_playing": "Jetzt läuft",
             "current_music": "Aktuelle Musik",
@@ -1907,8 +2031,6 @@
             "difficulty_hard": "Schwer",
             "choose_game_type": "Wähle eine Spielart aus",
             "configure_game": "Konfiguriere dein Spiel",
-            "setup_step": "Schritt {0} von {1}",
-            "coming_soon": "Demnächst verfügbar",
             "answer_choices": "Antwortmöglichkeiten",
             "game_type_guess_the_song": "Errate den Song",
             "game_type_guess_the_song_description": "Spiele einen Titel ab und errate als Erster den Titel aus den vorgegebenen Optionen.",
@@ -1918,7 +2040,6 @@
             "end_game_confirm": "Möchtest du dieses Spiel wirklich beenden? Dadurch wird das laufende Spiel für alle Spieler gelöscht.",
             "end_game": "Spiel beenden",
             "remove_music_source": "Entferne {0}",
-            "timeline": "Zeitleiste",
             "timeline_anchor": "Anker",
             "timeline_revealed": "Neu",
             "timeline_place_help": "Wähle aus, wo der gerade abgespielte Titel hingehört – von älter bis neuer.",
@@ -2030,7 +2151,43 @@
             "how_to_play_trivia_description": "Beantworte Quizfragen zum Thema Musik. Wähle die Antwort, die du für richtig hältst, bevor die Zeit abläuft.",
             "landing_continue": "Fortsetzen",
             "timeline_result_placement": "Platzierung",
-            "round_result_answer": "Antwort"
+            "round_result_answer": "Antwort",
+            "game_type_title_reveal": "Titelenthüllung",
+            "game_type_title_reveal_description": "Spiele einen Titel ab und gib dessen Titel ein, während die Buchstaben nacheinander angezeigt werden.",
+            "how_to_play_title_reveal_description": "Hör dir das gerade abgespielte Lied an und gib den Titel ein. Mit der Zeit werden weitere Buchstaben angezeigt, und kleine Tippfehler sind kein Problem – je schneller du jedoch errätst, desto mehr Punkte bekommst du.",
+            "title_reveal_hint_speed": "Hinweisgeschwindigkeit",
+            "title_reveal_hint_speed_slow": "Langsam (wenige Buchstaben)",
+            "title_reveal_hint_speed_normal": "Normal",
+            "title_reveal_hint_speed_fast": "Schnell (viele Buchstaben)",
+            "title_reveal_typo_tolerance": "Fehlertoleranz",
+            "title_reveal_typo_tolerance_strict": "Strikt",
+            "title_reveal_typo_tolerance_normal": "Normal",
+            "title_reveal_typo_tolerance_lenient": "Nachsichtig",
+            "title_reveal_mask_label": "Songtitel: {0}, {1} Buchstaben sind noch versteckt",
+            "title_reveal_hints_progress": "{0} von {1} Hinweise enthüllt",
+            "title_reveal_typos_allowed": "Bis zu {count} Tippfehler erlaubt | Bis zu {count} Tippfehler erlaubt",
+            "title_reveal_exact_spelling": "Exakte Rechtschreibung erforderlich",
+            "title_reveal_guess_label": "Songtitel",
+            "title_reveal_guess_placeholder": "Gib den Titel ein…",
+            "title_reveal_submit_guess": "Erraten",
+            "title_reveal_attempts_left": "{count} Schätzung übrig | {count} Schätzungen übrig",
+            "title_reveal_your_guesses": "Deine Vermutungen",
+            "title_reveal_close": "So knapp!",
+            "title_reveal_solved": "Genau!",
+            "title_reveal_points": "+{0} Punkte",
+            "title_reveal_solved_players": "Erraten",
+            "title_reveal_not_solved": "Du hast den Titel in dieser Runde nicht erraten",
+            "title_reveal_first_bonus": "Erster! +{0}",
+            "title_reveal_first_bonus_result": "Erster richtiger Tipp",
+            "title_reveal_artist_bonus_setting": "Interpretenbonus",
+            "title_reveal_artist_bonus_setting_help": "Nachdem sie den Titel erraten haben, haben die Spieler einen Versuch, den Interpreten zu erraten, um Bonuspunkte zu erhalten.",
+            "title_reveal_artist_bonus_label": "Bonus: Wer ist der Interpret?",
+            "title_reveal_artist_bonus_help": "Ein Versuch für Extrapunkte.",
+            "title_reveal_artist_placeholder": "Gib den Interpreten ein…",
+            "title_reveal_artist_skip": "Überspringen",
+            "title_reveal_artist_correct": "{0} hat recht! +{1}",
+            "title_reveal_artist_wrong": "Nicht ganz, es war {0}",
+            "title_reveal_artist_skipped": "Übersprungen, es war {0}"
         },
         "ai_radio": {
             "title": "KI-Radio",
@@ -2339,7 +2496,11 @@
             "log_download_started": "Der Download des Aufgabenprotokolls wurde gestartet.",
             "log_download_failed": "Kein Aufgabenprotokoll zum Herunterladen verfügbar."
         },
-        "report_title": "Aufgabenbericht"
+        "report_title": "Aufgabenbericht",
+        "settings": {
+            "title": "Aufgabeneinstellungen",
+            "description": "Wie viele Aufgaben werden gleichzeitig ausgeführt?"
+        }
     },
     "not_found_headline": "Oh, diese Seite gehört nicht zur Setlist.",
     "not_found_subtext": "Der Titel, den du suchst, ist zwischen den Musikquellen verloren gegangen. Geh zurück oder such dir etwas Neues aus.",
@@ -2470,7 +2631,7 @@
     "artist_all_albums": "Alle Alben",
     "artist_all_tracks": "Alle Titel",
     "on_provider": "Auf {0}",
-    "open_queue_settings": "Warteschlangeneinstellungen öffnen",
+    "open_queue_settings": "Wiedergabeeinstellungen öffnen",
     "crossfade_enable": "Crossfade aktivieren",
     "crossfade_disable": "Crossfade deaktivieren",
     "crossfade": "Crossfade",
@@ -2769,7 +2930,7 @@
     "previous_chapter": "Vorheriges Kapitel",
     "next_chapter": "Nächstes Kapitel",
     "autoplay_repeat_disabled": "Die automatische Wiedergabe wurde deaktiviert, da die Wiederholungsfunktion aktiviert ist.",
-    "biography": "Biographie",
+    "biography": "Biografie",
     "author": "Autor",
     "narrator": "Erzähler",
     "artist_entity_type": {
@@ -2807,32 +2968,19 @@
         "skip": "Vorerst überspringen",
         "finish": "Beenden",
         "finish_failed": "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
-        "nothing_configured": "Noch nichts eingerichtet",
         "needs_attention": "Aufmerksamkeit erforderlich",
-        "set_up": "Fertig",
         "still_to_do": "Noch zu erledigen",
-        "all_done": "Du kannst die Einrichtung jetzt abschließen und jederzeit weitere Funktionen hinzufügen.",
         "players_count": "{count} Wiedergabegerät | {count} Wiedergabegeräte",
         "run_again": "Führe den Installationsassistenten erneut aus",
         "steps": {
-            "intent": {
-                "title": "Wie möchtest du Music Assistant nutzen?",
-                "description": "Wähle deinen Ausgangspunkt. Mit beiden Optionen kannst du alle Funktionen nutzen.",
-                "phone_apps": {
-                    "label": "Meine Musik-Apps mit meinen Lautsprechern verbinden",
-                    "description": "Wähle weiterhin Musik in Apps wie Spotify aus oder nutze AirPlay. Music Assistant arbeitet im Hintergrund und verbindet die Musik mit deinen Lautsprechern, ohne dass du eine Musikbibliothek einrichten musst.",
-                    "preview": "Als Nächstes fügen wir deine Lautsprecher hinzu, verbinden deine Musik-Apps und zeigen dir, wie du mit dem Hören beginnen kannst."
-                },
-                "music_hub": {
-                    "label": "Das volle Music Assistant-Erlebnis",
-                    "description": "Fasse deine Musikdienste, lokale Musikdateien und Lautsprecher an einem Ort zusammen. Stöbere in Music Assistant, suche nach Titeln und erstelle Wiedergabelisten. Du kannst weiterhin über Spotify Connect und AirPlay abspielen.",
-                    "preview": "Als Nächstes verbinden wir deine Musikdienste und fügen deine Lautsprecher hinzu, dann erkunden wir weitere Funktionen."
-                },
-                "summary_title": "Deine Konfigurationsauswahl"
-            },
             "music_sources": {
                 "title": "Füge deine Musikquellen hinzu",
-                "description": "Verbinde einen Streaming-Dienst oder deine lokalen Musikdateien, damit Music Assistant etwas abspielen kann."
+                "description": "Verbinde einen Streaming-Dienst oder deine lokalen Musikdateien, damit Music Assistant etwas abspielen kann.",
+                "features": {
+                    "streaming": "Streaming-Dienste wie Spotify oder Tidal",
+                    "files": "Deine eigenen Musikdateien, auf diesem Server oder in einem Netzwerkordner",
+                    "radio": "Radiosender und Podcasts"
+                }
             },
             "players": {
                 "title": "Füge deine Wiedergabegeräte hinzu",
@@ -2843,68 +2991,44 @@
                 "discovering_hint": "Das Auffinden von Wiedergabegeräten kann einen Moment dauern. Stelle sicher, dass deine Lautsprecher eingeschaltet sind und sich im selben Netzwerk wie Music Assistant befinden.",
                 "add_more": "Weitere Wiedergabegeräte hinzufügen",
                 "rename": "{name} umbenennen",
-                "discovered_by": "Entdeckt von"
+                "discovered_by": "Entdeckt von",
+                "features": {
+                    "found_automatically": "Wird automatisch in deinem Netzwerk erkannt",
+                    "one_place": "Spiele sie alle von einem Ort aus",
+                    "groups": "Gruppiere sie, damit sie zusammen spielen können"
+                }
             },
             "plugins": {
                 "title": "Plugins hinzufügen",
-                "description": "Plugins erweitern den Music Assistant um zusätzliche Funktionen wie „Party“, „Spotify Connect“ und einen AirPlay-Empfänger. Du kannst sie jederzeit nachträglich hinzufügen.",
                 "phone_apps_title": "Verbinde deine Musik-Apps",
-                "phone_apps_description": "Füge Spotify Connect oder den AirPlay-Empfänger hinzu und öffne anschließend dessen Einstellungen, um deine Lautsprecher auszuwählen. Weitere Plugins sind ebenfalls verfügbar.",
-                "connect": "Verbinde eine Musik-App"
+                "connect": "Verbinde eine Musik-App",
+                "phone_apps_instructions": "Füge Spotify Connect oder den AirPlay-Empfänger hinzu und wähle ihn anschließend aus, um die Lautsprecher festzulegen, über die die Wiedergabe erfolgen soll.",
+                "features": {
+                    "apps": "Wähle weiterhin Musik in den Apps aus, die du kennst",
+                    "spotify_connect": "Mit Spotify Connect von Spotify abspielen",
+                    "airplay": "Wiedergabe von deinen Apple-Geräten über AirPlay"
+                }
             },
             "finish": {
                 "title": "Einrichtung abschließen",
                 "description": "Gut gemacht, dass du alles eingerichtet hast. Hier noch einmal eine kurze Zusammenfassung – du kannst all das später in den Einstellungen ändern.",
                 "phone_apps_description": "Hier ist eine Übersicht deiner Lautsprecher- und App-Verbindungen. Du kannst später in den Einstellungen eine Musikbibliothek und weitere Funktionen hinzufügen."
             },
-            "core_settings": {
-                "title": "Access Music Assistant",
-                "load_failed": "Die Server-Einstellungen konnten nicht geladen werden. Du kannst sie später in den Einstellungen ändern.",
-                "intro": "Music Assistant funktioniert automatisch in deinem Heimnetzwerk. Richte den Fernzugriff ein, wenn du auch unterwegs Musik hören möchtest.",
-                "internal_address": "Interne Adresse",
-                "internal_address_hint": "Wo die Apps und Geräte in deinem Haushalt mit Music Assistant verbunden sind.",
-                "stream_address": "Adresse des Stream-Servers",
-                "stream_address_hint": "Woher deine Wiedergabegeräte die Audiodaten beziehen.",
-                "address_unknown": "Nicht verfügbar",
-                "check": {
-                    "checking": "Wird geprüft...",
-                    "reachable": "Von diesem Gerät aus erreichbar",
-                    "unreachable": "Von diesem Gerät aus nicht erreichbar",
-                    "unchecked": "Von diesem Gerät aus konnte keine Überprüfung durchgeführt werden"
-                },
-                "unreachable_hint": "Eine Adresse, die hier nicht funktioniert, funktioniert möglicherweise auch für deine Wiedergabegeräte nicht. Sollte die Wiedergabe fehlschlagen, ändere die Adresse über Bearbeiten weiter unten.",
-                "override_hint": "Du musst diese Einstellungen nur in einem komplexeren Netzwerk ändern, beispielsweise hinter einem Reverse-Proxy oder über VLANs hinweg. Du findest sie später unter Einstellungen › {system}, unter {webserver} und {streams}.",
-                "remote": {
-                    "title": "Höre von außerhalb deines Hauses zu",
-                    "description": "Es gibt zwei Möglichkeiten, Music Assistant zu erreichen, wenn du nicht zu Hause bist. Beide können auch später eingerichtet werden.",
-                    "builtin": {
-                        "title": "Integrierter Fernzugriff",
-                        "easiest": "Am einfachsten",
-                        "description": "Sicher und verschlüsselt, ganz ohne Portweiterleitung oder VPN. Schalte den Dienst ein und stelle mit deiner Fernzugriffs-ID von überall aus eine Verbindung her.",
-                        "switch": "Fernzugriff",
-                        "id": "Deine Fernzugriffs-ID",
-                        "copy": "Kopiere die Fernzugriffs-ID",
-                        "hint": "Verwende ihn in der Music Assistant-App oder unter app.music-assistant.io. Den QR-Code findest du unter Einstellungen › {remote_access}."
-                    },
-                    "proxy": {
-                        "title": "Dein eigener Reverse-Proxy",
-                        "description": "Schalte einen Reverse-Proxy vor den Server und gib die Adresse, unter der der Server von extern erreicht wird, als externe Adresse ein.",
-                        "set_external": "Externe Adresse festlegen"
-                    }
-                },
-                "network_details": "Server- und Netzwerkdetails",
-                "external_address": "Externe Adresse",
-                "external_address_hint": "Wo du von außerhalb deines Netzwerks über deinen Reverse-Proxy deinen Music Assistant erreichst."
-            },
             "invite_members": {
                 "title": "Benutzer hinzufügen",
-                "description": "Jeder in deinem Haushalt erhält ein eigenes Konto mit den Wiedergabegeräten und Musikquellen, auf die du ihm Zugriff gewährst.",
-                "load_failed": "Die Benutzer konnten nicht geladen werden. Du kannst sie später in den Einstellungen hinzufügen."
+                "load_failed": "Die Benutzer konnten nicht geladen werden. Du kannst sie später in den Einstellungen hinzufügen.",
+                "intro": "Richte für jeden in deinem Haushalt ein eigenes Konto ein.",
+                "features": {
+                    "sign_in": "Deine eigene Anmeldung",
+                    "players": "Die Wiedergabegeräte, auf die du ihnen Zugriff gewährst",
+                    "music": "Ihre eigenen Musikdienste, neben deinen"
+                },
+                "optional": "Optional: Du kannst Benutzer auch später unter Einstellungen → {users} hinzufügen."
             },
             "welcome": {
                 "title": "Fühl dich wie zu Hause",
                 "description": "Hallo {name}, hier ist die Musik in deinem Zuhause zu Hause. Wähle aus, wie viel du sehen möchtest, während etwas abgespielt wird.",
-                "defaults_hint": "Damit werden lediglich einige Standardeinstellungen festgelegt. Du kanst jede Einstellung nach Belieben ändern.",
+                "defaults_hint": "Damit werden lediglich einige Standardeinstellungen festgelegt. Du kannst jede Einstellung nach Belieben ändern.",
                 "save_failed": "Deine Auswahl konnte nicht gespeichert werden. Bitte versuche es erneut.",
                 "standard": {
                     "label": "Standard",
@@ -2921,10 +3045,35 @@
             },
             "own_sources": {
                 "title": "Verbinde deine eigenen Konten",
-                "description": "Füge deine eigenen Musikdienste hinzu, damit deine Wiedergabelisten und deine Mediathek zusammen mit denen aller anderen angezeigt werden. Das kannst du jederzeit später in deinen Einstellungen nachholen.",
                 "add": "Füge eine Musikquelle hinzu",
-                "empty": "Du hast noch keine eigenen Musikquellen angeschlossen.",
-                "connected": "Deine Musikquellen"
+                "intro": "Füge die Musikdienste hinzu, die du selbst nutzt.",
+                "features": {
+                    "accounts": "Deine eigenen Streaming-Konten, wie beispielsweise Spotify",
+                    "library": "Deine Wiedergabelisten und deine Mediathek – zusammen mit denen aller anderen"
+                },
+                "optional": "Optional: Du kannst sie auch später unter Einstellungen → {music} hinzufügen."
+            },
+            "core_settings": {
+                "remote": {
+                    "builtin": {
+                        "id": "Deine Fernzugriffs-ID",
+                        "copy": "Kopiere die Fernzugriffs-ID",
+                        "hint": "Verwende ihn in der Music Assistant-App oder unter app.music-assistant.io. Den QR-Code findest du unter Einstellungen → {system} → {network} → {remote_access}."
+                    },
+                    "features": {
+                        "secure": "Sicher und verschlüsselt",
+                        "no_setup": "Keine Portweiterleitung oder VPN",
+                        "anywhere": "Mit deiner Fernzugriffs-ID kannst du dich von überall aus verbinden",
+                        "home_assistant_link": "Verwendet Home Assistant Link, sofern dein Home Assistant darüber verfügt"
+                    },
+                    "turn_on": "Fernzugriff aktivieren",
+                    "turn_off": "Deaktivieren",
+                    "on": "Fernzugriff ist aktiviert"
+                },
+                "away_title": "Auch unterwegs hören",
+                "optional": "Optional: Du kannst diese Funktion auch später unter Einstellungen → {system} → {network} aktivieren, wo du zudem deinen eigenen Reverse-Proxy einrichten kannst.",
+                "intro": "Music Assistant läuft stets sicher in deinem Heimnetzwerk. Dank des Fernzugriffs kannst du die Musik auch unterwegs über die App hören.",
+                "intro_addon": "Überall dort, wo du Home Assistant öffnen kannst, kannst du auch Music Assistant öffnen. Dank des Fernzugriffs kannst du die Musik auch über die App hören, wenn du nicht zu Hause bist."
             },
             "your_players": {
                 "title": "Deine Wiedergabegeräte",
@@ -2949,13 +3098,61 @@
                 "sign_in_here": "Hier anmelden",
                 "reload": "Seite neu laden",
                 "ready": "Angemeldet als {name}."
+            },
+            "intent": {
+                "summary_title": "Deine Konfigurationsauswahl",
+                "phone_apps": {
+                    "title": "Meine Musik-Apps mit meinen Lautsprechern verbinden",
+                    "description": "Wähle weiterhin Musik in Apps wie Spotify aus oder nutze AirPlay. Music Assistant verbindet diese mit deinen Lautsprechern – ganz ohne eigene Musikbibliothek."
+                },
+                "music_hub": {
+                    "title": "Das volle Music Assistant-Erlebnis",
+                    "description": "Deine Musikdienste, lokale Musik und Lautsprecher – alles an einem Ort. Stöbere, suche und erstelle Wiedergabelisten in Music Assistant."
+                },
+                "title": "Wie möchtest du Music Assistant nutzen?",
+                "intro": "Wähle deinen Startpunkt.",
+                "reassurance": "Keine Sorge: Deine Auswahl bestimmt lediglich diese Konfiguration. Du kannst später in den Einstellungen beliebige Funktionen hinzufügen."
+            },
+            "home_assistant": {
+                "title": "Home Assistant verbinden",
+                "connect": "Mit Home Assistant verbinden",
+                "intro": "Verbinden Home Assistant, um Music Assistant noch besser nutzen zu können.",
+                "features": {
+                    "players": "Auf den Wiedergabegeräten von Home Assistant abspielen",
+                    "controls": "Steuere deine Wiedergabegeräte mit Home Assistant-Entitäten",
+                    "sign_in": "Melde dich mit deinem Home Assistant-Konto an",
+                    "remote_access": "Greife über den Home Assistant Link aus der Ferne auf Music Assistant zu"
+                },
+                "optional": "Optional: Du kannst es auch später unter Einstellungen → {system} → {home_assistant} verbinden."
+            },
+            "get_started": {
+                "title": "Willkommen bei Music Assistant",
+                "start": "Los geht’s",
+                "intro": "Lass uns Schritt für Schritt loslegen.",
+                "features": {
+                    "account": "Erstelle dein Konto",
+                    "intent": "Wähle aus, wie du Music Assistant nutzen möchtest",
+                    "music": "Füge deine Musik und deine Lautsprecher hinzu",
+                    "extras": "Füge nach Belieben Erweiterungen wie Home Assistant hinzu"
+                }
+            },
+            "ai": {
+                "enrich_title": "Music Assistant mit KI erweitern",
+                "intro": "Nutze die Möglichkeiten der KI für Music Assistant.",
+                "features": {
+                    "announcements": "Durchsagen",
+                    "ai_radio": "Moderator bei AI Radio",
+                    "smart_playlists": "Intelligente Wiedergabelisten erstellen",
+                    "music_quiz": "Das Musikquiz starten",
+                    "playlist_covers": "Wiedergabelisten-Cover erstellen"
+                },
+                "optional": "Optional: Du kannst KI-Dienste auch später unter Einstellungen → {ai} hinzufügen.",
+                "intro_examples": "Erweitere Music Assistant um die Möglichkeiten der KI. Hier einige Beispiele – weitere folgen:"
             }
         },
         "add_member": "Benutzer hinzufügen",
-        "just_you_so_far": "Bisher nur du.",
         "welcome_title": "Willkommen bei Music Assistant",
         "welcome_again": "Die Begrüßung erneut anzeigen",
-        "what_you_picked": "Was du ausgewählt hast",
         "description": "Richte Music Assistant Schritt für Schritt ein.",
         "step_completed": "{step}, abgeschlossen",
         "welcome_description": "Ein kurzer Überblick über Music Assistant.",
@@ -2967,9 +3164,6 @@
         "dismiss": "Zurückweisen",
         "music_sources_count": "{count} Musikquelle | {count} Musikquellen",
         "plugins_count": "{count} Plugin | {count} Plugins",
-        "continue": "Fortsetzen",
-        "explore_more": "Mehr entdecken",
-        "listen_from_apps": "Versuche, die Musik über deine Musik-Apps abzuspielen.",
         "spotify_connect_hint": "Wähle in den Einstellungen von Spotify Connect die gewünschten Lautsprecher aus. Öffne anschließend die Geräteauswahl von Spotify und wähle einen dieser Lautsprecher aus.",
         "airplay_receiver_hint": "Wähle in den Einstellungen des AirPlay-Empfängers die gewünschten Lautsprecher aus. Öffne anschließend die AirPlay-Audioauswahl auf deinem Apple-Gerät und wähle den Empfänger für deinen Lautsprecher aus."
     },
@@ -3025,7 +3219,7 @@
             },
             "profile": {
                 "title": "Dein Profil",
-                "description": "Hier findest du deinen Namen, dein Profilbild und dein Passwort. Über dieses Menü kannst du außerdem die Menüanordnung ändern, dich abmelden oder diese Führung noch einmal durchlaufen."
+                "description": "Hier findest du deinen Namen, dein Profilbild, dein Passwort und deine Einstellungen für die Benutzeroberfläche. Über dieses Menü kannst du außerdem die Menüanordnung ändern, dich abmelden oder diese Führung erneut durchlaufen."
             },
             "player_bar": {
                 "title": "Die Wiedergabegeräte-Leiste",
@@ -3153,10 +3347,10 @@
     "statistics_per_day": "Pro Tag",
     "statistics_per_month": "Pro Monat",
     "statistics_per_year": "Pro Jahr",
-    "statistics_busiest_hour": "geschäftigste Stunde",
-    "statistics_busiest_day": "geschäftigster Tag",
-    "statistics_busiest_month": "geschäftigster Monat",
-    "statistics_busiest_year": "geschäftigstes Jahr",
+    "statistics_busiest_hour": "Geschäftigste Stunde",
+    "statistics_busiest_day": "Geschäftigster Tag",
+    "statistics_busiest_month": "Geschäftigster Monat",
+    "statistics_busiest_year": "Geschäftigstes Jahr",
     "statistics_peak_hour": "Stoßzeit",
     "statistics_top_artist": "Dein Lieblingsinterpret",
     "statistics_of_plays": "der Wiedergaben",
@@ -3282,5 +3476,60 @@
     "chapter_progress_show_audiobook": "Das gesamte Hörbuch anzeigen",
     "chapter_progress_show_episode": "Die gesamte Folge ansehen",
     "chapter_progress_show_chapter": "Nur dieses Kapitel anzeigen",
-    "transfer_queue_no_audio": "Audio ist auf diesem Gerät noch nicht verfügbar."
+    "transfer_queue_no_audio": "Audio ist auf diesem Gerät noch nicht verfügbar.",
+    "discography_types_empty": "Es gibt keine Veröffentlichungen der ausgewählten Art.",
+    "favorites_song_add": "Titel zu den Favoriten hinzufügen",
+    "favorites_song_remove": "Titel aus den Favoriten entfernen",
+    "favorites_song_added": "{name} wurde zu deinen Favoriten hinzugefügt",
+    "favorites_station_add": "Sender zu Favoriten hinzufügen",
+    "favorites_station_remove": "Sender aus Favoriten entfernen",
+    "favorites_station_dislike": "Sender gefällt mir nicht",
+    "favorites_station_dislike_remove": "Sender-Dislike entfernen",
+    "add_song_playlist": "Titel zur Wiedergabeliste hinzufügen...",
+    "add_station_playlist": "Sender zur Wiedergabeliste hinzufügen...",
+    "radio_song_not_found": "{name} wurde in deinen Musikquellen nicht gefunden",
+    "add_queue_to_playlist": "Zur Wiedergabeliste hinzufügen...",
+    "channel_layout": {
+        "stereo": "Stereopaar",
+        "speaker_with_subwoofer": "Lautsprecher mit Subwoofer",
+        "stereo_with_subwoofer": "Stereopaar mit Subwoofer"
+    },
+    "provider_pages": {
+        "heading": "Extras",
+        "home_network": "Die Seite wurde über die Heimnetzwerkadresse von Music Assistant geöffnet, sodass sie nur geladen wird, wenn du zu Hause bist.",
+        "unavailable": "Die Seite lässt sich nur in deinem Heimnetzwerk öffnen, die Adresse des Music Assistant im Heimnetzwerk ist jedoch unbekannt."
+    },
+    "audio_inputs": "Audioeingänge",
+    "metadata": "Metadaten",
+    "controllers": "Controller",
+    "statistics_library_based_albums": "Enthält Titel, die mit Titeln aus der Bibliothek verknüpft sind und Albuminformationen enthalten. Andere Titel fehlen möglicherweise.",
+    "statistics_library_based_genres": "Enthält Titel, die mit Titeln aus der Bibliothek verknüpft sind und Genreangaben enthalten. Andere Titel fehlen möglicherweise.",
+    "statistics_library_based_decades": "Enthält Titel, die mit Titeln aus der Bibliothek verknüpft sind und deren Album im jeweiligen Jahr veröffentlicht wurde. Andere Titel fehlen möglicherweise.",
+    "statistics_library_based_listening_time": "Berechnet anhand der abgeschlossenen Wiedergaben, die mit Titeln aus der Bibliothek mit bekannter Dauer verknüpft sind. Andere Wiedergaben fehlen möglicherweise.",
+    "edit_rows_subtitle_podcast_episode": "Gilt für jede Podcast-Folgenseite",
+    "share": {
+        "title": "Freigegebene Musik",
+        "open_preview": "Link teilen...",
+        "preview_title": "{title} teilen",
+        "preview_description": "Zeige eine Vorschau des Elements an, bevor du dessen Freigabelink kopierst.",
+        "copy_share_link": "Kopiere den Freigabelink",
+        "copy_provider_link": "{0}-Link kopieren",
+        "copy_all": "Alles kopieren",
+        "link_copied": "Der Freigabelink wurde kopiert",
+        "link_copy_failed": "Der Freigabelink konnte nicht erstellt oder kopiert werden.",
+        "preview_failed": "Die Vorschau der Freigabe konnte nicht erstellt werden.",
+        "preview_loading": "Vorschau wird vorbereitet…",
+        "loading": "Diesen Artikel in deiner Bibliothek finden…",
+        "plugin_unavailable": "Für diesen Link ist das Plugin „Share Links“ erforderlich. Bitte den Serveradministrator, es zu aktivieren.",
+        "resolve_failed": "Dieser Titel konnte in deiner Bibliothek nicht gefunden werden.",
+        "invalid_link": "Dieser Freigabelink ist ungültig oder unvollständig."
+    },
+    "live_sources": "Live Quellen",
+    "live_sources_page": {
+        "plays_on": "Spielt auf {0}",
+        "no_player": "Wähle ein Wiedergabegerät aus, um zu sehen, was du live darauf abspielen kannst.",
+        "select_player": "Wiedergabegerät auswählen",
+        "empty": "Nichts zum Live-Spielen",
+        "empty_description": "{0} hat keine Live Quellen oder Eingänge"
+    }
 }

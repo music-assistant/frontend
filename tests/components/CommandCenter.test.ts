@@ -1,10 +1,17 @@
 import CommandCenter from "@/components/CommandCenter.vue";
+import { Command } from "@/components/ui/command";
 import { useCommandCenter } from "@/composables/useCommandCenter";
 import type { SearchTarget } from "@/composables/useProgressiveSearch";
-import { ArtistType, MediaType, type Player } from "@/plugins/api/interfaces";
+import {
+  ArtistType,
+  MediaType,
+  type Player,
+  type PlayerSource,
+} from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Ref } from "vue";
+import type { MaybeRefOrGetter, Ref } from "vue";
+import { playerSource } from "../fixtures/playerSource";
 
 const state = vi.hoisted(() => ({
   resultsByType: {} as Record<string, unknown[]>,
@@ -15,9 +22,14 @@ const state = vi.hoisted(() => ({
   providersRef: undefined as Ref<string[]> | undefined,
   providerTargets: { value: [] as SearchTarget[] },
   players: [] as unknown[],
+  liveSources: [] as PlayerSource[],
+  startLiveSourceSpy: vi.fn(),
+  liveSourceMenuSpy: vi.fn(),
   providers: {} as Record<string, { supported_artist_types: string[] }>,
   prefs: {} as Record<string, unknown>,
   searchSpy: vi.fn(),
+  // called with the media types whenever those would rerun the search
+  rerunSpy: vi.fn(),
   setPreferenceSpy: vi.fn(),
   routerPush: vi.fn(),
   route: { fullPath: "/" },
@@ -63,7 +75,7 @@ vi.mock("@/helpers/media_item_actions", () => ({
 vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@/composables/useProgressiveSearch")>();
-  const { computed, ref } = await import("vue");
+  const { computed, ref, watch } = await import("vue");
   const resultsVersion = ref(0);
   state.bumpResults = () => {
     resultsVersion.value += 1;
@@ -74,8 +86,16 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
   state.loading = ref(false);
   return {
     ...actual,
-    useProgressiveSearch: (options: { providers?: Ref<string[]> }) => {
+    useProgressiveSearch: (options: {
+      mediaTypes: Ref<MediaType[]>;
+      providers?: Ref<string[]>;
+    }) => {
       state.providersRef = options.providers;
+      // the real composable reruns the search when the media types change
+      watch(
+        () => options.mediaTypes.value.join(","),
+        (mediaTypes) => state.rerunSpy(mediaTypes),
+      );
       // the real composable records the submitted term here; the palette shows
       // the fetched results only while the box still holds that same term
       const activeSearchTerm = ref("");
@@ -101,6 +121,27 @@ vi.mock("@/composables/useProgressiveSearch", async (importOriginal) => {
         },
       };
     },
+  };
+});
+
+vi.mock("@/composables/useLiveSources", async () => {
+  const { computed, shallowRef, toValue } = await import("vue");
+  // reactive, so a test can let the list arrive after the palette opened
+  const loaded = shallowRef<PlayerSource[]>([]);
+  Object.defineProperty(state, "liveSources", {
+    get: () => loaded.value,
+    set: (sources: PlayerSource[]) => {
+      loaded.value = sources;
+    },
+  });
+  return {
+    // like the real one, a player to start them on lists its live sources
+    useLiveSources: (playerId: MaybeRefOrGetter<string | undefined>) => ({
+      sources: computed(() => (toValue(playerId) ? state.liveSources : [])),
+    }),
+    liveSourceSubtitle: () => "Sendspin",
+    startLiveSource: state.startLiveSourceSpy,
+    openLiveSourceMenu: state.liveSourceMenuSpy,
   };
 });
 
@@ -377,6 +418,7 @@ beforeEach(() => {
   state.providersRef = undefined;
   state.providerTargets.value = [SPOTIFY_TARGET, FILES_TARGET];
   state.players = [];
+  state.liveSources = [];
   for (const id of Object.keys(state.providers)) delete state.providers[id];
   state.prefs = {};
   state.loading.value = false;
@@ -1021,6 +1063,47 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("drops the submitted search once the query no longer matches it", async () => {
+    state.resultsByType[MediaType.TRACK] = [
+      makeTrack("t1", "Bohemian Rhapsody"),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    await typeQuery(wrapper, "bohemian");
+    const input = wrapper.get('[data-testid="palette-input"]');
+
+    // case and surrounding whitespace do not make it another term
+    await input.setValue(" Bohemian ");
+    expect(state.searchSpy).not.toHaveBeenCalledWith("");
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    await input.setValue("bohemian r");
+    expect(state.searchSpy).toHaveBeenLastCalledWith("");
+    expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
+
+    // typing the term again asks to submit it again
+    await input.setValue("bohemian");
+    expect(wrapper.text()).not.toContain("Bohemian Rhapsody");
+    expect(wrapper.text()).toContain("command_center_press_enter");
+    await submitSearch(wrapper);
+    expect(wrapper.text()).toContain("Bohemian Rhapsody");
+
+    wrapper.unmount();
+  });
+
+  it("drops the submitted search when the query is cleared", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await typeQuery(wrapper, "bohemian");
+    await wrapper.get("button.command-center-clear").trigger("click");
+    expect(state.searchSpy).toHaveBeenLastCalledWith("");
+
+    wrapper.unmount();
+  });
+
   it("runs the search on the return key while the results are stale", async () => {
     state.resultsByType[MediaType.TRACK] = [
       makeTrack("t1", "Bohemian Rhapsody"),
@@ -1341,6 +1424,71 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("lists no recent searches while scoped to pages", async () => {
+    state.prefs["search.recent"] = ["discotheque", "queen"];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    expect(groupHeadings(wrapper)).toEqual(["recent_searches", "pages"]);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["pages"]);
+
+    // a single letter that a recent search holds too
+    await wrapper.get('[data-testid="palette-input"]').setValue("d");
+    expect(groupHeadings(wrapper)).toEqual(["pages"]);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(groupHeadings(wrapper)).toEqual(["recent_searches", "pages"]);
+
+    wrapper.unmount();
+  });
+
+  it("reruns the search when the pages scope is left, not when it is chosen", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    const artistChip = wrapper
+      .findAll("button.command-center-chip")
+      .find((chip) => chip.text() === "artists")!;
+    await artistChip.trigger("click");
+    await typeQuery(wrapper, "queen");
+    state.rerunSpy.mockClear();
+
+    // the results of the searched type are still there to go back to
+    await pagesChip(wrapper).trigger("click");
+    await artistChip.trigger("click");
+    expect(state.rerunSpy).not.toHaveBeenCalled();
+
+    // going back to all types takes a search, which waits until then
+    await pagesChip(wrapper).trigger("click");
+    expect(state.rerunSpy).not.toHaveBeenCalled();
+    await pagesChip(wrapper).trigger("click");
+    expect(state.rerunSpy.mock.calls).toEqual([[""]]);
+
+    wrapper.unmount();
+  });
+
+  it("shows no search spinner while scoped to pages", async () => {
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+    const spinners = () => wrapper.findAll('[data-testid="palette-spinner"]');
+
+    state.loading.value = true;
+    await typeQuery(wrapper, "disco");
+    expect(spinners()).toHaveLength(1);
+
+    await pagesChip(wrapper).trigger("click");
+    expect(spinners()).toHaveLength(0);
+
+    // the search is still out, so it spins again for the results
+    await pagesChip(wrapper).trigger("click");
+    expect(spinners()).toHaveLength(1);
+
+    wrapper.unmount();
+  });
+
   it("drops the pages scope when a media type is chosen", async () => {
     const wrapper = mountPalette();
     useCommandCenter().open();
@@ -1569,6 +1717,75 @@ describe("CommandCenter", () => {
     wrapper.unmount();
   });
 
+  it("plays a live source found by name on the selected player", async () => {
+    state.storeMock.activePlayerId = "p1";
+    state.liveSources = [
+      playerSource({ id: "phono", name: "Record player" }),
+      playerSource({ id: "tv", name: "TV" }),
+    ];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    // matched while typing, so there is no prompt to run the search
+    await wrapper.get('[data-testid="palette-input"]').setValue("record");
+    expect(wrapper.text()).toContain("live_sources");
+    expect(wrapper.text()).toContain("Sendspin");
+    expect(wrapper.text()).not.toContain("TV");
+    expect(wrapper.text()).not.toContain("command_center_press_enter");
+
+    await itemByText(wrapper, "Record player").trigger("click");
+    expect(state.startLiveSourceSpy).toHaveBeenCalledWith(
+      "p1",
+      state.liveSources[0],
+    );
+    expect(state.setPreferenceSpy).toHaveBeenCalledWith("search.recent", [
+      "record",
+    ]);
+    expect(wrapper.find('[data-testid="command-center"]').exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("opens the menu of a live source from its menu button", async () => {
+    state.storeMock.activePlayerId = "p1";
+    state.liveSources = [playerSource({ id: "phono", name: "Record player" })];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="palette-input"]').setValue("record");
+    await wrapper
+      .get('button[aria-label="more_options: Record player"]')
+      .trigger("click");
+    expect(state.liveSourceMenuSpy).toHaveBeenCalledWith(
+      state.liveSources[0],
+      "p1",
+      expect.any(Number),
+      expect.any(Number),
+    );
+    expect(state.startLiveSourceSpy).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it.each([
+    ["without a player", undefined, false],
+    ["in the pages scope", "p1", true],
+  ])("leaves live sources out %s", async (_, playerId, pagesOnly) => {
+    state.storeMock.activePlayerId = playerId;
+    state.liveSources = [playerSource({ id: "phono", name: "Record player" })];
+    const wrapper = mountPalette();
+    useCommandCenter().open();
+    await flushPromises();
+
+    if (pagesOnly) await pagesChip(wrapper).trigger("click");
+    await wrapper.get('[data-testid="palette-input"]').setValue("record");
+    expect(wrapper.text()).not.toContain("Record player");
+
+    wrapper.unmount();
+  });
+
   it("puts the on-screen keyboard away on enter instead of picking a result", async () => {
     state.storeMock.isTouchscreen = true;
     state.storeMock.mobileLayout = true;
@@ -1704,6 +1921,61 @@ describe("CommandCenter", () => {
     );
     expect(blurSpy).not.toHaveBeenCalled();
     expect(seen).toContain("Enter");
+
+    wrapper.unmount();
+  });
+
+  it("lets enter play a live source that loads after a reopen", async () => {
+    state.storeMock.activePlayerId = "p1";
+    // the real listbox, so the highlight and enter run as in the app
+    const wrapper = mount(CommandCenter, {
+      attachTo: document.body,
+      global: {
+        directives: { hold: {} },
+        stubs: {
+          CommandCenterShell: {
+            components: { Command },
+            props: ["open"],
+            template: '<Command v-if="open"><slot /></Command>',
+          },
+          MediaItemThumb: IconStub,
+          PlayerIcon: IconStub,
+          ProviderIcon: IconStub,
+          Spinner: IconStub,
+        },
+      },
+    });
+    // vue ignores a handler attached in the same instant as the event, and the
+    // clock is frozen here
+    const settleClock = () => vi.advanceTimersByTime(1);
+    const pressEnter = async () => {
+      wrapper
+        .get('[data-slot="command-input"]')
+        .element.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+        );
+      await flushPromises();
+    };
+    useCommandCenter().open();
+    await flushPromises();
+    await wrapper.get('[data-slot="command-input"]').setValue("record");
+    await pressEnter();
+
+    useCommandCenter().close();
+    await flushPromises();
+    useCommandCenter().open();
+    await flushPromises();
+    settleClock();
+    // the list loads only once the palette is open again
+    state.liveSources = [playerSource({ id: "phono", name: "Record player" })];
+    await flushPromises();
+    settleClock();
+
+    await pressEnter();
+    expect(state.startLiveSourceSpy).toHaveBeenCalledWith(
+      "p1",
+      state.liveSources[0],
+    );
 
     wrapper.unmount();
   });

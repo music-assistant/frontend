@@ -409,6 +409,26 @@ describe("ProviderRow", () => {
   );
 
   it.each(VARIANTS)(
+    "shows the details it is given under the description (%s)",
+    (variant) => {
+      const wrapper = mountRow(
+        { variant, description: "A great music service" },
+        { details: '<span data-testid="details">Up to date</span>' },
+      );
+
+      const description = wrapper
+        .findAll("p")
+        .find((element) => element.text() === "A great music service")!;
+      const details = wrapper.get('[data-testid="details"]');
+      expect(details.text()).toBe("Up to date");
+      expect(
+        description.element.compareDocumentPosition(details.element) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    },
+  );
+
+  it.each(VARIANTS)(
     "dims the row when the source is disabled (%s)",
     (variant) => {
       const wrapper = mountRow({
@@ -563,8 +583,10 @@ let holdHandler: (event: Event) => void;
 
 function mountRow(
   overrides: Partial<InstanceType<typeof ProviderRow>["$props"]> = {},
+  slots: Record<string, string> = {},
 ) {
   return mount(ProviderRow, {
+    slots,
     props: {
       config: providerConfig(),
       variant: "list",

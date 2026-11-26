@@ -45,7 +45,7 @@
           "
         >
           <template v-for="item in section.items" :key="item.instance_id">
-            <slot name="row" :item="item"></slot>
+            <slot name="row" :item="item" />
           </template>
         </component>
       </section>

@@ -10,6 +10,6 @@ const props = defineProps<{ class?: HTMLAttributes["class"] }>();
 
 <template>
   <optgroup :class="cn('bg-popover text-popover-foreground', props.class)">
-    <slot></slot>
+    <slot />
   </optgroup>
 </template>

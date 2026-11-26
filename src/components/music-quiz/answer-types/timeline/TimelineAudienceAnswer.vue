@@ -127,9 +127,9 @@
         data-testid="timeline-leaderboard-region"
         class="lg:min-h-0 lg:overflow-hidden"
       >
-        <slot name="leaderboard"></slot>
+        <slot name="leaderboard" />
       </div>
-      <slot v-else-if="!present" name="leaderboard"></slot>
+      <slot v-else-if="!present" name="leaderboard" />
     </div>
   </div>
 </template>

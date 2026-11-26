@@ -6,7 +6,7 @@
     <CatalogArt :color="color" class="h-20 shrink-0" />
     <!-- an action on the banner, above the name that covers the card -->
     <div v-if="$slots.corner" class="absolute top-2 right-2 z-10">
-      <slot name="corner"></slot>
+      <slot name="corner" />
     </div>
     <div class="flex flex-1 flex-col px-4 pb-4">
       <CatalogIconTile
@@ -40,14 +40,14 @@
           </button>
           <template v-else>{{ name }}</template>
         </h3>
-        <slot name="badges"></slot>
+        <slot name="badges" />
       </div>
-      <slot></slot>
+      <slot />
       <div
         v-if="$slots.footer"
         class="mt-auto flex items-center justify-between gap-3 pt-3"
       >
-        <slot name="footer"></slot>
+        <slot name="footer" />
       </div>
     </div>
   </Card>

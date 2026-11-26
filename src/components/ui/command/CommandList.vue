@@ -26,7 +26,7 @@ const forwarded = useForwardProps(delegatedProps);
     "
   >
     <div role="presentation">
-      <slot></slot>
+      <slot />
     </div>
   </ListboxContent>
 </template>

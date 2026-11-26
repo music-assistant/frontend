@@ -137,7 +137,32 @@ describe("useAudioAnalysisCoverage", () => {
     expect(row.analyzed + row.pending).toBe(19696);
     expect(row.pending).toBe(18154);
     expect(row.staleVersion).toBe(18154);
-    expect(row.coveragePct).toBe(8);
+    expect(row.coveragePct).toBe(7);
+  });
+
+  it("only reaches 100% once no track waits", async () => {
+    setProviders([
+      {
+        type: ProviderType.AUDIO_ANALYSIS,
+        domain: "loudness",
+        name: "Loudness",
+        instance_id: "l1",
+        available: true,
+      },
+    ]);
+    mockAa({
+      loudness: {
+        analyzed: 9995,
+        pending: 5,
+        stale_version: 0,
+        analysis_version: 1,
+      },
+    });
+
+    const c = useAudioAnalysisCoverage();
+    await c.refresh();
+
+    expect(c.rows.value[0].coveragePct).toBe(99);
   });
 
   it("clamps the completed count when stale analyses exceed analyzed", async () => {

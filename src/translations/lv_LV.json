@@ -251,7 +251,6 @@
             "description": "Piespiest mobilo izkārtojumu (ar navigācijas izvēlni apakšā) pat uz lielākiem ekrāniem."
         },
         "players_description": "Pārvaldi un rediģē savas audio izejas ierīces",
-        "frontend_description": "Lietotāja saskarnes tēmas un izskata pielāgošana",
         "profile_description": "Pārvaldi sava personīgā konta iestatījumus un preferences",
         "users": "Lietotāji",
         "users_description": "Pārvaldi lietotāju kontus, lomas un atļaujas",
@@ -271,41 +270,29 @@
         "proud_part_of": "Lepna daļa no",
         "core_module": {
             "cache": {
-                "name": "Kešatmiņa",
-                "description": "Pamata moduļa konfigurācija, kas apstrādā datu glabāšanu kešā visai lietotnei"
+                "name": "Kešatmiņa"
             },
             "metadata": {
-                "name": "Metadati",
-                "description": "Pamata metadatu moduļa konfigurācija"
+                "name": "Metadati"
             },
             "music": {
-                "name": "Mūzika",
-                "description": "Pamata mūzikas (bibliotēkas) pārvaldības moduļa konfigurācija"
+                "name": "Mūzika"
             },
             "players": {
-                "name": "Atskaņotāji",
-                "description": "Pamata atskaņotāju pārvaldības moduļa konfigurācija"
+                "name": "Atskaņotāji"
             },
             "player_queues": {
-                "name": "Atskaņotāju rindas",
-                "description": "Pamata atskaņošanas rindas pārvaldības moduļa konfigurācija"
-            },
-            "remote_access": {
-                "name": "Attālā Piekļuve",
-                "description": "Iespējo attālinātu piekļuvi tavam Music Assistant serverim"
+                "name": "Atskaņotāju rindas"
             },
             "streams": {
-                "name": "Straumes",
-                "description": "Audio straumēšanas un apstrādes dzinēja konfigurācija"
+                "name": "Straumes"
             },
             "webserver": {
-                "name": "Tīmekļa serveris",
-                "description": "Tīmekļa servera un API konfigurācija"
+                "name": "Tīmekļa serveris"
             }
         },
         "remote_access": "Attālā Piekļuve",
         "remote_access_description": "Droši piekļūsti Music Assistant no jebkuras vietas",
-        "remote_access_title": "Droša Attālā Piekļuve",
         "remote_access_explanation_intro": "Attālinātā Piekļuve ļauj tev droši savienoties ar savu Music Assistant serveri no jebkuras vietas pasaulē.",
         "remote_access_explanation_ha_cloud": "Lai nodrošinātu labāko pieredzi un uzticamību, ir nepieciešams Home Assistant Cloud abonements.",
         "remote_access_feature_webrtc": "Balstīts uz WebRTC tehnoloģijas priekš vienādranga (peer-to-peer) savienojumiem",
@@ -342,7 +329,6 @@
         "remote_access_protocol_basic": "WebRTC ar publiskiem STUN serveriem (var nedarboties sarežģītās tīkla konfigurācijās).",
         "remote_access_protocol_optimized": "WebRTC ar optimizētiem STUN\/TURN serveriem no Home Assistant Cloud (strādā visās tīkla konfigurācijās).",
         "remote_access_encryption_description": "End-to-end šifrēšana, izmantojot DTLS-SRTP, nodrošina datu konfidencialitāti un drošību.",
-        "frontend": "Lietotāja Interfeiss",
         "view_players": "Skatīt atskaņotājus",
         "players_total": "{0} kopējie atskaņotāji {1}",
         "api_docs": "API dokumentācija",
@@ -599,8 +585,6 @@
         "setup_failed": "Uzstādīšana neizdevās. Lūdzu mēģiniet vēlreiz.",
         "setup_error": "Uzstādīšanas laikā notikusi kļūda",
         "profile": "Profils",
-        "account_settings": "Konta iestatījumi",
-        "manage_your_profile_info": "Pārvaldi savu profila informāciju un iestatījumus",
         "change_password": "Mainīt paroli",
         "update_your_password": "Atjauno sava konta paroli",
         "old_password": "Esošā parole",
@@ -662,7 +646,6 @@
         "change_role": "Mainīt lomu",
         "avatar_url": "Profila attēla URL",
         "avatar_url_hint": "Ievadi URL uz profila attēlu",
-        "change_avatar": "Mainīt profila attēlu",
         "profile_updated": "Profils atjaunināts veiksmīgi",
         "ingress_password_note": "Piekļūstot Music Assistant ārpus",
         "copy_new_token_hint": "Nokopējiet savu piekļuves atslēgu. Tā netiks rādīta atkārtoti.",
@@ -744,7 +727,6 @@
     "narrators": "Stāstītāji",
     "queue_move_end": "Pārvietot uz beigām",
     "discover": "Atklāt",
-    "save_queue_as_playlist": "Saglabāt rindu kā mūzikas sarakstu",
     "playlist_created": "Mūzikas saraksts izveidots",
     "open_playlist": "Atvērt mūzikas sarakstu",
     "add": "Pievienot",

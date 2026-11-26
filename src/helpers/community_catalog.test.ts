@@ -83,14 +83,19 @@ describe("the state of one from the community catalog", () => {
 
 describe("updates of one from the community catalog", () => {
   it.each([
-    [CommunityProviderState.UPDATE_AVAILABLE, true],
-    [CommunityProviderState.INSTALLED, false],
-    [CommunityProviderState.RESTART_REQUIRED, false],
-    [CommunityProviderState.AVAILABLE, false],
-  ])("%s has an update: %s", (state, update) => {
-    expect(hasCommunityUpdate(communityProvider("radio", { state }))).toBe(
-      update,
-    );
+    [CommunityProviderState.UPDATE_AVAILABLE, "1.2.0", true],
+    [CommunityProviderState.UNAVAILABLE, "1.2.0", true],
+    [CommunityProviderState.BLOCKED, "1.2.0", true],
+    [CommunityProviderState.UNAVAILABLE, null, false],
+    [CommunityProviderState.INSTALLED, null, false],
+    [CommunityProviderState.RESTART_REQUIRED, null, false],
+    [CommunityProviderState.AVAILABLE, null, false],
+  ])("%s with %s on offer has an update: %s", (state, version, update) => {
+    expect(
+      hasCommunityUpdate(
+        communityProvider("radio", { state, update_version: version }),
+      ),
+    ).toBe(update);
   });
 
   it("offers to try a failed version again only while it is the one on offer", () => {
@@ -152,6 +157,28 @@ describe("getCommunityUpdateOutcome", () => {
     });
 
     expect(getCommunityUpdateOutcome(pending, "1.2.0")).toBe("restart");
+  });
+
+  it("waits for a restart also when the one updated does not run", () => {
+    const pending = after({
+      state: CommunityProviderState.UNAVAILABLE,
+      pending_version: "1.2.0",
+    });
+
+    expect(getCommunityUpdateOutcome(pending, "1.2.0")).toBe("restart");
+  });
+
+  it("is no restart without a version, or for another version", () => {
+    const pending = after({
+      state: CommunityProviderState.UNAVAILABLE,
+      pending_version: "1.2.0",
+    });
+
+    expect(getCommunityUpdateOutcome(pending, null)).toBe("failed");
+    expect(getCommunityUpdateOutcome(pending, "1.3.0")).toBe("failed");
+    expect(
+      getCommunityUpdateOutcome(after({ pending_version: null }), null),
+    ).toBe("failed");
   });
 
   it("failed when the server put the previous version back, skipped it or no longer lists it", () => {

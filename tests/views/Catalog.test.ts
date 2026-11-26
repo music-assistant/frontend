@@ -2840,6 +2840,7 @@ describe("Catalog with the community catalog", () => {
         RADIO,
         communityProvider("old", {
           state: CommunityProviderState.UPDATE_AVAILABLE,
+          update_version: "1.2.0",
           notice: "moved",
         }),
       ];
@@ -2876,6 +2877,7 @@ describe("Catalog with updates from the community catalog", () => {
       state: CommunityProviderState.UPDATE_AVAILABLE,
       installed_version: from,
       latest_version: to,
+      update_version: to,
       manifest: providerManifest({ domain, name }),
     });
 
@@ -2945,6 +2947,7 @@ describe("Catalog with updates from the community catalog", () => {
                 ...provider,
                 state: CommunityProviderState.INSTALLED,
                 installed_version: "1.2.0",
+                update_version: null,
               }
             : provider,
         ),
@@ -3127,6 +3130,7 @@ describe("Catalog with updates from the community catalog", () => {
         ...RADIO,
         state: CommunityProviderState.UPDATE_AVAILABLE,
         installed_version: "1.1.0",
+        update_version: "1.2.0",
       },
     ];
     apiMock.updateCommunityProviders.mockResolvedValue(community);
@@ -3157,6 +3161,7 @@ describe("Catalog with updates from the community catalog", () => {
         ...RADIO,
         state: CommunityProviderState.UPDATE_AVAILABLE,
         installed_version: "1.1.0",
+        update_version: "1.2.0",
       },
       updatable("dj", "DJ", "0.1.0", "0.2.0"),
     ];
@@ -3188,6 +3193,7 @@ describe("Catalog with updates from the community catalog", () => {
         ...RADIO,
         state: CommunityProviderState.UPDATE_AVAILABLE,
         installed_version: "1.1.0",
+        update_version: "1.2.0",
         released: "soon",
       },
     ];

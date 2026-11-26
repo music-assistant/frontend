@@ -115,7 +115,7 @@ describe("useProgressiveSearch", () => {
     const composable = scope.run(() =>
       useProgressiveSearch({ ...options, mediaTypes }),
     )!;
-    return { ...composable, mediaTypes };
+    return { ...composable, mediaTypes, scope };
   };
 
   beforeEach(() => {
@@ -392,6 +392,24 @@ describe("useProgressiveSearch", () => {
     expect(loading.value).toBe(false);
   });
 
+  it("does not retry a slow provider once its scope is disposed", async () => {
+    vi.useFakeTimers();
+    mockSearch.mockImplementation(
+      () =>
+        new Promise<SearchResults>((resolve) =>
+          setTimeout(() => resolve(emptyResults()), 8000),
+        ),
+    );
+    const { search, scope } = setup({ providers: ref(["spotify"]) });
+
+    await search("late");
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+
+    scope.stop();
+    await vi.advanceTimersByTimeAsync(8000 + 2500);
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+  });
+
   it("searches only the library for a genre-only search", async () => {
     const genres = [genreFixture("g1", "Rock")];
     mockGetLibraryGenres.mockResolvedValue(genres);
@@ -462,6 +480,50 @@ describe("useProgressiveSearch", () => {
     expect(mockSearch).toHaveBeenCalledTimes(2);
     expect(mockSearch).toHaveBeenLastCalledWith("query", undefined, 8, [
       "spotify",
+    ]);
+  });
+
+  it("searches nothing on a selection change once the search is reset", async () => {
+    const providers = ref<string[]>(["spotify"]);
+    const { search, mediaTypes } = setup({ providers });
+    await search("queen");
+    await flush();
+    await search("");
+    mockSearch.mockClear();
+    mockGetLibraryGenres.mockClear();
+
+    mediaTypes.value = [MediaType.ARTIST];
+    await flush();
+    mediaTypes.value = [MediaType.GENRE];
+    await flush();
+    mediaTypes.value = [];
+    await flush();
+    providers.value = [];
+    await flush();
+
+    expect(mockSearch).not.toHaveBeenCalled();
+    expect(mockGetLibraryGenres).not.toHaveBeenCalled();
+  });
+
+  it("searches a newly selected media type for the active query", async () => {
+    const { search, mediaTypes } = setup();
+    await search("queen");
+    await flush();
+    mockSearch.mockClear();
+
+    mediaTypes.value = [MediaType.ARTIST];
+    await flush();
+
+    expect(
+      mockSearch.mock.calls.map(([term, types, , targets]) => [
+        term,
+        types,
+        targets?.[0],
+      ]),
+    ).toEqual([
+      ["queen", [MediaType.ARTIST], LIBRARY_SEARCH_TARGET],
+      ["queen", [MediaType.ARTIST], "fs1"],
+      ["queen", [MediaType.ARTIST], "spotify"],
     ]);
   });
 

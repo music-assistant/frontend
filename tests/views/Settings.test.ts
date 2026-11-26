@@ -359,15 +359,10 @@ describe("Settings breadcrumbs on the System pages", () => {
     delete apiMock.providerManifests.radio_tuner;
   });
 
-  it("hang the task settings under the background tasks", () => {
-    expect(pageTrail("tasksettings")).toEqual([
+  it("hang the background tasks under the System settings", () => {
+    expect(pageTrail("backgroundtasks")).toEqual([
       SYSTEM,
-      {
-        title: "background_tasks.title",
-        disabled: false,
-        to: { name: "backgroundtasks" },
-      },
-      { title: "background_tasks.settings.title", disabled: true },
+      { title: "background_tasks.title", disabled: true },
     ]);
   });
 

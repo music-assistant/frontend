@@ -1,12 +1,12 @@
 <template>
   <!-- play/pause/stop button -->
-  <Icon
-    v-bind="{ ...icon, ...$attrs }"
-    class="play-btn-icon"
+  <TransportBtn
+    ref="button"
+    class="relative rounded-full bg-[#212121] text-[var(--play-icon-color,#fff)] dark:bg-white dark:text-[var(--play-icon-color,#212121)]"
+    v-bind="$attrs"
+    :icon-size="size"
     :disabled="isDisabled"
-    :aria-label="playButtonLabel"
-    :title="playButtonLabel"
-    variant="button"
+    :label="playButtonLabel"
     @click="playPause"
   >
     <Square
@@ -17,40 +17,63 @@
     />
     <Pause v-else-if="isPlaying" :size="size" fill="currentColor" />
     <Play v-else :size="size" fill="currentColor" class="play-icon-centered" />
-  </Icon>
-  <v-progress-circular
-    v-if="player && isLoading"
-    class="play-btn-spinner"
-    indeterminate
-    :size="compProps.spinnerSize"
-    :width="2"
-  />
+  </TransportBtn>
+  <!-- starts with part of its tail, draws the rest, pulls it in on exit -->
+  <Transition
+    enter-active-class="[transition:opacity_120ms_linear,--comet-reveal_650ms_linear]"
+    enter-from-class="opacity-0 [--comet-reveal:0.35] motion-reduce:[--comet-reveal:1]"
+    leave-active-class="[transition:--comet-reveal_250ms_ease-in,opacity_150ms_ease-in_200ms]"
+    leave-to-class="opacity-0 [--comet-reveal:0] motion-reduce:[--comet-reveal:1]"
+  >
+    <CometSpinner
+      v-if="showSpinner"
+      class="pointer-events-none absolute top-1/2 left-1/2 z-1 size-(--spinner-size) -translate-1/2"
+      :style="{ '--spinner-size': `${spinnerSize}px` }"
+      :stroke-width="SPINNER_STROKE_WIDTH"
+    />
+  </Transition>
 </template>
 
 <script setup lang="ts">
 import { $t } from "@/plugins/i18n";
 defineOptions({ inheritAttrs: false });
-import Icon, { IconProps } from "@/components/Icon.vue";
+import { CometSpinner } from "@/components/ui/spinner";
 import { usePlayPauseCommand } from "@/composables/usePlayPauseCommand";
+import TransportBtn from "@/layouts/default/PlayerOSD/PlayerControlBtn/TransportBtn.vue";
 import { Player, PlayerQueue } from "@/plugins/api/interfaces";
 import { Pause, Play, Square } from "@lucide/vue";
-import { computed, toRef } from "vue";
+import { useElementSize, useTimeoutFn } from "@vueuse/core";
+import { computed, ref, toRef, useTemplateRef, watch } from "vue";
 
 // properties
 export interface Props {
   player: Player | undefined;
   playerQueue?: PlayerQueue;
-  icon?: IconProps;
-  spinnerSize?: number;
   size?: number;
+  /** space in px between the button's edge and the loading ring */
+  spinnerGap?: number;
 }
 
 const compProps = withDefaults(defineProps<Props>(), {
   playerQueue: undefined,
-  icon: undefined,
-  spinnerSize: 46,
   size: 24,
+  spinnerGap: 3,
 });
+
+// the spinner ring keeps a hairline stroke at every size
+const SPINNER_STROKE_WIDTH = 2;
+// a load quicker than this never shows the spinner
+const SPINNER_SHOW_DELAY_MS = 150;
+
+const button = useTemplateRef("button");
+const { height: buttonSize } = useElementSize(button, undefined, {
+  box: "border-box",
+});
+
+// the ring's outer edge runs the gap plus the stroke outside the button
+const spinnerSize = computed(
+  () => buttonSize.value + 2 * (compProps.spinnerGap + SPINNER_STROKE_WIDTH),
+);
 
 const { isPlaying, showStop, isLoading, isDisabled, playPause } =
   usePlayPauseCommand(
@@ -58,31 +81,25 @@ const { isPlaying, showStop, isLoading, isDisabled, playPause } =
     toRef(compProps, "playerQueue"),
   );
 
+// shows once loading has lasted the delay, hides straight away
+const showSpinner = ref(false);
+const spinnerTimer = useTimeoutFn(
+  () => (showSpinner.value = true),
+  SPINNER_SHOW_DELAY_MS,
+  { immediate: false },
+);
+watch(
+  () => !!compProps.player && isLoading.value,
+  (loading) => {
+    if (loading) return spinnerTimer.start();
+    spinnerTimer.stop();
+    showSpinner.value = false;
+  },
+  { immediate: true },
+);
+
 const playButtonLabel = computed(() => {
   if (isPlaying.value && showStop.value) return $t("stop_playback");
   return isPlaying.value ? $t("pause") : $t("play");
 });
 </script>
-
-<style>
-.play-btn-icon {
-  position: relative;
-  border-radius: 50%;
-  background-color: #212121;
-  color: var(--play-icon-color, #fff);
-}
-
-.v-theme--dark .play-btn-icon {
-  background-color: #fff;
-  color: var(--play-icon-color, #212121);
-}
-
-.play-btn-spinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 1;
-}
-</style>

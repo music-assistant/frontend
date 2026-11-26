@@ -57,9 +57,9 @@ import ToolbarHeading, {
 } from "@/components/ToolbarHeading.vue";
 import { Button } from "@/components/ui/button";
 import {
+  browseLevelTitle,
   browsePathLevels,
   parentBrowsePath,
-  type BrowsePathLevel,
 } from "@/helpers/browse_path";
 import api from "@/plugins/api";
 import {
@@ -87,22 +87,18 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
   const path = props.path;
   if (isRoot.value || !path) return [];
 
+  const names = {
+    discover: t("discover"),
+    folderName,
+    providerName: (providerId: string) => api.getProviderName(providerId),
+  };
   const levels = browsePathLevels(path);
   return levels.map((level, index) => ({
-    title: levelTitle(level),
+    title: browseLevelTitle(level, names),
     disabled: index === levels.length - 1,
     to: browseRoute(level.path),
   }));
 });
-
-// only a Discover row is looked up by name; every other level shows the path
-// segment it came from, as before
-function levelTitle(level: BrowsePathLevel): string {
-  if (level.kind === "scheme") return t("discover");
-  if (level.kind === "provider") return api.getProviderName(level.segment);
-  if (level.kind === "row") return folderName(level.path) ?? level.segment;
-  return level.segment;
-}
 
 watch(
   () => props.path,

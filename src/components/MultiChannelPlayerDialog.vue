@@ -12,16 +12,46 @@
         class="space-y-4"
         @submit.prevent="create"
       >
-        <!-- one row per channel; the swap button beside them moves this speaker -->
+        <!-- a single layout is no choice -->
+        <FieldSet v-if="layoutChoices.length > 1" class="gap-3">
+          <FieldLegend variant="label" class="mb-0">
+            {{ $t("settings.multi_channel.layout") }}
+          </FieldLegend>
+          <RadioGroup
+            :model-value="layout"
+            :disabled="creating"
+            class="gap-2"
+            @update:model-value="setLayout($event as ChannelLayout)"
+          >
+            <Field
+              v-for="option in layoutChoices"
+              :key="option"
+              orientation="horizontal"
+            >
+              <RadioGroupItem
+                :id="`multi-channel-layout-${option}`"
+                :value="option"
+              />
+              <FieldLabel
+                :for="`multi-channel-layout-${option}`"
+                class="font-normal"
+              >
+                {{ getChannelLayoutLabel(option) }}
+              </FieldLabel>
+            </Field>
+          </RadioGroup>
+        </FieldSet>
+        <!-- one row per channel; the swap button beside the first two swaps their speakers -->
         <div
-          class="grid grid-cols-[4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2"
+          data-testid="multi-channel-channels"
+          class="grid grid-cols-[minmax(4rem,auto)_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2"
         >
-          <template v-for="(channel, index) in CHANNELS" :key="channel">
+          <template v-for="(channel, index) in channels" :key="channel">
             <span class="text-sm font-medium">
               {{ $t(`settings.multi_channel.channels.${channel}`) }}
             </span>
             <div
-              v-if="channel === playerChannel"
+              v-if="speakers[channel] === playerId"
               data-testid="multi-channel-this-speaker"
               class="flex h-9 items-center truncate rounded-md border bg-muted/40 px-3 text-sm"
             >
@@ -29,8 +59,9 @@
             </div>
             <Select
               v-else
-              v-model="speakerId"
+              :model-value="speakers[channel]"
               :disabled="creating || candidates.length === 0"
+              @update:model-value="pickSpeaker(channel, $event)"
             >
               <SelectTrigger
                 class="w-full"
@@ -42,6 +73,10 @@
                 />
               </SelectTrigger>
               <SelectContent>
+                <!-- picking this speaker moves it to the row -->
+                <SelectItem :value="playerId">
+                  {{ $t("settings.multi_channel.this_speaker", [playerName]) }}
+                </SelectItem>
                 <SelectItem
                   v-for="candidate in candidates"
                   :key="candidate.player_id"
@@ -118,8 +153,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Field,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -127,14 +169,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { suggestMultiChannelName } from "@/helpers/multi_channel";
+import { useCandidateSpeakers } from "@/composables/settings/players/useCandidateSpeakers";
+import {
+  assignChannelSpeaker,
+  changeChannelLayout,
+  type ChannelSpeakers,
+  type MultiChannelLayouts,
+  suggestMultiChannelName,
+} from "@/helpers/multi_channel";
 import {
   createMultiChannelPlayer,
   getOutputName,
 } from "@/helpers/player_settings_actions";
-import { getPlayerDisplayName } from "@/helpers/players";
-import { api } from "@/plugins/api";
+import { getChannelLayoutLabel } from "@/helpers/players";
 import {
+  type ChannelLayout,
   type PlayerProtocolInfo,
   SpeakerChannel,
 } from "@/plugins/api/interfaces";
@@ -146,67 +195,67 @@ import { store } from "@/plugins/store";
 import { ArrowUpDown } from "@lucide/vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-// the channels of a stereo pair, in the order the rows show them
-const CHANNELS = [SpeakerChannel.FRONT_LEFT, SpeakerChannel.FRONT_RIGHT];
-
 const open = ref(false);
 const creating = ref(false);
 const playerId = ref("");
 const playerName = ref("");
 const protocol = ref<PlayerProtocolInfo>();
-// the channel of the speaker the dialog opened for; the other speaker takes the other one
-const playerChannel = ref(SpeakerChannel.FRONT_LEFT);
-const speakerId = ref<string>();
+// the layouts the server offers, in its order, and the one picked
+const layouts = ref<MultiChannelLayouts>({});
+const layout = ref<ChannelLayout>();
+// the speaker on each channel; the one the dialog opened for always has one
+const speakers = ref<ChannelSpeakers>({});
 const name = ref("");
 // a name the user typed is theirs; until then it follows the speakers picked
 const nameEdited = ref(false);
-// the players the server lists as candidate speakers; undefined while they load
-const candidateIds = ref<string[]>();
-let candidatesRequestId = 0;
 let onCreated: MultiChannelPlayerDialogEvent["onCreated"];
 
-const candidates = computed(() =>
-  (candidateIds.value ?? [])
-    .filter((id) => id !== playerId.value)
-    .flatMap((id) => {
-      const player = api.players[id];
-      return player
-        ? [{ player_id: id, name: getPlayerDisplayName(player) }]
-        : [];
-    })
-    .sort((left, right) =>
-      left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
-    ),
+const { candidates, noSpeakers, load } = useCandidateSpeakers(playerId);
+
+const layoutChoices = computed(
+  () => Object.keys(layouts.value) as ChannelLayout[],
 );
 
-const noSpeakers = computed(
-  () => candidateIds.value !== undefined && candidates.value.length === 0,
+const channels = computed(() =>
+  layout.value ? (layouts.value[layout.value] ?? []) : [],
 );
 
-// undefined as well when the speaker picked went away meanwhile
-const speakerName = computed(
-  () =>
-    candidates.value.find(
-      (candidate) => candidate.player_id === speakerId.value,
-    )?.name,
-);
+// the speaker on each channel by the player id, once every channel has one that can join
+const members = computed(() => {
+  if (channels.value.length === 0) return undefined;
+  const result: Record<string, SpeakerChannel> = {};
+  for (const channel of channels.value) {
+    const speaker = speakers.value[channel];
+    if (!speaker || getSpeakerName(speaker) === undefined) return undefined;
+    result[speaker] = channel;
+  }
+  return result;
+});
+
+// the speakers that play the music name the player, once they are all picked
+const suggestedName = computed(() => {
+  const names = channels.value
+    .filter((channel) => channel !== SpeakerChannel.LFE)
+    .map((channel) => getSpeakerName(speakers.value[channel]));
+  return names.every((value) => value !== undefined)
+    ? suggestMultiChannelName(...(names as string[]))
+    : undefined;
+});
 
 const outputName = computed(() =>
   protocol.value ? getOutputName(protocol.value) : "",
 );
 
 const canCreate = computed(
-  () => !!speakerName.value && !!name.value.trim() && !creating.value,
+  () => !!members.value && !!name.value.trim() && !creating.value,
 );
 
 watch(open, (value) => {
   store.dialogActive = value;
 });
 
-watch(speakerName, (value) => {
-  if (value && !nameEdited.value) {
-    name.value = suggestMultiChannelName(playerName.value, value);
-  }
+watch(suggestedName, (value) => {
+  if (value !== undefined && !nameEdited.value) name.value = value;
 });
 
 const onDialogRequested = (evt: MultiChannelPlayerDialogEvent) => {
@@ -214,14 +263,15 @@ const onDialogRequested = (evt: MultiChannelPlayerDialogEvent) => {
   playerName.value = evt.playerName;
   protocol.value = evt.protocol;
   onCreated = evt.onCreated;
-  playerChannel.value = SpeakerChannel.FRONT_LEFT;
-  speakerId.value = undefined;
+  layouts.value = evt.layouts;
+  // the dialog opens on the first layout, with this speaker on its first channel
+  layout.value = layoutChoices.value[0];
+  speakers.value = changeChannelLayout({}, channels.value, evt.playerId);
   name.value = "";
   nameEdited.value = false;
   creating.value = false;
-  candidateIds.value = undefined;
   open.value = true;
-  void loadCandidates(evt.protocol.provider);
+  void load(evt.protocol.provider);
 };
 
 onMounted(() => {
@@ -234,21 +284,34 @@ onBeforeUnmount(() => {
   if (open.value) store.dialogActive = false;
 });
 
-async function loadCandidates(provider: string) {
-  const request = ++candidatesRequestId;
-  let ids: string[];
-  try {
-    ids = await api.getMultiChannelCandidates(provider);
-  } catch {
-    // a failed command is already reported by the api layer
-    ids = [];
-  }
-  // a dialog opened again meanwhile asked for the speakers of another player
-  if (request === candidatesRequestId) candidateIds.value = ids;
+// undefined as well for a speaker that went away after it was picked
+function getSpeakerName(speaker: string | undefined): string | undefined {
+  if (speaker === playerId.value) return playerName.value;
+  return candidates.value.find((candidate) => candidate.player_id === speaker)
+    ?.name;
+}
+
+function setLayout(value: ChannelLayout) {
+  layout.value = value;
+  speakers.value = changeChannelLayout(
+    speakers.value,
+    channels.value,
+    playerId.value,
+  );
+}
+
+function pickSpeaker(channel: SpeakerChannel, speaker: unknown) {
+  if (typeof speaker !== "string") return;
+  speakers.value = assignChannelSpeaker(speakers.value, channel, speaker);
 }
 
 function swapChannels() {
-  playerChannel.value = otherChannel(playerChannel.value);
+  const [first, second] = channels.value;
+  speakers.value = {
+    ...speakers.value,
+    [first]: speakers.value[second],
+    [second]: speakers.value[first],
+  };
 }
 
 function setName(value: string | number) {
@@ -256,22 +319,14 @@ function setName(value: string | number) {
   nameEdited.value = true;
 }
 
-function otherChannel(channel: SpeakerChannel): SpeakerChannel {
-  return CHANNELS.find((candidate) => candidate !== channel) ?? channel;
-}
-
 async function create() {
-  const speaker = speakerId.value;
-  if (!canCreate.value || !speaker || !protocol.value) return;
+  if (!canCreate.value || !members.value || !protocol.value) return;
   creating.value = true;
   try {
     const player = await createMultiChannelPlayer(
       protocol.value.provider,
       name.value.trim(),
-      {
-        [playerId.value]: playerChannel.value,
-        [speaker]: otherChannel(playerChannel.value),
-      },
+      members.value,
     );
     // a player the server refuses keeps the dialog open to change the choice
     if (player) {

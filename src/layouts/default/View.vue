@@ -38,6 +38,7 @@
           <player-rename-dialog />
           <player-merge-dialog />
           <multi-channel-player-dialog />
+          <multi-channel-subwoofer-dialog />
           <item-context-menu />
           <command-center />
           <!-- kept last so they portal after the other dialogs, which share
@@ -66,6 +67,7 @@ import DeleteGenreDialog from "@/components/genre/DeleteGenreDialog.vue";
 import LinkGenreDialog from "@/components/genre/LinkGenreDialog.vue";
 import MergeGenreDialog from "@/components/genre/MergeGenreDialog.vue";
 import MultiChannelPlayerDialog from "@/components/MultiChannelPlayerDialog.vue";
+import MultiChannelSubwooferDialog from "@/components/MultiChannelSubwooferDialog.vue";
 import AppSidebar from "@/components/navigation/AppSidebar.vue";
 import PlayerMergeDialog from "@/components/PlayerMergeDialog.vue";
 import PlayerRenameDialog from "@/components/PlayerRenameDialog.vue";

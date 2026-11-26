@@ -36,7 +36,7 @@
       :menu-items="menuItems"
     >
       <template #append>
-        <slot name="toolbar-append"></slot>
+        <slot name="toolbar-append" />
       </template>
     </Toolbar>
 
@@ -62,7 +62,7 @@
             v-if="$slots.cover"
             class="detail-hero-cover size-[280px] flex-none @max-3xl/detail-hero:size-[180px]"
           >
-            <slot name="cover"></slot>
+            <slot name="cover" />
           </div>
           <!-- the title spans the whole width; the facts on the right sit
                beside the lines and buttons under it, and give up width to
@@ -85,7 +85,7 @@
                 v-if="$slots.meta"
                 class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
               >
-                <slot name="meta"></slot>
+                <slot name="meta" />
               </div>
               <!-- the play button ellipsizes before the buttons beside it wrap,
                    and keeps a minimum width that wraps them once room runs out -->
@@ -93,14 +93,14 @@
                 v-if="$slots.actions"
                 class="flex min-w-0 flex-wrap items-center gap-2 @max-3xl/detail-hero:gap-2.5"
               >
-                <slot name="actions"></slot>
+                <slot name="actions" />
               </div>
               <div
                 v-if="$slots.footer"
                 class="flex flex-col"
                 :class="{ 'items-center': artworkLayout }"
               >
-                <slot name="footer"></slot>
+                <slot name="footer" />
               </div>
             </div>
             <div
@@ -108,7 +108,7 @@
               class="detail-hero__aside self-end"
               :class="{ 'items-center text-center': artworkLayout }"
             >
-              <slot name="aside"></slot>
+              <slot name="aside" />
             </div>
           </div>
         </div>
@@ -125,7 +125,7 @@
       @back="backButtonClick"
     >
       <template #append>
-        <slot name="toolbar-append"></slot>
+        <slot name="toolbar-append" />
       </template>
     </DetailHeroStickyBar>
   </header>

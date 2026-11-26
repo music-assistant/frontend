@@ -250,7 +250,6 @@
             "description": "Force the mobile layout (with the menu-navigation at the bottom), even on larger screens."
         },
         "players_description": "Configure and manage your audio output devices",
-        "frontend_description": "Customise the user interface theme and appearance",
         "profile_description": "Manage your personal account settings and preferences",
         "users": "Users",
         "users_description": "Manage user accounts, roles, and permissions",
@@ -270,41 +269,29 @@
         "proud_part_of": "Proud part of",
         "core_module": {
             "cache": {
-                "name": "Cache",
-                "description": "Configuration of the core module that handles caching of data across the application"
+                "name": "Cache"
             },
             "metadata": {
-                "name": "Metadata",
-                "description": "Configuration of the core metadata management module"
+                "name": "Metadata"
             },
             "music": {
-                "name": "Music",
-                "description": "Configuration of the core music (library) management module"
+                "name": "Music"
             },
             "players": {
-                "name": "Players",
-                "description": "Configuration of the core player management module"
+                "name": "Players"
             },
             "player_queues": {
-                "name": "Player Queues",
-                "description": "Configuration of the core player queue management module"
-            },
-            "remote_access": {
-                "name": "Remote Access",
-                "description": "Enables remote access to your Music Assistant server"
+                "name": "Player Queues"
             },
             "streams": {
-                "name": "Streams",
-                "description": "Configuration of the audio streaming and processing engine"
+                "name": "Streams"
             },
             "webserver": {
-                "name": "Webserver",
-                "description": "Configuration of the web server and API"
+                "name": "Webserver"
             }
         },
         "remote_access": "Remote Access",
         "remote_access_description": "Securely access Music Assistant from anywhere",
-        "remote_access_title": "Secure Remote Access",
         "remote_access_explanation_intro": "Remote Access allows you to securely connect to your Music Assistant server from anywhere in the world.",
         "remote_access_explanation_ha_cloud": "For the best experience and reliability, a Home Assistant Cloud subscription is required.",
         "remote_access_feature_webrtc": "Based on WebRTC technology for peer-to-peer connections",
@@ -341,7 +328,6 @@
         "remote_access_protocol_basic": "WebRTC with public STUN servers (may not work in complex network setups).",
         "remote_access_protocol_optimized": "WebRTC with optimised STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "remote_access_encryption_description": "End-to-end encryption using DTLS-SRTP ensures your data remains private and secure.",
-        "frontend": "User Interface",
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
@@ -555,8 +541,6 @@
         "setup_failed": "Setup failed. Please try again.",
         "setup_error": "An error occurred during setup",
         "profile": "Profile",
-        "account_settings": "Account settings",
-        "manage_your_profile_info": "Manage your profile information and settings",
         "change_password": "Change password",
         "update_your_password": "Update your account password",
         "old_password": "Current password",
@@ -618,7 +602,6 @@
         "change_role": "Change role",
         "avatar_url": "Avatar URL",
         "avatar_url_hint": "Enter URL to avatar image",
-        "change_avatar": "Change avatar",
         "profile_updated": "Profile updated successfully",
         "ingress_password_note": "When accessing Music Assistant outside of Home Assistant, you will need this password to sign in.",
         "copy_new_token_hint": "Copy your access token. It will not be shown again.",

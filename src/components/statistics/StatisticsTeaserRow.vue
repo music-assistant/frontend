@@ -15,7 +15,7 @@
             <ChevronRight aria-hidden="true" />
           </RouterLink>
         </Button>
-        <slot name="edit-controls"></slot>
+        <slot name="edit-controls" />
       </div>
     </div>
     <StatisticsHeroCard

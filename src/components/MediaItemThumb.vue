@@ -27,11 +27,12 @@ import type {
   MediaItemType,
   QueueItem,
 } from "@/plugins/api/interfaces";
-import { ImageType } from "@/plugins/api/interfaces";
+import { ImageType, MediaType } from "@/plugins/api/interfaces";
 import {
   imgCoverDark,
   imgCoverLight,
 } from "@/components/QualityDetailsBtn.vue";
+import { getBrowseFolderIcon } from "@/helpers/browse_folder_icon";
 import { getMediaTypeIcon } from "@/helpers/media_type_icon";
 import { getImageThumbForItem } from "@/helpers/utils";
 import { useProviderIcon } from "@/composables/useProviderIcon";
@@ -97,6 +98,10 @@ const placeholderIcon = computed(() => {
     "media_type" in props.item
       ? props.item.media_type
       : props.item.media_item?.media_type;
+  if (mediaType === MediaType.FOLDER && "path" in props.item) {
+    const folderIcon = getBrowseFolderIcon(props.item.path);
+    if (folderIcon) return folderIcon;
+  }
   return getMediaTypeIcon(mediaType);
 });
 </script>

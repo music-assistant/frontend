@@ -11,7 +11,9 @@
       @open-auto-focus="preventOnScreenKeyboardOnOpen"
     >
       <!-- right padding keeps the search box clear of the sheet's close button -->
-      <SheetHeader class="flex-row items-center gap-3 border-b py-3 pl-4 pr-12">
+      <SheetHeader
+        class="flex-row items-center gap-3 border-b py-1.5 pl-4 pr-12"
+      >
         <ListPlus class="size-5 shrink-0 opacity-80" />
         <SheetTitle class="truncate">{{ $t(title) }}</SheetTitle>
         <SearchInput

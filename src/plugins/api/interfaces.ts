@@ -1706,6 +1706,11 @@ export interface PlayerSource {
   id: string;
   name: string;
   passive: boolean;
+  // an input of a device, such as Line-in, TV or Optical
+  is_input: boolean;
+  // the player the source belongs to: in a player's source list only when that is
+  // another player, in the list of live sources always; null for a source of no player
+  owner_player_id: string | null;
   can_play_pause: boolean;
   can_seek: boolean;
   can_next_previous: boolean;
@@ -1999,6 +2004,8 @@ export interface CommunityProvider {
   state: CommunityProviderState;
   installed_version: string | null;
   latest_version: string | null;
+  // the version an update installs, whatever the state
+  update_version: string | null;
   // the version that becomes active at the next start of the server
   pending_version: string | null;
   // a version that failed to load here; installed again only when asked for by domain

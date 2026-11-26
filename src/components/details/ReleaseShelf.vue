@@ -13,7 +13,7 @@
       />
     </template>
     <template #header>
-      <slot v-if="$slots.label" name="label"></slot>
+      <slot v-if="$slots.label" name="label" />
       <DetailSectionTitle
         v-else
         :title="title"

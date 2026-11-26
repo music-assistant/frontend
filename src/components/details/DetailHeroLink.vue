@@ -5,7 +5,7 @@
     @click="emit('click')"
   >
     <!-- reads as a link in the hero's line of text, so the button chrome goes -->
-    <slot></slot>
+    <slot />
   </button>
 </template>
 

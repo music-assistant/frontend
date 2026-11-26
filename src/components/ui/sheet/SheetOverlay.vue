@@ -23,6 +23,6 @@ const delegatedProps = reactiveOmit(props, "class");
     "
     v-bind="delegatedProps"
   >
-    <slot></slot>
+    <slot />
   </DialogOverlay>
 </template>

@@ -18,6 +18,6 @@ const delegatedProps = reactiveOmit(props, "class");
     v-bind="delegatedProps"
     :class="cn(buttonVariants(), props.class)"
   >
-    <slot></slot>
+    <slot />
   </AlertDialogAction>
 </template>

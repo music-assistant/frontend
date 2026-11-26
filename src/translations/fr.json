@@ -259,7 +259,6 @@
             "description": "Forcer la mise en page mobile (avec le menu de navigation en bas), même sur les écrans plus grands."
         },
         "players_description": "Configurez et gérez vos appareils de sortie audio",
-        "frontend_description": "Personnaliser le thème et l'apparence de l'interface utilisateur",
         "profile_description": "Gérez les paramètres et préférences de votre compte personnel",
         "users": "Utilisateurs",
         "users_description": "Gérer les comptes utilisateurs, les rôles et les autorisations",
@@ -279,41 +278,29 @@
         "proud_part_of": "Fier de faire partie de",
         "core_module": {
             "cache": {
-                "name": "Cache",
-                "description": "Configuration du module principal qui gère la mise en cache des données dans l'ensemble de l'application"
+                "name": "Cache"
             },
             "metadata": {
-                "name": "Métadonnées",
-                "description": "Configuration du module de gestion des métadonnées principal"
+                "name": "Métadonnées"
             },
             "music": {
-                "name": "Musique",
-                "description": "Configuration du module de gestion de la musique (bibliothèque) principale"
+                "name": "Musique"
             },
             "players": {
-                "name": "Lecteurs",
-                "description": "Configuration du module de gestion du lecteur principal"
+                "name": "Lecteurs"
             },
             "player_queues": {
-                "name": "Files d'attente des lecteurs",
-                "description": "Configuration du module de gestion de la file d'attente du lecteur principal"
-            },
-            "remote_access": {
-                "name": "Accès à distance",
-                "description": "Permet l'accès à distance à votre serveur Music Assistant"
+                "name": "Files d'attente des lecteurs"
             },
             "streams": {
-                "name": "Flux",
-                "description": "Configuration du moteur de flux et de traitement audio"
+                "name": "Flux"
             },
             "webserver": {
-                "name": "Serveur Web",
-                "description": "Configuration du serveur web et de l'API"
+                "name": "Serveur Web"
             }
         },
         "remote_access": "Accès à distance",
         "remote_access_description": "Accéder à Music Assistant en toute sécurité, où que vous soyez.",
-        "remote_access_title": "Accès distant sécurisé",
         "remote_access_explanation_intro": "L'accès à distance vous permet de vous connecter en toute sécurité à votre serveur Music Assistant depuis n'importe où dans le monde.",
         "remote_access_explanation_ha_cloud": "Pour une expérience optimale et une fiabilité maximale, un abonnement à Home Assistant Cloud est requis.",
         "remote_access_feature_webrtc": "Basé sur la technologie WebRTC pour les connexions pair à pair",
@@ -350,7 +337,6 @@
         "remote_access_protocol_basic": "WebRTC avec serveurs STUN publics (peut ne pas fonctionner avec des configurations réseau complexes).",
         "remote_access_protocol_optimized": "WebRTC avec serveurs STUN\/TURN optimisés de Home Assistant Cloud (fonctionne avec toutes les configurations réseau).",
         "remote_access_encryption_description": "Le chiffrement de bout en bout utilisant DTLS-SRTP garantit la confidentialité et la sécurité de vos données.",
-        "frontend": "Interface utilisateur",
         "view_players": "Voir les lecteurs",
         "players_total": "{count} lecteur au total | {count} lecteurs au total",
         "api_docs": "Documentation de l'API",
@@ -399,20 +385,6 @@
         "add_group_player_desc_sync": "Créer un SyncGroup avec des lecteurs qui sont compatibles pour la synchronisation. Lorsque vous jouez avec un groupe de lecteurs, les lecteurs membres seront automatiquement synchronisés.",
         "add_audio_analysis_provider": "Ajouter un fournisseur d'analyse audio",
         "audio_analysis_providers": "Analyse audio",
-        "audio_analysis_providers_description": "Gérer les fournisseurs qui analysent votre audio",
-        "audio_analysis": "Analyse audio",
-        "audio_analysis_coverage": {
-            "title": "Couverture de l'analyse audio",
-            "col_pending": "En attente",
-            "unavailable": "indisponible",
-            "none": "—"
-        },
-        "audio_analysis_description": "Suivi de la couverture de l'analyse audio pour l'ensemble de vos fournisseurs",
-        "audio_analysis_concurrency": {
-            "title": "Concurrence dans l'analyse en arrière-plan",
-            "description": "Contrôle le nombre de pistes analysées simultanément pendant l'analyse de fond nocturne. Ce réglage fait partie de la configuration de base des flux.",
-            "open_settings": "Ouvrir les paramètres de flux"
-        },
         "provider_status_auth_required": "Authentification requise",
         "provider_status_incompatible": "Non pris en charge par ce système",
         "provider_status_error": "Échec de la configuration",
@@ -625,8 +597,6 @@
         "setup_failed": "L'installation a échoué. Veuillez réessayer.",
         "setup_error": "Une erreur s'est produite lors de la configuration.",
         "profile": "Profil",
-        "account_settings": "Paramètres du compte",
-        "manage_your_profile_info": "Gérer les informations et les paramètres de votre profil",
         "change_password": "Changer le mot de passe",
         "update_your_password": "Mettre à jour le mot de passe de votre compte",
         "old_password": "Mot de passe actuel",
@@ -688,7 +658,6 @@
         "change_role": "Changer le rôle",
         "avatar_url": "URL de l'avatar",
         "avatar_url_hint": "Saisissez l'URL de l'image de l'avatar",
-        "change_avatar": "Changer d'avatar",
         "profile_updated": "Profil mis à jour avec succès",
         "ingress_password_note": "Pour accéder à Music Assistant en dehors de Home Assistant, vous aurez besoin de ce mot de passe pour vous connecter.",
         "copy_new_token_hint": "Copiez votre jeton d'accès. Il ne sera plus affiché.",
@@ -770,7 +739,6 @@
     "narrators": "Narrateurs",
     "queue_move_end": "Déplacer à la fin",
     "discover": "Découvrir",
-    "save_queue_as_playlist": "Sauvegarder la file d'attente en tant que liste de lecture",
     "playlist_created": "Liste de lecture créée",
     "open_playlist": "Ouvrir la liste de lecture",
     "add": "Ajouter",

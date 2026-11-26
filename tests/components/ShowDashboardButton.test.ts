@@ -149,7 +149,6 @@ function mountButton(
           template:
             '<i data-testid="cast-dashboard-device-icon" :data-icon="providerDomainHint" />',
         },
-        "v-icon": { template: "<i />" },
       },
     },
   });
@@ -232,6 +231,11 @@ describe("ShowDashboardButton", () => {
       expect(
         wrapper.find('[data-testid="cast-dashboard-get-url"]').exists(),
       ).toBe(true);
+      expect(
+        wrapper
+          .get('[data-testid="cast-dashboard-get-url"] svg.lucide-link')
+          .attributes("aria-hidden"),
+      ).toBe("true");
     },
   );
 

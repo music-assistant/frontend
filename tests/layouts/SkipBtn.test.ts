@@ -22,13 +22,6 @@ vi.mock("@/plugins/i18n", () => ({
 
 const queueCommandSkip = vi.mocked(api.queueCommandSkip);
 
-// Vuetify is not installed in the test app, and Icon.vue renders its icon
-// inside a v-badge it never imports itself.
-const stubs = {
-  VIcon: { template: "<i><slot /></i>" },
-  VBadge: { template: "<div><slot /></div>" },
-};
-
 /** A queue that is playing an item. */
 function playingQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
   return playerQueue({ current_item: queueItem(), ...overrides });
@@ -40,15 +33,14 @@ function mountButton(props: {
 }) {
   return mount(SkipBtn, {
     props: { playerQueue: undefined, ...props },
-    global: { stubs },
   });
 }
 
 const button = (wrapper: ReturnType<typeof mountButton>) =>
-  wrapper.get(".icon-container");
+  wrapper.get("button");
 
 const isDisabled = (wrapper: ReturnType<typeof mountButton>) =>
-  button(wrapper).classes().includes("icon-container--disabled");
+  button(wrapper).attributes("disabled") !== undefined;
 
 enableAutoUnmount(afterEach);
 

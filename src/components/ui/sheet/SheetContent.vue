@@ -64,7 +64,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       "
       v-bind="{ ...$attrs, ...forwarded }"
     >
-      <slot></slot>
+      <slot />
 
       <DialogClose
         v-if="showClose"

@@ -5,7 +5,7 @@
       <!-- a first fact that is more than text, such as a link; it gives way
            first, as it is the longest -->
       <span v-if="$slots.lead" class="min-w-0 truncate">
-        <slot name="lead"></slot>
+        <slot name="lead" />
       </span>
       <template v-for="(fact, index) in facts" :key="index">
         <span

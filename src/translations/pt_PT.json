@@ -252,7 +252,6 @@
             "description": "Forçar o layout móvel (com o menu-navegação na parte inferior), mesmo em ecrãs maiores."
         },
         "players_description": "Configurar e gerir os seus dispositivos de saída de áudio",
-        "frontend_description": "Personalizar o tema e o aspeto da interface do utilizador",
         "profile_description": "Gerir as definições e preferências da sua conta pessoal",
         "users": "Utilizadores",
         "users_description": "Gerir contas de utilizador, funções e permissões",
@@ -272,41 +271,29 @@
         "proud_part_of": "Orgulhosamente parte de",
         "core_module": {
             "cache": {
-                "name": "Cache",
-                "description": "Configuração do módulo principal que trata do armazenamento em cache de dados em toda a aplicação"
+                "name": "Cache"
             },
             "metadata": {
-                "name": "Metadados",
-                "description": "Configuração do módulo central de gestão de metadados"
+                "name": "Metadados"
             },
             "music": {
-                "name": "Música",
-                "description": "Configuração do módulo central de gestão de música (biblioteca)"
+                "name": "Música"
             },
             "players": {
-                "name": "Leitores",
-                "description": "Configuração do módulo central de gestão de leitores"
+                "name": "Leitores"
             },
             "player_queues": {
-                "name": "Filas de espera de leitores",
-                "description": "Configuração do módulo de gestão de filas de espera do leitor principal"
-            },
-            "remote_access": {
-                "name": "Acesso remoto",
-                "description": "Permite o acesso remoto ao seu servidor Music Assistant"
+                "name": "Filas de espera de leitores"
             },
             "streams": {
-                "name": "Fluxos",
-                "description": "Configuração do motor de processamento e transmissão de áudio"
+                "name": "Fluxos"
             },
             "webserver": {
-                "name": "Servidor Web",
-                "description": "Configuração do servidor Web e da API"
+                "name": "Servidor Web"
             }
         },
         "remote_access": "Acesso remoto",
         "remote_access_description": "Aceder de forma segura ao Music Assistant a partir de qualquer lugar",
-        "remote_access_title": "Acesso remoto seguro",
         "remote_access_explanation_intro": "O Acesso Remoto permite-lhe ligar-se de forma segura ao seu servidor Music Assistant a partir de qualquer parte do mundo.",
         "remote_access_explanation_ha_cloud": "Para obter a melhor experiência e fiabilidade, é necessária uma subscrição do Home Assistant Cloud.",
         "remote_access_feature_webrtc": "Baseado na tecnologia WebRTC para ligações ponto-a-ponto",
@@ -343,7 +330,6 @@
         "remote_access_protocol_basic": "WebRTC com servidores STUN públicos (pode não funcionar em configurações de rede complexas).",
         "remote_access_protocol_optimized": "WebRTC com servidores STUN\/TURN otimizados do Home Assistant Cloud (funciona em todas as configurações de rede).",
         "remote_access_encryption_description": "A encriptação de ponta a ponta utilizando DTLS-SRTP garante que os seus dados permanecem privados e seguros.",
-        "frontend": "Interface de utilizador",
         "view_players": "Ver leitores",
         "players_total": "{0} total de leitores{1}",
         "api_docs": "Documentação da API",
@@ -414,9 +400,7 @@
         "add_plugin_provider": "Adicionar um suplemento",
         "music_sources": "Fontes musicais",
         "plugins": "Suplementos",
-        "music_providers_description": "Gerir os seus serviços de streaming de música e bibliotecas locais",
         "player_providers_description": "Configurar fornecedores para os seus dispositivos de saída de áudio",
-        "metadata_providers_description": "Gerir fornecedores de metadados para trabalhos artísticos e informações adicionais",
         "plugin_providers_description": "Gerir suplementos que alargam a funcionalidade do Music Assistant",
         "restore_genres": "Restaurar géneros",
         "genre_statistics_description": "Navegue e filtre todos os géneros da sua biblioteca. Os géneros podem ser globalmente excluídos e restaurados.",
@@ -425,21 +409,6 @@
         "add_player_providers": "Adicionar mais fornecedores de leitores",
         "add_audio_analysis_provider": "Adicionar um fornecedor de análise de áudio",
         "audio_analysis_providers": "Análise áudio",
-        "audio_analysis_providers_description": "Gerir fornecedores que analisam o seu áudio",
-        "audio_analysis": "Análise áudio",
-        "audio_analysis_coverage": {
-            "title": "Cobertura da análise áudio",
-            "col_pending": "Pendente",
-            "col_stale": "",
-            "unavailable": "indisponível",
-            "none": ""
-        },
-        "audio_analysis_description": "Acompanhar a cobertura da análise de áudio nos seus provedores",
-        "audio_analysis_concurrency": {
-            "title": "Concorrência da análise de fundo",
-            "description": "Controla quantas faixas são analisadas em simultâneo durante a pesquisa noturna em segundo plano. Esta definição está presente na configuração principal do Streams.",
-            "open_settings": "Definições Open Streams"
-        },
         "provider_status_auth_required": "É necessária autenticação",
         "provider_status_incompatible": "Não é suportado neste sistema",
         "provider_status_error": "A instalação falhou",
@@ -653,8 +622,6 @@
         "setup_failed": "A configuração falhou. Por favor, tente novamente.",
         "setup_error": "Ocorreu um erro durante a configuração",
         "profile": "Perfil",
-        "account_settings": "Definições da conta",
-        "manage_your_profile_info": "Gerir as informações e definições do seu perfil",
         "change_password": "Alterar a palavra-passe",
         "update_your_password": "Atualizar a palavra-passe da sua conta",
         "old_password": "Palavra-passe atual",
@@ -716,7 +683,6 @@
         "change_role": "Mudar de função",
         "avatar_url": "URL do avatar",
         "avatar_url_hint": "Introduzir URL para a imagem do avatar",
-        "change_avatar": "Alterar o avatar",
         "profile_updated": "Perfil atualizado com sucesso",
         "ingress_password_note": "Quando aceder ao Music Assistant fora do Home Assistant, necessitará desta palavra-passe para iniciar sessão.",
         "copy_new_token_hint": "Copie o seu token de acesso. Este não voltará a ser apresentado.",
@@ -799,7 +765,6 @@
     "narrators": "Narradores",
     "queue_move_end": "Mover para o fim",
     "discover": "Descobrir",
-    "save_queue_as_playlist": "Guardar a fila como lista de reprodução",
     "playlist_created": "Lista de reprodução criada",
     "open_playlist": "Abrir lista de reprodução",
     "add": "Adicionar",

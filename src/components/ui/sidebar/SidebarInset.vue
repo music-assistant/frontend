@@ -37,7 +37,7 @@ const {
       class="bg-background flex min-h-0 flex-1 flex-col"
       :style="swipeStyle"
     >
-      <slot></slot>
+      <slot />
     </div>
   </main>
 </template>

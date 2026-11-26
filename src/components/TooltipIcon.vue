@@ -9,7 +9,7 @@
         class="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 -my-[5px] inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm outline-none focus-visible:ring-[3px]"
         :aria-label="label"
       >
-        <slot></slot>
+        <slot />
       </button>
     </PopoverTrigger>
     <PopoverContent side="top" class="w-auto max-w-72 px-3 py-2 text-sm">

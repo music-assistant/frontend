@@ -36,7 +36,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         )
       "
     >
-      <slot name="thumb" v-bind="slotProps"></slot>
+      <slot name="thumb" v-bind="slotProps" />
     </SwitchThumb>
   </SwitchRoot>
 </template>
