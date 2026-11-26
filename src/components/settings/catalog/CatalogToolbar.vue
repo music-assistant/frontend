@@ -12,7 +12,12 @@
         orientation="vertical"
         class="data-[orientation=vertical]:h-6 max-md:hidden"
       />
-      <ProviderLabelFilter v-model="label" :labels="labels" />
+      <!-- on a phone the pills scroll beside the stage filter -->
+      <ProviderLabelFilter
+        v-model="label"
+        :labels="labels"
+        class="max-md:min-w-0 max-md:flex-1"
+      />
     </template>
     <div v-if="filterable" class="ml-auto">
       <FacetedFilter

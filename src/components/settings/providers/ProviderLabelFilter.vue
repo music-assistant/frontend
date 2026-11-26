@@ -13,9 +13,9 @@
         type="button"
         :class="
           cn(
-            'h-[30px] shrink-0 cursor-pointer rounded-[7px] border border-transparent px-3.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,box-shadow] outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
+            'h-[30px] shrink-0 cursor-pointer rounded-[7px] px-3.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,box-shadow] outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
             model === option.value &&
-              'bg-background text-foreground shadow-sm dark:border-input dark:bg-input/30',
+              'bg-background text-foreground shadow-sm dark:bg-input/30',
           )
         "
         :aria-pressed="model === option.value"
