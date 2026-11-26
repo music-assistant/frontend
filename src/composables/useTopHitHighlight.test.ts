@@ -101,4 +101,14 @@ describe("useTopHitHighlight", () => {
     await setRows(["Record track", "Record room", "Record player"]);
     expect(highlighted()).toBe("Record player");
   });
+
+  it("forgets the row the user moved to when the reset key changes", async () => {
+    await setRows(["Record room", "Record player"]);
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+    query.value = "records";
+    await nextTick();
+
+    await setRows(["Record track", "Record room", "Record player"]);
+    expect(highlighted()).toBe("Record track");
+  });
 });

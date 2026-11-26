@@ -1037,7 +1037,7 @@ useTopHitHighlight({
       ...mediaSections.value.map((section) => section.items[0]?.uri ?? ""),
       liveSourceResults.value[0]?.id ?? "",
     ].join("|"),
-  resetKey: () => [query.value, isOpen.value],
+  resetKey: () => [query.value, isOpen.value, activeSearchTerm.value],
   enabled: () =>
     !(store.isTouchscreen && store.mobileLayout) &&
     isOpen.value &&
