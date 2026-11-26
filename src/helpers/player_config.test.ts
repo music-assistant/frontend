@@ -1,5 +1,6 @@
 import {
   getListedPlayerConfigs,
+  getPlayerConfigPage,
   getPlayerName,
   getPlayerSetupLabel,
   playerBelongsToProviders,
@@ -137,5 +138,18 @@ describe("playerBelongsToProviders", () => {
         "chromecast--1",
       ]),
     ).toBe(false);
+  });
+});
+
+describe("getPlayerConfigPage", () => {
+  it.each([
+    ["protocol_general", "outputs"],
+    ["protocol_airplay", "outputs"],
+    ["player_controls", "controls"],
+    ["generic", "player"],
+    ["announcements", "player"],
+    ["audio_sources", "player"],
+  ])("shows an entry of category %s on the %s page", (category, page) => {
+    expect(getPlayerConfigPage({ category })).toBe(page);
   });
 });

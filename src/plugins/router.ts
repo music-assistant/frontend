@@ -853,6 +853,26 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
           },
           {
+            path: "editplayer/:playerId/outputs",
+            name: "editplayeroutputs",
+            component: () =>
+              import(
+                /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayerOutputs.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
+          },
+          {
+            path: "editplayer/:playerId/controls",
+            name: "editplayercontrols",
+            component: () =>
+              import(
+                /* webpackChunkName: "editplayer" */ "@/views/settings/EditPlayerControls.vue"
+              ),
+            props: true,
+            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
+          },
+          {
             path: "editqueue/:queueId",
             name: "editqueue",
             component: () =>

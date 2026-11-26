@@ -37,6 +37,7 @@ import { store } from "@/plugins/store";
 import {
   AudioLines,
   BookOpen,
+  Cast,
   CircleMinus,
   CircleOff,
   CirclePlay,
@@ -51,6 +52,7 @@ import {
   Split,
   Trash2,
   Ungroup,
+  Volume2,
 } from "@lucide/vue";
 import { markRaw } from "vue";
 import { toast } from "vue-sonner";
@@ -102,6 +104,10 @@ export const getPlayerSettingsSections = (playerId: string) => {
     queue: playerId in api.queues,
     dsp: !!player && player.type !== PlayerType.GROUP,
     options: !!player && player.options.length > 0,
+    // the server lists the settings of each output, and which one is preferred
+    outputs: !!player && player.output_protocols.length > 0,
+    // every player the server runs has a power control at least
+    controls: !!player,
   };
 };
 
@@ -152,6 +158,20 @@ export const getPlayerSettingsMenuItems = (
         label: "player_options.open",
         action: () => router.push(`/settings/editplayer/${playerId}/options`),
         icon: markRaw(SlidersHorizontal),
+      });
+    }
+    if (sections.outputs) {
+      menuItems.push({
+        label: "open_output_protocol_settings",
+        action: () => router.push(`/settings/editplayer/${playerId}/outputs`),
+        icon: markRaw(Cast),
+      });
+    }
+    if (sections.controls) {
+      menuItems.push({
+        label: "open_player_control_settings",
+        action: () => router.push(`/settings/editplayer/${playerId}/controls`),
+        icon: markRaw(Volume2),
       });
     }
   }
