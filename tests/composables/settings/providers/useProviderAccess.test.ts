@@ -1,6 +1,11 @@
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { ProviderSharing, type User, UserRole } from "@/plugins/api/interfaces";
+import {
+  ProviderSharing,
+  type User,
+  UserRole,
+  SharedPlayback,
+} from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, type Ref, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -166,6 +171,7 @@ describe("accessSummary", () => {
       access: {
         owner: "user-marcel",
         shared_users: ["user-sam"],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
         sharing: ProviderSharing.SELECTED,
       },
     });
@@ -183,7 +189,12 @@ describe("accessSummary", () => {
     async (_label, sharing) => {
       const { result } = await mountAccess({ managesAllSources: true });
       const config = providerConfig({
-        access: { owner: null, shared_users: [], sharing },
+        access: {
+          owner: null,
+          shared_users: [],
+          sharing,
+          shared_playback: SharedPlayback.WITHOUT_OWN,
+        },
       });
 
       expect(result.accessSummary(config)).toBe(
@@ -202,6 +213,7 @@ describe("accessSummary", () => {
       access: {
         owner: "user-me",
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
         sharing: ProviderSharing.PRIVATE,
       },
     });
@@ -218,6 +230,7 @@ describe("accessSummary", () => {
       access: {
         owner: "user-gone",
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
         sharing: ProviderSharing.PRIVATE,
       },
     });

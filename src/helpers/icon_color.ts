@@ -1,8 +1,5 @@
 // The colours of an icon, read from the text of an SVG, never drawn or run.
 
-/** The colour for an icon without a main colour of its own. */
-export const NEUTRAL_ICON_COLOR = "#64748b";
-
 // a fill, a gradient stop or a stroke, as an attribute or in a style; what an
 // rgb() holds is bounded, so an unclosed one cannot make every match scan the rest
 const COLOR_PATTERN =

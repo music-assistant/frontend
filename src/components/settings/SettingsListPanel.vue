@@ -1,7 +1,9 @@
 <template>
-  <Card class="gap-4 py-4 md:gap-5 md:py-5">
-    <header class="flex flex-wrap items-center gap-x-3 gap-y-3 px-4 md:px-5">
-      <div class="min-w-0 flex-1">
+  <Card class="gap-5 py-5 md:gap-6 md:py-6">
+    <header
+      class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-4 px-4 md:px-5"
+    >
+      <div class="col-start-1 row-start-1 min-w-0">
         <h2 class="m-0 flex items-baseline gap-2 text-base font-semibold">
           {{ title }}
           <span
@@ -13,25 +15,31 @@
           </span>
         </h2>
       </div>
-      <div class="flex shrink-0 items-center gap-1">
-        <SettingsViewModeToggle
-          v-if="viewMode"
-          :mode="viewMode"
-          small
-          @toggle="emit('toggle-view-mode')"
-        />
+      <!-- on a phone the switch sits by the title; wider, it ends the row of
+           the search and filters, or comes before the buttons without them -->
+      <SettingsViewModeTabs
+        v-if="viewMode"
+        :mode="viewMode"
+        class="col-start-2 row-start-1"
+        :class="{
+          'md:col-start-3 md:row-start-2 md:self-start md:justify-self-end':
+            $slots.filters,
+        }"
+        @toggle="emit('toggle-view-mode')"
+      />
+      <div
+        class="col-start-3 row-start-1 flex items-center gap-1 justify-self-end"
+      >
         <Button
           v-for="action in actions ?? []"
           :key="action.key"
           size="sm"
           class="max-md:hidden"
-          :title="action.shortLabel ? action.label : undefined"
-          :aria-label="action.shortLabel ? action.label : undefined"
           :data-testid="action.key"
           @click="action.onSelect()"
         >
           <component :is="action.icon" class="size-4" aria-hidden="true" />
-          {{ action.shortLabel ?? action.label }}
+          {{ action.label }}
         </Button>
         <!-- a phone has no room for the buttons, so they move into a menu -->
         <DropdownMenu v-if="actions?.length">
@@ -60,7 +68,10 @@
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div v-if="$slots.filters" class="basis-full">
+      <div
+        v-if="$slots.filters"
+        class="col-span-3 col-start-1 row-start-2 min-w-0 md:col-span-2"
+      >
         <slot name="filters" />
       </div>
     </header>
@@ -77,16 +88,13 @@ export interface SettingsPanelAction {
   // also the test id of its button
   key: string;
   label: string;
-  // shown on its button in place of the label, which names it to assistive
-  // technology and in the menu on a phone
-  shortLabel?: string;
   icon: Component;
   onSelect: () => void;
 }
 </script>
 
 <script setup lang="ts">
-import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
+import SettingsViewModeTabs from "@/components/settings/SettingsViewModeTabs.vue";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -100,8 +108,8 @@ import { EllipsisVertical } from "@lucide/vue";
 
 /**
  * A list of a settings page in a panel of its own, whose header holds the title
- * of the list with how many it holds, its search and filters, the switch
- * between its list and card view, and its actions.
+ * of the list with how many it holds and its actions, then its search and
+ * filters, ended by the pills switching between its list and card view.
  */
 defineProps<{
   title: string;

@@ -41,7 +41,7 @@ vi.mock("@/composables/settings/providers/useProviderSources", async () => {
   return {
     useProviderSources: () => ({
       loaded: ref(true),
-      list: ref({}),
+      list: ref({ filteredProviders: [] }),
       setSearchQuery: vi.fn(),
       setLabelFilter: vi.fn(),
       loadItems: vi.fn(),
