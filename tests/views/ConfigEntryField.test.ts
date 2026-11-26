@@ -388,6 +388,35 @@ describe("ConfigEntryField", () => {
     expect(wrapper.emitted("update:value")).toEqual([["mp3"]]);
   });
 
+  it("stores a slider move and a typed exact value as one number", () => {
+    const wrapper = mountField(rangedEntry(ConfigEntryType.INTEGER));
+
+    wrapper
+      .getComponent({ name: "SliderRoot" })
+      .vm.$emit("update:modelValue", [7]);
+    wrapper
+      .getComponent({ name: "NumberFieldRoot" })
+      .vm.$emit("update:modelValue", 8);
+
+    expect(wrapper.emitted("update:value")).toEqual([[7], [8]]);
+  });
+
+  it.each([
+    [true, true],
+    [false, false],
+    ["indeterminate", false],
+  ])("stores a checkbox set to %s as %s", (state, stored) => {
+    const wrapper = mountField(
+      entry({ key: "flow_mode", type: ConfigEntryType.BOOLEAN }),
+    );
+
+    wrapper
+      .getComponent({ name: "CheckboxRoot" })
+      .vm.$emit("update:modelValue", state);
+
+    expect(wrapper.emitted("update:value")).toEqual([[stored]]);
+  });
+
   // clearing a value an action filled in is how the action is offered again
   it("lets the read-only value of an action be cleared", async () => {
     const wrapper = mountField(
