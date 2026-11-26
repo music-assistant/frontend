@@ -1,7 +1,7 @@
 import SettingsListPanel, {
   type SettingsPanelAction,
 } from "@/components/settings/SettingsListPanel.vue";
-import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
+import SettingsViewModeTabs from "@/components/settings/SettingsViewModeTabs.vue";
 import { Plus } from "@lucide/vue";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -39,32 +39,73 @@ describe("SettingsListPanel", () => {
     );
   });
 
-  it("switches the view of the list, showing the view it is in", async () => {
+  it("switches the view of the list from two pills, the one it is in pressed", async () => {
     const wrapper = mountPanel({ title: "Players", viewMode: "card" });
 
-    const toggle = wrapper.getComponent(SettingsViewModeToggle);
-    expect(toggle.props("mode")).toBe("card");
-    expect(toggle.attributes("aria-label")).toBe(
-      "tooltip.view_mode_switch(view.card,view.list)",
-    );
-    await toggle.trigger("click");
+    const tabs = wrapper.get('[data-testid="view-mode-tabs"]');
+    expect(tabs.attributes("role")).toBe("group");
+    expect(tabs.attributes("aria-label")).toBe("view.view_as");
+    const pills = tabs.findAll("button");
+    expect(
+      pills.map((pill) => [
+        pill.attributes("aria-label"),
+        pill.attributes("aria-pressed"),
+      ]),
+    ).toEqual([
+      ["view.list", "false"],
+      ["view.card", "true"],
+    ]);
 
+    await pills[1].trigger("click");
+    expect(wrapper.emitted("toggle-view-mode")).toBeUndefined();
+    await pills[0].trigger("click");
     expect(wrapper.emitted("toggle-view-mode")).toHaveLength(1);
+  });
+
+  it("ends the row of the search and filters with the switch of the view on a wide screen", () => {
+    const wrapper = mountPanel(
+      { title: "Music sources", viewMode: "list", actions: [action()] },
+      { filters: '<input data-testid="search" />', default: "<ul />" },
+    );
+
+    const tabs = wrapper.getComponent(SettingsViewModeTabs);
+    // by the title on a phone, under the buttons at the end of the filters wider
+    expect(tabs.classes()).toEqual(
+      expect.arrayContaining([
+        "row-start-1",
+        "md:row-start-2",
+        "md:col-start-3",
+      ]),
+    );
+    expect(
+      wrapper.get('[data-testid="search"]').element.parentElement!.className,
+    ).toContain("row-start-2");
+  });
+
+  it("puts the switch before the buttons of a list without filters", () => {
+    const wrapper = mountPanel({
+      title: "Player providers",
+      viewMode: "list",
+      actions: [action()],
+    });
+
+    const tabs = wrapper.getComponent(SettingsViewModeTabs);
+    expect(tabs.classes()).toContain("row-start-1");
+    expect(tabs.classes()).not.toContain("md:row-start-2");
   });
 
   it("has no switch for a list without views", () => {
     const wrapper = mountPanel({ title: "Players" });
 
-    expect(wrapper.findComponent(SettingsViewModeToggle).exists()).toBe(false);
+    expect(wrapper.findComponent(SettingsViewModeTabs).exists()).toBe(false);
   });
 
-  it("runs an action from its button, named in full for assistive technology", async () => {
+  it("runs an action from its button, named by its label", async () => {
     const add = action();
     const wrapper = mountPanel({ title: "Music sources", actions: [add] });
 
     const button = wrapper.get('[data-testid="add-provider"]');
-    expect(button.text()).toBe("Add");
-    expect(button.attributes("aria-label")).toBe("Add a music source");
+    expect(button.text()).toBe("Add a music source");
     await button.trigger("click");
 
     expect(add.onSelect).toHaveBeenCalledOnce();
@@ -86,23 +127,6 @@ describe("SettingsListPanel", () => {
 
     expect(wrapper.find('[data-testid="panel-menu"]').exists()).toBe(false);
   });
-
-  it("shows the label of an action without a short one on its button", () => {
-    const wrapper = mountPanel({
-      title: "Players",
-      actions: [
-        action({
-          key: "add-group",
-          label: "Add group player",
-          shortLabel: undefined,
-        }),
-      ],
-    });
-
-    const button = wrapper.get('[data-testid="add-group"]');
-    expect(button.text()).toBe("Add group player");
-    expect(button.attributes("aria-label")).toBeUndefined();
-  });
 });
 
 function action(
@@ -111,7 +135,6 @@ function action(
   return {
     key: "add-provider",
     label: "Add a music source",
-    shortLabel: "Add",
     icon: markRaw(Plus),
     onSelect: vi.fn(),
     ...overrides,

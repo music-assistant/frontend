@@ -27,7 +27,7 @@
           <Badge v-if="community" variant="community">
             {{ $t("settings.provider_community") }}
           </Badge>
-          <ProviderStageBadge :stage="entry.manifest.stage" />
+          <CatalogStageTag :stage="entry.manifest.stage" />
           <Badge
             v-if="isSetUp"
             variant="outline"
@@ -195,7 +195,7 @@
 
 <script setup lang="ts">
 import CatalogIcon from "@/components/settings/catalog/CatalogIcon.vue";
-import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
+import CatalogStageTag from "@/components/settings/catalog/CatalogStageTag.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

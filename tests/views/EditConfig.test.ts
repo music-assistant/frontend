@@ -8,9 +8,6 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { h, nextTick } from "vue";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
-import { createVuetify } from "vuetify";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
 import {
   ConfigEntryType,
   type ConfigEntry,
@@ -712,7 +709,7 @@ describe("EditConfig", () => {
     expect(renderedKeys(wrapper)).toEqual(["clear_cache"]);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
     // nothing floats, so no room is kept for it either
-    expect(wrapper.get("v-form-stub").classes()).not.toContain(
+    expect(wrapper.get("form").classes()).not.toContain(
       "floating-save-clearance",
     );
   });
@@ -789,9 +786,7 @@ describe("EditConfig", () => {
       entry({ key: "server", type: ConfigEntryType.STRING }),
     ]);
 
-    expect(wrapper.get("v-form-stub").classes()).toContain(
-      "floating-save-clearance",
-    );
+    expect(wrapper.get("form").classes()).toContain("floating-save-clearance");
   });
 
   it.each([
@@ -806,7 +801,7 @@ describe("EditConfig", () => {
         inlineSave,
       );
 
-      expect(wrapper.get("v-form-stub").classes()).not.toContain(
+      expect(wrapper.get("form").classes()).not.toContain(
         "floating-save-clearance",
       );
     },
@@ -824,7 +819,7 @@ describe("EditConfig unsaved changes", () => {
     await flushPromises();
     expect(router.currentRoute.value.name).toBe("editprovider");
 
-    await click(wrapper, "config-discard");
+    await click("config-discard");
 
     expect(router.currentRoute.value.name).toBe("music-quiz");
   });
@@ -836,7 +831,7 @@ describe("EditConfig unsaved changes", () => {
 
     router.push({ name: "music-quiz" });
     await flushPromises();
-    await click(wrapper, "config-stay");
+    await click("config-stay");
 
     expect(router.currentRoute.value.name).toBe("editprovider");
     expect(wrapper.findComponent(EditConfig).exists()).toBe(true);
@@ -851,7 +846,7 @@ describe("EditConfig unsaved changes", () => {
 
     router.back();
     await flushPromises();
-    await click(wrapper, "config-discard");
+    await click("config-discard");
     expect(router.currentRoute.value.name).toBe("settings");
 
     router.back();
@@ -868,7 +863,7 @@ describe("EditConfig unsaved changes", () => {
 
     router.push({ name: "redirects-away" });
     await flushPromises();
-    await click(wrapper, "config-discard");
+    await click("config-discard");
 
     expect(router.currentRoute.value.name).toBe("music-quiz");
   });
@@ -884,7 +879,7 @@ describe("EditConfig unsaved changes", () => {
     await flushPromises();
     router.back();
     await flushPromises();
-    await click(wrapper, "config-stay");
+    await click("config-stay");
 
     expect(router.currentRoute.value.name).toBe("editprovider");
     expect(router.options.history.location).toBe("/settings/provider");
@@ -906,7 +901,7 @@ describe("EditConfig unsaved changes", () => {
     await flushPromises();
 
     expect(router.currentRoute.value.name).toBe("editprovider");
-    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
+    expect(dialogShown()).toBe(true);
   });
 
   it("lets the form go once what is on it has been saved", async () => {
@@ -922,7 +917,7 @@ describe("EditConfig unsaved changes", () => {
     await router.push({ name: "music-quiz" });
 
     expect(router.currentRoute.value.name).toBe("music-quiz");
-    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(false);
+    expect(dialogShown()).toBe(false);
   });
 
   // a save lets the screen navigate away without asking, and that permission is
@@ -943,7 +938,7 @@ describe("EditConfig unsaved changes", () => {
     await flushPromises();
 
     expect(router.currentRoute.value.name).toBe("editprovider");
-    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
+    expect(dialogShown()).toBe(true);
   });
 
   it("lets an unchanged form go without asking", async () => {
@@ -952,7 +947,7 @@ describe("EditConfig unsaved changes", () => {
     await router.push({ name: "music-quiz" });
 
     expect(router.currentRoute.value.name).toBe("music-quiz");
-    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(false);
+    expect(dialogShown()).toBe(false);
   });
 });
 
@@ -991,7 +986,6 @@ function mountEntries(
   });
 }
 
-// the real form validates through Vuetify, which this bare mount leaves out
 // the entries of a stereo pair whose first speaker is on the right, with a delay
 function stereoPairEntries(): ConfigEntry[] {
   const category = "protocol_sendspin";
@@ -1038,15 +1032,7 @@ function mountForSave(
 ) {
   return shallowMount(EditConfig, {
     props: { configEntries, disabled: false, ...extraProps },
-    global: {
-      renderStubDefaultSlot: true,
-      stubs: {
-        VForm: {
-          template: "<form><slot /></form>",
-          methods: { validate: async () => ({ valid: true }) },
-        },
-      },
-    },
+    global: { renderStubDefaultSlot: true },
   });
 }
 
@@ -1112,20 +1098,16 @@ async function mountInRouter() {
   await router.push({ name: "settings" });
   await router.push({ name: "editprovider" });
 
+  // the dialog teleports to the body, so the form lives in the document too
   const wrapper = mount(
     { render: () => h(RouterView) },
     {
+      attachTo: document.body,
       global: {
-        plugins: [router, createVuetify({ components, directives })],
+        plugins: [router],
         stubs: {
           ConfigEntryRow: true,
           ProtocolConfigSection: true,
-          // the real dialog teleports into an overlay container this bare app
-          // never mounts, so render it where it is declared instead
-          VDialog: {
-            props: ["modelValue"],
-            template: '<div v-if="modelValue"><slot /></div>',
-          },
         },
       },
     },
@@ -1135,7 +1117,15 @@ async function mountInRouter() {
 }
 
 // answering the dialog releases a navigation, so settle that too
-async function click(wrapper: VueWrapper, testId: string) {
-  await wrapper.get(`[data-testid="${testId}"]`).trigger("click");
+async function click(testId: string) {
+  const button = document.querySelector<HTMLElement>(
+    `[data-testid="${testId}"]`,
+  );
+  if (!button) throw new Error(`${testId} not rendered`);
+  button.click();
   await flushPromises();
+}
+
+function dialogShown() {
+  return !!document.querySelector('[data-testid="config-discard"]');
 }

@@ -1,10 +1,10 @@
 <template>
-  <v-form
+  <!-- saving goes through the Save button, so Enter in a field does not submit -->
+  <form
     v-if="entries"
-    ref="form"
-    v-model="valid"
-    :disabled="disabled"
+    novalidate
     :class="{ 'floating-save-clearance': showSaveAction && !inlineSave }"
+    @submit.prevent
   >
     <component
       :is="flat ? 'div' : Card"
@@ -138,34 +138,40 @@
         {{ $t("settings.save") }}
       </Button>
     </div>
-  </v-form>
+  </form>
   <!-- Unsaved changes confirmation dialog -->
   <!-- any way out of this dialog has to answer the navigation it is holding -->
-  <v-dialog
-    :model-value="showUnsavedDialog"
-    max-width="400"
-    persistent
-    @update:model-value="cancelDiscard"
-  >
-    <v-card>
-      <v-card-title>{{ $t("settings.unsaved_changes") }}</v-card-title>
-      <v-card-text>{{ $t("settings.unsaved_changes_message") }}</v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn data-testid="config-stay" variant="text" @click="cancelDiscard">
+  <AlertDialog :open="showUnsavedDialog" @update:open="onUnsavedDialogOpen">
+    <AlertDialogContent class="sm:max-w-[400px]">
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{
+          $t("settings.unsaved_changes")
+        }}</AlertDialogTitle>
+        <AlertDialogDescription>
+          {{ $t("settings.unsaved_changes_message") }}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <!-- plain buttons: each answer closes the dialog itself -->
+        <Button
+          data-testid="config-stay"
+          type="button"
+          variant="ghost"
+          @click="cancelDiscard"
+        >
           {{ $t("settings.stay") }}
-        </v-btn>
-        <v-btn
+        </Button>
+        <Button
           data-testid="config-discard"
-          color="warning"
-          variant="flat"
+          type="button"
+          variant="warning"
           @click="confirmDiscard"
         >
           {{ $t("settings.discard") }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </Button>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>
 
 <script setup lang="ts">
@@ -178,7 +184,16 @@ import {
   NON_INTERACTIVE_ENTRY_TYPES,
   VALUELESS_ENTRY_TYPES,
 } from "@/helpers/config_entry_ui";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { provideConfigFormValidation } from "@/composables/useConfigFormValidation";
 import { isSpeakerChannelEntry } from "@/helpers/multi_channel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
@@ -250,8 +265,7 @@ const emit = defineEmits<{
 
 // global refs
 const entries = ref<ConfigEntryUI[]>();
-const valid = ref(false);
-const form = ref<InstanceType<typeof import("vuetify/components").VForm>>();
+const { validate } = provideConfigFormValidation();
 const showPasswordValues = ref(false);
 const oldValues = ref<Record<string, ConfigValueType>>({});
 const oldValuesInitialized = ref(false);
@@ -359,8 +373,14 @@ const hasOptions = computed(
   () => showAdvancedToggle.value || hasVisibleSections.value,
 );
 
+// the same fields the form checks on save: hidden advanced entries leave it alone
 const requiredValuesPresent = computed(() =>
-  entries.value ? allRequiredValuesPresent(entries.value) : false,
+  entries.value
+    ? allRequiredValuesPresent(
+        entries.value,
+        (entry) => !entry.advanced || showAdvancedSettings.value,
+      )
+    : false,
 );
 
 const hasUnsavedChanges = computed(() => {
@@ -438,13 +458,9 @@ watch(
 );
 
 // methods
-const validate = async function () {
-  const { valid } = await form.value!.validate();
-  return valid;
-};
 const submit = async function () {
   // submit button is pressed
-  if (await validate()) {
+  if (validate()) {
     allowNavigation.value = true;
     emit("submit", getSaveValues());
   }
@@ -552,6 +568,11 @@ const confirmDiscard = function () {
   releaseNavigation(true);
 };
 
+// Escape is the only way the dialog closes by itself, and it means stay
+const onUnsavedDialogOpen = function (open: boolean) {
+  if (!open && showUnsavedDialog.value) cancelDiscard();
+};
+
 const cancelDiscard = function () {
   showUnsavedDialog.value = false;
   releaseNavigation(false);
@@ -595,8 +616,7 @@ const isDisabled = function (entry: ConfigEntryUI) {
   return isEntryDisabled(entry, entries.value || []);
 };
 
-// the form-wide disabled state has to be handed to every field: v-form only reaches
-// Vuetify's own inputs, so the number field beside a slider would stay editable
+// the form-wide disabled state is handed to every field
 const isRowDisabled = function (entry: ConfigEntryUI) {
   return props.disabled || isDisabled(entry);
 };
