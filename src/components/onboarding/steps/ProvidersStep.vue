@@ -14,7 +14,7 @@
           data-testid="onboarding-configured-provider"
         />
         <Button
-          v-if="hiddenCount > 0 || showAll"
+          v-if="sorted.length > COLLAPSED_COUNT"
           variant="ghost"
           class="text-muted-foreground w-full rounded-none"
           data-testid="onboarding-show-all-providers"
@@ -106,7 +106,7 @@ const hiddenCount = computed(() => sorted.value.length - shown.value.length);
 watch(
   () => configured.value.length,
   (count, previous) => {
-    if (count > previous) showAll.value = true;
+    if (count > previous && count > COLLAPSED_COUNT) showAll.value = true;
   },
 );
 

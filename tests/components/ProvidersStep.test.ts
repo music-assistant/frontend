@@ -162,6 +162,21 @@ describe("ProvidersStep", () => {
       wrapper.unmount();
     });
 
+    it("offers no show all for a short list, even after adding one", async () => {
+      const sources = reactive<ConfiguredProvider[]>([]);
+      onboardingState.musicSources = sources;
+      const wrapper = mountStep(ProviderType.MUSIC);
+
+      sources.push(configured("spotify", { name: "Spotify" }));
+      await nextTick();
+
+      expect(testId(wrapper, "onboarding-show-all-providers").exists()).toBe(
+        false,
+      );
+
+      wrapper.unmount();
+    });
+
     it("lists a source that does not work, with what is wrong", () => {
       onboardingState.musicSources = [
         configured("spotify", {
