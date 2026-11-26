@@ -12,15 +12,23 @@
           v-for="providerMapping in itemDetails?.provider_mappings"
           :key="providerMapping.provider_instance"
           v-hold="
-            (evt: Event) =>
-              openMappingMenu(evt, providerMapping.provider_instance)
+            (evt: Event) => onHold(evt, providerMapping.provider_instance)
           "
           size="sm"
           class="gap-7 rounded-(--radius-lg) border-0 px-2"
           :class="{
             'pointer-events-none opacity-50':
               !isMappingAvailable(providerMapping),
+            'cursor-pointer hover:bg-accent/50': opensOnClick(providerMapping),
           }"
+          :title="
+            opensOnClick(providerMapping)
+              ? $t('tooltip.open_provider_link')
+              : undefined
+          "
+          @touchstart.passive="onTouchStart"
+          @click.capture="swallowClickAfterHold"
+          @click="onRowClick(providerMapping)"
           @click.right.prevent="
             openMappingMenu($event, providerMapping.provider_instance)
           "
@@ -44,7 +52,7 @@
                 {{ $t("library") }}
               </Badge>
             </ItemTitle>
-            <ItemDescription class="truncate">
+            <ItemDescription v-if="expert" class="truncate">
               <span v-if="itemDetails.media_type == MediaType.TRACK"
                 >{{ providerMapping.audio_format.content_type }} |
                 {{ providerMapping.audio_format.sample_rate / 1000 }}kHz/{{
@@ -53,13 +61,10 @@
                 bits |
               </span>
               <a
-                v-if="
-                  providerMapping.url &&
-                  !providerMapping.provider_domain.startsWith('file')
-                "
+                v-if="hasProviderLink(providerMapping)"
                 class="cursor-pointer opacity-60"
                 :title="$t('tooltip.open_provider_link')"
-                @click.prevent="openLinkInNewTab(providerMapping.url)"
+                @click.prevent="openLinkInNewTab(providerMapping.url!)"
                 >{{ getProviderUri(providerMapping) }}</a
               >
               <span v-else class="opacity-60" :title="$t('tooltip.copy_uri')">{{
@@ -77,6 +82,7 @@
             />
             <Button
               v-if="
+                expert &&
                 getBreakpointValue('bp1') &&
                 itemDetails.media_type == MediaType.TRACK
               "
@@ -132,7 +138,7 @@
             <ItemTitle class="text-base">
               {{ $t("music_assistant_library") }}
             </ItemTitle>
-            <ItemDescription class="truncate">
+            <ItemDescription v-if="expert" class="truncate">
               library://{{ itemDetails.media_type }}/{{ itemDetails.item_id }}
             </ItemDescription>
           </ItemContent>
@@ -189,8 +195,12 @@ import {
 } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
 import { useSectionBodyPadding } from "@/composables/useDetailAdminCard";
-import { getEventPosition } from "@/composables/useHoldToOpenMenu";
+import {
+  getEventPosition,
+  useHoldToOpenMenu,
+} from "@/composables/useHoldToOpenMenu";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
+import { expertMode } from "@/helpers/expert_mode";
 import { copyToClipboard } from "@/helpers/utils";
 import { api } from "@/plugins/api";
 import {
@@ -215,6 +225,9 @@ const { t } = useI18n();
 const expanded = ref(false);
 const bodyPadding = useSectionBodyPadding();
 const mappingSearchInProgress = ref(false);
+
+// the standard experience leaves out the technical details of each source
+const expert = computed(() => expertMode());
 
 const openLinkInNewTab = function (url: string) {
   window.open(url, "_blank");
@@ -306,6 +319,23 @@ const openMappingMenu = function (evt: Event, providerInstance: string) {
   onMenu(evt, mapping);
 };
 
+const { onHold, onTouchStart, swallowClickAfterHold } =
+  useHoldToOpenMenu(openMappingMenu);
+
+// a link to the item at the source, which a local file has none of
+const hasProviderLink = function (mapping: ProviderMappingRef) {
+  return !!mapping.url && !mapping.provider_domain.startsWith("file");
+};
+
+// without the technical line and its link, the row itself opens the source
+const opensOnClick = function (providerMapping: ProviderMapping) {
+  return !expert.value && hasProviderLink(providerMapping);
+};
+
+const onRowClick = function (providerMapping: ProviderMapping) {
+  if (opensOnClick(providerMapping)) openLinkInNewTab(providerMapping.url!);
+};
+
 const getProviderName = function (providerMapping: ProviderMapping) {
   const providerInstance = api.getProvider(providerMapping.provider_instance);
   if (providerInstance) {
@@ -337,10 +367,7 @@ const onMenu = function (evt: Event, providerMapping: ProviderMappingRef) {
     },
   ];
   // visit website button
-  if (
-    providerMapping.url &&
-    !providerMapping.provider_domain.startsWith("file")
-  ) {
+  if (hasProviderLink(providerMapping)) {
     menuItems.push({
       label: t("tooltip.open_provider_link"),
       icon: ExternalLink,
