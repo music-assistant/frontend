@@ -4,7 +4,11 @@ import {
   type ConfigEntryUI,
 } from "@/helpers/config_entry_ui";
 import { HASS_DOMAIN } from "@/helpers/home_assistant";
-import { ConfigEntryType } from "@/plugins/api/interfaces";
+import {
+  ConfigEntryType,
+  type ConfigValueOption,
+  type ConfigValueType,
+} from "@/plugins/api/interfaces";
 
 /** The control a config entry is rendered with. */
 export type ConfigFieldKind =
@@ -95,4 +99,54 @@ export const isRequiredValueMissing = (
   const { value } = entry;
   if (value === null || value === undefined) return true;
   return kind !== "select" && value === "";
+};
+
+/**
+ * The options of a dropdown or option list: the option holding the default is
+ * marked as such, and a value the options do not list yet, such as a player
+ * control registered moments ago, is offered as an option of its own so the
+ * control does not show up blank.
+ *
+ * @param defaultSuffix The text put after the title of the default option.
+ */
+export const configFieldOptions = (
+  entry: Pick<ConfigEntryUI, "options" | "value" | "default_value">,
+  defaultSuffix: string,
+): ConfigValueOption[] => {
+  const options: ConfigValueOption[] = entry.options.map((option) => ({
+    // option titles are resolved server-side for the connection locale
+    title: option.title?.toString() || option.value?.toString() || "",
+    value: option.value,
+    disabled: option.disabled,
+    disabled_reason: option.disabled_reason,
+    description: option.description,
+  }));
+  for (const option of options) {
+    if (option.value == entry.default_value) {
+      option.title += ` [${defaultSuffix}]`;
+    }
+  }
+  const listed = new Set<ConfigValueType>(options.map((o) => o.value));
+  const values = Array.isArray(entry.value) ? entry.value : [entry.value];
+  for (const value of values) {
+    if (value === null || value === undefined || listed.has(value)) continue;
+    listed.add(value);
+    options.push({ title: value.toString(), value });
+  }
+  return options;
+};
+
+/**
+ * The first enabled option whose title starts with `prefix`, ignoring case: what
+ * typing on a closed dropdown picks.
+ */
+export const findOptionByPrefix = (
+  options: ConfigValueOption[],
+  prefix: string,
+): ConfigValueOption | undefined => {
+  const lower = prefix.toLowerCase();
+  return options.find(
+    (option) =>
+      !option.disabled && option.title?.toLowerCase().startsWith(lower),
+  );
 };

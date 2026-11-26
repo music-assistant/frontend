@@ -6,6 +6,8 @@ import {
 import { describe, expect, it } from "vitest";
 import {
   configFieldKind,
+  configFieldOptions,
+  findOptionByPrefix,
   isRequiredValueMissing,
   type ConfigFieldKind,
 } from "./config_field";
@@ -86,5 +88,34 @@ describe("isRequiredValueMissing", () => {
     expect(isRequiredValueMissing({ required: false, value: "" }, "text")).toBe(
       false,
     );
+  });
+});
+
+describe("configFieldOptions", () => {
+  it("marks the default and lists a value the options do not hold", () => {
+    const options = configFieldOptions(
+      entry({ options: OPTIONS, default_value: "flac", value: "opus" }),
+      "default",
+    );
+
+    expect(options.map((option) => option.title)).toEqual([
+      "FLAC [default]",
+      "MP3",
+      "opus",
+    ]);
+  });
+});
+
+describe("findOptionByPrefix", () => {
+  it("picks the first enabled option starting with what was typed", () => {
+    const options = [
+      { title: "Mono", value: "mono", disabled: true },
+      { title: "Multi", value: "multi" },
+      { title: "Stereo", value: "stereo" },
+    ];
+
+    expect(findOptionByPrefix(options, "m")?.value).toBe("multi");
+    expect(findOptionByPrefix(options, "ST")?.value).toBe("stereo");
+    expect(findOptionByPrefix(options, "x")).toBeUndefined();
   });
 });

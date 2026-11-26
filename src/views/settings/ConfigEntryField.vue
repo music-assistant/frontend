@@ -169,35 +169,19 @@
       @update:value="onUpdateValue($event)"
     />
 
-    <!-- value with dropdown -->
-    <v-select
+    <SelectField
       v-else-if="kind === 'select'"
-      :model-value="confEntry.value"
-      :menu-props="{ zIndex: 10000 }"
-      :chips="confEntry.multi_value"
-      :clearable="clearable"
-      :multiple="confEntry.multi_value"
-      :items="displayOptions"
-      :item-props="
-        (item) => ({
-          title: item.title,
-          value: item.value,
-          disabled: item.disabled,
-          subtitle: item.disabled ? item.disabled_reason : item.description,
-        })
-      "
-      :disabled="isFieldDisabled"
       :label="displayLabel()"
+      :options="displayOptions"
+      :value="confEntry.value"
+      :multiple="!!confEntry.multi_value"
+      :clearable="clearable"
+      :disabled="isFieldDisabled"
       :required="confEntry.required"
-      :rules="[
-        (v) =>
-          !((v === null || v === undefined) && confEntry.required) ||
-          $t('settings.invalid_input'),
-      ]"
-      variant="outlined"
-      density="comfortable"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
+      :error="validation.error.value"
+      @update:value="onUpdateValue($event)"
+      @clear="onClear"
+      @blur="validation.touch"
     />
 
     <!-- int value without range -->
@@ -282,7 +266,6 @@ import {
 import {
   ConfigEntry,
   ConfigEntryType,
-  ConfigValueOption,
   ConfigValueType,
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
@@ -294,6 +277,7 @@ import HassControlsField from "./fields/HassControlsField.vue";
 import LabelField from "./fields/LabelField.vue";
 import PairingCodeField from "./fields/PairingCodeField.vue";
 import RadioGroupField from "./fields/RadioGroupField.vue";
+import SelectField from "./fields/SelectField.vue";
 import { useConfigFieldValidation } from "@/composables/useConfigFormValidation";
 import {
   ConfigEntryUI,
@@ -301,6 +285,7 @@ import {
 } from "@/helpers/config_entry_ui";
 import {
   configFieldKind,
+  configFieldOptions,
   isRequiredValueMissing,
 } from "@/helpers/config_field";
 import { isEmbeddedImage } from "@/helpers/utils";
@@ -391,37 +376,9 @@ const onClear = () => {
   emit("update:value", null);
 };
 
-const displayOptions = computed(() => {
-  const options: ConfigValueOption[] = [];
-  for (const orgOption of props.confEntry.options) {
-    // option titles are resolved server-side for the connection locale; use them directly
-    const option: ConfigValueOption = {
-      title: orgOption.title?.toString() || orgOption.value?.toString() || "",
-      value: orgOption.value,
-      disabled: orgOption.disabled,
-      disabled_reason: orgOption.disabled_reason,
-      description: orgOption.description,
-    };
-    if (option.value == props.confEntry.default_value) {
-      option.title += ` [${$t("settings.default")}]`;
-    }
-    options.push(option);
-  }
-  // a value the server has not listed yet - a player control registered moments ago -
-  // would leave the select blank, so it is offered as an option of its own
-  const listedValues = new Set(options.map((option) => option.value));
-  const values = Array.isArray(props.confEntry.value)
-    ? props.confEntry.value
-    : [props.confEntry.value];
-  for (const value of values) {
-    if (value === null || value === undefined || listedValues.has(value)) {
-      continue;
-    }
-    listedValues.add(value);
-    options.push({ title: value.toString(), value });
-  }
-  return options;
-});
+const displayOptions = computed(() =>
+  configFieldOptions(props.confEntry, $t("settings.default")),
+);
 </script>
 
 <style scoped>
