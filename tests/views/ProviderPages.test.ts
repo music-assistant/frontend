@@ -24,6 +24,7 @@ import {
   Scope,
   type User,
   UserRole,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import CommunityMovedNotice from "@/components/settings/catalog/CommunityMovedNotice.vue";
@@ -219,6 +220,7 @@ const ProviderRowStub = {
   props: [
     "config",
     "variant",
+    "columns",
     "manageable",
     "reconfigurable",
     "syncing",
@@ -538,6 +540,7 @@ describe("Providers", () => {
       access: {
         owner: "user-marcel",
         shared_users: ["user-sam"],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
         sharing: ProviderSharing.SELECTED,
       },
     });
@@ -552,6 +555,7 @@ describe("Providers", () => {
       access: {
         owner: null,
         shared_users: ["user-sam"],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
         sharing: ProviderSharing.SELECTED,
       },
     });
@@ -568,7 +572,12 @@ describe("Providers", () => {
     "says nobody can use a music source without an owner that is %s",
     async (_label, sharing) => {
       const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
-        access: { owner: null, shared_users: [], sharing },
+        access: {
+          owner: null,
+          shared_users: [],
+          sharing,
+          shared_playback: SharedPlayback.WITHOUT_OWN,
+        },
       });
 
       expect(onlyRow(wrapper).props("accessSummary")).toBe(
@@ -582,6 +591,7 @@ describe("Providers", () => {
       access: {
         owner: "user-gone",
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
         sharing: ProviderSharing.PRIVATE,
       },
     });
@@ -596,6 +606,7 @@ describe("Providers", () => {
       access: {
         owner: "user-marcel",
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
         sharing: ProviderSharing.PRIVATE,
       },
     });
@@ -610,6 +621,7 @@ describe("Providers", () => {
       access: {
         owner: "user-sam",
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
         sharing: ProviderSharing.PRIVATE,
       },
     });
@@ -691,6 +703,22 @@ describe("Providers", () => {
     );
     expect(accessItem.hide).toBe(true);
     expect(onlyRow(wrapper).props("accessSummary")).toBeNull();
+  });
+
+  it("gives a list of providers that offer nothing and serve nobody no columns", async () => {
+    pageType = ProviderType.PLAYER;
+
+    const wrapper = await mountProviders(ProviderStatus.LOADED, true, true, {
+      type: ProviderType.PLAYER,
+    });
+
+    expect(wrapper.find('[data-testid="provider-columns"]').exists()).toBe(
+      false,
+    );
+    expect(onlyRow(wrapper).props("columns")).toEqual({
+      offers: false,
+      access: false,
+    });
   });
 
   it("lists remove as the last menu item, marked as destructive", async () => {
@@ -1142,6 +1170,24 @@ describe("Providers labelled with what they offer", () => {
     expect(rowFor(wrapper, "airplay_receiver--1").props("labels")).toEqual([
       "live",
     ]);
+  });
+
+  it("gives the list a column for what its sources offer and who can use them", async () => {
+    const wrapper = await mountWithConfigs(labelledSources());
+
+    expect(
+      wrapper
+        .findAll('[data-testid="provider-columns"] span')
+        .map((column) => column.text()),
+    ).toEqual([
+      "settings.provider_columns.name",
+      "settings.provider_columns.offers",
+      "settings.provider_columns.access",
+    ]);
+    expect(rowFor(wrapper, "spotify--own").props("columns")).toEqual({
+      offers: true,
+      access: true,
+    });
   });
 
   it("offers a chip for every label a listed source has, after All", async () => {
@@ -2018,6 +2064,7 @@ function ownSource() {
     access: {
       owner: owner.user_id,
       shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
       sharing: ProviderSharing.PRIVATE,
     },
     domain: "spotify",
@@ -2032,6 +2079,7 @@ function otherSource() {
     access: {
       owner: member.user_id,
       shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
       sharing: ProviderSharing.PRIVATE,
     },
     domain: "spotify",
@@ -2047,6 +2095,7 @@ function householdSource() {
     access: {
       owner: null,
       shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
       sharing: ProviderSharing.EVERYONE,
     },
     domain: "spotify",

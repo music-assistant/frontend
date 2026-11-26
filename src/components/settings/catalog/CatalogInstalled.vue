@@ -28,18 +28,15 @@
           :data-domain="item.config.domain"
         >
           <template v-if="!item.config.enabled" #badges>
-            <Badge variant="outline">
+            <Badge variant="outline" class="h-5 rounded-md px-1.5 text-[11px]">
               {{ $t("settings.provider_status_disabled") }}
             </Badge>
           </template>
-          <p
-            v-if="subtitle(item)"
-            class="m-0 mt-0.5 text-xs text-muted-foreground"
-          >
+          <template v-if="subtitle(item)" #subtitle>
             {{ subtitle(item) }}
-          </p>
+          </template>
           <p
-            class="m-0 mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground"
+            class="m-0 mt-2.5 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground"
           >
             {{ description(item) }}
           </p>

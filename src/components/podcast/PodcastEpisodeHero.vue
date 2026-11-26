@@ -1,111 +1,77 @@
 <template>
   <DetailHero
-    class="podcast-episode-hero"
     :item="item"
     :backdrop="backdrop"
     :blur-backdrop="blurBackdrop"
-    :height="400"
-    :phone-height="360"
     @edit-rows="emit('edit-rows')"
   >
-    <template v-if="item" #main>
-      <div class="podcast-episode-hero__main">
-        <div class="podcast-episode-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :rounded="false" />
-        </div>
+    <template v-if="item" #cover>
+      <DetailHeroCover :item="item" />
+    </template>
 
-        <div class="podcast-episode-hero__text">
-          <h1 class="podcast-episode-hero__name">{{ item.name }}</h1>
-
-          <div class="podcast-episode-hero__meta">
-            <div class="podcast-episode-hero__line">
-              <PodcastIcon :size="16" class="podcast-episode-hero__icon" />
-              <span class="podcast-episode-hero__line-text">
-                <button
-                  type="button"
-                  class="podcast-episode-hero__link"
-                  @click="gotoPodcast"
-                >
-                  {{ item.podcast.name }}
-                </button>
-              </span>
-            </div>
-            <div
-              v-if="releaseDate || item.duration || episodeNumber"
-              class="podcast-episode-hero__line podcast-episode-hero__facts"
-            >
-              <span
-                v-if="episodeNumber"
-                class="podcast-episode-hero__fact"
-                :title="episodeNumber.label"
-              >
-                <span aria-hidden="true">{{ episodeNumber.short }}</span>
-                <span class="sr-only">{{ episodeNumber.label }}</span>
-              </span>
-              <span v-if="releaseDate" class="podcast-episode-hero__fact">
-                <Calendar :size="16" class="podcast-episode-hero__icon" />
-                {{ releaseDate }}
-              </span>
-              <span v-if="item.duration" class="podcast-episode-hero__fact">
-                <Timer :size="16" class="podcast-episode-hero__icon" />
-                {{ formatDuration(item.duration) }}
-              </span>
-            </div>
-          </div>
-
-          <div class="podcast-episode-hero__actions">
-            <DetailHeroPlayButton :item="item" :parent-item="parentPodcast" />
-            <template v-if="showSteppers">
-              <DetailHeroButton
-                :icon="ChevronLeft"
-                :label="$t('previous_episode')"
-                icon-only
-                :disabled="!hasPrevious"
-                @click="emit('previous')"
-              />
-              <DetailHeroButton
-                :icon="ChevronRight"
-                :label="$t('next_episode')"
-                icon-only
-                :disabled="!hasNext"
-                @click="emit('next')"
-              />
-            </template>
-            <span
-              v-if="item.fully_played"
-              class="podcast-episode-hero__badge"
-              role="img"
-              :title="$t('item_fully_played')"
-              :aria-label="$t('item_fully_played')"
-            >
-              <Check :size="20" />
-            </span>
-            <span
-              v-else-if="item.resume_position_ms"
-              class="podcast-episode-hero__badge"
-              role="img"
-              :title="$t('item_in_progress')"
-              :aria-label="$t('item_in_progress')"
-            >
-              <ClockFading :size="20" />
-            </span>
-            <!-- holds the played state's place so the transcript button keeps
-            its position while the episode is unplayed -->
-            <span
-              v-else
-              class="podcast-episode-hero__badge podcast-episode-hero__badge--empty"
-              aria-hidden="true"
-            ></span>
-            <DetailHeroButton
-              v-if="showTranscript"
-              :icon="Captions"
-              :label="$t('transcript')"
-              :icon-only="isPhone"
-              @click="emit('transcript')"
-            />
-          </div>
-        </div>
+    <template v-if="item" #meta>
+      <DetailHeroMetaLine :icon="PodcastIcon">
+        <DetailHeroLink @click="gotoPodcast">
+          {{ item.podcast.name }}
+        </DetailHeroLink>
+      </DetailHeroMetaLine>
+      <!-- wraps on a narrow phone rather than running past the edge -->
+      <div
+        v-if="releaseDate || item.duration || episodeNumber"
+        class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1"
+      >
+        <span
+          v-if="episodeNumber"
+          class="inline-flex items-center gap-1.5 whitespace-nowrap"
+          :title="episodeNumber.label"
+        >
+          <span aria-hidden="true">{{ episodeNumber.short }}</span>
+          <span class="sr-only">{{ episodeNumber.label }}</span>
+        </span>
+        <span
+          v-if="releaseDate"
+          class="inline-flex items-center gap-1.5 whitespace-nowrap"
+        >
+          <Calendar :size="16" class="flex-none" aria-hidden="true" />
+          {{ releaseDate }}
+        </span>
+        <span
+          v-if="item.duration"
+          class="inline-flex items-center gap-1.5 whitespace-nowrap"
+        >
+          <Timer :size="16" class="flex-none" aria-hidden="true" />
+          {{ formatDuration(item.duration) }}
+        </span>
       </div>
+    </template>
+
+    <template v-if="item" #actions>
+      <DetailHeroPlayButton :item="item" :parent-item="parentPodcast" />
+      <template v-if="showSteppers">
+        <DetailHeroButton
+          :icon="ChevronLeft"
+          :label="$t('previous_episode')"
+          icon-only
+          :disabled="!hasPrevious"
+          @click="emit('previous')"
+        />
+        <DetailHeroButton
+          :icon="ChevronRight"
+          :label="$t('next_episode')"
+          icon-only
+          :disabled="!hasNext"
+          @click="emit('next')"
+        />
+      </template>
+      <!-- holds its place while unplayed, so the transcript button keeps its position -->
+      <DetailHeroPlayedState :item="item" />
+      <DetailHeroButton
+        v-if="showTranscript"
+        :icon="Captions"
+        :label="$t('transcript')"
+        :icon-only="isPhone"
+        @click="emit('transcript')"
+      />
     </template>
 
     <template v-if="item" #aside>
@@ -119,10 +85,13 @@
 <script setup lang="ts">
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
+import DetailHeroCover from "@/components/details/DetailHeroCover.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
+import DetailHeroLink from "@/components/details/DetailHeroLink.vue";
+import DetailHeroMetaLine from "@/components/details/DetailHeroMetaLine.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
+import DetailHeroPlayedState from "@/components/details/DetailHeroPlayedState.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import {
   episodeReleaseDate,
   podcastEpisodeNumber,
@@ -133,10 +102,8 @@ import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import {
   Calendar,
   Captions,
-  Check,
   ChevronLeft,
   ChevronRight,
-  ClockFading,
   PodcastIcon,
   Timer,
 } from "@lucide/vue";
@@ -189,147 +156,3 @@ const gotoPodcast = function () {
   });
 };
 </script>
-
-<style scoped>
-.podcast-episode-hero__main {
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-  width: 100%;
-  min-width: 0;
-}
-.podcast-episode-hero__cover {
-  width: 200px;
-  height: 200px;
-  flex: none;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-.podcast-episode-hero__text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-  padding-bottom: 4px;
-}
-
-.podcast-episode-hero__name {
-  margin: 0;
-  font-size: 44px;
-  font-weight: 500;
-  letter-spacing: -1.1px;
-  line-height: 1.2;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.podcast-episode-hero__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-}
-.podcast-episode-hero__line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.podcast-episode-hero__icon {
-  flex: none;
-}
-.podcast-episode-hero__line-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-/* the podcast reads as a link in the line of text, so the button chrome goes */
-.podcast-episode-hero__link {
-  display: inline;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  vertical-align: baseline;
-  cursor: pointer;
-}
-.podcast-episode-hero__link:hover {
-  text-decoration: underline;
-}
-.podcast-episode-hero__link:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-/* wraps on a narrow phone rather than running past the edge */
-.podcast-episode-hero__facts {
-  flex-wrap: wrap;
-  gap: 4px 16px;
-}
-.podcast-episode-hero__fact {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.podcast-episode-hero__actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-/* the same chrome as the hero buttons, for the facts that are not actions */
-.podcast-episode-hero__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.4);
-}
-.podcast-episode-hero__badge--empty {
-  visibility: hidden;
-}
-
-@container detail-hero (width < 48rem) {
-  .podcast-episode-hero__main {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  .podcast-episode-hero__cover {
-    width: 132px;
-    height: 132px;
-  }
-  .podcast-episode-hero__name {
-    font-size: 30px;
-    letter-spacing: -0.7px;
-  }
-  .podcast-episode-hero__meta {
-    font-size: 14px;
-  }
-  .podcast-episode-hero__actions {
-    gap: 10px;
-  }
-}
-@media (max-width: 768px) {
-  .podcast-episode-hero__badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-  }
-}
-</style>

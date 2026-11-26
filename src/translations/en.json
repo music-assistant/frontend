@@ -162,6 +162,10 @@
         "enable": "Enable",
         "enable_player": "Enable this player",
         "invalid_input": "The input is invalid",
+        "clear_value": "Clear {0}",
+        "remove_value": "Remove {0}",
+        "show_password": "Show password",
+        "hide_password": "Hide password",
         "metadataproviders": "Metadata sources",
         "player_disabled": "This player is disabled",
         "player_name": "Custom player name",
@@ -755,6 +759,7 @@
             "description": "Extend Music Assistant with more music sources, support for more players and powerful plugins.",
             "search": "Search the Marketplace",
             "search_results": "Search results",
+            "choose_section": "Choose what to browse",
             "discover": "Discover",
             "installed": "Installed",
             "popular": "Popular",
@@ -783,7 +788,6 @@
             "manage": "Manage",
             "manage_named": "Manage {name}",
             "by_maintainers": "by {maintainers}",
-            "by_team": "by the Music Assistant team",
             "created_by": "Created and maintained by {maintainers}",
             "created_by_team": "Created and maintained by the Music Assistant team",
             "request_change": "Request a change",
@@ -910,7 +914,18 @@
                 "nobody": "Nobody can use this source until it has an owner or is shared with someone."
             },
             "updated": "Access updated",
-            "nobody": "Nobody can use this source"
+            "nobody": "Nobody can use this source",
+            "shared_playback": "Playback by others",
+            "shared_playback_options": {
+              "never": "Only the owner",
+              "without_own": "Users without an account of their own",
+              "when_busy": "Also when their own account is busy"
+            },
+            "shared_playback_hints": {
+              "never": "Others can browse this account but never play from it.",
+              "without_own": "Plays for users who have no account of this service, nor one shared with them by name.",
+              "when_busy": "Also plays for users whose own account is busy or unavailable."
+            }
         },
         "player_providers_description": "Configure player support for your audio output devices",
         "metadata_description": "Metadata sources, language, online lookups, genres and the artwork cache",
@@ -1136,6 +1151,11 @@
         "provider_labels": {
             "filter": "Filter on what they offer",
             "all": "All"
+        },
+        "provider_columns": {
+            "name": "Name",
+            "offers": "Offers",
+            "access": "Who can use it"
         },
         "source_labels": {
             "library": "Library",
@@ -3071,6 +3091,8 @@
     "lyrics_hide": "Hide lyrics for this track",
     "lyrics_loading": "Lyrics are being fetched...",
     "show_audio_chain_details": "Show audio pipeline details",
+    "all_genres": "All {count} genres",
+    "genres_of_item": "Every genre of {name}",
     "show_less": "Show less",
     "show_more": "Show more",
     "autoplay_on_title": "Autoplay is enabled",
