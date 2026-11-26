@@ -423,10 +423,13 @@ describe("getPlaylistMigrationProviders", () => {
 describe("mappedServices", () => {
   const SPOTIFY = { name: "Spotify", domain: "spotify" };
 
-  const item = (...mappings: Array<{ domain: string; instance: string }>) => ({
-    provider_mappings: mappings.map(({ domain, instance }) => ({
+  const item = (
+    ...mappings: Array<{ domain: string; instance: string; url?: string }>
+  ) => ({
+    provider_mappings: mappings.map(({ domain, instance, url = null }) => ({
       provider_domain: domain,
       provider_instance: instance,
+      url,
     })) as ProviderMapping[],
   });
 
@@ -463,6 +466,20 @@ describe("mappedServices", () => {
     expect(
       mappedServices(item({ domain: "filesystem_smb", instance: "smb--one" })),
     ).toEqual([{ domain: "filesystem_smb", name: "My files" }]);
+  });
+
+  it("links to the first page any account of the service has", () => {
+    mocks.getProviderManifest.mockReturnValue(SPOTIFY);
+
+    expect(
+      mappedServices(
+        item(
+          { domain: "spotify", instance: "spotify--one" },
+          { domain: "spotify", instance: "spotify--two", url: "https://a" },
+          { domain: "spotify", instance: "spotify--three", url: "https://b" },
+        ),
+      ),
+    ).toEqual([{ domain: "spotify", name: "Spotify", url: "https://a" }]);
   });
 
   // the server sends mappings whose provider fields are the string "None";

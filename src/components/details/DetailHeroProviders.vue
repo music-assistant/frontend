@@ -4,8 +4,21 @@
     <span class="detail-hero-providers__pill">
       <template v-for="(provider, index) in providers" :key="provider.domain">
         <span v-if="index > 0" class="detail-hero-providers__sep">·</span>
-        <ProviderIcon :domain="provider.domain" :size="14" />
-        <span class="detail-hero-providers__name">{{ provider.name }}</span>
+        <!-- a service with a page for the item opens it in a new tab -->
+        <component
+          :is="provider.href ? 'a' : 'span'"
+          class="detail-hero-providers__service inline-flex items-center gap-[5px]"
+          :class="{ [LINK_CLASS]: provider.href }"
+          :href="provider.href"
+          :target="provider.href ? '_blank' : undefined"
+          :rel="provider.href ? 'noopener noreferrer' : undefined"
+          :aria-label="provider.href ? provider.name : undefined"
+        >
+          <ProviderIcon :domain="provider.domain" :size="14" />
+          <span class="detail-hero-providers__name group-hover:underline">{{
+            provider.name
+          }}</span>
+        </component>
       </template>
     </span>
   </div>
@@ -13,6 +26,7 @@
 
 <script setup lang="ts">
 import ProviderIcon from "@/components/ProviderIcon.vue";
+import { isWebUrl } from "@/helpers/utils";
 import { mappedServices } from "@/plugins/api/helpers";
 import type { MediaItem } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
@@ -23,8 +37,17 @@ export interface Props {
 }
 const props = defineProps<Props>();
 
+const LINK_CLASS =
+  "group text-inherit no-underline focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--v-theme-primary))]";
+
 // one entry per music service, however many accounts of it hold the item
-const providers = computed(() => mappedServices(props.item));
+// a local file's link is its path, which a browser cannot open
+const providers = computed(() =>
+  mappedServices(props.item).map((service) => ({
+    ...service,
+    href: isWebUrl(service.url) ? service.url : undefined,
+  })),
+);
 
 const isPhone = computed(() => isPhoneSizedScreen());
 </script>
@@ -64,6 +87,10 @@ const isPhone = computed(() => isPhoneSizedScreen());
   .detail-hero-providers__name,
   .detail-hero-providers__sep {
     display: none;
+  }
+  /* with the names gone, a link shows it is pointed at by dimming */
+  a.detail-hero-providers__service:hover {
+    opacity: 0.8;
   }
   .detail-hero-providers__pill {
     height: auto;
