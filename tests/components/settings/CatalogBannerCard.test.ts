@@ -76,6 +76,20 @@ describe("CatalogBannerCard", () => {
     ).toBe("light");
   });
 
+  it("draws a light banner for an icon without a colour of its own", () => {
+    registerIcon("spotify", SVG_WHITE);
+
+    expect(
+      mountCard().get("[data-testid='catalog-art']").attributes("data-art"),
+    ).toBe("light");
+
+    registerIcon("spotify", SVG_GREEN);
+
+    expect(
+      mountCard().get("[data-testid='catalog-art']").attributes("data-art"),
+    ).toBe("colour");
+  });
+
   it("puts an icon drawn in white only on a dark tile", () => {
     registerIcon("spotify", SVG_WHITE);
 
@@ -93,6 +107,26 @@ describe("CatalogBannerCard", () => {
       wrapper.get("[data-testid='catalog-icon-image']").attributes("src"),
     ).toBe(SVG_GREEN);
   });
+
+  it("puts the badges next to its name and the subtitle below it", () => {
+    const wrapper = mountCard(
+      {},
+      { badges: "<span data-testid='badge'>Beta</span>", subtitle: "Library" },
+    );
+
+    expect(
+      wrapper.get("h3").element.nextElementSibling?.getAttribute("data-testid"),
+    ).toBe("badge");
+    expect(wrapper.get("[data-testid='catalog-card-subtitle']").text()).toBe(
+      "Library",
+    );
+  });
+
+  it("leaves out the subtitle when it is given none", () => {
+    expect(
+      mountCard().find("[data-testid='catalog-card-subtitle']").exists(),
+    ).toBe(false);
+  });
 });
 
 function registerIcon(domain: string, icon: string) {
@@ -105,8 +139,10 @@ function registerIcon(domain: string, icon: string) {
 
 function mountCard(
   props: Partial<InstanceType<typeof CatalogBannerCard>["$props"]> = {},
+  slots: Record<string, string> = {},
 ) {
   return mount(CatalogBannerCard, {
     props: { domain: "spotify", name: "Spotify", ...props },
+    slots,
   });
 }
