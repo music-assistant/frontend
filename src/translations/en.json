@@ -163,6 +163,8 @@
         "enable_player": "Enable this player",
         "invalid_input": "The input is invalid",
         "clear_value": "Clear {0}",
+        "show_password": "Show password",
+        "hide_password": "Hide password",
         "metadataproviders": "Metadata sources",
         "player_disabled": "This player is disabled",
         "player_name": "Custom player name",

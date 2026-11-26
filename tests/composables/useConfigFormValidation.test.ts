@@ -2,9 +2,15 @@ import {
   provideConfigFormValidation,
   useConfigFieldValidation,
 } from "@/composables/useConfigFormValidation";
+import { ConfigEntryType, type ConfigEntry } from "@/plugins/api/interfaces";
+import ConfigEntryField from "@/views/settings/ConfigEntryField.vue";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { h, nextTick, ref, type VNode } from "vue";
+
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string) => key,
+}));
 
 // a field that is invalid while `invalid` is set; its button stands in for the
 // user changing or leaving the field
@@ -68,4 +74,36 @@ describe("useConfigFormValidation", () => {
 
     expect(validate()).toBe(true);
   });
+
+  it("fails the check for an empty required config field", () => {
+    const { validate } = mountForm(() => [configField(requiredText())]);
+
+    expect(validate()).toBe(false);
+  });
+
+  // the save button lets a field the user can not fill in through as well
+  it("lets an empty read-only config field through", () => {
+    const { validate } = mountForm(() => [
+      configField({ ...requiredText(), read_only: true }),
+    ]);
+
+    expect(validate()).toBe(true);
+  });
 });
+
+function requiredText(): ConfigEntry {
+  return {
+    key: "server",
+    type: ConfigEntryType.STRING,
+    category: "generic",
+    default_value: null,
+    label: "server",
+    required: true,
+    options: [],
+    value: "",
+  };
+}
+
+function configField(confEntry: ConfigEntry) {
+  return h(ConfigEntryField, { confEntry, showPasswordValues: false });
+}

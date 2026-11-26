@@ -113,32 +113,22 @@
       </div>
     </div>
 
-    <!-- password value -->
-    <v-text-field
+    <TextField
       v-else-if="kind === 'secret'"
-      :model-value="confEntry.value"
+      type="password"
       :label="displayLabel()"
-      :required="confEntry.required"
-      :disabled="isFieldDisabled"
-      :rules="[
-        (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
-      ]"
-      :type="showPasswordValues ? 'text' : 'password'"
-      :append-inner-icon="
-        showPasswordValues
-          ? 'mdi-eye'
-          : typeof confEntry.value == 'string' &&
-              confEntry.value.includes(SECURE_STRING_SUBSTITUTE)
-            ? ''
-            : 'mdi-eye-off'
-      "
-      variant="outlined"
-      density="comfortable"
-      clearable
+      :value="confEntry.value"
       :readonly="!!confEntry.action"
-      @update:model-value="onUpdateValue($event)"
-      @click:append-inner="emit('togglePassword')"
-      @click:clear="onClear"
+      :disabled="isFieldDisabled"
+      :required="confEntry.required"
+      :error="validation.error.value"
+      :password-visible="showPasswordValues"
+      :password-toggle="canRevealPassword"
+      clearable
+      @update:value="onUpdateValue($event)"
+      @clear="onClear"
+      @blur="validation.touch"
+      @toggle-password="emit('togglePassword')"
     />
 
     <!-- pairing code: one box per code character -->
@@ -184,23 +174,20 @@
       @blur="validation.touch"
     />
 
-    <!-- int value without range -->
-    <v-text-field
+    <TextField
       v-else-if="kind === 'number'"
-      :model-value="confEntry.value"
+      type="number"
+      :step="confEntry.type === ConfigEntryType.FLOAT ? 'any' : undefined"
+      :label="displayLabel()"
+      :value="confEntry.value"
       :placeholder="confEntry.default_value?.toString()"
       :disabled="isFieldDisabled"
-      :label="displayLabel()"
       :required="confEntry.required"
-      :rules="[
-        (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
-      ]"
-      variant="outlined"
-      density="comfortable"
       :clearable="!confEntry.required"
-      type="number"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
+      :error="validation.error.value"
+      @update:value="onUpdateValue($event)"
+      @clear="onClear"
+      @blur="validation.touch"
     />
 
     <!-- icon picker -->
@@ -234,23 +221,20 @@
       @click:clear="onClear"
     />
 
-    <!-- all other: textbox with single value -->
-    <v-text-field
+    <TextField
       v-else
-      :model-value="confEntry.value"
-      :placeholder="confEntry.default_value?.toString()"
-      clearable
-      :disabled="isFieldDisabled"
+      type="text"
       :label="displayLabel()"
-      :required="confEntry.required"
-      :rules="[
-        (v) => !(!v && confEntry.required) || $t('settings.invalid_input'),
-      ]"
-      variant="outlined"
-      density="comfortable"
+      :value="confEntry.value"
+      :placeholder="confEntry.default_value?.toString()"
       :readonly="!!confEntry.action"
-      @update:model-value="onUpdateValue($event)"
-      @click:clear="onClear"
+      :disabled="isFieldDisabled"
+      :required="confEntry.required"
+      :error="validation.error.value"
+      clearable
+      @update:value="onUpdateValue($event)"
+      @clear="onClear"
+      @blur="validation.touch"
     />
   </div>
 </template>
@@ -278,6 +262,7 @@ import LabelField from "./fields/LabelField.vue";
 import PairingCodeField from "./fields/PairingCodeField.vue";
 import RadioGroupField from "./fields/RadioGroupField.vue";
 import SelectField from "./fields/SelectField.vue";
+import TextField from "./fields/TextField.vue";
 import { useConfigFieldValidation } from "@/composables/useConfigFormValidation";
 import {
   ConfigEntryUI,
@@ -375,6 +360,16 @@ const onClear = () => {
   validation.touch();
   emit("update:value", null);
 };
+
+// a stored secret only reads back as a placeholder, which there is no use in showing
+const canRevealPassword = computed(
+  () =>
+    props.showPasswordValues ||
+    !(
+      typeof props.confEntry.value === "string" &&
+      props.confEntry.value.includes(SECURE_STRING_SUBSTITUTE)
+    ),
+);
 
 const displayOptions = computed(() =>
   configFieldOptions(props.confEntry, $t("settings.default")),
