@@ -90,6 +90,8 @@ export default defineConfig({
   },
   build: {
     outDir: "./music_assistant_frontend",
+    // Vite's defaults with Chrome 92 for older Cast receivers, which lack range media queries
+    cssTarget: ["chrome92", "edge111", "firefox114", "safari16.4", "ios16.4"],
     rollupOptions: {
       output: {
         codeSplitting: {
