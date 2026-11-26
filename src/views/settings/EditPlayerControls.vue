@@ -5,6 +5,7 @@
       :title="$t('settings.category.player_controls')"
       :description="playerName"
       :documentation-url="documentationUrl"
+      :reset-disabled="!config?.enabled"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -80,7 +81,7 @@ const configEntries = computed(() => {
   const hassInstance = getHassProviderInstance();
   const entries: ConfigEntryUI[] = [];
   for (const entry of Object.values(config.value.values)) {
-    if (getPlayerConfigPage(entry) !== "controls") continue;
+    if (getPlayerConfigPage(entry, player.value) !== "controls") continue;
     entries.push(entry);
     const hassControlKey =
       HASS_CONTROL_KEY_BY_PLAYER_KEY[entry.key as HassControlPlayerKey];

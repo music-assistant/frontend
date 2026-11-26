@@ -1538,8 +1538,6 @@
     "shuffle_disable": "Disable shuffle",
     "shuffle_enable": "Enable shuffle",
     "open_dsp_settings": "Open DSP settings",
-    "open_output_protocol_settings": "Open output protocol settings",
-    "open_player_control_settings": "Open player control settings",
     "audiobook": "Audiobook",
     "audiobooks": "Audiobooks",
     "chapter": "Chapter",

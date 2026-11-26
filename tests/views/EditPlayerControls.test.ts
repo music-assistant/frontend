@@ -117,7 +117,20 @@ describe("EditPlayerControls", () => {
       description: "Kitchen",
       documentationUrl:
         "https://music-assistant.io/settings/individual-player/#player-controls",
+      resetDisabled: false,
     });
+  });
+
+  it("keeps the reset out of reach while the player is disabled", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerSettingsConfig({ enabled: false }),
+    );
+
+    const header = (await mountPage()).findComponent({
+      name: "SettingsHeaderCard",
+    });
+
+    expect(header.props("resetDisabled")).toBe(true);
   });
 
   it("shows the player controls only, with the entity picker under each control entry", async () => {

@@ -6,7 +6,11 @@ import {
   playerBelongsToProviders,
 } from "@/helpers/player_config";
 import type { MusicAssistantApi } from "@/plugins/api";
-import { type Player, ProviderType } from "@/plugins/api/interfaces";
+import {
+  type Player,
+  PlayerType,
+  ProviderType,
+} from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { outputProtocol } from "../../tests/fixtures/outputProtocol";
 import { playerConfig } from "../../tests/fixtures/playerConfig";
@@ -150,6 +154,22 @@ describe("getPlayerConfigPage", () => {
     ["announcements", "player"],
     ["audio_sources", "player"],
   ])("shows an entry of category %s on the %s page", (category, page) => {
-    expect(getPlayerConfigPage({ category })).toBe(page);
+    expect(getPlayerConfigPage({ category }, { type: PlayerType.PLAYER })).toBe(
+      page,
+    );
   });
+
+  it.each([
+    ["protocol_general", "player"],
+    ["protocol_sync_group", "player"],
+    ["player_controls", "controls"],
+    ["generic", "player"],
+  ])(
+    "shows an entry of category %s of a group on the %s page",
+    (category, page) => {
+      expect(
+        getPlayerConfigPage({ category }, { type: PlayerType.GROUP }),
+      ).toBe(page);
+    },
+  );
 });

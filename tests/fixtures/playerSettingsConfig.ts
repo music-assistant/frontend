@@ -1,5 +1,6 @@
 import {
   ConfigEntryType,
+  PlayerType,
   type ConfigEntry,
   type ConfigValueType,
   type OutputProtocol,
@@ -21,6 +22,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   protocol_chromecast: "Enable Chromecast support",
   protocol_airplay: "Enable AirPlay support",
   protocol_sendspin: "Enable Sendspin support (over AirPlay)",
+  protocol_sync_group: "Enable Sync Group Player support",
 };
 
 const OUTPUT_CHANNEL_OPTIONS = [
@@ -252,6 +254,100 @@ export function playerSettingsConfig(
   ];
   return playerConfig({
     name: "Kitchen",
+    values: Object.fromEntries(entries.map((e) => [e.key, e])),
+    ...overrides,
+  });
+}
+
+/** The one output of a sync group: its own, native one. */
+export function groupSettingsOutputs(): OutputProtocol[] {
+  return [
+    outputProtocol({
+      output_protocol_id: "native",
+      name: "Sync Group Player",
+      is_native: true,
+      protocol_domain: "sync_group",
+      priority: 0,
+    }),
+  ];
+}
+
+/**
+ * The config of a sync group of two players as the server builds it: its own
+ * settings, its members among them, come as those of its native output.
+ */
+export function groupSettingsConfig(
+  overrides: Partial<PlayerConfig> = {},
+): PlayerConfig {
+  const members = [
+    { title: "Kitchen", value: "kitchen" },
+    { title: "Living room", value: "living_room" },
+  ];
+  const entries: ConfigEntry[] = [
+    entry("hide_in_ui", ConfigEntryType.BOOLEAN, "generic", false, {
+      label: "Hide this player in the user interface",
+    }),
+    entry("expose_player_to_ha", ConfigEntryType.BOOLEAN, "generic", true, {
+      label: "Expose this player to Home Assistant",
+    }),
+    entry("power_control", ConfigEntryType.STRING, "player_controls", "none", {
+      label: "Power Control",
+      options: [
+        { title: "None", value: "none" },
+        { title: "Fake power control", value: "fake" },
+      ],
+    }),
+    // a group has a single output, so there is no other one to prefer
+    entry(
+      "preferred_output_protocol",
+      ConfigEntryType.STRING,
+      "protocol_general",
+      "native",
+      {
+        label: "Preferred Output Protocol",
+        required: true,
+        hidden: true,
+        options: [{ title: "Sync Group Player (native)", value: "native" }],
+      },
+    ),
+    entry("sgp_note", ConfigEntryType.ALERT, "protocol_sync_group", null, {
+      label:
+        "Sync groups allow you to group compatible players together to play audio in sync.",
+    }),
+    entry(
+      "group_members",
+      ConfigEntryType.STRING,
+      "protocol_sync_group",
+      ["kitchen", "living_room"],
+      { label: "Group members", multi_value: true, options: members },
+    ),
+    entry(
+      "dynamic_members",
+      ConfigEntryType.BOOLEAN,
+      "protocol_sync_group",
+      false,
+      { label: "Enable dynamic members" },
+    ),
+    entry(
+      "allowed_members",
+      ConfigEntryType.STRING,
+      "protocol_sync_group",
+      [],
+      {
+        label: "Allowed members",
+        multi_value: true,
+        options: members,
+        advanced: true,
+        depends_on: "dynamic_members",
+      },
+    ),
+  ];
+  return playerConfig({
+    player_id: "downstairs",
+    provider: "sync_group",
+    name: "Downstairs",
+    default_name: "Sync Group",
+    player_type: PlayerType.GROUP,
     values: Object.fromEntries(entries.map((e) => [e.key, e])),
     ...overrides,
   });

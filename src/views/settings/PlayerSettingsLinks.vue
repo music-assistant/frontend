@@ -25,6 +25,10 @@ import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
  */
 const props = defineProps<{
   playerId: string;
+  /** The output settings have an entry to show on their page. */
+  hasOutputs: boolean;
+  /** The player controls have an entry to show on their page. */
+  hasControls: boolean;
 }>();
 
 // global refs
@@ -85,7 +89,7 @@ const links = computed(() => {
       description: $t("settings.player_options_description"),
     });
   }
-  if (sections.value.outputs) {
+  if (props.hasOutputs) {
     items.push({
       key: "outputs",
       to: `/settings/editplayer/${props.playerId}/outputs`,
@@ -94,7 +98,7 @@ const links = computed(() => {
       description: $t("settings.output_protocols_description"),
     });
   }
-  if (sections.value.controls) {
+  if (props.hasControls) {
     items.push({
       key: "controls",
       to: `/settings/editplayer/${props.playerId}/controls`,

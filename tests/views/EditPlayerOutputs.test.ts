@@ -157,7 +157,20 @@ describe("EditPlayerOutputs", () => {
       description: "Kitchen",
       documentationUrl:
         "https://music-assistant.io/settings/individual-player/#output-protocols",
+      resetDisabled: false,
     });
+  });
+
+  it("keeps the reset out of reach while the player is disabled", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerSettingsConfig({ enabled: false }),
+    );
+
+    const header = (await mountPage()).findComponent({
+      name: "SettingsHeaderCard",
+    });
+
+    expect(header.props("resetDisabled")).toBe(true);
   });
 
   it("shows the preferred output and the settings of each output only", async () => {

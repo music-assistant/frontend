@@ -5,6 +5,7 @@
       :title="$t('settings.category.protocol_settings')"
       :description="playerName"
       :documentation-url="documentationUrl"
+      :reset-disabled="!config?.enabled"
       @reset-to-defaults="resetToDefaults"
     />
 
@@ -88,9 +89,10 @@ const isMultiChannel = computed(
 );
 
 const configEntries = computed(() => {
-  if (!config.value || !player.value) return [];
+  const shownPlayer = player.value;
+  if (!config.value || !shownPlayer) return [];
   return Object.values(config.value.values).filter(
-    (entry) => getPlayerConfigPage(entry) === "outputs",
+    (entry) => getPlayerConfigPage(entry, shownPlayer) === "outputs",
   );
 });
 

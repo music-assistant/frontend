@@ -16,6 +16,7 @@ import {
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
+import EditConfig from "@/views/settings/EditConfig.vue";
 import EditPlayer from "@/views/settings/EditPlayer.vue";
 import {
   enableAutoUnmount,
@@ -24,7 +25,11 @@ import {
   type VueWrapper,
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { playerSettingsConfig } from "../fixtures/playerSettingsConfig";
+import {
+  groupSettingsConfig,
+  groupSettingsOutputs,
+  playerSettingsConfig,
+} from "../fixtures/playerSettingsConfig";
 import { providerManifest } from "../fixtures/providerManifest";
 
 const {
@@ -81,7 +86,12 @@ const playerDetailsStubs = {
   CardHeader: SlotStub,
   EditConfig: {
     name: "EditConfig",
-    props: ["configEntries", "disabled", "showAdvancedSettings"],
+    props: [
+      "configEntries",
+      "disabled",
+      "outputProtocols",
+      "showAdvancedSettings",
+    ],
     methods: {
       discardChanges: editConfigDiscardMock,
       resetToDefaults: editConfigResetMock,
@@ -117,6 +127,10 @@ vi.mock("@/helpers/player_settings_actions", () => ({
   isPlayerBeingRemoved,
 }));
 
+vi.mock("@/plugins/store", () => ({
+  store: { frameless: false, mobileLayout: false, currentUser: undefined },
+}));
+
 vi.mock("vue-sonner", () => ({
   toast: toastMock,
 }));
@@ -125,6 +139,15 @@ vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>();
   return { ...actual, useRouter: () => routerMock };
 });
+
+// the entries of the player itself in the config of a Chromecast
+const PLAYER_KEYS = [
+  "hide_in_ui",
+  "expose_player_to_ha",
+  "play_media_overrides_group",
+  "tts_pre_announce",
+  "pre_announcement_chime_url",
+];
 
 // the layouts of the Sendspin provider, as the server lists them
 const LAYOUTS = {
@@ -192,13 +215,81 @@ describe("EditPlayer", () => {
 
     const wrapper = await mountPlayerPage();
 
+    expect(formKeys(wrapper)).toEqual(PLAYER_KEYS);
+    expect(linkProps(wrapper)).toMatchObject({
+      hasOutputs: true,
+      hasControls: true,
+    });
+  });
+
+  it("keeps the settings of a group, its members among them, on its own page", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      groupSettingsConfig({ player_id: "player-1" }),
+    );
+    apiMock.players = {
+      "player-1": {
+        ...playerState(),
+        output_protocols: groupSettingsOutputs(),
+        type: PlayerType.GROUP,
+      },
+    };
+
+    const wrapper = await mountPlayerPage();
+
     expect(formKeys(wrapper)).toEqual([
       "hide_in_ui",
       "expose_player_to_ha",
-      "play_media_overrides_group",
-      "tts_pre_announce",
-      "pre_announcement_chime_url",
+      "preferred_output_protocol",
+      "sgp_note",
+      "group_members",
+      "dynamic_members",
+      "allowed_members",
+      "dsp_note_multi_device_group_unsupported",
     ]);
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("outputProtocols"),
+    ).toEqual(groupSettingsOutputs());
+    expect(linkProps(wrapper)).toMatchObject({
+      hasOutputs: false,
+      hasControls: true,
+    });
+  });
+
+  it("offers no row for a page that would only hold hidden entries", async () => {
+    // a single output whose protocol is away leaves only the preferred output, hidden
+    const config = playerSettingsConfig({ player_id: "player-1" });
+    config.values = Object.fromEntries(
+      Object.entries(config.values).filter(
+        ([key, entry]) =>
+          !entry.category.startsWith("protocol_") ||
+          key === "preferred_output_protocol",
+      ),
+    );
+    config.values.preferred_output_protocol.hidden = true;
+    apiMock.getPlayerConfig.mockResolvedValue(config);
+
+    const wrapper = await mountPlayerPage();
+
+    expect(linkProps(wrapper)).toMatchObject({
+      hasOutputs: false,
+      hasControls: true,
+    });
+  });
+
+  it("saves the entries of this page only, with whether the player is enabled", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerSettingsConfig({ player_id: "player-1" }),
+    );
+    const wrapper = await mountPlayerPage({ realForm: true });
+    const form = wrapper.findComponent(EditConfig);
+
+    await form.vm.submit();
+    await flushPromises();
+
+    const [playerId, values] = apiMock.savePlayerConfig.mock.lastCall!;
+    expect(playerId).toBe("player-1");
+    expect(Object.keys(values)).toEqual([...PLAYER_KEYS, "enabled"]);
+    expect(values.enabled).toBe(true);
   });
 
   it("leaves whether advanced settings show to the user's choice in the form", async () => {
@@ -719,16 +810,26 @@ function playerConfigUpdated(playerId: string) {
   }
 }
 
-async function mountPlayerPage(playerId: string = "player-1") {
+async function mountPlayerPage({ realForm = false } = {}) {
   const wrapper = shallowMount(EditPlayer, {
-    props: { playerId },
+    props: { playerId: "player-1" },
     global: {
       mocks: { $t: (key: string) => key },
-      stubs: playerDetailsStubs,
+      stubs: {
+        ...playerDetailsStubs,
+        EditConfig: realForm ? false : playerDetailsStubs.EditConfig,
+      },
     },
   });
   await flushPromises();
   return wrapper;
+}
+
+/**
+ * What the page tells its rows of the pages of their own.
+ */
+function linkProps(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "PlayerSettingsLinks" }).props();
 }
 
 /**

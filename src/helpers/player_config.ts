@@ -1,8 +1,9 @@
 import { api } from "@/plugins/api";
-import type {
-  ConfigEntry,
-  Player,
-  PlayerConfig,
+import {
+  PlayerType,
+  type ConfigEntry,
+  type Player,
+  type PlayerConfig,
 } from "@/plugins/api/interfaces";
 
 type PlayerSetupInfo = Pick<Player, "needs_setup" | "has_setup_flow">;
@@ -50,9 +51,13 @@ export const getPlayerSetupLabel = (
 /** The settings page of a player that shows an entry of its config. */
 export const getPlayerConfigPage = (
   entry: Pick<ConfigEntry, "category">,
+  player: Pick<Player, "type">,
 ): PlayerConfigPage => {
-  // the preferred output (protocol_general) and the settings of each output
-  if (entry.category.startsWith("protocol_")) return "outputs";
+  // the preferred output (protocol_general) and the settings of each output; a group
+  // gets its own settings, its members among them, as those of its native output
+  if (entry.category.startsWith("protocol_")) {
+    return player.type === PlayerType.GROUP ? "player" : "outputs";
+  }
   if (entry.category === "player_controls") return "controls";
   return "player";
 };

@@ -58,10 +58,10 @@ describe("PlayerSettingsLinks", () => {
 
   it("leaves out the sections the player has nothing to show for", async () => {
     getPlayerSettingsSections.mockReturnValue(
-      sections({ queue: false, options: false, controls: false }),
+      sections({ queue: false, options: false }),
     );
 
-    const wrapper = await mountLinks();
+    const wrapper = await mountLinks({ hasControls: false });
 
     expect(rowLabels(wrapper)).toEqual([
       "settings.category.dsp",
@@ -71,16 +71,10 @@ describe("PlayerSettingsLinks", () => {
 
   it("renders nothing when the player has no other settings", async () => {
     getPlayerSettingsSections.mockReturnValue(
-      sections({
-        queue: false,
-        dsp: false,
-        options: false,
-        outputs: false,
-        controls: false,
-      }),
+      sections({ queue: false, dsp: false, options: false }),
     );
 
-    const wrapper = await mountLinks();
+    const wrapper = await mountLinks({ hasOutputs: false, hasControls: false });
 
     expect(wrapper.find("a").exists()).toBe(false);
   });
@@ -144,8 +138,6 @@ function sections(overrides: Partial<Sections> = {}): Sections {
     queue: true,
     dsp: true,
     options: true,
-    outputs: true,
-    controls: true,
     ...overrides,
   };
 }
@@ -176,9 +168,13 @@ function dspConfigUpdated(enabled: boolean) {
   }
 }
 
-async function mountLinks(playerId = "kitchen") {
+/**
+ * Mount the rows of a player whose outputs and player controls have entries to show,
+ * but for the given ones.
+ */
+async function mountLinks({ hasOutputs = true, hasControls = true } = {}) {
   const wrapper = mount(PlayerSettingsLinks, {
-    props: { playerId },
+    props: { playerId: "kitchen", hasOutputs, hasControls },
     global: {
       stubs: { RouterLink: RouterLinkStub },
     },

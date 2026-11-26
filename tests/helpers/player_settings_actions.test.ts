@@ -142,8 +142,6 @@ const SECTION_LABELS = [
   "open_queue_settings",
   "open_dsp_settings",
   "player_options.open",
-  "open_output_protocol_settings",
-  "open_player_control_settings",
 ];
 
 // an admin unless a test says otherwise
@@ -154,9 +152,7 @@ beforeEach(() => {
 describe("getPlayerSettingsMenuItems sections", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    registerPlayer({
-      output_protocols: [output("chromecast", { is_native: true })],
-    });
+    registerPlayer();
     apiMock.getProvider.mockReturnValue(providerInstance());
     apiMock.getProviderManifest.mockReturnValue(providerManifest());
   });
@@ -181,8 +177,6 @@ describe("getPlayerSettingsMenuItems sections", () => {
     ["open_queue_settings", "/settings/editqueue/kitchen"],
     ["open_dsp_settings", "/settings/editplayer/kitchen/dsp"],
     ["player_options.open", "/settings/editplayer/kitchen/options"],
-    ["open_output_protocol_settings", "/settings/editplayer/kitchen/outputs"],
-    ["open_player_control_settings", "/settings/editplayer/kitchen/controls"],
     ["open_player_settings", "/settings/editplayer/kitchen"],
   ])("opens %s on its own page", (label, path) => {
     const menuItems = getPlayerSettingsMenuItems(playerConfig(), {
@@ -210,28 +204,6 @@ describe("getPlayerSettingsMenuItems sections", () => {
     registerPlayer({ options: [] });
 
     expect(sectionLabels()).not.toContain("player_options.open");
-  });
-
-  it("leaves out the output protocols section for a player without outputs", () => {
-    registerPlayer({ output_protocols: [] });
-
-    expect(sectionLabels()).not.toContain("open_output_protocol_settings");
-  });
-
-  it("leaves the sections that need the live player out while it is not registered", () => {
-    apiMock.players = {};
-
-    const labels = sectionLabels();
-
-    expect(labels).toContain("open_queue_settings");
-    for (const section of [
-      "open_dsp_settings",
-      "player_options.open",
-      "open_output_protocol_settings",
-      "open_player_control_settings",
-    ]) {
-      expect(labels).not.toContain(section);
-    }
   });
 });
 

@@ -182,14 +182,18 @@
     <PlayerSettingsLinks
       v-if="config"
       :player-id="config.player_id"
+      :has-outputs="configPages.has('outputs')"
+      :has-controls="configPages.has('controls')"
       class="mb-4"
     />
 
+    <!-- the outputs of a group show on this page -->
     <edit-config
       v-if="config"
       ref="editConfig"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
+      :output-protocols="player?.output_protocols || []"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -227,6 +231,7 @@ import {
   getPlayerConfigPage,
   getPlayerName,
   getPlayerSetupLabel,
+  type PlayerConfigPage,
 } from "@/helpers/player_config";
 import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
@@ -281,14 +286,14 @@ const setupReason = computed(() => getPlayerSetupReason(player.value));
 // the docs of a beta server live on the beta site
 const documentationUrl = computed(() => getExternalLinkUrl(PLAYER_DOCS_URL));
 
-// the outputs and the player controls have pages of their own
+// the outputs (but for those of a group) and the player controls have pages of their own
 const config_entries = computed(() => {
   if (!config.value) return [];
   const player = api.players[config.value.player_id];
   if (!player) return [];
 
   const entries: ConfigEntryUI[] = Object.values(config.value.values).filter(
-    (entry) => getPlayerConfigPage(entry) === "player",
+    (entry) => getPlayerConfigPage(entry, player) === "player",
   );
 
   if (
@@ -328,6 +333,16 @@ const config_entries = computed(() => {
     }
   }
   return entries;
+});
+
+// the pages that show an entry of the config, so no row leads to an empty page
+const configPages = computed(() => {
+  const pages = new Set<PlayerConfigPage>();
+  if (!config.value || !player.value) return pages;
+  for (const entry of Object.values(config.value.values)) {
+    if (!entry.hidden) pages.add(getPlayerConfigPage(entry, player.value));
+  }
+  return pages;
 });
 
 // methods
