@@ -415,6 +415,46 @@ describe("ConfigEntryField", () => {
     );
   });
 
+  it("keeps a comma inside a listed value and adds pasted lines one by one", async () => {
+    const wrapper = mountField(
+      entry({
+        key: "manual_discovery_ips",
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+        value: [],
+      }),
+    );
+    const input = wrapper.get("input");
+
+    await input.setValue("a,b");
+    await input.trigger("keydown", { key: "Enter" });
+    await input.trigger("paste", {
+      clipboardData: { getData: () => " c \n\nd" },
+    });
+
+    expect(wrapper.emitted("update:value")).toEqual([
+      [["a,b"]],
+      [["a,b", "c", "d"]],
+    ]);
+  });
+
+  it("drops a value still being typed when the list is cleared", async () => {
+    const wrapper = mountField(
+      entry({
+        key: "manual_discovery_ips",
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+        value: ["a"],
+      }),
+    );
+    await wrapper.get("input").setValue("draft");
+
+    await wrapper.get(CLEAR_BUTTON).trigger("click");
+
+    expect(wrapper.emitted("update:value")).toEqual([[null]]);
+    expect(wrapper.get<HTMLInputElement>("input").element.value).toBe("");
+  });
+
   it("emits the value of the option picked in a dropdown", async () => {
     const wrapper = mountField(dropdownEntry());
 
