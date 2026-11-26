@@ -523,6 +523,24 @@ describe("ProviderRow", () => {
     expect(root.attributes("role")).toBeUndefined();
   });
 
+  it.each(VARIANTS)(
+    "shows the error reason in red and the description muted (%s)",
+    (variant) => {
+      const error = mountRow({ variant, isError: true, errorText: "Failed" });
+      const healthy = mountRow({ variant, description: "A music service" });
+
+      const reason = error.get('[data-testid="provider-error"]').classes();
+      expect(reason).toContain("text-destructive");
+      expect(reason).not.toContain("text-muted-foreground");
+      expect(
+        healthy
+          .findAll("p")
+          .find((element) => element.text() === "A music service")!
+          .classes(),
+      ).toContain("text-muted-foreground");
+    },
+  );
+
   it("tints the list row of a source that needs attention", () => {
     expect(
       mountRow({ variant: "list", isError: true })

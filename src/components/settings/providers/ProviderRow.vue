@@ -61,7 +61,11 @@
           >
             {{ errorText }}
           </p>
-          <p v-else-if="description" :class="LINE_CLASS">
+          <p
+            v-else-if="description"
+            :class="LINE_CLASS"
+            class="text-muted-foreground"
+          >
             {{ description }}
           </p>
           <slot name="details" />
@@ -246,7 +250,7 @@ defineSlots<{
 const NAME_CLASS = "min-w-0 truncate text-[15px] leading-5 font-semibold";
 // two lines while the row stacks, one in the columns
 const LINE_CLASS =
-  "m-0 mt-0.5 line-clamp-2 text-[13px] leading-[18px] text-muted-foreground @4xl:line-clamp-1";
+  "m-0 mt-0.5 line-clamp-2 text-[13px] leading-[18px] @4xl:line-clamp-1";
 const CELL_CLASS =
   "@4xl:line-clamp-2 @4xl:text-[13px] @4xl:leading-[18px] @4xl:text-foreground/80";
 
