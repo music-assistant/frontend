@@ -25,13 +25,11 @@
           :key="action.key"
           size="sm"
           class="max-md:hidden"
-          :title="action.shortLabel ? action.label : undefined"
-          :aria-label="action.shortLabel ? action.label : undefined"
           :data-testid="action.key"
           @click="action.onSelect()"
         >
           <component :is="action.icon" class="size-4" aria-hidden="true" />
-          {{ action.shortLabel ?? action.label }}
+          {{ action.label }}
         </Button>
         <!-- a phone has no room for the buttons, so they move into a menu -->
         <DropdownMenu v-if="actions?.length">
@@ -90,9 +88,6 @@ export interface SettingsPanelAction {
   // also the test id of its button
   key: string;
   label: string;
-  // shown on its button in place of the label, which names it to assistive
-  // technology and in the menu on a phone
-  shortLabel?: string;
   icon: Component;
   onSelect: () => void;
 }

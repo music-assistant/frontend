@@ -90,9 +90,11 @@
           {{ accessSummary }}
         </span>
       </p>
+      <!-- the stacked spacing only applies while stacked: Vuetify's own mt-2
+           and pl-12 would outrank @4xl:mt-0 and @4xl:pl-0 -->
       <div
         v-if="showReconfigure || removable"
-        class="mt-2 flex flex-wrap gap-2 pl-12 @4xl:-col-end-2 @4xl:mt-0 @4xl:justify-end @4xl:pl-0"
+        class="flex flex-wrap gap-2 @max-4xl:mt-2 @max-4xl:pl-12 @4xl:-col-end-2 @4xl:justify-end"
       >
         <ProviderRowButtons
           :reconfigure="showReconfigure"

@@ -71,13 +71,12 @@ describe("SettingsListPanel", () => {
     expect(wrapper.findComponent(SettingsViewModeToggle).exists()).toBe(false);
   });
 
-  it("runs an action from its button, named in full for assistive technology", async () => {
+  it("runs an action from its button, named by its label", async () => {
     const add = action();
     const wrapper = mountPanel({ title: "Music sources", actions: [add] });
 
     const button = wrapper.get('[data-testid="add-provider"]');
-    expect(button.text()).toBe("Add");
-    expect(button.attributes("aria-label")).toBe("Add a music source");
+    expect(button.text()).toBe("Add a music source");
     await button.trigger("click");
 
     expect(add.onSelect).toHaveBeenCalledOnce();
@@ -99,23 +98,6 @@ describe("SettingsListPanel", () => {
 
     expect(wrapper.find('[data-testid="panel-menu"]').exists()).toBe(false);
   });
-
-  it("shows the label of an action without a short one on its button", () => {
-    const wrapper = mountPanel({
-      title: "Players",
-      actions: [
-        action({
-          key: "add-group",
-          label: "Add group player",
-          shortLabel: undefined,
-        }),
-      ],
-    });
-
-    const button = wrapper.get('[data-testid="add-group"]');
-    expect(button.text()).toBe("Add group player");
-    expect(button.attributes("aria-label")).toBeUndefined();
-  });
 });
 
 function action(
@@ -124,7 +106,6 @@ function action(
   return {
     key: "add-provider",
     label: "Add a music source",
-    shortLabel: "Add",
     icon: markRaw(Plus),
     onSelect: vi.fn(),
     ...overrides,
