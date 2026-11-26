@@ -1,11 +1,7 @@
 <template>
   <!-- saving goes through the Save button, so Enter in a field does not submit -->
-  <form
-    v-if="entries"
-    novalidate
-    :class="{ 'floating-save-clearance': showSaveAction && !inlineSave }"
-    @submit.prevent
-  >
+  <form v-if="entries" novalidate @submit.prevent>
+    <slot />
     <component
       :is="flat ? 'div' : Card"
       v-if="hasOptions"
@@ -112,32 +108,22 @@
       </component>
     </component>
 
-    <div
+    <SettingsSaveBar
       v-if="showSaveAction"
-      :class="
-        inlineSave
-          ? 'mt-4 flex justify-end'
-          : [
-              'floating-save',
-              {
-                'floating-save--mobile': store.mobileLayout,
-                'floating-save--frameless': store.frameless,
-              },
-            ]
-      "
+      :inline="inlineSave"
+      :unsaved-changes="hasUnsavedChanges"
     >
       <Button
         data-testid="config-save"
         type="button"
         size="lg"
-        :class="{ 'shadow-lg': !inlineSave }"
         :disabled="!requiredValuesPresent || !hasUnsavedChanges"
         @click="submit"
       >
         <Save class="size-4" />
         {{ $t("settings.save") }}
       </Button>
-    </div>
+    </SettingsSaveBar>
   </form>
   <!-- Unsaved changes confirmation dialog -->
   <!-- any way out of this dialog has to answer the navigation it is holding -->
@@ -196,6 +182,7 @@ import { Button } from "@/components/ui/button";
 import { provideConfigFormValidation } from "@/composables/useConfigFormValidation";
 import { isSpeakerChannelEntry } from "@/helpers/multi_channel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import SettingsSaveBar from "@/components/settings/SettingsSaveBar.vue";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   ConfigEntryType,
@@ -204,7 +191,6 @@ import {
   SECURE_STRING_SUBSTITUTE,
 } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { store } from "@/plugins/store";
 import {
   setUserPreference,
   useUserPreferences,
@@ -239,8 +225,8 @@ export interface Props {
   // Domain of the provider being configured; lets a field recognise the entries of the
   // provider it belongs to. Omitted for player/core configs.
   providerDomain?: string;
-  // Keep the Save button in the flow of the form instead of floating over the page:
-  // inside a dialog, a fixed position is measured from the dialog rather than the screen.
+  // Keep the Save button in the flow of the form instead of a bar pinned to the bottom of
+  // the page, for a form in a dialog or in a frame of its own.
   inlineSave?: boolean;
   // Leave out the Options header and its advanced toggle, for a host that names the form and
   // decides which of its entries show.
@@ -251,6 +237,11 @@ export interface Props {
   // the user made with the advanced toggle applies.
   showAdvancedSettings?: boolean;
 }
+
+defineSlots<{
+  // controls of the host whose values the form saves, above its own fields
+  default?(): unknown;
+}>();
 
 const emit = defineEmits<{
   (e: "submit", values: Record<string, ConfigValueType>): void;
@@ -717,36 +708,3 @@ const unsetsOnReset = function (entry: ConfigEntryUI) {
   return key !== "enabled" && key !== "name" && !key.endsWith("||enabled");
 };
 </script>
-
-<style scoped>
-/* Lets the last row scroll clear of the floating Save button. */
-.floating-save-clearance {
-  padding-bottom: 56px;
-}
-
-.floating-save {
-  position: fixed;
-  /* A landscape phone is wide enough to count as the desktop layout, so this
-     rule is what keeps the button clear of a side cutout. */
-  /* 100cqw is the width of the settings page, its query container: on a page
-     wider than the settings column, the button moves in to the column's edge. */
-  right: calc(
-    24px + var(--device-inset-right) +
-      max(0px, (100cqw - var(--settings-column-width)) / 2)
-  );
-  bottom: calc(var(--v-layout-bottom, var(--player-bar-height)) + 16px);
-  z-index: 20;
-}
-
-.floating-save--mobile {
-  /* Takes the floating player card's inset, so the two right edges line up. */
-  right: calc(var(--mobile-player-inset-x) + var(--device-inset-right));
-  bottom: calc(var(--bottom-bars-height) + 16px);
-  /* Above the player scrim, below the mobile bars. */
-  z-index: 1000;
-}
-
-.floating-save--frameless {
-  bottom: 16px;
-}
-</style>

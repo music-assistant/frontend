@@ -4,12 +4,19 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import {
   ConfigEntryType,
   type ConfigEntry,
+  type ConfigValueType,
   type CoreConfig,
   type Scope,
 } from "@/plugins/api/interfaces";
 import SettingsPageFormView from "@/views/settings/SettingsPageFormView.vue";
-import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 const { apiMock, hasScope, toastSuccess } = vi.hoisted(() => ({
   apiMock: {
@@ -190,6 +197,53 @@ describe("SettingsPageFormView on the library settings", () => {
     );
     expect(toastSuccess).toHaveBeenCalledWith("The database has been reset.");
   });
+});
+
+describe("SettingsPageFormView saving the library settings", () => {
+  it("saves the settings of each module from the one save bar of the page", async () => {
+    apiMock.getCoreConfig.mockImplementation(async (domain) =>
+      libraryConfig(domain),
+    );
+    apiMock.saveCoreConfig.mockImplementation(async (domain) =>
+      libraryConfig(domain),
+    );
+    const wrapper = mount(SettingsPageFormView, {
+      props: { page: "library" },
+      global: { stubs: { ConfigEntryRow: true, ProtocolConfigSection: true } },
+    });
+    await flushPromises();
+    const save = wrapper.get('[data-testid="config-save"]');
+
+    expect(wrapper.findAll('[data-testid="settings-save-bar"]')).toHaveLength(
+      1,
+    );
+    expect(save.attributes("disabled")).toBeDefined();
+
+    editRow(wrapper, "core/streams/stream_source_mode", "prefer_quality");
+    editRow(wrapper, "core/music/keep_remasters_apart", true);
+    await nextTick();
+    expect(save.attributes("disabled")).toBeUndefined();
+
+    await save.trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
+      stream_source_mode: "prefer_quality",
+    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("music", {
+      keep_remasters_apart: true,
+    });
+  });
+
+  // what typing into the field of an entry does
+  function editRow(wrapper: VueWrapper, key: string, value: ConfigValueType) {
+    const row = wrapper
+      .findAllComponents({ name: "ConfigEntryRow" })
+      .find((r) => (r.props("confEntry") as ConfigEntry).key === key);
+    if (!row) throw new Error(`no row for ${key}`);
+    row.vm.$emit("update:value", value);
+  }
 });
 
 describe("SettingsPageFormView on the task settings", () => {

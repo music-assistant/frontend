@@ -158,8 +158,8 @@ describe("InterfaceSettings", () => {
 
     // the breadcrumb names the page, so the form carries no header of its own
     expect(form.props("hideHeader")).toBe(true);
-    // the save button stays with the form, at the end of the page
-    expect(form.props("inlineSave")).toBe(true);
+    // the page pins its Save to a bar at the bottom of the screen
+    expect(form.props("inlineSave")).toBe(false);
   });
 
   it("holds the preferences of the account, which follow the user", () => {
