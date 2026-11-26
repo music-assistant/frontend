@@ -159,6 +159,12 @@
   .dark .bg-foreground\/10 {
     background-color: rgb(255 255 255 / 10%) !important;
   }
+  :root .bg-primary\/5 {
+    background-color: rgb(3 169 244 / 5%) !important;
+  }
+  :root .bg-primary\/10 {
+    background-color: rgb(3 169 244 / 10%) !important;
+  }
 }
 
 .player-control-button {
