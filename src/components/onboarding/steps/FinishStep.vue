@@ -63,21 +63,15 @@
             class="text-muted-foreground size-5"
             aria-hidden="true"
           />
-          <CircleAlert
-            v-else
-            class="size-5 text-amber-500"
-            aria-hidden="true"
-          />
+          <CircleAlert v-else class="text-warning size-5" aria-hidden="true" />
         </ItemMedia>
         <ItemContent>
           <ItemTitle>{{ $t(stepTitleKey(step.id, ctx.answers)) }}</ItemTitle>
         </ItemContent>
         <ItemActions>
           <Badge
-            variant="outline"
-            :class="
-              step.optional ? undefined : 'border-amber-500/40 text-amber-500'
-            "
+            :variant="step.optional ? 'outline' : 'warning'"
+            :class="{ 'text-muted-foreground': step.optional }"
           >
             {{ step.optional ? $t("optional") : $t("onboarding.still_to_do") }}
           </Badge>

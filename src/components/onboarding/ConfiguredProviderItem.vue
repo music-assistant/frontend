@@ -20,9 +20,14 @@
       <ItemDescription v-if="description">{{ description }}</ItemDescription>
     </ItemContent>
     <ItemActions>
-      <!-- a provider that is set up but switched off or broken is no tick -->
+      <!-- only a row shown for its status needs the tick; in a list of
+           rows that open, the ones needing attention stand out on their own -->
       <template v-if="working">
-        <Check class="text-primary size-4" aria-hidden="true" />
+        <Check
+          v-if="statusOnly"
+          class="text-primary size-4"
+          aria-hidden="true"
+        />
         <ChevronRight
           v-if="opensSettings"
           class="text-muted-foreground size-4"
@@ -78,8 +83,8 @@ import { Check, ChevronRight, TriangleAlert } from "@lucide/vue";
 import { computed, ref } from "vue";
 
 /**
- * A provider set up in the setup wizard: ticked when it works, and then the
- * way into its settings unless it is shown for its status only; otherwise
+ * A provider set up in the setup wizard: the way into its settings when it
+ * works, or ticked when it is shown for its status only; otherwise
  * flagged with what is wrong, with a Reconfigure button when signing in again
  * fixes it.
  */

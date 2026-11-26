@@ -26,7 +26,7 @@
       <span class="flex min-w-0 flex-1 flex-col gap-1">
         <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span class="font-semibold">{{ $t(option.labelKey) }}</span>
-          <Badge v-if="option.recommended" as="span" variant="secondary">
+          <Badge v-if="option.recommended" as="span" variant="info">
             {{ $t("recommended") }}
           </Badge>
         </span>

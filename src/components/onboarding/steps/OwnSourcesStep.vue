@@ -6,6 +6,11 @@
       :note="hasSources ? undefined : optionalLine"
     >
       <OnboardingList>
+        <OnboardingAddRow
+          :label="$t('onboarding.steps.own_sources.add')"
+          data-testid="onboarding-add-provider"
+          @click="showAddProviderDialog = true"
+        />
         <Item
           v-for="source in ownedMusicSources"
           :key="source.instance_id"
@@ -19,11 +24,6 @@
             <ItemTitle>{{ sourceName(source) }}</ItemTitle>
           </ItemContent>
         </Item>
-        <OnboardingAddRow
-          :label="$t('onboarding.steps.own_sources.add')"
-          data-testid="onboarding-add-provider"
-          @click="showAddProviderDialog = true"
-        />
       </OnboardingList>
     </OnboardingInvitation>
 

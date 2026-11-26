@@ -86,9 +86,9 @@ import RowsEditor from "@/components/details/RowsEditor.vue";
 import ProviderDetails from "@/components/ProviderDetails.vue";
 import {
   releaseSubtitle,
-  trackBackdrop,
   trackReleaseYear,
 } from "@/components/track/trackData";
+import { heroBackdrop } from "@/helpers/hero_backdrop";
 import TrackHero from "@/components/track/TrackHero.vue";
 import {
   availableTrackRowIds,
@@ -146,7 +146,7 @@ const { lyrics, appearsOnItems, versionItems, similarItems } = useTrackRowData(
 // the cover at first; the artist's fanart takes over once that lookup is done
 const backdrop = computed(() =>
   itemDetails.value
-    ? trackBackdrop(itemDetails.value, backdropArtist.value ?? undefined)
+    ? heroBackdrop(itemDetails.value, backdropArtist.value ?? undefined)
     : { blurred: false },
 );
 
