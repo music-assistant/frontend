@@ -1,7 +1,9 @@
 <template>
-  <Card class="@container/panel gap-4 py-4 md:gap-5 md:py-5">
-    <header class="flex flex-wrap items-center gap-x-3 gap-y-3 px-4 md:px-5">
-      <div class="min-w-0 flex-1 @4xl/panel:flex-none">
+  <Card class="gap-4 py-4 md:gap-5 md:py-5">
+    <header
+      class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-3 px-4 md:px-5"
+    >
+      <div class="col-start-1 row-start-1 min-w-0">
         <h2 class="m-0 flex items-baseline gap-2 text-base font-semibold">
           {{ title }}
           <span
@@ -13,21 +15,21 @@
           </span>
         </h2>
       </div>
-      <!-- the search and filters sit between the title and the buttons once
-           the panel is wide enough, and get a row of their own below it -->
+      <!-- on a phone the switch sits by the title; wider, it ends the row of
+           the search and filters, or comes before the buttons without them -->
+      <SettingsViewModeTabs
+        v-if="viewMode"
+        :mode="viewMode"
+        class="col-start-2 row-start-1"
+        :class="{
+          'md:col-start-3 md:row-start-2 md:self-start md:justify-self-end':
+            $slots.filters,
+        }"
+        @toggle="emit('toggle-view-mode')"
+      />
       <div
-        v-if="$slots.filters"
-        class="order-[1] min-w-0 basis-full @4xl/panel:order-[0] @4xl/panel:flex-1 @4xl/panel:basis-0"
+        class="col-start-3 row-start-1 flex items-center gap-1 justify-self-end"
       >
-        <slot name="filters" />
-      </div>
-      <div class="ml-auto flex shrink-0 items-center gap-1">
-        <SettingsViewModeToggle
-          v-if="viewMode"
-          :mode="viewMode"
-          small
-          @toggle="emit('toggle-view-mode')"
-        />
         <Button
           v-for="action in actions ?? []"
           :key="action.key"
@@ -66,6 +68,12 @@
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <div
+        v-if="$slots.filters"
+        class="col-span-3 col-start-1 row-start-2 min-w-0 md:col-span-2"
+      >
+        <slot name="filters" />
+      </div>
     </header>
     <div class="px-4 md:px-5">
       <slot />
@@ -86,7 +94,7 @@ export interface SettingsPanelAction {
 </script>
 
 <script setup lang="ts">
-import SettingsViewModeToggle from "@/components/settings/SettingsViewModeToggle.vue";
+import SettingsViewModeTabs from "@/components/settings/SettingsViewModeTabs.vue";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -100,8 +108,8 @@ import { EllipsisVertical } from "@lucide/vue";
 
 /**
  * A list of a settings page in a panel of its own, whose header holds the title
- * of the list with how many it holds, its search and filters, the switch
- * between its list and card view, and its actions.
+ * of the list with how many it holds and its actions, then its search and
+ * filters, ended by the pills switching between its list and card view.
  */
 defineProps<{
   title: string;
