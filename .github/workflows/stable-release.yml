@@ -3,8 +3,10 @@ name: Release stable backport
 # Publishes the .post release when a "[Backport to stable]" PR from
 # backport-to-stable.yml is merged into `stable`.
 
+# Plain pull_request: the guard below only accepts backport/ branches of this
+# repository, and those runs get this repository's write token.
 on:
-  pull_request_target:
+  pull_request:
     types: [closed]
     branches:
       - stable
