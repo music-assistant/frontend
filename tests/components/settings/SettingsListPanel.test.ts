@@ -52,17 +52,21 @@ describe("SettingsListPanel", () => {
     expect(wrapper.emitted("toggle-view-mode")).toHaveLength(1);
   });
 
-  it("ends the row of the search and filters with the switch of the view", () => {
+  it("puts the search and filters between the title and the buttons, with the switch by the actions", () => {
     const wrapper = mountPanel(
       { title: "Music sources", viewMode: "list", actions: [action()] },
       { filters: '<input data-testid="search" />', default: "<ul />" },
     );
 
-    const toggles = wrapper.findAllComponents(SettingsViewModeToggle);
-    expect(toggles).toHaveLength(1);
-    const filtersRow = wrapper.get('[data-testid="search"]').element
-      .parentElement!.parentElement!;
-    expect(filtersRow.lastElementChild).toBe(toggles[0].element);
+    const header = wrapper.get("header").element;
+    const [title, filters, buttons] = Array.from(header.children);
+    expect(title.querySelector("h2")).not.toBeNull();
+    expect(filters.querySelector('[data-testid="search"]')).not.toBeNull();
+    const toggle = wrapper.getComponent(SettingsViewModeToggle).element;
+    expect(toggle.parentElement).toBe(buttons);
+    expect(toggle.nextElementSibling?.getAttribute("data-testid")).toBe(
+      "add-provider",
+    );
   });
 
   it("has no switch for a list without views", () => {

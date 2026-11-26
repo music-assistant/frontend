@@ -1,7 +1,7 @@
 <template>
-  <Card class="gap-4 py-4 md:gap-5 md:py-5">
+  <Card class="@container/panel gap-4 py-4 md:gap-5 md:py-5">
     <header class="flex flex-wrap items-center gap-x-3 gap-y-3 px-4 md:px-5">
-      <div class="min-w-0 flex-1">
+      <div class="min-w-0 flex-1 @4xl/panel:flex-none">
         <h2 class="m-0 flex items-baseline gap-2 text-base font-semibold">
           {{ title }}
           <span
@@ -13,9 +13,17 @@
           </span>
         </h2>
       </div>
-      <div class="flex shrink-0 items-center gap-1">
+      <!-- the search and filters sit between the title and the buttons once
+           the panel is wide enough, and get a row of their own below it -->
+      <div
+        v-if="$slots.filters"
+        class="order-[1] min-w-0 basis-full @4xl/panel:order-[0] @4xl/panel:flex-1 @4xl/panel:basis-0"
+      >
+        <slot name="filters" />
+      </div>
+      <div class="ml-auto flex shrink-0 items-center gap-1">
         <SettingsViewModeToggle
-          v-if="viewMode && !$slots.filters"
+          v-if="viewMode"
           :mode="viewMode"
           small
           @toggle="emit('toggle-view-mode')"
@@ -58,22 +66,6 @@
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <!-- the switch of the view ends the row of the search and filters -->
-      <div
-        v-if="$slots.filters"
-        class="flex min-w-0 basis-full items-start gap-3"
-      >
-        <div class="min-w-0 flex-1">
-          <slot name="filters" />
-        </div>
-        <SettingsViewModeToggle
-          v-if="viewMode"
-          :mode="viewMode"
-          small
-          class="mt-0.5"
-          @toggle="emit('toggle-view-mode')"
-        />
-      </div>
     </header>
     <div class="px-4 md:px-5">
       <slot />
@@ -108,8 +100,8 @@ import { EllipsisVertical } from "@lucide/vue";
 
 /**
  * A list of a settings page in a panel of its own, whose header holds the title
- * of the list with how many it holds and its actions, then its search and
- * filters, ended by the switch between its list and card view.
+ * of the list with how many it holds, its search and filters, the switch
+ * between its list and card view, and its actions.
  */
 defineProps<{
   title: string;
