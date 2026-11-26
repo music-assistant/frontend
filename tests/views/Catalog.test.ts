@@ -2149,7 +2149,7 @@ describe("Catalog with the community catalog", () => {
         "https://jane.github.io/ma-radio/",
       );
       expect(href(detail, "catalog-detail-help")).toBe(
-        "https://github.com/jane/ma-radio",
+        "https://github.com/jane/ma-radio/issues",
       );
       expect(
         detail.querySelector("[data-testid='catalog-detail-version']")
@@ -2222,7 +2222,7 @@ describe("Catalog with the community catalog", () => {
         "settings.catalog.community.note_maintainers Radio Garden @jane",
       );
       expect(href(note, "community-note-help")).toBe(
-        "https://github.com/jane/ma-radio",
+        "https://github.com/jane/ma-radio/issues",
       );
       expect(
         note.querySelector("[data-testid='community-note-help']")?.textContent,
