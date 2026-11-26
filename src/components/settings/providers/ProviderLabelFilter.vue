@@ -1,21 +1,25 @@
 <template>
-  <!-- the pills scroll sideways rather than wrapping when they do not fit -->
+  <!-- on a phone the pills scroll sideways; wider, they wrap when they do not fit -->
   <div
     role="group"
     :aria-label="$t('settings.provider_labels.filter')"
-    class="max-w-full overflow-x-auto [scrollbar-width:none]"
+    class="max-w-full max-md:overflow-x-auto max-md:[scrollbar-width:none]"
     data-testid="provider-label-filter"
   >
-    <div class="inline-flex gap-0.5 rounded-(--radius-lg) bg-muted p-[3px]">
-      <button
+    <div
+      class="inline-flex gap-0.5 rounded-(--radius-lg) bg-muted p-[3px] md:flex-wrap"
+    >
+      <Button
         v-for="option in options"
         :key="option.value ?? 'all'"
         type="button"
+        variant="ghost"
+        size="sm"
         :class="
           cn(
-            'h-[30px] shrink-0 cursor-pointer rounded-[7px] px-3.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[color,box-shadow] outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
+            'h-[30px] rounded-[7px] px-3.5 text-muted-foreground hover:bg-transparent hover:text-foreground dark:hover:bg-transparent',
             model === option.value &&
-              'bg-background text-foreground shadow-sm dark:bg-input/30',
+              'bg-background text-foreground shadow-sm hover:bg-background dark:bg-input/30 dark:hover:bg-input/30',
           )
         "
         :aria-pressed="model === option.value"
@@ -23,12 +27,13 @@
         @click="model = option.value"
       >
         {{ option.label }}
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from "@/components/ui/button";
 import {
   PROVIDER_LABEL_KEYS,
   type ProviderLabel,

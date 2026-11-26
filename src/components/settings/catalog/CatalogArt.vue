@@ -4,14 +4,15 @@
   <div
     class="relative overflow-hidden"
     :class="light ? 'bg-muted' : GRADIENT_CLASS"
-    :style="{ '--catalog-art': color }"
+    :style="color ? { '--catalog-art': color } : undefined"
     :data-art="light ? 'light' : 'colour'"
     data-testid="catalog-art"
   >
+    <!-- border-[1px] rather than border, which Vuetify colours over -->
     <span
       v-for="ring in RINGS"
       :key="ring"
-      class="pointer-events-none absolute top-[12%] left-[88%] aspect-square -translate-1/2 rounded-full border"
+      class="pointer-events-none absolute top-[12%] left-[88%] aspect-square -translate-1/2 rounded-full border-[1px]"
       :class="[ring, light ? 'border-foreground/5' : 'border-white/15']"
       aria-hidden="true"
     ></span>
@@ -25,13 +26,11 @@
 </template>
 
 <script setup lang="ts">
-import { NEUTRAL_ICON_COLOR } from "@/helpers/icon_color";
 import { computed } from "vue";
 
 interface Props {
-  // the main colour of the entry's icon, as #rrggbb, or the neutral colour
-  // when it has none
-  color: string;
+  // the main colour of the entry's icon, as #rrggbb; null when it has none
+  color: string | null;
 }
 
 const props = defineProps<Props>();
@@ -40,5 +39,5 @@ const GRADIENT_CLASS =
   "bg-[linear-gradient(135deg,var(--catalog-art)_0%,color-mix(in_srgb,var(--catalog-art)_55%,black)_100%)]";
 const RINGS = ["w-[30%]", "w-[60%]", "w-[90%]"];
 
-const light = computed(() => props.color === NEUTRAL_ICON_COLOR);
+const light = computed(() => !props.color);
 </script>

@@ -1,5 +1,8 @@
 <template>
-  <div class="flex flex-wrap items-center gap-3" data-testid="catalog-toolbar">
+  <div
+    class="flex flex-wrap items-center gap-3 md:items-start"
+    data-testid="catalog-toolbar"
+  >
     <CatalogTypePicker
       :tab="tab"
       :types="types"
@@ -7,18 +10,14 @@
       :update-count="updateCount"
       @select="emit('select', $event)"
     />
-    <template v-if="labels.length">
+    <!-- the pills take the room between the picker and the stage filter -->
+    <div v-if="labels.length" class="flex min-w-0 flex-1 items-center gap-3">
       <Separator
         orientation="vertical"
-        class="data-[orientation=vertical]:h-6 max-md:hidden"
+        class="self-start data-[orientation=vertical]:mt-1.5 data-[orientation=vertical]:h-6 max-md:hidden"
       />
-      <!-- on a phone the pills scroll beside the stage filter -->
-      <ProviderLabelFilter
-        v-model="label"
-        :labels="labels"
-        class="max-md:min-w-0 max-md:flex-1"
-      />
-    </template>
+      <ProviderLabelFilter v-model="label" :labels="labels" class="min-w-0" />
+    </div>
     <div v-if="filterable" class="ml-auto">
       <FacetedFilter
         v-model="stages"

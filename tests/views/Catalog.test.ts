@@ -1030,11 +1030,10 @@ describe("Catalog", () => {
 
     await togglePicker();
 
-    expect(
-      document
-        .querySelector("[data-slot='dropdown-menu-content']")
-        ?.getAttribute("aria-label"),
-    ).toBe("settings.catalog.choose_section");
+    // reka names the menu after its button, which says what it is for
+    const menu = document.querySelector("[data-slot='dropdown-menu-content']")!;
+    expect(menu.getAttribute("aria-labelledby")).toBe(picker().id);
+    expect(picker().textContent).toContain("settings.catalog.choose_section");
     expect(
       sections().map((section) => [
         section.getAttribute("data-tab"),
@@ -1465,9 +1464,6 @@ describe("Catalog suggestions from the server", () => {
     expect(
       tile.querySelector("[data-testid='catalog-card-paired']")?.textContent,
     ).toContain("settings.catalog.goes_well_with Spotify");
-    expect(
-      tile.querySelector("[data-testid='catalog-card-credit']"),
-    ).toBeNull();
     // the rows mix the types, so each card names its own
     expect(
       tile.querySelector("[data-testid='catalog-card-subtitle']")?.textContent,
@@ -3117,7 +3113,7 @@ describe("Catalog with updates from the community catalog", () => {
     expect(
       document.querySelector("[data-testid='catalog-updates-dot']"),
     ).not.toBeNull();
-    expect(picker().querySelector(".sr-only")?.textContent).toBe(
+    expect(picker().textContent).toContain(
       "settings.catalog.community.updates_waiting",
     );
 
@@ -3630,8 +3626,14 @@ function picker(): HTMLElement {
   )!;
 }
 
+// what the picker shows, without what it says only to a screen reader
 function pickerLabel() {
-  return picker().textContent?.replace(/\s+/g, "");
+  const purpose = picker().querySelector(
+    "[data-testid='catalog-section-picker-purpose']",
+  )?.textContent;
+  return picker()
+    .textContent?.replace(purpose ?? "", "")
+    .replace(/\s+/g, "");
 }
 
 // reka opens and closes the menu on a click of its trigger

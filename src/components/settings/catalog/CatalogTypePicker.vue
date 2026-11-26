@@ -6,6 +6,10 @@
         class="px-3 max-md:w-full"
         data-testid="catalog-section-picker"
       >
+        <!-- the menu takes its name from this button, so it says what it is for -->
+        <span class="sr-only" data-testid="catalog-section-picker-purpose">{{
+          $t("settings.catalog.choose_section")
+        }}</span>
         <component :is="current.icon" aria-hidden="true" />
         <span class="font-semibold">{{ current.label }}</span>
         <span
@@ -25,11 +29,7 @@
         <span v-if="updatesHidden" class="sr-only">{{ updatesWaiting }}</span>
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent
-      align="start"
-      class="min-w-64"
-      :aria-label="$t('settings.catalog.choose_section')"
-    >
+    <DropdownMenuContent align="start" class="min-w-64">
       <DropdownMenuRadioGroup :model-value="tab" @update:model-value="select">
         <template v-for="section in sections" :key="section.tab">
           <!-- what is set up is a view of its own rather than more to add -->

@@ -1,5 +1,7 @@
 <template>
   <section class="space-y-4" data-testid="catalog-list">
+    <!-- the picker names the section on screen; this names it for the outline -->
+    <h2 class="sr-only">{{ heading }}</h2>
     <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
       <p
         class="m-0 text-[13px] text-muted-foreground"
@@ -134,6 +136,10 @@ const matches = computed(() =>
     }),
     props.badges,
   ),
+);
+
+const heading = computed(() =>
+  props.type ? $t(props.type.label) : $t("settings.catalog.search_results"),
 );
 
 const summary = computed(() =>

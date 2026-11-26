@@ -17,9 +17,10 @@
           class="relative -mt-[22px]"
         />
         <div class="min-w-0 flex-1 pt-1.5">
-          <div class="flex min-w-0 items-center gap-2">
+          <!-- the badges go under a name they would cut short -->
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <h3
-              class="m-0 min-w-0 truncate text-base leading-[22px] font-semibold"
+              class="m-0 max-w-full min-w-0 truncate text-base leading-[22px] font-semibold"
             >
               <!-- the name stretches over the card, so the whole card opens it
                    while the actions on it stay their own controls -->

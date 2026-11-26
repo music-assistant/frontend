@@ -12,7 +12,7 @@
       <Button
         variant="ghost"
         size="icon-sm"
-        class="size-8 rounded-full bg-black/25 text-white hover:bg-black/40 hover:text-white"
+        class="size-8 rounded-full bg-background/80 text-foreground shadow-sm hover:bg-background"
         :aria-label="
           $t('settings.catalog.dont_suggest_named', {
             name: entry.manifest.name,
