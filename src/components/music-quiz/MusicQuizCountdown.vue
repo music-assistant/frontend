@@ -5,8 +5,9 @@
     role="timer"
     :aria-label="label"
   >
+    <!-- transform instead of -rotate-90: older Cast receivers lack the rotate property -->
     <svg
-      class="-rotate-90"
+      class="[transform:rotate(-90deg)]"
       :width="size"
       :height="size"
       viewBox="0 0 100 100"

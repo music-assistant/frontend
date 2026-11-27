@@ -6,6 +6,7 @@
  * episode.
  */
 import ListviewItem from "@/components/ListviewItem.vue";
+import { handleMenuBtnClick } from "@/helpers/media_item_actions";
 import {
   AlbumType,
   MediaType,
@@ -72,6 +73,45 @@ function mountRow(item: MediaItemType, isAvailable = true) {
     global: { mocks: { $t: (key: string) => key } },
   });
 }
+
+it("opens a folder menu at the long-press position", () => {
+  const folder = {
+    item_id: "albums",
+    provider: "filesystem",
+    name: "Albums",
+    version: "",
+    uri: "filesystem://folder/albums",
+    external_ids: [],
+    is_playable: false,
+    media_type: MediaType.FOLDER as const,
+    path: "filesystem://albums",
+    image: null,
+  };
+  const wrapper = mountRow(folder);
+  const event = new TouchEvent("touchstart", {
+    touches: [
+      new Touch({
+        identifier: 0,
+        target: wrapper.element,
+        clientX: 90,
+        clientY: 240,
+      }),
+    ],
+  });
+
+  wrapper.getComponent({ name: "ListItem" }).vm.$emit("menu", event);
+
+  expect(handleMenuBtnClick).toHaveBeenCalledExactlyOnceWith(
+    folder,
+    90,
+    240,
+    undefined,
+    true,
+    undefined,
+    undefined,
+    undefined,
+  );
+});
 
 describe("ListviewItem for a release that is not in the library", () => {
   it("mutes the row instead of greying it out", () => {

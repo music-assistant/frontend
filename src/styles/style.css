@@ -145,6 +145,28 @@
   --sidebar-ring: #03a9f4;
 }
 
+/* Older Cast receivers lack color-mix(), so Tailwind's alpha utilities fall back to the opaque colour */
+@supports not (color: color-mix(in lab, red, red)) {
+  :root .bg-foreground\/5 {
+    background-color: rgb(0 0 0 / 5%) !important;
+  }
+  :root .bg-foreground\/10 {
+    background-color: rgb(0 0 0 / 10%) !important;
+  }
+  .dark .bg-foreground\/5 {
+    background-color: rgb(255 255 255 / 5%) !important;
+  }
+  .dark .bg-foreground\/10 {
+    background-color: rgb(255 255 255 / 10%) !important;
+  }
+  :root .bg-primary\/5 {
+    background-color: rgb(3 169 244 / 5%) !important;
+  }
+  :root .bg-primary\/10 {
+    background-color: rgb(3 169 244 / 10%) !important;
+  }
+}
+
 .player-control-button {
   color: var(--muted-foreground) !important;
 }
