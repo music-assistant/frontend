@@ -218,6 +218,9 @@ let dialogActiveBeforeOpen = false;
 // unrelated input that would scroll the page or bring up the on-screen keyboard
 let focusBeforeOpen: HTMLElement | null = null;
 let usingKeyboard = false;
+// the menu can open under the pointer while the right button or a long-press
+// finger is still down; releasing it there must not pick the item beneath
+let pressOpenedMenu = false;
 
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
@@ -235,11 +238,14 @@ onMounted(() => {
       }
       show.value = true;
       store.dialogActive = true;
+      pressOpenedMenu = true;
     });
   });
   document.addEventListener("keydown", markKeyboardInteraction, true);
   document.addEventListener("pointerdown", markPointerInteraction, true);
   document.addEventListener("pointerdown", closeOnOutsidePointer, true);
+  document.addEventListener("pointerdown", endOpeningPress, true);
+  document.addEventListener("pointerup", ignoreOpeningRelease, true);
 });
 
 onBeforeUnmount(() => {
@@ -247,7 +253,20 @@ onBeforeUnmount(() => {
   document.removeEventListener("keydown", markKeyboardInteraction, true);
   document.removeEventListener("pointerdown", markPointerInteraction, true);
   document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
+  document.removeEventListener("pointerdown", endOpeningPress, true);
+  document.removeEventListener("pointerup", ignoreOpeningRelease, true);
 });
+
+function endOpeningPress() {
+  pressOpenedMenu = false;
+}
+
+// a menu item skips its selection when its pointerup is default-prevented
+function ignoreOpeningRelease(event: PointerEvent) {
+  if (!pressOpenedMenu) return;
+  pressOpenedMenu = false;
+  if (show.value) event.preventDefault();
+}
 
 const onOpenChange = function (value: boolean) {
   show.value = value;
