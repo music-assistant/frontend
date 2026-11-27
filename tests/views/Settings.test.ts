@@ -574,13 +574,6 @@ describe("Settings breadcrumbs on the pages below the players", () => {
     ]);
   });
 
-  it("hang adding a group player under the players", () => {
-    expect(pageTrail("addgroup", { provider: "sonos--kitchen" })).toEqual([
-      players,
-      { title: "settings.add_group_player", disabled: true },
-    ]);
-  });
-
   it("hang the settings of a player provider under the player providers", async () => {
     apiMock.getProvider.mockReturnValue(undefined);
     apiMock.providerManifests.sonos = {

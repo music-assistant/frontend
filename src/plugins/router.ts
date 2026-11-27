@@ -902,16 +902,6 @@ export const routes: RouteRecordRaw[] = [
             props: true,
             meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
-          {
-            path: "addgroup/:provider",
-            name: "addgroup",
-            component: () =>
-              import(
-                /* webpackChunkName: "addgroup" */ "@/views/settings/AddPlayerGroup.vue"
-              ),
-            props: true,
-            meta: { requiresScope: Scope.CONFIG_PLAYERS_WRITE },
-          },
           // the provider lists shared an earlier address, by the type in its
           // query, which their own pages leave out
           {

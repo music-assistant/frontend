@@ -357,6 +357,12 @@ describe("player settings routes", () => {
       expect(route.params).toMatchObject(params);
     },
   );
+
+  it("has no page to add a group, a dialog adds it", () => {
+    expect(resolveRoute("/settings/addgroup/sync_group").name).toBe(
+      "not-found",
+    );
+  });
 });
 
 describe("settings pages", () => {
@@ -757,7 +763,6 @@ describe("scope-gated routes", () => {
     ["/settings/editplayer/player-1/outputs", ["admin"]],
     ["/settings/editplayer/player-1/controls", ["admin"]],
     ["/settings/editqueue/player-1", ["admin"]],
-    ["/settings/addgroup/sonos--abc", ["admin"]],
     [
       "/settings/editplayer/player-1/options",
       ["admin", "user", "guest", "own_sources", "reads_sources"],

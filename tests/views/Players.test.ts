@@ -16,6 +16,7 @@ import {
   type PlayerConfig,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
+import type { AddGroupDialogEvent } from "@/plugins/eventbus";
 import { webPlayer } from "@/plugins/web_player";
 import { flushPromises, mount } from "@vue/test-utils";
 import { ref } from "vue";
@@ -113,12 +114,6 @@ vi.mock("@/composables/userPreferences", async () => {
 
 vi.mock("@/helpers/utils", () => ({
   openLinkInNewTab: vi.fn(),
-}));
-
-vi.mock("@/views/settings/AddPlayerGroupDialog.vue", () => ({
-  default: {
-    template: "<div />",
-  },
 }));
 
 vi.mock("vue-router", async (importOriginal) => ({
@@ -318,7 +313,7 @@ describe("Players", () => {
     );
   });
 
-  it("offers to add a group player from the list when a provider makes them", async () => {
+  it("opens the dialog that adds a group, and reads the list again once one is made", async () => {
     apiMock.providers = {
       "sonos--1": providerInstance({
         domain: "sonos",
@@ -335,6 +330,19 @@ describe("Players", () => {
     expect(actions.map(({ key, label }) => ({ key, label }))).toEqual([
       { key: "add-player-group", label: "Add group player" },
     ]);
+
+    actions[0].onSelect();
+    expect(emitEvent).toHaveBeenCalledExactlyOnceWith("addGroupDialog", {
+      onCreated: expect.any(Function),
+    });
+    apiMock.getPlayerConfigs.mockClear();
+    const [, { onCreated }] = emitEvent.mock.calls[0] as [
+      string,
+      AddGroupDialogEvent,
+    ];
+    onCreated?.("syncgroup_downstairs");
+    await flushPromises();
+    expect(apiMock.getPlayerConfigs).toHaveBeenCalledOnce();
   });
 
   it("offers no group player without a provider making them", async () => {
@@ -675,7 +683,6 @@ async function mountPlayers(
         },
       },
       stubs: {
-        AddPlayerGroupDialog: true,
         Button: true,
         Container: passthroughStub,
         PlayerFilters: true,

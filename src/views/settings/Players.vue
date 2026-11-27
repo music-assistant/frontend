@@ -83,7 +83,6 @@
         </router-link>
       </i18n-t>
     </div>
-    <AddPlayerGroupDialog v-model:show="showAddPlayerGroupDialog" />
   </div>
 </template>
 
@@ -103,6 +102,7 @@ import type { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useSettingsPlayerList } from "@/composables/settings/players/useSettingsPlayerList";
 import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
+import { getGroupKinds } from "@/helpers/player_group";
 import {
   getPlayerSettingsMenuItems,
   removeUnavailablePlayers,
@@ -110,19 +110,13 @@ import {
 import { providerListRoute } from "@/helpers/settings_sections";
 
 import { api } from "@/plugins/api";
-import {
-  PlayerConfig,
-  ProviderFeature,
-  ProviderType,
-  Scope,
-} from "@/plugins/api/interfaces";
+import { PlayerConfig, ProviderType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { EyeOff, Info, Plus, Trash2, VolumeOff } from "@lucide/vue";
-import { computed, inject, markRaw, onBeforeUnmount, ref, watch } from "vue";
+import { computed, inject, markRaw, onBeforeUnmount, watch } from "vue";
 import { useRouter } from "vue-router";
-import AddPlayerGroupDialog from "./AddPlayerGroupDialog.vue";
 
 // the list of the player providers
 const PLAYER_PROVIDERS_ROUTE = providerListRoute(ProviderType.PLAYER);
@@ -151,34 +145,19 @@ const {
   loadItems,
 } = useSettingsPlayerList();
 
-// local refs
-const showAddPlayerGroupDialog = ref<boolean>(false);
-
 // computed properties
-const providersWithCreateGroupSupport = computed(() => {
-  // providers available with create_group support
-  return Object.values(api.providers)
-    .filter(
-      (x) =>
-        x.available &&
-        x.supported_features.includes(ProviderFeature.CREATE_GROUP_PLAYER),
-    )
-    .sort((a, b) =>
-      (a.name || api.providerManifests[a.domain].name).toUpperCase() >
-      (b.name || api.providerManifests[b.domain].name).toUpperCase()
-        ? 1
-        : -1,
-    );
-});
 const actions = computed<SettingsPanelAction[]>(() =>
-  providersWithCreateGroupSupport.value.length > 0
+  getGroupKinds(api.providers, api.providerManifests).length > 0
     ? [
         {
           key: "add-player-group",
           label: $t("settings.add_group_player"),
           icon: markRaw(Plus),
           onSelect: () => {
-            showAddPlayerGroupDialog.value = true;
+            // the list does not hear of a new player, so it is read again
+            eventbus.emit("addGroupDialog", {
+              onCreated: () => void loadItems(),
+            });
           },
         },
       ]

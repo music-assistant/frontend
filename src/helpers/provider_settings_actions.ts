@@ -18,6 +18,7 @@ import {
   Scope,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
+import { eventbus } from "@/plugins/eventbus";
 import router from "@/plugins/router";
 import {
   BookOpen,
@@ -158,7 +159,7 @@ export const getProviderSettingsMenuItems = (
   ) {
     menuItems.push({
       label: "settings.add_group_player",
-      action: () => router.push(`/settings/addgroup/${instanceId}`),
+      action: () => eventbus.emit("addGroupDialog", { provider: instanceId }),
       icon: markRaw(Copy),
     });
   }
