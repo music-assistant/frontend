@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center justify-between gap-2.5">
+  <div class="flex flex-wrap items-center justify-between gap-x-2.5 gap-y-1.5">
     <Badge
       variant="warning"
       class="h-7 min-w-0 shrink items-center gap-1 rounded-md py-0 leading-none"
