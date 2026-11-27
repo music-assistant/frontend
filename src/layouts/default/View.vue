@@ -151,7 +151,7 @@ onMounted(() => {
 
 .content-section--mobile {
   /* clears the bottom navigation plus the floating player bar above it */
-  padding-bottom: calc(var(--mobile-navigation-height) + 162px);
+  padding-bottom: var(--mobile-page-clearance);
 }
 
 .content-section--frameless {

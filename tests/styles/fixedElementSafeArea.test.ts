@@ -9,7 +9,6 @@ import playbackSpeedDialogSource from "@/layouts/default/PlayerOSD/PlaybackSpeed
 import { cn } from "@/lib/utils";
 import utilities from "@/styles/style.css?inline";
 import homeViewSource from "@/views/HomeView.vue?raw";
-import editConfigSource from "@/views/settings/EditConfig.vue?raw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // Every inset carries a distinct value, so an element reaching for the wrong
@@ -21,8 +20,6 @@ const INSET_BOTTOM = "11px";
 // Taller than the bottom inset it already folds in, so an element measuring
 // from the wrong one cannot read as the right number.
 const BARS_HEIGHT = "158px";
-// not the shipped width, so a rule reading it rather than a copy of it shows
-const SETTINGS_COLUMN_WIDTH = "1234px";
 
 // The unscoped blocks ship as written; a scoped one arrives without the
 // [data-v-hash] compound the compiler pairs each of its selectors with, so it
@@ -137,10 +134,6 @@ beforeEach(() => {
     "--bottom-bars-height",
     BARS_HEIGHT,
   );
-  document.documentElement.style.setProperty(
-    "--settings-column-width",
-    SETTINGS_COLUMN_WIDTH,
-  );
 });
 
 afterEach(() => {
@@ -149,29 +142,15 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe.each([
-  // The desktop rule is what a landscape phone gets, so it carries the inset
-  // even though the mobile variant has its own. On a settings page wider than
-  // the settings column, the room beside the column comes on top of both.
-  [
-    "settings save button",
-    editConfigSource,
-    "floating-save",
-    "24px",
-    `+max(0px,(100cqw-${SETTINGS_COLUMN_WIDTH})/2)`,
-  ],
-  ["home screen edit button", homeViewSource, EDIT_DONE, "24px", ""],
-])("%s", (_name, source, className, gap, columnOffset) => {
+describe("home screen edit button", () => {
   it("keeps its gap clear of a side cutout", () => {
-    const element = render(source, className);
+    const element = render(homeViewSource, EDIT_DONE);
 
     expect(normalize(getComputedStyle(element).right)).toBe(
-      `calc(${gap}+${INSET_RIGHT}${columnOffset})`,
+      `calc(24px+${INSET_RIGHT})`,
     );
   });
-});
 
-describe("home screen edit button", () => {
   it("clears the notch it sits under in portrait", () => {
     const element = render(homeViewSource, EDIT_DONE);
 

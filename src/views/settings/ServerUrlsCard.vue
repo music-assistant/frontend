@@ -36,6 +36,7 @@
             <template v-else>
               <code class="text-sm break-all">{{ remoteUrl }}</code>
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 class="size-7 shrink-0"
@@ -112,6 +113,7 @@
           <template v-if="detectedUrl">
             <code class="text-sm break-all">{{ detectedUrl }}</code>
             <Button
+              type="button"
               variant="ghost"
               size="icon"
               class="size-7 shrink-0"

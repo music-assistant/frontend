@@ -7,7 +7,7 @@
     :label="label ?? $t('settings.settings')"
     :description="description"
   >
-    <SettingsPageForm :page="page" flat @reset="open" />
+    <SettingsPageForm :page="page" flat inline-save @reset="open" />
   </SettingsFoldRow>
 </template>
 

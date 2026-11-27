@@ -71,7 +71,7 @@
     </Card>
 
     <CoreLogLevelsForm />
-    <SettingsPageForm page="diagnostics" embedded />
+    <SettingsPageForm page="diagnostics" embedded inline-save />
   </div>
 </template>
 
