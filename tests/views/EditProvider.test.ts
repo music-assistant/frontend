@@ -1559,9 +1559,9 @@ describe("EditProvider actions and sections", () => {
 
     (await menuEntry(wrapper, "settings.add_group_player")).action?.();
 
-    expect(routerMock.push).toHaveBeenCalledWith(
-      "/settings/addgroup/spotify--test",
-    );
+    expect(eventbusMock.emit).toHaveBeenCalledWith("addGroupDialog", {
+      provider: "spotify--test",
+    });
   });
 
   it("lets a member enable its own disabled source", async () => {
