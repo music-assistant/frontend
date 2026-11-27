@@ -719,6 +719,7 @@
             }
         },
         "settings_saved": "Settings saved successfully",
+        "settings_save_failed_for": "Couldn't save the settings of {0}",
         "settings_load_failed": "Couldn't load these settings",
         "protocol_no_settings": "This output protocol does not have any additional configuration",
         "protocol_no_settings_with_advanced": "No settings visible. Enable advanced settings to see more configuration options.",
