@@ -87,6 +87,8 @@ Object.assign(apiMock, {
   })),
   getDSPPresets: vi.fn(async () => []),
   subscribe: vi.fn(() => () => {}),
+  // the documentation link of the page depends on the server version
+  serverInfo: { value: undefined },
 });
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
@@ -1155,7 +1157,8 @@ describe("the way back from the DSP settings of a player", () => {
     return wrapper;
   }
 
-  const stageOpen = () => wrapper!.find("h3").exists();
+  const stageOpen = () =>
+    wrapper!.find('[data-testid="dsp-editor"] h3').exists();
   const stagesShown = () =>
     wrapper!.find('[data-testid="dsp-stages"]').exists();
   const pressBack = () =>
