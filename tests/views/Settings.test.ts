@@ -560,6 +560,13 @@ describe("Settings breadcrumbs on the pages below the players", () => {
     ]);
   });
 
+  it("hang Tap & play under the players", () => {
+    expect(pageTrail("tapandplaysettings")).toEqual([
+      players,
+      { title: "settings.tap_and_play.title", disabled: true },
+    ]);
+  });
+
   it("hang the player providers under the players", () => {
     expect(pageTrail("playerproviders")).toEqual([
       players,

@@ -284,6 +284,45 @@ describe("useSettingsPage on a page with several owners", () => {
   });
 });
 
+describe("useSettingsPage on the pages of the queue settings", () => {
+  beforeEach(() => {
+    apiMock.getCoreConfig.mockImplementation(async (domain) =>
+      queuePagesConfig(domain),
+    );
+  });
+
+  it("shows what clicking or playing an item does on Tap & play, in the order of the server", async () => {
+    const page = useSettingsPage("tap_and_play");
+    await flushPromises();
+
+    expect(apiMock.getCoreConfig).toHaveBeenCalledExactlyOnceWith(
+      "player_queues",
+    );
+    expect(page.entries.value.map((entry) => entry.key)).toEqual([
+      "default_enqueue_select_artist",
+      "default_enqueue_option_album",
+      "default_click_action_album",
+      "default_play_action_album_track",
+    ]);
+  });
+
+  it("shows every other queue setting with the playback defaults, also of a category the server adds", async () => {
+    const page = useSettingsPage("playback");
+    await flushPromises();
+
+    expect(page.entries.value.map((entry) => entry.key)).toEqual([
+      "core/player_queues/smart_shuffle_enabled",
+      "core/player_queues/autoplay_mode",
+      "core/player_queues/crossfade_mode",
+      "core/player_queues/volume_normalization",
+      "core/player_queues/pause_timeout",
+      "core/player_queues/radio_mode",
+      "core/streams/buffer_size",
+      "core/players/volume_step",
+    ]);
+  });
+});
+
 describe("useSettingsPage on the page of a provider", () => {
   beforeEach(() => {
     // the list of provider configs comes without their entries
@@ -457,6 +496,36 @@ function networkConfig(
         e.key in overrides ? { ...e, value: overrides[e.key] } : e,
       ]),
     ),
+  };
+}
+
+// the modules of the playback defaults and Tap & play, the queue settings with
+// an entry of each category the server has and of one it may add
+function queuePagesConfig(domain: string): CoreConfig {
+  const entries: Record<string, ConfigEntry[]> = {
+    player_queues: [
+      entry("default_enqueue_select_artist", "items_to_select", "top_tracks"),
+      entry("default_enqueue_option_album", "default_enqueue_option", "play"),
+      entry("default_click_action_album", "click_actions", "browse"),
+      entry("default_play_action_album_track", "click_actions", "play_track"),
+      entry("smart_shuffle_enabled", "smart_shuffle", "disabled"),
+      entry("autoplay_mode", "autoplay", "auto"),
+      entry("crossfade_mode", "crossfade", "smart_crossfade"),
+      entry("volume_normalization", "volume_normalization", "enabled"),
+      entry("pause_timeout", "playback", 30),
+      entry("radio_mode", "radio", "off"),
+      entry("log_level", "generic", "GLOBAL"),
+    ],
+    streams: [
+      entry("buffer_size", "playback", "auto"),
+      entry("stream_source_mode", "source_selection", "best_quality"),
+    ],
+    players: [entry("volume_step", "generic", 0)],
+  };
+  return {
+    domain,
+    last_error: null,
+    values: Object.fromEntries(entries[domain].map((e) => [e.key, e])),
   };
 }
 

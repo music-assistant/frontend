@@ -21,6 +21,8 @@ export interface SettingsSource {
   owner: SettingsOwner;
   // the categories of the owner's entries the page shows; left out: all of them
   categories?: readonly string[];
+  // the categories of the owner's entries the page leaves to other pages
+  excludedCategories?: readonly string[];
   // the heading of the source's entries on a page with several sources; left
   // out: its entries show under their categories
   title?: string;
@@ -45,6 +47,7 @@ export type SettingsPageId =
   | "metadata"
   | "network"
   | "playback"
+  | "tap_and_play"
   | "users";
 
 export const STREAMS_DOMAIN = "streams";
@@ -64,6 +67,12 @@ export const ACCOUNT_ACCESS_CATEGORY = "account_access";
 export const LOG_LEVEL_KEY = "log_level";
 // the category of an entry that names none
 const GENERIC_CATEGORY = "generic";
+// the categories of the queue settings about what clicking or playing an item does
+const TAP_AND_PLAY_CATEGORIES = [
+  "click_actions",
+  "default_enqueue_option",
+  "items_to_select",
+];
 
 // the scope needed to change the settings of each kind of owner
 const OWNER_WRITE_SCOPES: Readonly<Record<SettingsOwnerKind, Scope>> = {
@@ -149,12 +158,24 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
   playback: {
     // the sections follow the order of the sources
     sources: [
-      { owner: coreOwner(PLAYER_QUEUES_DOMAIN) },
+      // a category of the queue settings Tap & play does not show lands here
+      {
+        owner: coreOwner(PLAYER_QUEUES_DOMAIN),
+        excludedCategories: TAP_AND_PLAY_CATEGORIES,
+      },
       {
         owner: coreOwner(STREAMS_DOMAIN),
         categories: ["playback", "crossfade", "volume_normalization"],
       },
       { owner: coreOwner(PLAYERS_DOMAIN) },
+    ],
+  },
+  tap_and_play: {
+    sources: [
+      {
+        owner: coreOwner(PLAYER_QUEUES_DOMAIN),
+        categories: TAP_AND_PLAY_CATEGORIES,
+      },
     ],
   },
   users: {
@@ -185,9 +206,10 @@ export function sourceIncludesEntry(
   entry: ConfigEntry,
 ): boolean {
   if (entry.key === LOG_LEVEL_KEY) return false;
+  const category = entry.category || GENERIC_CATEGORY;
   return (
-    !source.categories ||
-    source.categories.includes(entry.category || GENERIC_CATEGORY)
+    (!source.categories || source.categories.includes(category)) &&
+    !source.excludedCategories?.includes(category)
   );
 }
 
