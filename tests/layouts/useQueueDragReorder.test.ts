@@ -85,7 +85,8 @@ describe("useQueueDragReorder", () => {
     storeMock.activePlayerQueue = playerQueue({
       items: rows.length,
       current_index: 0,
-      index_in_buffer: 0,
+      index_in_buffer: FIRST_UP_NEXT,
+      last_locked_index: 0,
     });
   });
 

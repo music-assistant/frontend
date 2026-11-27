@@ -81,4 +81,26 @@ describe("getQueueItemMenuItems", () => {
 
     expect(labels(items)).toContain("share.open_preview");
   });
+
+  it("locks the buffered item while the server locks it", () => {
+    storeMock.activePlayerQueue = playerQueue({
+      items: 5,
+      current_index: 0,
+      index_in_buffer: 1,
+      last_locked_index: 1,
+    });
+    const items = getQueueItemMenuItems(queueItem(), 1);
+    expect(items.find((i) => i.label === "queue_delete")?.disabled).toBe(true);
+  });
+
+  it("frees the buffered item when the server only locks the playing one", () => {
+    storeMock.activePlayerQueue = playerQueue({
+      items: 5,
+      current_index: 0,
+      index_in_buffer: 1,
+      last_locked_index: 0,
+    });
+    const items = getQueueItemMenuItems(queueItem(), 1);
+    expect(items.find((i) => i.label === "queue_delete")?.disabled).toBe(false);
+  });
 });

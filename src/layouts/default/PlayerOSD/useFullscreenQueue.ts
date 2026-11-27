@@ -68,7 +68,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   const itemState = (absIndex: number): QueueItemState => {
     const queue = store.activePlayerQueue;
     const current = currentQueueIndex(queue);
-    const buffer = Math.max(queue?.index_in_buffer ?? current, current);
+    const buffer = Math.max(queue?.last_locked_index ?? current, current);
     if (absIndex < current) return "played";
     if (absIndex === current) return "playing";
     if (absIndex <= buffer) return "buffered";

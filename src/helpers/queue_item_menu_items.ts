@@ -15,8 +15,8 @@ import { store } from "@/plugins/store";
 import { Orbit } from "@lucide/vue";
 
 // Builds the context-menu entries for a single queue item. Items up to and
-// including the buffered region are locked (already cued in the stream), so
-// they can't be moved or removed.
+// including the last item the player holds are locked (already cued in the
+// stream), so they can't be moved or removed.
 export const getQueueItemMenuItems = (
   item: QueueItem,
   index: number,
@@ -24,7 +24,8 @@ export const getQueueItemMenuItems = (
   const queue = store.activePlayerQueue;
   if (!queue) return [];
   const queueId = queue.queue_id;
-  const locked = index <= (queue.index_in_buffer ?? 0);
+  const lockedIndex = queue.last_locked_index;
+  const locked = index <= (lockedIndex ?? 0);
 
   const menuItems: ContextMenuItem[] = [
     {
@@ -32,8 +33,7 @@ export const getQueueItemMenuItems = (
       labelArgs: [],
       action: () => api.queueCommandPlayIndex(queueId, item.queue_item_id),
       icon: "mdi-play-circle-outline",
-      disabled:
-        index === queue.current_index || index === queue.index_in_buffer,
+      disabled: index === queue.current_index || index === lockedIndex,
     },
     {
       label: "play_next",

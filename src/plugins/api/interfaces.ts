@@ -1613,6 +1613,9 @@ export interface PlayerQueue {
   overlay_volume: number;
   current_index: number | null;
   index_in_buffer: number | null;
+  // last_locked_index: the items up to and including this index are held by the player and
+  // can't be moved or removed (server-derived, read-only). Null while nothing is locked.
+  last_locked_index: number | null;
   // ended: whether the queue played all the way to its end and is waiting to be restarted
   // (server-derived, read-only). The position stays on the last item, so this flag is what
   // tells a finished queue apart from one that is merely stopped on that item. Pressing play
