@@ -825,6 +825,103 @@ describe("EditConfig", () => {
   });
 });
 
+describe("EditConfig section headings", () => {
+  beforeEach(() => {
+    storeMock.currentUser = undefined;
+  });
+
+  it("leaves out the heading of the only section", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER }),
+    ]);
+
+    expect(sectionHeadings(wrapper)).toEqual([]);
+  });
+
+  it("heads every section once there are two", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({
+        key: "buffer",
+        type: ConfigEntryType.INTEGER,
+        category: "audio",
+      }),
+    ]);
+
+    expect(sectionHeadings(wrapper)).toEqual(["generic", "audio"]);
+  });
+
+  it("counts no section that holds only hidden entries", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({
+        key: "buffer",
+        type: ConfigEntryType.INTEGER,
+        category: "audio",
+        hidden: true,
+      }),
+    ]);
+
+    expect(sectionHeadings(wrapper)).toEqual([]);
+  });
+
+  it("heads the sections once the advanced toggle reveals a second one", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({
+        key: "buffer",
+        type: ConfigEntryType.INTEGER,
+        category: "audio",
+        advanced: true,
+      }),
+    ]);
+    expect(sectionHeadings(wrapper)).toEqual([]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await nextTick();
+
+    expect(sectionHeadings(wrapper)).toEqual(["generic", "audio"]);
+  });
+
+  it("keeps the heading of the only section when the host names its sections", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled: false,
+        keepSectionHeadings: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(sectionHeadings(wrapper)).toEqual(["generic"]);
+  });
+
+  it("leaves out the heading of the protocol section when it is the only one", () => {
+    const wrapper = mountEntries([protocolEnabledEntry()]);
+
+    expect(protocolSection(wrapper).props("showHeading")).toBe(false);
+  });
+
+  it("heads the protocol section beside another section", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      protocolEnabledEntry(),
+    ]);
+
+    expect(protocolSection(wrapper).props("showHeading")).toBe(true);
+    expect(sectionHeadings(wrapper)).toEqual(["generic"]);
+  });
+
+  it("renders no protocol section for a config without protocols", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+
+    expect(protocolSection(wrapper).exists()).toBe(false);
+  });
+});
+
 describe("EditConfig unsaved changes", () => {
   it("carries on to the page the user picked once they discard", async () => {
     const { router, wrapper } = await mountInRouter();
@@ -1051,6 +1148,23 @@ function mountForSave(
     props: { configEntries, disabled: false, ...extraProps },
     global: { renderStubDefaultSlot: true },
   });
+}
+
+// the enable switch of an optional protocol, which alone gives a form its protocol section
+function protocolEnabledEntry() {
+  return entry({
+    key: "airplay-output||protocol||enabled",
+    type: ConfigEntryType.BOOLEAN,
+    category: "protocol_airplay",
+  });
+}
+
+function sectionHeadings(wrapper: VueWrapper) {
+  return wrapper.findAll("section > h4").map((heading) => heading.text());
+}
+
+function protocolSection(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "ProtocolConfigSection" });
 }
 
 function advancedToggle(wrapper: VueWrapper) {

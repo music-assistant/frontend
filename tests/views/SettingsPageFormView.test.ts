@@ -43,7 +43,12 @@ const SAVE_BAR = '[data-testid="settings-save-bar"]';
 // the form itself is covered where it lives
 const editConfigStub = {
   name: "EditConfig",
-  props: { configEntries: Array, disabled: Boolean, inlineSave: Boolean },
+  props: {
+    configEntries: Array,
+    disabled: Boolean,
+    inlineSave: Boolean,
+    keepSectionHeadings: Boolean,
+  },
   emits: ["submit", "action", "immediateApply"],
   template: "<div />",
 };
@@ -124,6 +129,17 @@ const STREAMS_ENTRIES: ConfigEntry[] = [
 ];
 
 describe("SettingsPageFormView on the metadata settings", () => {
+  it("leaves the headings of its sections to the form", async () => {
+    apiMock.getCoreConfig.mockResolvedValue(
+      coreConfig("metadata", [entry("language", "generic")]),
+    );
+    const wrapper = await mountPage("metadata");
+
+    expect(
+      wrapper.getComponent(editConfigStub).props("keepSectionHeadings"),
+    ).toBe(false);
+  });
+
   it("shows every setting of the metadata module but its log level", async () => {
     apiMock.getCoreConfig.mockResolvedValue(
       coreConfig("metadata", [
@@ -179,6 +195,9 @@ describe("SettingsPageFormView on the library settings", () => {
         category_label: "settings.library.maintenance",
       },
     ]);
+    expect(
+      wrapper.getComponent(editConfigStub).props("keepSectionHeadings"),
+    ).toBe(true);
   });
 
   it("resets the library on the music module", async () => {

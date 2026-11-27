@@ -39,6 +39,7 @@ const editConfigStub = {
     inlineSave: Boolean,
     hideHeader: Boolean,
     showAdvancedSettings: { type: Boolean, default: undefined },
+    keepSectionHeadings: Boolean,
   },
   emits: ["submit"],
   setup() {
@@ -65,7 +66,7 @@ describe("CoreLogLevelsForm", () => {
     );
   });
 
-  it("shows every log level, advanced or not, without the header of the form", async () => {
+  it("shows every log level, advanced or not, under its heading without the header of the form", async () => {
     const wrapper = await mountForm();
 
     const form = wrapper.getComponent(editConfigStub);
@@ -73,6 +74,7 @@ describe("CoreLogLevelsForm", () => {
       (form.props("configEntries") as ConfigEntry[]).map((e) => e.key),
     ).toEqual(["core/streams/log_level"]);
     expect(form.props("hideHeader")).toBe(true);
+    expect(form.props("keepSectionHeadings")).toBe(true);
     expect(form.props("showAdvancedSettings")).toBe(true);
     expect(form.props("inlineSave")).toBe(true);
   });

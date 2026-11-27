@@ -27,6 +27,7 @@ import {
   providerSettingsPageId,
   SETTINGS_PAGES,
   settingsPageProviderDomain,
+  settingsPageTitlesSections,
   sourceIncludesEntry,
   STREAMS_DOMAIN,
   TASKS_DOMAIN,
@@ -389,6 +390,22 @@ describe("settingsPageProviderDomain", () => {
     "names none for the %s page of core settings",
     (pageId) => {
       expect(settingsPageProviderDomain(pageId)).toBeUndefined();
+    },
+  );
+});
+
+describe("settingsPageTitlesSections", () => {
+  it.each<SettingsPageId>(["diagnostics", "library", "network"])(
+    "heads the sources of the %s page with their titles",
+    (pageId) => {
+      expect(settingsPageTitlesSections(pageId)).toBe(true);
+    },
+  );
+
+  it.each<SettingsPageId>(["metadata", "playback"])(
+    "leaves the %s page to the categories of its entries",
+    (pageId) => {
+      expect(settingsPageTitlesSections(pageId)).toBe(false);
     },
   );
 });

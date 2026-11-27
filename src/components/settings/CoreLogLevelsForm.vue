@@ -9,6 +9,7 @@
       inline-save
       hide-header
       :show-advanced-settings="true"
+      keep-section-headings
       @submit="onSubmit"
     />
 
