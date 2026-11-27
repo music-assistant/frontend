@@ -35,7 +35,7 @@
       </ItemTitle>
       <PlayerSetupWarning
         v-if="needsSetup"
-        class="self-start"
+        class="max-w-full self-start"
         :reason="setupReason"
         @setup="emit('setup', playerConfig)"
       />
@@ -62,7 +62,6 @@
     <ItemActions class="gap-1">
       <PlayerStatusIcon
         :enabled="playerConfig.enabled"
-        :needs-setup="needsSetup"
         :unavailable="isUnavailable"
         :reason="setupReason"
         class="size-5"
