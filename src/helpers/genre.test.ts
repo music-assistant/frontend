@@ -4,6 +4,7 @@ import {
   genreContentTypeIcon,
   genreMediaTypeIconMap,
   mappedAliases,
+  rankedAliases,
 } from "./genre";
 import { Genre, MediaType } from "../plugins/api/interfaces";
 
@@ -44,5 +45,62 @@ describe("mappedAliases", () => {
     expect(mappedAliases(genre("Rock", ["Rock", "Rockabilly"]))).toEqual([
       "Rockabilly",
     ]);
+  });
+});
+
+describe("rankedAliases", () => {
+  it("lists exact, then leading, then contained matches, then the rest", () => {
+    expect(
+      rankedAliases(
+        [
+          genre("Hip Hop", [
+            "Acid Jazz",
+            "Abstract Hip Hop",
+            "Hip-Hop",
+            "Hip Hop Soul",
+          ]),
+        ],
+        "hip hop",
+      ),
+    ).toEqual(["Hip-Hop", "Hip Hop Soul", "Abstract Hip Hop", "Acid Jazz"]);
+  });
+
+  it("keeps only the matching aliases of a genre whose name does not match", () => {
+    expect(
+      rankedAliases(
+        [genre("R&B", ["Blue-Eyed Soul", "Hip Hop Soul"])],
+        "hip hop",
+      ),
+    ).toEqual(["Hip Hop Soul"]);
+  });
+
+  it("offers every alias of a genre the server matched by a localized name", () => {
+    expect(
+      rankedAliases(
+        [
+          genre("Classical", ["Opera", "Baroque"]),
+          genre("Electronic", ["Klassik Electro", "Techno"]),
+        ],
+        "Klassik",
+      ),
+    ).toEqual(["Klassik Electro", "Baroque", "Opera"]);
+  });
+
+  it("lists aliases that differ only in case once", () => {
+    expect(
+      rankedAliases(
+        [genre("Rock", ["Hip Hop"]), genre("Pop", ["hip hop"])],
+        "hip hop",
+      ),
+    ).toEqual(["Hip Hop"]);
+  });
+
+  it("ignores accents and lists an alias shared by two genres once", () => {
+    expect(
+      rankedAliases(
+        [genre("Raï", ["Raï"]), genre("World", ["Rai", "Raï"])],
+        "rai",
+      ),
+    ).toEqual(["Rai", "Raï"]);
   });
 });
