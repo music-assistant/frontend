@@ -911,6 +911,59 @@ describe("EditProvider", () => {
     ]);
   });
 
+  it("starts with nothing unsaved on the page of another provider", async () => {
+    apiMock.getProviderConfig
+      .mockResolvedValueOnce(spotifyConfig(ProviderStatus.LOADED, "first"))
+      .mockResolvedValueOnce(
+        spotifyConfig(
+          ProviderStatus.LOADED,
+          "second",
+          undefined,
+          true,
+          "spotify--other",
+        ),
+      );
+    const wrapper = await mountProvider(undefined, { EditConfig: false });
+
+    await wrapper.setProps({ instanceId: "spotify--other" });
+    await flushPromises();
+
+    const editConfig = wrapper.findComponent({ name: "EditConfig" });
+    expect(editConfig.props("configEntries")).toEqual([
+      expect.objectContaining({ key: "account", value: "second" }),
+    ]);
+    expect(
+      wrapper
+        .findComponent({ name: "SettingsSaveBar" })
+        .props("unsavedChanges"),
+    ).toBe(false);
+  });
+
+  it("keeps a value an action filled in unsaved", async () => {
+    apiMock.getProviderConfig.mockResolvedValue(
+      spotifyConfig(ProviderStatus.LOADED),
+    );
+    // an action such as signing in hands back the entries with the value it set
+    apiMock.invokeProviderConfigAction.mockResolvedValue([
+      {
+        ...spotifyConfig(ProviderStatus.LOADED).values.account,
+        value: "signed in",
+      },
+    ]);
+    const wrapper = await mountProvider(undefined, { EditConfig: false });
+
+    wrapper
+      .findComponent({ name: "EditConfig" })
+      .vm.$emit("action", "authenticate", {}, false);
+    await flushPromises();
+
+    expect(
+      wrapper
+        .findComponent({ name: "SettingsSaveBar" })
+        .props("unsavedChanges"),
+    ).toBe(true);
+  });
+
   it("refreshes provider status when reconfiguration ends", async () => {
     apiMock.getProviderConfig
       .mockResolvedValueOnce(spotifyConfig(ProviderStatus.AUTH_REQUIRED))

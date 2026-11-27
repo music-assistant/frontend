@@ -223,8 +223,10 @@
       />
     </div>
 
+    <!-- the form compares against the values it first got, so another provider gets a form of its own -->
     <edit-config
       v-if="config"
+      :key="config.instance_id"
       ref="editConfig"
       :config-entries="allConfigEntries"
       :disabled="!config.enabled"

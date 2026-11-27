@@ -11,8 +11,10 @@
       @reset-to-defaults="resetToDefaults"
     />
 
+    <!-- the form compares against the values it first got, so another module gets a form of its own -->
     <edit-config
       v-if="config"
+      :key="config.domain"
       ref="editConfig"
       :config-entries="allConfigEntries"
       :disabled="false"

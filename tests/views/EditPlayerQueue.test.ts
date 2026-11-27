@@ -119,6 +119,44 @@ describe("EditPlayerQueue", () => {
     expect(formEntry("flow").value).toBe("b");
   });
 
+  it("starts with nothing unsaved on the page of another queue", async () => {
+    const queueConfig = (queueId: string, crossfade: string) => ({
+      queue_id: queueId,
+      values: {
+        crossfade: {
+          key: "crossfade",
+          type: "string",
+          label: "crossfade",
+          category: "generic",
+          options: [],
+          required: false,
+          default_value: null,
+          value: crossfade,
+        },
+      },
+    });
+    apiMock.getPlayerQueueConfig
+      .mockResolvedValueOnce(queueConfig("kitchen", "off"))
+      .mockResolvedValueOnce(queueConfig("garden", "smart_crossfade"));
+    const wrapper = shallowMount(EditPlayerQueue, {
+      props: { queueId: "kitchen" },
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: { EditConfig: false },
+      },
+    });
+    await flushPromises();
+
+    await wrapper.setProps({ queueId: "garden" });
+    await flushPromises();
+
+    expect(
+      wrapper
+        .findComponent({ name: "SettingsSaveBar" })
+        .props("unsavedChanges"),
+    ).toBe(false);
+  });
+
   it("leaves reporting a refused immediate change to the api", async () => {
     apiMock.savePlayerQueueConfig.mockRejectedValueOnce(
       new ApiCommandError(REASON, 1, REASON),
