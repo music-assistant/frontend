@@ -288,6 +288,14 @@ describe("the page of each setting", () => {
       ).toEqual([]);
     }
   });
+
+  it("sets the log levels of the core modules on the diagnostics page only", () => {
+    expect(
+      (Object.keys(SETTINGS_PAGES) as SettingsPageId[]).filter(
+        (id) => SETTINGS_PAGES[id].logLevels,
+      ),
+    ).toEqual(["diagnostics"]);
+  });
 });
 
 describe("isKnownOwner", () => {

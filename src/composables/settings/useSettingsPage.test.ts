@@ -25,6 +25,8 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
     invokeProviderConfigAction:
       vi.fn<MusicAssistantApi["invokeProviderConfigAction"]>(),
     saveProviderConfig: vi.fn<MusicAssistantApi["saveProviderConfig"]>(),
+    getCoreConfigs: vi.fn<MusicAssistantApi["getCoreConfigs"]>(),
+    providerManifests: {} as Record<string, { name: string }>,
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { error: vi.fn(), success: vi.fn() },
@@ -32,8 +34,15 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
 
 vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+// a text with arguments shows them, so a test can tell what it names
+vi.mock("@/plugins/i18n", () => ({
+  $t: (key: string, args?: unknown[]) =>
+    args ? `${key}:${args.join("|")}` : key,
+}));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
+
+// the save names the owner of a failed save in a toast of its own
+const QUIET_SAVE = { suppressGlobalError: true };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -88,11 +97,15 @@ describe("useSettingsPage", () => {
         background_scan_concurrency: 4,
         smart_fades_log_level: "GLOBAL",
       }),
-    ).resolves.toBe(true);
+    ).resolves.toMatchObject({ complete: true });
 
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledExactlyOnceWith("streams", {
-      background_scan_concurrency: 4,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledExactlyOnceWith(
+      "streams",
+      {
+        background_scan_concurrency: 4,
+      },
+      QUIET_SAVE,
+    );
   });
 
   it("takes what the server stored as saved", async () => {
@@ -100,9 +113,9 @@ describe("useSettingsPage", () => {
     await flushPromises();
     await page.save({ background_scan_concurrency: 4 });
 
-    await expect(page.save({ background_scan_concurrency: 4 })).resolves.toBe(
-      true,
-    );
+    await expect(
+      page.save({ background_scan_concurrency: 4 }),
+    ).resolves.toMatchObject({ complete: true });
 
     expect(apiMock.saveCoreConfig).toHaveBeenCalledOnce();
   });
@@ -113,9 +126,13 @@ describe("useSettingsPage", () => {
 
     await page.save({ background_scan_concurrency: null });
 
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
-      background_scan_concurrency: null,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      {
+        background_scan_concurrency: null,
+      },
+      QUIET_SAVE,
+    );
   });
 
   it("makes no call when nothing changed", async () => {
@@ -124,7 +141,7 @@ describe("useSettingsPage", () => {
 
     await expect(
       page.save({ background_scan_concurrency: 2, bind_port: 1234 }),
-    ).resolves.toBe(true);
+    ).resolves.toMatchObject({ complete: true });
 
     expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
   });
@@ -134,10 +151,14 @@ describe("useSettingsPage", () => {
     const page = useSettingsPage("audio_analysis");
     await flushPromises();
 
-    await expect(page.save({ background_scan_concurrency: 4 })).resolves.toBe(
-      false,
-    );
+    await expect(
+      page.save({ background_scan_concurrency: 4 }),
+    ).resolves.toEqual({ stored: {}, complete: false });
     expect(page.busy.value).toBe(false);
+    expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
+      "settings.settings_save_failed_for:streams",
+      { description: "refused" },
+    );
   });
 
   it("runs an action on the owner of its entry and shows what it returns", async () => {
@@ -204,15 +225,23 @@ describe("useSettingsPage on a page with several owners", () => {
         "core/streams/bind_port": 8098,
         "core/discovery/upnp_network_scan": false,
       }),
-    ).resolves.toBe(true);
+    ).resolves.toMatchObject({ complete: true });
 
     expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("webserver", {
-      bind_port: 8096,
-    });
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
-      bind_port: 8098,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "webserver",
+      {
+        bind_port: 8096,
+      },
+      QUIET_SAVE,
+    );
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      {
+        bind_port: 8098,
+      },
+      QUIET_SAVE,
+    );
   });
 
   it("sends a change again only to the owner that did not store it", async () => {
@@ -227,13 +256,21 @@ describe("useSettingsPage on a page with several owners", () => {
       "core/streams/bind_port": 8098,
     };
 
-    await expect(page.save(values)).resolves.toBe(false);
+    // what the other owner stored is reported as stored
+    await expect(page.save(values)).resolves.toEqual({
+      stored: { "core/webserver/bind_port": 8096 },
+      complete: false,
+    });
     apiMock.saveCoreConfig.mockClear();
     await page.save(values);
 
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledExactlyOnceWith("streams", {
-      bind_port: 8098,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledExactlyOnceWith(
+      "streams",
+      {
+        bind_port: 8098,
+      },
+      QUIET_SAVE,
+    );
   });
 
   it("runs an action on the owner of its entry, by the name it knows", async () => {
@@ -281,6 +318,157 @@ describe("useSettingsPage on a page with several owners", () => {
       "core/streams/bind_port",
     );
     expect(page.entryOf(coreOwner("streams"), "fade_in")).toBeUndefined();
+  });
+});
+
+describe("useSettingsPage on the diagnostics page", () => {
+  beforeEach(() => {
+    apiMock.providerManifests = { cache: { name: "Cache" } };
+    apiMock.getCoreConfig.mockImplementation(async (domain) =>
+      moduleConfig(domain),
+    );
+    apiMock.getCoreConfigs.mockImplementation(async () =>
+      ["streams", "cache", "statistics"].map((domain) => moduleConfig(domain)),
+    );
+    apiMock.saveCoreConfig.mockImplementation(async (domain, values) =>
+      moduleConfig(domain, values),
+    );
+  });
+
+  it("leads with the log level of every module, by name and always in view", async () => {
+    const page = useSettingsPage("diagnostics");
+    await flushPromises();
+
+    // the configs carry their entries only on request
+    expect(apiMock.getCoreConfigs).toHaveBeenCalledExactlyOnceWith(true);
+    expect(
+      page.entries.value.map(({ key, label, advanced, category }) => ({
+        key,
+        label,
+        advanced,
+        category,
+      })),
+    ).toEqual([
+      {
+        key: "core/cache/log_level",
+        label: "Cache",
+        advanced: false,
+        category: "log_levels",
+      },
+      {
+        key: "core/statistics/log_level",
+        label: "statistics",
+        advanced: false,
+        category: "log_levels",
+      },
+      {
+        key: "core/streams/log_level",
+        label: "streams",
+        advanced: false,
+        category: "log_levels",
+      },
+      {
+        key: "core/cache/clear_cache",
+        label: "clear_cache",
+        advanced: undefined,
+        category: "core/cache",
+      },
+      {
+        key: "core/cache/expire_after",
+        label: "expire_after",
+        advanced: undefined,
+        category: "core/cache",
+      },
+    ]);
+  });
+
+  it("saves the log levels with the other settings, one call per module", async () => {
+    const page = useSettingsPage("diagnostics");
+    await flushPromises();
+
+    await expect(
+      page.save({
+        "core/streams/log_level": "DEBUG",
+        "core/cache/log_level": "INFO",
+        "core/cache/expire_after": 60,
+        "core/statistics/log_level": "GLOBAL",
+      }),
+    ).resolves.toMatchObject({ complete: true });
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      { log_level: "DEBUG" },
+      QUIET_SAVE,
+    );
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "cache",
+      { log_level: "INFO", expire_after: 60 },
+      QUIET_SAVE,
+    );
+  });
+
+  it("names the modules that did not store their changes, and keeps them unsaved", async () => {
+    apiMock.saveCoreConfig.mockImplementation(async (domain, values) => {
+      if (domain !== "statistics") throw new Error(`${domain} refused`);
+      return moduleConfig(domain, values);
+    });
+    const page = useSettingsPage("diagnostics");
+    await flushPromises();
+    const values = {
+      "core/streams/log_level": "DEBUG",
+      "core/cache/expire_after": 60,
+      "core/statistics/log_level": "ERROR",
+    };
+
+    await expect(page.save(values)).resolves.toEqual({
+      stored: { "core/statistics/log_level": "ERROR" },
+      complete: false,
+    });
+    // one toast for the whole save, the reason of each module in it
+    expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
+      "settings.settings_save_failed_for:streams, Cache",
+      { description: "streams refused; cache refused" },
+    );
+
+    apiMock.saveCoreConfig.mockClear();
+    await page.save(values);
+    expect(apiMock.saveCoreConfig).not.toHaveBeenCalledWith(
+      "statistics",
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("keeps a log level that was typed when an action shows new entries", async () => {
+    // an action answers with the entries without their values
+    apiMock.invokeCoreConfigAction.mockResolvedValueOnce(
+      Object.values(moduleConfig("cache").values).map((entry) => ({
+        ...entry,
+        value: undefined,
+      })),
+    );
+    const page = useSettingsPage("diagnostics");
+    await flushPromises();
+
+    await page.onAction(
+      "core/cache/clear_cache",
+      { "core/cache/log_level": "DEBUG", "core/streams/log_level": "ERROR" },
+      false,
+    );
+
+    expect(valueOf(page, "core/cache/log_level")).toBe("DEBUG");
+    expect(valueOf(page, "core/streams/log_level")).toBe("ERROR");
+  });
+
+  it("loads nothing for a user who may not change the core settings", async () => {
+    hasScope.mockImplementation((scope) => scope !== Scope.CONFIG_CORE_WRITE);
+
+    const page = useSettingsPage("diagnostics");
+    await flushPromises();
+
+    expect(page.canEdit).toBe(false);
+    expect(apiMock.getCoreConfigs).not.toHaveBeenCalled();
   });
 });
 
@@ -381,12 +569,13 @@ describe("useSettingsPage on the page of a provider", () => {
         power_controls: ["switch.amplifier"],
         volume_controls: [],
       }),
-    ).resolves.toBe(true);
+    ).resolves.toMatchObject({ complete: true });
 
     expect(apiMock.saveProviderConfig).toHaveBeenCalledExactlyOnceWith(
       "hass",
       { power_controls: ["switch.amplifier"] },
       "hass--1",
+      QUIET_SAVE,
     );
   });
 
@@ -492,6 +681,41 @@ function networkConfig(
     last_error: null,
     values: Object.fromEntries(
       entries[domain].map((e) => [
+        e.key,
+        e.key in overrides ? { ...e, value: overrides[e.key] } : e,
+      ]),
+    ),
+  };
+}
+
+// a core module as the server sends it: its log level, and the settings of the
+// cache module, with a setting holding a value next to its action
+function moduleConfig(
+  domain: string,
+  overrides: Record<string, ConfigEntry["value"]> = {},
+): CoreConfig {
+  const entries: ConfigEntry[] = [
+    {
+      ...entry("log_level", "generic", "GLOBAL"),
+      type: ConfigEntryType.STRING,
+      default_value: "GLOBAL",
+      advanced: true,
+    },
+  ];
+  if (domain === "cache") {
+    entries.unshift(
+      {
+        ...entry("clear_cache", "generic", null),
+        type: ConfigEntryType.ACTION,
+      },
+      entry("expire_after", "generic", 30),
+    );
+  }
+  return {
+    domain,
+    last_error: null,
+    values: Object.fromEntries(
+      entries.map((e) => [
         e.key,
         e.key in overrides ? { ...e, value: overrides[e.key] } : e,
       ]),

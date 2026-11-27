@@ -83,7 +83,9 @@ export function buildSettingsForm(
 
 /**
  * The form of the log levels of the core modules: the log level of each
- * module, labelled with the name of the module, in one section, by name.
+ * module, labelled with the name of the module, in one section, by name. The
+ * section is about the log levels, so none of them waits for the advanced
+ * settings to show.
  *
  * @param configs - The config of each core module.
  * @param moduleName - Gives the name of a core module, by its domain.
@@ -107,6 +109,7 @@ export function buildLogLevelForm(
       label: moduleName(config.domain),
       // the description speaks of a single module, which the section does not
       description: null,
+      advanced: false,
       category: LOG_LEVELS_CATEGORY,
       category_label: sectionLabel,
     });

@@ -165,23 +165,23 @@ onBeforeUnmount(() => {
   if (!props.embedded) pageMenu.value = [];
 });
 
-// an entry that applies the moment it changes is saved on its own; the api
-// reports a failed save itself
+// an entry that applies the moment it changes is saved on its own; the save
+// reports a failure itself
 const onImmediateApply = async function (
   values: Record<string, ConfigValueType>,
 ) {
-  if (!(await save(values))) return;
+  if (!(await save(values)).complete) return;
   toast.success($t("settings.settings_saved"));
   emit("saved");
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
-  if (!(await save(values))) {
-    editConfig.value?.saveFailed();
-    return;
-  }
-  // the form stays on screen, so it takes the saved values as its baseline
-  editConfig.value?.saveSucceeded(values);
+  const { stored, complete } = await save(values);
+  // the form stays on screen, so it takes the stored values as its baseline;
+  // the changes of an owner that did not store them stay unsaved, and the save
+  // reports that itself
+  editConfig.value?.saveSucceeded(stored);
+  if (!complete) return;
   toast.success($t("settings.settings_saved"));
   emit("saved");
 };

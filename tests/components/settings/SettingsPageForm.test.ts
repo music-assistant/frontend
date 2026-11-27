@@ -21,6 +21,7 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
     saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
     getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
+    providerManifests: {} as Record<string, { name: string }>,
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { error: vi.fn(), success: vi.fn() },
@@ -30,6 +31,9 @@ vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
+
+// the save names the owner of a failed save in a toast of its own
+const QUIET_SAVE = { suppressGlobalError: true };
 // one menu for the test to read what the form publishes into it
 vi.mock("@/composables/useSettingsPageMenu", async () => {
   const { ref } = await import("vue");
@@ -39,9 +43,8 @@ vi.mock("@/composables/useSettingsPageMenu", async () => {
 
 enableAutoUnmount(afterEach);
 
-// the form takes the saved values as its baseline, or guards them again
+// the form takes the stored values as its baseline
 const saveSucceeded = vi.fn();
-const saveFailed = vi.fn();
 const resetToDefaults = vi.fn();
 
 /**
@@ -60,7 +63,7 @@ const editConfigStub = {
   },
   emits: ["submit", "action", "immediateApply"],
   setup() {
-    return { saveFailed, saveSucceeded, resetToDefaults };
+    return { saveSucceeded, resetToDefaults };
   },
   template: "<div data-testid='edit-config'><slot /></div>",
 };
@@ -191,9 +194,13 @@ describe("SettingsPageForm", () => {
     await form.vm.$emit("submit", { background_scan_concurrency: 4 });
     await flushPromises();
 
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
-      background_scan_concurrency: 4,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      {
+        background_scan_concurrency: 4,
+      },
+      QUIET_SAVE,
+    );
     expect(saveSucceeded).toHaveBeenCalledWith({
       background_scan_concurrency: 4,
     });
@@ -205,7 +212,7 @@ describe("SettingsPageForm", () => {
     );
   });
 
-  it("guards the edits again when the save did not land", async () => {
+  it("keeps the edits unsaved when the save did not land", async () => {
     apiMock.saveCoreConfig.mockRejectedValueOnce(new Error("refused"));
     const wrapper = await mountForm();
 
@@ -214,8 +221,9 @@ describe("SettingsPageForm", () => {
       .vm.$emit("submit", { background_scan_concurrency: 4 });
     await flushPromises();
 
-    expect(saveFailed).toHaveBeenCalledOnce();
-    expect(saveSucceeded).not.toHaveBeenCalled();
+    // nothing landed, so nothing joins the baseline
+    expect(saveSucceeded).toHaveBeenCalledExactlyOnceWith({});
+    expect(toastMock.error).toHaveBeenCalledOnce();
     expect(toastMock.success).not.toHaveBeenCalled();
     expect(wrapper.emitted("saved")).toBeUndefined();
   });
@@ -228,9 +236,13 @@ describe("SettingsPageForm", () => {
       .vm.$emit("immediateApply", { background_scan_concurrency: 4 });
     await flushPromises();
 
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
-      background_scan_concurrency: 4,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      {
+        background_scan_concurrency: 4,
+      },
+      QUIET_SAVE,
+    );
     expect(toastMock.success).toHaveBeenCalledExactlyOnceWith(
       "settings.settings_saved",
     );

@@ -36,6 +36,9 @@ vi.mock("vue-sonner", () => ({
   toast: { error: vi.fn(), success: toastSuccess },
 }));
 
+// the save names the owner of a failed save in a toast of its own
+const QUIET_SAVE = { suppressGlobalError: true };
+
 enableAutoUnmount(afterEach);
 
 const SAVE_BAR = '[data-testid="settings-save-bar"]';
@@ -257,12 +260,20 @@ describe("SettingsPageFormView saving the library settings", () => {
     await flushPromises();
 
     expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
-      stream_source_mode: "prefer_quality",
-    });
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("music", {
-      keep_remasters_apart: true,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      {
+        stream_source_mode: "prefer_quality",
+      },
+      QUIET_SAVE,
+    );
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "music",
+      {
+        keep_remasters_apart: true,
+      },
+      QUIET_SAVE,
+    );
     // what is saved is no longer a change
     expect(wrapper.find(SAVE_BAR).exists()).toBe(false);
   });

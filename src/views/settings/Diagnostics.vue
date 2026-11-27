@@ -70,8 +70,7 @@
       </CardContent>
     </Card>
 
-    <CoreLogLevelsForm />
-    <SettingsPageForm page="diagnostics" embedded inline-save />
+    <SettingsPageForm page="diagnostics" embedded />
   </div>
 </template>
 
@@ -80,7 +79,6 @@ import { AlertCircle, Download, RefreshCw, Stethoscope } from "@lucide/vue";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 import UnsupportedInstallBanner from "@/components/UnsupportedInstallBanner.vue";
-import CoreLogLevelsForm from "@/components/settings/CoreLogLevelsForm.vue";
 import SettingsPageForm from "@/components/settings/SettingsPageForm.vue";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
 import { Button } from "@/components/ui/button";

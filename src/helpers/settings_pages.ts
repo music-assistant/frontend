@@ -35,6 +35,9 @@ export interface SettingsPage {
   // lists of providers leave it out
   provider?: string;
   sources: readonly SettingsSource[];
+  // the page also sets the log level of every core module, in a section of
+  // its own above the settings of its sources
+  logLevels?: boolean;
 }
 
 export type SettingsPageId =
@@ -99,6 +102,7 @@ export const SETTINGS_PAGES: Readonly<Record<SettingsPageId, SettingsPage>> = {
     sources: [{ owner: coreOwner(TASKS_DOMAIN) }],
   },
   diagnostics: {
+    logLevels: true,
     sources: [
       {
         owner: coreOwner(CACHE_DOMAIN),
