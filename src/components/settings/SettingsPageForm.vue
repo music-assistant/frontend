@@ -1,24 +1,26 @@
 <template>
   <div v-if="showForm" :aria-busy="busy" data-testid="settings-page-form">
-    <template v-if="loaded">
+    <!-- the custom controls go inside the form, so its Save stays in view
+         while they are -->
+    <EditConfig
+      v-if="loaded"
+      ref="editConfig"
+      :config-entries="entries"
+      :disabled="false"
+      :provider-domain="settingsPageProviderDomain(page)"
+      :flat="flat"
+      :inline-save="inlineSave"
+      @submit="onSubmit"
+      @action="onAction"
+      @immediate-apply="onImmediateApply"
+    >
       <slot
         v-if="customEntries"
         name="custom"
         :entries="customEntries"
         :set-value="setCustomValue"
       />
-      <EditConfig
-        ref="editConfig"
-        :config-entries="entries"
-        :disabled="false"
-        :provider-domain="settingsPageProviderDomain(page)"
-        :flat="flat"
-        inline-save
-        @submit="onSubmit"
-        @action="onAction"
-        @immediate-apply="onImmediateApply"
-      />
-    </template>
+    </EditConfig>
 
     <Empty v-else-if="loadFailed" class="rounded-xl border border-dashed py-6">
       <EmptyHeader>
@@ -71,6 +73,9 @@ const props = defineProps<{
   // the form sits in a frame that names it, so it draws no card or title of
   // its own
   flat?: boolean;
+  // Save follows the fields instead of a bar pinned to the bottom of the page,
+  // for a form in a frame of its own
+  inlineSave?: boolean;
 }>();
 
 defineSlots<{

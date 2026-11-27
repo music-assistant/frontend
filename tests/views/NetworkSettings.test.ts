@@ -35,7 +35,7 @@ enableAutoUnmount(afterEach);
 const editConfigStub = {
   name: "EditConfig",
   props: { configEntries: Array, disabled: Boolean, inlineSave: Boolean },
-  template: "<div data-testid='edit-config' />",
+  template: "<div data-testid='edit-config'><slot /></div>",
 };
 const resetUrlCard = vi.fn();
 const serverUrlsCardStub = {

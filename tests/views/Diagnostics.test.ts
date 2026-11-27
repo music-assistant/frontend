@@ -132,9 +132,11 @@ describe("Diagnostics settings", () => {
 
     expect(wrapper.findComponent(CoreLogLevelsForm).exists()).toBe(true);
     // the log viewer is what the page is about, so the page menu stays its own
+    // like the log levels form above it, its Save follows its fields
     expect(wrapper.findComponent(SettingsPageForm).props()).toMatchObject({
       page: "diagnostics",
       embedded: true,
+      inlineSave: true,
     });
     wrapper.unmount();
   });

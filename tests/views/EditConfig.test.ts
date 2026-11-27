@@ -495,21 +495,20 @@ describe("EditConfig", () => {
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
   });
 
-  it.each([
-    ["mobile", "mobileLayout", "floating-save--mobile"],
-    ["frameless", "frameless", "floating-save--frameless"],
-  ] as const)(
-    "uses the %s save position in that layout",
-    (_, layout, cssClass) => {
-      storeMock[layout] = true;
+  it("pins the save action to a bar that says when there are unsaved changes", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+    const bar = wrapper.getComponent({ name: "SettingsSaveBar" });
+    expect(bar.props("inline")).toBe(false);
+    expect(bar.props("unsavedChanges")).toBe(false);
+    expect(bar.find('[data-testid="config-save"]').exists()).toBe(true);
 
-      const wrapper = mountEntries([
-        entry({ key: "server", type: ConfigEntryType.STRING }),
-      ]);
+    dirty(wrapper);
+    await nextTick();
 
-      expect(wrapper.get(".floating-save").classes()).toContain(cssClass);
-    },
-  );
+    expect(bar.props("unsavedChanges")).toBe(true);
+  });
 
   it("keeps the save action in the flow of the form when asked", () => {
     const wrapper = mountEntries(
@@ -518,9 +517,27 @@ describe("EditConfig", () => {
       true,
     );
 
-    // a form inside a dialog: nothing floats, the button follows the fields
-    expect(wrapper.find(".floating-save").exists()).toBe(false);
-    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
+    // a form inside a dialog: the button follows the fields
+    const bar = wrapper.getComponent({ name: "SettingsSaveBar" });
+    expect(bar.props("inline")).toBe(true);
+    expect(bar.find('[data-testid="config-save"]').exists()).toBe(true);
+  });
+
+  it("shows the controls of its host inside the form, above its fields", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled: false,
+      },
+      slots: { default: "<div data-testid='host-control' />" },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(
+      wrapper
+        .get("form")
+        .element.firstElementChild?.getAttribute("data-testid"),
+    ).toBe("host-control");
   });
 
   it.each([
@@ -738,10 +755,6 @@ describe("EditConfig", () => {
 
     expect(renderedKeys(wrapper)).toEqual(["clear_cache"]);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
-    // nothing floats, so no room is kept for it either
-    expect(wrapper.get("form").classes()).not.toContain(
-      "floating-save-clearance",
-    );
   });
 
   it("offers no save action on a form whose entries save the moment they change", () => {
@@ -810,32 +823,6 @@ describe("EditConfig", () => {
         .props("outputMenuItems"),
     ).toBe(outputMenuItems);
   });
-
-  it("leaves room below the last row for the floating save action", () => {
-    const wrapper = mountEntries([
-      entry({ key: "server", type: ConfigEntryType.STRING }),
-    ]);
-
-    expect(wrapper.get("form").classes()).toContain("floating-save-clearance");
-  });
-
-  it.each([
-    ["disabled", true, false],
-    ["inline save", false, true],
-  ] as const)(
-    "leaves no room for a save action that does not float (%s)",
-    (_, disabled, inlineSave) => {
-      const wrapper = mountEntries(
-        [entry({ key: "server", type: ConfigEntryType.STRING })],
-        disabled,
-        inlineSave,
-      );
-
-      expect(wrapper.get("form").classes()).not.toContain(
-        "floating-save-clearance",
-      );
-    },
-  );
 });
 
 describe("EditConfig unsaved changes", () => {

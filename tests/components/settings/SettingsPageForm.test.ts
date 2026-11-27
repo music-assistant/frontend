@@ -62,7 +62,7 @@ const editConfigStub = {
   setup() {
     return { saveFailed, saveSucceeded, resetToDefaults };
   },
-  template: "<div data-testid='edit-config' />",
+  template: "<div data-testid='edit-config'><slot /></div>",
 };
 
 beforeEach(() => {
@@ -126,7 +126,8 @@ describe("SettingsPageForm", () => {
     expect(
       (form.props("configEntries") as ConfigEntry[]).map((e) => e.key),
     ).toEqual(["background_scan_concurrency"]);
-    expect(form.props("inlineSave")).toBe(true);
+    // a page pins its Save to a bar at the bottom of the screen
+    expect(form.props("inlineSave")).toBe(false);
     expect(form.props("hideHeader")).toBe(false);
     expect(form.props("flat")).toBe(false);
     expect(form.props("providerDomain")).toBeUndefined();
@@ -137,7 +138,13 @@ describe("SettingsPageForm", () => {
 
     const form = wrapper.getComponent(editConfigStub);
     expect(form.props("flat")).toBe(true);
-    expect(form.props("inlineSave")).toBe(true);
+    expect(form.props("inlineSave")).toBe(false);
+  });
+
+  it("keeps Save in the flow of the form for a host that asks", async () => {
+    const wrapper = await mountForm({ inlineSave: true });
+
+    expect(wrapper.getComponent(editConfigStub).props("inlineSave")).toBe(true);
   });
 
   it("names the provider to the form of a page showing its settings", async () => {
@@ -309,6 +316,9 @@ describe("SettingsPageForm with settings the page edits itself", () => {
   it("hands the page their entries and keeps them out of view in the form", async () => {
     const wrapper = await mountCustom(customSettings);
 
+    // inside the form, so its Save stays in view while they are
+    const form = wrapper.getComponent(editConfigStub);
+    expect(form.find('[data-testid="custom"]').exists()).toBe(true);
     expect(wrapper.get('[data-testid="custom"]').text()).toBe(
       "core/webserver/base_url=auto;core/webserver/external_url=;",
     );
@@ -373,7 +383,9 @@ describe("SettingsPageForm with settings the page edits itself", () => {
   }
 });
 
-async function mountForm(props: { embedded?: boolean; flat?: boolean } = {}) {
+async function mountForm(
+  props: { embedded?: boolean; flat?: boolean; inlineSave?: boolean } = {},
+) {
   const wrapper = mount(SettingsPageForm, {
     props: { page: "audio_analysis", ...props },
     global: { stubs: { EditConfig: editConfigStub } },
