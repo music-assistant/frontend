@@ -131,9 +131,7 @@
 
       <div class="player-card-actions flex shrink-0 items-center">
         <Button
-          v-if="
-            player.power_control !== PLAYER_CONTROL_NONE && allowPowerControl
-          "
+          v-if="player.power_control !== PLAYER_CONTROL_NONE"
           variant="ghost"
           size="icon-sm"
           :disabled="!player.available"
@@ -269,7 +267,6 @@ export interface Props {
   showGroupControls?: boolean;
   showGroupMemberNames?: boolean;
   stackMediaDetails?: boolean;
-  allowPowerControl?: boolean;
   showDisabledGroupControl?: boolean;
   groupControlExpanded?: boolean;
   groupControlsId?: string;

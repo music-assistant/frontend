@@ -165,7 +165,6 @@
             :show-disabled-group-control="true"
             :show-group-member-names="showGroupMemberNames"
             :stack-media-details="true"
-            :allow-power-control="true"
             :group-control-expanded="
               expandedMemberPlayerIds.has(player.player_id)
             "

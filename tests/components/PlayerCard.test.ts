@@ -233,7 +233,6 @@ function mountPlayerCard(
   return mount(PlayerCard, {
     props: {
       player,
-      allowPowerControl: true,
       showGroupControls: true,
       showMenuButton: true,
       showVolumeControl: true,

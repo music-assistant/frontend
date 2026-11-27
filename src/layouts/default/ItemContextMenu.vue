@@ -177,6 +177,7 @@ onMounted(() => {
       closedByTrigger = undefined;
       return;
     }
+    if (evt.items.every((item) => item.hide)) return;
     items.value = evt.items;
     posX.value = evt.posX || 0;
     posY.value = evt.posY || 0;
@@ -270,22 +271,25 @@ function markPointerInteraction() {
 function openSubmenu(evt: Event, menuItem: ContextMenuItem) {
   evt.preventDefault();
   openedSubmenus.value = [...openedSubmenus.value, menuItem];
-  focusFirstEntry();
+  showReplacedEntries();
 }
 
 function closeSubmenu(evt: Event) {
   evt.preventDefault();
   openedSubmenus.value = openedSubmenus.value.slice(0, -1);
-  focusFirstEntry();
+  showReplacedEntries();
 }
 
-// the row that held focus is gone once the entries are replaced
-function focusFirstEntry() {
-  if (!usingKeyboard) return;
+// the scroll position and the row that held focus belong to the replaced entries
+function showReplacedEntries() {
   nextTick(() => {
-    document
-      .querySelector<HTMLElement>("[data-item-context-menu] [role='menuitem']")
-      ?.focus();
+    const menu = document.querySelector<HTMLElement>(
+      "[data-item-context-menu]",
+    );
+    if (!menu) return;
+    menu.scrollTop = 0;
+    if (usingKeyboard)
+      menu.querySelector<HTMLElement>("[role='menuitem']")?.focus();
   });
 }
 

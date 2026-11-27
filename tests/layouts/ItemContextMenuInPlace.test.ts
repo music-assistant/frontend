@@ -40,7 +40,7 @@ async function settle() {
   await flushPromises();
 }
 
-function emitContextMenu(event: Omit<ContextMenuDialogEvent, "items">) {
+function emitContextMenu(event: Partial<ContextMenuDialogEvent>) {
   eventHandlers.get("contextmenu")?.({
     items: [
       {
@@ -103,6 +103,30 @@ describe("ItemContextMenu opened from a button", () => {
     select(document.querySelector('[aria-label="Back"]'));
     await settle();
     expect(menuLabels()).toEqual(["Queue", "Stop"]);
+  });
+
+  it("shows a submenu from its top", async () => {
+    mountMenu();
+    emitContextMenu({ trigger: opener, inPlaceSubmenus: true });
+    await settle();
+    const menu = document.querySelector<HTMLElement>(
+      "[data-item-context-menu]",
+    )!;
+    menu.scrollTop = 120;
+
+    select(menuItem("Queue"));
+    await settle();
+    expect(menu.scrollTop).toBe(0);
+  });
+
+  it.each([
+    ["no entries", []],
+    ["only hidden entries", [{ label: "stop_playback", hide: true }]],
+  ])("does not open with %s", async (_, items) => {
+    mountMenu();
+    emitContextMenu({ trigger: opener, items });
+    await settle();
+    expect(document.querySelector("[data-item-context-menu]")).toBeNull();
   });
 
   it("closes when its button is pressed again, without opening again", async () => {
