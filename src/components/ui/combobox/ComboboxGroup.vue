@@ -28,6 +28,6 @@ const delegatedProps = reactiveOmit(props, "class");
     >
       {{ heading }}
     </ComboboxLabel>
-    <slot></slot>
+    <slot />
   </ComboboxGroup>
 </template>

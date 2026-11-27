@@ -7,7 +7,8 @@ import { provideComboboxFreeText } from ".";
 
 const props = defineProps<
   ComboboxRootProps & {
-    // commit typed text that matches no item, on Enter or when leaving the field
+    // commit typed text that matches no item as a string value: on Enter, and for
+    // a single value also when leaving the field
     freeText?: boolean;
   }
 >();
@@ -22,6 +23,6 @@ provideComboboxFreeText(toRef(props, "freeText"));
 
 <template>
   <ComboboxRoot v-slot="slotProps" data-slot="combobox" v-bind="forwarded">
-    <slot v-bind="slotProps"></slot>
+    <slot v-bind="slotProps" />
   </ComboboxRoot>
 </template>

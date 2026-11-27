@@ -28,6 +28,6 @@ const forwarded = useForwardProps(delegatedProps);
       )
     "
   >
-    <slot></slot>
+    <slot />
   </ComboboxAnchor>
 </template>
