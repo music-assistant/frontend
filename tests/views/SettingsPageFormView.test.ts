@@ -38,6 +38,8 @@ vi.mock("vue-sonner", () => ({
 
 enableAutoUnmount(afterEach);
 
+const SAVE_BAR = '[data-testid="settings-save-bar"]';
+
 // the form itself is covered where it lives
 const editConfigStub = {
   name: "EditConfig",
@@ -200,28 +202,36 @@ describe("SettingsPageFormView on the library settings", () => {
 });
 
 describe("SettingsPageFormView saving the library settings", () => {
-  it("saves the settings of each module from the one save bar of the page", async () => {
+  beforeEach(() => {
     apiMock.getCoreConfig.mockImplementation(async (domain) =>
       libraryConfig(domain),
     );
     apiMock.saveCoreConfig.mockImplementation(async (domain) =>
       libraryConfig(domain),
     );
-    const wrapper = mount(SettingsPageFormView, {
-      props: { page: "library" },
-      global: { stubs: { ConfigEntryRow: true, ProtocolConfigSection: true } },
-    });
-    await flushPromises();
-    const save = wrapper.get('[data-testid="config-save"]');
+  });
 
-    expect(wrapper.findAll('[data-testid="settings-save-bar"]')).toHaveLength(
-      1,
-    );
-    expect(save.attributes("disabled")).toBeDefined();
+  it("shows the save bar only while the page holds unsaved changes", async () => {
+    const wrapper = await mountLibrary();
+    expect(wrapper.find(SAVE_BAR).exists()).toBe(false);
+
+    editRow(wrapper, "core/music/keep_remasters_apart", true);
+    await nextTick();
+    expect(wrapper.find(SAVE_BAR).exists()).toBe(true);
+
+    editRow(wrapper, "core/music/keep_remasters_apart", null);
+    await nextTick();
+    expect(wrapper.find(SAVE_BAR).exists()).toBe(false);
+  });
+
+  it("saves the settings of each module from the one save bar of the page", async () => {
+    const wrapper = await mountLibrary();
 
     editRow(wrapper, "core/streams/stream_source_mode", "prefer_quality");
     editRow(wrapper, "core/music/keep_remasters_apart", true);
     await nextTick();
+    expect(wrapper.findAll(SAVE_BAR)).toHaveLength(1);
+    const save = wrapper.get('[data-testid="config-save"]');
     expect(save.attributes("disabled")).toBeUndefined();
 
     await save.trigger("click");
@@ -234,7 +244,18 @@ describe("SettingsPageFormView saving the library settings", () => {
     expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("music", {
       keep_remasters_apart: true,
     });
+    // what is saved is no longer a change
+    expect(wrapper.find(SAVE_BAR).exists()).toBe(false);
   });
+
+  async function mountLibrary() {
+    const wrapper = mount(SettingsPageFormView, {
+      props: { page: "library" },
+      global: { stubs: { ConfigEntryRow: true, ProtocolConfigSection: true } },
+    });
+    await flushPromises();
+    return wrapper;
+  }
 
   // what typing into the field of an entry does
   function editRow(wrapper: VueWrapper, key: string, value: ConfigValueType) {
