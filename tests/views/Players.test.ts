@@ -195,7 +195,7 @@ describe("Players", () => {
     getPlayerSettingsMenuItems.mockReturnValue([{ label: "settings.delete" }]);
   });
 
-  it("leads an admin to the playback defaults and to the player support, saying how many run", async () => {
+  it("leads an admin to the playback defaults, Tap & play and the player support, saying how many run", async () => {
     apiMock.providers = {
       "sonos--1": providerInstance({
         instance_id: "sonos--1",
@@ -212,7 +212,17 @@ describe("Players", () => {
     };
     const wrapper = await mountPlayers("list");
 
-    expect(linkRowKeys(wrapper)).toEqual(["playback", "player_support"]);
+    expect(linkRowKeys(wrapper)).toEqual([
+      "playback",
+      "tap_and_play",
+      "player_support",
+    ]);
+    const tapAndPlay = wrapper.get(
+      '[data-testid="settings-page-link-tap_and_play"]',
+    );
+    expect(JSON.parse(tapAndPlay.attributes("href")!)).toEqual({
+      name: "tapandplaysettings",
+    });
     const support = wrapper.get(
       '[data-testid="settings-page-link-player_support"]',
     );
@@ -237,7 +247,7 @@ describe("Players", () => {
         Scope.CONFIG_PLAYERS_WRITE,
         Scope.CONFIG_CORE_WRITE,
       ],
-      rows: ["playback"],
+      rows: ["playback", "tap_and_play"],
     },
   ])("leads $role only where it may go", async ({ scopes, rows }) => {
     hasScope.mockImplementation(scopeChecker(scopes));

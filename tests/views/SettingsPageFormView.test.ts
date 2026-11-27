@@ -54,7 +54,7 @@ beforeEach(() => {
 });
 
 describe("SettingsPageFormView on the playback defaults", () => {
-  it.each(["library", "metadata", "playback"] as const)(
+  it.each(["library", "metadata", "playback", "tap_and_play"] as const)(
     "heads the %s settings with the header of their page",
     async (page) => {
       apiMock.getCoreConfig.mockImplementation(async (domain) =>

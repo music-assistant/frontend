@@ -380,6 +380,7 @@ describe("settings pages", () => {
     ["/settings/music/metadata", "metadataproviders"],
     ["/settings/music/audio-analysis", "audioanalysisproviders"],
     ["/settings/players/playback", "playbacksettings"],
+    ["/settings/players/tap-and-play", "tapandplaysettings"],
     ["/settings/players/support", "playerproviders"],
     ["/settings/plugins", "pluginproviders"],
     ["/settings/system/network", "networksettings"],
@@ -431,7 +432,7 @@ describe("settings pages", () => {
     expect(route.meta.requiresScope).toBe(Scope.CONFIG_PROVIDERS_WRITE);
   });
 
-  it.each(["library", "playback"] as const)(
+  it.each(["library", "playback", "tap_and_play"] as const)(
     "hands the %s page to the view showing its form",
     (id) => {
       if (!mocks.router) {
@@ -762,6 +763,7 @@ describe("scope-gated routes", () => {
       ["admin", "user", "guest", "own_sources", "reads_sources"],
     ],
     ["/settings/players/playback", ["admin"]],
+    ["/settings/players/tap-and-play", ["admin"]],
     ["/settings/system", ["admin"]],
     ["/settings/system/network", ["admin"]],
     ["/settings/music/library", ["admin"]],

@@ -566,7 +566,11 @@
         },
         "playback": {
             "title": "Playback",
-            "description": "Crossfade, volume normalization, autoplay and what happens when you press play"
+            "description": "Crossfade, volume normalization, smart shuffle and autoplay"
+        },
+        "tap_and_play": {
+            "title": "Tap & play",
+            "description": "What clicking an item does, and what playing it puts in the queue"
         },
         "library": {
             "title": "Library settings",

@@ -692,6 +692,16 @@ export const routes: RouteRecordRaw[] = [
             meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
           },
           {
+            path: "players/tap-and-play",
+            name: "tapandplaysettings",
+            component: () =>
+              import(
+                /* webpackChunkName: "settingspageform" */ "@/views/settings/SettingsPageFormView.vue"
+              ),
+            props: { page: "tap_and_play" satisfies SettingsPageId },
+            meta: { requiresScope: Scope.CONFIG_CORE_WRITE },
+          },
+          {
             path: "players/support",
             name: "playerproviders",
             component: () =>
