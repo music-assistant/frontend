@@ -68,6 +68,26 @@ describe("SettingsHeaderCard", () => {
       mountHeader().find('[data-testid="settings-documentation"]').exists(),
     ).toBe(false);
   });
+
+  it("offers the documentation in the menu", () => {
+    const item = mountHeader({
+      documentationUrl: "https://music-assistant.io/settings/core/",
+    }).get('[data-testid="settings-documentation-item"]');
+
+    expect(item.attributes("href")).toBe(
+      "https://music-assistant.io/settings/core/",
+    );
+    expect(item.attributes("target")).toBe("_blank");
+    expect(item.attributes("rel")).toBe("noopener noreferrer");
+  });
+
+  it("leaves the documentation out of the menu without a link", () => {
+    expect(
+      mountHeader()
+        .find('[data-testid="settings-documentation-item"]')
+        .exists(),
+    ).toBe(false);
+  });
 });
 
 function mountHeader(props: Record<string, unknown> = {}) {
