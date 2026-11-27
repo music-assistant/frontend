@@ -27,8 +27,8 @@ importers:
         specifier: ^2.4.0
         version: 2.4.0
       '@sendspin/sendspin-js':
-        specifier: 6.0.0
-        version: 6.0.0
+        specifier: 6.1.0
+        version: 6.1.0
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(esbuild@0.27.7)(jiti@2.7.0)(sass@1.108.2)(terser@5.48.0)(yaml@2.9.1))
@@ -1938,8 +1938,8 @@ packages:
   '@scure/base@2.4.0':
     resolution: {integrity: sha512-thZ1TuJwFwBblOhgsjDKvvGirBxNp+wSvY/DR6tJBJOTDhdAAcHJ8Vbr2eFnqaxeca4+t0i9KBf+uHYGWwZORg==}
 
-  '@sendspin/sendspin-js@6.0.0':
-    resolution: {integrity: sha512-sYqh7MlgRXa8BG8wDLEZWkJeb5WckEQxCVrpOqHknVGcCJ9vGaSTuQlI46X/iahFPGUjD3yJ2fh8klcV2Tr7iQ==}
+  '@sendspin/sendspin-js@6.1.0':
+    resolution: {integrity: sha512-rWtsUwSNiKQBN3T5mqHp6tiPlcyEX1y2e++S0/fBjhFIpShyyd4DtriOKKyNqt1JaG1AKBixUqY5hgGuU6YQgA==}
     engines: {node: '>=20.19.0'}
 
   '@swc/helpers@0.5.23':
@@ -6634,7 +6634,7 @@ snapshots:
 
   '@scure/base@2.4.0': {}
 
-  '@sendspin/sendspin-js@6.0.0':
+  '@sendspin/sendspin-js@6.1.0':
     dependencies:
       '@noble/ciphers': 2.4.0
       '@noble/curves': 2.4.0
