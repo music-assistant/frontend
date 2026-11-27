@@ -1,74 +1,106 @@
 <template>
-  <section v-if="dsp">
-    <div class="flex items-center gap-2 border-b px-4 py-2">
-      <Switch
-        v-model="dsp.enabled"
-        :aria-label="dspToggleLabel"
-        :title="dspToggleLabel"
-      />
-      <h2 class="min-w-0 flex-1 truncate text-base font-medium">
-        {{ $t("settings.dsp.configure_on", { name: playerName }) }}
-      </h2>
-      <Badge
-        v-if="selectedPresetLabel"
-        :aria-label="selectedPresetLabel"
-        :title="selectedPresetLabel"
-        data-testid="selected-dsp-preset"
-        class="max-w-24 md:max-w-48"
-        variant="outline"
+  <section class="p-4">
+    <SettingsHeaderCard
+      :icon="AudioLines"
+      :title="$t('settings.category.dsp')"
+      :description="playerName"
+      :documentation-url="documentationUrl"
+      :reset-disabled="!dsp"
+      @reset-to-defaults="resetToDefaults"
+    />
+
+    <template v-if="dsp">
+      <Card
+        class="mb-4 flex-row flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3"
       >
-        <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
-      </Badge>
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-          <Button variant="secondary">
-            <Download />
+        <div class="flex min-w-0 flex-1 items-center gap-3">
+          <Switch id="dsp-enabled" v-model="dsp.enabled" />
+          <Label for="dsp-enabled" class="cursor-pointer">
+            {{ $t("settings.dsp.enable") }}
+          </Label>
+        </div>
+        <div class="flex min-w-0 items-center gap-2">
+          <Badge
+            v-if="selectedPresetLabel"
+            :aria-label="selectedPresetLabel"
+            :title="selectedPresetLabel"
+            data-testid="selected-dsp-preset"
+            class="max-w-24 md:max-w-48"
+            variant="outline"
+          >
+            <span class="min-w-0 truncate">{{ selectedPresetLabel }}</span>
+          </Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="secondary"
+                :aria-label="$t('settings.dsp.presets.load')"
+              >
+                <Download />
+                <span class="hidden md:inline">
+                  {{ $t("settings.dsp.presets.load") }}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              class="min-w-[max(8rem,var(--reka-dropdown-menu-trigger-width))]"
+            >
+              <DropdownMenuItem v-if="dspPresets.length === 0" disabled>
+                {{ $t("settings.dsp.presets.empty_warning") }}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                v-for="preset in dspPresets"
+                v-else
+                :key="preset.preset_id ?? undefined"
+                class="justify-between gap-4"
+                @click="loadPreset(preset)"
+              >
+                <span class="min-w-0 truncate">{{ preset.name }}</span>
+                <!-- .stop keeps the click off the item, which would otherwise
+                     select the preset and close the menu. -->
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  :aria-label="`${$t('delete')}: ${preset.name}`"
+                  :title="`${$t('delete')}: ${preset.name}`"
+                  @click.stop="removePreset(preset.preset_id)"
+                >
+                  <Trash2 />
+                </Button>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="secondary"
+            :aria-label="$t('settings.dsp.presets.save')"
+            @click="showSavePresetDialog = true"
+          >
+            <Save />
             <span class="hidden md:inline">
-              {{ $t("settings.dsp.presets.load") }}
+              {{ $t("settings.dsp.presets.save") }}
             </span>
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          class="min-w-[max(8rem,var(--reka-dropdown-menu-trigger-width))]"
-        >
-          <DropdownMenuItem v-if="dspPresets.length === 0" disabled>
-            {{ $t("settings.dsp.presets.empty_warning") }}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            v-for="preset in dspPresets"
-            v-else
-            :key="preset.preset_id ?? undefined"
-            class="justify-between gap-4"
-            @click="loadPreset(preset)"
-          >
-            <span class="min-w-0 truncate">{{ preset.name }}</span>
-            <!-- .stop keeps the click off the item, which would otherwise
-                 select the preset and close the menu. -->
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              :aria-label="`${$t('delete')}: ${preset.name}`"
-              :title="`${$t('delete')}: ${preset.name}`"
-              @click.stop="removePreset(preset.preset_id)"
-            >
-              <Trash2 />
-            </Button>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <Button variant="secondary" @click="showSavePresetDialog = true">
-        <Save />
-        <span class="hidden md:inline">
-          {{ $t("settings.dsp.presets.save") }}
-        </span>
-      </Button>
-    </div>
+        </div>
+      </Card>
 
-    <div class="p-4">
+      <Alert
+        v-if="!dsp.enabled"
+        variant="warning"
+        class="mb-4"
+        data-testid="dsp-disabled-note"
+      >
+        <TriangleAlert />
+        <AlertDescription>
+          {{ $t("settings.dsp.disabled_message") }}
+        </AlertDescription>
+      </Alert>
+
       <div
+        data-testid="dsp-editor"
         class="flex flex-nowrap gap-6"
-        :class="{ 'justify-center': mobileLayout }"
+        :class="{ 'justify-center': mobileLayout, 'opacity-50': !dsp.enabled }"
+        :inert="!dsp.enabled"
       >
         <!-- Timeline Column -->
         <div
@@ -238,14 +270,7 @@
           </div>
         </div>
       </div>
-
-      <Alert v-if="!dsp.enabled" variant="warning" class="mt-5">
-        <TriangleAlert />
-        <AlertDescription>
-          {{ $t("settings.dsp.disabled_message") }}
-        </AlertDescription>
-      </Alert>
-    </div>
+    </template>
 
     <!-- Save DSP Preset Dialog -->
     <Dialog v-model:open="showSavePresetDialog">
@@ -344,7 +369,7 @@ import {
   HighLowPassMode,
   EventType,
 } from "@/plugins/api/interfaces";
-import { truncateString } from "@/helpers/utils";
+import { getExternalLinkUrl } from "@/helpers/utils";
 import DSPPipeline from "@/components/dsp/DSPPipeline.vue";
 import DSPSlider from "@/components/dsp/DSPSlider.vue";
 import DSPParametricEQ from "@/components/dsp/DSPParametricEQ.vue";
@@ -362,6 +387,7 @@ import DSPHelp from "@/components/dsp/DSPHelp.vue";
 import {
   ArrowDown,
   ArrowUp,
+  AudioLines,
   Download,
   Save,
   Trash2,
@@ -370,6 +396,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -404,6 +431,9 @@ import {
   parseDSPStage,
   sanitizeDSPPresetConfig,
 } from "@/helpers/audioProcessing";
+import SettingsHeaderCard from "./SettingsHeaderCard.vue";
+
+const DSP_DOCS_URL = "https://music-assistant.io/dsp/";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -687,6 +717,25 @@ const savePreset = async () => {
   }
 };
 
+const resetToDefaults = () => {
+  eventbus.emit("deleteConfirmationDialog", {
+    title: t("settings.reset_to_defaults"),
+    message: t("settings.dsp.reset_confirm"),
+    confirmLabel: t("settings.reset_to_defaults"),
+    onConfirm: () => {
+      // the same config the server hands out for a player without DSP settings
+      dsp.value = {
+        enabled: false,
+        filters: [],
+        input_gain: 0,
+        output_gain: 0,
+        preset_id: null,
+      };
+      selectedStage.value = mobileLayout.value ? null : "input";
+    },
+  });
+};
+
 const removePreset = (presetId?: string | null) => {
   if (!presetId) return;
 
@@ -707,11 +756,9 @@ watch(
   },
   { immediate: true },
 );
-const fullPlayerName = computed(() => api.players[props.playerId!]?.name ?? "");
-const playerName = computed(() => truncateString(fullPlayerName.value, 27));
-// Stable names: the switch's checked state already conveys on/off, so the
-// accessible name identifies what the switch controls.
-const dspToggleLabel = computed(() => `DSP: ${fullPlayerName.value}`);
+const playerName = computed(() => api.players[props.playerId!]?.name ?? "");
+// the docs of a beta server live on the beta site
+const documentationUrl = computed(() => getExternalLinkUrl(DSP_DOCS_URL));
 const selectedFilterToggleLabel = computed(() => {
   if (typeof selectedStage.value !== "number") {
     return t("settings.enable");

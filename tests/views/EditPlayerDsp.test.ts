@@ -9,6 +9,7 @@ import type {
 import { DSPFilterType, EventType } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import EditPlayerDsp from "@/views/settings/EditPlayerDsp.vue";
+import SettingsHeaderCard from "@/views/settings/SettingsHeaderCard.vue";
 import {
   eventbus,
   type DeleteConfirmationDialogEvent,
@@ -55,9 +56,9 @@ vi.mock("vue-router", () => ({
   useRoute: () => routeMock.route,
   useRouter: () => ({ replace: routeMock.replace }),
 }));
-// The view uses only truncateString from @/helpers/utils.
+// The view uses only getExternalLinkUrl from @/helpers/utils.
 vi.mock("@/helpers/utils", () => ({
-  truncateString: (str: string) => str,
+  getExternalLinkUrl: (url: string) => url,
 }));
 vi.mock("vue-i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-i18n")>();
@@ -480,12 +481,12 @@ describe("EditPlayerDsp preset identity", () => {
     await wrapper.setProps({ playerId: "player-2" });
     await nextTick();
 
-    expect(wrapper.find("section").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="dsp-editor"]').exists()).toBe(false);
     expect(wrapper.find(".dsp-switch").exists()).toBe(false);
 
     resolvePlayerConfig(makeConfig({ preset_id: "preset-1" }));
     await flushPromises();
-    expect(wrapper.find("section").exists()).toBe(true);
+    expect(wrapper.find('[data-testid="dsp-editor"]').exists()).toBe(true);
     expect(apiMock.saveDSPConfig).not.toHaveBeenCalled();
   });
 
@@ -723,6 +724,74 @@ describe("EditPlayerDsp preset removal", () => {
   });
 });
 
+describe("EditPlayerDsp page header", () => {
+  it("names the page and the player like the other player settings pages", async () => {
+    apiMock.players = { "player-1": { name: "Kitchen" } };
+    const wrapper = await mountEditor();
+
+    expect(wrapper.getComponent(SettingsHeaderCard).props()).toMatchObject({
+      title: "settings.category.dsp",
+      description: "Kitchen",
+      documentationUrl: "https://music-assistant.io/dsp/",
+    });
+  });
+
+  it("resets the player to an empty, switched off DSP after confirming", async () => {
+    vi.spyOn(eventbus, "emit");
+    const wrapper = await mountEditor();
+
+    wrapper.getComponent(SettingsHeaderCard).vm.$emit("resetToDefaults");
+    const request = confirmationRequest();
+    expect(request?.message).toBe("settings.dsp.reset_confirm");
+    expect(apiMock.saveDSPConfig).not.toHaveBeenCalled();
+
+    await request?.onConfirm();
+    await vi.advanceTimersByTimeAsync(2100);
+
+    expect(apiMock.saveDSPConfig).toHaveBeenLastCalledWith("player-1", {
+      enabled: false,
+      filters: [],
+      input_gain: 0,
+      output_gain: 0,
+      preset_id: null,
+    });
+    vi.mocked(eventbus.emit).mockRestore();
+  });
+});
+
+describe("EditPlayerDsp switched off", () => {
+  it("dims the editor and keeps it out of reach, with the note above it", async () => {
+    apiMock.getDSPConfig.mockResolvedValue(makeConfig({ enabled: false }));
+    const wrapper = await mountEditor();
+
+    const editor = wrapper.get('[data-testid="dsp-editor"]');
+    const note = wrapper.get('[data-testid="dsp-disabled-note"]');
+    expect(editor.attributes()).toHaveProperty("inert");
+    expect(editor.classes()).toContain("opacity-50");
+    expect(
+      note.element.compareDocumentPosition(editor.element) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    // switching DSP on and loading a preset stay in reach
+    expect(wrapper.get(".dsp-switch").element.closest("[inert]")).toBeNull();
+    expect(wrapper.get(".preset-item").element.closest("[inert]")).toBeNull();
+  });
+
+  it("makes the editor editable again once DSP is switched on", async () => {
+    apiMock.getDSPConfig.mockResolvedValue(makeConfig({ enabled: false }));
+    const wrapper = await mountEditor();
+
+    await wrapper.get(".dsp-switch").trigger("click");
+
+    const editor = wrapper.get('[data-testid="dsp-editor"]');
+    expect(editor.attributes()).not.toHaveProperty("inert");
+    expect(editor.classes()).not.toContain("opacity-50");
+    expect(wrapper.find('[data-testid="dsp-disabled-note"]').exists()).toBe(
+      false,
+    );
+  });
+});
+
 describe("EditPlayerDsp stage link", () => {
   it("opens the stage the link asks for and drops it from the address", async () => {
     routeMock.route!.query = { stage: "output" };
@@ -765,6 +834,7 @@ async function mountEditor() {
       stubs: {
         Badge: { template: "<span><slot /></span>" },
         Button: { template: "<button><slot /></button>" },
+        Card: { template: "<div><slot /></div>" },
         DropdownMenu: { template: "<div><slot /></div>" },
         DropdownMenuContent: { template: "<div><slot /></div>" },
         DropdownMenuItem: {
