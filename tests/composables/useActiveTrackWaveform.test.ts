@@ -23,6 +23,7 @@ vi.mock("@/plugins/api", () => ({
 const storeMock = reactive({
   curQueueItem: null as unknown,
   currentUser: null as unknown,
+  roleScopes: {},
 });
 
 vi.mock("@/plugins/store", () => ({

@@ -7,6 +7,8 @@ import { BrowserMediaControlsMode } from "@/helpers/device_settings";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import {
   ConfigEntryType,
+  Scope,
+  UserRole,
   type ConfigEntry,
   type ConfigValueType,
 } from "@/plugins/api/interfaces";
@@ -23,8 +25,10 @@ const {
   apiMock: { players: {}, providers: {}, serverInfo: { value: undefined } },
   storeMock: {
     isIngressSession: false,
+    roleScopes: {} as Record<string, string[]>,
     currentUser: {
       user_id: "user",
+      role: "user" as string,
       preferences: {} as Record<string, unknown>,
     },
   },
@@ -142,6 +146,8 @@ describe("InterfaceSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storeMock.isIngressSession = false;
+    storeMock.roleScopes = { [UserRole.ADMIN]: [Scope.ALL] };
+    storeMock.currentUser.role = UserRole.USER;
     storeMock.currentUser.preferences = {};
     pageMenu.value = [];
     vi.stubGlobal("localStorage", createLocalStorageMock());
@@ -166,6 +172,7 @@ describe("InterfaceSettings", () => {
     const keys = entriesOf(mountSettings("account")).map(({ key }) => key);
 
     expect(keys).toEqual([
+      "expert_mode",
       "customize_menu",
       "show_waveform",
       "show_letter_index",
@@ -299,6 +306,46 @@ describe("InterfaceSettings", () => {
 
     expect(setUserPreferences).toHaveBeenCalledTimes(2);
     expect(formMock.saveSucceeded).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [UserRole.USER, false],
+    [UserRole.ADMIN, true],
+  ])(
+    "offers the expert mode first, as the %s's default until they choose",
+    (role, expert) => {
+      storeMock.currentUser.role = role;
+
+      const [entry] = entriesOf(mountSettings());
+
+      expect(entry).toMatchObject({
+        key: "expert_mode",
+        type: ConfigEntryType.BOOLEAN,
+        default_value: expert,
+        value: expert,
+      });
+    },
+  );
+
+  it("shows the expert mode the user chose, with their default to reset to", () => {
+    storeMock.currentUser.role = UserRole.ADMIN;
+    storeMock.currentUser.preferences = { expert_mode: false };
+
+    const [entry] = entriesOf(mountSettings());
+
+    expect(entry).toMatchObject({ value: false, default_value: true });
+  });
+
+  it("stores a switched expert mode on the account and reloads", async () => {
+    const wrapper = mountSettings();
+    await submitAll(wrapper, { expert_mode: true });
+
+    expect(setUserPreferences).toHaveBeenCalledOnce();
+    expect(setUserPreferences).toHaveBeenCalledWith(
+      { expert_mode: true },
+      { suppressGlobalError: true },
+    );
+    expect(reload).toHaveBeenCalled();
   });
 
   it("defaults browser media controls to the built-in web player", () => {
