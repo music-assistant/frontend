@@ -26,6 +26,7 @@ export function playerQueue(overrides: Partial<PlayerQueue> = {}): PlayerQueue {
     overlay_volume: 100,
     current_index: null,
     index_in_buffer: null,
+    last_locked_index: null,
     ended: false,
     elapsed_time: 0,
     elapsed_time_last_updated: 0,

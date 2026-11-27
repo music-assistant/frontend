@@ -68,14 +68,15 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
   const totalItems = () => store.activePlayerQueue?.items ?? 0;
 
   // First absolute index an up-next item may occupy. Everything up to and
-  // including the buffered items is locked (already cued in the stream).
+  // including the last item the player holds is locked (already cued in the
+  // stream).
   const firstReorderableIndex = () => {
     const queue = store.activePlayerQueue;
     if (!queue) return 0;
     // a queue that never started or already ended has nothing cued, so every row is free
     if (queue.ended || queue.current_index === null) return 0;
     const current = queue.current_index;
-    const buffer = Math.max(queue.index_in_buffer ?? current, current);
+    const buffer = Math.max(queue.last_locked_index ?? current, current);
     return buffer + 1;
   };
 
@@ -176,11 +177,23 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
 
   const finishDrag = (commit: boolean) => {
     const source = dragSourceIndex.value;
-    const drop = dragDropIndex.value;
+    // the lock can move while the pointer rests, so check the drag against it again
+    const firstFree = firstReorderableIndex();
+    const drop =
+      dragDropIndex.value == null
+        ? null
+        : Math.max(dragDropIndex.value, firstFree);
     const itemId = dragItemId;
     const queue = store.activePlayerQueue;
     cleanupDrag();
-    if (!commit || source == null || drop == null || itemId == null || !queue)
+    if (
+      !commit ||
+      source == null ||
+      source < firstFree ||
+      drop == null ||
+      itemId == null ||
+      !queue
+    )
       return;
     // Removing the source first shifts everything after it down by one, so the
     // final resting index is one lower when dropping below the original spot.
