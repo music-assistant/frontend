@@ -12,6 +12,6 @@ const props = defineProps<{
     data-slot="empty-title"
     :class="cn('text-lg font-medium tracking-tight', props.class)"
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>

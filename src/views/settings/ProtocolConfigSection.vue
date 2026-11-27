@@ -1,10 +1,8 @@
 <template>
-  <section
-    v-if="protocolGeneralEntries.length > 0 || protocolPanels.length > 0"
-    class="pt-7 first:pt-5"
-  >
+  <section class="pt-7 first:pt-5">
     <!-- Mirrors the category title in EditConfig.vue -->
     <h4
+      v-if="showHeading"
       class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
     >
       <span>{{ $t("settings.category.protocol_settings") }}</span>
@@ -174,6 +172,8 @@ const props = defineProps<{
   outputMenuItems?: (output: OutputProtocol) => ContextMenuItem[];
   // The config is that of a multi-channel player, whose speakers show as rows of their own.
   multiChannel?: boolean;
+  // Whether the section shows its heading; a form with no other section leaves it out.
+  showHeading: boolean;
 }>();
 
 const emit = defineEmits<{

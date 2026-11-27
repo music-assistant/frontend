@@ -218,6 +218,9 @@ let dialogActiveBeforeOpen = false;
 // unrelated input that would scroll the page or bring up the on-screen keyboard
 let focusBeforeOpen: HTMLElement | null = null;
 let usingKeyboard = false;
+// the menu can open under the pointer while the right button or a long-press
+// finger is still down; releasing it there must not pick the item beneath
+let pressOpenedMenu = false;
 
 onMounted(() => {
   eventbus.on("contextmenu", async (evt: ContextMenuDialogEvent) => {
@@ -235,11 +238,14 @@ onMounted(() => {
       }
       show.value = true;
       store.dialogActive = true;
+      pressOpenedMenu = true;
     });
   });
   document.addEventListener("keydown", markKeyboardInteraction, true);
   document.addEventListener("pointerdown", markPointerInteraction, true);
   document.addEventListener("pointerdown", closeOnOutsidePointer, true);
+  document.addEventListener("pointerdown", endOpeningPress, true);
+  document.addEventListener("pointerup", ignoreOpeningRelease, true);
 });
 
 onBeforeUnmount(() => {
@@ -247,7 +253,20 @@ onBeforeUnmount(() => {
   document.removeEventListener("keydown", markKeyboardInteraction, true);
   document.removeEventListener("pointerdown", markPointerInteraction, true);
   document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
+  document.removeEventListener("pointerdown", endOpeningPress, true);
+  document.removeEventListener("pointerup", ignoreOpeningRelease, true);
 });
+
+function endOpeningPress() {
+  pressOpenedMenu = false;
+}
+
+// a menu item skips its selection when its pointerup is default-prevented
+function ignoreOpeningRelease(event: PointerEvent) {
+  if (!pressOpenedMenu) return;
+  pressOpenedMenu = false;
+  if (show.value) event.preventDefault();
+}
 
 const onOpenChange = function (value: boolean) {
   show.value = value;
@@ -337,6 +356,7 @@ import {
   unpinShortcutStandaloneItem,
 } from "@/composables/useShortcuts";
 import { runWithConcurrency } from "@/helpers/concurrency";
+import { expertMode } from "@/helpers/expert_mode";
 import {
   FAVORITABLE_MEDIA_TYPES,
   favoriteState,
@@ -1820,10 +1840,20 @@ const getDefaultEnqueueOption = async function (
   )) as QueueOption;
 };
 
+// what the standard experience calls its three ways to start or queue items
+const STANDARD_QUEUE_OPTION_LABELS: Partial<Record<QueueOption, string>> = {
+  [QueueOption.PLAY]: "play_now",
+  [QueueOption.REPLACE]: "play_now",
+  [QueueOption.NEXT]: "play_next",
+  [QueueOption.ADD]: "queue_option.add",
+};
+
 /**
- * Menu entries for every way the given items can be started or queued, with the
- * configured default, when known, marked as selected. tracksSortBy orders the
- * tracks of an album or playlist the way its page shows them.
+ * Menu entries for the ways the given items can be started or queued, with the
+ * configured default, when known, marked as selected. The expert gets every way;
+ * the standard experience gets three: playing now the way the default does,
+ * playing next and adding to the queue. tracksSortBy orders the tracks of an album
+ * or playlist the way its page shows them.
  */
 const buildEnqueueMenuItems = function (
   items: MediaItemTypeOrItemMapping[],
@@ -1832,32 +1862,48 @@ const buildEnqueueMenuItems = function (
   tracksSortField?: SortField,
   tracksSortDirection?: SortDirection,
 ): ContextMenuItem[] {
-  return [
-    QueueOption.PLAY,
-    QueueOption.NEXT,
-    QueueOption.ADD,
-    QueueOption.REPLACE,
-    QueueOption.REPLACE_NEXT,
-  ].map((option) => ({
-    label: $t(`queue_option.${option}`),
-    action: () => {
-      const uris = items.map((x) => x.uri);
-      if (tracksSortField) {
-        api.playMedia(uris, option, {
-          sort_field: tracksSortField,
-          sort_direction: tracksSortDirection,
-        });
-      } else if (tracksSortBy) {
-        api.playMedia(uris, option, { sort_by: tracksSortBy });
-      } else {
-        api.playMedia(uris, option);
-      }
-    },
-    icon: queueOptionIconMap[option],
-    labelArgs: [],
-    disabled: !store.activePlayer,
-    selected: option === defaultEnqueueOption,
-  }));
+  const expert = expertMode();
+  // left unset, playing now follows the server's own default
+  const playNow =
+    defaultEnqueueOption === QueueOption.PLAY ||
+    defaultEnqueueOption === QueueOption.REPLACE
+      ? defaultEnqueueOption
+      : undefined;
+  const options: (QueueOption | undefined)[] = expert
+    ? [
+        QueueOption.PLAY,
+        QueueOption.NEXT,
+        QueueOption.ADD,
+        QueueOption.REPLACE,
+        QueueOption.REPLACE_NEXT,
+      ]
+    : [playNow, QueueOption.NEXT, QueueOption.ADD];
+  return options.map((option) => {
+    const shownAs = option ?? QueueOption.PLAY;
+    return {
+      label: $t(
+        (!expert && STANDARD_QUEUE_OPTION_LABELS[shownAs]) ||
+          `queue_option.${shownAs}`,
+      ),
+      action: () => {
+        const uris = items.map((x) => x.uri);
+        if (tracksSortField) {
+          api.playMedia(uris, option, {
+            sort_field: tracksSortField,
+            sort_direction: tracksSortDirection,
+          });
+        } else if (tracksSortBy) {
+          api.playMedia(uris, option, { sort_by: tracksSortBy });
+        } else {
+          api.playMedia(uris, option);
+        }
+      },
+      icon: queueOptionIconMap[shownAs],
+      labelArgs: [],
+      disabled: !store.activePlayer,
+      selected: option !== undefined && option === defaultEnqueueOption,
+    };
+  });
 };
 
 /**

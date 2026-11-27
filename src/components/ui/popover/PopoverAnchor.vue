@@ -7,6 +7,6 @@ const props = defineProps<PopoverAnchorProps>();
 
 <template>
   <PopoverAnchor data-slot="popover-anchor" v-bind="props">
-    <slot></slot>
+    <slot />
   </PopoverAnchor>
 </template>

@@ -200,7 +200,7 @@ describe("InviteMembersStep", () => {
     expect(
       wrapper
         .find("[data-testid=onboarding-invitation-features]")
-        .findAll("[data-slot=item]")
+        .findAll("li")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.invite_members.features.sign_in",

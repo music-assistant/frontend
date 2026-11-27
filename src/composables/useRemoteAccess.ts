@@ -31,10 +31,11 @@ export function useRemoteAccess() {
   );
   // unknown until the details of remote access came in
   const usingHaCloud = computed(() => info.value?.using_ha_cloud);
-  const remoteId = computed(() => {
-    const id = info.value?.remote_id;
-    return id ? formatRemoteId(id) : undefined;
-  });
+  // as the server hands it over, for a link that fills it in
+  const rawRemoteId = computed(() => info.value?.remote_id || undefined);
+  const remoteId = computed(() =>
+    rawRemoteId.value ? formatRemoteId(rawRemoteId.value) : undefined,
+  );
 
   const load = async function (): Promise<void> {
     const current = ++request;
@@ -86,6 +87,7 @@ export function useRemoteAccess() {
     enabled,
     usingHaCloud,
     remoteId,
+    rawRemoteId,
     loadingId,
     busy,
     load,

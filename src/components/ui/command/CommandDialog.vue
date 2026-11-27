@@ -65,7 +65,7 @@ function handleOpenAutoFocus(event: Event) {
         <DialogDescription>{{ description }}</DialogDescription>
       </DialogHeader>
       <Command>
-        <slot v-bind="slotProps"></slot>
+        <slot v-bind="slotProps" />
       </Command>
     </DialogContent>
   </Dialog>

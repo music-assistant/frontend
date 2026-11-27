@@ -5,7 +5,6 @@
       ref="editConfig"
       :config-entries="entries"
       :disabled="false"
-      inline-save
       hide-header
       @submit="onSubmit"
       @action="onAction"

@@ -27,7 +27,7 @@
           <Badge v-if="community" variant="community">
             {{ $t("settings.provider_community") }}
           </Badge>
-          <ProviderStageBadge :stage="entry.manifest.stage" />
+          <CatalogStageTag :stage="entry.manifest.stage" />
           <Badge
             v-if="isSetUp"
             variant="outline"
@@ -136,58 +136,66 @@
             {{ $t("settings.catalog.manage") }}
           </RouterLink>
         </Button>
-        <Button
-          v-if="documentationUrl"
-          as="a"
-          variant="outline"
-          class="no-underline"
-          :href="documentationUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="catalog-detail-documentation"
-        >
-          <BookOpen class="size-4" />
-          {{ $t("settings.documentation") }}
-        </Button>
-        <Button
-          as="a"
-          variant="outline"
-          class="no-underline"
-          :href="helpUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="catalog-detail-help"
-        >
-          <LifeBuoy class="size-4" />
-          {{ $t("settings.provider_get_help") }}
-        </Button>
-        <Button
-          v-if="repositoryUrl"
-          as="a"
-          variant="outline"
-          class="no-underline"
-          :href="repositoryUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="catalog-detail-repository"
-        >
-          <FolderGit2 class="size-4" />
-          {{ $t("settings.catalog.community.source_code") }}
-        </Button>
-        <!-- a change to one from the community is for its maintainer -->
-        <Button
-          v-if="!entry.community"
-          as="a"
-          variant="outline"
-          class="no-underline"
-          :href="FEATURE_REQUESTS_URL"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="catalog-detail-request"
-        >
-          <MessageSquarePlus class="size-4" />
-          {{ $t("settings.catalog.request_change") }}
-        </Button>
+        <!-- the links wrap as one group below the actions when they do not fit,
+             shifted by their padding so their icons line up with the actions -->
+        <div class="-ml-2.5 flex flex-wrap items-center gap-1">
+          <Button
+            v-if="documentationUrl"
+            as="a"
+            variant="ghost"
+            size="sm"
+            class="text-muted-foreground no-underline"
+            :href="documentationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="catalog-detail-documentation"
+          >
+            <BookOpen class="size-4" />
+            {{ $t("settings.documentation") }}
+          </Button>
+          <Button
+            as="a"
+            variant="ghost"
+            size="sm"
+            class="text-muted-foreground no-underline"
+            :href="helpUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="catalog-detail-help"
+          >
+            <LifeBuoy class="size-4" />
+            {{ $t("settings.provider_get_help") }}
+          </Button>
+          <Button
+            v-if="repositoryUrl"
+            as="a"
+            variant="ghost"
+            size="sm"
+            class="text-muted-foreground no-underline"
+            :href="repositoryUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="catalog-detail-repository"
+          >
+            <FolderGit2 class="size-4" />
+            {{ $t("settings.catalog.community.source_code") }}
+          </Button>
+          <!-- a change to one from the community is for its maintainer -->
+          <Button
+            v-if="!entry.community"
+            as="a"
+            variant="ghost"
+            size="sm"
+            class="text-muted-foreground no-underline"
+            :href="FEATURE_REQUESTS_URL"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="catalog-detail-request"
+          >
+            <MessageSquarePlus class="size-4" />
+            {{ $t("settings.catalog.request_change") }}
+          </Button>
+        </div>
       </div>
     </DialogContent>
   </Dialog>
@@ -195,7 +203,7 @@
 
 <script setup lang="ts">
 import CatalogIcon from "@/components/settings/catalog/CatalogIcon.vue";
-import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
+import CatalogStageTag from "@/components/settings/catalog/CatalogStageTag.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

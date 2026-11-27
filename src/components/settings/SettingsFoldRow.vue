@@ -16,7 +16,7 @@
       </template>
     </AccordionTrigger>
     <AccordionContent class="px-6 pt-1 pb-6 max-sm:px-4">
-      <slot :open="open"></slot>
+      <slot :open="open" />
     </AccordionContent>
   </AccordionItem>
 </template>

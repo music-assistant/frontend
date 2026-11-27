@@ -11,7 +11,7 @@
     >
       {{ $t("player_tip.selected") }}
     </Badge>
-    <slot></slot>
+    <slot />
   </div>
 </template>
 

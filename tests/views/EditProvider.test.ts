@@ -16,6 +16,7 @@ import {
   ProviderType,
   type ProviderConfig,
   type Scope,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
@@ -1426,6 +1427,7 @@ describe("EditProvider", () => {
         owner: "member-id",
         sharing: ProviderSharing.PRIVATE,
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       },
     });
 
@@ -1445,6 +1447,7 @@ describe("EditProvider", () => {
         owner: "someone-else",
         sharing: ProviderSharing.MEMBERS,
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       },
     });
 
@@ -1475,6 +1478,7 @@ describe("EditProvider", () => {
         owner: "member-id",
         sharing: ProviderSharing.PRIVATE,
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       },
     });
 
@@ -1508,6 +1512,7 @@ describe("EditProvider", () => {
           owner: "member-id",
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       });
 
@@ -1554,9 +1559,9 @@ describe("EditProvider actions and sections", () => {
 
     (await menuEntry(wrapper, "settings.add_group_player")).action?.();
 
-    expect(routerMock.push).toHaveBeenCalledWith(
-      "/settings/addgroup/spotify--test",
-    );
+    expect(eventbusMock.emit).toHaveBeenCalledWith("addGroupDialog", {
+      provider: "spotify--test",
+    });
   });
 
   it("lets a member enable its own disabled source", async () => {
@@ -1576,6 +1581,7 @@ describe("EditProvider actions and sections", () => {
           owner: "member-id",
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       },
       { VAlert: SlotStub },
@@ -1749,6 +1755,7 @@ describe("EditProvider actions and sections", () => {
         owner: "member-id",
         sharing: ProviderSharing.PRIVATE,
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       },
     });
 

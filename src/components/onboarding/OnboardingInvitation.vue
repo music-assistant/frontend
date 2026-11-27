@@ -1,16 +1,28 @@
 <template>
   <div class="flex flex-col gap-3">
-    <OnboardingList v-if="!setUp" data-testid="onboarding-invitation-features">
-      <Item v-for="feature in features" :key="feature.labelKey" size="sm">
-        <ItemMedia class="text-primary size-8 place-items-center">
-          <component :is="feature.icon" class="size-5" aria-hidden="true" />
-        </ItemMedia>
-        <ItemContent>
-          <ItemTitle class="font-normal">{{ $t(feature.labelKey) }}</ItemTitle>
-        </ItemContent>
-      </Item>
-    </OnboardingList>
-    <slot v-else></slot>
+    <!-- what it brings is read, not picked: a flat panel with no borders,
+         dividers or hover, so it does not look like the rows a step offers
+         to click -->
+    <ul
+      v-if="!setUp"
+      class="bg-muted/60 flex flex-col gap-3 rounded-xl p-4"
+      data-testid="onboarding-invitation-features"
+    >
+      <li
+        v-for="feature in features"
+        :key="feature.labelKey"
+        class="flex items-center gap-3 text-sm"
+      >
+        <span
+          class="bg-primary/10 text-primary grid size-8 shrink-0 place-items-center rounded-lg"
+          aria-hidden="true"
+        >
+          <component :is="feature.icon" class="size-4" />
+        </span>
+        {{ $t(feature.labelKey) }}
+      </li>
+    </ul>
+    <slot v-else />
 
     <p
       v-if="note"
@@ -33,9 +45,6 @@ export interface InvitationFeature {
 </script>
 
 <script setup lang="ts">
-import OnboardingList from "@/components/onboarding/OnboardingList.vue";
-import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
-
 /**
  * The body of a setup wizard step that invites to set something up: what it
  * brings until it is set up, the slot (what is set up) after that, and a note

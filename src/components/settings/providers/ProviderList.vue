@@ -3,6 +3,7 @@
     :list="list"
     :loaded="loaded"
     :view-mode="viewMode"
+    :columns="columns"
     :title="title"
     @search="setSearchQuery"
     @filter-label="setLabelFilter"
@@ -12,6 +13,7 @@
     <template #row="{ item }">
       <ProviderRow
         :variant="viewMode"
+        :columns="columns"
         :config="item"
         :manageable="canManageSource(item) && !isUnavailable(item)"
         :reconfigurable="canReconfigureSource(item)"
@@ -35,7 +37,7 @@
         @remove="removeSource(item)"
       >
         <template v-if="$slots.details" #details>
-          <slot name="details" :config="item"></slot>
+          <slot name="details" :config="item" />
         </template>
       </ProviderRow>
     </template>
@@ -54,7 +56,9 @@
 <script setup lang="ts">
 import ProviderAccessDialog from "@/components/settings/providers/ProviderAccessDialog.vue";
 import ProviderListPanel from "@/components/settings/providers/ProviderListPanel.vue";
-import ProviderRow from "@/components/settings/providers/ProviderRow.vue";
+import ProviderRow, {
+  type ProviderListColumns,
+} from "@/components/settings/providers/ProviderRow.vue";
 import { useBackgroundTasks } from "@/composables/background-tasks/useBackgroundTasks";
 import { useProviderAccess } from "@/composables/settings/providers/useProviderAccess";
 import { useProviderSources } from "@/composables/settings/providers/useProviderSources";
@@ -75,7 +79,7 @@ import {
   managesAllSources,
   maySetUpSource,
 } from "@/helpers/provider_permissions";
-import { getProviderLabels } from "@/helpers/provider_labels";
+import { getProviderLabels, getShownLabels } from "@/helpers/provider_labels";
 import { getProviderSettingsMenuItems } from "@/helpers/provider_settings_actions";
 import { api } from "@/plugins/api";
 import { type ProviderConfig, ProviderStatus } from "@/plugins/api/interfaces";
@@ -174,6 +178,14 @@ const {
   getLabels: labelsOf,
   isErrorStatus,
 });
+
+// a wide list only gives a column to what one of its providers has
+const columns = computed((): ProviderListColumns => ({
+  offers: list.value.filteredProviders.some(
+    (item) => getShownLabels(labelsOf(item)).length > 0,
+  ),
+  access: list.value.filteredProviders.some(canConfigureSourceAccess),
+}));
 
 const {
   users,

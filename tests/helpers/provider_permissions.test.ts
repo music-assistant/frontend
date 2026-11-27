@@ -13,6 +13,7 @@ import {
   ProviderType,
   type Scope,
   type User,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerConfig } from "../fixtures/providerConfig";
@@ -47,6 +48,7 @@ const ownSource = providerConfig({
     owner: "user-me",
     sharing: ProviderSharing.PRIVATE,
     shared_users: [],
+    shared_playback: SharedPlayback.WITHOUT_OWN,
   },
 });
 const sharedSource = providerConfig({
@@ -55,6 +57,7 @@ const sharedSource = providerConfig({
     owner: "user-other",
     sharing: ProviderSharing.MEMBERS,
     shared_users: [],
+    shared_playback: SharedPlayback.WITHOUT_OWN,
   },
 });
 

@@ -162,6 +162,23 @@ describe("allRequiredValuesPresent", () => {
     expect(allRequiredValuesPresent([required({ type })])).toBe(true);
   });
 
+  // the user can not fill these in, so they never keep the form from saving
+  it.each([
+    ["read-only", { read_only: true }],
+    ["hidden", { hidden: true }],
+  ])("ignores a %s required entry", (_kind, overrides) => {
+    expect(allRequiredValuesPresent([required(overrides)])).toBe(true);
+  });
+
+  it("ignores a required entry the form does not show", () => {
+    expect(
+      allRequiredValuesPresent(
+        [required({ advanced: true })],
+        (e) => !e.advanced,
+      ),
+    ).toBe(true);
+  });
+
   it("ignores a required entry behind an unmet dependency", () => {
     const form = [
       entry({ key: "use_proxy", type: ConfigEntryType.BOOLEAN, value: false }),

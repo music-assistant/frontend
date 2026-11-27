@@ -164,7 +164,7 @@
 
     <v-divider v-if="!detailRow" />
 
-    <slot name="header"></slot>
+    <slot name="header" />
 
     <div v-if="props.toolBarTabs !== undefined" class="content-tabs">
       <Tabs

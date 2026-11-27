@@ -1,7 +1,7 @@
 <template>
   <DropdownMenu v-model:open="open">
     <DropdownMenuTrigger as-child>
-      <slot></slot>
+      <slot />
     </DropdownMenuTrigger>
     <!-- capped as the menu of an item, so a long entry is cut off on a phone -->
     <DropdownMenuContent align="end" class="min-w-56 max-w-[350px]">

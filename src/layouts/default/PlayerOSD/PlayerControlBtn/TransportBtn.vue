@@ -12,7 +12,7 @@
     :aria-label="label"
     @keydown.enter="$event.repeat && $event.preventDefault()"
   >
-    <slot></slot>
+    <slot />
   </Button>
 </template>
 

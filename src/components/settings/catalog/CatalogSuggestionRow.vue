@@ -46,6 +46,7 @@
           :installing="installing.has(suggestion.entry.manifest.domain)"
           :paired-with="suggestion.pairedWith"
           :dismissible="isPersonalSuggestion(suggestion)"
+          show-type
           @open="emit('open', suggestion.entry)"
           @add="emit('add', suggestion.entry)"
           @dismiss="emit('dismiss', suggestion.entry.manifest.domain)"

@@ -1,5 +1,6 @@
 import {
   getPluginLabels,
+  OTHER_PLUGIN_LABEL,
   PLUGIN_LABEL_KEYS,
   PLUGIN_LABELS,
   type PluginLabel,
@@ -59,6 +60,17 @@ export function getProviderLabels(
       return [];
   }
 }
+
+/**
+ * The labels that say what a provider offers: all of them but other, which
+ * only gathers the plugins without a label for the filter, so it tells nothing
+ * about one.
+ *
+ * @param labels - The labels of the provider.
+ */
+export const getShownLabels = (
+  labels: readonly ProviderLabel[],
+): ProviderLabel[] => labels.filter((label) => label !== OTHER_PLUGIN_LABEL);
 
 /**
  * The labels a list of providers can be filtered on: those at least one of

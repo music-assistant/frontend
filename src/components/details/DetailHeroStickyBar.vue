@@ -32,7 +32,7 @@
         <!-- the hero's controls carry a dark backdrop for the artwork, which
              the solid bar doesn't need -->
         <span class="contents [&>*]:bg-transparent [&>*]:hover:bg-accent">
-          <slot name="append"></slot>
+          <slot name="append" />
         </span>
         <Button
           v-if="menuItems.length"

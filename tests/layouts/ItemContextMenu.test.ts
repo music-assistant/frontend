@@ -1,6 +1,6 @@
 import ItemContextMenu from "@/layouts/default/ItemContextMenu.vue";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { markRaw, nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -133,6 +133,76 @@ describe("ItemContextMenu", () => {
     expect(storeMock.dialogActive).toBe(true);
 
     selectContent.remove();
+    wrapper.unmount();
+  });
+
+  // the menu can open under a held right button or long-press finger; a menu
+  // item selects on a pointerup that is not default-prevented
+  it("ignores the release of the press that opened it, not a later one", async () => {
+    const wrapper = mountContextMenu();
+    eventHandlers.get("contextmenu")?.({
+      items: [{ label: "exclude_genre" }],
+      posX: 10,
+      posY: 20,
+    });
+    await nextTick();
+    await nextTick();
+    // the menu is not attached, so the presses go where the document sees them
+    const menu = document.body;
+    const release = () => {
+      const event = new PointerEvent("pointerup", {
+        bubbles: true,
+        cancelable: true,
+      });
+      menu.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+
+    expect(release()).toBe(true);
+    menu.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    expect(release()).toBe(false);
+    wrapper.unmount();
+  });
+
+  // the same, through reka's own menu item: what the stubs above stand in for
+  it("does not pick the item under the press that opened the real menu", async () => {
+    const action = vi.fn();
+    const wrapper = mount(ItemContextMenu, {
+      attachTo: document.body,
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: { PlayerIcon: passthroughStub },
+      },
+    });
+    eventHandlers.get("contextmenu")?.({
+      items: [{ label: "exclude_genre", action }],
+      posX: 10,
+      posY: 20,
+    });
+    await flushPromises();
+    const item = document.querySelector<HTMLElement>("[role=menuitem]")!;
+    // reka reads currentTarget after a tick; a browser runs that tick while
+    // the event is still dispatching, jsdom only once it has finished
+    const pointer = (type: string) => {
+      const event = new PointerEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        pointerType: "mouse",
+      });
+      Object.defineProperty(event, "currentTarget", { value: item });
+      item.dispatchEvent(event);
+    };
+
+    pointer("pointerup");
+    await flushPromises();
+    expect(action).not.toHaveBeenCalled();
+
+    // a fresh press then picks it, which reka finishes with the click
+    pointer("pointerdown");
+    pointer("pointerup");
+    item.click();
+    await flushPromises();
+    expect(action).toHaveBeenCalledTimes(1);
     wrapper.unmount();
   });
 

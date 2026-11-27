@@ -13,7 +13,7 @@
           </div>
         </div>
         <template v-if="$slots.actions">
-          <slot name="actions"></slot>
+          <slot name="actions" />
           <Separator
             orientation="vertical"
             class="bg-muted-foreground/65 data-[orientation=vertical]:h-6"

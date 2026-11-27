@@ -1,24 +1,27 @@
 <template>
   <div v-if="showForm" :aria-busy="busy" data-testid="settings-page-form">
-    <template v-if="loaded">
+    <!-- the custom controls go inside the form, so its Save stays in view
+         while they are -->
+    <EditConfig
+      v-if="loaded"
+      ref="editConfig"
+      :config-entries="entries"
+      :disabled="false"
+      :provider-domain="settingsPageProviderDomain(page)"
+      :keep-section-headings="settingsPageTitlesSections(page)"
+      :flat="flat"
+      :inline-save="inlineSave"
+      @submit="onSubmit"
+      @action="onAction"
+      @immediate-apply="onImmediateApply"
+    >
       <slot
         v-if="customEntries"
         name="custom"
         :entries="customEntries"
         :set-value="setCustomValue"
-      ></slot>
-      <EditConfig
-        ref="editConfig"
-        :config-entries="entries"
-        :disabled="false"
-        :provider-domain="settingsPageProviderDomain(page)"
-        :flat="flat"
-        inline-save
-        @submit="onSubmit"
-        @action="onAction"
-        @immediate-apply="onImmediateApply"
       />
-    </template>
+    </EditConfig>
 
     <Empty v-else-if="loadFailed" class="rounded-xl border border-dashed py-6">
       <EmptyHeader>
@@ -48,6 +51,7 @@ import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import type { SettingsField } from "@/helpers/settings_form";
 import {
   settingsPageProviderDomain,
+  settingsPageTitlesSections,
   type SettingsPageId,
 } from "@/helpers/settings_pages";
 import type { ConfigEntry, ConfigValueType } from "@/plugins/api/interfaces";
@@ -71,6 +75,9 @@ const props = defineProps<{
   // the form sits in a frame that names it, so it draws no card or title of
   // its own
   flat?: boolean;
+  // Save follows the fields instead of a bar pinned to the bottom of the page,
+  // for a form in a frame of its own
+  inlineSave?: boolean;
 }>();
 
 defineSlots<{
@@ -158,23 +165,23 @@ onBeforeUnmount(() => {
   if (!props.embedded) pageMenu.value = [];
 });
 
-// an entry that applies the moment it changes is saved on its own; the api
-// reports a failed save itself
+// an entry that applies the moment it changes is saved on its own; the save
+// reports a failure itself
 const onImmediateApply = async function (
   values: Record<string, ConfigValueType>,
 ) {
-  if (!(await save(values))) return;
+  if (!(await save(values)).complete) return;
   toast.success($t("settings.settings_saved"));
   emit("saved");
 };
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
-  if (!(await save(values))) {
-    editConfig.value?.saveFailed();
-    return;
-  }
-  // the form stays on screen, so it takes the saved values as its baseline
-  editConfig.value?.saveSucceeded(values);
+  const { stored, complete } = await save(values);
+  // the form stays on screen, so it takes the stored values as its baseline;
+  // the changes of an owner that did not store them stay unsaved, and the save
+  // reports that itself
+  editConfig.value?.saveSucceeded(stored);
+  if (!complete) return;
   toast.success($t("settings.settings_saved"));
   emit("saved");
 };

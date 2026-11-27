@@ -332,10 +332,8 @@ export function useProgressiveSearch(options: ProgressiveSearchOptions) {
     () => ensureTargetResults(),
   );
 
-  onScopeDispose(() => {
-    for (const timer of retryTimers.values()) clearTimeout(timer);
-    retryTimers.clear();
-  });
+  // a request still out could otherwise schedule retries when it answers
+  onScopeDispose(() => search(""));
 
   return {
     activeSearchTerm,

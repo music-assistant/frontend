@@ -101,10 +101,7 @@ import RowsEditor from "@/components/details/RowsEditor.vue";
 import ItemsListing, {
   type LoadDataParams,
 } from "@/components/ItemsListing.vue";
-import {
-  podcastEpisodeBackdrop,
-  type PodcastEpisodeBackdrop,
-} from "@/components/podcast/podcastEpisodeData";
+import { heroBackdrop, type HeroBackdrop } from "@/helpers/hero_backdrop";
 import PodcastEpisodeHero from "@/components/podcast/PodcastEpisodeHero.vue";
 import {
   PODCAST_EPISODE_ROWS,
@@ -237,13 +234,10 @@ const episodePodcast = computed(() => {
 
 // the podcast's own artwork once it is loaded for this episode, else what the
 // episode carries of it
-const backdrop = computed<PodcastEpisodeBackdrop>(() => {
+const backdrop = computed<HeroBackdrop>(() => {
   const episode = itemDetails.value;
   if (!episode) return { blurred: false };
-  return podcastEpisodeBackdrop(
-    episode,
-    episodePodcast.value ?? episode.podcast,
-  );
+  return heroBackdrop(episode, episodePodcast.value ?? episode.podcast);
 });
 
 const openEpisode = function (episode?: PodcastEpisode) {

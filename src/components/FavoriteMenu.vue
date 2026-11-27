@@ -46,7 +46,7 @@
          asked to hang above it -->
     <DropdownMenuContent :side="side" align="center" class="z-[100001]">
       <template v-if="$slots.before">
-        <slot name="before"></slot>
+        <slot name="before" />
         <DropdownMenuSeparator />
       </template>
       <template v-if="offersFavorite">
