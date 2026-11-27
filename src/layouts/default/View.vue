@@ -39,6 +39,7 @@
           <player-merge-dialog />
           <multi-channel-player-dialog />
           <multi-channel-subwoofer-dialog />
+          <add-group-dialog />
           <item-context-menu />
           <command-center />
           <!-- kept last so they portal after the other dialogs, which share
@@ -60,6 +61,7 @@
 </template>
 
 <script lang="ts" setup>
+import AddGroupDialog from "@/components/AddGroupDialog.vue";
 import AddManualLink from "@/components/AddManualLink.vue";
 import CommandCenter from "@/components/CommandCenter.vue";
 import DialogDeleteConfirmation from "@/components/DialogDeleteConfirmation.vue";

@@ -300,10 +300,6 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
         },
       ];
     })
-    .with("addgroup", () => [
-      ...pageCrumbs("players"),
-      { title: t("settings.add_group_player"), disabled: true },
-    ])
     .with(
       "editplayer",
       "editplayerdsp",
