@@ -47,7 +47,7 @@
           :class="
             compact
               ? 'max-w-32 rounded-lg'
-              : 'max-w-[min(11rem,22dvh)] rounded-xl'
+              : 'max-w-[min(11rem,22vh)] supports-[height:100dvh]:max-w-[min(11rem,22dvh)] rounded-xl'
           "
         />
         <div
@@ -56,7 +56,7 @@
           :class="
             compact
               ? 'max-w-32 rounded-lg'
-              : 'max-w-[min(11rem,22dvh)] rounded-xl'
+              : 'max-w-[min(11rem,22vh)] supports-[height:100dvh]:max-w-[min(11rem,22dvh)] rounded-xl'
           "
           aria-hidden="true"
         >
