@@ -74,6 +74,7 @@ const dependencies: AudioProcessingDetailsDependencies = {
   getPlayerName: (player) => player.name,
   players: makePlayers(),
   canOpenSettings: true,
+  expertMode: false,
   loadDSPConfig: vi.fn(),
 };
 
@@ -83,6 +84,7 @@ beforeEach(() => {
   dependencies.players = makePlayers();
   dependencies.getPlayerName = (player) => player.name;
   dependencies.canOpenSettings = true;
+  dependencies.expertMode = false;
   vi.mocked(dependencies.loadDSPConfig).mockReset();
   presetNames.clear();
   presetNames.set("preset-1", "Living room");
@@ -99,7 +101,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       providerIconDomain: "test--instance",
     });
     expect(display.inputStages[1]).toMatchObject({
-      title: "FLAC",
+      title: "Lossless, compressed",
       icon: FileIcon,
     });
     expect(display.inputStages[0].subtitleParts).toBeUndefined();
@@ -1111,6 +1113,7 @@ describe("buildAudioProcessingDetailsDisplay", () => {
       sample_rate: 44100,
       bit_rate: 1234,
     });
+    dependencies.expertMode = true;
     const chain: Partial<AudioProcessingChain> = {
       queue_processing: audioQueueProcessing({
         normalization: audioNormalizationDetails({
@@ -1152,6 +1155,144 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     expect(german.processingStages[1].title).toBe("Playback speed: 1,25x");
     expect(german.outputPaths[0].stages[1].title).toBe("Input Gain (-1,5 dB)");
     expect(german.outputPaths[0].stages[2].title).toBe("Output Gain (2,3 dB)");
+  });
+
+  it.each([
+    {
+      label: "PCM",
+      format: {
+        content_type: ContentType.WAV,
+        codec_type: ContentType.PCM_S16LE,
+      },
+      input: "Lossless, uncompressed",
+      output: "Lossless, uncompressed",
+    },
+    {
+      label: "WAV without a codec",
+      format: {
+        content_type: ContentType.WAV,
+        codec_type: ContentType.UNKNOWN,
+      },
+      input: "Lossless, uncompressed",
+      output: "Lossless, uncompressed",
+    },
+    {
+      label: "FLAC",
+      format: { content_type: ContentType.FLAC, codec_type: ContentType.FLAC },
+      input: "Lossless, compressed",
+      output: "Lossless, compressed",
+    },
+    {
+      label: "ALAC",
+      format: { content_type: ContentType.M4A, codec_type: ContentType.ALAC },
+      input: "Lossless, compressed",
+      output: "Lossless, compressed",
+    },
+    {
+      label: "AAC",
+      format: { content_type: ContentType.M4A, codec_type: ContentType.AAC },
+      input: "Compressed",
+      output: "High quality, compressed",
+    },
+    {
+      label: "MP3",
+      format: {
+        content_type: ContentType.MP3,
+        codec_type: ContentType.UNKNOWN,
+      },
+      input: "Compressed",
+      output: "High quality, compressed",
+    },
+    {
+      label: "a container without a codec",
+      format: {
+        content_type: ContentType.OGG,
+        codec_type: ContentType.UNKNOWN,
+      },
+      input: "OGG",
+      output: "OGG",
+    },
+    {
+      label: "an unknown codec",
+      format: {
+        content_type: ContentType.UNKNOWN,
+        codec_type: ContentType.UNKNOWN,
+      },
+      input: "Unknown format",
+      output: "Unknown format",
+    },
+  ])("names $label by its quality level", ({ format, input, output }) => {
+    const audio = makeFormat(format);
+
+    const display = buildDisplay(
+      { outputs: [audioOutputDetails({ output_format: audio })] },
+      audio,
+    );
+
+    expect(display.inputStages[1].title).toBe(input);
+    expect(display.outputPaths[0].stages.at(-1)?.title).toBe(output);
+  });
+
+  it("keeps the unknown title for an output without a format", () => {
+    const display = buildDisplay({
+      outputs: [audioOutputDetails({ output_format: null })],
+    });
+
+    expect(display.outputPaths[0].stages.at(-1)?.title).toBe("Unknown format");
+  });
+
+  it("leaves the technical details of a format to its info popover", () => {
+    const format = makeFormat({ sample_rate: 44100 });
+
+    const display = buildDisplay(
+      { outputs: [audioOutputDetails({ output_format: format })] },
+      format,
+    );
+
+    for (const stage of [
+      display.inputStages[1],
+      display.outputPaths[0].stages.at(-1),
+    ]) {
+      expect(stage?.subtitleParts).toBeUndefined();
+      expect(stage?.details?.slice(0, 2)).toEqual([
+        "Codec: FLAC",
+        "Container: FLAC",
+      ]);
+    }
+  });
+
+  it("shows the codec and technical details under the level in expert mode", () => {
+    dependencies.expertMode = true;
+    const format = makeFormat({ sample_rate: 44100 });
+
+    const display = buildDisplay(
+      { outputs: [audioOutputDetails({ output_format: format })] },
+      format,
+    );
+
+    for (const stage of [
+      display.inputStages[1],
+      display.outputPaths[0].stages.at(-1),
+    ]) {
+      expect(stage).toMatchObject({
+        title: "Lossless, compressed",
+        subtitleParts: ["FLAC", "44.1 kHz", "16-bit", "Stereo"],
+      });
+    }
+  });
+
+  it("keeps the codec as the title without a level in expert mode", () => {
+    dependencies.expertMode = true;
+    const format = makeFormat({
+      content_type: ContentType.OGG,
+      codec_type: ContentType.UNKNOWN,
+      sample_rate: 44100,
+    });
+
+    expect(buildDisplay({}, format).inputStages[1]).toMatchObject({
+      title: "OGG",
+      subtitleParts: ["44.1 kHz", "16-bit", "Stereo"],
+    });
   });
 
   it("updates number formatting when the selected locale changes", async () => {

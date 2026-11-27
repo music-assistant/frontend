@@ -25,7 +25,9 @@ import {
   dspFilterPosition,
   dspFilterText,
   type DSPStage,
+  LOSSLESS_CODECS,
 } from "@/helpers/audioProcessing";
+import { expertMode } from "@/helpers/expert_mode";
 import { getPlayerDisplayName } from "@/helpers/players";
 import api from "@/plugins/api";
 import { authManager } from "@/plugins/auth";
@@ -128,6 +130,8 @@ export interface AudioProcessingDetailsDependencies {
   players: Record<string, AudioProcessingDisplayPlayer>;
   // whether the user may open the settings pages the stages link to
   canOpenSettings: boolean;
+  // whether the format steps show their technical details under the title
+  expertMode: boolean;
   loadDSPConfig: (playerId: string) => Promise<DSPConfig>;
 }
 
@@ -176,6 +180,20 @@ const LOSSY_AUDIO_CODECS = new Set<string>([
   ContentType.WMAPRO,
   ContentType.WMAV2,
 ]);
+// the lossless codecs that pack the samples smaller; the other lossless ones
+// carry them as they are
+const LOSSLESS_COMPRESSED_CODECS = new Set<string>([
+  ContentType.ALAC,
+  ContentType.APE,
+  ContentType.FLAC,
+  ContentType.RA_144,
+  ContentType.TAK,
+  ContentType.TRUEHD,
+  ContentType.WAVPACK,
+]);
+// the levels of the server's playback quality setting
+type PlaybackQuality =
+  "lossless_uncompressed" | "lossless_compressed" | "compressed";
 // the items a track can be played from that have a details page, routed by
 // their media type
 const CONTAINER_DETAIL_PAGES = new Set<string>([
@@ -216,6 +234,7 @@ export function useAudioProcessingDetails(
         getPlayerName: getPlayerDisplayName,
         players: api.players,
         canOpenSettings: authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE),
+        expertMode: expertMode(),
         loadDSPConfig: (playerId) => api.getDSPConfig(playerId),
       },
       toValue(crossfadeIntent),
@@ -284,12 +303,7 @@ function buildInputStages(
         : undefined,
       subtitleLink: container ? containerLink(container, translate) : undefined,
     },
-    formatStage(
-      "source-format",
-      streamDetails.audio_format,
-      translate,
-      dependencies.locale,
-    ),
+    formatStage("source-format", streamDetails.audio_format, dependencies),
   ];
 }
 
@@ -476,7 +490,7 @@ function buildOutputDisplay(
           ]),
     });
   }
-  stages.push(finalOutputStage(output, index, translate, dependencies.locale));
+  stages.push(finalOutputStage(output, index, dependencies));
 
   return {
     key: playerIds.join("|") || `output-${index}`,
@@ -833,9 +847,9 @@ function allOutputsAreBitPerfect(chain: AudioProcessingChain): boolean {
 function finalOutputStage(
   output: AudioOutputDetails,
   index: number,
-  translate: Translate,
-  locale: string,
+  dependencies: AudioProcessingDetailsDependencies,
 ): AudioProcessingDisplayStage {
+  const { translate, locale } = dependencies;
   const format = output.output_format;
   const details = format ? audioFormatDetails(format, translate, locale) : [];
   details.push(
@@ -848,12 +862,9 @@ function finalOutputStage(
   return {
     key: `output-format-${index}`,
     icon: FileIcon,
-    title: format
-      ? audioFormatTitle(format, translate)
-      : translate("streamdetails.audio_processing.unknown_format"),
-    subtitleParts: format
-      ? audioFormatTechnicalParts(format, translate, locale)
-      : undefined,
+    ...(format
+      ? formatStageText(format, false, dependencies)
+      : { title: translate("streamdetails.audio_processing.unknown_format") }),
     atomicSubtitleParts: true,
     badge:
       output.fidelity.bit_perfect === true
@@ -866,17 +877,60 @@ function finalOutputStage(
 function formatStage(
   key: string,
   format: AudioFormat,
-  translate: Translate,
-  locale: string,
+  dependencies: AudioProcessingDetailsDependencies,
 ): AudioProcessingDisplayStage {
   return {
     key,
     icon: FileIcon,
-    title: audioFormatTitle(format, translate),
-    subtitleParts: audioFormatTechnicalParts(format, translate, locale),
+    ...formatStageText(format, true, dependencies),
     atomicSubtitleParts: true,
-    details: audioFormatDetails(format, translate, locale),
+    details: audioFormatDetails(
+      format,
+      dependencies.translate,
+      dependencies.locale,
+    ),
   };
+}
+
+/**
+ * The title and subtitle of a format step: the quality level of its codec,
+ * with the codec and its technical details under it in expert mode. A lossy
+ * source is not called high quality, as it can be a low bit rate stream.
+ */
+function formatStageText(
+  format: AudioFormat,
+  isSource: boolean,
+  dependencies: AudioProcessingDetailsDependencies,
+): Pick<AudioProcessingDisplayStage, "title" | "subtitleParts"> {
+  const { translate, locale } = dependencies;
+  const codecLabel = audioFormatTitle(format, translate);
+  const technicalParts = audioFormatTechnicalParts(format, translate, locale);
+  const quality = playbackQualityOf(audioFormatCodec(format));
+  if (!quality) {
+    return {
+      title: codecLabel,
+      subtitleParts: dependencies.expertMode ? technicalParts : undefined,
+    };
+  }
+  const qualityKey =
+    isSource && quality === "compressed" ? "compressed_source" : quality;
+  return {
+    title: translate(
+      `streamdetails.audio_processing.playback_quality.${qualityKey}`,
+    ),
+    subtitleParts: dependencies.expertMode
+      ? [codecLabel, ...technicalParts]
+      : undefined,
+  };
+}
+
+// undefined for a codec in neither class, such as one that only names a container
+function playbackQualityOf(codec: string): PlaybackQuality | undefined {
+  if (LOSSY_AUDIO_CODECS.has(codec)) return "compressed";
+  if (!LOSSLESS_CODECS.has(codec)) return undefined;
+  return LOSSLESS_COMPRESSED_CODECS.has(codec)
+    ? "lossless_compressed"
+    : "lossless_uncompressed";
 }
 
 function outputFidelityDetail(
@@ -1128,11 +1182,7 @@ function audioFormatDetails(
   translate: Translate,
   locale: string,
 ): string[] {
-  const details = [
-    translate("streamdetails.file_info.container", [
-      contentTypeLabel(format.content_type, translate),
-    ]),
-  ];
+  const details: string[] = [];
   if (format.codec_type && format.codec_type !== ContentType.UNKNOWN) {
     details.push(
       translate("streamdetails.file_info.codec", [
@@ -1140,6 +1190,11 @@ function audioFormatDetails(
       ]),
     );
   }
+  details.push(
+    translate("streamdetails.file_info.container", [
+      contentTypeLabel(format.content_type, translate),
+    ]),
+  );
   if (format.bit_depth > 0) {
     details.push(
       translate("streamdetails.file_info.bit_depth", [format.bit_depth]),

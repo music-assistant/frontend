@@ -1659,6 +1659,12 @@
                 "hi_res": "Hi-res",
                 "unknown": "Quality unknown"
             },
+            "playback_quality": {
+                "lossless_uncompressed": "Lossless, uncompressed",
+                "lossless_compressed": "Lossless, compressed",
+                "compressed": "High quality, compressed",
+                "compressed_source": "Compressed"
+            },
             "normalization_mode": {
                 "disabled": "Disabled",
                 "dynamic": "Dynamic",
