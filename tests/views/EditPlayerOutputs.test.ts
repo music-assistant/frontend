@@ -91,7 +91,12 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 vi.mock("@/plugins/store", () => ({
-  store: { frameless: false, mobileLayout: false, currentUser: undefined },
+  store: {
+    frameless: false,
+    mobileLayout: false,
+    roleScopes: {},
+    currentUser: undefined,
+  },
 }));
 
 // the menus are covered where they are built

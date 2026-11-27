@@ -62,7 +62,12 @@ vi.mock("@/plugins/i18n", () => ({
 }));
 
 vi.mock("@/plugins/store", () => ({
-  store: { frameless: false, mobileLayout: false, currentUser: undefined },
+  store: {
+    frameless: false,
+    mobileLayout: false,
+    roleScopes: {},
+    currentUser: undefined,
+  },
 }));
 
 vi.mock("@/helpers/player_settings_actions", () => ({
