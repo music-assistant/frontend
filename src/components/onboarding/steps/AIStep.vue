@@ -6,6 +6,11 @@
       :note="hasServices ? undefined : optionalLine"
     >
       <OnboardingList>
+        <OnboardingAddRow
+          :label="$t('settings.ai.add_service')"
+          data-testid="onboarding-add-ai-service"
+          @click="showAddDialog = true"
+        />
         <!-- what a service does for AI is set on the AI settings page, so its
              row here only shows how it is doing -->
         <ConfiguredProviderItem
@@ -15,11 +20,6 @@
           :description="service.provides"
           status-only
           data-testid="onboarding-ai-service"
-        />
-        <OnboardingAddRow
-          :label="$t('settings.ai.add_service')"
-          data-testid="onboarding-add-ai-service"
-          @click="showAddDialog = true"
         />
       </OnboardingList>
     </OnboardingInvitation>

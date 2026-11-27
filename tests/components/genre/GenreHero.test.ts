@@ -21,11 +21,8 @@ vi.mock("@/plugins/breakpoint", () => ({
 vi.mock("@/helpers/utils", () => ({
   getImageThumbForItem: () => undefined,
 }));
-vi.mock("@/components/details/DetailHero.vue", () => ({
-  default: {
-    name: "DetailHero",
-    template: '<div><slot name="toolbar-append" /><slot name="main" /></div>',
-  },
+vi.mock("@/components/details/DetailHero.vue", async () => ({
+  default: (await import("../details/detailHeroStub")).detailHeroStub,
 }));
 vi.mock("@/components/details/DetailHeroButton.vue", () => ({
   default: {

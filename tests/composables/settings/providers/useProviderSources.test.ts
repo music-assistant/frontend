@@ -8,6 +8,7 @@ import {
   ProviderStatus,
   ProviderType,
   type User,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { defineComponent } from "vue";
@@ -480,6 +481,7 @@ describe("the label filter", () => {
       owner,
       shared_users: ["user-me"],
       sharing: ProviderSharing.SELECTED,
+      shared_playback: SharedPlayback.WITHOUT_OWN,
     });
     apiMock.getProviderConfigs.mockResolvedValue([
       providerConfig({
@@ -580,6 +582,7 @@ describe("sections", () => {
         access: {
           owner: "user-me",
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
           sharing: ProviderSharing.PRIVATE,
         },
         domain: "spotify",
@@ -589,6 +592,7 @@ describe("sections", () => {
         access: {
           owner: "user-other",
           shared_users: ["user-me"],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
           sharing: ProviderSharing.SELECTED,
         },
         domain: "spotify",
@@ -617,6 +621,7 @@ describe("sections", () => {
         access: {
           owner: "user-me",
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
           sharing: ProviderSharing.PRIVATE,
         },
         domain: "spotify",

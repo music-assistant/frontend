@@ -85,7 +85,7 @@ describe("HomeAssistantStep", () => {
 
     expect(
       testId(wrapper, "onboarding-invitation-features")
-        .findAll("[data-slot=item]")
+        .findAll("li")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.home_assistant.features.players",

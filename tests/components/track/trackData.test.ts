@@ -29,7 +29,6 @@ import {
   loadTrackVersions,
   plainLyrics,
   releaseSubtitle,
-  trackBackdrop,
   trackReleaseYear,
 } from "@/components/track/trackData";
 import {
@@ -318,58 +317,6 @@ describe("trackData", () => {
       };
       expect(releaseSubtitle(mapping)).toBe("");
       expect(releaseSubtitle({ ...mapping, year: 1999 })).toBe("1999");
-    });
-  });
-
-  describe("trackBackdrop", () => {
-    // data urls are served as they are, so the choice can be read off the result
-    function image(type: ImageType, name: string): MediaItemImage {
-      return {
-        type,
-        path: `data:image/png;base64,${name}`,
-        provider: "library",
-        remotely_accessible: true,
-      };
-    }
-    const cover = image(ImageType.THUMB, "cover");
-
-    it("prefers the wide art of the track or its album, fanart first", () => {
-      const withAlbum = track({
-        metadata: { images: [cover, image(ImageType.FANART, "fanart")] },
-        album: album({
-          metadata: { images: [image(ImageType.LANDSCAPE, "album-wide")] },
-        }),
-      });
-      expect(trackBackdrop(withAlbum)).toEqual({
-        url: "data:image/png;base64,fanart",
-        blurred: false,
-      });
-      expect(
-        trackBackdrop({ ...withAlbum, metadata: { images: [cover] } }),
-      ).toEqual({ url: "data:image/png;base64,album-wide", blurred: false });
-    });
-
-    it("falls back to the artist's wide art", () => {
-      const plain = track({ metadata: { images: [cover] } });
-      const withFanart = artist({
-        metadata: { images: [image(ImageType.FANART, "artist-fanart")] },
-      });
-      expect(trackBackdrop(plain, withFanart)).toEqual({
-        url: "data:image/png;base64,artist-fanart",
-        blurred: false,
-      });
-    });
-
-    it("blurs the cover when there is no wide art to show", () => {
-      const plain = track({ metadata: { images: [cover] } });
-      expect(trackBackdrop(plain, artist())).toEqual({
-        url: "data:image/png;base64,cover",
-        blurred: true,
-      });
-      expect(trackBackdrop(track())).toEqual({
-        url: undefined,
-        blurred: true,
-      });
     });
   });
 });

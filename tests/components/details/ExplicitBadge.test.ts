@@ -1,8 +1,7 @@
-import AlbumHero from "@/components/album/AlbumHero.vue";
+import DetailHeroTitle from "@/components/details/DetailHeroTitle.vue";
 import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
 import ExplicitIcon from "@/components/icons/ExplicitIcon.vue";
-import TrackHero from "@/components/track/TrackHero.vue";
-import { mount, shallowMount } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { album } from "../../fixtures/album";
 import { track } from "../../fixtures/track";
@@ -46,30 +45,16 @@ describe("ExplicitBadge", () => {
     },
   );
 
-  it("uses the shared overlay badge in album and track heroes", () => {
-    const global = {
-      stubs: {
-        DetailHero: { template: '<div><slot name="main" /></div>' },
-        ExplicitBadge: false,
-        ExplicitIcon: false,
-      },
-    };
-    const wrappers = [
-      shallowMount(AlbumHero, {
-        props: { item: album({ metadata: { explicit: true } }) },
-        global,
-      }),
-      shallowMount(TrackHero, {
-        props: { item: track({ metadata: { explicit: true } }) },
-        global,
-      }),
-    ];
-    for (const wrapper of wrappers) {
-      const badge = wrapper.getComponent(ExplicitBadge);
-      expect(badge.classes()).toContain(
-        "[--explicit-icon-square:rgba(255,255,255,0.25)]",
-      );
-      expect(badge.classes()).toContain("[--explicit-icon-letter:#fff]");
-    }
+  it.each([
+    ["album", album({ metadata: { explicit: true } })],
+    ["track", track({ metadata: { explicit: true } })],
+  ])("uses the shared overlay badge in the %s hero's title", (_, item) => {
+    const badge = mount(DetailHeroTitle, { props: { item } }).getComponent(
+      ExplicitBadge,
+    );
+    expect(badge.classes()).toContain(
+      "[--explicit-icon-square:rgba(255,255,255,0.25)]",
+    );
+    expect(badge.classes()).toContain("[--explicit-icon-letter:#fff]");
   });
 });

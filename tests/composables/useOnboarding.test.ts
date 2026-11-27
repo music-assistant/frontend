@@ -14,6 +14,7 @@ import {
   type Player,
   type PlayerConfig,
   type User,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -262,7 +263,12 @@ function addOwnedSource(instanceId: string, domain: string, owner: string) {
       instance_id: instanceId,
       domain,
       type: ProviderType.MUSIC,
-      access: { owner, sharing: ProviderSharing.PRIVATE, shared_users: [] },
+      access: {
+        owner,
+        sharing: ProviderSharing.PRIVATE,
+        shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
+      },
     }),
   });
   apiMock.providerManifests[domain] = {

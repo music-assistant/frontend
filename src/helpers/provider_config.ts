@@ -130,8 +130,8 @@ export const getProviderMaintainers = (manifest: ProviderManifest): string[] =>
 
 /**
  * Where to ask for help with a provider: the maintainer's own https support link
- * when the manifest has one, else the repository of one from the community
- * catalog, else a new problem report in the support repository.
+ * when the manifest has one, else the issues of the repository of one from the
+ * community catalog, else a new problem report in the support repository.
  *
  * @param manifest - The manifest of the provider.
  * @param repositoryUrl - The repository of a provider from the community catalog.
@@ -141,7 +141,7 @@ export const getProviderHelpUrl = (
   repositoryUrl?: string,
 ): string => {
   if (manifest.support_url?.startsWith("https://")) return manifest.support_url;
-  if (repositoryUrl) return repositoryUrl;
+  if (repositoryUrl) return `${repositoryUrl}/issues`;
   // GitHub applies labels only for reporters with triage rights; for everyone
   // else the support repository's triage workflow labels by the provider named
   // in the title

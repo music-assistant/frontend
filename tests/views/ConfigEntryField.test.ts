@@ -69,6 +69,9 @@ const INTERACTIVE_ENTRIES: [string, ConfigEntryUI, string?][] = [
   ],
 ];
 
+const DROPDOWN = '[data-field-kind="select"]';
+const CLEAR_BUTTON = 'button[aria-label^="settings.clear_value"]';
+
 // the fields that render their own header above the control and expose a labelled group
 const HEADED_FIELDS: [string, ConfigEntryUI][] = [
   ["pairing code", pairingCodeEntry()],
@@ -101,8 +104,11 @@ describe("ConfigEntryField", () => {
       const wrapper = mountField(confEntry);
 
       if (branchText) expect(wrapper.text()).toContain(branchText);
-      expect(controlStates(wrapper)).toEqual([false]);
-      expect(controlStates(mountField(confEntry, true))).toEqual([true]);
+      // a field can render a clear or reveal button next to its input
+      expect(new Set(controlStates(wrapper))).toEqual(new Set([false]));
+      expect(new Set(controlStates(mountField(confEntry, true)))).toEqual(
+        new Set([true]),
+      );
     },
   );
 
@@ -143,7 +149,7 @@ describe("ConfigEntryField", () => {
     expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
       true,
     );
-    expect(wrapper.find(".v-select").exists()).toBe(false);
+    expect(wrapper.find(DROPDOWN).exists()).toBe(false);
   });
 
   it("leaves the same key on another provider as a plain dropdown", () => {
@@ -152,7 +158,7 @@ describe("ConfigEntryField", () => {
     expect(wrapper.findComponent({ name: "HassControlsField" }).exists()).toBe(
       false,
     );
-    expect(wrapper.find(".v-select").exists()).toBe(true);
+    expect(wrapper.find(DROPDOWN).exists()).toBe(true);
   });
 
   it("leaves out the clear button of a dropdown that must keep its value", () => {
@@ -166,7 +172,7 @@ describe("ConfigEntryField", () => {
       value: "front_left",
     });
     const clearable = (wrapper: VueWrapper) =>
-      wrapper.getComponent({ name: "VSelect" }).props("clearable");
+      wrapper.find(CLEAR_BUTTON).exists();
 
     expect(clearable(mountField(dropdown))).toBe(true);
     expect(
@@ -193,7 +199,7 @@ describe("ConfigEntryField", () => {
       }),
     );
 
-    expect(wrapper.get(".v-select").text()).toContain(
+    expect(wrapper.get(DROPDOWN).text()).toContain(
       "switch.registered_moments_ago",
     );
   });
@@ -201,7 +207,7 @@ describe("ConfigEntryField", () => {
   it("expands the options of an expanded_options entry, descriptions and all", () => {
     const wrapper = mountField(expandedOptionsEntry());
 
-    expect(wrapper.find(".v-select").exists()).toBe(false);
+    expect(wrapper.find(DROPDOWN).exists()).toBe(false);
     expect(optionButtons(wrapper)).toHaveLength(2);
     // the whole point of the branch: no option (or its description) is hidden behind a click
     expect(wrapper.text()).toContain("FLAC");
@@ -242,7 +248,7 @@ describe("ConfigEntryField", () => {
       value: [],
     });
 
-    expect(wrapper.find(".v-select").exists()).toBe(true);
+    expect(wrapper.find(DROPDOWN).exists()).toBe(true);
     expect(optionButtons(wrapper)).toHaveLength(0);
   });
 
@@ -363,6 +369,143 @@ describe("ConfigEntryField", () => {
 
     expect(wrapper.emitted("update:value")).toEqual([[""]]);
   });
+
+  it("stores a typed number as a number", async () => {
+    const wrapper = mountField(numberEntry(ConfigEntryType.INTEGER));
+
+    await wrapper.get("input").setValue("9000");
+
+    expect(wrapper.emitted("update:value")).toEqual([[9000]]);
+  });
+
+  it("emits the value of the option picked in a dropdown", async () => {
+    const wrapper = mountField(dropdownEntry());
+
+    wrapper
+      .getComponent({ name: "SelectRoot" })
+      .vm.$emit("update:modelValue", "1");
+
+    expect(wrapper.emitted("update:value")).toEqual([["mp3"]]);
+  });
+
+  it("stores a slider move and a typed exact value as one number", () => {
+    const wrapper = mountField(rangedEntry(ConfigEntryType.INTEGER));
+
+    wrapper
+      .getComponent({ name: "SliderRoot" })
+      .vm.$emit("update:modelValue", [7]);
+    wrapper
+      .getComponent({ name: "NumberFieldRoot" })
+      .vm.$emit("update:modelValue", 8);
+
+    expect(wrapper.emitted("update:value")).toEqual([[7], [8]]);
+  });
+
+  it.each([
+    [true, true],
+    [false, false],
+    ["indeterminate", false],
+  ])("stores a checkbox set to %s as %s", (state, stored) => {
+    const wrapper = mountField(
+      entry({ key: "flow_mode", type: ConfigEntryType.BOOLEAN }),
+    );
+
+    wrapper
+      .getComponent({ name: "CheckboxRoot" })
+      .vm.$emit("update:modelValue", state);
+
+    expect(wrapper.emitted("update:value")).toEqual([[stored]]);
+  });
+
+  // clearing a value an action filled in is how the action is offered again
+  it("lets the read-only value of an action be cleared", async () => {
+    const wrapper = mountField(
+      entry({
+        key: "token",
+        type: ConfigEntryType.STRING,
+        action: "authenticate",
+        value: "abc",
+      }),
+    );
+
+    expect(wrapper.get("input").attributes("readonly")).toBeDefined();
+    await wrapper.get(CLEAR_BUTTON).trigger("click");
+
+    expect(wrapper.emitted("update:value")).toEqual([[null]]);
+  });
+
+  it("shows the default again after an emptied required field is left", async () => {
+    const wrapper = mountField(
+      entry({
+        key: "name",
+        type: ConfigEntryType.STRING,
+        required: true,
+        default_value: "Fallback",
+        value: "Fallback",
+      }),
+    );
+
+    await wrapper.get("input").setValue("");
+    await wrapper.get("input").trigger("blur");
+
+    expect(wrapper.emitted("update:value")).toEqual([["Fallback"]]);
+    expect(wrapper.get<HTMLInputElement>("input").element.value).toBe(
+      "Fallback",
+    );
+  });
+
+  it("keeps a comma inside a listed value and adds pasted lines one by one", async () => {
+    const wrapper = mountField(
+      entry({
+        key: "manual_discovery_ips",
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+        value: [],
+      }),
+    );
+    const input = wrapper.get("input");
+
+    await input.setValue("a,b");
+    await input.trigger("keydown", { key: "Enter" });
+    await input.trigger("paste", {
+      clipboardData: { getData: () => " c \n\nd" },
+    });
+
+    expect(wrapper.emitted("update:value")).toEqual([
+      [["a,b"]],
+      [["a,b", "c", "d"]],
+    ]);
+  });
+
+  it("drops a value still being typed when the list is cleared", async () => {
+    const wrapper = mountField(
+      entry({
+        key: "manual_discovery_ips",
+        type: ConfigEntryType.STRING,
+        multi_value: true,
+        value: ["a"],
+      }),
+    );
+    await wrapper.get("input").setValue("draft");
+
+    await wrapper.get(CLEAR_BUTTON).trigger("click");
+
+    expect(wrapper.emitted("update:value")).toEqual([[null]]);
+    expect(wrapper.get<HTMLInputElement>("input").element.value).toBe("");
+  });
+
+  it("flags a required dropdown once it is cleared", async () => {
+    const wrapper = mountField({ ...dropdownEntry(), required: true });
+    expect(wrapper.text()).not.toContain("settings.invalid_input");
+
+    await wrapper.get(CLEAR_BUTTON).trigger("click");
+    await wrapper.setProps({
+      confEntry: { ...dropdownEntry(), required: true, value: null },
+    });
+
+    expect(wrapper.emitted("update:value")).toEqual([[null]]);
+    expect(wrapper.text()).toContain("settings.invalid_input");
+  });
 });
 
 function entry(
@@ -414,6 +557,18 @@ function expandedOptionsEntry(): ConfigEntryUI {
   });
 }
 
+function dropdownEntry(): ConfigEntryUI {
+  return entry({
+    key: "output_codec",
+    type: ConfigEntryType.STRING,
+    options: [
+      { title: "FLAC", value: "flac" },
+      { title: "MP3", value: "mp3" },
+    ],
+    value: "flac",
+  });
+}
+
 function pairingCodeEntry(format: string | null = "###-###"): ConfigEntryUI {
   return entry({ key: "pin", type: ConfigEntryType.PAIRING_CODE, format });
 }
@@ -442,10 +597,9 @@ function mountField(
 /**
  * The disabled state of every control the field rendered, in document order.
  *
- * Elements carrying the `hidden` attribute are left out, since a v-select mirrors its
- * value into a hidden native select that no user can reach. Everything else counts, so
- * a control that escapes the field's disabled state fails the assertion rather than
- * being filtered away.
+ * Elements carrying the `hidden` attribute are left out, since no user can reach them.
+ * Everything else counts, so a control that escapes the field's disabled state fails
+ * the assertion rather than being filtered away.
  */
 function controlStates(wrapper: VueWrapper): boolean[] {
   return wrapper
@@ -455,16 +609,20 @@ function controlStates(wrapper: VueWrapper): boolean[] {
 }
 
 /**
- * The disabled state of each control in the slider row: the value input Vuetify renders
- * for the slider, plus the number field's own input and its two step buttons.
+ * The disabled state of each control in the slider row: the slider, plus the number
+ * field's own input and its two step buttons.
  */
 function sliderRowStates(wrapper: VueWrapper): Record<string, boolean> {
   const numberFieldParts = wrapper
-    .findAll(".config-slider-input [data-slot]")
+    .findAll(
+      '[data-slot="input"], [data-slot="decrement"], [data-slot="increment"]',
+    )
     .map((el) => [el.attributes("data-slot") as string, isDisabled(el)]);
 
   return {
-    slider: isDisabled(wrapper.get(".config-slider input")),
+    slider:
+      wrapper.get('[data-slot="slider"]').attributes("data-disabled") !==
+      undefined,
     ...Object.fromEntries(numberFieldParts),
   };
 }
