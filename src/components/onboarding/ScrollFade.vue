@@ -5,7 +5,7 @@
       v-bind="$attrs"
       :class="cn('min-h-0 flex-1 overflow-y-auto', props.class)"
     >
-      <slot></slot>
+      <slot />
     </div>
     <div
       class="from-background pointer-events-none absolute inset-x-0 top-0 h-6 bg-linear-to-b to-transparent transition-opacity"

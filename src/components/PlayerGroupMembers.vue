@@ -10,62 +10,22 @@
         {{ section.translateLabel ? $t(section.label) : section.label }}
       </p>
       <div class="space-y-1">
-        <label
+        <PlayerGroupMemberRow
           v-for="candidate in section.players"
           :key="candidate.player_id"
-          :for="getCheckboxId(candidate)"
-          class="player-group-member flex min-h-9 items-center gap-2 rounded-md pr-2 transition-colors"
-          :class="{
-            'bg-primary/10': isGroupMember(candidate),
-            'hover:bg-accent/50 cursor-pointer': !isRequiredMember(candidate),
-            'cursor-not-allowed': isRequiredMember(candidate),
-          }"
-        >
-          <span
-            class="player-group-member-icon flex h-6 w-[30px] shrink-0 items-center justify-center"
-          >
-            <PlayerIcon
-              :icon="candidate.icon"
-              :size="18"
-              class="text-muted-foreground"
-              :class="{
-                'opacity-50':
-                  candidate.powered === false || !candidate.available,
-              }"
-            />
-          </span>
-          <span
-            class="min-w-0 flex-1 truncate text-xs font-medium"
-            :class="{ 'text-muted-foreground': !candidate.available }"
-          >
-            {{ getPlayerDisplayName(candidate) }}
-          </span>
-          <PlayerStatusIcon
-            :enabled="true"
-            :unavailable="!candidate.available"
-            :reason="getPlayerSetupReason(candidate)"
-            class="size-4"
-          />
-          <Checkbox
-            :id="getCheckboxId(candidate)"
-            :model-value="isGroupMember(candidate)"
-            :disabled="isRequiredMember(candidate)"
-            :aria-label="getPlayerDisplayName(candidate)"
-            class="border-muted-foreground/70 bg-background/70 size-5 border-2 shadow-sm"
-            @update:model-value="
-              updateGroupMember(candidate.player_id, $event === true)
-            "
-          />
-        </label>
+          :player="candidate"
+          :checkbox-id="getCheckboxId(candidate)"
+          :model-value="isGroupMember(candidate)"
+          :disabled="isRequiredMember(candidate)"
+          @update:model-value="updateGroupMember(candidate.player_id, $event)"
+        />
       </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import PlayerIcon from "@/components/PlayerIcon.vue";
-import PlayerStatusIcon from "@/components/settings/players/PlayerStatusIcon.vue";
-import { Checkbox } from "@/components/ui/checkbox";
+import PlayerGroupMemberRow from "@/components/PlayerGroupMemberRow.vue";
 import { Separator } from "@/components/ui/separator";
 import type { PlayerGroupFilter } from "@/helpers/player_group";
 import { requestGroupPlaybackConfirmation } from "@/helpers/player_group_playback";
@@ -73,7 +33,6 @@ import { playerSectionOf, playerSections } from "@/helpers/player_sections";
 import {
   canBeGroupMember,
   getPlayerDisplayName,
-  getPlayerSetupReason,
   groupMemberPickerVisible,
 } from "@/helpers/players";
 import { api } from "@/plugins/api";

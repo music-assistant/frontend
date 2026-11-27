@@ -17,6 +17,6 @@ const props = defineProps<{
     :data-orientation="orientation"
     :class="cn(fieldVariants({ orientation }), props.class)"
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>

@@ -2,11 +2,9 @@
     "settings": {
         "sync": "Synchronise now",
         "sync_running": "This provider is now being synchronised",
-        "frontend_description": "Customise the user interface theme and appearance",
         "remote_access_mode_optimized": "Optimised Mode (HA Cloud)",
         "remote_access_protocol_optimized": "WebRTC with optimised STUN\/TURN servers from Home Assistant Cloud (works in all network setups).",
         "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronised.",
-        "audio_analysis_providers_description": "Manage providers that analyae your audio",
         "customize_menu": {
             "label": "Customise menu"
         },

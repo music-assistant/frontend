@@ -1,3 +1,4 @@
+import DetailHeroLink from "@/components/details/DetailHeroLink.vue";
 import PodcastEpisodeHero from "@/components/podcast/PodcastEpisodeHero.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,12 +16,8 @@ vi.mock("@/plugins/i18n", () => ({
   $t: (key: string, args?: unknown[]) =>
     args ? `${key}(${args.join(",")})` : key,
 }));
-vi.mock("@/components/details/DetailHero.vue", () => ({
-  default: {
-    name: "DetailHero",
-    emits: ["edit-rows"],
-    template: '<div><slot name="main" /></div>',
-  },
+vi.mock("@/components/details/DetailHero.vue", async () => ({
+  default: (await import("../details/detailHeroStub")).detailHeroStub,
 }));
 vi.mock("@/components/details/DetailHeroButton.vue", () => ({
   default: { template: "<div />" },
@@ -59,7 +56,7 @@ describe("PodcastEpisodeHero", () => {
       parentPodcast: podcast({ item_id: "7", provider: "library" }),
     });
 
-    await wrapper.find(".podcast-episode-hero__link").trigger("click");
+    await wrapper.getComponent(DetailHeroLink).trigger("click");
 
     expect(mockRouterPush).toHaveBeenCalledWith({
       name: "podcast",
@@ -70,7 +67,7 @@ describe("PodcastEpisodeHero", () => {
   it("opens the episode's podcast before the podcast has loaded", async () => {
     const wrapper = mountHero({ item: EPISODE });
 
-    await wrapper.find(".podcast-episode-hero__link").trigger("click");
+    await wrapper.getComponent(DetailHeroLink).trigger("click");
 
     expect(mockRouterPush).toHaveBeenCalledWith({
       name: "podcast",
@@ -87,9 +84,11 @@ describe("PodcastEpisodeHero", () => {
       }),
     });
 
-    // the second line, after the one with the podcast name
-    const facts = wrapper.findAll(".podcast-episode-hero__line")[1];
-    const number = facts.findAll(".podcast-episode-hero__fact")[0];
+    const number = wrapper.get('[title="season_episode_number(1,53)"]');
+    // first among the facts, ahead of the date and duration
+    expect(number.element.parentElement?.firstElementChild).toBe(
+      number.element,
+    );
     expect(number.attributes("title")).toBe("season_episode_number(1,53)");
     expect(number.get("[aria-hidden='true']").text()).toBe(
       "season_episode_number_short(1,53)",
@@ -106,9 +105,9 @@ describe("PodcastEpisodeHero", () => {
       }),
     });
 
-    const facts = wrapper.findAll(".podcast-episode-hero__line")[1];
-    expect(facts.findAll(".podcast-episode-hero__fact")).toHaveLength(1);
-    expect(facts.text()).toContain("episode_number_short(53)");
+    const number = wrapper.get('[title="episode_number(53)"]');
+    expect(number.element.parentElement?.children).toHaveLength(1);
+    expect(number.text()).toContain("episode_number_short(53)");
   });
 
   it("forwards the shared hero's edit-rows action", async () => {

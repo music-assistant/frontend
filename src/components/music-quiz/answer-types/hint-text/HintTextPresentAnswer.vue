@@ -14,11 +14,11 @@
       class="grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:overflow-hidden"
     >
       <HintTextProgress :statuses="roundPlayerStatuses" scrollable />
-      <slot name="leaderboard"></slot>
+      <slot name="leaderboard" />
     </div>
   </template>
   <template v-else-if="state.phase === 'reveal'">
-    <slot name="leaderboard"></slot>
+    <slot name="leaderboard" />
   </template>
 </template>
 

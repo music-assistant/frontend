@@ -40,6 +40,6 @@ const forwardedProps = useForwardProps(delegatedProps);
     "
     v-bind="forwardedProps"
   >
-    <slot></slot>
+    <slot />
   </CalendarCellTrigger>
 </template>

@@ -206,7 +206,8 @@
             },
             "types": {
                 "parametric_eq": "Parametrický ekvalizér",
-                "tone_control": "Ovládání tónů"
+                "tone_control": "Ovládání tónů",
+                "stereo_width": "Šířka sterea"
             },
             "channels": {
                 "ALL": "Všechny",
@@ -224,6 +225,12 @@
                 "name": "Název předvolby",
                 "name_placeholder": "Moje nová předvolba",
                 "remove_confirm": "Opravdu chcete tuto předvolbu DSP odebrat?"
+            },
+            "crossfeed": {
+                "presets": {
+                    "medium": "Středy",
+                    "high": "Výšky"
+                }
             }
         },
         "dsp_note_multi_device_group": {
@@ -251,7 +258,6 @@
             "description": "Vynucení mobilního rozložení (s nabídkou a navigací ve spodní části), a to i na větších obrazovkách."
         },
         "players_description": "Konfigurace a správa výstupních zvukových zařízení",
-        "frontend_description": "Přizpůsobte si motiv a vzhled uživatelského rozhraní",
         "profile_description": "Spravujte nastavení a předvolby svého osobního účtu",
         "users": "Uživatelé",
         "users_description": "Správa uživatelských účtů, rolí a oprávnění",
@@ -271,41 +277,29 @@
         "proud_part_of": "Hrdá součást",
         "core_module": {
             "cache": {
-                "name": "Mezipaměť",
-                "description": "Konfigurace základního modulu, který se stará o ukládání dat do mezipaměti v rámci celé aplikace"
+                "name": "Mezipaměť"
             },
             "metadata": {
-                "name": "Metadata",
-                "description": "Konfigurace základního modulu správy metadat"
+                "name": "Metadata"
             },
             "music": {
-                "name": "Hudba",
-                "description": "Konfigurace základního modulu pro správu hudby (knihovny)"
+                "name": "Hudba"
             },
             "players": {
-                "name": "Přehrávače",
-                "description": "Konfigurace základního modulu správy přehrávačů"
+                "name": "Přehrávače"
             },
             "player_queues": {
-                "name": "Fronty přehrávače",
-                "description": "Konfigurace základního modulu správy fronty přehrávače"
-            },
-            "remote_access": {
-                "name": "Vzdálený přístup",
-                "description": "Umožňuje vzdálený přístup k serveru Music Assistant"
+                "name": "Fronty přehrávače"
             },
             "streams": {
-                "name": "Streamy",
-                "description": "Konfigurace enginu pro streamování a zpracování zvuku"
+                "name": "Streamy"
             },
             "webserver": {
-                "name": "Webový server",
-                "description": "Konfigurace webového serveru a API"
+                "name": "Webový server"
             }
         },
         "remote_access": "Vzdálený přístup",
         "remote_access_description": "Bezpečně se připojte k Music Assistant odkudkoli",
-        "remote_access_title": "Zabezpečený vzdálený přístup",
         "remote_access_explanation_intro": "Vzdálený přístup umožňuje bezpečné připojení k serveru Music Assistant odkudkoli na světě.",
         "remote_access_explanation_ha_cloud": "Pro dosažení co nejlepšího zážitku a spolehlivosti je nutné předplatné služby Home Assistant Cloud.",
         "remote_access_feature_webrtc": "Založeno na technologii WebRTC pro peer-to-peer připojení",
@@ -342,7 +336,6 @@
         "remote_access_protocol_basic": "WebRTC s veřejnými STUN servery (nemusí fungovat ve složitých síťových nastaveních).",
         "remote_access_protocol_optimized": "WebRTC s optimalizovanými STUN\/TURN servery od Home Assistant Cloud (funguje ve všech síťových nastaveních).",
         "remote_access_encryption_description": "Koncové šifrování pomocí DTLS-SRTP zajišťuje, že vaše data zůstanou soukromá a bezpečná.",
-        "frontend": "Uživatelské rozhraní",
         "view_players": "Zobrazit přehrávače",
         "players_total": "{0} celkový přehrávač{1}",
         "api_docs": "Dokumentace API",
@@ -371,7 +364,11 @@
         },
         "enable_browser_controls": {
             "label": "Povolit ovládání médií v prohlížeči",
-            "description": "Umožňuje ovládání přehrávání pomocí integrovaných ovládacích prvků médií v prohlížeči (např. klávesami médií na klávesnici)."
+            "description": "Umožnit ovládání přehrávání v aplikaci Music Assistant pomocí ovládacích prvků prohlížeče a operačního systému, jako jsou multimediální klávesy a ovládací prvky na uzamčené obrazovce. Události na zařízení, jako jsou telefonní hovory, přechod do režimu spánku nebo zavření víka notebooku, mohou přehrávač pozastavit.",
+            "options": {
+                "active_player": "Jakýkoli aktivně vybraný přehrávač",
+                "web_player": "Pouze vestavěný webový přehrávač"
+            }
         },
         "settings_saved": "Nastavení bylo úspěšně uloženo",
         "protocol_no_settings": "Tento výstupní protokol nemá žádnou další konfiguraci",
@@ -403,7 +400,38 @@
         "restore_defaults_failed": "Nepodařilo se obnovit výchozí nastavení žánru",
         "full_restore_failed": "Nepodařilo se provést úplné obnovení žánrů",
         "error_loading_genres": "Chyba při načítání žánrů",
-        "player_needs_setup": "Tento přehrávač vyžaduje nastavení"
+        "player_needs_setup": "Tento přehrávač vyžaduje nastavení",
+        "restore_genres": "Obnovit žánry",
+        "genre_statistics_description": "Procházejte a filtrujte všechny žánry ve vaší knihovně. Žánry lze globálně vyloučit a obnovit.",
+        "genre_table_rows_per_page": "Řádků na stránku",
+        "show_waveform": {
+            "label": "Upřednostnit ukazatel průběhu ve formě vlnové křivky"
+        },
+        "setup_flow": {
+            "external_default_title": "Pokračujte ve svém prohlížeči"
+        },
+        "audiobook_chapter_progress": {
+            "label": "Zobrazit průběh kapitoly",
+            "description": "Zobrazit uplynulý a zbývající čas aktuální kapitoly audioknihy nebo epizody podcastu místo celé položky."
+        },
+        "genre_table_page_of": "Strana {0} z {1}",
+        "genre_table_rows_selected": "{selected} z {total} řádek vybrán. | {selected} z {total} řádků vybráno.",
+        "folder_picker": {
+            "browse_failed": "Složku se nepodařilo otevřít"
+        },
+        "sync_in_progress": "Synchronizace...",
+        "catalog": {
+            "community": {
+                "updated_title": "Nedávno aktualizováno"
+            },
+            "top_pick": "Nejlepší volba pro tebe",
+            "browse_everything": "Procházet vše"
+        },
+        "home_assistant": {
+            "remote_access_details": "Vzdálené ID a QR kód"
+        },
+        "metadata_description": "Zdroje metadat, jazyk, online vyhledávání, žánry a mezipaměť uměleckých děl",
+        "audio_analysis_description": "Průběh analýzy, neúspěšné stopy, analytické moduly a nastavení"
     },
     "show_info": "Zobrazit informace",
     "show_select_boxes": "Zobrazit výběrová pole",
@@ -468,7 +496,12 @@
         "in_provider_library": "Tato položka je v knihovně poskytovatele",
         "hide_empty_genres": "Skrýt prázdné žánry",
         "show_empty_genres": "Zobrazit prázdné žánry",
-        "filter_genre": "Filtrovat podle žánru"
+        "filter_genre": "Filtrovat podle žánru",
+        "show_only_default_genres": "Zobrazit pouze výchozí žánry",
+        "show_all_genres": "Zobrazit všechny žánry",
+        "genre_content_type": "Typ média",
+        "restore_genre": "Obnovit žánr",
+        "collapse_collections": "Sbalit kolekce"
     },
     "topresult": "Nejlepší výsledek",
     "track": "Skladba",
@@ -599,8 +632,6 @@
         "setup_failed": "Nastavení se nezdařilo. Zkuste to prosím znovu.",
         "setup_error": "Během nastavení došlo k chybě",
         "profile": "Profil",
-        "account_settings": "Nastavení účtu",
-        "manage_your_profile_info": "Spravujte informace a nastavení svého profilu",
         "change_password": "Změnit heslo",
         "update_your_password": "Aktualizujte heslo k účtu",
         "old_password": "Současné heslo",
@@ -662,7 +693,6 @@
         "change_role": "Změnit roli",
         "avatar_url": "URL avatara",
         "avatar_url_hint": "Zadejte URL obrázku avatara",
-        "change_avatar": "Změnit avatara",
         "profile_updated": "Profil byl úspěšně aktualizován",
         "ingress_password_note": "Při přístupu k aplikaci Music Assistant mimo aplikaci Home Assistant budete toto heslo potřebovat k přihlášení.",
         "copy_new_token_hint": "Zkopírujte si svůj přístupový token. Už se nezobrazí.",
@@ -673,7 +703,12 @@
         "no_players_selected": "Všechny přehrávače (bez omezení)",
         "select_players": "Vybrat přehrávače",
         "save_changes": "Uložit změny",
-        "update_password": "Aktualizovat heslo"
+        "update_password": "Aktualizovat heslo",
+        "tokens_load_failed": "Nepodařilo se načíst přístupové tokeny",
+        "users_load_failed": "Nepodařilo se načíst uživatele",
+        "permissions": {
+            "browse_library": "Procházet knihovnu"
+        }
     },
     "login": {
         "subtitle": "Připojte se k hudebnímu serveru",
@@ -721,7 +756,17 @@
         "scan_qr_code": "Naskenujte QR kód",
         "scan_qr_hint": "Namiřte fotoaparát na QR kód zobrazený v nastavení serveru Music Assistant.",
         "qr_invalid": "Neplatný QR kód. Naskenujte prosím QR kód vzdáleného ID Music Assistant.",
-        "qr_camera_error": "Nepodařilo se připojit k fotoaparátu. Zkontrolujte prosím oprávnění."
+        "qr_camera_error": "Nepodařilo se připojit k fotoaparátu. Zkontrolujte prosím oprávnění.",
+        "error_party_auth_failed": "Nepodařilo se mi připojit se k večírku",
+        "remote_only_info": "Připojte se vzdáleně k serveru Music Assistant",
+        "server_address_hint": "Zadejte úplnou URL adresu vašeho serveru Music Assistant",
+        "connecting_ingress": "Připojování přes Home Assistant...",
+        "connecting_local_party": "Připojování k večírku...",
+        "connecting_remote_party": "Připojování k večírku...",
+        "joining_party": "Připojuji se k večírku...",
+        "reconnecting": "Obnovení spojení",
+        "reconnecting_message": "Pokus o opětovné připojení k serveru...",
+        "error_ingress_failed": "Nepodařilo se mi přihlásit přes Home Assistant"
     },
     "yes": "Ano",
     "no": "Ne",
@@ -744,7 +789,6 @@
     "narrators": "Vypravěči",
     "queue_move_end": "Přesunout na konec",
     "discover": "Objevit",
-    "save_queue_as_playlist": "Uložit frontu jako playlist",
     "playlist_created": "Playlist byl vytvořen",
     "open_playlist": "Otevřít playlist",
     "add": "Přidat",
@@ -818,5 +862,72 @@
     "playlist_mix_allowed": "Tyto typy médií lze kombinovat.",
     "playlist_mix_not_allowed": "Tento poskytovatel nepodporuje odlišné typy médií v seznamech skladeb. Vyberte prosím, pro který typ média chcete seznam skladeb vytvořit:",
     "playlist_create_provider_error": "Nelze získat poskytovatele.",
-    "playlist_create_no_type_selected": "Nebyl zvolen typ média."
+    "playlist_create_no_type_selected": "Nebyl zvolen typ média.",
+    "exclude_genre": "Vyloučit žánr",
+    "genre_exclusions": "Vyloučené žánry",
+    "remove_genre_exclusion": "Odebrat vyloučení",
+    "background_tasks": {
+        "progress": "Průběh",
+        "schedule_dialog": {
+            "browser_timezone": "Časové pásmo prohlížeče: {0}."
+        }
+    },
+    "restore_genre": "Obnovit",
+    "genre_name": "Název žánru",
+    "providers": {
+        "party": {
+            "confirm_enable_guest_access": "Opravdu chcete povolit přístup pro hosty? To umožní komukoli s odkazem nebo QR kódem připojit se k večírku, procházet hudbu a přidávat skladby do fronty."
+        },
+        "music_quiz": {
+            "genre": "Žánr",
+            "genre_count": "{0} žánr",
+            "genres_count": "{0} žánrů",
+            "title_reveal_hints_progress": "{0} z {1} odhalených náznaků"
+        }
+    },
+    "smart_playlist": {
+        "field_genre_is": "Žánr je",
+        "field_genre_is_not": "Žánr není"
+    },
+    "browse_by_genre": "Procházet podle žánru",
+    "top_picks_for_you": "Nejlepší výběr pro tebe",
+    "genre_content_type": {
+        "all": "Vše",
+        "audiobooks": "Audioknihy",
+        "podcasts": "Podcasty",
+        "music": "Hudba"
+    },
+    "goto_genre_radio": "Zobrazit nekonečný mix žánrů",
+    "play_from_beginning": "Přehrát od začátku",
+    "audiobooks_in_collection": "Audioknihy v této kolekci",
+    "collection_no_audiobooks": "Tato kolekce neobsahuje žádné audioknihy.",
+    "error_generic": "Něco se pokazilo. Zkuste to prosím znovu.",
+    "listing_filters": {
+        "genres_shown": "Zobrazit",
+        "genre": "Žánr",
+        "any_genre": "Jakýkoli žánr"
+    },
+    "statistics_top_genre": "Nejlepší žánr",
+    "statistics_genre_other": "Ostatní",
+    "statistics_genres_accessible": "Žánry: {values}",
+    "statistics_genre_empty": "V tomto období nebyly nalezeny žádné hry knihovních skladeb s určitým žánrem.",
+    "edit_rows_subtitle_genre": "Platí pro každou stránku žánru",
+    "chapter_progress_show_audiobook": "Zobrazit celou audioknihu",
+    "chapter_progress_show_episode": "Zobrazit celou epizodu",
+    "chapter_progress_show_chapter": "Zobrazit pouze tuto kapitolu",
+    "statistics_library_based_genres": "Zahrnuje přehrávání propojené se skladbami z knihovny s informacemi o žánru. Jiné přehrávání může chybět.",
+    "onboarding": {
+        "steps": {
+            "core_settings": {
+                "remote": {
+                    "features": {
+                        "home_assistant_link": "Využívá funkci Home Assistant Link, pokud ji váš Home Assistant podporuje"
+                    }
+                }
+            },
+            "ai": {
+                "intro_examples": "Využijte sílu umělé inteligence v aplikaci Music Assistant. Několik příkladů, další budou následovat:"
+            }
+        }
+    }
 }

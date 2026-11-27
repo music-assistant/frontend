@@ -60,7 +60,9 @@
         "visualizer": "Vizuelizator",
         "light": "Svetlo",
         "unknown": "Nepoznato",
-        "source": "Audio ulaz"
+        "source": "Audio ulaz",
+        "multi_channel": "Višekanalni",
+        "controller": "Kontroler"
     },
     "players": "Plejeri",
     "playlist": "Plejlista",
@@ -125,7 +127,8 @@
                 "auto": "Automatski (sistemska podesavanja)",
                 "light": "Svetli režim",
                 "dark": "Tamni režim"
-            }
+            },
+            "automatic": "Automatski"
         },
         "language": {
             "label": "Jezik",
@@ -304,7 +307,8 @@
                 "remove_confirm": "Obrisati „{0}“? Svaki konvolucioni filter koji ga koristi, na bilo kom plejeru ili režimu rada, biće vraćen na stanje bez impulsnog odziva.",
                 "mono": "Mono",
                 "stereo": "Stereo",
-                "channel_count": "{0} kanala"
+                "channel_count": "{0} kanala",
+                "too_large_remote": "Ova datoteka je prevelika za otpremanje putem udaljenog pristupa."
             },
             "safety_limiter": {
                 "help": "Hvata vršne vrednosti (pikove) koje bi inače dovele do izobličenja (klipinga) i mogle oštetiti vaše zvučnike. Postavite ga na kraj lanca obrade.",
@@ -356,7 +360,7 @@
         },
         "add_group_player_desc_universal": "Kreiranjem univerzalne grupe plejera možete grupisati plejere iz različitih ekosistema.Ovo će distribuirati isti audio zapis na sve plejere članove (ali ne sinhronizovano).",
         "playerprovider": "Podrška za plejere",
-        "providers_total": "{count} ukupno | {count} ukupno",
+        "providers_total": "Ukupno: {count} | Ukupno: {count}",
         "stage": {
             "label": "Status",
             "options": {
@@ -372,12 +376,11 @@
             "label": "Nametni mobilni prikaz",
             "description": "Nametnite mobilni prikaz (sa navigacionim menijem na dnu), čak i na većim ekranima."
         },
-        "players_description": "Podešavanje i upravljanje uređajima za izlaz zvuka",
-        "frontend_description": "Prilagođavanje teme i izgleda korisničkog interfejsa",
-        "profile_description": "Upravljanje podešavanjima ličnog naloga i parametrima",
+        "players_description": "Vaši plejeri, svetla, ekrani i audio-ulazi, kao i način na koji reprodukuju",
+        "profile_description": "Vaš nalog, lozinka, sesije i podešavanja interfejsa",
         "users": "Korisnici",
         "users_description": "Upravljanje korisničkim nalozima, ulogama i dozvolama",
-        "system_description": "Podešavanje serverskih podešavanja i glavnih modula Music Assistant-a",
+        "system_description": "Mreža, skladište, Home Assistant, pozadinski zadaci i dijagnostika servera",
         "system": "Sistem",
         "about": "O aplikaciji",
         "about_description": "Informacije o verziji, zaslugama i ostalo",
@@ -393,50 +396,41 @@
         "proud_part_of": "Ponosni deo",
         "core_module": {
             "cache": {
-                "name": "Keš memorija",
-                "description": "Podešavanje glavnog modula koji upravlja keširanjem podataka u celoj aplikaciji."
+                "name": "Keš memorija"
             },
             "metadata": {
-                "name": "Informacije o muzici (metapodaci)",
-                "description": "Konfiguracija glavnog modula za upravljanje informacijama o muzici"
+                "name": "Informacije o muzici (metapodaci)"
             },
             "music": {
-                "name": "Muzika",
-                "description": "Konfiguracija glavnog modula za upravljanje muzičkom bibliotekom"
+                "name": "Muzika"
             },
             "players": {
-                "name": "Plejeri",
-                "description": "Podešavanje glavnog modula za upravljanje plejerima"
+                "name": "Plejeri"
             },
             "player_queues": {
-                "name": "Redovi čekanja plejera",
-                "description": "Konfiguracija glavnog modula za upravljanje redovima čekanja plejera"
-            },
-            "remote_access": {
-                "name": "Udaljeni pristup",
-                "description": "Omogućava vam udaljeni pristup sopstvenim Music Assistant serveru"
+                "name": "Redovi čekanja plejera"
             },
             "streams": {
-                "name": "Audio-strimovi",
-                "description": "Konfiguracija modula za audio strimovanje i procesiranje"
+                "name": "Audio-strimovi"
             },
             "webserver": {
-                "name": "Veb-server",
-                "description": "Podešavanje veb-servera i API-ja."
+                "name": "Veb-server"
+            },
+            "statistics": {
+                "name": "Statistika"
             }
         },
         "remote_access": "Udaljeni pristup",
         "remote_access_description": "Bezbedan pristup sistemu Music Assistant sa bilo kog mesta",
-        "remote_access_title": "Bezbedan udaljeni pristup",
         "remote_access_explanation_intro": "Udaljeni pristup omogućava vam bezbedno povezivanje sa sopstvenim Music Assistant serverom sa bilo kog mesta na svetu.",
-        "remote_access_explanation_ha_cloud": "Za najbolje korisničko iskustvo i pouzdanost, potrebna je pretplata na Home Assistant Cloud servis.",
+        "remote_access_explanation_ha_cloud": "Za najbolje iskustvo i pouzdanost potrebna je pretplata na Home Assistant Link.",
         "remote_access_feature_webrtc": "Zasnovano na WebRTC tehnologiji za peer‑to‑peer povezivanja",
         "remote_access_feature_encrypted": "Potpuno šifrovano – vaši podaci ostaju privatni",
         "remote_access_feature_no_port_forwarding": "Nije potrebno prosleđivanje portova niti VPN",
-        "remote_access_mode_optimized": "Optimizovani režim (HA Cloud)",
+        "remote_access_mode_optimized": "Optimizovani režim (HA Link)",
         "remote_access_mode_basic": "Rad u osnovnom režimu",
-        "remote_access_mode_basic_description": "Korišćenje javnih STUN servera. Ovo možda neće funkcionisati u složenim mrežnim konfiguracijama. Nadogradite na Home Assistant Cloud servis za najbolje iskustvo.",
-        "remote_access_upgrade_to_optimized": "Nadogradite na Home Assistant Cloud servis",
+        "remote_access_mode_basic_description": "Korišćenje javnih STUN servera. Ovo možda neće raditi u složenim mrežnim okruženjima. Nadogradite na Home Assistant Link za najbolje iskustvo.",
+        "remote_access_upgrade_to_optimized": "Nadogradite na Home Assistant Link",
         "remote_access_status": "Status udaljenog pristupa",
         "remote_access_enabled": "Udaljeni pristup je omogućen",
         "remote_access_disabled": "Udaljeni pristup je onemogućen",
@@ -462,9 +456,8 @@
         "remote_access_disabled_success": "Udaljeni pristup je onemogućen",
         "remote_access_signaling_server_description": "Signalizacioni server u oblaku, čiji je domaćin Open Home Foundation.",
         "remote_access_protocol_basic": "WebRTC sa javnim STUN serverima (možda neće raditi u složenim mrežnim konfiguracijama).",
-        "remote_access_protocol_optimized": "WebRTC sa optimizovanim STUN\/TURN serverima preko Home Assistant Cloud servisa (radi u svim mrežnim konfiguracijama).",
+        "remote_access_protocol_optimized": "WebRTC sa optimizovanim STUN\/TURN serverima servisa Home Assistant Link (radi u svim mrežnim okruženjima).",
         "remote_access_encryption_description": "Šifrovanje sa kraja na kraj (End-to-end) pomoću DTLS-SRTP protokola osigurava privatnost i bezbednost vaših podataka.",
-        "frontend": "Korisnički interfejs",
         "view_players": "Prikaži plejere",
         "players_total": "{count} plejer |  {count} plejera",
         "api_docs": "API dokumentacija",
@@ -547,9 +540,7 @@
         "add_plugin_provider": "Dodaj dodatak",
         "music_sources": "Izvori muzike",
         "plugins": "Dodaci",
-        "music_providers_description": "Upravljanje servisima za strimovanje muzike i lokalnim bibliotekama",
         "player_providers_description": "Podesite podršku za plejere za vaše izlazne audio uređaje",
-        "metadata_providers_description": "Upravljajte izvorima omota albuma i dodatnih informacija",
         "plugin_providers_description": "Upravljanje dodacima koji proširuju funkcionalnost Music Assistant-a.",
         "restore_genres": "Povratite žanrove",
         "genre_statistics_description": "Pretraga i filtriranje svih žanrova u vašoj biblioteci. Žanrovi se mogu globalno izuzeti i vratiti.",
@@ -558,21 +549,6 @@
         "add_player_providers": "Dodaj još podrške za plejere",
         "add_audio_analysis_provider": "Dodaj analizu zvuka",
         "audio_analysis_providers": "Servisi za analizu zvuka",
-        "audio_analysis_providers_description": "Upravljanje servisima koji analiziraju vaš zvuk.",
-        "audio_analysis": "Analiza zvuka",
-        "audio_analysis_coverage": {
-            "title": "Pokrivenost analizom zvuka",
-            "col_pending": "Na čekanju",
-            "col_stale": "Zastarelo",
-            "unavailable": "nedostupno",
-            "none": "—"
-        },
-        "audio_analysis_description": "Praćenje pokrivenosti analizom zvuka kod vaših provajdera",
-        "audio_analysis_concurrency": {
-            "title": "Broj istovremenih pozadinskih analiza",
-            "description": "Kontrola broja numera koje se istovremeno analiziraju tokom noćnog pozadinskog skeniranja. Ovo podešavanje se nalazi u glavnoj konfiguraciji strimova.",
-            "open_settings": "Otvori podešavanja strimova"
-        },
         "provider_status_auth_required": "Potrebna je prijava",
         "provider_status_incompatible": "Nije podržano na ovom sistemu",
         "provider_status_error": "Podešavanje nije uspelo",
@@ -584,9 +560,8 @@
         "provider_saved": "Podešavanja su sačuvana",
         "provider_reloading": "Ponovno učitavanje …",
         "provider_removed": "\"{0}\" je uklonjen",
-        "queue_settings": "Podešavanja reda",
+        "queue_settings": "Podešavanja reprodukcije",
         "audio_analysis_failures": {
-            "title": "Neuspele analize zvuka",
             "description": "Numere kod kojih analiza nije uspela biće preskočene u budućim skeniranjima. Obrišite stavku da biste uklonili status greške i omogućili ponovnu analizu.",
             "col_item": "Numera",
             "col_reason": "Razlog",
@@ -604,10 +579,13 @@
             "cleared_one": "Greška je izbrisana – numera će biti ponovo analizirana.",
             "cleared_many": "Obrisan broj grešaka: {0}.",
             "clear_error": "Brisanje grešaka nije uspelo. Pokušajte ponovo.",
-            "load_error": "Učitavanje grešaka sa servera nije uspelo."
+            "load_error": "Učitavanje grešaka sa servera nije uspelo.",
+            "failed_tracks": "Neuspele numere",
+            "failed_tracks_description": "Numere koje analiza preskače dok ih ne obrišete",
+            "state_none": "Nema"
         },
-        "queue_global_settings_hint": "Ova podešavanja se primenjuju samo na ovaj red čekanja. Možete takođe konfigurisati podrazumevane vrednosti koje važe za sve redove čekanja plejera.",
-        "queue_global_settings_link": "Otvori globalna podešavanja reda",
+        "queue_global_settings_hint": "Ova podešavanja važe samo za ovaj plejer. Možete podesiti i podrazumevane vrednosti za sve plejere.",
+        "queue_global_settings_link": "Otvori podrazumevana podešavanja",
         "protocol_provider_unavailable": "Podrška za plejere za ovaj izlazni protokol trenutno nije dostupna.",
         "protocol_multi_info": "Ovaj plejer podržava više izlaznih protokola. Music Assistant ih kombinuje u jedan plejer. Izaberite protokol ispod da biste konfigurisali kako se koristi.",
         "protocol_configure_title": "Podešavanje: {name}",
@@ -618,7 +596,7 @@
         },
         "download_diagnostics": "Preuzmi dijagnostiku",
         "diagnostics": "Dijagnostika",
-        "diagnostics_description": "Pregled serverskih dnevnika i preuzimanje dijagnostičkog izveštaja radi otklanjanja grešaka",
+        "diagnostics_description": "Evidencija servera, nivoi dnevnika i dijagnostički izveštaj za rešavanje problema",
         "customize_menu": {
             "label": "Prilagodi meni",
             "description": "Postavite navigacioni meni u režim izmene da biste prikazali, sakrili, promenili redosled i preimenovali njegove stavke."
@@ -660,7 +638,7 @@
                 "volume_controls": "Izbor kontrole jačine zvuka",
                 "mute_controls": "Izbor kontrole utišavanja"
             },
-            "search_placeholder": "Pretražite po entitetu, uređaju ili prostoriji...",
+            "search_placeholder": "Pretraži po entitetu, uređaju ili prostoriji...",
             "no_results": "Nema podudarnih entiteta",
             "search_failed": "Pretraga Home Assistant entiteta nije uspela. Proverite da li je Home Assistant povezan.",
             "truncated": "Više entiteta odgovara nego što se može prikazati, precizirajte pretragu da je suzite.",
@@ -702,7 +680,7 @@
         },
         "delete_player_title": "Obrisati {0}?",
         "delete_player_confirmation": "Ovaj plejer će biti uklonjen iz Music Assistant-a. Njegova podešavanja će biti izgubljena i mogu se povratiti samo ponovnim podešavanjem.",
-        "queue_settings_description": "Podešavanja reprodukcije za red čekanja iz kojeg ovaj plejer pušta muziku",
+        "queue_settings_description": "Postepeni prelaz, normalizacija jačine zvuka i automatska reprodukcija za ovaj plejer",
         "dsp_description": "Filteri i pojačanje koji se primenjuju na sve što ovaj plejer pušta",
         "player_options_description": "Opcije i očitavanja koje nudi sam plejer",
         "volume_slider_mode": {
@@ -735,8 +713,6 @@
         "server_internal_url": "Interna URL adresa",
         "server_external_url": "Eksterna URL adresa",
         "server_remote_access": "Udaljeni pristup",
-        "audio_analysis_status_hint": "Pogledajte napredak analize po servisu, kao i eventualne greške, na stranici sa statusom.",
-        "audio_analysis_status_link": "Otvori status analize zvuka",
         "music_sources_empty_title": "Još uvek nema muzičkih izvora",
         "music_sources_empty": "Povežite nalog muzičkog servisa ili dodajte lokalnu biblioteku da biste započeli slušanje.",
         "source_access": {
@@ -778,8 +754,7 @@
         "music_sources_shared": "Podeljeno sa vama",
         "music_sources_shared_empty": "Još uvek nijedan muzički izvor nije podeljen sa vama.",
         "storage": {
-            "title": "Skladište",
-            "description": "Fascikle, diskovi i mrežni deljeni resursi iz kojih muzika može da se preuzima",
+            "description": "Fascikle sa muzikom, diskovi, mrežna deljenja i skladište servera",
             "load_failed": "Učitavanje skladišta nije uspelo",
             "music_locations": "Lokacije sa muzikom",
             "music_locations_empty_title": "Još uvek nema lokacija sa muzikom",
@@ -860,11 +835,11 @@
                 "path": "Putanja fascikle",
                 "path_hint": "Puna putanja fascikle, na primer \/home\/me\/Music"
             },
-            "use_as_source": "Koristi kao muzički izvor"
+            "use_as_source": "Koristi kao muzički izvor",
+            "title": "Skladište"
         },
         "folder_picker": {
             "selected": "Izabrana fascikla",
-            "none_selected": "Nema izabrane fascikle",
             "outside_locations": "Ova fascikla se ne nalazi ni na jednoj od lokacija skladišta. Ostaje izabrana sve dok ne izaberete neku drugu.",
             "locations": "Lokacije skladišta",
             "all_locations": "Sve lokacije",
@@ -872,13 +847,12 @@
             "open_folder": "Otvori {name}",
             "no_subfolders": "Ova fascikla nema podfascikle.",
             "use_folder": "Koristi ovu fasciklu",
-            "folder_selected": "Izabrano",
-            "holds_selection": "Izabrana fascikla se nalazi ovde",
             "browse_failed": "Otvaranje fascikle nije uspelo",
             "empty_title": "Još uvek nema ničega za izbor",
-            "empty_text": "Još uvek nema fascikle, diska ili mrežnog deljenog resursa za izbor. Izaberite Upravljaj skladištem da biste ga dodali.",
             "empty_text_member": "Još uvek nema fascikle, diska ili mrežnog deljenog resursa za izbor. Zatražite od administratora da ga doda.",
-            "manage": "Upravljaj skladištem"
+            "empty_text_add": "Još uvek nema fascikle, diska ili mrežne deljene lokacije za izbor. Dodajte onu u kojoj se nalaze vaši fajlovi.",
+            "empty_text_container": "Još uvek nema fascikle, diska ili mrežne deljene lokacije za izbor. Mapirajte fasciklu u kojoj se nalaze vaši fajlovi u Music Assistant kontejner i ponovo ga pokrenite.",
+            "chosen_hint": "Koristi se ova fascikla, uključujući i fascikle unutar nje."
         },
         "remove_provider_confirm_music": "Ukloniti {0}? Sva muzika koju ovaj izvor pruža biće uklonjena iz vaše biblioteke, zajedno sa istorijom puštanja. Ovo se ne može poništiti.",
         "remove_provider_confirm_player": "Ukloniti {0}? Njegovi plejeri i njihova podešavanja biće takođe uklonjeni. Ovo se ne može poništiti.",
@@ -929,7 +903,7 @@
         "unavailable_players_removed": "Nisu pronađeni nedostupni plejeri | Uklonjen je jedan nedostupan plejer | Uklonjeno je {count} nedostupnih plejera",
         "catalog": {
             "title": "Prodavnica",
-            "description": "Proširite Music Assistant sa više izvora muzike, podrškom za više plejera i moćnim dodacima.",
+            "description": "Proširenje Music Assistant-a dodatnim izvorima muzike, podrškom za više plejera i moćnim dodacima.",
             "installed": "Instalirano",
             "popular": "Popularno",
             "previous": "Prethodno",
@@ -1031,9 +1005,10 @@
                 "moved_message_not_running": "O njemu sada brinu njegovi održavaoci, a ne Music Assistant tim. Music Assistant ga je instalirao iz kataloga zajednice.",
                 "dismiss": "Odbaci",
                 "new_title": "Novo u katalogu zajednice",
-                "updated_title": "Nedavno ažurirano"
+                "updated_title": "Nedavno ažurirano",
+                "new_badge": "Novo"
             },
-            "search": "Pretražite prodavnicu",
+            "search": "Pretraži Prodavnicu",
             "search_results": "Rezultati pretrage",
             "discover": "Otkrij",
             "top_pick": "Preporuka za vas",
@@ -1051,9 +1026,168 @@
             "dont_suggest_failed": "Zaustavljanje predlaganja za {name} nije uspelo",
             "suggested_again_toast": "{name} se ponovo predlaže",
             "suggest_again_failed": "Ponovno predlaganje za {name} nije uspelo",
-            "undo": "Opozovi"
+            "undo": "Opozovi",
+            "fits_your_setup": "Odgovara vašem sistemu"
         },
-        "provider_status_unavailable": "Nije dostupno"
+        "provider_status_unavailable": "Nije dostupno",
+        "merge_player": "Spoji sa drugim plejerom...",
+        "merge_player_title": "Spoji {0} sa drugim plejerom",
+        "merge_player_description": "Za uređaj koji se prikazuje kao dva plejera. Izaberite plejer koji ostaje.",
+        "merge_player_pick": "Izaberite plejer",
+        "merge_player_confirmation": "{0} nestaje, a njegovi izlazi prelaze na {1}. Podešavanja koja ima samo {0} se zadržavaju. Njegov red čekanja se briše.",
+        "merge_player_confirmation_outputs": "{0} nestaje, a njegovi izlazi ({2}) prelaze na {1}. Podešavanja koja ima samo {0} se zadržavaju. Njegov red čekanja se briše.",
+        "merge_player_confirm": "Spoji",
+        "player_merged": "Spojeni plejeri",
+        "split_off_output": "Izdvoji kao poseban plejer",
+        "split_off_output_title": "Odvojiti {0} od {1}?",
+        "split_off_output_confirmation": "{0} više nije deo plejera {1} i prikazuje se kao novi zaseban plejer sa podrazumevanim podešavanjima. {1} zadržava svoj naziv, podešavanja i red čekanja.",
+        "split_off": "Odvoji",
+        "output_split_off": "{0} je sada zaseban plejer",
+        "action_link_refused": "Veza nije otvorena jer vodi ka samoj aplikaciji Music Assistant.",
+        "settings_load_failed": "Učitavanje ovih podešavanja nije uspelo",
+        "network": {
+            "title": "Mreža",
+            "description": "Udaljeni pristup, adrese, portovi i otkrivanje uređaja",
+            "web": "Veb-interfejs i API",
+            "streaming": "Audio strimovanje",
+            "discovery": "Otkrivanje"
+        },
+        "providers_active": "{count} aktivan | {count} aktivna | {count} aktivnih",
+        "playback": {
+            "title": "Reprodukcija",
+            "description": "Postepeni prelaz, normalizacija jačine zvuka, automatska reprodukcija i šta se dešava kada pritisnete pusti"
+        },
+        "library": {
+            "title": "Podešavanja biblioteke",
+            "description": "Koji izvor reprodukuje numeru i održavanje biblioteke",
+            "source_selection": "Izbor izvora",
+            "maintenance": "Održavanje biblioteke"
+        },
+        "log_levels": "Nivoi dnevnika",
+        "home_assistant": {
+            "title": "Home Assistant",
+            "description": "Veza sa Home Assistant-om i šta ona donosi aplikaciji Music Assistant",
+            "not_connected": "Nije povezano sa Home Assistant-om",
+            "connect_description": "Povežite se sa Home Assistant-om da biste reprodukovali na njegovim medija plejerima, prijavljivali se njegovim nalozima i pretvorili njegove uređaje u kontrole plejera.",
+            "connect": "Poveži",
+            "connection": "Veza",
+            "connection_description": "Ponovo podesite, onemogućite ili uklonite vezu",
+            "connection_addon": "Music Assistant radi kao Home Assistant aplikacija, što ga povezuje",
+            "state_connected": "Povezano",
+            "state_connecting": "Povezivanje",
+            "state_disabled": "Onemogućeno",
+            "state_needs_attention": "Zahteva pažnju",
+            "players": "Home Assistant plejeri",
+            "players_description": "Reprodukuj na medija plejerima iz Home Assistant-a",
+            "players_add": "Dodaj",
+            "sign_in": "Prijavi se pomoću Home Assistant-a",
+            "remote_access_description": "Home Assistant Link omogućava da udaljeni pristup radi na bilo kojoj mreži",
+            "remote_access_ha_cloud": "Home Assistant Link",
+            "remote_access_without_ha_cloud": "Bez servisa Home Assistant Link",
+            "ai": "AI iz sistema Home Assistant",
+            "ai_description": "AI zadaci i glasovi iz sistema Home Assistant",
+            "ai_none": "Nijedan",
+            "players_choose": "Izaberi",
+            "sign_in_new_users": "Home Assistant korisnici bez naloga ga dobijaju prilikom prve prijave",
+            "remote_access_details": "Udaljeni ID i QR kod"
+        },
+        "music": "Muzika",
+        "music_description": "Vaši izvori muzike, biblioteka, metapodaci i audio-analiza",
+        "source_labels": {
+            "library": "Biblioteka",
+            "radio": "Radio",
+            "podcasts": "Podkasti",
+            "audiobooks": "Audio-knjige",
+            "live": "Izvori uživo"
+        },
+        "ai": {
+            "title": "AI",
+            "description": "AI mehanizmi koje Music Assistant koristi, šta ih koristi i pristup za AI asistente",
+            "no_engines": "Još uvek nema AI mehanizama",
+            "no_engines_description": "Dodajte AI uslugu za pisanje opisa plejlista, izgovaranje obaveštenja, vođenje AI radija i još mnogo toga.",
+            "add_service": "Dodaj AI uslugu",
+            "usage": "Šta koristi AI",
+            "services": "AI usluge",
+            "kind": {
+                "text": "AI mehanizam",
+                "speech": "Mehanizam za pretvaranje teksta u govor",
+                "image": "Mehanizam za slike"
+            },
+            "engine_count": {
+                "text": "{count} tekst | {count} teksta | {count} tekstova",
+                "speech": "{count} govor | {count} govora",
+                "image": "{count} slika | {count} slike | {count} slika"
+            },
+            "follows_default": "Podrazumevano · {engine}",
+            "not_available": "Nije dostupno",
+            "choose_models": "Izaberite modele za korišćenje",
+            "assistant_access": "Pristup za AI asistente",
+            "assistant_access_enabled": "Ugrađeni MCP server je uključen",
+            "assistant_access_disabled": "Ugrađeni MCP server je isključen",
+            "mcp_server": "Omogući ugrađeni MCP server",
+            "mcp_server_description": "Omogućava AI asistentima kao što su Home Assistant Assist, Claude i ChatGPT da pretražuju vašu muziku i kontrolišu reprodukciju.",
+            "engine_unavailable": "Izabrani mehanizam nije dostupan"
+        },
+        "provider_labels": {
+            "filter": "Filtriraj prema ponudi",
+            "all": "Svi"
+        },
+        "plugin_labels": {
+            "ai": "AI",
+            "tts": "Pretvaranje teksta u govor",
+            "scrobble": "Skroblovanje",
+            "assistant": "Asistenti",
+            "visualizer": "Svetla i vizuelni efekti",
+            "recommendations": "Miksevi i preporuke",
+            "fun": "Zabava i igre",
+            "other": "Ostalo"
+        },
+        "multi_channel": {
+            "make": "Napravi višekanalni plejer…",
+            "make_title": "Napravi višekanalni plejer",
+            "make_description": "{0} i zvučnici koje izaberete reprodukuju zvuk kao jedan plejer, svaki na svom kanalu.",
+            "channels": {
+                "front_left": "Levo",
+                "front_right": "Desno",
+                "front_center": "Centralni",
+                "lfe": "Sabvufer"
+            },
+            "this_speaker": "{0} (ovaj zvučnik)",
+            "channel": "Kanal",
+            "output_delay": "Kašnjenje izlaza (ms)",
+            "pick_speaker": "Izaberite zvučnik",
+            "swap": "Zameni kanale",
+            "no_speakers": "Nema drugih zvučnika za dodavanje. Zvučnik se ovde pojavljuje dok je uključen i povezan.",
+            "name": "Naziv",
+            "make_note": "{0} izlaz svakog zvučnika prelazi na novi plejer. Plejer bez drugog izlaza nestaje, zajedno sa svojim podešavanjima.",
+            "created": "{0} je kreiran",
+            "speaker_online": "Na mreži",
+            "speaker_offline": "Van mreže",
+            "take_apart": "Razdvoji",
+            "take_apart_title": "Razdvojiti {0}?",
+            "take_apart_confirmation": "{0} nestaje, zajedno sa svojim podešavanjima. Njegovi zvučnici se vraćaju kao samostalni plejeri, sa podrazumevanim podešavanjima.",
+            "take_apart_confirm": "Razdvoji",
+            "taken_apart": "{0} je razdvojen",
+            "layout": "Raspored",
+            "add_subwoofer": "Dodaj sabvufer…",
+            "add_subwoofer_title": "Dodaj sabvufer",
+            "add_subwoofer_description": "Izaberite zvučnik koji reprodukuje bas za {0}.",
+            "add_subwoofer_note": "{0} izlaz sabvufera se premešta na {1}. Plejer bez drugog izlaza nestaje, zajedno sa svojim podešavanjima.",
+            "subwoofer_added": "Sabvufer je dodat u {0}",
+            "remove_subwoofer": "Ukloni sabvufer",
+            "remove_subwoofer_title": "Ukloniti sabvufer iz {0}?",
+            "remove_subwoofer_confirmation": "{0} se vraća kao samostalan plejer, sa podrazumevanim podešavanjima.",
+            "subwoofer_removed": "Sabvufer je uklonjen iz {0}"
+        },
+        "metadata_description": "Izvori metapodataka, jezik, onlajn pretrage, žanrovi i keš omota",
+        "audio_analysis_description": "Napredak analize, neuspele numere, moduli za analizu i podešavanja",
+        "audio_analysis_modules": "Moduli za analizu",
+        "metadata_settings_description": "Jezik, onlajn pretrage, žanrovi i keš omota",
+        "audio_analysis_settings_description": "Koliko se numera analizira istovremeno",
+        "audio_analysis_coverage": {
+            "up_to_date": "Ažurirano",
+            "waiting": "{count} na čekanju"
+        }
     },
     "show_info": "Prikaži informacije",
     "show_select_boxes": "Prikaži polja za potvrdu",
@@ -1161,7 +1295,6 @@
         "toggle_subplayers": "Prikaži\/sakrij pod-plejere",
         "restore_genre": "Obnovite žanr",
         "remove_rule": "Ukloni pravilo",
-        "change_avatar": "Promenite avatar",
         "revoke_session": "Opozovite sesiju",
         "revoke_token": "Opozovite token",
         "user_options": "Korisničke opcije",
@@ -1422,8 +1555,6 @@
         "setup_failed": "Podešavanje nije uspelo. Pokušajte ponovo.",
         "setup_error": "Došlo je do greške tokom podešavanja",
         "profile": "Profil",
-        "account_settings": "Podešavanja naloga",
-        "manage_your_profile_info": "Upravljanje informacijama i podešavanjima svog profila",
         "change_password": "Promena lozinke",
         "update_your_password": "Ažuriraj lozinku svog naloga",
         "old_password": "Trenutna lozinka",
@@ -1485,7 +1616,6 @@
         "change_role": "Promenite ulogu",
         "avatar_url": "URL slike avatara",
         "avatar_url_hint": "Unesite URL za sliku avatara",
-        "change_avatar": "Promenite avatar",
         "profile_updated": "Profil je uspešno ažuriran",
         "ingress_password_note": "Kada pristupate Music Assistant-u izvan Home Assistant-a, biće vam potrebna ova lozinka za prijavu.",
         "copy_new_token_hint": "Kopirajte vaš pristupni token. Neće biti ponovo prikazan.",
@@ -1552,7 +1682,17 @@
         },
         "username_max_length": "Korisničko ime može imati najviše 50 karaktera",
         "display_name_max_length": "Prikazano ime može imati najviše 100 karaktera",
-        "password_max_length": "Lozinka mora imati najviše 128 znakova"
+        "password_max_length": "Lozinka mora imati najviše 128 znakova",
+        "profile_pages": {
+            "theme_language": "Tema i jezik",
+            "interface": "Interfejs",
+            "interface_description": "Podešavanja koja prate vaš nalog na svakom uređaju",
+            "device": "Ovaj uređaj",
+            "device_description": "Podešavanja koja važe samo na ovom uređaju",
+            "security": "Bezbednost",
+            "security_description": "Lozinka, aktivne sesije i pristupni tokeni"
+        },
+        "edit_profile": "Izmeni profil"
     },
     "login": {
         "subtitle": "Povezivanje sa muzičkim serverom",
@@ -1644,7 +1784,6 @@
     "narrators": "Naratori",
     "queue_move_end": "Pomeri na kraj reda",
     "discover": "Početna",
-    "save_queue_as_playlist": "Sačuvaj red kao plejlistu",
     "playlist_created": "Plejlista je napravljena",
     "open_playlist": "Otvorite plejlistu",
     "add": "Dodaj",
@@ -1743,7 +1882,7 @@
                 "queue_empty": "Red je prazna",
                 "search_failed": "Pretraga nije uspela. Pokušajte ponovo.",
                 "searching": "Pretraživanje...",
-                "search_placeholder": "Pretražite pesme ili izvođače...",
+                "search_placeholder": "Pretraži pesme ili izvođače...",
                 "search_results_count": "Rezultati pretrage ({0})",
                 "skip_disabled": "Domaćin je onemogućio preskakanje pesama.",
                 "skip_failed": "Preskakanje pesme nije uspelo. Pokušajte ponovo.",
@@ -1804,31 +1943,24 @@
             "create_intro": "Kreirajte novu igru kviza da testirate svoje muzičko znanje!",
             "loading": "Učitavanje...",
             "no_active_game": "Nema aktivne igre",
-            "game_removed": "Igra više nije dostupna",
             "game_ended": "Igra je završena",
             "game_ended_detail": "Kviz kojem ste se pridružili je završen.",
-            "game_no_longer_available": "Ova igra više nije dostupna",
             "start": "Pokreni kviz",
-            "reveal": "Otkrijte odgovor",
             "phase_reveal": "Otkrijte odgovor",
             "next": "Sledeća runda",
             "finish": "Završi kviz",
-            "reset": "Resetuj kviz",
             "new_game": "Nova igra",
             "phase_waiting_for_players": "Čeka se da se igrači pridruže",
             "phase_answers_open": "Odgovori su otvoreni!",
             "phase_enjoy_track": "Uživajte u pesmi!",
             "phase_finished": "Kviz je završen",
-            "join_url_label": "URL za pridruživanje",
             "players": "Igrači",
             "players_count": "Igrači: {0}",
             "rounds_count": "Runda: {0}",
             "round_label": "Runda",
-            "round": "Runda",
             "enter_name": "Unesi svoje ime",
             "join": "Pridružite se kvizu",
             "waiting_for_start": "Čeka se da domaćin pokrene kviz...",
-            "waiting_for_answers": "Čekaju se odgovori...",
             "choose_answer": "Izaberi odgovor!",
             "answered": "Odgovor je poslat! Čekaju se ostali...",
             "answer_was": "Odgovor je bio",
@@ -1838,19 +1970,12 @@
             "ready": "Spreman za sledeću rundu",
             "waiting_for_next": "Čeka se sledeća runda...",
             "game_over": "Kraj igre!",
-            "final_scores": "Konačni rezultati",
             "final_leaderboard": "Konačna tabela",
-            "setup_placeholder": "Forma za podešavanje stiže uskoro",
             "connection_lost": "Veze je prekinuta, ponovno povezivanje...",
             "rounds": "Runde",
-            "suggestions": "Ponuđeni odgovori",
             "answer_seconds": "Vreme za odgovor (u sekundama)",
-            "search_music": "Pretražite vašu biblioteku",
-            "searching": "Pretraga...",
-            "no_sources_found": "Nisu pronađene pesme niti plejliste",
             "selected_music": "Izabrana muzika",
             "pick_at_least_one_source": "Izaberi barem jedan izvor",
-            "source_search_failed": "Nije moguće pretražiti izvore muzike",
             "playlist": "Plejlista",
             "track_with_artist": "Numera • {0}",
             "track": "Numera",
@@ -1866,7 +1991,6 @@
             "qr_unavailable": "Nije moguće generisati QR kod",
             "copied": "Kopirano",
             "copy_link": "Kopiraj link",
-            "join_link_copied": "Link za pridruživanje je kopiran",
             "copy_join_link_failed": "Nije moguće kopirati link za pridruživanje",
             "now_playing": "Trenutno se reprodukuje",
             "current_music": "Trenutna muzika",
@@ -1907,8 +2031,6 @@
             "difficulty_hard": "Teško",
             "choose_game_type": "Izaberi tip igre",
             "configure_game": "Konfiguriši svoju igru",
-            "setup_step": "Korak {0} od {1}",
-            "coming_soon": "Uskoro",
             "answer_choices": "Ponuđeni odgovori",
             "game_type_guess_the_song": "Pogodi pesmu",
             "game_type_guess_the_song_description": "Pustite pesmu i budite prvi koji će izabrati njen naziv iz ponuđenih opcija.",
@@ -1918,7 +2040,6 @@
             "end_game_confirm": "Da li ste sigurni da želite da završite ovu igru? Ovo će ukloniti trenutnu igru za sve igrače.",
             "end_game": "Završite igru",
             "remove_music_source": "Ukloni {0}",
-            "timeline": "Vremenska linija",
             "timeline_anchor": "Sidro",
             "timeline_revealed": "Novo",
             "timeline_place_help": "Izaberite gde pripada pesma koja se reprodukuje, od starije ka novijoj.",
@@ -2030,7 +2151,43 @@
             "how_to_play_trivia_description": "Odgovarajte na kviz pitanja o muzici. Izaberite odgovor za koji mislite da je tačan pre nego što vreme istekn",
             "landing_continue": "Nastavite",
             "timeline_result_placement": "Mesto",
-            "round_result_answer": "Odgovor"
+            "round_result_answer": "Odgovor",
+            "game_type_title_reveal": "Otkrivanje naziva",
+            "game_type_title_reveal_description": "Pustite numeru i unesite njen naziv dok se slova otkrivaju jedno po jedno.",
+            "how_to_play_title_reveal_description": "Slušajte pesmu koja se reprodukuje i unesite njen naziv. Vremenom se otkriva sve više slova, a male greške u kucanju se tolerišu, ali što brže pogodite, to više poena dobijate.",
+            "title_reveal_hint_speed": "Brzina nagoveštaja",
+            "title_reveal_hint_speed_slow": "Spora (malo slova)",
+            "title_reveal_hint_speed_normal": "Normalna",
+            "title_reveal_hint_speed_fast": "Brza (mnogo slova)",
+            "title_reveal_typo_tolerance": "Tolerancija na greške u kucanju",
+            "title_reveal_typo_tolerance_strict": "Stroga",
+            "title_reveal_typo_tolerance_normal": "Normalna",
+            "title_reveal_typo_tolerance_lenient": "Blaga",
+            "title_reveal_mask_label": "Naziv pesme: {0}, još {1} skrivenih slova",
+            "title_reveal_hints_progress": "Otkriveno {0} od {1} nagoveštaja",
+            "title_reveal_typos_allowed": "Dozvoljena je najviše {count} greška u kucanju | Dozvoljene su najviše {count} greške u kucanju | Dozvoljeno je najviše {count} grešaka u kucanju",
+            "title_reveal_exact_spelling": "Potreban je tačan pravopis",
+            "title_reveal_guess_label": "Naziv pesme",
+            "title_reveal_guess_placeholder": "Unesite naziv...",
+            "title_reveal_submit_guess": "Pogodi",
+            "title_reveal_attempts_left": "{count} preostali pokušaj | {count} preostala pokušaja | {count} preostalih pokušaja",
+            "title_reveal_your_guesses": "Vaši pokušaji",
+            "title_reveal_close": "Tako blizu!",
+            "title_reveal_solved": "Tačno!",
+            "title_reveal_points": "+{0} poena",
+            "title_reveal_solved_players": "Pogođeno",
+            "title_reveal_not_solved": "Niste pogodili naziv u ovoj rundi",
+            "title_reveal_first_bonus": "Prvi! +{0}",
+            "title_reveal_first_bonus_result": "Prvi tačan odgovor",
+            "title_reveal_artist_bonus_setting": "Bonus za izvođača",
+            "title_reveal_artist_bonus_setting_help": "Nakon što pogode naziv, igrači imaju jedan pokušaj da pogode izvođača za bonus poene.",
+            "title_reveal_artist_bonus_label": "Bonus: ko je izvođač?",
+            "title_reveal_artist_bonus_help": "Jedan pokušaj za dodatne poene.",
+            "title_reveal_artist_placeholder": "Unesite izvođača...",
+            "title_reveal_artist_skip": "Preskoči",
+            "title_reveal_artist_correct": "{0} je tačan odgovor! +{1}",
+            "title_reveal_artist_wrong": "Nije baš tako, u pitanju je {0}",
+            "title_reveal_artist_skipped": "Preskočeno, u pitanju je {0}"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -2339,7 +2496,11 @@
             "log_download_started": "Preuzimanje dnevnika rada je započeto.",
             "log_download_failed": "Dnevnik zadataka za preuzimanje nije dostupan."
         },
-        "report_title": "Izveštaj o zadacima"
+        "report_title": "Izveštaj o zadacima",
+        "settings": {
+            "title": "Podešavanja zadataka",
+            "description": "Koliko se zadataka izvršava istovremeno"
+        }
     },
     "not_found_headline": "Ups, ova stranica nije na repertoaru.",
     "not_found_subtext": "Numera koju tražite se izgubila među izvorima muzike. Vratite se nazad ili pronađite nešto novo.",
@@ -2349,7 +2510,7 @@
     "import_playlist": "Uvezi plejlistu",
     "import_playlist_title": "Uvoz plejliste",
     "import_playlist_invalid_file": "Neispravna datoteka plejliste",
-    "import_playlist_search_providers": "Pretražite numere na sledećim servisima:",
+    "import_playlist_search_providers": "Potraži numere na",
     "party_mode": "Žurka",
     "edit_playlist": "Uredi plejlistu",
     "edit_radio": "Uredi radio",
@@ -2470,7 +2631,7 @@
     "artist_all_albums": "Svi albumi",
     "artist_all_tracks": "Sve numere",
     "on_provider": "Na servisu: {0}",
-    "open_queue_settings": "Otvori podešavanja reda",
+    "open_queue_settings": "Otvori podešavanja reprodukcije",
     "crossfade_enable": "Omogući postepeni prelaz",
     "crossfade_disable": "Onemogući postepeni prelaz",
     "crossfade": "Postepeni prelaz",
@@ -2719,7 +2880,7 @@
     "audio_overlay_no_custom_sounds": "Još uvek nema dodatih prilagođenih zvukova.",
     "audio_overlay_custom_added": "{0} dodato",
     "audio_overlay_custom_add_failed": "Dodavanje prilagođenog zvuka nije uspelo. Proverite da li URL vodi do audio strima koji se može pustiti.",
-    "search_in": "Pretražite u: {0}...",
+    "search_in": "Pretraži u {0}...",
     "pages": "Stranice",
     "recent_searches": "Nedavne pretrage",
     "command_center_navigate": "Navigacija",
@@ -2807,32 +2968,19 @@
         "skip": "Preskoči za sada",
         "finish": "Završi",
         "finish_failed": "Nije moguće završiti. Pokušajte ponovo.",
-        "nothing_configured": "Još ništa nije podešeno",
         "needs_attention": "Zahteva pažnju",
-        "set_up": "Završeno",
         "still_to_do": "Preostalo",
-        "all_done": "Možete sada završiti podešavanje, a dodatne funkcije dodati kad god poželite.",
-        "players_count": "{count} plejer | {count} plejera",
+        "players_count": "Plejera: {count} | Plejera: {count}",
         "run_again": "Ponovo pokreni čarobnjaka za podešavanje",
         "steps": {
-            "intent": {
-                "title": "Kako želite da koristite Music Assistant?",
-                "description": "Izaberite početnu tačku. Sve funkcije su vam dostupne bez obzira na to koju opciju izaberete.",
-                "phone_apps": {
-                    "label": "Poveži moje muzičke aplikacije sa mojim zvučnicima",
-                    "description": "Nastavite da birate muziku u aplikacijama kao što je Spotify ili koristite AirPlay. Music Assistant radi u pozadini kako bi ih povezao sa vašim zvučnicima, bez potrebe za podešavanjem muzičke biblioteke.",
-                    "preview": "Zatim ćemo dodati vaše zvučnike, povezati muzičke aplikacije i pokazati vam kako da započnete slušanje."
-                },
-                "music_hub": {
-                    "label": "Potpuno Music Assistant iskustvo",
-                    "description": "Objedinite svoje muzičke servise, lokalnu muziku i zvučnike na jednom mestu. Pregledajte, pretražujte i pravite plejliste u aplikaciji Music Assistant. I dalje možete reprodukovati sadržaj putem servisa Spotify Connect i AirPlay.",
-                    "preview": "Zatim ćemo povezati vaše muzičke servise i dodati zvučnike, a onda istražiti dodatne funkcije."
-                },
-                "summary_title": "Vaš izbor podešavanja"
-            },
             "music_sources": {
                 "title": "Dodavanje izvora muzike",
-                "description": "Povežite striming servis ili svoje lokalne muzičke datoteke, kako bi Music Assistant imao šta da pušta."
+                "description": "Povežite striming servis ili svoje lokalne muzičke datoteke, kako bi Music Assistant imao šta da pušta.",
+                "features": {
+                    "streaming": "Servisi za striming, kao što su Spotify ili Tidal",
+                    "files": "Vaši sopstveni muzički fajlovi, na ovom serveru ili deljenoj mreži",
+                    "radio": "Radio-stanice i podkasti"
+                }
             },
             "players": {
                 "title": "Dodavanje vaših plejera",
@@ -2843,63 +2991,39 @@
                 "discovering_hint": "Pronalaženje plejera može potrajati. Proverite da li su Vam zvučnici uključeni i na istoj mreži kao i Music Assistant.",
                 "add_more": "Dodaj još plejera",
                 "rename": "Preimenuj: {name}",
-                "discovered_by": "Otkriveno od"
+                "discovered_by": "Otkriveno od",
+                "features": {
+                    "found_automatically": "Automatski pronađeni na vašoj mreži",
+                    "one_place": "Reprodukujte na svima njima sa jednog mesta",
+                    "groups": "Grupišite ih da reprodukuju zajedno"
+                }
             },
             "plugins": {
                 "title": "Dodavanje dodataka",
-                "description": "Dodaci donose nove funkcije u Music Assistant, kao što su Party režim, Spotify Connect i AirPlay prijemnik. Uvek ih možete dodati kasnije.",
                 "phone_apps_title": "Povežite vaše muzičke aplikacije",
-                "phone_apps_description": "Dodajte Spotify Connect ili AirPlay prijemnik, a zatim otvorite njegova podešavanja da biste izabrali zvučnike. Ovde su dostupni i drugi dodaci.",
-                "connect": "Povežite muzičku aplikaciju"
+                "connect": "Povežite muzičku aplikaciju",
+                "phone_apps_instructions": "Dodajte Spotify Connect ili AirPlay prijemnik, a zatim ga izaberite da biste odabrali zvučnike na kojima reprodukuje.",
+                "features": {
+                    "apps": "Nastavite da birate muziku u aplikacijama koje poznajete",
+                    "spotify_connect": "Reprodukujte sa servisa Spotify pomoću funkcije Spotify Connect",
+                    "airplay": "Reprodukujte sa svojih Apple uređaja pomoću tehnologije AirPlay"
+                }
             },
             "finish": {
                 "title": "Završetak podešavanja",
                 "description": "Odlično ste obavili podešavanje. Evo kratkog pregleda, a sve ovo možete kasnije izmeniti u podešavanjima.",
                 "phone_apps_description": "Evo pregleda vaših zvučnika i povezanih aplikacija. Muzičku biblioteku i ostale funkcije možete dodati kasnije u podešavanjima."
             },
-            "core_settings": {
-                "title": "Pristup aplikaciji Music Assistant",
-                "load_failed": "Nije moguće učitati podešavanja servera. Možete ih promeniti kasnije u podešavanjima.",
-                "intro": "Music Assistant automatski radi na vašoj kućnoj mreži. Podesite daljinski pristup ako želite da slušate muziku i kada niste kod kuće.",
-                "internal_address": "Interna adresa",
-                "internal_address_hint": "Mesto preko kog aplikacije i uređaji u Vašem domu pristupaju aplikaciji Music Assistant.",
-                "stream_address": "Adresa servera za strimovanje",
-                "stream_address_hint": "Mesto odakle vaši plejeri preuzimaju zvuk.",
-                "address_unknown": "Nedostupno",
-                "check": {
-                    "checking": "Provera u toku...",
-                    "reachable": "Dostupno sa ovog uređaja",
-                    "unreachable": "Nedostupno sa ovog uređaja",
-                    "unchecked": "Provera sa ovog uređaja nije uspela"
-                },
-                "unreachable_hint": "Adresa koja se ovde ne odaziva verovatno se neće odazivati ni vašim plejerima. Ako reprodukcija ne uspe, promenite je pomoću opcije „Izmeni“ ispod.",
-                "override_hint": "Ovo treba da menjate samo u složenijim mrežama, na primer iza reverznog proksija ili kroz VLAN mreže. Možete ih pronaći kasnije u Podešavanja > {system}, u sekcijama {webserver} i {streams}.",
-                "remote": {
-                    "title": "Slušanje van kuće",
-                    "description": "Dva načina da pristupite aplikaciji Music Assistant kada niste kod kuće. Oba načina možete podesiti i kasnije.",
-                    "builtin": {
-                        "title": "Ugrađeni udaljeni pristup",
-                        "easiest": "Najlakše",
-                        "description": "Bezbedno i šifrovano, bez prosleđivanja portova ili VPN-a. Uključite i povežite se sa bilo kog mesta pomoću svog ID-ja za udaljeni pristup.",
-                        "switch": "Udaljeni pristup",
-                        "id": "Vaš ID za udaljeni pristup",
-                        "copy": "Kopiraj ID za udaljeni pristup",
-                        "hint": "Koristite ga u aplikaciji Music Assistant ili na stranici app.music-assistant.io. QR kôd se nalazi u Podešavanja > {remote_access}."
-                    },
-                    "proxy": {
-                        "title": "Sopstveni reverzni proksi",
-                        "description": "Pokrenite reverzni proksi ispred servera i unesite adresu preko koje mu se pristupa spolja kao spoljnu adresu.",
-                        "set_external": "Podesi spoljnu adresu"
-                    }
-                },
-                "network_details": "Detalji o serveru i mreži",
-                "external_address": "Spoljna adresa",
-                "external_address_hint": "Adresa na kojoj pristupate aplikaciji Music Assistant van svog doma, preko vašeg reverse proxy-ja."
-            },
             "invite_members": {
                 "title": "Dodavanje korisnika",
-                "description": "Svaki ukućanin dobija sopstveni nalog, sa pristupom plejerima i izvorima muzike koji im sami odredite.",
-                "load_failed": "Nije moguće učitati korisnike. Možete ih dodati kasnije u podešavanjima."
+                "load_failed": "Nije moguće učitati korisnike. Možete ih dodati kasnije u podešavanjima.",
+                "intro": "Dajte svakome u vašem domu sopstveni nalog.",
+                "features": {
+                    "sign_in": "Njihova sopstvena prijava",
+                    "players": "Plejeri kojima im date pristup",
+                    "music": "Njihovi sopstveni muzički servisi, uz vaše"
+                },
+                "optional": "Opciono: korisnike možete dodati i kasnije u odeljku Podešavanja › {users}."
             },
             "welcome": {
                 "title": "Osećajte se kao kod kuće",
@@ -2921,10 +3045,35 @@
             },
             "own_sources": {
                 "title": "Povezivanje sopstvenih naloga",
-                "description": "Dodajte sopstvene muzičke servise kako bi se vaše plejliste i biblioteka prikazivale zajedno sa ostalima. Ovo uvek možete uraditi kasnije u podešavanjima.",
                 "add": "Dodaj muzički izvor",
-                "empty": "Još uvek niste povezali sopstvene muzičke izvore.",
-                "connected": "Vaši muzički izvori"
+                "intro": "Dodajte muzičke servise koje sami koristite.",
+                "features": {
+                    "accounts": "Vaši sopstveni nalozi za striming, kao što je Spotify",
+                    "library": "Vaše plejliste i biblioteka, uz plejliste i biblioteke svih ostalih"
+                },
+                "optional": "Opciono: možete ih dodati i kasnije u odeljku Podešavanja › {music}."
+            },
+            "core_settings": {
+                "remote": {
+                    "builtin": {
+                        "id": "Vaš ID za udaljeni pristup",
+                        "copy": "Kopiraj ID za udaljeni pristup",
+                        "hint": "Koristite ga u aplikaciji Music Assistant ili na adresi app.music-assistant.io. QR kod se nalazi u odeljku Podešavanja › {system} › {network} › {remote_access}."
+                    },
+                    "features": {
+                        "secure": "Bezbedno i šifrovano",
+                        "no_setup": "Bez prosleđivanja portova (port forwarding) ili VPN-a",
+                        "anywhere": "Povežite se sa bilo kog mesta pomoću svog ID-a za udaljeni pristup",
+                        "home_assistant_link": "Koristi Home Assistant Link kada ga vaš Home Assistant ima"
+                    },
+                    "turn_on": "Uključi udaljeni pristup",
+                    "turn_off": "Isključi",
+                    "on": "Udaljeni pristup je uključen"
+                },
+                "away_title": "Slušajte van kuće",
+                "optional": "Opciono: možete ga uključiti i kasnije u odeljku Podešavanja › {system} › {network}, gde takođe možete podesiti sopstveni obrnuti proksi (reverse proxy).",
+                "intro": "Music Assistant uvek bezbedno radi na vašoj kućnoj mreži. Udaljeni pristup vam takođe omogućava da slušate muziku putem aplikacije kada niste kod kuće.",
+                "intro_addon": "Gde god možete da otvorite Home Assistant, možete da otvorite i Music Assistant. Udaljeni pristup vam takođe omogućava da slušate muziku putem aplikacije kada niste kod kuće."
             },
             "your_players": {
                 "title": "Vaši plejeri",
@@ -2949,13 +3098,61 @@
                 "sign_in_here": "Prijavite se ovde umesto toga",
                 "reload": "Ponovo učitaj stranicu",
                 "ready": "Prijavljeni ste kao {name}."
+            },
+            "intent": {
+                "summary_title": "Vaš izbor podešavanja",
+                "phone_apps": {
+                    "title": "Povežite moje muzičke aplikacije sa mojim zvučnicima",
+                    "description": "Nastavite da birate muziku u aplikacijama kao što je Spotify ili koristite AirPlay. Music Assistant ih povezuje sa vašim zvučnicima, bez potrebe za bibliotekom."
+                },
+                "music_hub": {
+                    "title": "Potpuno Music Assistant iskustvo",
+                    "description": "Vaši muzički servisi, lokalna muzika i zvučnici na jednom mestu. Pregledajte, pretražujte i pravite plejliste u programu Music Assistant."
+                },
+                "title": "Kako biste želeli da koristite Music Assistant?",
+                "intro": "Izaberite svoju početnu tačku.",
+                "reassurance": "Bez brige: vaš izbor određuje samo ovo početno podešavanje. Bilo koju funkciju možete dodati kasnije u podešavanjima."
+            },
+            "home_assistant": {
+                "title": "Poveži Home Assistant",
+                "connect": "Poveži se sa Home Assistant-om",
+                "intro": "Povežite Home Assistant da biste izvukli još više iz programa Music Assistant.",
+                "features": {
+                    "players": "Reprodukujte na medija plejerima sistema Home Assistant",
+                    "controls": "Kontrolišite svoje plejere pomoću Home Assistant entiteta",
+                    "sign_in": "Prijavite se svojim Home Assistant nalogom",
+                    "remote_access": "Pristupajte programu Music Assistant udaljeno putem servisa Home Assistant Link"
+                },
+                "optional": "Opciono: možete ga povezati i kasnije u odeljku Podešavanja › {system} › {home_assistant}."
+            },
+            "get_started": {
+                "title": "Dobro došli u Music Assistant",
+                "start": "Započni",
+                "intro": "Hajde da vas podesimo, korak po korak.",
+                "features": {
+                    "account": "Kreirajte svoj nalog",
+                    "intent": "Izaberite kako želite da koristite Music Assistant",
+                    "music": "Dodajte svoju muziku i svoje zvučnike",
+                    "extras": "Dodajte dodatne funkcije kao što je Home Assistant, ako želite"
+                }
+            },
+            "ai": {
+                "enrich_title": "Obogatite Music Assistant pomoću AI",
+                "intro": "Unesite snagu veštačke inteligencije (AI) u Music Assistant.",
+                "features": {
+                    "announcements": "Izgovaranje obaveštenja",
+                    "ai_radio": "Vođenje AI radija",
+                    "smart_playlists": "Kreiranje pametnih plejlista",
+                    "music_quiz": "Pokretanje muzičkog kviza",
+                    "playlist_covers": "Pravljenje omota plejlista"
+                },
+                "optional": "Opciono: AI usluge možete dodati i kasnije u odeljku Podešavanja › {ai}",
+                "intro_examples": "Unesite snagu AI u Music Assistant. Nekoliko primera, a biće ih još:"
             }
         },
         "add_member": "Dodaj korisnika",
-        "just_you_so_far": "Za sada samo vi.",
         "welcome_title": "Dobrodošli u Music Assistant",
         "welcome_again": "Ponovo prikaži dobrodošlicu",
-        "what_you_picked": "Vaš izbor",
         "description": "Podesite Music Assistant, korak po korak.",
         "step_completed": "{step}, završeno",
         "welcome_description": "Kratak pregled aplikacije Music Assistant.",
@@ -2967,9 +3164,6 @@
         "dismiss": "Odbaci",
         "music_sources_count": "{count} muzički izvor | {count} muzička izvora | {count} muzičkih izvora",
         "plugins_count": "{count} dodatak | {count} dodatka | {count} dodataka",
-        "continue": "Nastavi",
-        "explore_more": "Istražite više",
-        "listen_from_apps": "Isprobajte reprodukciju iz svojih muzičkih aplikacija",
         "spotify_connect_hint": "U podešavanjima za Spotify Connect izaberite zvučnike koje želite da koristite. Zatim otvorite Spotify birač uređaja i izaberite jedan od tih zvučnika.",
         "airplay_receiver_hint": "U podešavanjima AirPlay prijemnika izaberite zvučnike koje želite da koristite. Zatim otvorite AirPlay birač zvuka na svom Apple uređaju i izaberite prijemnik za vaš zvučnik."
     },
@@ -3025,7 +3219,7 @@
             },
             "profile": {
                 "title": "Vaš profil",
-                "description": "Ovde se nalaze vaše ime, slika avatara i lozinka. U ovom meniju takođe možete promeniti raspored stavki, odjaviti se ili ponovo pokrenuti ovaj vodič."
+                "description": "Ovde se nalaze vaše ime, avatar, lozinka i podešavanja interfejsa. U ovom meniju takođe možete promeniti raspored stavki menija, odjaviti se ili ponovo pokrenuti ovaj vodič."
             },
             "player_bar": {
                 "title": "Traka plejera",
@@ -3282,5 +3476,60 @@
     "chapter_progress_show_audiobook": "Prikaži celu audio-knjigu",
     "chapter_progress_show_episode": "Prikaži celu epizodu",
     "chapter_progress_show_chapter": "Prikaži samo ovo poglavlje",
-    "transfer_queue_no_audio": "Zvuk još uvek nije dostupan na ovom uređaju."
+    "transfer_queue_no_audio": "Zvuk još uvek nije dostupan na ovom uređaju.",
+    "discography_types_empty": "Nema izdanja izabranih tipova.",
+    "favorites_song_add": "Dodaj pesmu u omiljene",
+    "favorites_song_remove": "Ukloni pesmu iz omiljenih",
+    "favorites_song_added": "Dodato u vaše omiljene: {name}",
+    "favorites_station_add": "Dodaj stanicu u omiljene",
+    "favorites_station_remove": "Ukloni stanicu iz omiljenih",
+    "favorites_station_dislike": "Ne sviđa mi se stanica",
+    "favorites_station_dislike_remove": "Ukloni oznaku „Ne sviđa mi se“ za stanicu",
+    "add_song_playlist": "Dodaj pesmu na plejlistu...",
+    "add_station_playlist": "Dodaj stanicu na plejlistu...",
+    "radio_song_not_found": "{name} nije pronađeno u vašim muzičkim izvorima",
+    "add_queue_to_playlist": "Dodaj red čekanja na plejlistu...",
+    "channel_layout": {
+        "stereo": "Stereo par",
+        "speaker_with_subwoofer": "Zvučnik sa sabvuferom",
+        "stereo_with_subwoofer": "Stereo par sa sabvuferom"
+    },
+    "provider_pages": {
+        "heading": "Dodaci",
+        "home_network": "Stranica je otvorena putem adrese kućne mreže za Music Assistant, pa se učitava samo dok ste kod kuće.",
+        "unavailable": "Stranica može da se otvori samo na vašoj kućnoj mreži, ali adresa kućne mreže za Music Assistant nije poznata."
+    },
+    "audio_inputs": "Audio ulazi",
+    "metadata": "Metapodaci",
+    "controllers": "Kontroleri",
+    "statistics_library_based_albums": "Uključuje reprodukcije povezane sa numerama iz biblioteke koje imaju informacije o albumu. Ostale reprodukcije mogu nedostajati.",
+    "statistics_library_based_genres": "Uključuje reprodukcije povezane sa numerama iz biblioteke koje imaju informacije o žanru. Ostale reprodukcije mogu nedostajati.",
+    "statistics_library_based_decades": "Uključuje reprodukcije povezane sa numerama iz biblioteke koje imaju godinu izdanja albuma. Ostale reprodukcije mogu nedostajati.",
+    "statistics_library_based_listening_time": "Izračunato na osnovu završenih reprodukcija povezanih sa numerama iz biblioteke sa poznatim trajanjem. Ostale reprodukcije mogu nedostajati.",
+    "edit_rows_subtitle_podcast_episode": "Primenjuje se na svaku stranicu epizode podkasta",
+    "share": {
+        "title": "Deljena muzika",
+        "open_preview": "Podeli link...",
+        "preview_title": "Podeli {title}",
+        "preview_description": "Pregledajte stavku pre kopiranja njenog linka za deljenje.",
+        "copy_share_link": "Kopiraj link za deljenje",
+        "copy_provider_link": "Копирај {0} линк",
+        "copy_all": "Kopiraj sve",
+        "link_copied": "Link za deljenje je kopiran",
+        "link_copy_failed": "Nije moguće kreirati ili kopirati link za deljenje.",
+        "preview_failed": "Nije moguće kreirati pregled za deljenje.",
+        "preview_loading": "Priprema pregleda za deljenje...",
+        "loading": "Pronalaženje ove stavke u vašoj biblioteci...",
+        "plugin_unavailable": "Ovaj link zahteva dodatak „Share Links“ (Linkovi za deljenje). Zamolite administratora servera da ga omogući.",
+        "resolve_failed": "Nije moguće pronaći ovu stavku u vašoj biblioteci.",
+        "invalid_link": "Ovaj link za deljenje je nevažeći ili nepotpun."
+    },
+    "live_sources": "Izvori uživo",
+    "live_sources_page": {
+        "plays_on": "Reprodukuje se na {0}",
+        "no_player": "Izaberite plejer da biste videli šta možete da pustite na njemu uživo.",
+        "select_player": "Izaberite plejer",
+        "empty": "Nema ničega za reprodukciju uživo",
+        "empty_description": "{0} nema izvore uživo niti ulaze."
+    }
 }

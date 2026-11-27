@@ -11,6 +11,6 @@ const props = defineProps<AvatarImageProps>();
     v-bind="props"
     class="aspect-square size-full"
   >
-    <slot></slot>
+    <slot />
   </AvatarImage>
 </template>

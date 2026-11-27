@@ -1,10 +1,12 @@
 import { isSystemUser } from "@/helpers/users";
 import {
+  type AccessRecord,
   type ProviderAccess,
   type ProviderConfig,
   type ProviderManifest,
   ProviderSharing,
   ProviderType,
+  SharedPlayback,
   type User,
   UserRole,
   type UserSummary,
@@ -25,9 +27,26 @@ const PROVIDER_SHARING_HINT_TRANSLATION_KEYS: Record<ProviderSharing, string> =
     [ProviderSharing.EVERYONE]: "settings.source_access.hints.everyone",
   };
 
+const SHARED_PLAYBACK_TRANSLATION_KEYS: Record<SharedPlayback, string> = {
+  [SharedPlayback.NEVER]:
+    "settings.source_access.shared_playback_options.never",
+  [SharedPlayback.WITHOUT_OWN]:
+    "settings.source_access.shared_playback_options.without_own",
+  [SharedPlayback.WHEN_BUSY]:
+    "settings.source_access.shared_playback_options.when_busy",
+};
+
+const SHARED_PLAYBACK_HINT_TRANSLATION_KEYS: Record<SharedPlayback, string> = {
+  [SharedPlayback.NEVER]: "settings.source_access.shared_playback_hints.never",
+  [SharedPlayback.WITHOUT_OWN]:
+    "settings.source_access.shared_playback_hints.without_own",
+  [SharedPlayback.WHEN_BUSY]:
+    "settings.source_access.shared_playback_hints.when_busy",
+};
+
 /** Whether the given user may use what the access record guards, read the way the server does. */
 export const accessAllows = (
-  access: ProviderAccess | null,
+  access: AccessRecord | null,
   user: User,
 ): boolean => {
   if (access === null) return true;
@@ -51,6 +70,7 @@ export const effectiveProviderAccess = (
     owner: null,
     sharing: ProviderSharing.EVERYONE,
     shared_users: [],
+    shared_playback: SharedPlayback.WITHOUT_OWN,
   };
 
 /**
@@ -87,7 +107,7 @@ export const ownedMusicSourceCount = (
  * Whether nobody can use what this access record guards: it has no owner and
  * is private, or is shared with selected members while nobody is picked.
  */
-export const servesNobody = (access: ProviderAccess) =>
+export const servesNobody = (access: AccessRecord) =>
   access.owner === null &&
   (access.sharing === ProviderSharing.PRIVATE ||
     (access.sharing === ProviderSharing.SELECTED &&
@@ -108,14 +128,31 @@ export const getProviderSharingTranslationKey = (
 /**
  * The translation key explaining who can use a music source with this access.
  */
-export const getProviderSharingHintTranslationKey = (
-  access: ProviderAccess,
-) => {
+export const getProviderSharingHintTranslationKey = (access: AccessRecord) => {
   if (servesNobody(access)) return "settings.source_access.hints.nobody";
   if (access.owner === null && access.sharing === ProviderSharing.SELECTED)
     return "settings.source_access.hints.selected_no_owner";
   return PROVIDER_SHARING_HINT_TRANSLATION_KEYS[access.sharing];
 };
+
+/**
+ * The choices for when others play from a music source. Keeping it to its
+ * owner needs an owner, as nobody could play from it otherwise.
+ *
+ * @param hasOwner - Whether the source has an owner.
+ */
+export const sharedPlaybackOptions = (hasOwner: boolean) =>
+  Object.values(SharedPlayback).filter(
+    (option) => hasOwner || option !== SharedPlayback.NEVER,
+  );
+
+/** The translation key naming a choice for when others play from a source. */
+export const getSharedPlaybackTranslationKey = (option: SharedPlayback) =>
+  SHARED_PLAYBACK_TRANSLATION_KEYS[option];
+
+/** The translation key explaining a choice for when others play from a source. */
+export const getSharedPlaybackHintTranslationKey = (option: SharedPlayback) =>
+  SHARED_PLAYBACK_HINT_TRANSLATION_KEYS[option];
 
 /**
  * The users that may own a music source: every enabled member, so neither the

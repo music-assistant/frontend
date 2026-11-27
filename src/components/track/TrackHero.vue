@@ -1,102 +1,64 @@
 <template>
   <DetailHero
-    class="track-hero"
-    :class="{ 'track-hero--phone': isPhone }"
     :item="item"
     :backdrop="backdrop"
     :blur-backdrop="blurBackdrop"
-    :height="400"
-    :phone-height="360"
     @edit-rows="emit('edit-rows')"
   >
     <template #toolbar-append>
       <DetailHeroFavorite v-if="item" :item="item" />
     </template>
 
-    <template v-if="item" #main>
-      <div class="track-hero__main">
-        <div class="track-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :rounded="false" />
-        </div>
+    <template v-if="item" #cover>
+      <DetailHeroCover :item="item" />
+    </template>
 
-        <div class="track-hero__text">
-          <h1 class="track-hero__name">
-            {{ item.name }}
-            <span v-if="item.version" class="track-hero__version">
-              ({{ item.version }})
-            </span>
-            <ExplicitBadge
-              v-if="item.metadata?.explicit"
-              class="track-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
-            />
-          </h1>
+    <template v-if="item" #meta>
+      <DetailHeroMetaLine v-if="item.artists.length" :icon="Music">
+        <template v-for="(artist, index) in item.artists" :key="artist.uri">
+          <span v-if="index > 0">,&nbsp;</span>
+          <DetailHeroLink @click="gotoItem('artist', artist)">
+            {{ artist.name }}
+          </DetailHeroLink>
+        </template>
+      </DetailHeroMetaLine>
+      <DetailHeroFacts
+        v-if="item.album || albumFacts.length"
+        :icon="Disc"
+        :facts="albumFacts"
+      >
+        <template v-if="item.album" #lead>
+          <DetailHeroLink @click="gotoItem('album', item.album)">
+            {{ item.album.name }}
+          </DetailHeroLink>
+        </template>
+      </DetailHeroFacts>
+    </template>
 
-          <div class="track-hero__meta">
-            <div v-if="item.artists.length" class="track-hero__line">
-              <Music :size="16" class="track-hero__icon" />
-              <span class="track-hero__line-text">
-                <template
-                  v-for="(artist, index) in item.artists"
-                  :key="artist.uri"
-                >
-                  <span v-if="index > 0">,&nbsp;</span>
-                  <button
-                    type="button"
-                    class="track-hero__link"
-                    @click="gotoItem('artist', artist)"
-                  >
-                    {{ artist.name }}
-                  </button>
-                </template>
-              </span>
-            </div>
-            <div
-              v-if="item.album || releaseYear || item.duration"
-              class="track-hero__line"
-            >
-              <Disc :size="16" class="track-hero__icon" />
-              <span class="track-hero__line-text">
-                <button
-                  v-if="item.album"
-                  type="button"
-                  class="track-hero__link"
-                  @click="gotoItem('album', item.album)"
-                >
-                  {{ item.album.name }}
-                </button>
-                <template v-if="releaseYear">
-                  <span v-if="item.album" class="track-hero__sep">·</span>
-                  {{ releaseYear }}
-                </template>
-                <template v-if="item.duration">
-                  <span v-if="item.album || releaseYear" class="track-hero__sep"
-                    >·</span
-                  >
-                  {{ formatDuration(item.duration) }}
-                </template>
-              </span>
-            </div>
-          </div>
-
-          <div class="track-hero__actions">
-            <DetailHeroPlayButton :item="item" />
-            <DetailHeroButton
-              v-if="radioRelevant(item)"
-              :icon="Orbit"
-              :label="$t('track_radio')"
-              :disabled="!radioSupported(item)"
-              @click="gotoRadio(item)"
-            />
-            <DetailHeroSourceBadge :item="item" />
-            <span v-if="hasAudioAnalysis" class="track-hero__badge">
-              <AudioAnalysisMetadata :audio-metadata="item.audio_metadata" />
-            </span>
-            <span v-if="qualityLabel" class="track-hero__pill">
-              {{ qualityLabel }}
-            </span>
-          </div>
-        </div>
-      </div>
+    <template v-if="item" #actions>
+      <DetailHeroPlayButton :item="item" />
+      <DetailHeroButton
+        v-if="radioRelevant(item)"
+        :icon="Orbit"
+        :label="$t('track_radio')"
+        :disabled="!radioSupported(item)"
+        @click="gotoRadio(item)"
+      />
+      <DetailHeroSourceBadge :item="item" />
+      <!-- the same chrome as the hero buttons, for the facts that are not actions -->
+      <span
+        v-if="hasAudioAnalysis"
+        class="inline-flex flex-none items-center justify-center border border-white/25 bg-black/40"
+        :class="isPhone ? 'size-11 rounded-[10px]' : 'size-9 rounded-lg'"
+      >
+        <AudioAnalysisMetadata :audio-metadata="item.audio_metadata" />
+      </span>
+      <span
+        v-if="qualityLabel"
+        class="ml-1 inline-flex h-[22px] flex-none items-center rounded-full bg-black/45 px-2 text-xs font-medium whitespace-nowrap"
+      >
+        {{ qualityLabel }}
+      </span>
     </template>
 
     <template v-if="item" #aside>
@@ -109,12 +71,14 @@
 import AudioAnalysisMetadata from "@/components/AudioAnalysisMetadata.vue";
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
+import DetailHeroCover from "@/components/details/DetailHeroCover.vue";
+import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
+import DetailHeroLink from "@/components/details/DetailHeroLink.vue";
+import DetailHeroMetaLine from "@/components/details/DetailHeroMetaLine.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
-import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import {
   audioFormatLabel,
   bestAudioFormat,
@@ -145,7 +109,16 @@ const router = useRouter();
 
 const isPhone = computed(() => isPhoneSizedScreen());
 
-const releaseYear = computed(() => props.item && trackReleaseYear(props.item));
+// "1998 · 4:31" after the album, without whatever the track does not have
+const albumFacts = computed(() => {
+  const track = props.item;
+  if (!track) return [];
+  const parts: string[] = [];
+  const year = trackReleaseYear(track);
+  if (year) parts.push(String(year));
+  if (track.duration) parts.push(formatDuration(track.duration));
+  return parts;
+});
 
 const hasAudioAnalysis = computed(() => {
   const metadata = props.item?.audio_metadata;
@@ -167,158 +140,3 @@ const gotoItem = function (
   });
 };
 </script>
-
-<style scoped>
-.track-hero__main {
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-  width: 100%;
-  min-width: 0;
-}
-.track-hero__cover {
-  width: 200px;
-  height: 200px;
-  flex: none;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-.track-hero__text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-  padding-bottom: 4px;
-}
-
-.track-hero__name {
-  margin: 0;
-  font-size: 44px;
-  font-weight: 500;
-  letter-spacing: -1.1px;
-  line-height: 1.2;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.track-hero__version {
-  font-size: 0.6em;
-  letter-spacing: 0;
-  color: rgba(255, 255, 255, 0.7);
-}
-.track-hero__explicit {
-  margin-left: 6px;
-  vertical-align: middle;
-}
-
-.track-hero__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-}
-.track-hero__line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.track-hero__icon {
-  flex: none;
-}
-.track-hero__line-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-/* the artist and album read as links in the line of text, so the button chrome goes */
-.track-hero__link {
-  display: inline;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  vertical-align: baseline;
-  cursor: pointer;
-}
-.track-hero__link:hover {
-  text-decoration: underline;
-}
-.track-hero__link:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-.track-hero__sep {
-  margin: 0 4px;
-  opacity: 0.5;
-}
-
-.track-hero__actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-/* the same chrome as the hero buttons, for the facts that are not actions */
-.track-hero__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.4);
-}
-.track-hero__pill {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  margin-left: 4px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-@container detail-hero (width < 48rem) {
-  .track-hero__main {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  .track-hero__cover {
-    width: 132px;
-    height: 132px;
-  }
-  .track-hero__name {
-    font-size: 30px;
-    letter-spacing: -0.7px;
-  }
-  .track-hero__meta {
-    font-size: 14px;
-  }
-  .track-hero__actions {
-    gap: 10px;
-  }
-}
-@media (max-width: 768px) {
-  .track-hero__badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-  }
-}
-</style>

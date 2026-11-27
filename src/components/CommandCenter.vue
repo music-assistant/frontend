@@ -379,6 +379,7 @@ import {
   SEARCHABLE_MEDIA_TYPES,
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
+import { useTopHitHighlight } from "@/composables/useTopHitHighlight";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   AUDIOBOOK_ARTIST_TYPES,
@@ -455,6 +456,12 @@ const savedScrollTop = ref(0);
 // provider (the composable drops ids of providers that no longer exist)
 const savedSources = getPreference<string[]>(SOURCES_PREF_KEY, []);
 
+// the Pages scope lists no media, so the search keeps its media types until the
+// user leaves it
+const searchedMediaTypes = computed<MediaType[]>((previous) =>
+  pagesOnly.value ? (previous ?? []) : selectedMediaTypes.value,
+);
+
 const {
   loading,
   search,
@@ -463,7 +470,7 @@ const {
   providerTargets,
   selectedProviders,
 } = useProgressiveSearch({
-  mediaTypes: selectedMediaTypes,
+  mediaTypes: searchedMediaTypes,
   providers: computed(() =>
     Array.isArray(savedSources.value) ? savedSources.value : [],
   ),
@@ -474,8 +481,8 @@ const queryActive = computed(
   () => query.value.trim().length >= MIN_QUERY_LENGTH,
 );
 
-// the fetched results belong to the last submitted term; while the box holds a
-// different term (typed but not searched yet) those results stay hidden
+// the fetched results belong to the last submitted term, so they only show
+// while the box holds that term
 const resultsMatchQuery = computed(
   () =>
     activeSearchTerm.value.length >= MIN_QUERY_LENGTH &&
@@ -483,8 +490,11 @@ const resultsMatchQuery = computed(
 );
 
 // only the submitted term drives the loading UI; a term typed over a still
-// pending search shows the submit prompt, not the old search's spinner
-const isSearching = computed(() => resultsMatchQuery.value && loading.value);
+// pending search shows the submit prompt, not the old search's spinner, and the
+// Pages scope has nothing to load
+const isSearching = computed(
+  () => !pagesOnly.value && resultsMatchQuery.value && loading.value,
+);
 
 // the footer's return-key hint reflects what enter does now: submit a typed
 // term (never in the Pages scope, where enter opens the highlighted page), or
@@ -540,10 +550,7 @@ const togglePagesOnly = function () {
 // search runs on demand (the button or the return key), not while typing
 const runSearch = function () {
   const trimmed = query.value.trim();
-  if (pagesOnly.value || trimmed.length < MIN_QUERY_LENGTH) {
-    search("");
-    return;
-  }
+  if (pagesOnly.value || trimmed.length < MIN_QUERY_LENGTH) return;
   search(trimmed);
 };
 
@@ -808,7 +815,7 @@ const { onHold, onTouchStart, swallowClickAfterHold } =
 const recentSearches = getPreference<string[]>(RECENT_SEARCHES_PREF_KEY, []);
 
 const recentResults = computed(() => {
-  if (queryActive.value) return [];
+  if (pagesOnly.value || queryActive.value) return [];
 
   const term = query.value.trim().toLowerCase();
   const recents = recentSearches.value.slice(0, MAX_RECENT_SEARCHES);
@@ -993,6 +1000,12 @@ watch(isOpen, (opened) => {
   });
 });
 
+// drop the submitted search as soon as the box holds another term, so no filter
+// change, provider update or retry searches for results that stay hidden
+watch(query, () => {
+  if (activeSearchTerm.value && !resultsMatchQuery.value) search("");
+});
+
 // a new search lands at the top; a reopened search keeps its saved offset
 watch(activeSearchTerm, scrollResultsToTop);
 
@@ -1016,25 +1029,20 @@ watch(
 // a touch screen the on-screen keyboard drives the interaction — there is no
 // enter contract there and the phantom highlight would read as a selection
 // nobody made
-watch(
-  () =>
+useTopHitHighlight({
+  list: () => listRef.value?.$el as HTMLElement | undefined,
+  input: () => filterRef.value?.$el as HTMLElement | undefined,
+  topRowKey: () =>
     [
       ...mediaSections.value.map((section) => section.items[0]?.uri ?? ""),
       liveSourceResults.value[0]?.id ?? "",
     ].join("|"),
-  async () => {
-    if (store.isTouchscreen && store.mobileLayout) return;
-    if (!isOpen.value || !queryActive.value) return;
-    await nextTick();
-    const listEl = listRef.value?.$el as HTMLElement | undefined;
-    const inputEl = filterRef.value?.$el as HTMLElement | undefined;
-    if (!listEl || !inputEl) return;
-    if (listEl.querySelector("[data-highlighted]")) return;
-    inputEl.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
-    );
-  },
-);
+  resetKey: () => [query.value, isOpen.value, activeSearchTerm.value],
+  enabled: () =>
+    !(store.isTouchscreen && store.mobileLayout) &&
+    isOpen.value &&
+    queryActive.value,
+});
 </script>
 
 <style scoped>

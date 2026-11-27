@@ -24,7 +24,7 @@
         :test-id-prefix="testIdPrefix"
         :action-state="!!row.actionIcon && !row.busy"
       />
-      <slot v-if="controlled" name="control" :row="row"></slot>
+      <slot v-if="controlled" name="control" :row="row" />
       <component
         :is="row.actionIcon"
         v-else-if="row.actionIcon"

@@ -27,9 +27,9 @@
     </div>
     <div
       v-if="$slots.actions || menuItems.length"
-      class="flex shrink-0 items-center gap-1"
+      :class="cn('flex shrink-0 items-center gap-1', actionsClass)"
     >
-      <slot name="actions"></slot>
+      <slot name="actions" />
       <OverflowMenu v-if="menuItems.length" :items="menuItems">
         <Button
           variant="ghost"
@@ -59,9 +59,10 @@ import { Button } from "@/components/ui/button";
 import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import { ACTIVE_DOT_CLASS } from "@/constants";
 import { settingsHeading } from "@/helpers/settings_sections";
+import { cn } from "@/lib/utils";
 import { $t } from "@/plugins/i18n";
 import { EllipsisVertical } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, type HTMLAttributes } from "vue";
 
 /**
  * The header of a settings page: the icon of the page in its colour, its title
@@ -75,6 +76,8 @@ const props = defineProps<{
   // in place of the title and description of the page
   title?: string;
   description?: string;
+  // for a page that lays its buttons out differently
+  actionsClass?: HTMLAttributes["class"];
 }>();
 
 defineSlots<{

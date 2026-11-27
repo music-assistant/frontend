@@ -14,6 +14,6 @@ const forwarded = useForwardPropsEmits(props, emits);
     data-slot="alert-dialog"
     v-bind="forwarded"
   >
-    <slot v-bind="slotProps"></slot>
+    <slot v-bind="slotProps" />
   </AlertDialogRoot>
 </template>

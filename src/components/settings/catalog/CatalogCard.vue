@@ -12,7 +12,7 @@
       <Button
         variant="ghost"
         size="icon-sm"
-        class="size-8 rounded-full bg-black/25 text-white hover:bg-black/40 hover:text-white"
+        class="size-8 rounded-full bg-background/80 text-foreground shadow-sm hover:bg-background"
         :aria-label="
           $t('settings.catalog.dont_suggest_named', {
             name: entry.manifest.name,
@@ -29,59 +29,56 @@
       <Badge
         v-if="community"
         variant="community"
+        class="h-5 rounded-md px-1.5 text-[11px]"
         data-testid="catalog-card-community"
       >
         {{ $t("settings.provider_community") }}
       </Badge>
-      <ProviderStageBadge :stage="entry.manifest.stage" />
-      <Badge
+      <CatalogStageTag :stage="entry.manifest.stage" />
+    </template>
+    <template v-if="subtitle" #subtitle>{{ subtitle }}</template>
+    <p
+      class="m-0 mt-2.5 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground"
+    >
+      {{ entry.manifest.description }}
+    </p>
+    <template #footer>
+      <!-- one status at most, the first that applies -->
+      <span
         v-if="isSetUp"
-        variant="outline"
-        class="gap-1"
+        class="inline-flex min-w-0 items-center gap-1.5 text-xs font-medium text-green-700 dark:text-green-400"
         data-testid="catalog-card-added"
       >
-        <Check class="size-3" aria-hidden="true" />
+        <CircleCheck class="size-3.5 shrink-0" aria-hidden="true" />
         {{ $t("settings.catalog.added") }}
-      </Badge>
-      <Badge v-if="badge" variant="info" data-testid="catalog-card-badge">
-        {{ badge }}
-      </Badge>
-    </template>
-    <!-- takes the free room, so the labels line up across the cards of a row -->
-    <div class="flex-1">
-      <p
-        class="m-0 mt-0.5 text-xs text-muted-foreground"
-        data-testid="catalog-card-type"
-      >
-        {{ typeLabel }}
-      </p>
-      <p
-        class="m-0 mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground"
-      >
-        {{ entry.manifest.description }}
-      </p>
-    </div>
-    <ProviderLabels :labels="labels" class="mt-3" />
-    <template #footer>
+      </span>
       <span
-        v-if="pairedWith"
+        v-else-if="pairedWith"
         class="min-w-0 truncate text-xs text-primary"
         data-testid="catalog-card-paired"
       >
         {{ $t("settings.catalog.goes_well_with", { name: pairedWith }) }}
       </span>
       <span
-        v-else
+        v-else-if="badge"
+        class="inline-flex min-w-0 items-center gap-1.5 text-xs font-medium text-sky-700 dark:text-sky-400"
+        data-testid="catalog-card-badge"
+      >
+        <Sparkles class="size-3.5 shrink-0" aria-hidden="true" />
+        <span class="truncate">{{ badge }}</span>
+      </span>
+      <span
+        v-else-if="credit"
         class="min-w-0 truncate text-xs text-muted-foreground"
         data-testid="catalog-card-credit"
       >
         {{ credit }}
       </span>
-      <div class="relative z-10 flex shrink-0 gap-2">
+      <div class="relative z-10 ml-auto flex shrink-0 gap-2">
         <Button
           v-if="isSetUp"
           as-child
-          variant="ghost"
+          variant="outline"
           size="sm"
           :aria-label="
             $t('settings.catalog.manage_named', { name: entry.manifest.name })
@@ -92,14 +89,24 @@
             {{ $t("settings.catalog.manage") }}
           </RouterLink>
         </Button>
+        <!-- next to Manage, its icon is enough to add another one -->
         <Button
-          v-if="entry.canAdd"
+          v-if="entry.canAdd && isSetUp"
+          variant="outline"
+          size="icon-sm"
+          :aria-label="addLabel"
+          :title="$t('settings.catalog.add')"
+          data-testid="catalog-card-add"
+          @click="emit('add')"
+        >
+          <Plus class="size-4" aria-hidden="true" />
+        </Button>
+        <Button
+          v-else-if="entry.canAdd"
           variant="outline"
           size="sm"
           :loading="installing"
-          :aria-label="
-            $t('settings.catalog.add_named', { name: entry.manifest.name })
-          "
+          :aria-label="addLabel"
           data-testid="catalog-card-add"
           @click="emit('add')"
         >
@@ -118,14 +125,15 @@
 
 <script setup lang="ts">
 import CatalogBannerCard from "@/components/settings/catalog/CatalogBannerCard.vue";
-import ProviderLabels from "@/components/settings/providers/ProviderLabels.vue";
-import ProviderStageBadge from "@/components/settings/providers/ProviderStageBadge.vue";
+import CatalogStageTag from "@/components/settings/catalog/CatalogStageTag.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCatalogEntryDetails } from "@/composables/settings/catalog/useCatalogEntryDetails";
+import { OTHER_PLUGIN_LABEL } from "@/helpers/plugin_labels";
 import type { CatalogEntry } from "@/helpers/provider_catalog";
+import { PROVIDER_LABEL_KEYS } from "@/helpers/provider_labels";
 import { $t } from "@/plugins/i18n";
-import { Check, Plus, X } from "@lucide/vue";
+import { CircleCheck, Plus, Sparkles, X } from "@lucide/vue";
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 
@@ -137,8 +145,10 @@ interface Props {
   pairedWith?: string | null;
   // whether the user may ask not to have it suggested any more
   dismissible?: boolean;
-  // why it is suggested, as the label of a badge
+  // why it is suggested
   badge?: string;
+  // whether to say what type it is, for a list that mixes the types
+  showType?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -152,11 +162,29 @@ const emit = defineEmits<{
 const { typeLabel, community, labels, isSetUp, manageRoute, maintainers } =
   useCatalogEntryDetails(() => props.entry);
 
+// what it offers, after its type in a list of every type; other only gathers
+// the plugins without a label for the filter, so it tells nothing about one
+const subtitle = computed(() =>
+  [
+    props.showType ? typeLabel.value : "",
+    ...labels.value
+      .filter((label) => label !== OTHER_PLUGIN_LABEL)
+      .map((label) => $t(PROVIDER_LABEL_KEYS[label])),
+  ]
+    .filter(Boolean)
+    .join(" · "),
+);
+
+// the team's own are credited in their details only
 const credit = computed(() =>
-  maintainers.value.length
+  community.value && maintainers.value.length
     ? $t("settings.catalog.by_maintainers", {
         maintainers: maintainers.value.join(", "),
       })
-    : $t("settings.catalog.by_team"),
+    : "",
+);
+
+const addLabel = computed(() =>
+  $t("settings.catalog.add_named", { name: props.entry.manifest.name }),
 );
 </script>

@@ -58,9 +58,11 @@
         "stereo_pair": "Stereopaar",
         "display": "Beeldscherm",
         "visualizer": "Visualizer",
-        "light": "Licht",
+        "light": "Verlichting",
         "unknown": "Onbekend",
-        "source": "Audio-invoer"
+        "source": "Audio-invoer",
+        "multi_channel": "Meerkanaals",
+        "controller": "Controller"
     },
     "players": "Spelers",
     "playlist": "Afspeellijst",
@@ -125,7 +127,8 @@
                 "auto": "Automatisch (systeemconfiguratie volgen)",
                 "light": "Licht",
                 "dark": "Donker"
-            }
+            },
+            "automatic": "Automatisch"
         },
         "language": {
             "label": "Taal",
@@ -304,7 +307,8 @@
                 "remove_confirm": "\"{0}\" verwijderen? Elk convolutiefilter dat hiervan gebruikmaakt, ongeacht de speler of preset, wordt teruggezet naar geen impulsrespons.",
                 "mono": "Mono",
                 "stereo": "Stereo",
-                "channel_count": "{0} kanalen"
+                "channel_count": "{0} kanalen",
+                "too_large_remote": "Dit bestand is te groot om via externe toegang te uploaden."
             },
             "safety_limiter": {
                 "help": "Vangt pieken op die anders zouden clippen en je luidsprekers zouden kunnen beschadigen. Plaats het als laatste in de audioketen.",
@@ -372,8 +376,7 @@
             "label": "Forceer mobiele lay-out",
             "description": "Forceer de mobiele lay-out (met de menu-navigatie onderaan), zelfs op grotere schermen."
         },
-        "players_description": "Configureer en beheer je audio-uitvoerapparaten",
-        "frontend_description": "Pas het thema en het uiterlijk van de gebruikersinterface aan",
+        "players_description": "Je spelers, verlichting, schermen en audio-ingangen, en hoe ze spelen",
         "profile_description": "Beheer je persoonlijke accountinstellingen en voorkeuren",
         "users": "Gebruikers",
         "users_description": "Beheer gebruikersaccounts, rollen en machtigingen",
@@ -393,41 +396,32 @@
         "proud_part_of": "Met trots onderdeel van",
         "core_module": {
             "cache": {
-                "name": "Cache",
-                "description": "Configuratie van de systeemmodule die het cachen van gegevens binnen de applicatie afhandelt"
+                "name": "Cache"
             },
             "metadata": {
-                "name": "Metadata",
-                "description": "Configuratie van de systeemmodule voor metadata-beheer"
+                "name": "Metadata"
             },
             "music": {
-                "name": "Muziek",
-                "description": "Configuratie van de systeemmodule voor muziek(bibliotheek)beheer"
+                "name": "Muziek"
             },
             "players": {
-                "name": "Spelers",
-                "description": "Configuratie van de systeemmodule voor spelersbeheer"
+                "name": "Spelers"
             },
             "player_queues": {
-                "name": "Spelerwachtrijen",
-                "description": "Configuratie van de systeemmodule voor het beheer van de spelerwachtrij"
-            },
-            "remote_access": {
-                "name": "Externe Toegang",
-                "description": "Schakelt externe toegang tot jouw Music Assistant server in"
+                "name": "Spelerwachtrijen"
             },
             "streams": {
-                "name": "Streams",
-                "description": "Configuratie van de audio-streaming- en verwerkingsengine"
+                "name": "Streams"
             },
             "webserver": {
-                "name": "Webserver",
-                "description": "Configuratie van de webserver en API"
+                "name": "Webserver"
+            },
+            "statistics": {
+                "name": "Statistieken"
             }
         },
         "remote_access": "Externe Toegang",
         "remote_access_description": "Krijg vanaf elke locatie veilige toegang tot Music Assistant",
-        "remote_access_title": "Beveiligde Externe Toegang",
         "remote_access_explanation_intro": "Met Externe Toegang kun je overal ter wereld veilig verbinding maken met jouw Music Assistant server.",
         "remote_access_explanation_ha_cloud": "Voor de beste ervaring en betrouwbaarheid is een Home Assistant Link-abonnement vereist",
         "remote_access_feature_webrtc": "Gebaseerd op WebRTC-technologie voor peer-to-peer verbindingen",
@@ -464,7 +458,6 @@
         "remote_access_protocol_basic": "WebRTC met openbare STUN-servers (werkt mogelijk niet in complexe netwerkconfiguraties).",
         "remote_access_protocol_optimized": "WebRTC met geoptimaliseerde STUN\/TURN-servers van Home Assistant Link (werkt in alle netwerkconfiguraties).",
         "remote_access_encryption_description": "End-to-end-versleuteling met DTLS-SRTP zorgt ervoor dat jouw gegevens privé en veilig blijven.",
-        "frontend": "Gebruikersinterface",
         "view_players": "Bekijk spelers",
         "players_total": "In totaal {count} speler | In totaal {count} spelers",
         "api_docs": "API-documentatie",
@@ -547,9 +540,7 @@
         "add_plugin_provider": "Een plug-in toevoegen",
         "music_sources": "Muziekbronnen",
         "plugins": "Plug-ins",
-        "music_providers_description": "Beheer je muziekstreamingdiensten en lokale bibliotheken",
         "player_providers_description": "Stel spelerondersteuning in voor je audio-uitvoerapparaten",
-        "metadata_providers_description": "Beheer waar omslagen en aanvullende informatie vandaan komen",
         "plugin_providers_description": "Plug-ins beheren die de functionaliteit van Music Assistant uitbreiden",
         "restore_genres": "Herstel Genres",
         "genre_statistics_description": "Blader door en filter alle genres in je bibliotheek. Genres kunnen globaal worden uitgesloten en weer worden toegevoegd.",
@@ -558,21 +549,6 @@
         "add_player_providers": "Voeg meer spelerondersteuning toe",
         "add_audio_analysis_provider": "Een audioanalyse-provider toevoegen",
         "audio_analysis_providers": "Audioanalyse",
-        "audio_analysis_providers_description": "Beheer providers die je audio analyseren",
-        "audio_analysis": "Audioanalyse",
-        "audio_analysis_coverage": {
-            "title": "Audio-analysedekking",
-            "col_pending": "In de wacht",
-            "col_stale": "Verouderd",
-            "unavailable": "niet beschikbaar",
-            "none": "—"
-        },
-        "audio_analysis_description": "Volg audio-analysedekking bij je providers",
-        "audio_analysis_concurrency": {
-            "title": "Gelijktijdige achtergrondanalyse",
-            "description": "Bepaal hoeveel nummers er tegelijk worden geanalyseerd tijdens de nachtelijke achtergrondscan. Deze instelling bevindt zich in de systeemmodule voor streams.",
-            "open_settings": "Streamsinstellingen openen"
-        },
         "provider_status_auth_required": "Authenticatie vereist",
         "provider_status_incompatible": "Niet ondersteund op dit systeem",
         "provider_status_error": "Installatie mislukt",
@@ -584,9 +560,8 @@
         "provider_saved": "Instellingen opgeslagen",
         "provider_reloading": "Opnieuw laden…",
         "provider_removed": "\"{0}\" verwijderd",
-        "queue_settings": "Wachtrijinstellingen",
+        "queue_settings": "Afspeelinstellingen",
         "audio_analysis_failures": {
-            "title": "Fouten bij de Audioanalyse",
             "description": "Nummer waarbij de analyse niet is gelukt, worden bij volgende scans overgeslagen. Verwijder een foutmelding om de fout te wissen en het nummer opnieuw te laten analyseren.",
             "col_item": "Item",
             "col_reason": "Reden",
@@ -604,10 +579,13 @@
             "cleared_one": "Fout verwijderd — het nummer wordt opnieuw geanalyseerd.",
             "cleared_many": "{0} fouten gewist.",
             "clear_error": "Foutmeldingen konden niet worden gewist. Probeer het nog eens.",
-            "load_error": "De fouten konden niet vanaf de server worden geladen."
+            "load_error": "De fouten konden niet vanaf de server worden geladen.",
+            "failed_tracks": "Mislukte nummers",
+            "failed_tracks_description": "Houdt bij welke analyses worden overgeslagen totdat je ze wist",
+            "state_none": "Geen"
         },
-        "queue_global_settings_hint": "Deze instellingen gelden alleen voor deze wachtrij. Je kunt ook de standaardinstellingen configureren die voor alle spelerswachtrijen gelden.",
-        "queue_global_settings_link": "Globale wachtrijinstellingen openen",
+        "queue_global_settings_hint": "Deze instellingen gelden alleen voor deze speler. Je kunt ook de standaardinstellingen voor alle spelers instellen.",
+        "queue_global_settings_link": "Standaardinstellingen openen",
         "protocol_provider_unavailable": "De spelerondersteuning voor dit uitvoerprotocol is momenteel niet beschikbaar.",
         "protocol_multi_info": "Deze speler ondersteunt meerdere uitvoerprotocollen. Music Assistant koppelt deze automatisch aan elkaar, zodat ze als één speler functioneren — schakel de protocollen in die je wilt gebruiken.",
         "protocol_configure_title": "Configureer {name}",
@@ -702,7 +680,7 @@
         },
         "delete_player_title": "Wil je {0} verwijderen?",
         "delete_player_confirmation": "Deze speler wordt uit Music Assistant verwijderd. De instellingen gaan verloren en het apparaat kan alleen weer worden toegevoegd door het opnieuw in te stellen.",
-        "queue_settings_description": "Afspeelinstellingen voor de wachtrij waaruit deze speler afspeelt",
+        "queue_settings_description": "Crossfade, volumenormalisatie en autoplay voor deze speler",
         "dsp_description": "Filters en versterking die worden toegepast op alles wat deze speler afspeelt",
         "player_options_description": "Opties en weergaven die de speler zelf aanbiedt",
         "volume_slider_mode": {
@@ -735,8 +713,6 @@
         "server_internal_url": "Interne URL",
         "server_external_url": "Externe URL",
         "server_remote_access": "Externe Toegang",
-        "audio_analysis_status_hint": "Bekijk op de statuspagina de voortgang van de analyse per provider en eventuele fouten.",
-        "audio_analysis_status_link": "Open audioanalysestatus",
         "music_sources_empty_title": "Er zijn nog geen muziekbronnen beschikbaar",
         "music_sources_empty": "Koppel een account van een muziekdienst of voeg een lokale bibliotheek toe om te beginnen met luisteren.",
         "source_access": {
@@ -778,7 +754,6 @@
         "music_sources_shared": "Met jou gedeeld",
         "music_sources_shared_empty": "Er zijn nog geen muziekbronnen met je gedeeld.",
         "storage": {
-            "title": "Opslag",
             "description": "De mappen, schijven en netwerklocaties waar je muziek vandaan kan komen",
             "load_failed": "De opslagruimte kon niet worden geladen",
             "music_locations": "Muzieklocaties",
@@ -860,11 +835,11 @@
                 "path": "Pad naar de map",
                 "path_hint": "Het volledige pad naar de map, bijvoorbeeld \/home\/ik\/Muziek"
             },
-            "use_as_source": "Gebruik als muziekbron"
+            "use_as_source": "Gebruik als muziekbron",
+            "title": "Opslag"
         },
         "folder_picker": {
             "selected": "Geselecteerde map",
-            "none_selected": "Geen map geselecteerd",
             "outside_locations": "Deze map bevindt zich niet op een van de opslaglocaties. Hij blijft geselecteerd, tenzij je een andere locatie kiest.",
             "locations": "Opslaglocaties",
             "all_locations": "Alle locaties",
@@ -872,13 +847,12 @@
             "open_folder": "Open {name}",
             "no_subfolders": "Deze map bevat geen submappen.",
             "use_folder": "Gebruik deze map",
-            "folder_selected": "Geselecteerd",
-            "holds_selection": "Geselecteerde map is beschikbaar",
             "browse_failed": "De map kon niet worden geopend",
             "empty_title": "Er is nog niets om uit te kiezen",
-            "empty_text": "Er is nog geen map, schijf of netwerklocatie waaruit je kunt kiezen. Selecteer \"Opslag beheren\" om er een toe te voegen.",
             "empty_text_member": "Er is nog geen map, schijf of netwerklocatie waaruit je kunt kiezen. Vraag een beheerder om er een toe te voegen.",
-            "manage": "Opslag beheren"
+            "empty_text_add": "Er is nog geen map, schijf of netwerklocatie om uit te kiezen. Voeg degene toe waarin je bestanden staan.",
+            "empty_text_container": "Er is nog geen map, schijf of netwerklocatie waaruit je kunt kiezen. Koppel de map waarin je bestanden staan aan de Music Assistant-container en start deze opnieuw op.",
+            "chosen_hint": "Deze map wordt gebruikt, inclusief de onderliggende mappen."
         },
         "remove_provider_confirm_music": "Wil je \"{0}\" verwijderen? Alle muziek die deze bron aanbiedt, wordt uit je bibliotheek verwijderd, samen met de afspeelgeschiedenis. Dit kan niet ongedaan worden gemaakt.",
         "remove_provider_confirm_player": "Wil je \"{0}\" verwijderen? De spelers en hun instellingen worden dan ook verwijderd. Dit kan niet ongedaan worden gemaakt.",
@@ -1031,7 +1005,8 @@
                 "moved_message_not_running": "Het wordt nu onderhouden door de eigen beheerders, niet door het Music Assistant-team. Music Assistant heeft het geïnstalleerd vanuit de communitycatalogus.",
                 "dismiss": "Sluiten",
                 "new_title": "Nieuw in de communitycatalogus",
-                "updated_title": "Onlangs bijgewerkt"
+                "updated_title": "Onlangs bijgewerkt",
+                "new_badge": "Nieuw"
             },
             "search": "Doorzoek de Marktplaats",
             "search_results": "Zoekresultaten",
@@ -1051,9 +1026,168 @@
             "dont_suggest_failed": "Kon niet stoppen met het voorstellen van {name}",
             "suggested_again_toast": "{name} wordt opnieuw voorgesteld",
             "suggest_again_failed": "Kon {name} niet opnieuw voorstellen",
-            "undo": "Ongedaan maken"
+            "undo": "Ongedaan maken",
+            "fits_your_setup": "Past bij jouw installatie"
         },
-        "provider_status_unavailable": "Niet beschikbaar"
+        "provider_status_unavailable": "Niet beschikbaar",
+        "merge_player": "Samenvoegen met een andere speler…",
+        "merge_player_title": "Voeg {0} samen met een andere speler",
+        "merge_player_description": "Voor een apparaat dat als twee spelers wordt weergegeven. Kies de speler die blijft.",
+        "merge_player_pick": "Kies een speler",
+        "merge_player_confirmation": "{0} verdwijnt en de uitvoer ervan wordt verplaatst naar {1}. Alleen de instellingen van {0} blijven behouden. De wachtrij ervan wordt gewist.",
+        "merge_player_confirmation_outputs": "{0} verdwijnt en de uitvoer ({2}) wordt verplaatst naar {1}. Alleen de instellingen die {0} heeft, blijven behouden. De wachtrij ervan wordt gewist.",
+        "merge_player_confirm": "Samenvoegen",
+        "player_merged": "Spelers samengevoegd",
+        "split_off_output": "Afsplitsen al zelfstandige speler",
+        "split_off_output_title": "Wil je {0} afsplitsing van {1}?",
+        "split_off_output_confirmation": "{0} maakt geen deel meer uit van {1} en verschijnt als een nieuwe, opzichzelfstaande speler, met standaardinstellingen. {1} behoudt zijn naam, instellingen en wachtrij.",
+        "split_off": "Afsplitsen",
+        "output_split_off": "{0} is nu een speler op zich",
+        "action_link_refused": "De link is niet geopend, omdat deze naar Music Assistant zelf leidt.",
+        "settings_load_failed": "Deze instellingen konden niet worden geladen",
+        "network": {
+            "title": "Netwerk",
+            "description": "Externe toegang, adressen, poorten en discovery",
+            "web": "Webinterface en API",
+            "streaming": "Audiostreaming",
+            "discovery": "Discovery"
+        },
+        "providers_active": "{count} actief | {count} actief",
+        "playback": {
+            "title": "Afspelen",
+            "description": "Crossfade, volumenormalisatie, autoplay en wat er gebeurt als je op afspelen drukt"
+        },
+        "library": {
+            "title": "Bibliotheekinstellingen",
+            "description": "Welke bron een nummer afspeelt en onderhoud van de bibliotheek",
+            "source_selection": "Bronselectie",
+            "maintenance": "Bibliotheekonderhoud"
+        },
+        "log_levels": "Logniveaus",
+        "home_assistant": {
+            "title": "Home Assistant",
+            "description": "De verbinding met Home Assistant en wat dit voor Music Assistant betekent",
+            "not_connected": "Niet verbonden met Home Assistant",
+            "connect_description": "Maak verbinding met Home Assistant om af te spelen op de mediaspelers van Home Assistant, in te loggen met de accounts van Home Assistant en de apparaten van Home Assistant te gebruiken als bedieningselementen voor de spelers.",
+            "connect": "Verbinden",
+            "connection": "Verbinding",
+            "connection_description": "De verbinding opnieuw configureren, uitschakelen of verwijderen",
+            "connection_addon": "Music Assistant draait als een Home Assistant-app, deze maakt de verbinding",
+            "state_connected": "Verbonden",
+            "state_connecting": "Verbinden",
+            "state_disabled": "Uitgeschakeld",
+            "state_needs_attention": "Heeft aandacht nodig",
+            "players": "Home Assistant-spelers",
+            "players_description": "Afspelen op de mediaspelers van Home Assistant",
+            "players_add": "Toevoegen",
+            "sign_in": "Inloggen met Home Assistant",
+            "remote_access_description": "Home Assistant Link zorgt ervoor dat toegang op afstand in elk netwerk werkt",
+            "remote_access_ha_cloud": "Home Assistant Link",
+            "remote_access_without_ha_cloud": "Zonder Home Assistant Link",
+            "ai": "AI van Home Assistant",
+            "ai_description": "AI-taken en stemmen uit Home Assistant",
+            "ai_none": "Geen",
+            "players_choose": "Kies",
+            "sign_in_new_users": "Gebruikers van Home Assistant die nog geen account hebben, krijgen er een wanneer ze zich voor het eerst aanmelden",
+            "remote_access_details": "Remote-ID en QR-code"
+        },
+        "music": "Muziek",
+        "music_description": "Je muziekbronnen, bibliotheek, metadata en audioanalyse",
+        "source_labels": {
+            "library": "Bibliotheek",
+            "radio": "Radio",
+            "podcasts": "Podcasts",
+            "audiobooks": "Luisterboeken",
+            "live": "Livebronnen"
+        },
+        "ai": {
+            "title": "AI",
+            "description": "De AI-engines die Music Assistant gebruikt, waarvoor ze worden ingezet en de toegang tot AI-assistenten",
+            "no_engines": "Er zijn nog geen AI-engines",
+            "no_engines_description": "Voeg een AI-service toe om afspeellijstbeschrijvingen te schrijven, omroepberichten voor te lezen, AI Radio te presenteren en nog veel meer.",
+            "add_service": "Een AI-dienst toevoegen",
+            "usage": "Waarvoor AI wordt gebruikt",
+            "services": "AI-diensten",
+            "kind": {
+                "text": "AI-engine",
+                "speech": "Tekst-naar-spraak-engine",
+                "image": "Afbeelding-engine"
+            },
+            "engine_count": {
+                "text": "{count} tekst | {count} teksten",
+                "speech": "{count} spraakfragment | {count} spraakfragmenten",
+                "image": "{count} afbeelding | {count} afbeeldingen"
+            },
+            "follows_default": "Standaard · {engine}",
+            "not_available": "Niet beschikbaar",
+            "choose_models": "Kies de modellen die je wilt gebruiken",
+            "assistant_access": "Toegang voor AI-assistenten",
+            "assistant_access_enabled": "De ingebouwde MCP-server is ingeschakeld",
+            "assistant_access_disabled": "De ingebouwde MCP-server is uitgeschakeld",
+            "mcp_server": "Schakel de ingebouwde MCP-server in",
+            "mcp_server_description": "Laat AI-assistenten zoals Home Assistant Assist, Claude en ChatGPT je muziek doorzoeken en het afspelen regelen.",
+            "engine_unavailable": "De geselecteerde engine is niet beschikbaar"
+        },
+        "provider_labels": {
+            "filter": "Filteren op wat ze aanbieden",
+            "all": "Alle"
+        },
+        "plugin_labels": {
+            "ai": "AI",
+            "tts": "Tekst-naar-spraak",
+            "scrobble": "Scrobbelen",
+            "assistant": "Assistenten",
+            "visualizer": "Verlichting en visuele effecten",
+            "recommendations": "Mixen en aanbevelingen",
+            "fun": "Spelletjes en plezier",
+            "other": "Overige"
+        },
+        "multi_channel": {
+            "make": "Maak een speler voor meerdere kanalen…",
+            "make_title": "Maak een speler voor meerdere kanalen",
+            "make_description": "{0} en de luidsprekers die je kiest, spelen als één speler, elk op een eigen kanaal.",
+            "channels": {
+                "front_left": "Links",
+                "front_right": "Rechts",
+                "front_center": "Midden",
+                "lfe": "Subwoofer"
+            },
+            "this_speaker": "{0} (deze luidspreker)",
+            "channel": "Kanaal",
+            "output_delay": "Uitvoervertraging (ms)",
+            "pick_speaker": "Kies een luidspreker",
+            "swap": "Wissel de kanalen",
+            "no_speakers": "Er is geen andere luidspreker om toe te voegen. Een luidspreker wordt hier weergegeven wanneer deze is ingeschakeld en aangesloten.",
+            "name": "Naam",
+            "make_note": "De {0}-uitgang van elke luidspreker wordt overgezet naar de nieuwe speler. Een speler zonder andere uitgang verdwijnt, samen met de bijbehorende instellingen.",
+            "created": "{0} aangemaakt",
+            "speaker_online": "Online",
+            "speaker_offline": "Offline",
+            "take_apart": "Uit elkaar halen",
+            "take_apart_title": "Wil je {0} uit elkaar halen?",
+            "take_apart_confirmation": "{0} verdwijnt, samen met de instellingen. De luidsprekers verschijnen weer als afzonderlijke spelers, met de standaardinstellingen.",
+            "take_apart_confirm": "Uit elkaar halen",
+            "taken_apart": "{0} uit elkaar gehaald",
+            "layout": "Indeling",
+            "add_subwoofer": "Subwoofer toevoegen…",
+            "add_subwoofer_title": "Subwoofer toevoegen",
+            "add_subwoofer_description": "Kies de luidspreker die de bas van {0} weergeeft.",
+            "add_subwoofer_note": "De {0} de uitgang van de subwoofer verplaatst zich naar {1}. Een speler zonder andere uitvoer verdwijnt, samen met zijn instellingen.",
+            "subwoofer_added": "Subwoofer toegevoegd aan {0}",
+            "remove_subwoofer": "Subwoofer verwijderen",
+            "remove_subwoofer_title": "De subwoofer verwijderen van {0}?",
+            "remove_subwoofer_confirmation": "{0} keert terug als een zelfstandige speler, met standaardinstellingen.",
+            "subwoofer_removed": "Subwoofer verwijderd van {0}"
+        },
+        "metadata_description": "Metadatabronnen, taal, online zoekopdrachten, genres en de cache voor albumhoezen",
+        "audio_analysis_description": "Voortgang van de analyse, mislukte nummers, analysemodules en instellingen",
+        "audio_analysis_modules": "Analysemodules",
+        "metadata_settings_description": "Taal, online zoekopdrachten, genres en de albumhoes-cache",
+        "audio_analysis_settings_description": "Hoeveel nummers er tegelijkertijd worden geanalyseerd",
+        "audio_analysis_coverage": {
+            "up_to_date": "Actueel",
+            "waiting": "{count} in afwachting"
+        }
     },
     "show_info": "Bekijk informatie",
     "show_select_boxes": "Selectieboxen weergeven",
@@ -1161,7 +1295,6 @@
         "toggle_subplayers": "Subspelers weergeven\/verbergen",
         "restore_genre": "Genre herstellen",
         "remove_rule": "Regel verwijderen",
-        "change_avatar": "Avatar wijzigen",
         "revoke_session": "Sessie intrekken",
         "revoke_token": "Token intrekken",
         "user_options": "Gebruikersinstellingen",
@@ -1223,7 +1356,7 @@
         "panel": "Miniatuurweergave",
         "discovery": "Ontdekken",
         "card": "Kaartweergave",
-        "view_as": "Bekijken als",
+        "view_as": "Weergeven als",
         "panel_short": "Miniaturen",
         "list_short": "Lijst"
     },
@@ -1422,8 +1555,6 @@
         "setup_failed": "Instellen mislukt. Probeer het nog eens.",
         "setup_error": "Er is een fout opgetreden tijdens het instellen",
         "profile": "Profiel",
-        "account_settings": "Accountinstellingen",
-        "manage_your_profile_info": "Beheer je profielgegevens en instellingen",
         "change_password": "Wachtwoord wijzigen",
         "update_your_password": "Wijzig je accountwachtwoord",
         "old_password": "Huidig wachtwoord",
@@ -1485,7 +1616,6 @@
         "change_role": "Rol wijzigen",
         "avatar_url": "Avatar URL",
         "avatar_url_hint": "Voer de URL van de avatarafbeelding in",
-        "change_avatar": "Avatar wijzigen",
         "profile_updated": "Profiel succesvol bijgewerkt",
         "ingress_password_note": "Wanneer je Music Assistant buiten Home Assistant wilt gebruiken, heb je dit wachtwoord nodig om in te loggen.",
         "copy_new_token_hint": "Kopieer je access token. Deze wordt niet opnieuw weergegeven.",
@@ -1552,7 +1682,17 @@
         },
         "username_max_length": "De gebruikersnaam mag maximaal 50 tekens lang zijn",
         "display_name_max_length": "De weergavenaam mag maximaal 100 tekens lang zijn",
-        "password_max_length": "Het wachtwoord mag maximaal 128 tekens lang zijn"
+        "password_max_length": "Het wachtwoord mag maximaal 128 tekens lang zijn",
+        "profile_pages": {
+            "theme_language": "Thema en taal",
+            "interface": "Interface",
+            "interface_description": "Instellingen die aan je account zijn gekoppeld en op ieder apparaat worden toegepast",
+            "device": "Dit apparaat",
+            "device_description": "Instellingen die alleen op dit apparaat van toepassing zijn",
+            "security": "Beveiliging",
+            "security_description": "Wachtwoord, actieve sessies en toegangstokens"
+        },
+        "edit_profile": "Profiel bewerken"
     },
     "login": {
         "subtitle": "Maak verbinding met je muziekserver",
@@ -1644,7 +1784,6 @@
     "narrators": "Vertellers",
     "queue_move_end": "Verplaats naar einde",
     "discover": "Ontdekken",
-    "save_queue_as_playlist": "De wachtrij als afspeellijst opslaan",
     "playlist_created": "Afspeellijst gemaakt",
     "open_playlist": "Afspeellijst openen",
     "add": "Toevoegen",
@@ -1804,31 +1943,24 @@
             "create_intro": "Maak een nieuw quizspel om je muziekkennis te testen!",
             "loading": "Laden...",
             "no_active_game": "Geen actief spel",
-            "game_removed": "Het spel is niet langer beschikbaar",
             "game_ended": "Spel afgelopen",
             "game_ended_detail": "Dit quizspel is afgelopen.",
-            "game_no_longer_available": "Dit spel is niet langer beschikbaar",
             "start": "Start de quiz",
-            "reveal": "Antwoord weergeven",
             "phase_reveal": "Antwoord weergeven",
             "next": "Volgende ronde",
             "finish": "Quiz afronden",
-            "reset": "Quiz opnieuw instellen",
             "new_game": "Nieuw spel",
             "phase_waiting_for_players": "Wachten op deelnemers",
             "phase_answers_open": "Je kunt nu antwoorden!",
             "phase_enjoy_track": "Geniet van het nummer!",
             "phase_finished": "Quiz afgelopen",
-            "join_url_label": "Deelname-URL",
             "players": "Deelnemers",
             "players_count": "{0} deelnemer(s)",
             "rounds_count": "{0} ronde(s)",
             "round_label": "Ronde",
-            "round": "Ronde",
             "enter_name": "Vul je naam in",
             "join": "Doe mee aan de quiz",
             "waiting_for_start": "Wachten tot de host de quiz start...",
-            "waiting_for_answers": "Wachten op antwoorden...",
             "choose_answer": "Kies je antwoord!",
             "answered": "Antwoord ingediend! Wachten op anderen...",
             "answer_was": "Het antwoord was",
@@ -1838,19 +1970,12 @@
             "ready": "Klaar voor de volgende ronde",
             "waiting_for_next": "Wachten op de volgende ronde...",
             "game_over": "Spel afgelopen!",
-            "final_scores": "Eindstanden",
             "final_leaderboard": "Eindklassement",
-            "setup_placeholder": "Aanmeldingsformulier binnenkort beschikbaar",
             "connection_lost": "Verbinding verbroken, opnieuw verbinden...",
             "rounds": "Rondes",
-            "suggestions": "Antwoordopties",
             "answer_seconds": "Antwoordtijd (seconden)",
-            "search_music": "Zoek in je bibliotheek",
-            "searching": "Zoeken...",
-            "no_sources_found": "Geen nummers of afspeellijsten gevonden",
             "selected_music": "Geselecteerde muziek",
             "pick_at_least_one_source": "Kies ten minste één bron",
-            "source_search_failed": "Kon geen muziekbronnen doorzoeken",
             "playlist": "Afspeellijst",
             "track_with_artist": "Nummer • {0}",
             "track": "Nummer",
@@ -1866,7 +1991,6 @@
             "qr_unavailable": "De QR-code kon niet worden weergegeven",
             "copied": "Gekopieerd",
             "copy_link": "Link kopiëren",
-            "join_link_copied": "Deelnamelink gekopieerd",
             "copy_join_link_failed": "Kon deelnamelink kopiëren",
             "now_playing": "Speelt nu",
             "current_music": "Huidige muziek",
@@ -1907,8 +2031,6 @@
             "difficulty_hard": "Moeilijk",
             "choose_game_type": "Kies een speltype",
             "configure_game": "Configureer je spel",
-            "setup_step": "Stap {0} van {1}",
-            "coming_soon": "Binnenkort beschikbaar",
             "answer_choices": "Antwoordopties",
             "game_type_guess_the_song": "Raad het nummer",
             "game_type_guess_the_song_description": "Speel een nummer af en kies als eerste de titel uit de opties.",
@@ -1918,7 +2040,6 @@
             "end_game_confirm": "Weet je zeker dat je dit spel wilt beëindigen? Hierdoor wordt het huidige spel voor alle spelers verwijderd.",
             "end_game": "Spel beëindigen",
             "remove_music_source": "{0} Verwijderen",
-            "timeline": "Tijdlijn",
             "timeline_anchor": "Anker",
             "timeline_revealed": "Nieuw",
             "timeline_place_help": "Kies de ruimte waar het nummer thuishoort.",
@@ -2030,7 +2151,43 @@
             "how_to_play_trivia_description": "Beantwoord triviavragen over muziek. Kies het antwoord dat volgens jou juist is voordat de tijd om is.",
             "landing_continue": "Doorgaan",
             "timeline_result_placement": "Positie",
-            "round_result_answer": "Antwoord"
+            "round_result_answer": "Antwoord",
+            "game_type_title_reveal": "Onthulling van de titel",
+            "game_type_title_reveal_description": "Speel een nummer af en typ de titel ervan terwijl de letters één voor één verschijnen.",
+            "how_to_play_title_reveal_description": "Luister naar het nummer wordt afgespeeld en typ de titel ervan in. Na verloop van tijd worden er meer letters onthuld en kleine typefoutjes zijn geen probleem, maar hoe sneller je het raadt, hoe meer punten je krijgt.",
+            "title_reveal_hint_speed": "Hint snelheid",
+            "title_reveal_hint_speed_slow": "Langzaam (weinig letters)",
+            "title_reveal_hint_speed_normal": "Normaal",
+            "title_reveal_hint_speed_fast": "Snel (veel letters)",
+            "title_reveal_typo_tolerance": "Tolerantie voor typefouten",
+            "title_reveal_typo_tolerance_strict": "Strikt",
+            "title_reveal_typo_tolerance_normal": "Normaal",
+            "title_reveal_typo_tolerance_lenient": "Mild",
+            "title_reveal_mask_label": "Titel van het nummer: {0}, {1} letters nog steeds verborgen",
+            "title_reveal_hints_progress": "{0} van {1} hints onthuld",
+            "title_reveal_typos_allowed": "Er is maximaal {count} typefout toegestaan | Er zijn maximaal {count} typefouten toegestaan",
+            "title_reveal_exact_spelling": "De exacte spelling is vereist",
+            "title_reveal_guess_label": "Nummertitel",
+            "title_reveal_guess_placeholder": "Typ de titel…",
+            "title_reveal_submit_guess": "Antwood",
+            "title_reveal_attempts_left": "{count} poging te gaan | {count} pogingen te gaan",
+            "title_reveal_your_guesses": "Jouw antwoorden",
+            "title_reveal_close": "Zo dichtbij!",
+            "title_reveal_solved": "Dat klopt!",
+            "title_reveal_points": "+{0} punten",
+            "title_reveal_solved_players": "Geraden",
+            "title_reveal_not_solved": "Je hebt de titel deze ronde niet geraden",
+            "title_reveal_first_bonus": "Als eerste! +{0}",
+            "title_reveal_first_bonus_result": "Eerste juiste antwoord",
+            "title_reveal_artist_bonus_setting": "Artiestbonus",
+            "title_reveal_artist_bonus_setting_help": "Nadat het raden van de titel, krijgen spelers één poging om de artiest te raden en zo bonuspunten te verdienen.",
+            "title_reveal_artist_bonus_label": "Bonus: wie is de artiest?",
+            "title_reveal_artist_bonus_help": "Eén poging voor extra punten.",
+            "title_reveal_artist_placeholder": "Typ de naam van de artiest…",
+            "title_reveal_artist_skip": "Overslaan",
+            "title_reveal_artist_correct": "{0} klopt! +{1}",
+            "title_reveal_artist_wrong": "Niet helemaal, het was {0}",
+            "title_reveal_artist_skipped": "Overgeslagen, het was {0}"
         },
         "ai_radio": {
             "title": "AI Radio",
@@ -2227,7 +2384,7 @@
     "no_lyrics_available": "Geen songtekst beschikbaar",
     "background_tasks": {
         "title": "Achtergrondtaken",
-        "description": "Monitor geplande taken en recente, langlopende acties.",
+        "description": "Monitor geplande taken en recente, langlopende acties",
         "total": "In totaal {count} achtergrondtaak | In totaal {count} achtergrondtaken",
         "clear_finished": "Wis voltooide",
         "empty_title": "Geen achtergrondtaken",
@@ -2339,7 +2496,11 @@
             "log_download_started": "Downloaden van taaklogboek gestart.",
             "log_download_failed": "Geen taaklogboek beschikbaar om te downloaden."
         },
-        "report_title": "Taakrapport"
+        "report_title": "Taakrapport",
+        "settings": {
+            "title": "Taakinstellingen",
+            "description": "Hoeveel taken er tegelijkertijd worden uitgevoerd"
+        }
     },
     "not_found_headline": "Oeps, deze pagina is van de setlist.",
     "not_found_subtext": "Het nummer dat je zoekt, is tussen de verschillende muziekbronnen verdwenen. Ga terug of zoek naar iets nieuws.",
@@ -2470,7 +2631,7 @@
     "artist_all_albums": "Alle albums",
     "artist_all_tracks": "Alle nummers",
     "on_provider": "Op {0}",
-    "open_queue_settings": "Wachtrijinstellingen openen",
+    "open_queue_settings": "Afspeelinstellingen openen",
     "crossfade_enable": "Crossfade inschakelen",
     "crossfade_disable": "Crossfade uitschakelen",
     "crossfade": "Crossfade",
@@ -2586,7 +2747,7 @@
     "error_generic": "Er is een fout opgetreden. Probeer het nog eens.",
     "artist_no_library_audiobooks": "Je hebt geen luisterboeken van deze auteur\/voorlezer in je bibliotheek.",
     "artist_all_audiobooks": "Alle luisterboeken",
-    "lights": "Lichten",
+    "lights": "Verlichting",
     "volume": "Volume",
     "grouped_volume": "Gegroepeerd volume",
     "player_select": {
@@ -2807,32 +2968,19 @@
         "skip": "Voorlopig overslaan",
         "finish": "Afronden",
         "finish_failed": "Het instellen kon niet worden voltooid. Probeer het nog eens.",
-        "nothing_configured": "Er is nog niets ingesteld",
         "needs_attention": "Heeft aandacht nodig",
-        "set_up": "Klaar",
         "still_to_do": "Nog te doen",
-        "all_done": "Alles op de lijst is ingesteld.",
         "players_count": "{count} speler | {count} spelers",
         "run_again": "Voer de instelwizard opnieuw uit",
         "steps": {
-            "intent": {
-                "title": "Kies hoe je wilt luisteren",
-                "description": "Dit bepaalt alleen wat we als eerste voorstellen. Alle functies blijven beschikbaar, ongeacht de keuze die je nu maakt.",
-                "phone_apps": {
-                    "label": "Via de apps op mijn telefoon",
-                    "description": "Stream muziek vanaf Spotify, via AirPlay en vanaf andere apps naar de speakers in je huis.",
-                    "preview": "Nu voegen we je luidsprekers toe, verbinden we je muziek-apps en laten we je zien hoe je kunt beginnen met luisteren."
-                },
-                "music_hub": {
-                    "label": "Als mijn muziekhub",
-                    "description": "Breng je streamingdiensten en lokale muziek samen in één bibliotheek.",
-                    "preview": "Nu koppelen we je muziekdiensten en voegen we je luidsprekers toe, waarna we meer functies gaan verkennen."
-                },
-                "summary_title": "Je configuratiekeuze"
-            },
             "music_sources": {
                 "title": "Voeg je muziekbronnen toe",
-                "description": "Verbind een streamingdienst of je lokale muziekbestanden, zodat Music Assistant iets heeft om af te spelen."
+                "description": "Verbind een streamingdienst of je lokale muziekbestanden, zodat Music Assistant iets heeft om af te spelen.",
+                "features": {
+                    "streaming": "Streamingdiensten, zoals Spotify of Tidal",
+                    "files": "Je eigen muziekbestanden, op deze server of op een netwerklocatie",
+                    "radio": "Radiostations en podcasts"
+                }
             },
             "players": {
                 "title": "Voeg je spelers toe",
@@ -2843,63 +2991,39 @@
                 "discovering_hint": "Het kan even duren voordat spelers worden gevonden. Zorg ervoor dat je luidsprekers zijn ingeschakeld en zich op hetzelfde netwerk bevinden als Music Assistant.",
                 "add_more": "Voeg meer spelers toe",
                 "rename": "Hernoem {name}",
-                "discovered_by": "Ontdekt door"
+                "discovered_by": "Ontdekt door",
+                "features": {
+                    "found_automatically": "Automatisch op je netwerk gevonden",
+                    "one_place": "Speel ze allemaal vanaf één plek",
+                    "groups": "Groepeer ze zodat ze samen kunnen spelen"
+                }
             },
             "plugins": {
                 "title": "Plug-ins toevoegen",
-                "description": "Plug-ins voegen extra functionaliteit toe aan Music Assistant. Je kunt ze altijd later nog toevoegen.",
                 "phone_apps_title": "Verbind je muziek-apps",
-                "phone_apps_description": "Voeg Spotify Connect of de AirPlay-ontvanger toe en open daarna de instellingen ervan om je luidsprekers te selecteren. Ook zijn hier andere plug-ins beschikbaar.",
-                "connect": "Verbind een muziek-app"
+                "connect": "Verbind een muziek-app",
+                "phone_apps_instructions": "Voeg Spotify Connect of de AirPlay-ontvanger toe en selecteer deze vervolgens om de luidsprekers te kiezen waarop het geluid wordt afgespeeld.",
+                "features": {
+                    "apps": "Blijf muziek kiezen in de apps die je kent",
+                    "spotify_connect": "Afspelen via Spotify met Spotify Connect",
+                    "airplay": "Speel vanaf je Apple-apparaten met AirPlay"
+                }
             },
             "finish": {
                 "title": "Instellen afronden",
                 "description": "Dit is waarop je nu uitgekomen bent. Je kunt dit later allemaal nog aanpassen via de instellingen.",
                 "phone_apps_description": "Hier is een overzicht van je luidsprekers en app-verbindingen. Je kunt later via de instellingen een muziekbibliotheek en andere functies toevoegen."
             },
-            "core_settings": {
-                "title": "Controleer je serverinstellingen",
-                "load_failed": "De serverinstellingen konden niet worden geladen. Je kunt ze later aanpassen via de instellingen.",
-                "intro": "De adressen die Music Assistant momenteel gebruikt. Deze worden automatisch bepaald en zijn normaal gesproken correct, dus je kunt gewoon verdergaan.",
-                "internal_address": "Intern adres",
-                "internal_address_hint": "Waar de apps en apparaten in je huis Music Assistant kunnen bereiken.",
-                "stream_address": "Adres van de streamserver",
-                "stream_address_hint": "Waar je spelers de audio vandaan halen.",
-                "address_unknown": "Niet beschikbaar",
-                "check": {
-                    "checking": "Bezig met controleren...",
-                    "reachable": "Bereikbaar vanaf dit apparaat",
-                    "unreachable": "Niet bereikbaar vanaf dit apparaat",
-                    "unchecked": "Kon vanaf dit apparaat geen controle uitvoeren"
-                },
-                "unreachable_hint": "Een adres dat hier niet wordt beantwoord, wordt mogelijk ook niet door je spelers beantwoord. Als het afspelen mislukt, stel dit dan in via de geavanceerde instellingen.",
-                "override_hint": "Je hoeft deze instellingen alleen aan te passen in een complexer netwerk, bijvoorbeeld achter een reverse proxy of tussen VLAN’s. Je vindt ze later onder Instellingen › {system}, in {webserver} en {streams}.",
-                "remote": {
-                    "title": "Luister buitenshuis",
-                    "description": "Er zijn twee manieren om Music Assistant te bereiken als je niet thuis bent. Beide kun je ook later instellen.",
-                    "builtin": {
-                        "title": "Ingebouwde toegang op afstand",
-                        "easiest": "Het makkelijkst",
-                        "description": "Veilig en versleuteld, zonder port forwarding of VPN. Schakel het in en maak overal verbinding met je Externe Toegang ID.",
-                        "switch": "Externe Toegang",
-                        "id": "Jouw Externe Toegang ID",
-                        "copy": "Kopieer de Externe Toegang ID",
-                        "hint": "Gebruik deze in de Music Assistant-app of op app.music-assistant.io. De QR-code vind je onder Instellingen › {remote_access}."
-                    },
-                    "proxy": {
-                        "title": "Je eigen reverse proxy",
-                        "description": "Zet een reverse proxy voor de server en voer het adres in waarmee de server van buitenaf bereikbaar is als het externe adres.",
-                        "set_external": "Stel het externe adres in"
-                    }
-                },
-                "network_details": "Server- en netwerkgegevens",
-                "external_address": "Extern adres",
-                "external_address_hint": "Waarop je Music Assistant buiten je eigen netwerk bereikt, via je reverse proxy."
-            },
             "invite_members": {
                 "title": "Gebruikers toevoegen",
-                "description": "Iedereen met wie je samenwoont, krijgt een eigen account, met de spelers en muziekbronnen waartoe je hen toegang geeft.",
-                "load_failed": "De gebruikers konden niet worden geladen. Je kunt ze later via de instellingen toevoegen."
+                "load_failed": "De gebruikers konden niet worden geladen. Je kunt ze later via de instellingen toevoegen.",
+                "intro": "Geef iedereen in je huishouden een eigen account.",
+                "features": {
+                    "sign_in": "Hun eigen inloggegevens",
+                    "players": "De spelers waartoe je ze toegang geeft",
+                    "music": "Hun eigen muziekdiensten, naast die van jou"
+                },
+                "optional": "Optioneel: je kunt ook later gebruikers toevoegen via Instellingen › {users}."
             },
             "welcome": {
                 "title": "Richt het in zoals jij wilt",
@@ -2921,10 +3045,35 @@
             },
             "own_sources": {
                 "title": "Koppel je eigen accounts",
-                "description": "Voeg je eigen muziekdiensten toe, zodat je afspeellijsten en muziekbibliotheek naast die van anderen worden weergegeven. Je kunt dit later altijd nog doen via je instellingen.",
                 "add": "Voeg een muziekbron toe",
-                "empty": "Je hebt nog geen eigen muziekbronnen gekoppeld.",
-                "connected": "Jouw muziekbronnen"
+                "intro": "Voeg de muziekdiensten toe die je zelf gebruikt.",
+                "features": {
+                    "accounts": "Je eigen streamingaccounts, zoals Spotify",
+                    "library": "Jouw afspeellijsten en bibliotheek, samen met die van alle anderen"
+                },
+                "optional": "Optioneel: je kunt ze ook later toevoegen via Instellingen › {music}."
+            },
+            "core_settings": {
+                "remote": {
+                    "builtin": {
+                        "id": "Jouw Externe Toegang ID",
+                        "copy": "Kopieer de Externe Toegang ID",
+                        "hint": "Gebruik deze in de Music Assistant-app of op app.music-assistant.io. De QR-code vind je onder Instellingen › {remote_access}."
+                    },
+                    "features": {
+                        "secure": "Veilig en versleuteld",
+                        "no_setup": "Geen port forwarding of VPN",
+                        "anywhere": "Maak overal verbinding met je Externe Toegang ID",
+                        "home_assistant_link": "Maakt gebruik van Home Assistant Link als je Home Assistant deze functie ondersteunt"
+                    },
+                    "turn_on": "Externe toegang inschakelen",
+                    "turn_off": "Uitschakelen",
+                    "on": "Externe Toegang staat aan"
+                },
+                "away_title": "Luister buitenshuis",
+                "optional": "Optioneel: je kunt deze functie ook later inschakelen via Instellingen › {system} › {network}, waar je ook je eigen reverse proxy kunt instellen.",
+                "intro": "Music Assistant werkt altijd veilig op je thuisnetwerk. Dankzij de toegang op afstand kun je ook via de app naar muziek luisteren als je niet thuis bent.",
+                "intro_addon": "Overal waar je Home Assistant kunt openen, kun je ook Music Assistant openen. Dankzij de toegang op afstand kun je ook via de app naar muziek luisteren als je niet thuis bent."
             },
             "your_players": {
                 "title": "Jouw spelers",
@@ -2949,13 +3098,61 @@
                 "sign_in_here": "In plaats daarvan hier inloggen",
                 "reload": "Laad de pagina opnieuw",
                 "ready": "Ingelogd als {name}."
+            },
+            "intent": {
+                "summary_title": "Je configuratiekeuze",
+                "phone_apps": {
+                    "title": "Verbind mijn muziekapps aan mijn luidsprekers",
+                    "description": "Blijf muziek kiezen in apps zoals Spotify, of gebruik AirPlay. Music Assistant koppelt deze aan je luidsprekers; je hebt geen muziekbibliotheek nodig."
+                },
+                "music_hub": {
+                    "title": "De volledige Music Assistant-ervaring",
+                    "description": "Je muziekdiensten, lokale muziek en luidsprekers op één plek. Blader, zoek en stel afspeellijsten samen in Music Assistant."
+                },
+                "title": "Hoe wil je Music Assistant gebruiken?",
+                "intro": "Kies je startpunt.",
+                "reassurance": "Geen zorgen: je keuze bepaalt alleen de huidige configuratie. Je kunt later in de instellingen elke gewenste functie toevoegen."
+            },
+            "home_assistant": {
+                "title": "Verbind Home Assistant",
+                "connect": "Maak verbinding met Home Assistant",
+                "intro": "Koppel Home Assistant om nog meer uit Music Assistant te halen.",
+                "features": {
+                    "players": "Speel af op de mediaspelers van Home Assistant",
+                    "controls": "Bestuur je spelers met Home Assistant-entiteiten",
+                    "sign_in": "Log in met je Home Assistant-account",
+                    "remote_access": "Maak op afstand verbinding met Music Assistant via Home Assistant Link"
+                },
+                "optional": "Optioneel: je kunt het ook later koppelen via Instellingen › {system} › {home_assistant}."
+            },
+            "get_started": {
+                "title": "Welkom bij Music Assistant",
+                "start": "Aan de slag",
+                "intro": "Laten we je stap voor stap op weg helpen.",
+                "features": {
+                    "account": "Maak je account aan",
+                    "intent": "Kies hoe je Music Assistant wilt gebruiken",
+                    "music": "Voeg je muziek en je luidsprekers toe",
+                    "extras": "Voeg optionele extra's toe, zoals Home Assistant"
+                }
+            },
+            "ai": {
+                "enrich_title": "Verrijk Music Assistant met AI",
+                "intro": "Benut de kracht van AI in Music Assistant.",
+                "features": {
+                    "announcements": "Omroepberichten voorlezen",
+                    "ai_radio": "Presentator van AI Radio",
+                    "smart_playlists": "Maak slimme afspeellijsten",
+                    "music_quiz": "Doe de muziekquiz",
+                    "playlist_covers": "Maak afbeeldingen voor afspeellijsten"
+                },
+                "optional": "Optioneel: je kunt later ook AI-diensten toevoegen via Instellingen › {ai}.",
+                "intro_examples": "Laat Music Assistant gebruikmaken van de kracht van AI. Hier volgen enkele voorbeelden, en er komen er nog meer:"
             }
         },
         "add_member": "Een gebruiker toevoegen",
-        "just_you_so_far": "Tot nu toe ben jij de enige.",
         "welcome_title": "Welkom bij Music Assistant",
         "welcome_again": "Het welkomscherm nogmaals weergeven",
-        "what_you_picked": "Wat je hebt gekozen",
         "description": "Stel Music Assistant stap voor stap in.",
         "step_completed": "{step}, voltooid",
         "welcome_description": "Een korte rondleiding door Music Assistant.",
@@ -2967,9 +3164,6 @@
         "dismiss": "Sluiten",
         "music_sources_count": "{count} muziekbron | {count} muziekbronnen",
         "plugins_count": "{count} plug-in | {count} plug-ins",
-        "continue": "Doorgaan",
-        "explore_more": "Ontdek meer",
-        "listen_from_apps": "Probeer muziek af te spelen via je muziek-apps",
         "spotify_connect_hint": "Kies in de instellingen van Spotify Connect de luidsprekers die je wilt gebruiken. Open vervolgens de apparaatkiezer van Spotify en selecteer een van die luidsprekers.",
         "airplay_receiver_hint": "Kies in de instellingen van de AirPlay-ontvanger de luidsprekers die je wilt gebruiken. Open vervolgens de AirPlay-audiokiezer op je Apple-apparaat en selecteer de ontvanger voor je luidspreker."
     },
@@ -3282,5 +3476,60 @@
     "chapter_progress_show_audiobook": "Laat het volledige luisterboek zien",
     "chapter_progress_show_episode": "Laat de volledige aflevering zien",
     "chapter_progress_show_chapter": "Laat alleen dit hoofdstuk zien",
-    "transfer_queue_no_audio": "Audio is nog niet beschikbaar op dit apparaat."
+    "transfer_queue_no_audio": "Audio is nog niet beschikbaar op dit apparaat.",
+    "discography_types_empty": "Er zijn geen releases van de geselecteerde typen.",
+    "favorites_song_add": "Nummer aan favorieten toevoegen",
+    "favorites_song_remove": "Nummer uit favorieten verwijderen",
+    "favorites_song_added": "{name} is aan je favorieten toegevoegd",
+    "favorites_station_add": "Station aan favorieten toevoegen",
+    "favorites_station_remove": "Station uit favorieten verwijderen",
+    "favorites_station_dislike": "Station niet leuk vinden",
+    "favorites_station_dislike_remove": "Station 'niet leuk' verwijderen",
+    "add_song_playlist": "Nummer aan afspeellijst toevoegen...",
+    "add_station_playlist": "Station aan afspeellijst toevoegen...",
+    "radio_song_not_found": "{name} is niet in je muziekbronnen gevonden",
+    "add_queue_to_playlist": "Wachtrij aan afspeellijst toevoegen...",
+    "channel_layout": {
+        "stereo": "Stereopaar",
+        "speaker_with_subwoofer": "Luidspreker met subwoofer",
+        "stereo_with_subwoofer": "Stereopaar met subwoofer"
+    },
+    "provider_pages": {
+        "heading": "Extra's",
+        "home_network": "De pagina werd geopend op het thuisnetwerkadres van Music Assistant, dus deze wordt alleen geladen als je thuis bent.",
+        "unavailable": "De pagina kan alleen binnen je thuisnetwerk worden geopend, maar het thuisnetwerkadres van Music Assistant is onbekend."
+    },
+    "audio_inputs": "Audio-ingangen",
+    "metadata": "Metadata",
+    "controllers": "Controllers",
+    "statistics_library_based_albums": "Bevat weergaven die gekoppeld zijn aan bibliotheeknummers met albuminformatie. Andere weergaven kunnen ontbreken.",
+    "statistics_library_based_genres": "Bevat weergaven die gekoppeld zijn aan bibliotheeknummers, met genre-informatie. Andere weergaven kunnen ontbreken.",
+    "statistics_library_based_decades": "Bevat weergaven die gekoppeld zijn aan nummers uit de bibliotheek met een bekend releasejaar van het album. Andere weergaven kunnen ontbreken.",
+    "statistics_library_based_listening_time": "Berekend op basis van voltooide weergaven die zijn gekoppeld aan nummers uit de bibliotheek met een bekende duur. Andere weergaven kunnen ontbreken.",
+    "edit_rows_subtitle_podcast_episode": "Van toepassing op elke podcastaflevering-pagina",
+    "share": {
+        "title": "Gedeelde muziek",
+        "open_preview": "Deelbare link",
+        "preview_title": "Deel {title}",
+        "preview_description": "Bekijk een voorbeeld van het item voordat je de deelbare link kopieert.",
+        "copy_share_link": "Deelbare link kopiëren",
+        "copy_provider_link": "Kopieer {0} link",
+        "copy_all": "Alles kopiëren",
+        "link_copied": "Deelbare link gekopieerd",
+        "link_copy_failed": "De deelbare link kon niet worden aangemaakt of gekopieerd.",
+        "preview_failed": "Kon geen deelvoorbeeld maken.",
+        "preview_loading": "Deelvoorbeeld wordt geladen…",
+        "loading": "Dit item in je bibliotheek zoeken…",
+        "plugin_unavailable": "Deze link vereist de Share Links-plugin. Vraag de serverbeheerder om deze in te schakelen.",
+        "resolve_failed": "Dit item is niet gevonden in je bibliotheek.",
+        "invalid_link": "Deze deelbare link is ongeldig of onvolledig."
+    },
+    "live_sources": "Livebronnen",
+    "live_sources_page": {
+        "plays_on": "Speelt op {0}",
+        "no_player": "Selecteer een speler om te zien wat je er live op kunt afspelen.",
+        "select_player": "Selecteer een speler",
+        "empty": "Niets om live af te spelen",
+        "empty_description": "{0} heeft geen livebronnen of invoer."
+    }
 }

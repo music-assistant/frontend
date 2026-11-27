@@ -1,41 +1,36 @@
 <template>
+  <!-- a genre has no cover beside its name: its picture fills the hero -->
   <DetailHero
     :item="item"
     :backdrop="backdrop"
     :editable-rows="editableRows"
     @edit-rows="emit('edit-rows')"
   >
-    <template #toolbar-append>
-      <DetailHeroFavorite v-if="item" :item="item" />
-      <slot name="toolbar-append"></slot>
+    <!-- the name is all a genre hero has, so it shows whole -->
+    <template v-if="item" #title>
+      <DetailHeroTitle :item="item" :clamp="false" />
     </template>
 
-    <template v-if="item" #main>
-      <h1
-        class="m-0 max-w-full leading-[1.2] font-medium [overflow-wrap:anywhere] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)]"
-        :class="isPhone ? 'text-[34px]' : 'text-[48px]'"
-      >
-        {{ item.name }}
-      </h1>
-      <div
-        class="flex min-w-0 flex-nowrap items-center self-stretch"
-        :class="isPhone ? 'gap-2.5' : 'gap-2'"
-      >
-        <DetailHeroPlayButton :item="item" />
-        <DetailHeroButton
-          v-if="canManageGenre"
-          :icon="Merge"
-          :label="$t('merge_into')"
-          @click="mergeGenre"
-        />
-        <DetailHeroButton
-          v-if="canManageGenre"
-          :icon="Trash2"
-          :label="$t('delete_genre')"
-          @click="deleteGenre"
-        />
-        <DetailHeroSourceBadge :item="item" />
-      </div>
+    <template #toolbar-append>
+      <DetailHeroFavorite v-if="item" :item="item" />
+      <slot name="toolbar-append" />
+    </template>
+
+    <template v-if="item" #actions>
+      <DetailHeroPlayButton :item="item" />
+      <DetailHeroButton
+        v-if="canManageGenre"
+        :icon="Merge"
+        :label="$t('merge_into')"
+        @click="mergeGenre"
+      />
+      <DetailHeroButton
+        v-if="canManageGenre"
+        :icon="Trash2"
+        :label="$t('delete_genre')"
+        @click="deleteGenre"
+      />
+      <DetailHeroSourceBadge :item="item" />
     </template>
   </DetailHero>
 </template>
@@ -46,11 +41,12 @@ import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
-import { getImageThumbForItem } from "@/helpers/utils";
-import { ImageType, Scope, type Genre } from "@/plugins/api/interfaces";
+import DetailHeroTitle from "@/components/details/DetailHeroTitle.vue";
+import { heroBackdrop } from "@/helpers/hero_backdrop";
+import { Scope, type Genre } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { eventbus } from "@/plugins/eventbus";
+import { $t } from "@/plugins/i18n";
 import { Merge, Trash2 } from "@lucide/vue";
 import { computed } from "vue";
 
@@ -67,23 +63,17 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
 
-// matches the hero's own phone layout, which a width breakpoint alone misses
-const isPhone = computed(() => isPhoneSizedScreen());
-
 const canManageGenre = computed(
   () =>
     props.item?.provider === "library" &&
     authManager.hasScope(Scope.LIBRARY_MANAGE),
 );
 
-const backdrop = computed(() => {
-  if (!props.item) return undefined;
-  return (
-    getImageThumbForItem(props.item, ImageType.FANART) ||
-    getImageThumbForItem(props.item, ImageType.LANDSCAPE) ||
-    getImageThumbForItem(props.item, ImageType.THUMB)
-  );
-});
+// with no cover beside the name, the picture stays sharp even when it is the
+// square thumb
+const backdrop = computed(() =>
+  props.item ? heroBackdrop(props.item).url : undefined,
+);
 
 const mergeGenre = () => {
   const genre = props.item;

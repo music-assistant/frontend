@@ -67,7 +67,7 @@
         <Check v-if="playedState === 'fully_played'" :size="16" />
         <ClockFading v-else :size="16" />
       </span>
-      <slot name="art-overlay"></slot>
+      <slot name="art-overlay" />
       <ArtworkSpinner v-if="resolving" spinner-class="size-8" />
       <div
         v-if="showCheckboxes"
@@ -104,7 +104,7 @@
       </span>
     </div>
 
-    <slot name="actions"></slot>
+    <slot name="actions" />
   </div>
 </template>
 

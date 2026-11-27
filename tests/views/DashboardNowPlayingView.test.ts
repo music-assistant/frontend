@@ -5,7 +5,10 @@ import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { authMock, routeMock, routerMock, storeMock } = vi.hoisted(() => ({
-  authMock: { isDashboardViewer: (): boolean => false },
+  authMock: {
+    isDashboardViewer: (): boolean => false,
+    hasScope: (): boolean => false,
+  },
   routeMock: { query: {} as Record<string, string> },
   routerMock: {
     options: { history: { state: { back: "/discover" as string | null } } },

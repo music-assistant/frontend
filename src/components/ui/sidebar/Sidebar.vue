@@ -34,7 +34,7 @@ const mobileSheetSide = useMobileSidebarSide();
     "
     v-bind="$attrs"
   >
-    <slot></slot>
+    <slot />
   </div>
 
   <Sheet
@@ -61,7 +61,7 @@ const mobileSheetSide = useMobileSidebarSide();
         <SheetTitle>{{ $t("sidebar.title") }}</SheetTitle>
       </SheetHeader>
       <div class="flex h-full w-full flex-col">
-        <slot></slot>
+        <slot />
       </div>
     </SheetContent>
   </Sheet>
@@ -108,7 +108,7 @@ const mobileSheetSide = useMobileSidebarSide();
         data-sidebar="sidebar"
         class="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
       >
-        <slot></slot>
+        <slot />
       </div>
     </div>
   </div>

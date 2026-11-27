@@ -66,6 +66,6 @@ defineExpose({
       {{ $t("clear") }}
     </InputGroupButton>
     <!-- trailing controls rendered inside the input, e.g. an inline filter -->
-    <slot name="append"></slot>
+    <slot name="append" />
   </InputGroup>
 </template>

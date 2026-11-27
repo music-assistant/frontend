@@ -10,7 +10,12 @@ import {
   readDeviceSetting,
   saveDeviceSetting,
 } from "@/helpers/device_settings";
-import { expertMode, expertModeSetting } from "@/helpers/expert_mode";
+import {
+  defaultExpertMode,
+  EXPERT_MODE_PREFERENCE,
+  expertMode,
+  expertModeSetting,
+} from "@/helpers/expert_mode";
 import {
   ConfigEntry,
   ConfigEntryType,
@@ -128,6 +133,17 @@ function serializeValue(value: ConfigValueType | undefined): string {
 // the preferences saved to the account, which follow the user to every device
 function buildAccountEntries(): ConfigEntry[] {
   return [
+    {
+      key: EXPERT_MODE_PREFERENCE,
+      type: ConfigEntryType.BOOLEAN,
+      label: EXPERT_MODE_PREFERENCE,
+      default_value: defaultExpertMode(),
+      required: false,
+      options: [],
+      multi_value: false,
+      category: "preferences",
+      value: expertMode(),
+    },
     {
       // Menu items are managed in the sidebar's edit mode; this button is the
       // muscle-memory path for users who look for the old setting here.

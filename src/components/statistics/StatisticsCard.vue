@@ -23,13 +23,13 @@
           >
             {{ title }}
           </h2>
-          <slot name="title-info"></slot>
+          <slot name="title-info" />
         </div>
         <p v-if="subtitle" class="m-0 text-[13px] text-muted-foreground">
           {{ subtitle }}
         </p>
       </div>
-      <slot name="header"></slot>
+      <slot name="header" />
     </header>
     <div v-if="loading" :class="cn('flex flex-col gap-3', minHeightClass)">
       <Skeleton class="h-6 w-2/5" />
@@ -59,7 +59,7 @@
     >
       {{ emptyText ?? $t("statistics_section_empty") }}
     </p>
-    <slot v-else></slot>
+    <slot v-else />
   </section>
 </template>
 

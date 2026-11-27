@@ -8,6 +8,7 @@ import {
   ProviderType,
   type ProviderConfig,
   type ProviderInstance,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -70,6 +71,7 @@ function ownSource(instanceId: string, domain: string, name: string | null) {
         owner: "sam-1",
         sharing: ProviderSharing.PRIVATE,
         shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       },
     }),
   );
@@ -105,7 +107,7 @@ describe("OwnSourcesStep", () => {
 
     expect(
       testId(wrapper, "onboarding-invitation-features")
-        .findAll("[data-slot=item]")
+        .findAll("li")
         .map((item) => item.text()),
     ).toEqual([
       "onboarding.steps.own_sources.features.accounts",

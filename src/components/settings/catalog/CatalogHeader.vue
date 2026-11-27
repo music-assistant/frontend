@@ -1,38 +1,21 @@
 <template>
-  <SettingsPageHeader page="catalog">
+  <!-- on a phone the buttons join the title row, and the search takes a row
+       of its own under it -->
+  <SettingsPageHeader page="catalog" actions-class="max-md:contents">
     <template #actions>
-      <Button
-        :variant="installedOpen ? 'secondary' : 'outline'"
-        size="sm"
-        :aria-pressed="installedOpen"
-        data-testid="catalog-installed-button"
-        @click="emit('toggle-installed')"
-      >
-        {{ $t("settings.catalog.installed") }}
-        <span
-          v-if="installedCount !== null"
-          class="text-muted-foreground"
-          data-testid="catalog-installed-count"
-          >{{ installedCount }}</span
-        >
-        <Badge
-          v-if="updateCount"
-          class="h-5 min-w-5 rounded-full px-1.5"
-          :aria-label="
-            $t('settings.catalog.community.updates_waiting', updateCount, {
-              named: { count: updateCount },
-            })
-          "
-          data-testid="catalog-updates-count"
-        >
-          {{ updateCount }}
-        </Badge>
-      </Button>
+      <SearchInput
+        v-if="searchable"
+        v-model="search"
+        :placeholder="$t('settings.catalog.search')"
+        clearable
+        class="w-80 max-md:order-last max-md:w-full"
+      />
       <Button
         v-if="menuItems"
         data-testid="catalog-menu"
         variant="ghost"
         size="icon-sm"
+        class="max-md:self-center"
         aria-haspopup="menu"
         :aria-label="$t('more_options')"
         :disabled="menuDisabled"
@@ -46,20 +29,16 @@
 
 <script setup lang="ts">
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader.vue";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/ui/search-input";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import { MoreVertical } from "@lucide/vue";
 
 interface Props {
-  // what is set up, or null while it is not known
-  installedCount: number | null;
-  // the updates waiting in the community catalog
-  updateCount: number;
-  // whether the Installed view is shown
-  installedOpen: boolean;
+  // whether the page can be searched
+  searchable: boolean;
   // the options of the page; no menu without them
   menuItems?: () => ContextMenuItem[];
   menuDisabled?: boolean;
@@ -67,9 +46,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const emit = defineEmits<{
-  (e: "toggle-installed"): void;
-}>();
+const search = defineModel<string>("search", { required: true });
 
 // the menu opens under its button, so it never covers the title, whether it
 // was tapped, clicked or opened from the keyboard

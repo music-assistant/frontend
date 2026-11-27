@@ -140,6 +140,13 @@ export type MultiChannelPlayerDialogEvent = {
   onCreated?: (playerId: string) => void;
 };
 
+export type AddGroupDialogEvent = {
+  // the instance id of the provider that creates the group, else the user picks one
+  provider?: string;
+  // called with the id of the new group
+  onCreated?: (playerId: string) => void;
+};
+
 export type MultiChannelSubwooferDialogEvent = {
   // the multi-channel player the subwoofer joins
   playerId: string;
@@ -194,6 +201,7 @@ export type Events = {
   playerMergeDialog: PlayerMergeDialogEvent;
   multiChannelPlayerDialog: MultiChannelPlayerDialogEvent;
   multiChannelSubwooferDialog: MultiChannelSubwooferDialogEvent;
+  addGroupDialog: AddGroupDialogEvent;
   setupFlowDialog: SetupFlowDialogEvent;
   editItemDialog: Radio | Track | Playlist;
   clearSelection: void;

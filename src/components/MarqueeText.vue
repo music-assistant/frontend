@@ -12,7 +12,7 @@ Features:
   <div ref="containerRef" class="marquee-container">
     <!-- Scrolling content wrapper with dynamic transform -->
     <div ref="scrollingRef" class="scrolling" :style="scrollingStyle">
-      <slot></slot>
+      <slot />
     </div>
   </div>
 </template>

@@ -8,9 +8,6 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { h, nextTick } from "vue";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
-import { createVuetify } from "vuetify";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
 import {
   ConfigEntryType,
   type ConfigEntry,
@@ -31,6 +28,7 @@ const { apiMock, routerMock, setUserPreference, storeMock } = vi.hoisted(
     storeMock: {
       frameless: false,
       mobileLayout: false,
+      roleScopes: {},
       currentUser: undefined as
         { preferences: Record<string, unknown> } | undefined,
     },
@@ -497,21 +495,20 @@ describe("EditConfig", () => {
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
   });
 
-  it.each([
-    ["mobile", "mobileLayout", "floating-save--mobile"],
-    ["frameless", "frameless", "floating-save--frameless"],
-  ] as const)(
-    "uses the %s save position in that layout",
-    (_, layout, cssClass) => {
-      storeMock[layout] = true;
+  it("pins the save action to a bar that says when there are unsaved changes", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+    ]);
+    const bar = wrapper.getComponent({ name: "SettingsSaveBar" });
+    expect(bar.props("inline")).toBe(false);
+    expect(bar.props("unsavedChanges")).toBe(false);
+    expect(bar.find('[data-testid="config-save"]').exists()).toBe(true);
 
-      const wrapper = mountEntries([
-        entry({ key: "server", type: ConfigEntryType.STRING }),
-      ]);
+    dirty(wrapper);
+    await nextTick();
 
-      expect(wrapper.get(".floating-save").classes()).toContain(cssClass);
-    },
-  );
+    expect(bar.props("unsavedChanges")).toBe(true);
+  });
 
   it("keeps the save action in the flow of the form when asked", () => {
     const wrapper = mountEntries(
@@ -520,9 +517,27 @@ describe("EditConfig", () => {
       true,
     );
 
-    // a form inside a dialog: nothing floats, the button follows the fields
-    expect(wrapper.find(".floating-save").exists()).toBe(false);
-    expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(true);
+    // a form inside a dialog: the button follows the fields
+    const bar = wrapper.getComponent({ name: "SettingsSaveBar" });
+    expect(bar.props("inline")).toBe(true);
+    expect(bar.find('[data-testid="config-save"]').exists()).toBe(true);
+  });
+
+  it("shows the controls of its host inside the form, above its fields", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled: false,
+      },
+      slots: { default: "<div data-testid='host-control' />" },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(
+      wrapper
+        .get("form")
+        .element.firstElementChild?.getAttribute("data-testid"),
+    ).toBe("host-control");
   });
 
   it.each([
@@ -600,6 +615,35 @@ describe("EditConfig", () => {
 
     expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
     expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+  });
+
+  it("shows the advanced entries in expert mode until the user chooses", () => {
+    storeMock.currentUser = { preferences: { expert_mode: true } };
+
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["server", "port"]);
+    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(true);
+  });
+
+  it("hides the advanced entries in expert mode once the user chose to", () => {
+    storeMock.currentUser = {
+      preferences: {
+        expert_mode: true,
+        "settings.showAdvancedSettings": false,
+      },
+    };
+
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER, advanced: true }),
+    ]);
+
+    expect(renderedKeys(wrapper)).toEqual(["server"]);
+    expect(advancedToggle(wrapper).props("showAdvancedSettings")).toBe(false);
   });
 
   it("keeps the choice made here when the profile keeps the old one", async () => {
@@ -711,10 +755,6 @@ describe("EditConfig", () => {
 
     expect(renderedKeys(wrapper)).toEqual(["clear_cache"]);
     expect(wrapper.find('[data-testid="config-save"]').exists()).toBe(false);
-    // nothing floats, so no room is kept for it either
-    expect(wrapper.get("v-form-stub").classes()).not.toContain(
-      "floating-save-clearance",
-    );
   });
 
   it("offers no save action on a form whose entries save the moment they change", () => {
@@ -783,34 +823,103 @@ describe("EditConfig", () => {
         .props("outputMenuItems"),
     ).toBe(outputMenuItems);
   });
+});
 
-  it("leaves room below the last row for the floating save action", () => {
+describe("EditConfig section headings", () => {
+  beforeEach(() => {
+    storeMock.currentUser = undefined;
+  });
+
+  it("leaves out the heading of the only section", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({ key: "port", type: ConfigEntryType.INTEGER }),
+    ]);
+
+    expect(sectionHeadings(wrapper)).toEqual([]);
+  });
+
+  it("heads every section once there are two", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({
+        key: "buffer",
+        type: ConfigEntryType.INTEGER,
+        category: "audio",
+      }),
+    ]);
+
+    expect(sectionHeadings(wrapper)).toEqual(["generic", "audio"]);
+  });
+
+  it("counts no section that holds only hidden entries", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({
+        key: "buffer",
+        type: ConfigEntryType.INTEGER,
+        category: "audio",
+        hidden: true,
+      }),
+    ]);
+
+    expect(sectionHeadings(wrapper)).toEqual([]);
+  });
+
+  it("heads the sections once the advanced toggle reveals a second one", async () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      entry({
+        key: "buffer",
+        type: ConfigEntryType.INTEGER,
+        category: "audio",
+        advanced: true,
+      }),
+    ]);
+    expect(sectionHeadings(wrapper)).toEqual([]);
+
+    advancedToggle(wrapper).vm.$emit("update:showAdvancedSettings", true);
+    await nextTick();
+
+    expect(sectionHeadings(wrapper)).toEqual(["generic", "audio"]);
+  });
+
+  it("keeps the heading of the only section when the host names its sections", () => {
+    const wrapper = shallowMount(EditConfig, {
+      props: {
+        configEntries: [entry({ key: "server", type: ConfigEntryType.STRING })],
+        disabled: false,
+        keepSectionHeadings: true,
+      },
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(sectionHeadings(wrapper)).toEqual(["generic"]);
+  });
+
+  it("leaves out the heading of the protocol section when it is the only one", () => {
+    const wrapper = mountEntries([protocolEnabledEntry()]);
+
+    expect(protocolSection(wrapper).props("showHeading")).toBe(false);
+  });
+
+  it("heads the protocol section beside another section", () => {
+    const wrapper = mountEntries([
+      entry({ key: "server", type: ConfigEntryType.STRING }),
+      protocolEnabledEntry(),
+    ]);
+
+    expect(protocolSection(wrapper).props("showHeading")).toBe(true);
+    expect(sectionHeadings(wrapper)).toEqual(["generic"]);
+  });
+
+  it("renders no protocol section for a config without protocols", () => {
     const wrapper = mountEntries([
       entry({ key: "server", type: ConfigEntryType.STRING }),
     ]);
 
-    expect(wrapper.get("v-form-stub").classes()).toContain(
-      "floating-save-clearance",
-    );
+    expect(protocolSection(wrapper).exists()).toBe(false);
   });
-
-  it.each([
-    ["disabled", true, false],
-    ["inline save", false, true],
-  ] as const)(
-    "leaves no room for a save action that does not float (%s)",
-    (_, disabled, inlineSave) => {
-      const wrapper = mountEntries(
-        [entry({ key: "server", type: ConfigEntryType.STRING })],
-        disabled,
-        inlineSave,
-      );
-
-      expect(wrapper.get("v-form-stub").classes()).not.toContain(
-        "floating-save-clearance",
-      );
-    },
-  );
 });
 
 describe("EditConfig unsaved changes", () => {
@@ -824,7 +933,7 @@ describe("EditConfig unsaved changes", () => {
     await flushPromises();
     expect(router.currentRoute.value.name).toBe("editprovider");
 
-    await click(wrapper, "config-discard");
+    await click("config-discard");
 
     expect(router.currentRoute.value.name).toBe("music-quiz");
   });
@@ -836,7 +945,7 @@ describe("EditConfig unsaved changes", () => {
 
     router.push({ name: "music-quiz" });
     await flushPromises();
-    await click(wrapper, "config-stay");
+    await click("config-stay");
 
     expect(router.currentRoute.value.name).toBe("editprovider");
     expect(wrapper.findComponent(EditConfig).exists()).toBe(true);
@@ -851,7 +960,7 @@ describe("EditConfig unsaved changes", () => {
 
     router.back();
     await flushPromises();
-    await click(wrapper, "config-discard");
+    await click("config-discard");
     expect(router.currentRoute.value.name).toBe("settings");
 
     router.back();
@@ -868,7 +977,7 @@ describe("EditConfig unsaved changes", () => {
 
     router.push({ name: "redirects-away" });
     await flushPromises();
-    await click(wrapper, "config-discard");
+    await click("config-discard");
 
     expect(router.currentRoute.value.name).toBe("music-quiz");
   });
@@ -884,7 +993,7 @@ describe("EditConfig unsaved changes", () => {
     await flushPromises();
     router.back();
     await flushPromises();
-    await click(wrapper, "config-stay");
+    await click("config-stay");
 
     expect(router.currentRoute.value.name).toBe("editprovider");
     expect(router.options.history.location).toBe("/settings/provider");
@@ -906,7 +1015,7 @@ describe("EditConfig unsaved changes", () => {
     await flushPromises();
 
     expect(router.currentRoute.value.name).toBe("editprovider");
-    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
+    expect(dialogShown()).toBe(true);
   });
 
   it("lets the form go once what is on it has been saved", async () => {
@@ -922,7 +1031,7 @@ describe("EditConfig unsaved changes", () => {
     await router.push({ name: "music-quiz" });
 
     expect(router.currentRoute.value.name).toBe("music-quiz");
-    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(false);
+    expect(dialogShown()).toBe(false);
   });
 
   // a save lets the screen navigate away without asking, and that permission is
@@ -943,7 +1052,7 @@ describe("EditConfig unsaved changes", () => {
     await flushPromises();
 
     expect(router.currentRoute.value.name).toBe("editprovider");
-    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(true);
+    expect(dialogShown()).toBe(true);
   });
 
   it("lets an unchanged form go without asking", async () => {
@@ -952,7 +1061,7 @@ describe("EditConfig unsaved changes", () => {
     await router.push({ name: "music-quiz" });
 
     expect(router.currentRoute.value.name).toBe("music-quiz");
-    expect(wrapper.find('[data-testid="config-discard"]').exists()).toBe(false);
+    expect(dialogShown()).toBe(false);
   });
 });
 
@@ -991,7 +1100,6 @@ function mountEntries(
   });
 }
 
-// the real form validates through Vuetify, which this bare mount leaves out
 // the entries of a stereo pair whose first speaker is on the right, with a delay
 function stereoPairEntries(): ConfigEntry[] {
   const category = "protocol_sendspin";
@@ -1038,16 +1146,25 @@ function mountForSave(
 ) {
   return shallowMount(EditConfig, {
     props: { configEntries, disabled: false, ...extraProps },
-    global: {
-      renderStubDefaultSlot: true,
-      stubs: {
-        VForm: {
-          template: "<form><slot /></form>",
-          methods: { validate: async () => ({ valid: true }) },
-        },
-      },
-    },
+    global: { renderStubDefaultSlot: true },
   });
+}
+
+// the enable switch of an optional protocol, which alone gives a form its protocol section
+function protocolEnabledEntry() {
+  return entry({
+    key: "airplay-output||protocol||enabled",
+    type: ConfigEntryType.BOOLEAN,
+    category: "protocol_airplay",
+  });
+}
+
+function sectionHeadings(wrapper: VueWrapper) {
+  return wrapper.findAll("section > h4").map((heading) => heading.text());
+}
+
+function protocolSection(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "ProtocolConfigSection" });
 }
 
 function advancedToggle(wrapper: VueWrapper) {
@@ -1112,20 +1229,16 @@ async function mountInRouter() {
   await router.push({ name: "settings" });
   await router.push({ name: "editprovider" });
 
+  // the dialog teleports to the body, so the form lives in the document too
   const wrapper = mount(
     { render: () => h(RouterView) },
     {
+      attachTo: document.body,
       global: {
-        plugins: [router, createVuetify({ components, directives })],
+        plugins: [router],
         stubs: {
           ConfigEntryRow: true,
           ProtocolConfigSection: true,
-          // the real dialog teleports into an overlay container this bare app
-          // never mounts, so render it where it is declared instead
-          VDialog: {
-            props: ["modelValue"],
-            template: '<div v-if="modelValue"><slot /></div>',
-          },
         },
       },
     },
@@ -1135,7 +1248,15 @@ async function mountInRouter() {
 }
 
 // answering the dialog releases a navigation, so settle that too
-async function click(wrapper: VueWrapper, testId: string) {
-  await wrapper.get(`[data-testid="${testId}"]`).trigger("click");
+async function click(testId: string) {
+  const button = document.querySelector<HTMLElement>(
+    `[data-testid="${testId}"]`,
+  );
+  if (!button) throw new Error(`${testId} not rendered`);
+  button.click();
   await flushPromises();
+}
+
+function dialogShown() {
+  return !!document.querySelector('[data-testid="config-discard"]');
 }

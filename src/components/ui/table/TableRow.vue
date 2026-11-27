@@ -17,6 +17,6 @@ const props = defineProps<{
       )
     "
   >
-    <slot></slot>
+    <slot />
   </tr>
 </template>

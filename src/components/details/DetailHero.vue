@@ -5,10 +5,6 @@
       'detail-hero--phone': isPhone,
       'min-h-[calc(100vw+8rem)] bg-black': artworkLayout,
     }"
-    :style="{
-      '--detail-hero-height': `${height}px`,
-      '--detail-hero-phone-height': `${phoneHeight}px`,
-    }"
   >
     <Transition name="detail-hero-backdrop">
       <div
@@ -40,7 +36,7 @@
       :menu-items="menuItems"
     >
       <template #append>
-        <slot name="toolbar-append"></slot>
+        <slot name="toolbar-append" />
       </template>
     </Toolbar>
 
@@ -57,14 +53,66 @@
             artworkLayout,
         }"
       >
-        <slot name="main"></slot>
-      </div>
-      <div
-        v-if="$slots.aside"
-        class="detail-hero__aside"
-        :class="{ 'items-center text-center': artworkLayout }"
-      >
-        <slot name="aside"></slot>
+        <!-- every hero has the same parts: an optional cover, the title, lines
+             of facts, the actions and anything under them -->
+        <div
+          class="flex w-full min-w-0 items-end gap-6 @max-3xl/detail-hero:flex-col @max-3xl/detail-hero:items-stretch @max-3xl/detail-hero:gap-3"
+        >
+          <div
+            v-if="$slots.cover"
+            class="detail-hero-cover size-[280px] flex-none @max-3xl/detail-hero:size-[180px]"
+          >
+            <slot name="cover" />
+          </div>
+          <!-- the title spans the whole width; the facts on the right sit
+               beside the lines and buttons under it, and give up width to
+               keep the buttons on one row in a medium-width hero. A phone
+               stacks them, even a landscape one wider than a narrow hero -->
+          <div
+            class="grid min-w-0 flex-1 gap-x-6 gap-y-2.5 pb-1 has-[>.detail-hero\_\_aside:empty]:grid-cols-1 @max-5xl/detail-hero:gap-x-4 @max-3xl/detail-hero:grid-cols-1"
+            :class="
+              $slots.aside && !isPhone
+                ? 'grid-cols-[minmax(0,1fr)_fit-content(13rem)] @max-5xl/detail-hero:grid-cols-[minmax(0,1fr)_fit-content(11rem)]'
+                : 'grid-cols-1'
+            "
+          >
+            <div class="col-span-full min-w-0">
+              <slot name="title">
+                <DetailHeroTitle :item="item" />
+              </slot>
+            </div>
+            <div class="flex min-w-0 flex-col gap-2.5">
+              <div
+                v-if="$slots.meta"
+                class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
+              >
+                <slot name="meta" />
+              </div>
+              <!-- the play button ellipsizes before the buttons beside it wrap,
+                   and keeps a minimum width that wraps them once room runs out -->
+              <div
+                v-if="$slots.actions"
+                class="flex min-w-0 flex-wrap items-center gap-2 @max-3xl/detail-hero:gap-2.5"
+              >
+                <slot name="actions" />
+              </div>
+              <div
+                v-if="$slots.footer"
+                class="flex flex-col"
+                :class="{ 'items-center': artworkLayout }"
+              >
+                <slot name="footer" />
+              </div>
+            </div>
+            <div
+              v-if="$slots.aside"
+              class="detail-hero__aside self-end"
+              :class="{ 'items-center text-center': artworkLayout }"
+            >
+              <slot name="aside" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -78,18 +126,20 @@
       @back="backButtonClick"
     >
       <template #append>
-        <slot name="toolbar-append"></slot>
+        <slot name="toolbar-append" />
       </template>
     </DetailHeroStickyBar>
   </header>
 </template>
 
 <script setup lang="ts">
+import DetailHeroTitle from "@/components/details/DetailHeroTitle.vue";
 import DetailHeroStickyBar from "@/components/details/DetailHeroStickyBar.vue";
 import Toolbar from "@/components/Toolbar.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserPreferences } from "@/composables/userPreferences";
 import { useEscapeBack } from "@/composables/useEscapeBack";
+import { useDetailHeroScroll } from "@/composables/useDetailHeroScroll";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import {
@@ -104,7 +154,6 @@ import {
 } from "@/plugins/api/interfaces";
 import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { ArrowLeft, Rows3 } from "@lucide/vue";
-import { useIntersectionObserver } from "@vueuse/core";
 import { computed, ref, shallowRef, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -118,8 +167,6 @@ export interface Props {
   blurBackdrop?: boolean;
   // a light blur for a real picture, so the artwork and text in front stand out
   softenBackdrop?: boolean;
-  height?: number;
-  phoneHeight?: number;
   // off for a page with a fixed layout, which leaves "Edit rows" out of the menu
   editableRows?: boolean;
 }
@@ -128,17 +175,12 @@ const props = withDefaults(defineProps<Props>(), {
   backdrop: undefined,
   blurBackdrop: false,
   softenBackdrop: false,
-  height: 440,
-  phoneHeight: 340,
   editableRows: true,
 });
 
 const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
-
-// px, the pinned bar's h-14
-const STICKY_BAR_HEIGHT = 56;
 
 const router = useRouter();
 // the item's own menu entries, with the item they were built for
@@ -163,27 +205,9 @@ const isPhone = computed(() => isPhoneSizedScreen());
 
 const toolbarSentinel = ref<HTMLElement>();
 const heroBody = ref<HTMLElement>();
-const toolbarInView = ref(true);
-const titleInView = ref(true);
-// every hero puts its item name in the one h1 of its body
-const heroTitle = computed(
-  () => heroBody.value?.querySelector<HTMLElement>("h1") ?? undefined,
-);
-
-useIntersectionObserver(toolbarSentinel, ([entry]) => {
-  toolbarInView.value = entry?.isIntersecting ?? true;
-});
-// the page scroller starts below the safe area, as the pinned bar's content
-// does, so the title counts as gone once it is under the bar
-const pageScroller = computed(
-  () => heroBody.value?.closest<HTMLElement>(".content-section") ?? undefined,
-);
-useIntersectionObserver(
-  heroTitle,
-  ([entry]) => {
-    titleInView.value = entry?.isIntersecting ?? true;
-  },
-  { root: pageScroller, rootMargin: `-${STICKY_BAR_HEIGHT}px 0px 0px 0px` },
+const { toolbarInView, titleInView } = useDetailHeroScroll(
+  toolbarSentinel,
+  heroBody,
 );
 
 // a phone shows the item's own artwork across the top, fading into black just
@@ -238,7 +262,7 @@ async function buildMenu(item?: MediaItemType) {
   display: flex;
   flex-direction: column;
   /* the design height; taller content grows the hero */
-  min-height: var(--detail-hero-height);
+  min-height: 400px;
   overflow: hidden;
   background-color: rgb(var(--v-theme-background));
   /* the artwork is darkened, so the hero keeps its light-on-dark text in both
@@ -246,7 +270,7 @@ async function buildMenu(item?: MediaItemType) {
   color: #fff;
 }
 .detail-hero--phone {
-  min-height: var(--detail-hero-phone-height);
+  min-height: 360px;
 }
 .detail-hero__backdrop {
   position: absolute;
@@ -335,19 +359,19 @@ async function buildMenu(item?: MediaItemType) {
   gap: 14px;
   min-width: 0;
 }
-/* the facts about the item line up on the right, bottom-aligned with the buttons;
-   a long title never squeezes them narrower than their widest name */
+/* the facts about the item line up on the right, bottom-aligned with the
+   buttons; they wrap onto more lines rather than crowd the lines beside them,
+   and a name too long for the column is cut short */
 .detail-hero__aside {
   display: flex;
-  flex: 0 1 auto;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  min-width: min-content;
+  min-width: 0;
   text-align: right;
 }
 /* an aside whose only child rendered nothing (Vue leaves a comment node there,
-   which :empty ignores) takes no gap of the body's either */
+   which :empty ignores) takes no column or gap either */
 .detail-hero__aside:empty {
   display: none;
 }

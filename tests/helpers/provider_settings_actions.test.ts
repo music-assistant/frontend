@@ -13,6 +13,7 @@ import {
   ProviderType,
   Scope,
 } from "@/plugins/api/interfaces";
+import { eventbus } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { providerConfig } from "../fixtures/providerConfig";
 
@@ -257,7 +258,7 @@ describe("player extras", () => {
     });
   });
 
-  it("offers to add a group player when the instance supports it", () => {
+  it("opens the dialog that adds a group of the instance when it supports that", () => {
     apiMock.getProvider.mockReturnValue(
       providerInstance({
         instance_id: "sonos--1",
@@ -273,9 +274,16 @@ describe("player extras", () => {
         type: ProviderType.PLAYER,
       }),
     );
-    findItem(items, "settings.add_group_player").action?.();
+    const opened = vi.fn();
+    eventbus.on("addGroupDialog", opened);
+    try {
+      findItem(items, "settings.add_group_player").action?.();
+    } finally {
+      eventbus.off("addGroupDialog", opened);
+    }
 
-    expect(routerMock.push).toHaveBeenCalledWith("/settings/addgroup/sonos--1");
+    expect(opened).toHaveBeenCalledExactlyOnceWith({ provider: "sonos--1" });
+    expect(routerMock.push).not.toHaveBeenCalled();
   });
 
   it("leaves adding a group player to a role that may change player settings", () => {

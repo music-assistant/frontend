@@ -16,6 +16,6 @@ const props = defineProps<{
     role="alert"
     :class="cn(alertVariants({ variant }), props.class)"
   >
-    <slot></slot>
+    <slot />
   </div>
 </template>

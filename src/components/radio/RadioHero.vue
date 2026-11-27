@@ -1,40 +1,21 @@
 <template>
   <DetailHero
     :item="item"
-    :backdrop="backdrop"
-    :blur-backdrop="blurBackdrop"
-    :height="400"
-    :phone-height="360"
+    :backdrop="backdrop.url"
+    :blur-backdrop="backdrop.blurred"
     @edit-rows="emit('edit-rows')"
   >
     <template #toolbar-append>
       <DetailHeroFavorite v-if="item" :item="item" />
     </template>
 
-    <template v-if="item" #main>
-      <div
-        class="flex w-full min-w-0 items-end gap-6 @max-3xl/detail-hero:flex-col @max-3xl/detail-hero:items-stretch @max-3xl/detail-hero:gap-3"
-      >
-        <div
-          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:size-[132px]"
-        >
-          <MediaItemThumb :item="item" :rounded="false" />
-        </div>
+    <template v-if="item" #cover>
+      <DetailHeroCover :item="item" />
+    </template>
 
-        <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
-          <h1
-            class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-[30px] @max-3xl/detail-hero:tracking-[-0.7px]"
-          >
-            {{ item.name }}
-          </h1>
-          <div
-            class="flex min-w-0 items-center gap-2 @max-3xl/detail-hero:gap-2.5"
-          >
-            <DetailHeroPlayButton :item="item" />
-            <DetailHeroSourceBadge :item="item" library-only />
-          </div>
-        </div>
-      </div>
+    <template v-if="item" #actions>
+      <DetailHeroPlayButton :item="item" />
+      <DetailHeroSourceBadge :item="item" library-only />
     </template>
 
     <template v-if="item" #aside>
@@ -46,14 +27,14 @@
 
 <script setup lang="ts">
 import DetailHero from "@/components/details/DetailHero.vue";
+import DetailHeroCover from "@/components/details/DetailHeroCover.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
-import { getImageThumbForItem } from "@/helpers/utils";
-import { ImageType, type Radio } from "@/plugins/api/interfaces";
+import { heroBackdrop, type HeroBackdrop } from "@/helpers/hero_backdrop";
+import type { Radio } from "@/plugins/api/interfaces";
 import { computed } from "vue";
 
 export interface Props {
@@ -65,18 +46,7 @@ const emit = defineEmits<{
   (e: "edit-rows"): void;
 }>();
 
-const backdrop = computed(() => {
-  if (!props.item) return undefined;
-  return (
-    getImageThumbForItem(props.item, ImageType.FANART) ||
-    getImageThumbForItem(props.item, ImageType.LANDSCAPE) ||
-    getImageThumbForItem(props.item, ImageType.THUMB)
-  );
-});
-const blurBackdrop = computed(
-  () =>
-    !!props.item &&
-    !getImageThumbForItem(props.item, ImageType.FANART) &&
-    !getImageThumbForItem(props.item, ImageType.LANDSCAPE),
+const backdrop = computed<HeroBackdrop>(() =>
+  props.item ? heroBackdrop(props.item) : { blurred: false },
 );
 </script>

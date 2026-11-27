@@ -272,7 +272,6 @@
         "remote_access_connecting": "Conectando...",
         "remote_access_step_1": "Ir para",
         "remote_access_encryption": "Criptografia",
-        "frontend": "Interface de usuário",
         "api_docs": "Documentação da API",
         "provider_credits": "Possibilitado por",
         "advanced": "Avançado",
@@ -457,7 +456,6 @@
         "create_token": "Criar novo token",
         "change_role": "Alterar função",
         "avatar_url": "URL do avatar",
-        "change_avatar": "Alterar avatar",
         "guest_role": "Convidado"
     },
     "login": {
