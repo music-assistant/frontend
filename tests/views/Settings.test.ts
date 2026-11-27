@@ -205,6 +205,34 @@ describe("Settings breadcrumbs on the options of a player", () => {
   );
 });
 
+describe("Settings breadcrumbs on the other settings pages of a player", () => {
+  afterEach(() => {
+    routeState.name = "editplayeroptions";
+  });
+
+  it.each([
+    ["editplayeroutputs", "settings.category.protocol_settings"],
+    ["editplayercontrols", "settings.category.player_controls"],
+  ])("lead from %s back to the settings of the player", (name, title) => {
+    hasScope.mockImplementation(scopeChecker(BUILTIN_ROLE_SCOPES.admin));
+    routeState.name = name;
+
+    expect(playerOptionsTrail()).toEqual([
+      {
+        title: "settings.players",
+        disabled: false,
+        to: { name: "playersettings" },
+      },
+      {
+        title: "Kitchen",
+        disabled: false,
+        to: { name: "editplayer", params: { playerId: "kitchen" } },
+      },
+      { title, disabled: true },
+    ]);
+  });
+});
+
 /**
  * The trail the settings page hands its heading on the settings of a provider,
  * with the page below it stubbed by `providerPage`.

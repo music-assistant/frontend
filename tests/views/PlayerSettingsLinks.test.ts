@@ -41,12 +41,7 @@ describe("PlayerSettingsLinks", () => {
     vi.clearAllMocks();
     apiMock.subscribe.mockReturnValue(vi.fn());
     apiMock.getDSPConfig.mockResolvedValue(dspConfig());
-    getPlayerSettingsSections.mockReturnValue({
-      player: true,
-      queue: true,
-      dsp: true,
-      options: true,
-    });
+    getPlayerSettingsSections.mockReturnValue(sections());
   });
 
   it("lists a row for every section the player has", async () => {
@@ -56,31 +51,30 @@ describe("PlayerSettingsLinks", () => {
       "settings.playback.title",
       "settings.category.dsp",
       "settings.category.options",
+      "settings.category.protocol_settings",
+      "settings.category.player_controls",
     ]);
   });
 
   it("leaves out the sections the player has nothing to show for", async () => {
-    getPlayerSettingsSections.mockReturnValue({
-      player: true,
-      queue: false,
-      dsp: true,
-      options: false,
-    });
+    getPlayerSettingsSections.mockReturnValue(
+      sections({ queue: false, options: false }),
+    );
 
-    const wrapper = await mountLinks();
+    const wrapper = await mountLinks({ hasControls: false });
 
-    expect(rowLabels(wrapper)).toEqual(["settings.category.dsp"]);
+    expect(rowLabels(wrapper)).toEqual([
+      "settings.category.dsp",
+      "settings.category.protocol_settings",
+    ]);
   });
 
   it("renders nothing when the player has no other settings", async () => {
-    getPlayerSettingsSections.mockReturnValue({
-      player: true,
-      queue: false,
-      dsp: false,
-      options: false,
-    });
+    getPlayerSettingsSections.mockReturnValue(
+      sections({ queue: false, dsp: false, options: false }),
+    );
 
-    const wrapper = await mountLinks();
+    const wrapper = await mountLinks({ hasOutputs: false, hasControls: false });
 
     expect(wrapper.find("a").exists()).toBe(false);
   });
@@ -89,6 +83,8 @@ describe("PlayerSettingsLinks", () => {
     ["queue", "/settings/editqueue/kitchen"],
     ["dsp", "/settings/editplayer/kitchen/dsp"],
     ["options", "/settings/editplayer/kitchen/options"],
+    ["outputs", "/settings/editplayer/kitchen/outputs"],
+    ["controls", "/settings/editplayer/kitchen/controls"],
   ])("opens the %s settings on their own page", async (key, path) => {
     const wrapper = await mountLinks();
 
@@ -131,6 +127,20 @@ describe("PlayerSettingsLinks", () => {
 });
 
 type LinksWrapper = Awaited<ReturnType<typeof mountLinks>>;
+type Sections = ReturnType<typeof readPlayerSettingsSections>;
+
+/**
+ * The sections of a player that has every one of them, but for the given ones.
+ */
+function sections(overrides: Partial<Sections> = {}): Sections {
+  return {
+    player: true,
+    queue: true,
+    dsp: true,
+    options: true,
+    ...overrides,
+  };
+}
 
 function rowLabels(wrapper: LinksWrapper): string[] {
   return wrapper.findAll("a").map((row) => row.get("div > div").text());
@@ -158,9 +168,13 @@ function dspConfigUpdated(enabled: boolean) {
   }
 }
 
-async function mountLinks(playerId = "kitchen") {
+/**
+ * Mount the rows of a player whose outputs and player controls have entries to show,
+ * but for the given ones.
+ */
+async function mountLinks({ hasOutputs = true, hasControls = true } = {}) {
   const wrapper = mount(PlayerSettingsLinks, {
-    props: { playerId },
+    props: { playerId: "kitchen", hasOutputs, hasControls },
     global: {
       stubs: { RouterLink: RouterLinkStub },
     },

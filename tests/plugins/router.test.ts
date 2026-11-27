@@ -131,6 +131,16 @@ const PLAYER_SETTINGS_ROUTES = [
     params: { playerId: "player-1" },
   },
   {
+    name: "editplayeroutputs",
+    path: "/settings/editplayer/player-1/outputs",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editplayercontrols",
+    path: "/settings/editplayer/player-1/controls",
+    params: { playerId: "player-1" },
+  },
+  {
     name: "editqueue",
     path: "/settings/editqueue/player-1",
     params: { queueId: "player-1" },
@@ -743,6 +753,8 @@ describe("scope-gated routes", () => {
     ["/settings/players", ["admin"]],
     ["/settings/editplayer/player-1", ["admin"]],
     ["/settings/editplayer/player-1/dsp", ["admin"]],
+    ["/settings/editplayer/player-1/outputs", ["admin"]],
+    ["/settings/editplayer/player-1/controls", ["admin"]],
     ["/settings/editqueue/player-1", ["admin"]],
     ["/settings/addgroup/sonos--abc", ["admin"]],
     [

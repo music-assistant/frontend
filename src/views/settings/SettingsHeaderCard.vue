@@ -34,6 +34,7 @@
         <DropdownMenuContent align="end">
           <DropdownMenuItem
             data-testid="settings-reset-defaults"
+            :disabled="resetDisabled"
             @click="emit('resetToDefaults')"
           >
             <RotateCcw class="size-4" />
@@ -92,6 +93,8 @@ defineProps<{
   iconClass?: string;
   /** Where the documentation of this screen lives; without one no link is offered. */
   documentationUrl?: string;
+  /** Keeps the reset out of reach, e.g. while the form can not be edited. */
+  resetDisabled?: boolean;
 }>();
 
 const emit = defineEmits<{
