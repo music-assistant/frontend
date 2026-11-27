@@ -188,6 +188,7 @@ import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import RowPlayButton from "@/components/RowPlayButton.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { canHoldFavorite, favoriteState } from "@/helpers/favorites";
 import {
   handleMediaItemClick,
@@ -312,11 +313,11 @@ const onClick = function (evt: MouseEvent) {
 };
 
 const onMenu = function (evt: Event) {
-  const mouseEvt = evt as MouseEvent;
+  const { x, y } = getEventPosition(evt);
   handleMenuBtnClick(
     props.item,
-    mouseEvt.clientX,
-    mouseEvt.clientY,
+    x,
+    y,
     props.parentItem,
     true,
     props.sortBy,
