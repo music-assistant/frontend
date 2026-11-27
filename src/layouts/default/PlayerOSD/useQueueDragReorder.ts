@@ -3,7 +3,6 @@
 // floating "ghost" follows the pointer, and the rows between source and target
 // slide aside to reveal the drop position. Only transforms are touched, so the
 // virtualizer never re-measures.
-import { lastLockedIndex } from "@/helpers/queue_locked_index";
 import api from "@/plugins/api";
 import { QueueItem } from "@/plugins/api/interfaces";
 import { store } from "@/plugins/store";
@@ -77,7 +76,7 @@ export function useQueueDragReorder(options: QueueDragReorderOptions) {
     // a queue that never started or already ended has nothing cued, so every row is free
     if (queue.ended || queue.current_index === null) return 0;
     const current = queue.current_index;
-    const buffer = Math.max(lastLockedIndex(queue) ?? current, current);
+    const buffer = Math.max(queue.last_locked_index ?? current, current);
     return buffer + 1;
   };
 

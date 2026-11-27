@@ -6,7 +6,6 @@ import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { usePartyConfig } from "@/composables/usePartyConfig";
 import { MarqueeTextSync } from "@/helpers/marquee_text_sync";
 import { getQueueItemMenuItems } from "@/helpers/queue_item_menu_items";
-import { lastLockedIndex } from "@/helpers/queue_locked_index";
 import {
   currentQueueIndex,
   isQueueEnded,
@@ -69,10 +68,7 @@ export function useFullscreenQueue(showLyrics: Ref<boolean>) {
   const itemState = (absIndex: number): QueueItemState => {
     const queue = store.activePlayerQueue;
     const current = currentQueueIndex(queue);
-    const buffer = Math.max(
-      (queue ? lastLockedIndex(queue) : null) ?? current,
-      current,
-    );
+    const buffer = Math.max(queue?.last_locked_index ?? current, current);
     if (absIndex < current) return "played";
     if (absIndex === current) return "playing";
     if (absIndex <= buffer) return "buffered";

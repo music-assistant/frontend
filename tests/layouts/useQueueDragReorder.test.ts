@@ -86,7 +86,7 @@ describe("useQueueDragReorder", () => {
       items: rows.length,
       current_index: 0,
       index_in_buffer: FIRST_UP_NEXT,
-      extra_attributes: { last_locked_index: 0 },
+      last_locked_index: 0,
     });
   });
 
