@@ -138,6 +138,63 @@ describe("SmartPlaylistSeedSection", () => {
     expect(picker.props("results")).toEqual([]);
   });
 
+  it("allows selected sources without a similar-tracks provider and removes them", async () => {
+    const features = api.providers.spotify_instance.supported_features;
+    api.providers.spotify_instance.supported_features = [];
+    try {
+      scope = effectScope();
+      const sourceItems = scope.run(() => useSmartPlaylistSeedItems(false))!;
+      const wrapper = mount(SmartPlaylistSeedSection, {
+        props: { seedItems: sourceItems, sourceMode: true },
+        global: { stubs: { SmartPlaylistSeedPicker: true } },
+      });
+      const picker = wrapper.findComponent(SmartPlaylistSeedPicker);
+      expect(picker.props("hasProvider")).toBe(true);
+      expect(picker.props("sourceMode")).toBe(true);
+      vi.mocked(api.search).mockResolvedValueOnce(everyKind);
+
+      picker.vm.$emit("update:kind", "album");
+      picker.vm.$emit("update:searchQuery", "arrival");
+      await nextTick();
+      picker.vm.$emit("submit");
+      await flushPromises();
+      expect(picker.props("results")).toEqual([items.album]);
+      picker.vm.$emit("select", items.album);
+      await nextTick();
+      expect(sourceItems.seeds.value).toEqual([
+        expect.objectContaining({ kind: "album", uri: items.album.uri }),
+      ]);
+
+      await wrapper.find("button[aria-label]").trigger("click");
+      expect(sourceItems.seeds.value).toEqual([]);
+    } finally {
+      api.providers.spotify_instance.supported_features = features;
+    }
+  });
+
+  it("searches only saved playlists in source mode", async () => {
+    scope = effectScope();
+    const sourceItems = scope.run(() => useSmartPlaylistSeedItems(false))!;
+    const wrapper = mount(SmartPlaylistSeedSection, {
+      props: { seedItems: sourceItems, sourceMode: true },
+      global: { stubs: { SmartPlaylistSeedPicker: true } },
+    });
+    const picker = wrapper.findComponent(SmartPlaylistSeedPicker);
+    vi.mocked(api.search).mockResolvedValueOnce(everyKind);
+    picker.vm.$emit("update:kind", "playlist");
+    picker.vm.$emit("update:searchQuery", "gold");
+    await nextTick();
+    picker.vm.$emit("submit");
+    await flushPromises();
+    expect(api.search).toHaveBeenCalledExactlyOnceWith(
+      "gold",
+      ["playlist"],
+      20,
+      ["library"],
+    );
+    expect(picker.props("results")).toEqual([items.playlist]);
+  });
+
   it.each(kinds)("keeps the %s search to its own kind", async (kind) => {
     const pending = Promise.withResolvers<SearchResults>();
     vi.mocked(api.search).mockReturnValueOnce(pending.promise);

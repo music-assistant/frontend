@@ -40,6 +40,7 @@ function buildSeedItem(
   item: SearchableItem,
   kind: SeedKind,
   similarTracksProviderIds: string[],
+  similarOnly: boolean,
 ): SeedItem {
   // Prefer a SIMILAR_TRACKS-capable provider mapping so the seed URI resolves
   // through the same provider that will produce the similar-tracks output.
@@ -56,7 +57,9 @@ function buildSeedItem(
         : kind === "album"
           ? MediaType.ALBUM
           : MediaType.PLAYLIST;
-  const uri = buildItemUri(mediaType, mapping, item.item_id);
+  const uri = similarOnly
+    ? buildItemUri(mediaType, mapping, item.item_id)
+    : item.uri;
   let subtitle: string | undefined;
   if (kind === "track")
     subtitle = primaryArtistName((item as Track).artists) || undefined;
@@ -65,7 +68,7 @@ function buildSeedItem(
   return { uri, kind, name: item.name, subtitle };
 }
 
-export function useSmartPlaylistSeedItems() {
+export function useSmartPlaylistSeedItems(similarOnly = true) {
   const activeKind = ref<SeedKind>("track");
   const seeds = ref<SeedItem[]>([]);
 
@@ -95,7 +98,12 @@ export function useSmartPlaylistSeedItems() {
       results,
       isSearching,
       searchFn: async (q) => {
-        if (!hasSimilarTracksProvider.value) return [];
+        if (similarOnly && !hasSimilarTracksProvider.value) return [];
+        if (!similarOnly && mediaType === MediaType.PLAYLIST) {
+          return itemsOf(
+            await api.search(q, [mediaType], SEARCH_LIMIT, ["library"]),
+          );
+        }
         return itemsOf(await api.search(q, [mediaType], SEARCH_LIMIT));
       },
     });
@@ -127,7 +135,7 @@ export function useSmartPlaylistSeedItems() {
     return activeSearch.value.submit();
   }
 
-  const isFull = computed(() => seeds.value.length >= SEED_MAX);
+  const isFull = computed(() => similarOnly && seeds.value.length >= SEED_MAX);
   const hasSeed = computed(() => seeds.value.length > 0);
 
   function addSeed(item: SeedItem): boolean {
@@ -138,7 +146,12 @@ export function useSmartPlaylistSeedItems() {
   }
 
   function addSeedFromSearch(item: SearchableItem, kind: SeedKind): boolean {
-    const seed = buildSeedItem(item, kind, similarTracksProviderIds.value);
+    const seed = buildSeedItem(
+      item,
+      kind,
+      similarTracksProviderIds.value,
+      similarOnly,
+    );
     const added = addSeed(seed);
     if (added) {
       searches[kind].query.value = "";

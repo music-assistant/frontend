@@ -23,7 +23,9 @@
         :model-value="kind"
         @update:model-value="(v) => emit('update:kind', v as SeedKind)"
       >
-        <TabsList class="grid grid-cols-4 h-8 mb-2">
+        <TabsList
+          :class="['grid h-8 mb-2', sourceMode ? 'grid-cols-3' : 'grid-cols-4']"
+        >
           <TabsTrigger
             v-for="opt in tabs"
             :key="opt.value"
@@ -126,6 +128,7 @@ const props = defineProps<{
   hasProvider: boolean;
   isFull: boolean;
   invalid?: boolean;
+  sourceMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -163,7 +166,9 @@ function onPick(item: SearchItem) {
 
 const tabs = computed(() => [
   { value: "track" as SeedKind, label: $t("track") },
-  { value: "artist" as SeedKind, label: $t("artist") },
+  ...(!props.sourceMode
+    ? [{ value: "artist" as SeedKind, label: $t("artist") }]
+    : []),
   { value: "album" as SeedKind, label: $t("album") },
   { value: "playlist" as SeedKind, label: $t("playlist") },
 ]);
@@ -178,6 +183,7 @@ const kindLabel = computed(() =>
 );
 
 const buttonLabel = computed(() => {
+  if (props.sourceMode) return $t("smart_playlist.add_source");
   if (!props.hasProvider) return $t("smart_playlist.seed_no_provider");
   if (props.isFull) return $t("smart_playlist.seed_full");
   return $t("smart_playlist.add_seed");

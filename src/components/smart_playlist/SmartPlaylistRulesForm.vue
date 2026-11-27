@@ -10,16 +10,9 @@
         v-else
         class="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2"
       >
-        <component
-          :is="form.mode.value === 'seed' ? Sparkles : Library"
-          class="h-3.5 w-3.5 text-muted-foreground"
-        />
+        <component :is="modeIcon" class="h-3.5 w-3.5 text-muted-foreground" />
         <span class="text-xs font-medium text-muted-foreground">
-          {{
-            form.mode.value === "seed"
-              ? $t("smart_playlist.type_seed")
-              : $t("smart_playlist.type_library")
-          }}
+          {{ modeLabel }}
         </span>
       </div>
 
@@ -28,6 +21,18 @@
         :seed-items="form.seedItems"
         :invalid="form.seedInvalid.value"
       />
+      <SmartPlaylistSeedSection
+        v-if="form.mode.value === 'sources'"
+        :seed-items="form.sourceItems"
+        :invalid="form.seedInvalid.value"
+        source-mode
+      />
+      <p
+        v-if="form.mode.value === 'sources'"
+        class="text-xs text-muted-foreground"
+      >
+        {{ $t("smart_playlist.sources_limit_hint") }}
+      </p>
 
       <Separator />
 
@@ -58,7 +63,8 @@ import {
 } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Library, Sparkles } from "@lucide/vue";
+import { Library, ListMusic, Sparkles } from "@lucide/vue";
+import { computed } from "vue";
 import SmartPlaylistRulesList from "./SmartPlaylistRulesList.vue";
 import SmartPlaylistSeedSection from "./SmartPlaylistSeedSection.vue";
 import SmartPlaylistTypeSelector from "./SmartPlaylistTypeSelector.vue";
@@ -88,6 +94,12 @@ const emit = defineEmits<{
 const form = useSmartPlaylistRulesForm(props, (count, duration, counting) => {
   emit("trackCountUpdate", count, duration, counting);
 });
+
+const modeIcon = computed(
+  () =>
+    ({ library: Library, seed: Sparkles, sources: ListMusic })[form.mode.value],
+);
+const modeLabel = computed(() => $t(`smart_playlist.type_${form.mode.value}`));
 
 function onUpdateRule(uid: string, patch: Partial<RuleRow>) {
   const idx = form.rules.value.findIndex((r) => r.uid === uid);

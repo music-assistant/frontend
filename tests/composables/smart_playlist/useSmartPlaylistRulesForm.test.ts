@@ -53,6 +53,7 @@ describe("smart playlist favorite rules", () => {
       favorites_only: false,
       exclude_favorites: false,
     });
+
     expect(form.hasChanges.value).toBe(false);
   });
 
@@ -112,5 +113,46 @@ describe("smart playlist favorite rules", () => {
       favorites_only: false,
       exclude_favorites: true,
     });
+  });
+});
+
+describe("selected smart playlist sources", () => {
+  it("uses library filters without requiring a similar-tracks provider", () => {
+    const form = createForm();
+    form.setMode("sources");
+    expect(form.validate()).toHaveLength(1);
+    form.sourceItems.addSeed({
+      uri: "service--one://playlist/123",
+      kind: "playlist",
+      name: "Mix",
+    });
+    form.addRule("favorite");
+    expect(form.availableFields.value).toContain("artist");
+    expect(form.getFinalRules()).toMatchObject({
+      source_uris: ["service--one://playlist/123"],
+      source_names: { "service--one://playlist/123": "Mix" },
+      favorites_only: true,
+    });
+    expect(form.validate()).toEqual([]);
+    form.setMode("library");
+    expect(form.getFinalRules().source_uris).toBeUndefined();
+    form.setMode("sources");
+    expect(form.getFinalRules().source_uris).toEqual([
+      "service--one://playlist/123",
+    ]);
+  });
+
+  it("restores selected sources without resolving every item again", async () => {
+    const form = createForm({
+      ...baseRules,
+      source_uris: ["service--one://album/123"],
+      source_names: { "service--one://album/123": "Album" },
+    });
+    await flushPromises();
+    expect(form.mode.value).toBe("sources");
+    expect(form.sourceItems.seeds.value).toEqual([
+      { uri: "service--one://album/123", kind: "album", name: "Album" },
+    ]);
+    expect(form.hasChanges.value).toBe(false);
   });
 });
