@@ -18,6 +18,7 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
 import EditConfig from "@/views/settings/EditConfig.vue";
 import EditPlayer from "@/views/settings/EditPlayer.vue";
+import PlayerSettingsHeader from "@/views/settings/PlayerSettingsHeader.vue";
 import {
   enableAutoUnmount,
   flushPromises,
@@ -80,10 +81,6 @@ const SlotStub = {
 };
 
 const playerDetailsStubs = {
-  Button: SlotStub,
-  Card: SlotStub,
-  CardContent: SlotStub,
-  CardHeader: SlotStub,
   EditConfig: {
     name: "EditConfig",
     props: [
@@ -196,18 +193,22 @@ describe("EditPlayer", () => {
     isPlayerBeingRemoved.mockReturnValue(false);
   });
 
-  it("names the player in the header", async () => {
+  it("hands the player to the header", async () => {
     const wrapper = await mountPlayerPage();
 
-    expect(wrapper.get("h2").text()).toBe("Kitchen");
+    expect(header(wrapper).props()).toMatchObject({
+      config: expect.objectContaining({
+        player_id: "player-1",
+        name: "Kitchen",
+      }),
+      player: apiMock.players["player-1"],
+    });
   });
 
   it("offers the setup in the header and leaves the advanced toggle to the form", async () => {
     const wrapper = await mountPlayerPage();
 
-    expect(wrapper.get('[data-testid="player-setup"]').text()).toContain(
-      "reconfigure_player",
-    );
+    expect(header(wrapper).props("setupLabel")).toBe("reconfigure_player");
     expect(
       wrapper.findComponent({ name: "AdvancedSettingsToggle" }).exists(),
     ).toBe(false);
@@ -314,7 +315,7 @@ describe("EditPlayer", () => {
 
     const wrapper = await mountPlayerPage();
 
-    expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
+    expect(header(wrapper).props("setupLabel")).toBeUndefined();
   });
 
   it("keeps required setup available without an optional setup flow", async () => {
@@ -324,11 +325,9 @@ describe("EditPlayer", () => {
 
     const wrapper = await mountPlayerPage();
     expect(wrapper.text()).toContain("settings.player_needs_setup");
-    expect(wrapper.get('[data-testid="player-setup"]').text()).toContain(
-      "configure_player",
-    );
+    expect(header(wrapper).props("setupLabel")).toBe("configure_player");
 
-    await wrapper.get('[data-testid="player-setup"]').trigger("click");
+    header(wrapper).vm.$emit("setup");
 
     expect(emitEvent).toHaveBeenCalledWith("setupFlowDialog", {
       kind: "player",
@@ -341,39 +340,12 @@ describe("EditPlayer", () => {
 
     const wrapper = await mountPlayerPage();
 
-    expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
-  });
-
-  it("links the player settings documentation", async () => {
-    const wrapper = await mountPlayerPage();
-
-    expect(
-      wrapper.get('[data-testid="player-documentation"]').attributes(),
-    ).toMatchObject({
-      href: "https://music-assistant.io/settings/individual-player/",
-      rel: "noopener noreferrer",
-      target: "_blank",
-    });
-  });
-
-  it("links the beta documentation from a beta server", async () => {
-    apiMock.serverInfo.value = { server_version: "2.9.0b1" };
-
-    const wrapper = await mountPlayerPage();
-
-    expect(
-      wrapper.get('[data-testid="player-documentation"]').attributes("href"),
-    ).toBe("https://beta.music-assistant.io/settings/individual-player/");
-  });
-
-  it("keeps the documentation link without any setup action", async () => {
-    apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
-
-    const wrapper = await mountPlayerPage();
-
-    expect(wrapper.find('[data-testid="player-setup"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="player-documentation"]').exists()).toBe(
-      true,
+    expect(header(wrapper).props("setupLabel")).toBeUndefined();
+    // nor does the page start one for a disabled player
+    header(wrapper).vm.$emit("setup");
+    expect(emitEvent).not.toHaveBeenCalledWith(
+      "setupFlowDialog",
+      expect.anything(),
     );
   });
 
@@ -453,9 +425,7 @@ describe("EditPlayer", () => {
   it("opens the shared player menu from the kebab", async () => {
     const wrapper = await mountPlayerPage();
 
-    await wrapper
-      .get('[data-testid="player-menu"]')
-      .trigger("click", { clientX: 10, clientY: 20 });
+    openMenu(wrapper, { clientX: 10, clientY: 20 });
 
     expect(getPlayerSettingsMenuItems).toHaveBeenCalledWith(
       expect.objectContaining({ player_id: "player-1" }),
@@ -471,7 +441,7 @@ describe("EditPlayer", () => {
   it("resets the form from the same menu", async () => {
     const wrapper = await mountPlayerPage();
 
-    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+    openMenu(wrapper);
     resetMenuItem()?.action?.();
 
     expect(editConfigResetMock).toHaveBeenCalledOnce();
@@ -481,14 +451,14 @@ describe("EditPlayer", () => {
     apiMock.getPlayerConfig.mockResolvedValue(playerConfig({ enabled: false }));
     const wrapper = await mountPlayerPage();
 
-    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+    openMenu(wrapper);
 
     expect(resetMenuItem()?.disabled).toBe(true);
   });
 
   it("leaves the settings page once the player is deleted", async () => {
     const wrapper = await mountPlayerPage();
-    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+    openMenu(wrapper);
 
     getPlayerSettingsMenuItems.mock.calls[0][1]!.onDeleted!();
 
@@ -524,7 +494,7 @@ describe("EditPlayer", () => {
     apiMock.getMultiChannelLayouts.mockResolvedValue(LAYOUTS);
     const wrapper = await mountPlayerPage();
 
-    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+    openMenu(wrapper);
 
     // the menu of the page decides from them whether a subwoofer can join or go
     expect(getPlayerSettingsMenuItems.mock.lastCall?.[1]).toMatchObject({
@@ -607,7 +577,7 @@ describe("EditPlayer", () => {
 
   it("starts the form over from what is stored once a speaker joined or left", async () => {
     const wrapper = await mountPlayerPage();
-    await wrapper.get('[data-testid="player-menu"]').trigger("click");
+    openMenu(wrapper);
 
     getPlayerSettingsMenuItems.mock.calls[0][1]!.onSpeakersChanged!();
     await flushPromises();
@@ -621,7 +591,7 @@ describe("EditPlayer", () => {
   it("renames the player from the header", async () => {
     const wrapper = await mountPlayerPage();
 
-    await wrapper.get('[title="settings.player_name"]').trigger("click");
+    header(wrapper).vm.$emit("rename");
 
     expect(emitEvent).toHaveBeenCalledWith("playerRenameDialog", {
       playerId: "player-1",
@@ -828,6 +798,17 @@ async function mountPlayerPage({ realForm = false } = {}) {
   });
   await flushPromises();
   return wrapper;
+}
+
+function header(wrapper: VueWrapper) {
+  return wrapper.findComponent(PlayerSettingsHeader);
+}
+
+/**
+ * Click the kebab of the header, at the given spot of the screen.
+ */
+function openMenu(wrapper: VueWrapper, init: MouseEventInit = {}) {
+  header(wrapper).vm.$emit("openMenu", new MouseEvent("click", init));
 }
 
 /**
