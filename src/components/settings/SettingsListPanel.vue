@@ -1,8 +1,13 @@
 <template>
   <Card class="gap-5 py-5 md:gap-6 md:py-6">
     <header class="flex flex-col gap-4 px-4 md:px-5">
-      <div class="flex items-center gap-3" data-testid="panel-title-row">
-        <div class="min-w-0 flex-1">
+      <!-- a button too long to fit by the title, as some languages have on a
+           phone, goes under it, cut short if it is wider than the panel -->
+      <div
+        class="flex flex-wrap items-center gap-3"
+        data-testid="panel-title-row"
+      >
+        <div class="min-w-0 flex-[1_1_auto]">
           <h2 class="m-0 flex items-baseline gap-2 text-base font-semibold">
             {{ title }}
             <span
@@ -22,16 +27,20 @@
           class="max-md:hidden"
           @toggle="emit('toggle-view-mode')"
         />
-        <div v-if="actions?.length" class="flex shrink-0 items-center gap-1">
+        <div
+          v-if="actions?.length"
+          class="flex max-w-full shrink-0 items-center gap-1"
+        >
           <Button
             v-for="action in actions"
             :key="action.key"
             size="sm"
+            class="max-w-full"
             :data-testid="action.key"
             @click="action.onSelect()"
           >
             <component :is="action.icon" class="size-4" aria-hidden="true" />
-            {{ action.label }}
+            <span class="truncate">{{ action.label }}</span>
           </Button>
         </div>
       </div>

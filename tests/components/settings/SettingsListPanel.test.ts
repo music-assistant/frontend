@@ -76,6 +76,19 @@ describe("SettingsListPanel", () => {
     expect(row.element.lastElementChild).toBe(tabs[0].element);
   });
 
+  it("switches the view from the end of the row of the search and filters", async () => {
+    const wrapper = mountPanel(
+      { title: "Players", viewMode: "list" },
+      { filters: '<input data-testid="search" />', default: "<ul />" },
+    );
+
+    await wrapper
+      .get('[data-testid="panel-filter-row"] [data-view="card"]')
+      .trigger("click");
+
+    expect(wrapper.emitted("toggle-view-mode")).toHaveLength(1);
+  });
+
   it("puts the switch before the buttons of a list without filters, and under them on a phone", () => {
     const wrapper = mountPanel({
       title: "Player providers",
