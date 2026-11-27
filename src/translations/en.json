@@ -307,8 +307,9 @@
             }
         },
         "dsp": {
-            "configure_on": "Configuring DSP on: {name}",
-            "disabled_message": "DSP is currently disabled. Enable it using the switch above",
+            "enable": "Enable DSP",
+            "disabled_message": "DSP is off, so these filters are not applied. Turn on \"Enable DSP\" above to edit and use them.",
+            "reset_confirm": "This removes all filters and turns DSP off for this player.",
             "input": "Input",
             "output": "Output",
             "filter": {
@@ -379,9 +380,9 @@
                 "FR": "R"
             },
             "presets": {
-                "load": "Load DSP Preset",
+                "load": "Load DSP preset",
                 "empty_warning": "No DSP presets available",
-                "save": "Save DSP Preset",
+                "save": "Save DSP preset",
                 "name": "Preset Name",
                 "name_placeholder": "My new preset",
                 "remove_confirm": "Are you sure you want to remove this DSP preset?",
