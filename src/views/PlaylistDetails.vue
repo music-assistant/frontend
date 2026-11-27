@@ -126,10 +126,8 @@ import DetailTextRow from "@/components/details/DetailTextRow.vue";
 import RowsEditor from "@/components/details/RowsEditor.vue";
 import DynamicItemSample from "@/components/DynamicItemSample.vue";
 import ItemsListing, { LoadDataParams } from "@/components/ItemsListing.vue";
-import {
-  playlistBackdrop,
-  playlistDuration,
-} from "@/components/playlist/playlistData";
+import { playlistDuration } from "@/components/playlist/playlistData";
+import { heroBackdrop } from "@/helpers/hero_backdrop";
 import PlaylistFeaturedArtists from "@/components/playlist/PlaylistFeaturedArtists.vue";
 import PlaylistHero from "@/components/playlist/PlaylistHero.vue";
 import {
@@ -232,7 +230,7 @@ const visibleRows = computed(() => {
 
 const backdrop = computed(() =>
   itemDetails.value
-    ? playlistBackdrop(itemDetails.value)
+    ? heroBackdrop(itemDetails.value)
     : { url: undefined, blurred: false },
 );
 

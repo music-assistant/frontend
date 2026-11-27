@@ -5,6 +5,7 @@ import {
   type User,
   UserRole,
   type UserSummary,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import {
   enableAutoUnmount,
@@ -64,6 +65,7 @@ const ownedSource = providerConfig({
     owner: "owner-id",
     sharing: ProviderSharing.SELECTED,
     shared_users: ["member-id"],
+    shared_playback: SharedPlayback.WITHOUT_OWN,
   },
 });
 
@@ -157,6 +159,7 @@ describe("ProviderAccessDialog", () => {
           owner: "owner-id",
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       users,
@@ -180,6 +183,7 @@ describe("ProviderAccessDialog", () => {
           owner: "member-id",
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       users,
@@ -227,6 +231,7 @@ describe("ProviderAccessDialog", () => {
           owner: "owner-id",
           sharing: ProviderSharing.SELECTED,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       users,
@@ -239,6 +244,7 @@ describe("ProviderAccessDialog", () => {
       owner: "owner-id",
       sharing: ProviderSharing.SELECTED,
       shared_users: ["guest-id"],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
     });
   });
 
@@ -253,6 +259,7 @@ describe("ProviderAccessDialog", () => {
       owner: "owner-id",
       sharing: ProviderSharing.MEMBERS,
       shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
     });
     expect(toastMock.success).toHaveBeenCalledWith(
       "settings.source_access.updated",
@@ -272,6 +279,7 @@ describe("ProviderAccessDialog", () => {
       owner: "member-id",
       sharing: ProviderSharing.SELECTED,
       shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
     });
   });
 
@@ -306,6 +314,7 @@ describe("ProviderAccessDialog", () => {
           owner: null,
           sharing: ProviderSharing.EVERYONE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       users,
@@ -328,6 +337,7 @@ describe("ProviderAccessDialog", () => {
           owner: null,
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       users,
@@ -351,6 +361,7 @@ describe("ProviderAccessDialog", () => {
           owner: "owner-id",
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       users,
@@ -369,6 +380,7 @@ describe("ProviderAccessDialog", () => {
       owner: null,
       sharing: ProviderSharing.MEMBERS,
       shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
     });
   });
 
@@ -382,6 +394,7 @@ describe("ProviderAccessDialog", () => {
           owner: "owner-id",
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       users,
@@ -394,6 +407,7 @@ describe("ProviderAccessDialog", () => {
           owner: null,
           sharing: ProviderSharing.PRIVATE,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       open: true,
@@ -414,6 +428,7 @@ describe("ProviderAccessDialog", () => {
           owner: null,
           sharing: ProviderSharing.SELECTED,
           shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
         },
       }),
       users,
@@ -470,6 +485,7 @@ describe("ProviderAccessDialog", () => {
         owner: "owner-id",
         sharing: ProviderSharing.SELECTED,
         shared_users: ["member-id"],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       });
     });
 
@@ -481,6 +497,7 @@ describe("ProviderAccessDialog", () => {
             owner: "owner-id",
             sharing: ProviderSharing.PRIVATE,
             shared_users: [],
+            shared_playback: SharedPlayback.WITHOUT_OWN,
           },
         }),
         null,
@@ -514,6 +531,7 @@ describe("ProviderAccessDialog", () => {
         owner: "owner-id",
         sharing: ProviderSharing.SELECTED,
         shared_users: ["member-id", "other-id"],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       });
     });
 
@@ -527,6 +545,7 @@ describe("ProviderAccessDialog", () => {
             owner: "owner-id",
             sharing: ProviderSharing.SELECTED,
             shared_users: ["member-id", "disabled-id"],
+            shared_playback: SharedPlayback.WITHOUT_OWN,
           },
         }),
         null,
@@ -542,6 +561,7 @@ describe("ProviderAccessDialog", () => {
         owner: "owner-id",
         sharing: ProviderSharing.SELECTED,
         shared_users: ["member-id", "disabled-id", "other-id"],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       });
     });
   });
@@ -563,6 +583,7 @@ describe("ProviderAccessDialog", () => {
         owner: "owner-id",
         sharing: ProviderSharing.SELECTED,
         shared_users: ["member-id"],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
       });
     });
 
@@ -574,6 +595,7 @@ describe("ProviderAccessDialog", () => {
             owner: "owner-id",
             sharing: ProviderSharing.PRIVATE,
             shared_users: [],
+            shared_playback: SharedPlayback.WITHOUT_OWN,
           },
         }),
         null,
@@ -711,4 +733,100 @@ async function openDialog(
   await wrapper.setProps({ open: true });
   await flushPromises();
   return wrapper;
+}
+
+describe("ProviderAccessDialog playback by others", () => {
+  const streaming = (isStreaming: boolean) => {
+    apiMock.providers = {
+      "spotify--owned": { name: "Spotify", is_streaming_provider: isStreaming },
+    } as Record<string, { name: string }>;
+  };
+
+  it("saves when a shared streaming account plays for others", async () => {
+    streaming(true);
+    const wrapper = await openDialog(ownedSource, users);
+
+    await openSelect(sharedPlaybackTrigger()!);
+    expect(optionLabels()).toEqual([
+      "settings.source_access.shared_playback_options.never",
+      "settings.source_access.shared_playback_options.without_own",
+      "settings.source_access.shared_playback_options.when_busy",
+    ]);
+    await pickOption(
+      "settings.source_access.shared_playback_options.when_busy",
+    );
+    await submit(wrapper);
+
+    expect(apiMock.setProviderAccess).toHaveBeenCalledWith("spotify--owned", {
+      owner: "owner-id",
+      sharing: ProviderSharing.SELECTED,
+      shared_users: ["member-id"],
+      shared_playback: SharedPlayback.WHEN_BUSY,
+    });
+  });
+
+  it("is not offered for a source that is no streaming service", async () => {
+    streaming(false);
+    await openDialog(ownedSource, users);
+
+    expect(sharedPlaybackTrigger()).toBeNull();
+  });
+
+  it("is not offered while the source is shared with nobody", async () => {
+    streaming(true);
+    await openDialog(
+      providerConfig({
+        domain: "spotify",
+        instance_id: "spotify--owned",
+        access: {
+          owner: "owner-id",
+          sharing: ProviderSharing.PRIVATE,
+          shared_users: [],
+          shared_playback: SharedPlayback.WITHOUT_OWN,
+        },
+      }),
+      users,
+    );
+
+    expect(sharedPlaybackTrigger()).toBeNull();
+  });
+
+  it("lets go of keeping the account to its owner once it has none", async () => {
+    streaming(true);
+    const wrapper = await openDialog(
+      providerConfig({
+        domain: "spotify",
+        instance_id: "spotify--owned",
+        access: {
+          owner: "owner-id",
+          sharing: ProviderSharing.MEMBERS,
+          shared_users: [],
+          shared_playback: SharedPlayback.NEVER,
+        },
+      }),
+      users,
+    );
+
+    await openSelect(ownerTrigger()!);
+    await pickOption("settings.source_access.household");
+    await openSelect(sharedPlaybackTrigger()!);
+    expect(optionLabels()).toEqual([
+      "settings.source_access.shared_playback_options.without_own",
+      "settings.source_access.shared_playback_options.when_busy",
+    ]);
+    await submit(wrapper);
+
+    expect(apiMock.setProviderAccess).toHaveBeenCalledWith("spotify--owned", {
+      owner: null,
+      sharing: ProviderSharing.MEMBERS,
+      shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
+    });
+  });
+});
+
+function sharedPlaybackTrigger() {
+  return document.querySelector<HTMLElement>(
+    "#provider-access-shared-playback",
+  );
 }

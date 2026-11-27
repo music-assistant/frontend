@@ -17,13 +17,17 @@ import {
   coreOwner,
   coreSettingsPageId,
   isKnownOwner,
+  isSameOwner,
   LOG_LEVEL_KEY,
+  PLAYER_QUEUES_DOMAIN,
+  PLAYERS_DOMAIN,
   providerOwner,
   providerListType,
   providerPageEntries,
   providerSettingsPageId,
   SETTINGS_PAGES,
   settingsPageProviderDomain,
+  settingsPageTitlesSections,
   sourceIncludesEntry,
   STREAMS_DOMAIN,
   TASKS_DOMAIN,
@@ -33,6 +37,7 @@ import {
 } from "./settings_pages";
 
 const STREAMS = coreOwner(STREAMS_DOMAIN);
+const QUEUES = coreOwner(PLAYER_QUEUES_DOMAIN);
 const TASKS = coreOwner(TASKS_DOMAIN);
 const WEBSERVER = coreOwner(WEBSERVER_DOMAIN);
 // the core modules the server offers settings of
@@ -89,13 +94,29 @@ describe("SETTINGS_PAGES", () => {
   });
 
   it("shows nothing else of an owner a page shows as a whole", () => {
-    for (const whole of ALL_SOURCES.filter((source) => !source.categories)) {
+    for (const whole of ALL_SOURCES.filter(
+      (source) => !source.categories && !source.excludedCategories,
+    )) {
       const sameOwner = ALL_SOURCES.filter(
         (source) =>
           source.owner.kind === whole.owner.kind &&
           source.owner.id === whole.owner.id,
       );
       expect(sameOwner).toEqual([whole]);
+    }
+  });
+
+  it("shows the categories a source leaves to other pages on those pages, and nothing else there", () => {
+    for (const rest of ALL_SOURCES.filter(
+      (source) => source.excludedCategories,
+    )) {
+      const shown = ALL_SOURCES.filter(
+        (source) => source !== rest && isSameOwner(source.owner, rest.owner),
+      ).map((source) => source.categories);
+      expect(shown).not.toContain(undefined);
+      expect(shown.flat().sort()).toEqual(
+        [...(rest.excludedCategories ?? [])].sort(),
+      );
     }
   });
 
@@ -139,6 +160,15 @@ describe("sourceIncludesEntry", () => {
     expect(sourceIncludesEntry(source, entry("b", "generic"))).toBe(false);
   });
 
+  it("includes every category but the ones a source leaves to other pages", () => {
+    const source = { owner: QUEUES, excludedCategories: ["click_actions"] };
+    expect(sourceIncludesEntry(source, entry("a", "autoplay"))).toBe(true);
+    expect(sourceIncludesEntry(source, entry("b", ""))).toBe(true);
+    expect(sourceIncludesEntry(source, entry("c", "click_actions"))).toBe(
+      false,
+    );
+  });
+
   it.each([
     ["a source without categories", { owner: TASKS }],
     ["listed categories", { owner: STREAMS, categories: ["generic"] }],
@@ -171,6 +201,40 @@ describe("the page of each setting", () => {
       expect(pagesShowing(STREAMS, entry("buffer_size", category))).toEqual([
         "playback",
       ]);
+    },
+  );
+
+  it.each([
+    ["click_actions", "tap_and_play"],
+    ["default_enqueue_option", "tap_and_play"],
+    ["items_to_select", "tap_and_play"],
+    ["smart_shuffle", "playback"],
+    ["autoplay", "playback"],
+    ["crossfade", "playback"],
+    ["volume_normalization", "playback"],
+    ["playback", "playback"],
+  ])(
+    "shows the %s entries of the queue settings on the %s page",
+    (category, page) => {
+      expect(pagesShowing(QUEUES, entry("setting", category))).toEqual([page]);
+    },
+  );
+
+  it("shows a category the queue settings get later with the playback defaults", () => {
+    expect(pagesShowing(QUEUES, entry("setting", "radio_mode"))).toEqual([
+      "playback",
+    ]);
+  });
+
+  it.each([
+    ["volume_step", "generic"],
+    ["announce_tts_engine", "announcements"],
+  ])(
+    "shows the %s of the players module with the playback defaults",
+    (key, category) => {
+      expect(
+        pagesShowing(coreOwner(PLAYERS_DOMAIN), entry(key, category)),
+      ).toEqual(["playback"]);
     },
   );
 
@@ -224,6 +288,14 @@ describe("the page of each setting", () => {
       ).toEqual([]);
     }
   });
+
+  it("sets the log levels of the core modules on the diagnostics page only", () => {
+    expect(
+      (Object.keys(SETTINGS_PAGES) as SettingsPageId[]).filter(
+        (id) => SETTINGS_PAGES[id].logLevels,
+      ),
+    ).toEqual(["diagnostics"]);
+  });
 });
 
 describe("isKnownOwner", () => {
@@ -264,6 +336,7 @@ describe("providerSettingsPageId", () => {
 describe("coreSettingsPageId", () => {
   it.each([
     ["players", "playback"],
+    ["player_queues", "playback"],
     ["ai", "ai"],
     ["tasks", "background_tasks"],
   ])("finds the page showing the settings of the %s module", (domain, id) => {
@@ -325,6 +398,22 @@ describe("settingsPageProviderDomain", () => {
     "names none for the %s page of core settings",
     (pageId) => {
       expect(settingsPageProviderDomain(pageId)).toBeUndefined();
+    },
+  );
+});
+
+describe("settingsPageTitlesSections", () => {
+  it.each<SettingsPageId>(["diagnostics", "library", "network"])(
+    "heads the sources of the %s page with their titles",
+    (pageId) => {
+      expect(settingsPageTitlesSections(pageId)).toBe(true);
+    },
+  );
+
+  it.each<SettingsPageId>(["metadata", "playback"])(
+    "leaves the %s page to the categories of its entries",
+    (pageId) => {
+      expect(settingsPageTitlesSections(pageId)).toBe(false);
     },
   );
 });

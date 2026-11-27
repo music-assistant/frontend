@@ -1,27 +1,24 @@
 <template>
   <section class="space-y-4" data-testid="catalog-list">
-    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <h2 class="m-0 text-lg font-semibold">{{ title }}</h2>
-      <FacetedFilter
-        v-model="stages"
-        :title="$t('settings.stage.label')"
-        :options="stageOptions"
-      />
+    <!-- the picker names the section on screen; this names it for the outline -->
+    <h2 class="sr-only">{{ heading }}</h2>
+    <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <p
+        class="m-0 text-[13px] text-muted-foreground"
+        data-testid="catalog-list-summary"
+      >
+        {{ summary }}
+      </p>
       <RouterLink
         v-if="type"
         :to="getTypeSettingsRoute(type.type)"
-        class="ml-auto flex items-center gap-1 text-sm text-primary no-underline hover:underline"
+        class="flex items-center gap-1 text-sm text-primary no-underline hover:underline"
         data-testid="catalog-manage-link"
       >
         {{ $t(type.manageLabel) }}
         <ChevronRight class="size-4" aria-hidden="true" />
       </RouterLink>
     </div>
-    <ProviderLabelFilter
-      v-if="labels.length"
-      v-model="label"
-      :labels="labels"
-    />
 
     <template v-if="matches.length">
       <CatalogGrid>
@@ -31,6 +28,7 @@
           :entry="entry"
           :installing="installing.has(entry.manifest.domain)"
           :badge="getBadgeLabel(entry)"
+          :show-type="!type"
           @open="emit('open', entry)"
           @add="emit('add', entry)"
         />
@@ -76,10 +74,8 @@
 </template>
 
 <script setup lang="ts">
-import FacetedFilter from "@/components/FacetedFilter.vue";
 import CatalogCard from "@/components/settings/catalog/CatalogCard.vue";
 import CatalogGrid from "@/components/settings/catalog/CatalogGrid.vue";
-import ProviderLabelFilter from "@/components/settings/providers/ProviderLabelFilter.vue";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -93,19 +89,13 @@ import {
   sortSuggestedFirst,
 } from "@/helpers/catalog_recommendations";
 import {
-  ADDABLE_PROVIDER_STAGES,
   CATALOG_PAGE_SIZE,
   type CatalogEntry,
   type CatalogType,
   filterCatalogEntries,
   getTypeSettingsRoute,
 } from "@/helpers/provider_catalog";
-import { getProviderStageTranslationKey } from "@/helpers/provider_config";
-import {
-  getFilterLabels,
-  getProviderLabels,
-  type ProviderLabel,
-} from "@/helpers/provider_labels";
+import type { ProviderLabel } from "@/helpers/provider_labels";
 import { api } from "@/plugins/api";
 import { $t } from "@/plugins/i18n";
 import { ChevronRight, SearchX } from "@lucide/vue";
@@ -113,10 +103,13 @@ import { computed, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 
 interface Props {
-  // the entries to list, before the search and the stage filter
+  // the entries to list, before the search and the filters
   entries: CatalogEntry[];
   query: string;
-  title: string;
+  // the stages picked to filter on; none for every stage
+  stages: readonly string[];
+  // the label picked to filter on; null for All
+  label: ProviderLabel | null;
   // the type listed, for the link to its settings page; none for every type
   type?: CatalogType;
   // the domains being installed from the community catalog
@@ -132,38 +125,27 @@ const emit = defineEmits<{
   (e: "add", entry: CatalogEntry): void;
 }>();
 
-// the stages picked in the filter, kept by the page for the number on its tab
-const stages = defineModel<string[]>("stages", { required: true });
-// the label picked, kept by the page for the same reason
-const label = defineModel<ProviderLabel | null>("label", { required: true });
 const limit = ref(CATALOG_PAGE_SIZE);
-
-const stageOptions = computed(() =>
-  ADDABLE_PROVIDER_STAGES.map((stage) => ({
-    label: $t(getProviderStageTranslationKey(stage)!),
-    value: stage,
-  })),
-);
-
-// the entries of a type can be filtered on what they offer, not a search
-// through every type
-const labels = computed(() =>
-  props.type
-    ? getFilterLabels(
-        props.entries.map((entry) => getProviderLabels(entry.manifest)),
-      )
-    : [],
-);
 
 const matches = computed(() =>
   sortSuggestedFirst(
     filterCatalogEntries(props.entries, {
       query: props.query,
-      stages: stages.value,
-      label: label.value,
+      stages: props.stages,
+      label: props.label,
     }),
     props.badges,
   ),
+);
+
+const heading = computed(() =>
+  props.type ? $t(props.type.label) : $t("settings.catalog.search_results"),
+);
+
+const summary = computed(() =>
+  props.type
+    ? $t("settings.catalog.to_choose_from", { count: matches.value.length })
+    : $t("settings.catalog.search_results"),
 );
 
 const shown = computed(() => matches.value.slice(0, limit.value));
@@ -179,7 +161,7 @@ const getBadgeLabel = (entry: CatalogEntry) => {
 };
 
 // another search or filter starts again at the first page
-watch([() => props.query, stages, label], () => {
+watch([() => props.query, () => props.stages, () => props.label], () => {
   limit.value = CATALOG_PAGE_SIZE;
 });
 </script>

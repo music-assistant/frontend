@@ -162,9 +162,21 @@
         "enable": "Enable",
         "enable_player": "Enable this player",
         "invalid_input": "The input is invalid",
+        "clear_value": "Clear {0}",
+        "remove_value": "Remove {0}",
+        "show_password": "Show password",
+        "hide_password": "Hide password",
         "metadataproviders": "Metadata sources",
         "player_disabled": "This player is disabled",
         "player_name": "Custom player name",
+        "player_details": {
+            "id": "Player ID",
+            "ip_address": "IP address",
+            "mac_address": "MAC address",
+            "copy": "Copy {0}",
+            "copied": "{0} copied",
+            "copy_failed": "Couldn't copy {0}"
+        },
         "player_not_available": "This player is not (yet) available",
         "player_option_error": "Error while setting player option: {key} {value}",
         "server_logs_load_failed": "Failed to load server logs",
@@ -231,6 +243,19 @@
         "radio_in_library": "Radio in library",
         "download_log": "Download logfile",
         "add_group_player": "Add group player",
+        "add_group": {
+            "title": "Add a group",
+            "kind": "Kind of group",
+            "name": "Name",
+            "name_required": "Give the group a name",
+            "members": "Speakers in this group",
+            "members_required": "Pick at least one speaker, or let speakers join and leave the group",
+            "no_speakers": "No speaker can join this kind of group. A speaker shows up here while it is switched on and connected.",
+            "dynamic": "Let speakers join and leave",
+            "dynamic_description": "Speakers can join or leave the group while it plays, as when you group them by hand. The group keeps its own queue.",
+            "created": "{0} created",
+            "failed": "The group could not be created"
+        },
         "group_members": "Group members",
         "default": "default",
         "provider_depends_on_confirm": "Before you can set up {0}, you need to have {1} configured, do you want to do that now?",
@@ -280,10 +305,6 @@
                 "lv_LV": "Latvian",
                 "bg_BG": "Bulgarian"
             }
-        },
-        "dynamic_members": {
-            "label": "Dynamic group members",
-            "description": "Allow members to (temporarily) join\/leave the group dynamically, so the group more or less behaves the same as manually syncing players together, with the main difference being that the group player will hold the queue."
         },
         "dsp": {
             "configure_on": "Configuring DSP on: {name}",
@@ -471,8 +492,6 @@
         "dsp_note_multi_device_group_unsupported": {
             "label": "This group type does not support DSP when playing to multiple devices."
         },
-        "add_group_player_desc_universal": "By creating a Universal Player Group, you can group players from different ecosystems together. \nThis will distribute the same audio to all member players (but not in sync).",
-        "playerprovider": "Player support",
         "providers_total": "{count} total | {count} total",
         "providers_active": "{count} active | {count} active",
         "stage": {
@@ -562,7 +581,11 @@
         },
         "playback": {
             "title": "Playback",
-            "description": "Crossfade, volume normalization, autoplay and what happens when you press play"
+            "description": "Crossfade, volume normalization, smart shuffle and autoplay"
+        },
+        "tap_and_play": {
+            "title": "Tap & play",
+            "description": "What clicking an item does, and what playing it puts in the queue"
         },
         "library": {
             "title": "Library settings",
@@ -649,7 +672,6 @@
         "view_players": "View players",
         "players_total": "{count} total player | {count} total players",
         "api_docs": "API Documentation",
-        "no_group_providers": "The player support you added cannot create groups",
         "provider_codeowners": "Contributed\/maintained by",
         "provider_credits": "Made possible by",
         "provider_community": "Community",
@@ -659,8 +681,9 @@
         "category": {
             "web_player": "Web Player",
             "volume_control": "Volume control",
-            "protocol_settings": "Output Protocol(s)",
+            "protocol_settings": "Output protocols",
             "options": "Player options",
+            "player_controls": "Player controls",
             "preferences": "Preferences",
             "display_settings": "Display",
             "dsp": "DSP",
@@ -696,6 +719,7 @@
             }
         },
         "settings_saved": "Settings saved successfully",
+        "settings_save_failed_for": "Couldn't save the settings of {0}",
         "settings_load_failed": "Couldn't load these settings",
         "protocol_no_settings": "This output protocol does not have any additional configuration",
         "protocol_no_settings_with_advanced": "No settings visible. Enable advanced settings to see more configuration options.",
@@ -725,7 +749,6 @@
             "label": "Volume haptic feedback",
             "description": "Vibrate while adjusting the volume slider. Touch devices with a vibration motor only."
         },
-        "add_group_player_desc_sync": "Create a permanent SyncGroup with players that are sync-compatible. When you play to this Player Group, the member players will be automatically synchronized.",
         "genre_management": "Genre management",
         "genre_management_description": "Manage default genres and restore genre defaults",
         "restore_missing_defaults": "Restore Missing Defaults",
@@ -755,6 +778,7 @@
             "description": "Extend Music Assistant with more music sources, support for more players and powerful plugins.",
             "search": "Search the Marketplace",
             "search_results": "Search results",
+            "choose_section": "Choose what to browse",
             "discover": "Discover",
             "installed": "Installed",
             "popular": "Popular",
@@ -783,7 +807,6 @@
             "manage": "Manage",
             "manage_named": "Manage {name}",
             "by_maintainers": "by {maintainers}",
-            "by_team": "by the Music Assistant team",
             "created_by": "Created and maintained by {maintainers}",
             "created_by_team": "Created and maintained by the Music Assistant team",
             "request_change": "Request a change",
@@ -910,7 +933,18 @@
                 "nobody": "Nobody can use this source until it has an owner or is shared with someone."
             },
             "updated": "Access updated",
-            "nobody": "Nobody can use this source"
+            "nobody": "Nobody can use this source",
+            "shared_playback": "Playback by others",
+            "shared_playback_options": {
+              "never": "Only the owner",
+              "without_own": "Users without an account of their own",
+              "when_busy": "Also when their own account is busy"
+            },
+            "shared_playback_hints": {
+              "never": "Others can browse this account but never play from it.",
+              "without_own": "Plays for users who have no account of this service, nor one shared with them by name.",
+              "when_busy": "Also plays for users whose own account is busy or unavailable."
+            }
         },
         "player_providers_description": "Configure player support for your audio output devices",
         "metadata_description": "Metadata sources, language, online lookups, genres and the artwork cache",
@@ -975,6 +1009,10 @@
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
         "protocol_configure_title": "Configure {name}",
         "protocol_configure_title_via": "Configure {name} (over {base})",
+        "expert_mode": {
+            "label": "Expert mode",
+            "description": "Show every option and technical detail, such as the full play menu, the audio details of each source and the advanced settings. Turn it off for a clean interface with just the essentials."
+        },
         "show_waveform": {
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
@@ -1130,12 +1168,19 @@
         "queue_settings_description": "Crossfade, volume normalization and autoplay for this player",
         "dsp_description": "Filters and gain applied to everything this player plays",
         "player_options_description": "Options and readings the player itself offers",
+        "output_protocols_description": "The protocols this player plays through and their settings",
+        "player_controls_description": "Power, volume and mute control for this player",
         "music_sources_own": "Your sources",
         "music_sources_shared": "Shared with you",
         "music_sources_shared_empty": "No music sources have been shared with you yet.",
         "provider_labels": {
             "filter": "Filter on what they offer",
             "all": "All"
+        },
+        "provider_columns": {
+            "name": "Name",
+            "offers": "Offers",
+            "access": "Who can use it"
         },
         "source_labels": {
             "library": "Library",
@@ -3071,6 +3116,8 @@
     "lyrics_hide": "Hide lyrics for this track",
     "lyrics_loading": "Lyrics are being fetched...",
     "show_audio_chain_details": "Show audio pipeline details",
+    "all_genres": "All {count} genres",
+    "genres_of_item": "Every genre of {name}",
     "show_less": "Show less",
     "show_more": "Show more",
     "autoplay_on_title": "Autoplay is enabled",
@@ -3291,6 +3338,7 @@
         "step_completed": "{step}, completed",
         "next": "Next",
         "skip": "Skip for now",
+        "show_all": "Show all {count}",
         "finish": "Finish",
         "finish_failed": "Could not finish. Please try again.",
         "needs_attention": "Needs attention",
@@ -3405,7 +3453,7 @@
                     "builtin": {
                         "id": "Your remote access ID",
                         "copy": "Copy the remote access ID",
-                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. The QR code is under Settings › {system} › {network} › {remote_access}."
+                        "hint": "Use it in the Music Assistant app or at app.music-assistant.io. You can find it again under Settings › {system} › {network} › {remote_access}."
                     }
                 }
             },

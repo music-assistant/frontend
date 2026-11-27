@@ -18,7 +18,7 @@ enableAutoUnmount(afterEach);
 // the form is covered where it lives; here it only has to be held and reset
 const settingsPageFormStub = {
   name: "SettingsPageForm",
-  props: { page: String, flat: Boolean },
+  props: { page: String, flat: Boolean, inlineSave: Boolean },
   emits: ["reset"],
   template: "<div data-testid='page-form' />",
 };
@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 describe("SettingsPageFoldRow", () => {
-  it("holds the form of the page, flat, in a closed Settings row", () => {
+  it("holds the form of the page, flat and with Save after its fields, in a closed Settings row", () => {
     const wrapper = mountRow();
 
     const row = wrapper.get(ROW);
@@ -41,6 +41,7 @@ describe("SettingsPageFoldRow", () => {
     expect(wrapper.getComponent(settingsPageFormStub).props()).toEqual({
       page: "audio_analysis",
       flat: true,
+      inlineSave: true,
     });
   });
 

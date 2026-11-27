@@ -16,7 +16,11 @@ const headerStubs = {
   CardTitle: SlotStub,
   DropdownMenu: SlotStub,
   DropdownMenuContent: SlotStub,
-  DropdownMenuItem: SlotStub,
+  DropdownMenuItem: {
+    name: "DropdownMenuItem",
+    props: ["disabled"],
+    template: "<div><slot /></div>",
+  },
   DropdownMenuTrigger: SlotStub,
 };
 
@@ -36,6 +40,16 @@ describe("SettingsHeaderCard", () => {
       .trigger("click");
 
     expect(wrapper.emitted("resetToDefaults")).toHaveLength(1);
+  });
+
+  it("keeps the reset out of reach while the screen asks for that", () => {
+    const resetDisabled = (props: Record<string, unknown>) =>
+      mountHeader(props)
+        .findComponent({ name: "DropdownMenuItem" })
+        .props("disabled");
+
+    expect(resetDisabled({})).toBe(false);
+    expect(resetDisabled({ resetDisabled: true })).toBe(true);
   });
 
   it("links the documentation it is given", () => {

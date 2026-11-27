@@ -18,13 +18,19 @@ import {
   ProviderTier,
   ProviderType,
   type Scope,
+  SharedPlayback,
 } from "@/plugins/api/interfaces";
 import {
   type ContextMenuDialogEvent,
   type DeleteConfirmationDialogEvent,
   eventbus,
 } from "@/plugins/eventbus";
-import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from "@vue/test-utils";
 import {
   afterEach,
   beforeEach,
@@ -252,7 +258,7 @@ afterEach(() => {
 });
 
 describe("Catalog", () => {
-  it("heads the Marketplace with its own header, in the orange of its banner, with Installed beside the title", async () => {
+  it("heads the Marketplace with its own header, in the orange of its banner, with the search beside the title", async () => {
     const wrapper = await mountCatalog();
 
     const header = wrapper.getComponent(SettingsPageHeader);
@@ -262,17 +268,19 @@ describe("Catalog", () => {
       header.get('[data-testid="settings-page-icon"]').attributes("style"),
     ).toContain(`color: ${SETTINGS_COLORS.orange}`);
     expect(
-      header.find('[data-testid="catalog-installed-button"]').exists(),
-    ).toBe(true);
+      header.get("[data-slot='input-group-control']").attributes("placeholder"),
+    ).toBe("settings.catalog.search");
   });
 
-  it("offers Discover and a tab per type with something to add, with its count", async () => {
+  it("offers Discover, a section per type with something to add with its count, and Installed with its own", async () => {
     await mountCatalog();
 
-    expect(tabLabels()).toEqual([
+    expect(pickerLabel()).toBe("settings.catalog.discover");
+    expect(await sectionLabels()).toEqual([
       "settings.catalog.discover",
       "settings.music_sources2",
       "settings.playerproviders2",
+      "settings.catalog.installed2",
     ]);
   });
 
@@ -295,18 +303,19 @@ describe("Catalog", () => {
       }
     });
 
-    it("counts them with the music sources, with no tab of their own", async () => {
+    it("counts them with the music sources, with no section of their own", async () => {
       await mountCatalog();
 
-      expect(tabLabels()).toEqual([
+      expect(await sectionLabels()).toEqual([
         "settings.catalog.discover",
         "settings.music_sources3",
         "settings.playerproviders2",
         "settings.plugins1",
+        "settings.catalog.installed2",
       ]);
     });
 
-    it("lists them on the music sources tab and labels them as live sources", async () => {
+    it("lists them with the music sources and labels them as live sources", async () => {
       await mountList(ProviderType.MUSIC);
 
       expect(cardNames("[data-testid='catalog-list']").sort()).toEqual([
@@ -318,17 +327,23 @@ describe("Catalog", () => {
       expect(cardLabels("spotify")).toEqual([]);
     });
 
-    it("leaves the plugins tab to the other plugins", async () => {
+    it("leaves the list of plugins to the other plugins", async () => {
       await mountList(ProviderType.PLUGIN);
 
       expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
     });
 
-    it("offers no chips while the live sources are the only label", async () => {
+    it("offers no pills while the live sources are the only label", async () => {
       await mountList(ProviderType.MUSIC);
 
       expect(
         document.querySelector("[data-testid='provider-label-filter']"),
+      ).toBeNull();
+      // nothing to set apart from the picker either
+      expect(
+        document.querySelector(
+          "[data-testid='catalog-toolbar'] [data-slot='separator']",
+        ),
       ).toBeNull();
     });
   });
@@ -362,9 +377,18 @@ describe("Catalog", () => {
       expect(cardLabels("airplay_receiver")).toEqual(["live"]);
     });
 
-    it("offers a chip for every label of the music sources, after All", async () => {
+    it("offers a pill for every label of the music sources, after All, beside the picker", async () => {
       await mountList(ProviderType.MUSIC);
 
+      const toolbar = document.querySelector(
+        "[data-testid='catalog-toolbar']",
+      )!;
+      expect(
+        toolbar.querySelector("[data-testid='catalog-section-picker']"),
+      ).not.toBeNull();
+      expect(
+        toolbar.querySelector("[data-testid='provider-label-filter']"),
+      ).not.toBeNull();
       expect(chipStates()).toEqual([
         ["all", "true"],
         ["library", "false"],
@@ -373,7 +397,7 @@ describe("Catalog", () => {
       ]);
     });
 
-    it("narrows the tab down to the chip picked, and counts that on the tab", async () => {
+    it("narrows the list down to the pill picked, and counts that on the picker", async () => {
       await mountList(ProviderType.MUSIC);
 
       await pickChip("live");
@@ -381,15 +405,17 @@ describe("Catalog", () => {
       expect(cardNames("[data-testid='catalog-list']")).toEqual([
         "AirPlay Receiver",
       ]);
-      expect(tabLabels()).toContain("settings.music_sources1");
+      expect(pickerLabel()).toBe("settings.music_sources1");
+      expect(listSummary()).toBe("settings.catalog.to_choose_from 1");
 
       await pickChip("all");
 
       expect(cardNames("[data-testid='catalog-list']")).toHaveLength(3);
-      expect(tabLabels()).toContain("settings.music_sources3");
+      expect(pickerLabel()).toBe("settings.music_sources3");
+      expect(listSummary()).toBe("settings.catalog.to_choose_from 3");
     });
 
-    it("combines the chip with the search", async () => {
+    it("combines the pill with the search", async () => {
       await mountList(ProviderType.MUSIC);
 
       await pickChip("library");
@@ -398,7 +424,7 @@ describe("Catalog", () => {
       expect(cardNames("[data-testid='catalog-list']")).toEqual(["SoundCloud"]);
     });
 
-    it("offers no chips on the search results of every type", async () => {
+    it("offers no pills on the search results of every type", async () => {
       await mountCatalog();
 
       await search("s");
@@ -446,7 +472,7 @@ describe("Catalog", () => {
       expect(cardLabels("mystery")).toEqual([]);
     });
 
-    it("offers a chip for every label of the plugins, after All and with Other last", async () => {
+    it("offers a pill for every label of the plugins, after All and with Other last", async () => {
       await mountList(ProviderType.PLUGIN);
 
       expect(chipStates()).toEqual([
@@ -457,21 +483,21 @@ describe("Catalog", () => {
       ]);
     });
 
-    it("narrows the tab down to the chip picked, and counts that on the tab", async () => {
+    it("narrows the list down to the pill picked, and counts that on the picker", async () => {
       await mountList(ProviderType.PLUGIN);
 
       await pickChip("other");
 
       expect(cardNames("[data-testid='catalog-list']")).toEqual(["Mystery"]);
-      expect(tabLabels()).toContain("settings.plugins1");
+      expect(pickerLabel()).toBe("settings.plugins1");
 
       await pickChip("all");
 
       expect(cardNames("[data-testid='catalog-list']")).toHaveLength(3);
-      expect(tabLabels()).toContain("settings.plugins3");
+      expect(pickerLabel()).toBe("settings.plugins3");
     });
 
-    it("opens on the chip the route picks", async () => {
+    it("opens on the pill the route picks", async () => {
       routeMock.query = { types: "plugin", label: "fun" };
 
       await mountCatalog();
@@ -483,10 +509,10 @@ describe("Catalog", () => {
         ["other", "false"],
       ]);
       expect(cardNames("[data-testid='catalog-list']")).toEqual(["Party"]);
-      expect(tabLabels()).toContain("settings.plugins1");
+      expect(pickerLabel()).toBe("settings.plugins1");
     });
 
-    it("keeps the chip the route picks while the plugins come in", async () => {
+    it("keeps the pill the route picks while the plugins come in", async () => {
       routeMock.query = { types: "plugin", label: "fun" };
       const manifests = { ...apiMock.providerManifests };
       for (const domain of Object.keys(manifests)) {
@@ -501,31 +527,30 @@ describe("Catalog", () => {
     });
   });
 
-  it("counts what is set up on the Installed button, and opens the Installed view with it", async () => {
+  it("counts what is set up on Installed, last in the picker, and opens the Installed view from it", async () => {
     await mountCatalog();
 
-    const button = installedButton();
-    expect(button.textContent?.replace(/\s+/g, "")).toBe(
-      "settings.catalog.installed2",
-    );
-    expect(button.getAttribute("aria-pressed")).toBe("false");
+    expect((await sectionLabels()).at(-1)).toBe("settings.catalog.installed2");
 
-    button.click();
+    await pickSection("installed");
+
     expect(routerMock.replace).toHaveBeenCalledWith({
       query: { view: "installed" },
     });
   });
 
-  it("leads Discover back from the Installed view with the same button", async () => {
+  it("leads Discover back from the Installed view with the same picker, with no search or filter", async () => {
     routeMock.query = { view: "installed" };
-    await mountCatalog();
+    const wrapper = await mountCatalog();
 
-    expect(installedButton().getAttribute("aria-pressed")).toBe("true");
+    expect(pickerLabel()).toBe("settings.catalog.installed2");
     expect(
-      document.querySelector("[data-slot='tabs-trigger'][data-state='active']"),
+      document.querySelector("[data-slot='input-group-control']"),
     ).toBeNull();
+    expect(stageFilter(wrapper).exists()).toBe(false);
 
-    installedButton().click();
+    await pickSection("discover");
+
     expect(routerMock.replace).toHaveBeenCalledWith({ query: {} });
   });
 
@@ -692,7 +717,7 @@ describe("Catalog", () => {
       ).toBeNull();
     });
 
-    it("opens the tab of a type from Browse everything", async () => {
+    it("opens the list of a type from Browse everything", async () => {
       await mountCatalog();
 
       const tiles = [
@@ -717,18 +742,24 @@ describe("Catalog", () => {
   it("shows the matches of a search on Discover in place of its rows", async () => {
     const wrapper = await mountCatalog();
 
+    expect(stageFilter(wrapper).exists()).toBe(false);
+
     await wrapper.get("[data-slot='input-group-control']").setValue("sound");
 
     expect(
       document.querySelector("[data-testid='catalog-discover']"),
     ).toBeNull();
-    expect(
-      document.querySelector("[data-testid='catalog-list'] h2")?.textContent,
-    ).toBe("settings.catalog.search_results");
+    expect(pickerLabel()).toBe("settings.catalog.discover");
+    expect(listSummary()).toBe("settings.catalog.search_results");
     expect(cardNames("[data-testid='catalog-list']")).toEqual(["SoundCloud"]);
+    // what is found can be filtered on its stage, as a list of a type can
+    expect(stageFilter(wrapper).exists()).toBe(true);
+    expect(
+      document.querySelector("[data-testid='catalog-manage-link']"),
+    ).toBeNull();
   });
 
-  it("searches only the type of its tab", async () => {
+  it("searches only the type it lists", async () => {
     const wrapper = await mountList("player");
 
     // SoundCloud matches as well, but is a music source
@@ -737,30 +768,31 @@ describe("Catalog", () => {
     expect(cardNames("[data-testid='catalog-list']")).toEqual(["Sonos"]);
   });
 
-  it("counts on each tab what it lists with the search", async () => {
+  it("counts on each type in the picker what it lists with the search", async () => {
     await mountCatalog();
 
     await search("sound");
 
-    expect(tabLabels()).toEqual([
+    expect(await sectionLabels()).toEqual([
       "settings.catalog.discover",
       "settings.music_sources1",
       "settings.playerproviders0",
+      "settings.catalog.installed2",
     ]);
   });
 
-  it("counts a stage filter on its own tab only", async () => {
+  it("counts a stage filter on its own type only", async () => {
     const wrapper = await mountList();
 
-    wrapper
-      .findComponent({ name: "FacetedFilter" })
-      .vm.$emit("update:modelValue", [ProviderStage.BETA]);
+    stageFilter(wrapper).vm.$emit("update:modelValue", [ProviderStage.BETA]);
     await flushPromises();
 
-    expect(tabLabels()).toEqual([
+    expect(pickerLabel()).toBe("settings.music_sources1");
+    expect(await sectionLabels()).toEqual([
       "settings.catalog.discover",
       "settings.music_sources1",
       "settings.playerproviders2",
+      "settings.catalog.installed2",
     ]);
   });
 
@@ -794,6 +826,8 @@ describe("Catalog", () => {
 
     await mountCatalog();
 
+    expect(pickerLabel()).toBe("settings.playerproviders2");
+    expect(listSummary()).toBe("settings.catalog.to_choose_from 2");
     // Sonos is suggested, so it leads
     expect(cardNames("[data-testid='catalog-list']")).toEqual([
       "Sonos",
@@ -804,17 +838,16 @@ describe("Catalog", () => {
     });
   });
 
-  it("keeps the tab picked in the route", async () => {
-    const wrapper = await mountCatalog();
+  it("keeps the section picked in the route", async () => {
+    await mountCatalog();
 
-    await wrapper
-      .findAll("[data-slot='tabs-trigger']")
-      .find((tab) => tab.text().startsWith("settings.playerproviders"))!
-      .trigger("mousedown", { button: 0 });
+    await pickSection("player");
 
     expect(routerMock.replace).toHaveBeenCalledWith({
       query: { types: "player" },
     });
+    // picking closes the menu
+    expect(sections()).toEqual([]);
   });
 
   it("offers a jump instead of Add for a single-instance provider that is set up", async () => {
@@ -843,18 +876,19 @@ describe("Catalog", () => {
     ).not.toBeNull();
   });
 
-  it("credits the maintainers or the team on a card", async () => {
+  it("leaves the credit of what is not from the community to its details", async () => {
     await mountList();
 
     expect(
-      cardFor("soundcloud").querySelector("[data-testid='catalog-card-credit']")
-        ?.textContent,
-    ).toContain("settings.catalog.by_maintainers");
+      cardFor("soundcloud").querySelector(
+        "[data-testid='catalog-card-credit']",
+      ),
+    ).toBeNull();
     expect(
       cardFor("spotify", "[data-testid='catalog-list']").querySelector(
         "[data-testid='catalog-card-credit']",
-      )?.textContent,
-    ).toContain("settings.catalog.by_team");
+      ),
+    ).toBeNull();
   });
 
   it("starts the setup flow from the Add on a card", async () => {
@@ -992,17 +1026,27 @@ describe("Catalog", () => {
     ).toBe("settings.catalog.manage_named Spotify");
   });
 
-  it("shows the picked tab in a panel the tab controls", async () => {
-    await mountCatalog();
+  it("checks the section shown in a menu named for what it does", async () => {
+    await mountList("player");
 
-    const tab = document.querySelector(
-      "[data-slot='tabs-trigger'][data-state='active']",
-    )!;
-    const panel = document.getElementById(tab.getAttribute("aria-controls")!);
-    expect(panel?.getAttribute("role")).toBe("tabpanel");
+    await togglePicker();
+
+    // reka names the menu after its button, which says what it is for
+    const menu = document.querySelector("[data-slot='dropdown-menu-content']")!;
+    expect(menu.getAttribute("aria-labelledby")).toBe(picker().id);
+    expect(picker().textContent).toContain("settings.catalog.choose_section");
     expect(
-      panel?.querySelector("[data-testid='catalog-discover']"),
-    ).not.toBeNull();
+      sections().map((section) => [
+        section.getAttribute("data-tab"),
+        section.getAttribute("role"),
+        section.getAttribute("aria-checked"),
+      ]),
+    ).toEqual([
+      ["discover", "menuitemradio", "false"],
+      ["music", "menuitemradio", "false"],
+      ["player", "menuitemradio", "true"],
+      ["installed", "menuitemradio", "false"],
+    ]);
   });
 
   it.each<Record<string, string>>([{}, { view: "installed" }])(
@@ -1020,8 +1064,9 @@ describe("Catalog", () => {
       expect(
         document.querySelector("[data-testid='catalog-installed-empty']"),
       ).toBeNull();
+      // the picker counts what is set up
       expect(
-        document.querySelector("[data-testid='catalog-installed-count']"),
+        document.querySelector("[data-testid='catalog-section-picker']"),
       ).toBeNull();
     },
   );
@@ -1044,10 +1089,7 @@ describe("Catalog", () => {
     expect(
       document.querySelector("[data-testid='catalog-discover']"),
     ).not.toBeNull();
-    expect(
-      document.querySelector("[data-testid='catalog-installed-count']")
-        ?.textContent,
-    ).toBe("2");
+    expect((await sectionLabels()).at(-1)).toBe("settings.catalog.installed2");
   });
 
   it("asks what is missing at the bottom", async () => {
@@ -1143,59 +1185,6 @@ describe("Catalog lists of a type", () => {
     expect(card("source14").textContent).not.toContain(
       "settings.stage.options",
     );
-  });
-
-  it("scrolls the active tab to the middle of the strip of tabs", async () => {
-    const scrollTo = vi.fn();
-    HTMLElement.prototype.scrollTo = scrollTo;
-    // the strip is 300 wide; the active tab starts at 400 and is 100 wide
-    const isActive = (element: HTMLElement) =>
-      element.getAttribute("data-state") === "active";
-    const offsets = [
-      vi
-        .spyOn(HTMLElement.prototype, "offsetLeft", "get")
-        .mockImplementation(function (this: HTMLElement) {
-          return isActive(this) ? 400 : 0;
-        }),
-      vi
-        .spyOn(HTMLElement.prototype, "offsetWidth", "get")
-        .mockImplementation(function (this: HTMLElement) {
-          return isActive(this) ? 100 : 0;
-        }),
-    ];
-    const clientWidth = Object.getOwnPropertyDescriptor(
-      HTMLElement.prototype,
-      "clientWidth",
-    );
-    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
-      configurable: true,
-      get: () => 300,
-    });
-    try {
-      await mountList("player");
-
-      expect(scrollTo).toHaveBeenLastCalledWith({
-        left: 300,
-        behavior: "smooth",
-      });
-      expect(
-        (scrollTo.mock.contexts.at(-1) as HTMLElement).querySelector(
-          "[data-testid='catalog-tabs']",
-        ),
-      ).not.toBeNull();
-    } finally {
-      offsets.forEach((spy) => spy.mockRestore());
-      delete (HTMLElement.prototype as Partial<HTMLElement>).scrollTo;
-      if (clientWidth) {
-        Object.defineProperty(
-          HTMLElement.prototype,
-          "clientWidth",
-          clientWidth,
-        );
-      } else {
-        Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
-      }
-    }
   });
 });
 
@@ -1464,7 +1453,7 @@ describe("Catalog suggestions from the server", () => {
     );
   });
 
-  it("says what a suggestion goes well with in place of its type", async () => {
+  it("says what a suggestion goes well with, and the type of each card", async () => {
     recommendations = [...FOUR_FOUND, GOES_WELL];
 
     await mountCatalog();
@@ -1476,15 +1465,10 @@ describe("Catalog suggestions from the server", () => {
     expect(
       tile.querySelector("[data-testid='catalog-card-paired']")?.textContent,
     ).toContain("settings.catalog.goes_well_with Spotify");
+    // the rows mix the types, so each card names its own
     expect(
-      tile.querySelector("[data-testid='catalog-card-credit']"),
-    ).toBeNull();
-    // a card of another row says who maintains it
-    expect(
-      document.querySelector(
-        "[data-testid='catalog-discovered'] [data-testid='catalog-card-credit']",
-      )?.textContent,
-    ).toContain("settings.catalog.by_team");
+      tile.querySelector("[data-testid='catalog-card-subtitle']")?.textContent,
+    ).toContain("settings.catalog.type.");
   });
 
   it("picks what is found first, then what goes well, then what is popular", async () => {
@@ -1802,16 +1786,14 @@ describe("Catalog for a member", () => {
 
     await mountCatalog();
 
-    // a player tab it cannot use opens Discover instead
-    expect(tabLabels()).toEqual([
+    // a player list it cannot use opens Discover instead
+    expect(pickerLabel()).toBe("settings.catalog.discover");
+    expect(await sectionLabels()).toEqual([
       "settings.catalog.discover",
       "settings.music_sources1",
+      "settings.catalog.installed1",
     ]);
     expect(topPick()?.getAttribute("data-domain")).toBe("spotify");
-    expect(
-      document.querySelector("[data-testid='catalog-installed-count']")
-        ?.textContent,
-    ).toBe("1");
   });
 
   describe("with a source shared with it", () => {
@@ -1825,6 +1807,7 @@ describe("Catalog for a member", () => {
             owner: null,
             sharing: ProviderSharing.EVERYONE,
             shared_users: [],
+            shared_playback: SharedPlayback.WITHOUT_OWN,
           },
         }),
       ];
@@ -1871,6 +1854,7 @@ describe("Catalog for a member", () => {
             owner: "jane",
             sharing: ProviderSharing.PRIVATE,
             shared_users: [],
+            shared_playback: SharedPlayback.WITHOUT_OWN,
           },
         }),
       );
@@ -1936,7 +1920,7 @@ describe("Catalog with the community catalog", () => {
       expect(confirmations[0].message).toBe(OWN_RISK);
       expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
       expect(banner()).not.toBeNull();
-      expect(tabLabels()).toContain("settings.music_sources2");
+      expect(await sectionLabels()).toContain("settings.music_sources2");
 
       await confirmations[0].onConfirm();
       await flushPromises();
@@ -1966,7 +1950,7 @@ describe("Catalog with the community catalog", () => {
     expect(apiMock.saveCoreConfig).not.toHaveBeenCalled();
     expect(banner()).not.toBeNull();
     expect(menuLabels()).toEqual(["settings.catalog.community.enable"]);
-    expect(tabLabels()).toContain("settings.music_sources2");
+    expect(await sectionLabels()).toContain("settings.music_sources2");
   });
 
   it("switches off from the menu without a confirmation, and hides what it offers", async () => {
@@ -2087,7 +2071,7 @@ describe("Catalog with the community catalog", () => {
     beforeEach(() => {
       communityEnabled = true;
       community = [RADIO];
-      // what it offers is listed on the tab of its type
+      // what it offers is listed with its type
       routeMock.query = { types: "music" };
     });
 
@@ -2116,7 +2100,7 @@ describe("Catalog with the community catalog", () => {
       ).toContain("settings.catalog.by_maintainers @jane");
     });
 
-    it("lists it in the tab of its type", async () => {
+    it("lists it with its type", async () => {
       await mountCatalog();
 
       expect(cardNames("[data-testid='catalog-list']")).toContain(
@@ -2165,7 +2149,7 @@ describe("Catalog with the community catalog", () => {
         "https://jane.github.io/ma-radio/",
       );
       expect(href(detail, "catalog-detail-help")).toBe(
-        "https://github.com/jane/ma-radio",
+        "https://github.com/jane/ma-radio/issues",
       );
       expect(
         detail.querySelector("[data-testid='catalog-detail-version']")
@@ -2238,7 +2222,7 @@ describe("Catalog with the community catalog", () => {
         "settings.catalog.community.note_maintainers Radio Garden @jane",
       );
       expect(href(note, "community-note-help")).toBe(
-        "https://github.com/jane/ma-radio",
+        "https://github.com/jane/ma-radio/issues",
       );
       expect(
         note.querySelector("[data-testid='community-note-help']")?.textContent,
@@ -2761,7 +2745,7 @@ describe("Catalog with the community catalog", () => {
   });
 
   it.each<Record<string, string>>([{}, { types: "music" }])(
-    "says it is not available on every tab (%o)",
+    "says it is not available on every section (%o)",
     async (query) => {
       apiMock.getCommunityProviders.mockRejectedValue(new Error("refused"));
       routeMock.query = query;
@@ -2854,8 +2838,9 @@ describe("Catalog with the community catalog", () => {
         document.querySelector("[data-testid='community-moved']"),
       ).toBeNull();
       expect(
-        document.querySelector("[data-testid='catalog-updates-count']"),
+        document.querySelector("[data-testid='catalog-updates-dot']"),
       ).toBeNull();
+      expect(await updatesBadge()).toBeUndefined();
       expect(
         document.querySelector("[data-testid='catalog-community-new']"),
       ).toBeNull();
@@ -2918,10 +2903,11 @@ describe("Catalog with updates from the community catalog", () => {
       expect(
         radio.querySelector("[data-testid='community-update']")?.textContent,
       ).toContain("settings.catalog.community.update");
+      expect(await updatesBadge()).toBe("2");
+      // the updates are in sight, so the picker need not point them out
       expect(
-        document.querySelector("[data-testid='catalog-updates-count']")
-          ?.textContent,
-      ).toContain("2");
+        document.querySelector("[data-testid='catalog-updates-dot']"),
+      ).toBeNull();
     });
 
     it("updates one by its domain, with progress", async () => {
@@ -2960,10 +2946,7 @@ describe("Catalog with updates from the community catalog", () => {
       expect(
         installedRow("radio").querySelector("[data-testid='community-update']"),
       ).toBeNull();
-      expect(
-        document.querySelector("[data-testid='catalog-updates-count']")
-          ?.textContent,
-      ).toContain("1");
+      expect(await updatesBadge()).toBe("1");
     });
 
     it("shows the server's message when an update fails", async () => {
@@ -3122,6 +3105,32 @@ describe("Catalog with updates from the community catalog", () => {
     });
   });
 
+  it("points out the updates on the picker away from the Installed view, and counts them on Installed", async () => {
+    communityEnabled = true;
+    community = [
+      updatable("radio", "Radio Garden", "1.1.0", "1.2.0"),
+      updatable("dj", "DJ", "0.1.0", "0.2.0"),
+    ];
+    await mountList();
+
+    expect(
+      document.querySelector("[data-testid='catalog-updates-dot']"),
+    ).not.toBeNull();
+    expect(picker().textContent).toContain(
+      "settings.catalog.community.updates_waiting",
+    );
+
+    await togglePicker();
+
+    const badge = document.querySelector(
+      "[data-testid='catalog-section'][data-tab='installed'] [data-testid='catalog-updates-count']",
+    )!;
+    expect(badge.textContent?.trim()).toBe("2");
+    expect(badge.getAttribute("aria-label")).toBe(
+      "settings.catalog.community.updates_waiting",
+    );
+  });
+
   it("shows the version on offer with its date and an Update in the details", async () => {
     apiMock.providerManifests.radio = RADIO.manifest;
     communityEnabled = true;
@@ -3225,7 +3234,7 @@ describe("Catalog with updates from the community catalog", () => {
       community = [MOVED];
     });
 
-    it("names it above the tabs, also while the community catalog is off", async () => {
+    it("names it above the toolbar, also while the community catalog is off", async () => {
       await mountCatalog();
 
       const notice = document.querySelector("[data-testid='community-moved']")!;
@@ -3235,9 +3244,12 @@ describe("Catalog with updates from the community catalog", () => {
       expect(notice.textContent).toContain(
         "settings.catalog.community.moved_message",
       );
-      const tabs = document.querySelector("[data-testid='catalog-tabs']")!;
+      const toolbar = document.querySelector(
+        "[data-testid='catalog-toolbar']",
+      )!;
       expect(
-        notice.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+        notice.compareDocumentPosition(toolbar) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
       expect(
         linkTarget("[data-testid='community-moved-details']", notice),
@@ -3401,7 +3413,7 @@ describe("Catalog with updates from the community catalog", () => {
       });
     });
 
-    it("shows no rows on the tab of a type, or while searching", async () => {
+    it("shows no rows on the list of a type, or while searching", async () => {
       routeMock.query = { types: "music" };
       const wrapper = await mountCatalog();
 
@@ -3563,7 +3575,7 @@ async function mountCatalog() {
   return wrapper;
 }
 
-// the list of a type, on its tab
+// the list of a type
 async function mountList(type = "music") {
   routeMock.query = { types: type };
   return mountCatalog();
@@ -3578,10 +3590,25 @@ async function search(text: string) {
   await flushPromises();
 }
 
-function installedButton(): HTMLElement {
-  return document.querySelector<HTMLElement>(
-    "[data-testid='catalog-installed-button']",
-  )!;
+// the number of updates on Installed in the picker, if any
+async function updatesBadge() {
+  await togglePicker();
+  const badge = document
+    .querySelector("[data-testid='catalog-updates-count']")
+    ?.textContent?.trim();
+  await togglePicker();
+  return badge;
+}
+
+// what the list says it lists, above it
+function listSummary() {
+  return document
+    .querySelector("[data-testid='catalog-list-summary']")
+    ?.textContent?.trim();
+}
+
+function stageFilter(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "FacetedFilter" });
 }
 
 function topPick(): Element | null {
@@ -3595,10 +3622,53 @@ async function openDetail(domain: string) {
   await flushPromises();
 }
 
-function tabLabels() {
-  return [...document.querySelectorAll("[data-slot='tabs-trigger']")].map(
-    (tab) => tab.textContent?.replace(/\s+/g, ""),
+// the button that picks what the page shows, named after what it shows
+function picker(): HTMLElement {
+  return document.querySelector<HTMLElement>(
+    "[data-testid='catalog-section-picker']",
+  )!;
+}
+
+// what the picker shows, without what it says only to a screen reader
+function pickerLabel() {
+  const purpose = picker().querySelector(
+    "[data-testid='catalog-section-picker-purpose']",
+  )?.textContent;
+  return picker()
+    .textContent?.replace(purpose ?? "", "")
+    .replace(/\s+/g, "");
+}
+
+// reka opens and closes the menu on a click of its trigger
+async function togglePicker() {
+  picker().click();
+  await flushPromises();
+}
+
+function sections(): HTMLElement[] {
+  return [
+    ...document.querySelectorAll<HTMLElement>(
+      "[data-testid='catalog-section']",
+    ),
+  ];
+}
+
+// each section the picker offers, with its count
+async function sectionLabels() {
+  await togglePicker();
+  const labels = sections().map((section) =>
+    section.textContent?.replace(/\s+/g, ""),
   );
+  await togglePicker();
+  return labels;
+}
+
+async function pickSection(tab: string) {
+  await togglePicker();
+  sections()
+    .find((section) => section.getAttribute("data-tab") === tab)!
+    .click();
+  await flushPromises();
 }
 
 function cardNames(container: string) {
@@ -3609,13 +3679,15 @@ function cardNames(container: string) {
   ].map((name) => name.textContent?.trim());
 }
 
-// the labels on the card of an entry
+// the labels the card of an entry names under its name, read back from their
+// translation keys
 function cardLabels(domain: string) {
-  return [
-    ...cardFor(domain).querySelectorAll(
-      "[data-testid='provider-labels'] [data-label]",
-    ),
-  ].map((label) => label.getAttribute("data-label"));
+  const subtitle = cardFor(domain).querySelector(
+    "[data-testid='catalog-card-subtitle']",
+  );
+  return (subtitle?.textContent?.trim().split(" · ") ?? []).map((key) =>
+    key.split(".").pop(),
+  );
 }
 
 // each chip filtering on what the sources offer, with whether it is picked

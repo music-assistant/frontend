@@ -272,7 +272,7 @@ describe("buildLogLevelForm", () => {
     });
   });
 
-  it("puts every log level in one section, without the description of a single module", () => {
+  it("puts every log level in one section, without the description of a single module, in view without the advanced settings", () => {
     const form = buildLogLevelForm(
       [moduleConfig("streams", [logLevel("DEBUG")])],
       moduleName,
@@ -283,6 +283,7 @@ describe("buildLogLevelForm", () => {
       category: "log_levels",
       category_label: "Log levels",
       description: null,
+      advanced: false,
       default_value: "GLOBAL",
     });
   });

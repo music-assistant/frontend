@@ -379,6 +379,7 @@ import {
   SEARCHABLE_MEDIA_TYPES,
   useProgressiveSearch,
 } from "@/composables/useProgressiveSearch";
+import { useTopHitHighlight } from "@/composables/useTopHitHighlight";
 import { useUserPreferences } from "@/composables/userPreferences";
 import {
   AUDIOBOOK_ARTIST_TYPES,
@@ -1028,25 +1029,20 @@ watch(
 // a touch screen the on-screen keyboard drives the interaction — there is no
 // enter contract there and the phantom highlight would read as a selection
 // nobody made
-watch(
-  () =>
+useTopHitHighlight({
+  list: () => listRef.value?.$el as HTMLElement | undefined,
+  input: () => filterRef.value?.$el as HTMLElement | undefined,
+  topRowKey: () =>
     [
       ...mediaSections.value.map((section) => section.items[0]?.uri ?? ""),
       liveSourceResults.value[0]?.id ?? "",
     ].join("|"),
-  async () => {
-    if (store.isTouchscreen && store.mobileLayout) return;
-    if (!isOpen.value || !queryActive.value) return;
-    await nextTick();
-    const listEl = listRef.value?.$el as HTMLElement | undefined;
-    const inputEl = filterRef.value?.$el as HTMLElement | undefined;
-    if (!listEl || !inputEl) return;
-    if (listEl.querySelector("[data-highlighted]")) return;
-    inputEl.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
-    );
-  },
-);
+  resetKey: () => [query.value, isOpen.value, activeSearchTerm.value],
+  enabled: () =>
+    !(store.isTouchscreen && store.mobileLayout) &&
+    isOpen.value &&
+    queryActive.value,
+});
 </script>
 
 <style scoped>

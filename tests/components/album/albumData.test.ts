@@ -12,7 +12,6 @@ const { apiMock } = vi.hoisted(() => ({
 vi.mock("@/plugins/api", () => ({ api: apiMock }));
 
 import {
-  albumBackdrop,
   albumDuration,
   albumReview,
   loadAlbumTracks,
@@ -212,42 +211,6 @@ describe("albumData", () => {
         ]),
       ).toBe(142);
       expect(albumDuration([])).toBe(0);
-    });
-  });
-
-  describe("albumBackdrop", () => {
-    it("paints wide art of the album as it is", () => {
-      const withFanart = album({
-        metadata: { images: [image(ImageType.FANART, "wide.jpg")] },
-      });
-
-      const backdrop = albumBackdrop(withFanart);
-
-      expect(backdrop.url).toContain("wide.jpg");
-      expect(backdrop.blurred).toBe(false);
-    });
-
-    it("falls back to the artist's wide art", () => {
-      const withFanart = artist({
-        metadata: { images: [image(ImageType.FANART, "artist.jpg")] },
-      });
-
-      const backdrop = albumBackdrop(ALBUM, withFanart);
-
-      expect(backdrop.url).toContain("artist.jpg");
-      expect(backdrop.blurred).toBe(false);
-    });
-
-    // a cover beside itself reads as a mistake, so it stands in blurred
-    it("blurs the cover when nothing wide is to be had", () => {
-      const withCover = album({
-        metadata: { images: [image(ImageType.THUMB, "cover.jpg")] },
-      });
-
-      const backdrop = albumBackdrop(withCover);
-
-      expect(backdrop.url).toContain("cover.jpg");
-      expect(backdrop.blurred).toBe(true);
     });
   });
 });

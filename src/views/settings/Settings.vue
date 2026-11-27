@@ -300,14 +300,12 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
         },
       ];
     })
-    .with("addgroup", () => [
-      ...pageCrumbs("players"),
-      { title: t("settings.add_group_player"), disabled: true },
-    ])
     .with(
       "editplayer",
       "editplayerdsp",
       "editplayeroptions",
+      "editplayeroutputs",
+      "editplayercontrols",
       "editqueue",
       () => {
         // a queue is identified by the player id of the player owning it
@@ -327,6 +325,12 @@ const breadcrumbItems = computed((): ToolbarHeadingItem[] => {
         const section = match(name)
           .with("editplayerdsp", () => t("settings.category.dsp"))
           .with("editplayeroptions", () => t("settings.category.options"))
+          .with("editplayeroutputs", () =>
+            t("settings.category.protocol_settings"),
+          )
+          .with("editplayercontrols", () =>
+            t("settings.category.player_controls"),
+          )
           .with("editqueue", () => t("settings.playback.title"))
           .otherwise(() => undefined);
         if (section) items.push({ title: section, disabled: true });

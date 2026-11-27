@@ -87,6 +87,9 @@ html {
   /* How far up the screen the bottom is covered, for anything that stacks below
      what covers it and still has to stay visible. */
   --bottom-obscured-height: var(--bottom-bars-height);
+  /* Room the page keeps below its content in the mobile layout, where the page
+     scrolls on under the bottom navigation and the floating player bar. */
+  --mobile-page-clearance: calc(var(--mobile-navigation-height) + 162px);
   /* Gap the player bar popouts keep from the bar below them. */
   --player-bar-popout-gap: 8px;
   /* How far in from the sides of the screen the popouts sit. Taken from the

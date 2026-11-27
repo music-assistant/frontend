@@ -2,11 +2,17 @@
   <!-- a phone header keeps to the item and how to play it -->
   <div v-if="providers.length && !isPhone" class="detail-hero-providers">
     <span class="detail-hero-providers__pill">
-      <template v-for="(provider, index) in providers" :key="provider.domain">
+      <!-- each service keeps its icon and name together, so a list wider
+           than the column wraps between services instead of overflowing -->
+      <span
+        v-for="(provider, index) in providers"
+        :key="provider.domain"
+        class="detail-hero-providers__provider"
+      >
         <span v-if="index > 0" class="detail-hero-providers__sep">·</span>
         <ProviderIcon :domain="provider.domain" :size="14" />
         <span class="detail-hero-providers__name">{{ provider.name }}</span>
-      </template>
+      </span>
     </span>
   </div>
 </template>
@@ -39,21 +45,30 @@ const isPhone = computed(() => isPhoneSizedScreen());
 }
 .detail-hero-providers__pill {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
+  justify-content: flex-end;
+  gap: 0 5px;
+  max-width: 100%;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 11px;
   background: rgba(0, 0, 0, 0.45);
   font-size: 12px;
   font-weight: 500;
+}
+.detail-hero-providers__provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   white-space: nowrap;
 }
 .detail-hero-providers__sep {
   opacity: 0.4;
 }
 
-.detail-hero--phone .detail-hero-providers {
+.detail-hero--phone .detail-hero-providers,
+.detail-hero--phone .detail-hero-providers__pill {
   justify-content: flex-start;
 }
 
@@ -66,7 +81,7 @@ const isPhone = computed(() => isPhoneSizedScreen());
     display: none;
   }
   .detail-hero-providers__pill {
-    height: auto;
+    min-height: 0;
     padding: 0;
     background: none;
     gap: 10px;

@@ -234,20 +234,33 @@ describe("ProviderRow", () => {
     },
   );
 
-  it.each(VARIANTS)(
-    "shows a disabled source as a still icon by its name (%s)",
-    (variant) => {
-      const wrapper = mountRow({
-        variant,
-        statusIcon: "disabled",
-        statusLabel: "Disabled",
-      });
+  it("shows a disabled source as a still icon by its name in the list", () => {
+    const wrapper = mountRow({
+      variant: "list",
+      statusIcon: "disabled",
+      statusLabel: "Disabled",
+    });
 
-      const icon = wrapper.get('[data-testid="provider-status-icon"]');
-      expect(icon.attributes("aria-label")).toBe("Disabled");
-      expect(icon.get("svg").classes()).not.toContain("animate-spin");
-    },
-  );
+    const icon = wrapper.get('[data-testid="provider-status-icon"]');
+    expect(icon.attributes("aria-label")).toBe("Disabled");
+    expect(icon.get("svg").classes()).not.toContain("animate-spin");
+  });
+
+  it("says a disabled source is disabled on the grey banner of its card", () => {
+    const wrapper = mountRow({
+      variant: "card",
+      statusIcon: "disabled",
+      statusLabel: "Disabled",
+      config: providerConfig({ enabled: false }),
+    });
+
+    const art = wrapper.get('[data-testid="catalog-art"]');
+    expect(art.attributes("data-art")).toBe("light");
+    expect(art.get('[data-testid="provider-status"]').text()).toBe("Disabled");
+    expect(wrapper.find('[data-testid="provider-status-icon"]').exists()).toBe(
+      false,
+    );
+  });
 
   it.each(VARIANTS)(
     "does not open the provider when its status icon is tapped (%s)",
@@ -255,8 +268,8 @@ describe("ProviderRow", () => {
       const wrapper = mountRow({
         variant,
         manageable: true,
-        statusIcon: "disabled",
-        statusLabel: "Disabled",
+        statusIcon: "loading",
+        statusLabel: "Loading",
       });
 
       await wrapper
@@ -280,8 +293,8 @@ describe("ProviderRow", () => {
     (variant) => {
       const wrapper = mountRow({
         variant,
-        statusIcon: "disabled",
-        statusLabel: "Disabled",
+        statusIcon: "loading",
+        statusLabel: "Loading",
         community: true,
       });
 
@@ -457,19 +470,21 @@ describe("ProviderRow", () => {
   );
 
   it.each(VARIANTS)(
-    "says what the source offers, setting the live sources apart (%s)",
+    "says what the source offers as plain text (%s)",
     (variant) => {
       const wrapper = mountRow({ variant, labels: ["library", "live"] });
 
-      const labels = wrapper.findAll(
-        '[data-testid="provider-labels"] [data-label]',
-      );
-      expect(labels.map((label) => label.text())).toEqual([
+      const labels = wrapper.get('[data-testid="provider-labels"]');
+      expect(
+        labels.findAll("[data-label]").map((label) => label.text()),
+      ).toEqual([
         "settings.source_labels.library",
         "settings.source_labels.live",
       ]);
-      expect(labels[0].classes()).not.toContain("bg-orange-500/15");
-      expect(labels[1].classes()).toContain("bg-orange-500/15");
+      expect(labels.text()).toBe(
+        "settings.source_labels.library · settings.source_labels.live",
+      );
+      expect(labels.find('[data-slot="badge"]').exists()).toBe(false);
     },
   );
 
@@ -496,27 +511,78 @@ describe("ProviderRow", () => {
     },
   );
 
-  it("renders an outline item as the list root", () => {
+  it("renders an item without an outline of its own as the list root", () => {
     const wrapper = mountRow({ variant: "list" });
 
     const root = wrapper.get('[data-testid="provider-row"]');
     expect(root.attributes("data-slot")).toBe("item");
-    expect(root.classes()).toContain("border-border");
+    // the list draws one box around its rows
+    expect(root.classes()).not.toContain("border-border");
     // the row only follows the pointer, so it must not read as a control that
     // wraps the name button
     expect(root.attributes("role")).toBeUndefined();
   });
 
-  it("renders a card as the card root", () => {
+  it.each(VARIANTS)(
+    "shows the error reason in red and the description muted (%s)",
+    (variant) => {
+      const error = mountRow({ variant, isError: true, errorText: "Failed" });
+      const healthy = mountRow({ variant, description: "A music service" });
+
+      const reason = error.get('[data-testid="provider-error"]').classes();
+      expect(reason).toContain("text-destructive");
+      expect(reason).not.toContain("text-muted-foreground");
+      expect(
+        healthy
+          .findAll("p")
+          .find((element) => element.text() === "A music service")!
+          .classes(),
+      ).toContain("text-muted-foreground");
+    },
+  );
+
+  it("tints the list row of a source that needs attention", () => {
+    expect(
+      mountRow({ variant: "list", isError: true })
+        .get('[data-testid="provider-row"]')
+        .classes(),
+    ).toContain("bg-destructive/5");
+    expect(
+      mountRow({ variant: "list", isError: false })
+        .get('[data-testid="provider-row"]')
+        .classes(),
+    ).not.toContain("bg-destructive/5");
+  });
+
+  it("gives the list row a cell for each column of the list", () => {
+    const wrapper = mountRow({
+      variant: "list",
+      labels: ["library"],
+      accessSummary: "Shared with everyone",
+    });
+    const narrow = mountRow({
+      variant: "list",
+      columns: { offers: false, access: false },
+      labels: ["library"],
+      accessSummary: "Shared with everyone",
+    });
+
+    expect(wrapper.find('[data-testid="provider-labels"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="provider-access"]').exists()).toBe(true);
+    expect(narrow.find('[data-testid="provider-labels"]').exists()).toBe(false);
+    expect(narrow.find('[data-testid="provider-access"]').exists()).toBe(false);
+  });
+
+  it("renders the Marketplace card as the card root", () => {
     const wrapper = mountRow({ variant: "card" });
 
     const root = wrapper.get('[data-testid="provider-row"]');
     expect(root.attributes("data-slot")).toBe("card");
-    expect(root.classes()).toContain("provider-card");
+    expect(root.find('[data-testid="catalog-art"]').exists()).toBe(true);
     expect(root.attributes("role")).toBeUndefined();
   });
 
-  it("shows the status once and only the reason in the card error panel", () => {
+  it("puts the status on a red banner and only the reason in the card", () => {
     const wrapper = mountRow({
       variant: "card",
       isError: true,
@@ -525,10 +591,13 @@ describe("ProviderRow", () => {
       errorText: "Sign in again to keep using this account",
     });
 
-    // the status belongs to the badge by the name, not repeated in the panel
-    const panel = wrapper.get('[data-testid="provider-error"]');
-    expect(panel.text()).toContain("Sign in again to keep using this account");
-    expect(panel.text()).not.toContain("Authentication required");
+    const art = wrapper.get('[data-testid="catalog-art"]');
+    expect(art.attributes("data-art")).toBe("error");
+    expect(art.get('[data-testid="provider-status"]').text()).toBe(
+      "Authentication required",
+    );
+    const reason = wrapper.get('[data-testid="provider-error"]');
+    expect(reason.text()).toBe("Sign in again to keep using this account");
     expect(wrapper.text().split("Authentication required")).toHaveLength(2);
   });
 
@@ -590,6 +659,7 @@ function mountRow(
     props: {
       config: providerConfig(),
       variant: "list",
+      columns: { offers: true, access: true },
       manageable: true,
       reconfigurable: false,
       syncing: false,

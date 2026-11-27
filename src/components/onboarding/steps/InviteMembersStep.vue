@@ -8,6 +8,12 @@
       aria-live="polite"
     >
       <OnboardingList>
+        <OnboardingAddRow
+          :icon="UserPlus"
+          :label="$t('onboarding.add_member')"
+          data-testid="onboarding-add-member"
+          @click="showCreateUserDialog = true"
+        />
         <Item
           v-for="member in members"
           :key="member.user_id"
@@ -24,12 +30,6 @@
             </ItemDescription>
           </ItemContent>
         </Item>
-        <OnboardingAddRow
-          :icon="UserPlus"
-          :label="$t('onboarding.add_member')"
-          data-testid="onboarding-add-member"
-          @click="showCreateUserDialog = true"
-        />
       </OnboardingList>
     </OnboardingInvitation>
 

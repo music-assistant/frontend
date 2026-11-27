@@ -1,5 +1,7 @@
 import { useConfigAction } from "@/composables/useConfigAction";
+import { coreModuleName } from "@/helpers/core_modules";
 import {
+  buildLogLevelForm,
   buildSettingsForm,
   changedValuesByOwner,
   storedValues,
@@ -9,6 +11,7 @@ import {
 } from "@/helpers/settings_form";
 import {
   canEditSettingsPage,
+  coreOwner,
   isSameOwner,
   SETTINGS_PAGES,
   type SettingsOwner,
@@ -16,16 +19,30 @@ import {
   type SettingsPageId,
 } from "@/helpers/settings_pages";
 import { api } from "@/plugins/api";
+import type { CommandOptions } from "@/plugins/api/commandOptions";
 import type {
   Config,
   ConfigActionResult,
   ConfigEntry,
   ConfigValueType,
+  CoreConfig,
   ProviderConfig,
 } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
 import { $t } from "@/plugins/i18n";
 import { ref, toRef } from "vue";
+import { toast } from "vue-sonner";
+
+// what a save of the settings of a page stored
+export interface SettingsSaveResult {
+  // the given values, but for those of an owner that did not store its changes
+  stored: Record<string, ConfigValueType>;
+  // whether every owner stored its changes
+  complete: boolean;
+}
+
+// the domain and entries of a core module, as the form of the log levels takes them
+type ModuleConfig = Pick<CoreConfig, "domain" | "values">;
 
 // how the settings of one kind of owner are read, saved and acted on; a save
 // and an action get the config the owner loaded
@@ -36,12 +53,15 @@ interface SettingsOwnerAdapter {
     id: string,
     values: Record<string, ConfigValueType>,
     loaded: Config,
+    options?: CommandOptions,
   ) => Promise<Config>;
   invokeAction: (
     id: string,
     action: string,
     loaded: Config,
   ) => Promise<ConfigEntry[] | ConfigActionResult>;
+  // the name the user knows the owner by
+  name: (id: string) => string;
 }
 
 const OWNER_ADAPTERS: Readonly<
@@ -50,8 +70,11 @@ const OWNER_ADAPTERS: Readonly<
   core: {
     load: (id) => api.getCoreConfig(id),
     // clears the cached core config values as well
-    save: (id, values) => api.saveCoreConfig(id, values),
+    save: (id, values, _loaded, options) =>
+      api.saveCoreConfig(id, values, options),
     invokeAction: (id, action) => api.invokeCoreConfigAction(id, action),
+    name: (id) =>
+      coreModuleName(id, (key) => $t(key), api.providerManifests[id]?.name),
   },
   // the settings of the single instance of a provider; nothing while the
   // provider is not set up
@@ -61,10 +84,11 @@ const OWNER_ADAPTERS: Readonly<
       const [summary] = await api.getProviderConfigs(undefined, id);
       return summary && api.getProviderConfig(summary.instance_id);
     },
-    save: (id, values, loaded) =>
-      api.saveProviderConfig(id, values, instanceIdOf(loaded)),
+    save: (id, values, loaded, options) =>
+      api.saveProviderConfig(id, values, instanceIdOf(loaded), options),
     invokeAction: (_id, action, loaded) =>
       api.invokeProviderConfigAction(instanceIdOf(loaded), action),
+    name: (id) => api.providerManifests[id]?.name ?? id,
   },
 };
 
@@ -79,7 +103,7 @@ const OWNER_ADAPTERS: Readonly<
  * @param pageId - The settings page.
  */
 export function useSettingsPage(pageId: SettingsPageId) {
-  const { sources } = SETTINGS_PAGES[pageId];
+  const { sources, logLevels } = SETTINGS_PAGES[pageId];
   const canEdit = canEditSettingsPage(pageId, (scope) =>
     authManager.hasScope(scope),
   );
@@ -87,6 +111,8 @@ export function useSettingsPage(pageId: SettingsPageId) {
   // the config of each source of the page, in the order of the sources; none
   // for an owner without settings to show
   const configs = ref<(Config | undefined)[]>([]);
+  // the config of every core module, on a page that sets their log levels
+  let moduleConfigs: CoreConfig[] = [];
   const entries = ref<ConfigEntry[]>([]);
   const loaded = ref(false);
   const loadFailed = ref(false);
@@ -96,23 +122,31 @@ export function useSettingsPage(pageId: SettingsPageId) {
   let saved: Record<string, ConfigValueType> = {};
 
   /**
-   * Save the values that changed, each owner its own. Resolves whether every
-   * owner stored them.
+   * Save the values that changed, each owner its own. The changes of one owner
+   * land or fail together, apart from those of the others; a toast names the
+   * owners that did not store theirs.
    */
   const save = async function (
     values: Record<string, ConfigValueType>,
-  ): Promise<boolean> {
+  ): Promise<SettingsSaveResult> {
     const changes = changedValuesByOwner(values, saved, fields);
-    if (changes.length === 0) return true;
+    if (changes.length === 0) return { stored: values, complete: true };
     busy.value = true;
     try {
-      return await saveOwnerChanges(
+      const failed = await saveOwnerChanges(
         changes,
         loadedConfigOf,
         (owner, config) => {
           saved = { ...saved, ...storedValues(formEntriesOf(owner, config)) };
         },
       );
+      const stored = Object.fromEntries(
+        Object.entries(values).filter(([formKey]) => {
+          const owner = fields.get(formKey)?.owner;
+          return !owner || !failed.some((f) => isSameOwner(f, owner));
+        }),
+      );
+      return { stored, complete: failed.length === 0 };
     } finally {
       busy.value = false;
     }
@@ -167,9 +201,13 @@ export function useSettingsPage(pageId: SettingsPageId) {
 
   const load = async function (): Promise<void> {
     try {
-      configs.value = await Promise.all(
-        sources.map(({ owner }) => OWNER_ADAPTERS[owner.kind].load(owner.id)),
-      );
+      [configs.value, moduleConfigs] = await Promise.all([
+        Promise.all(
+          sources.map(({ owner }) => OWNER_ADAPTERS[owner.kind].load(owner.id)),
+        ),
+        // the configs carry their entries only on request
+        logLevels ? api.getCoreConfigs(true) : [],
+      ]);
       rebuildForm();
       saved = storedValues(entries.value);
       loaded.value = true;
@@ -180,23 +218,43 @@ export function useSettingsPage(pageId: SettingsPageId) {
   };
 
   const rebuildForm = function (): void {
-    const form = buildForm(configs.value);
+    // a module that is a source of the page keeps its log level in the config
+    // of that source, where an action leaves what was typed
+    const form = buildForm(
+      configs.value,
+      moduleConfigs.map(({ domain }) => ({
+        domain,
+        values: loadedConfigOf(coreOwner(domain)).values,
+      })),
+    );
     entries.value = form.entries;
     fields = form.fields;
   };
 
-  // the form of the page from the given config of each source; a source
-  // without one adds nothing
+  // the form of the page from the given config of each source, led by the log
+  // levels of the given core modules on a page that sets them; a source
+  // without a config adds nothing
   const buildForm = function (
     pageConfigs: readonly (Config | undefined)[],
+    logLevelConfigs: readonly ModuleConfig[],
   ): SettingsForm {
-    return buildSettingsForm(
+    const form = buildSettingsForm(
       sources.map((source, index) => ({
         source,
         entries: Object.values(pageConfigs[index]?.values ?? {}),
       })),
       (key) => $t(key),
     );
+    if (!logLevels) return form;
+    const levels = buildLogLevelForm(
+      logLevelConfigs,
+      OWNER_ADAPTERS.core.name,
+      $t("settings.log_levels"),
+    );
+    return {
+      entries: [...levels.entries, ...form.entries],
+      fields: new Map([...levels.fields, ...form.fields]),
+    };
   };
 
   // the entries of a config of an owner as the form shows them
@@ -208,6 +266,9 @@ export function useSettingsPage(pageId: SettingsPageId) {
       sources.map((source) =>
         isSameOwner(source.owner, owner) ? config : undefined,
       ),
+      owner.kind === "core"
+        ? [{ domain: owner.id, values: config.values }]
+        : [],
     ).entries;
   };
 
@@ -227,9 +288,16 @@ export function useSettingsPage(pageId: SettingsPageId) {
     return sources.findIndex((source) => isSameOwner(source.owner, owner));
   };
 
-  // the config of an owner with entries in the form, which only such an owner has
+  // the config of an owner with entries in the form, which only such an owner
+  // has: that of its source, else that of a core module with only its log level
+  // in the form
   const loadedConfigOf = function (owner: SettingsOwner): Config {
-    return configs.value[sourceIndexOf(owner)]!;
+    return (
+      configs.value[sourceIndexOf(owner)] ??
+      moduleConfigs.find(
+        ({ domain }) => owner.kind === "core" && domain === owner.id,
+      )!
+    );
   };
 
   if (canEdit) void load();
@@ -246,29 +314,39 @@ export function useSettingsPage(pageId: SettingsPageId) {
   };
 }
 
-/**
- * Save the changes of each owner to that owner. Resolves whether every owner
- * stored its changes; the api reports a failed save itself.
- *
- * @param changes - The changed values of each owner.
- * @param loadedConfigOf - Gives the config an owner loaded.
- * @param onSaved - Takes the config an owner stored.
- */
-export async function saveOwnerChanges(
+// saves the changes of each owner to that owner, and resolves the owners that
+// did not store theirs, after naming them in a toast with the reasons the
+// server gave
+async function saveOwnerChanges(
   changes: readonly OwnerChanges[],
   loadedConfigOf: (owner: SettingsOwner) => Config,
   onSaved: (owner: SettingsOwner, config: Config) => void,
-): Promise<boolean> {
+): Promise<SettingsOwner[]> {
   const outcomes = await Promise.allSettled(
     changes.map(async ({ owner, values }) => {
       const adapter = OWNER_ADAPTERS[owner.kind];
+      // the toast below reports the failure along with the owner it hit
+      const options = { suppressGlobalError: true };
       onSaved(
         owner,
-        await adapter.save(owner.id, values, loadedConfigOf(owner)),
+        await adapter.save(owner.id, values, loadedConfigOf(owner), options),
       );
     }),
   );
-  return outcomes.every((outcome) => outcome.status === "fulfilled");
+  const failed: SettingsOwner[] = [];
+  const reasons = new Set<string>();
+  outcomes.forEach((outcome, index) => {
+    if (outcome.status === "fulfilled") return;
+    failed.push(changes[index].owner);
+    if (outcome.reason instanceof Error) reasons.add(outcome.reason.message);
+  });
+  if (failed.length > 0) {
+    const names = failed.map(({ kind, id }) => OWNER_ADAPTERS[kind].name(id));
+    toast.error($t("settings.settings_save_failed_for", [names.join(", ")]), {
+      description: [...reasons].join("; ") || undefined,
+    });
+  }
+  return failed;
 }
 
 // the instance a provider owner loaded

@@ -1,35 +1,24 @@
 <template>
-  <div
+  <DetailHeroMetaLine
     v-for="credit in credits"
     :key="credit.role"
-    class="flex min-w-0 items-center gap-2"
+    :icon="credit.icon"
     :title="$t(credit.role)"
   >
-    <component
-      :is="credit.icon"
-      :size="16"
-      class="flex-none"
-      aria-hidden="true"
-    />
     <span class="sr-only">{{ $t(credit.role) }}:</span>
-    <span class="min-w-0 truncate">
-      <template v-for="(person, index) in credit.people" :key="index">
-        <span v-if="index > 0"> / </span>
-        <span v-if="typeof person === 'string'">{{ person }}</span>
-        <button
-          v-else
-          type="button"
-          class="inline cursor-pointer border-0 bg-transparent p-0 align-baseline text-inherit [font:inherit] hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          @click="gotoArtist(person, credit.role)"
-        >
-          {{ person.name }}
-        </button>
-      </template>
-    </span>
-  </div>
+    <template v-for="(person, index) in credit.people" :key="index">
+      <span v-if="index > 0"> / </span>
+      <span v-if="typeof person === 'string'">{{ person }}</span>
+      <DetailHeroLink v-else @click="gotoArtist(person, credit.role)">
+        {{ person.name }}
+      </DetailHeroLink>
+    </template>
+  </DetailHeroMetaLine>
 </template>
 
 <script setup lang="ts">
+import DetailHeroLink from "@/components/details/DetailHeroLink.vue";
+import DetailHeroMetaLine from "@/components/details/DetailHeroMetaLine.vue";
 import {
   AUDIOBOOK_ARTIST_ROUTE,
   type AudiobookArtistRole,

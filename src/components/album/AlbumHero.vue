@@ -1,83 +1,52 @@
 <template>
   <DetailHero
-    class="album-hero"
-    :class="{ 'album-hero--phone': isPhone }"
     :item="item"
     :backdrop="backdrop"
     :blur-backdrop="blurBackdrop"
     soften-backdrop
-    :height="400"
-    :phone-height="360"
     @edit-rows="emit('edit-rows')"
   >
     <template #toolbar-append>
       <DetailHeroFavorite v-if="item" :item="item" />
     </template>
 
-    <template v-if="item" #main>
-      <div class="album-hero__main">
-        <div class="album-hero__cover detail-hero-cover">
-          <MediaItemThumb :item="item" :rounded="false" />
-        </div>
+    <template v-if="item" #cover>
+      <DetailHeroCover :item="item" />
+    </template>
 
-        <div class="album-hero__text">
-          <h1 class="album-hero__name">
-            {{ item.name }}
-            <span v-if="item.version" class="album-hero__version">
-              ({{ item.version }})
-            </span>
-            <ExplicitBadge
-              v-if="item.metadata?.explicit"
-              class="album-hero__explicit [--explicit-icon-square:rgba(255,255,255,0.25)] [--explicit-icon-letter:#fff]"
-            />
-          </h1>
+    <template v-if="item" #meta>
+      <DetailHeroMetaLine v-if="item.artists.length" :icon="Music">
+        <template v-for="(artist, index) in item.artists" :key="artist.uri">
+          <span v-if="index > 0">,&nbsp;</span>
+          <DetailHeroLink @click="gotoArtist(artist)">
+            {{ artist.name }}
+          </DetailHeroLink>
+        </template>
+      </DetailHeroMetaLine>
+      <DetailHeroFacts v-if="facts.length" :icon="Disc" :facts="facts" />
+    </template>
 
-          <div class="album-hero__meta">
-            <div v-if="item.artists.length" class="album-hero__line">
-              <Music :size="16" class="album-hero__icon" />
-              <span class="album-hero__line-text">
-                <template
-                  v-for="(artist, index) in item.artists"
-                  :key="artist.uri"
-                >
-                  <span v-if="index > 0">,&nbsp;</span>
-                  <button
-                    type="button"
-                    class="album-hero__link"
-                    @click="gotoArtist(artist)"
-                  >
-                    {{ artist.name }}
-                  </button>
-                </template>
-              </span>
-            </div>
-            <DetailHeroFacts v-if="facts.length" :icon="Disc" :facts="facts" />
-          </div>
-
-          <div class="album-hero__actions">
-            <DetailHeroPlayButton
-              :item="item"
-              :tracks-sort-field="tracksSortField"
-              :tracks-sort-direction="tracksSortDirection"
-            />
-            <DetailHeroButton
-              :icon="Shuffle"
-              :label="$t('shuffle')"
-              :disabled="!store.activePlayer"
-              @click="api.playMedia(item, undefined, { shuffle: true })"
-            />
-            <DetailHeroButton
-              v-if="radioRelevant(item)"
-              :icon="Orbit"
-              :label="$t('album_radio')"
-              :disabled="!radioSupported(item)"
-              @click="gotoRadio(item)"
-            />
-            <!-- outside the library the services listed beside already say where it is from -->
-            <DetailHeroSourceBadge :item="item" library-only />
-          </div>
-        </div>
-      </div>
+    <template v-if="item" #actions>
+      <DetailHeroPlayButton
+        :item="item"
+        :tracks-sort-field="tracksSortField"
+        :tracks-sort-direction="tracksSortDirection"
+      />
+      <DetailHeroButton
+        :icon="Shuffle"
+        :label="$t('shuffle')"
+        :disabled="!store.activePlayer"
+        @click="api.playMedia(item, undefined, { shuffle: true })"
+      />
+      <DetailHeroButton
+        v-if="radioRelevant(item)"
+        :icon="Orbit"
+        :label="$t('album_radio')"
+        :disabled="!radioSupported(item)"
+        @click="gotoRadio(item)"
+      />
+      <!-- outside the library the services listed beside already say where it is from -->
+      <DetailHeroSourceBadge :item="item" library-only />
     </template>
 
     <template v-if="item" #aside>
@@ -90,14 +59,15 @@
 <script setup lang="ts">
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
+import DetailHeroCover from "@/components/details/DetailHeroCover.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
+import DetailHeroLink from "@/components/details/DetailHeroLink.vue";
+import DetailHeroMetaLine from "@/components/details/DetailHeroMetaLine.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroProviders from "@/components/details/DetailHeroProviders.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
-import ExplicitBadge from "@/components/details/ExplicitBadge.vue";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import { gotoRadio, radioRelevant, radioSupported } from "@/helpers/radio";
 import { formatTotalDuration } from "@/helpers/duration";
 import { api } from "@/plugins/api";
@@ -109,7 +79,6 @@ import {
   type SortDirection,
   type SortField,
 } from "@/plugins/api/interfaces";
-import { isPhoneSizedScreen } from "@/plugins/breakpoint";
 import { $t } from "@/plugins/i18n";
 import { store } from "@/plugins/store";
 import { Disc, Music, Orbit, Shuffle } from "@lucide/vue";
@@ -138,8 +107,6 @@ const emit = defineEmits<{
 
 const router = useRouter();
 
-const isPhone = computed(() => isPhoneSizedScreen());
-
 // "Album · 2011 · 12 tracks · 48 min", without whatever the album does not have
 const facts = computed(() => {
   const album = props.item;
@@ -165,125 +132,3 @@ const gotoArtist = function (artist: Artist | ItemMapping) {
   });
 };
 </script>
-
-<style scoped>
-.album-hero__main {
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-  width: 100%;
-  min-width: 0;
-}
-.album-hero__cover {
-  width: 280px;
-  height: 280px;
-  flex: none;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-.album-hero__text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-  padding-bottom: 4px;
-}
-
-.album-hero__name {
-  margin: 0;
-  font-size: 44px;
-  font-weight: 500;
-  letter-spacing: -1.1px;
-  line-height: 1.2;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.album-hero__version {
-  font-size: 0.6em;
-  letter-spacing: 0;
-  color: rgba(255, 255, 255, 0.7);
-}
-.album-hero__explicit {
-  margin-left: 6px;
-  vertical-align: middle;
-}
-
-.album-hero__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-}
-.album-hero__line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.album-hero__icon {
-  flex: none;
-}
-.album-hero__line-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-/* the artists read as links in the line of text, so the button chrome goes */
-.album-hero__link {
-  display: inline;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  vertical-align: baseline;
-  cursor: pointer;
-}
-.album-hero__link:hover {
-  text-decoration: underline;
-}
-.album-hero__link:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-.album-hero__actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 8px;
-  min-width: 0;
-}
-
-@container detail-hero (width < 48rem) {
-  .album-hero__main {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  .album-hero__cover {
-    width: 180px;
-    height: 180px;
-  }
-  .album-hero__name {
-    font-size: 30px;
-    letter-spacing: -0.7px;
-  }
-  .album-hero__meta {
-    font-size: 14px;
-  }
-  .album-hero__actions {
-    gap: 10px;
-  }
-}
-</style>

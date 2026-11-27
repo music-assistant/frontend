@@ -4,12 +4,19 @@ import type { MusicAssistantApi } from "@/plugins/api";
 import {
   ConfigEntryType,
   type ConfigEntry,
+  type ConfigValueType,
   type CoreConfig,
   type Scope,
 } from "@/plugins/api/interfaces";
 import SettingsPageFormView from "@/views/settings/SettingsPageFormView.vue";
-import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import {
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 const { apiMock, hasScope, toastSuccess } = vi.hoisted(() => ({
   apiMock: {
@@ -29,12 +36,22 @@ vi.mock("vue-sonner", () => ({
   toast: { error: vi.fn(), success: toastSuccess },
 }));
 
+// the save names the owner of a failed save in a toast of its own
+const QUIET_SAVE = { suppressGlobalError: true };
+
 enableAutoUnmount(afterEach);
+
+const SAVE_BAR = '[data-testid="settings-save-bar"]';
 
 // the form itself is covered where it lives
 const editConfigStub = {
   name: "EditConfig",
-  props: { configEntries: Array, disabled: Boolean, inlineSave: Boolean },
+  props: {
+    configEntries: Array,
+    disabled: Boolean,
+    inlineSave: Boolean,
+    keepSectionHeadings: Boolean,
+  },
   emits: ["submit", "action", "immediateApply"],
   template: "<div />",
 };
@@ -45,7 +62,7 @@ beforeEach(() => {
 });
 
 describe("SettingsPageFormView on the playback defaults", () => {
-  it.each(["library", "metadata", "playback"] as const)(
+  it.each(["library", "metadata", "playback", "tap_and_play"] as const)(
     "heads the %s settings with the header of their page",
     async (page) => {
       apiMock.getCoreConfig.mockImplementation(async (domain) =>
@@ -115,6 +132,17 @@ const STREAMS_ENTRIES: ConfigEntry[] = [
 ];
 
 describe("SettingsPageFormView on the metadata settings", () => {
+  it("leaves the headings of its sections to the form", async () => {
+    apiMock.getCoreConfig.mockResolvedValue(
+      coreConfig("metadata", [entry("language", "generic")]),
+    );
+    const wrapper = await mountPage("metadata");
+
+    expect(
+      wrapper.getComponent(editConfigStub).props("keepSectionHeadings"),
+    ).toBe(false);
+  });
+
   it("shows every setting of the metadata module but its log level", async () => {
     apiMock.getCoreConfig.mockResolvedValue(
       coreConfig("metadata", [
@@ -170,6 +198,9 @@ describe("SettingsPageFormView on the library settings", () => {
         category_label: "settings.library.maintenance",
       },
     ]);
+    expect(
+      wrapper.getComponent(editConfigStub).props("keepSectionHeadings"),
+    ).toBe(true);
   });
 
   it("resets the library on the music module", async () => {
@@ -190,6 +221,80 @@ describe("SettingsPageFormView on the library settings", () => {
     );
     expect(toastSuccess).toHaveBeenCalledWith("The database has been reset.");
   });
+});
+
+describe("SettingsPageFormView saving the library settings", () => {
+  beforeEach(() => {
+    apiMock.getCoreConfig.mockImplementation(async (domain) =>
+      libraryConfig(domain),
+    );
+    apiMock.saveCoreConfig.mockImplementation(async (domain) =>
+      libraryConfig(domain),
+    );
+  });
+
+  it("shows the save bar only while the page holds unsaved changes", async () => {
+    const wrapper = await mountLibrary();
+    expect(wrapper.find(SAVE_BAR).exists()).toBe(false);
+
+    editRow(wrapper, "core/music/keep_remasters_apart", true);
+    await nextTick();
+    expect(wrapper.find(SAVE_BAR).exists()).toBe(true);
+
+    editRow(wrapper, "core/music/keep_remasters_apart", null);
+    await nextTick();
+    expect(wrapper.find(SAVE_BAR).exists()).toBe(false);
+  });
+
+  it("saves the settings of each module from the one save bar of the page", async () => {
+    const wrapper = await mountLibrary();
+
+    editRow(wrapper, "core/streams/stream_source_mode", "prefer_quality");
+    editRow(wrapper, "core/music/keep_remasters_apart", true);
+    await nextTick();
+    expect(wrapper.findAll(SAVE_BAR)).toHaveLength(1);
+    const save = wrapper.get('[data-testid="config-save"]');
+    expect(save.attributes("disabled")).toBeUndefined();
+
+    await save.trigger("click");
+    await flushPromises();
+
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledTimes(2);
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      {
+        stream_source_mode: "prefer_quality",
+      },
+      QUIET_SAVE,
+    );
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "music",
+      {
+        keep_remasters_apart: true,
+      },
+      QUIET_SAVE,
+    );
+    // what is saved is no longer a change
+    expect(wrapper.find(SAVE_BAR).exists()).toBe(false);
+  });
+
+  async function mountLibrary() {
+    const wrapper = mount(SettingsPageFormView, {
+      props: { page: "library" },
+      global: { stubs: { ConfigEntryRow: true, ProtocolConfigSection: true } },
+    });
+    await flushPromises();
+    return wrapper;
+  }
+
+  // what typing into the field of an entry does
+  function editRow(wrapper: VueWrapper, key: string, value: ConfigValueType) {
+    const row = wrapper
+      .findAllComponents({ name: "ConfigEntryRow" })
+      .find((r) => (r.props("confEntry") as ConfigEntry).key === key);
+    if (!row) throw new Error(`no row for ${key}`);
+    row.vm.$emit("update:value", value);
+  }
 });
 
 describe("SettingsPageFormView on the task settings", () => {

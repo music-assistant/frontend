@@ -78,6 +78,17 @@ describe("ProtocolConfigSection", () => {
     ]);
   });
 
+  it("shows its heading only when the form asks", async () => {
+    const wrapper = mountSection(MULTIPLE_OUTPUT_ENTRIES, MULTIPLE_OUTPUTS);
+    expect(wrapper.find("h4").text()).toBe(
+      "settings.category.protocol_settings",
+    );
+
+    await wrapper.setProps({ showHeading: false });
+
+    expect(wrapper.find("h4").exists()).toBe(false);
+  });
+
   it("renders a single protocol without an accordion", () => {
     const wrapper = mountSection(
       [entry("native_buffer", "protocol_sonos")],
@@ -389,6 +400,7 @@ function sectionProps(
       isEntryDisabled(configEntry, entries),
     outputProtocols,
     protocolPanels,
+    showHeading: true,
     showPasswordValues: false,
     visibleEntriesByCategory,
   };

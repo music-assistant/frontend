@@ -3,6 +3,7 @@ import {
   type ProviderAccess,
   ProviderSharing,
   ProviderType,
+  SharedPlayback,
   UserRole,
 } from "@/plugins/api/interfaces";
 import { describe, expect, it } from "vitest";
@@ -14,6 +15,8 @@ import {
   effectiveProviderAccess,
   getProviderSharingHintTranslationKey,
   getProviderSharingTranslationKey,
+  getSharedPlaybackHintTranslationKey,
+  getSharedPlaybackTranslationKey,
   hasConfigurableAccess,
   isOwnMusicSource,
   isSelfServiceProvider,
@@ -21,6 +24,7 @@ import {
   ownerCandidates,
   servesNobody,
   shareCandidates,
+  sharedPlaybackOptions,
   userDisplayName,
 } from "./provider_access";
 
@@ -31,6 +35,7 @@ describe("accessAllows", () => {
     owner: "owner",
     sharing: ProviderSharing.PRIVATE,
     shared_users: [],
+    shared_playback: SharedPlayback.WITHOUT_OWN,
     ...overrides,
   });
 
@@ -76,6 +81,7 @@ describe("effectiveProviderAccess", () => {
       owner: null,
       sharing: ProviderSharing.EVERYONE,
       shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
     });
   });
 
@@ -84,6 +90,7 @@ describe("effectiveProviderAccess", () => {
       owner: "user-1",
       sharing: ProviderSharing.SELECTED,
       shared_users: ["user-2"],
+      shared_playback: SharedPlayback.WHEN_BUSY,
     };
 
     expect(effectiveProviderAccess(access)).toBe(access);
@@ -121,6 +128,7 @@ describe("isOwnMusicSource", () => {
       owner: "user-1",
       sharing: ProviderSharing.PRIVATE,
       shared_users: [],
+      shared_playback: SharedPlayback.WITHOUT_OWN,
     },
   });
 
@@ -144,7 +152,12 @@ describe("isOwnMusicSource", () => {
 describe("ownedMusicSourceCount", () => {
   const owned = (owner: string | null) =>
     providerConfig({
-      access: { owner, sharing: ProviderSharing.PRIVATE, shared_users: [] },
+      access: {
+        owner,
+        sharing: ProviderSharing.PRIVATE,
+        shared_users: [],
+        shared_playback: SharedPlayback.WITHOUT_OWN,
+      },
     });
 
   it("counts only the sources owned by the given user", () => {
@@ -348,5 +361,30 @@ describe("isSelfServiceProvider", () => {
 
   it("is false without a manifest", () => {
     expect(isSelfServiceProvider(undefined)).toBe(false);
+  });
+});
+
+describe("shared playback", () => {
+  it("offers keeping a source to its owner only when it has one", () => {
+    expect(sharedPlaybackOptions(true)).toEqual([
+      SharedPlayback.NEVER,
+      SharedPlayback.WITHOUT_OWN,
+      SharedPlayback.WHEN_BUSY,
+    ]);
+    expect(sharedPlaybackOptions(false)).toEqual([
+      SharedPlayback.WITHOUT_OWN,
+      SharedPlayback.WHEN_BUSY,
+    ]);
+  });
+
+  it("names and explains every choice", () => {
+    for (const option of Object.values(SharedPlayback)) {
+      expect(getSharedPlaybackTranslationKey(option)).toBe(
+        `settings.source_access.shared_playback_options.${option}`,
+      );
+      expect(getSharedPlaybackHintTranslationKey(option)).toBe(
+        `settings.source_access.shared_playback_hints.${option}`,
+      );
+    }
   });
 });
