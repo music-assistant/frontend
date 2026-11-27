@@ -143,6 +143,8 @@ onMounted(() => {
 }
 
 .content-section {
+  /* contains absolutely positioned content, so it scrolls with the page */
+  position: relative;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
