@@ -7,8 +7,8 @@ import { providerMapping } from "../../fixtures/providerMapping";
 vi.mock("@/plugins/api", () => ({ api: {} }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => false }));
-vi.mock("@/components/details/DetailHero.vue", () => ({
-  default: { template: '<div><slot name="main" /></div>' },
+vi.mock("@/components/details/DetailHero.vue", async () => ({
+  default: (await import("../details/detailHeroStub")).detailHeroStub,
 }));
 vi.mock("@/components/details/DetailHeroFavorite.vue", () => ({
   default: { template: "<div />" },

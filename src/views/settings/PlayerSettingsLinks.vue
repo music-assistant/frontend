@@ -10,7 +10,13 @@ import { getPlayerSettingsSections } from "@/helpers/player_settings_actions";
 import { api } from "@/plugins/api";
 import { DSPConfig, EventType } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { AudioLines, CirclePlay, SlidersHorizontal } from "@lucide/vue";
+import {
+  AudioLines,
+  Cast,
+  CirclePlay,
+  SlidersHorizontal,
+  Volume2,
+} from "@lucide/vue";
 import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
 
 /**
@@ -19,6 +25,10 @@ import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
  */
 const props = defineProps<{
   playerId: string;
+  /** The output settings have an entry to show on their page. */
+  hasOutputs: boolean;
+  /** The player controls have an entry to show on their page. */
+  hasControls: boolean;
 }>();
 
 // global refs
@@ -77,6 +87,24 @@ const links = computed(() => {
       icon: markRaw(SlidersHorizontal),
       label: $t("settings.category.options"),
       description: $t("settings.player_options_description"),
+    });
+  }
+  if (props.hasOutputs) {
+    items.push({
+      key: "outputs",
+      to: `/settings/editplayer/${props.playerId}/outputs`,
+      icon: markRaw(Cast),
+      label: $t("settings.category.protocol_settings"),
+      description: $t("settings.output_protocols_description"),
+    });
+  }
+  if (props.hasControls) {
+    items.push({
+      key: "controls",
+      to: `/settings/editplayer/${props.playerId}/controls`,
+      icon: markRaw(Volume2),
+      label: $t("settings.category.player_controls"),
+      description: $t("settings.player_controls_description"),
     });
   }
   return items;

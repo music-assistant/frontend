@@ -21,6 +21,7 @@ const { apiMock, hasScope, toastMock } = vi.hoisted(() => ({
     saveCoreConfig: vi.fn<MusicAssistantApi["saveCoreConfig"]>(),
     getProviderConfig: vi.fn<MusicAssistantApi["getProviderConfig"]>(),
     getProviderConfigs: vi.fn<MusicAssistantApi["getProviderConfigs"]>(),
+    providerManifests: {} as Record<string, { name: string }>,
   },
   hasScope: vi.fn<(scope: Scope) => boolean>(),
   toastMock: { error: vi.fn(), success: vi.fn() },
@@ -30,6 +31,9 @@ vi.mock("@/plugins/api", () => ({ api: apiMock, default: apiMock }));
 vi.mock("@/plugins/auth", () => ({ authManager: { hasScope } }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
 vi.mock("vue-sonner", () => ({ toast: toastMock }));
+
+// the save names the owner of a failed save in a toast of its own
+const QUIET_SAVE = { suppressGlobalError: true };
 // one menu for the test to read what the form publishes into it
 vi.mock("@/composables/useSettingsPageMenu", async () => {
   const { ref } = await import("vue");
@@ -39,9 +43,8 @@ vi.mock("@/composables/useSettingsPageMenu", async () => {
 
 enableAutoUnmount(afterEach);
 
-// the form takes the saved values as its baseline, or guards them again
+// the form takes the stored values as its baseline
 const saveSucceeded = vi.fn();
-const saveFailed = vi.fn();
 const resetToDefaults = vi.fn();
 
 /**
@@ -60,9 +63,9 @@ const editConfigStub = {
   },
   emits: ["submit", "action", "immediateApply"],
   setup() {
-    return { saveFailed, saveSucceeded, resetToDefaults };
+    return { saveSucceeded, resetToDefaults };
   },
-  template: "<div data-testid='edit-config' />",
+  template: "<div data-testid='edit-config'><slot /></div>",
 };
 
 beforeEach(() => {
@@ -126,7 +129,8 @@ describe("SettingsPageForm", () => {
     expect(
       (form.props("configEntries") as ConfigEntry[]).map((e) => e.key),
     ).toEqual(["background_scan_concurrency"]);
-    expect(form.props("inlineSave")).toBe(true);
+    // a page pins its Save to a bar at the bottom of the screen
+    expect(form.props("inlineSave")).toBe(false);
     expect(form.props("hideHeader")).toBe(false);
     expect(form.props("flat")).toBe(false);
     expect(form.props("providerDomain")).toBeUndefined();
@@ -137,7 +141,13 @@ describe("SettingsPageForm", () => {
 
     const form = wrapper.getComponent(editConfigStub);
     expect(form.props("flat")).toBe(true);
-    expect(form.props("inlineSave")).toBe(true);
+    expect(form.props("inlineSave")).toBe(false);
+  });
+
+  it("keeps Save in the flow of the form for a host that asks", async () => {
+    const wrapper = await mountForm({ inlineSave: true });
+
+    expect(wrapper.getComponent(editConfigStub).props("inlineSave")).toBe(true);
   });
 
   it("names the provider to the form of a page showing its settings", async () => {
@@ -184,9 +194,13 @@ describe("SettingsPageForm", () => {
     await form.vm.$emit("submit", { background_scan_concurrency: 4 });
     await flushPromises();
 
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
-      background_scan_concurrency: 4,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      {
+        background_scan_concurrency: 4,
+      },
+      QUIET_SAVE,
+    );
     expect(saveSucceeded).toHaveBeenCalledWith({
       background_scan_concurrency: 4,
     });
@@ -198,7 +212,7 @@ describe("SettingsPageForm", () => {
     );
   });
 
-  it("guards the edits again when the save did not land", async () => {
+  it("keeps the edits unsaved when the save did not land", async () => {
     apiMock.saveCoreConfig.mockRejectedValueOnce(new Error("refused"));
     const wrapper = await mountForm();
 
@@ -207,8 +221,9 @@ describe("SettingsPageForm", () => {
       .vm.$emit("submit", { background_scan_concurrency: 4 });
     await flushPromises();
 
-    expect(saveFailed).toHaveBeenCalledOnce();
-    expect(saveSucceeded).not.toHaveBeenCalled();
+    // nothing landed, so nothing joins the baseline
+    expect(saveSucceeded).toHaveBeenCalledExactlyOnceWith({});
+    expect(toastMock.error).toHaveBeenCalledOnce();
     expect(toastMock.success).not.toHaveBeenCalled();
     expect(wrapper.emitted("saved")).toBeUndefined();
   });
@@ -221,9 +236,13 @@ describe("SettingsPageForm", () => {
       .vm.$emit("immediateApply", { background_scan_concurrency: 4 });
     await flushPromises();
 
-    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith("streams", {
-      background_scan_concurrency: 4,
-    });
+    expect(apiMock.saveCoreConfig).toHaveBeenCalledWith(
+      "streams",
+      {
+        background_scan_concurrency: 4,
+      },
+      QUIET_SAVE,
+    );
     expect(toastMock.success).toHaveBeenCalledExactlyOnceWith(
       "settings.settings_saved",
     );
@@ -309,6 +328,9 @@ describe("SettingsPageForm with settings the page edits itself", () => {
   it("hands the page their entries and keeps them out of view in the form", async () => {
     const wrapper = await mountCustom(customSettings);
 
+    // inside the form, so its Save stays in view while they are
+    const form = wrapper.getComponent(editConfigStub);
+    expect(form.find('[data-testid="custom"]').exists()).toBe(true);
     expect(wrapper.get('[data-testid="custom"]').text()).toBe(
       "core/webserver/base_url=auto;core/webserver/external_url=;",
     );
@@ -373,7 +395,9 @@ describe("SettingsPageForm with settings the page edits itself", () => {
   }
 });
 
-async function mountForm(props: { embedded?: boolean; flat?: boolean } = {}) {
+async function mountForm(
+  props: { embedded?: boolean; flat?: boolean; inlineSave?: boolean } = {},
+) {
   const wrapper = mount(SettingsPageForm, {
     props: { page: "audio_analysis", ...props },
     global: { stubs: { EditConfig: editConfigStub } },

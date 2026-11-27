@@ -35,13 +35,14 @@
         <template v-if="stateLabel" #badges>
           <Badge
             :variant="problem ? 'destructive' : 'outline'"
+            class="h-5 rounded-md px-1.5 text-[11px]"
             data-testid="community-installed-state"
           >
             {{ $t(stateLabel) }}
           </Badge>
         </template>
-        <div class="mt-0.5 flex flex-col gap-1 text-sm text-muted-foreground">
-          <p class="m-0 text-xs">{{ summary }}</p>
+        <template v-if="summary" #subtitle>{{ summary }}</template>
+        <div class="mt-2.5 flex flex-col gap-1 text-sm text-muted-foreground">
           <p v-if="update" class="m-0" data-testid="community-installed-update">
             {{
               $t("settings.catalog.community.update_available", {

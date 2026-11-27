@@ -4,6 +4,7 @@ import type { StepPrimaryAction } from "@/helpers/onboarding";
 import { ProviderStatus, ProviderType } from "@/plugins/api/interfaces";
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick, reactive } from "vue";
 
 const { apiMock, onboardingState } = vi.hoisted(() => ({
   apiMock: {
@@ -84,7 +85,7 @@ function testId(wrapper: Wrapper, id: string) {
 
 const features = (wrapper: Wrapper) =>
   testId(wrapper, "onboarding-invitation-features")
-    .findAll("[data-slot=item]")
+    .findAll("li")
     .map((item) => item.text());
 const addRow = (wrapper: Wrapper) => testId(wrapper, "onboarding-add-provider");
 // the step's own way forward, which the wizard shows as its main button
@@ -138,6 +139,40 @@ describe("ProvidersStep", () => {
       );
       expect(addRow(wrapper).text()).toBe("settings.add_music_provider");
       expect(primaryAction(wrapper)).toBeUndefined();
+
+      wrapper.unmount();
+    });
+
+    it("opens the whole list when a source is added past the first five", async () => {
+      const sources = reactive(
+        ["a", "b", "c", "d", "e"].map((domain) => configured(domain)),
+      );
+      onboardingState.musicSources = sources;
+      const wrapper = mountStep(ProviderType.MUSIC);
+
+      sources.push(configured("spotify", { name: "Spotify" }));
+      await nextTick();
+
+      expect(
+        wrapper
+          .findAll("[data-testid=onboarding-configured-provider]")
+          .map((row) => row.text()),
+      ).toContain("Spotify");
+
+      wrapper.unmount();
+    });
+
+    it("offers no show all for a short list, even after adding one", async () => {
+      const sources = reactive<ConfiguredProvider[]>([]);
+      onboardingState.musicSources = sources;
+      const wrapper = mountStep(ProviderType.MUSIC);
+
+      sources.push(configured("spotify", { name: "Spotify" }));
+      await nextTick();
+
+      expect(testId(wrapper, "onboarding-show-all-providers").exists()).toBe(
+        false,
+      );
 
       wrapper.unmount();
     });

@@ -92,7 +92,9 @@ type DependencyFields = Pick<
 
 // the fields a required-value check reads, on top of the dependency fields it also evaluates
 type ValidationFields = DependencyFields &
-  Pick<ConfigEntry, "required" | "default_value"> & { type: ConfigEntryUIType };
+  Pick<ConfigEntry, "required" | "default_value" | "read_only" | "hidden"> & {
+    type: ConfigEntryUIType;
+  };
 
 /**
  * Whether `entry` should be disabled because its `depends_on` dependency is unmet
@@ -125,18 +127,23 @@ export const isEntryDisabled = (
  * Whether every required entry in `entries` holds something to submit.
  *
  * An entry counts as satisfied by its own value or by a default the server will fall
- * back to. Two kinds never block a submission: {@link VALUELESS_ENTRY_TYPES}, which hold
- * nothing to give, and those {@link isEntryDisabled} gates behind an unmet dependency —
- * including a dependency naming a key that is not on the form, which is unsatisfiable
- * by definition.
+ * back to. Entries the user can not fill in never block a submission:
+ * {@link VALUELESS_ENTRY_TYPES}, which hold nothing to give, read-only and hidden
+ * entries, those `isShown` leaves out (such as advanced entries while they are hidden),
+ * and those {@link isEntryDisabled} gates behind an unmet dependency — including a
+ * dependency naming a key that is not on the form, which is unsatisfiable by definition.
  */
-export const allRequiredValuesPresent = (
-  entries: readonly ValidationFields[],
+export const allRequiredValuesPresent = <T extends ValidationFields>(
+  entries: readonly T[],
+  isShown: (entry: T) => boolean = () => true,
 ): boolean =>
   entries.every(
     (entry) =>
       !entry.required ||
       VALUELESS_ENTRY_TYPES.includes(entry.type) ||
+      !!entry.read_only ||
+      !!entry.hidden ||
+      !isShown(entry) ||
       isEntryDisabled(entry, entries) ||
       !isNullOrUndefined(entry.value) ||
       !isNullOrUndefined(entry.default_value),

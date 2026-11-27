@@ -8,14 +8,8 @@ const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ push: routerPush }) }));
 vi.mock("@/plugins/breakpoint", () => ({ isPhoneSizedScreen: () => false }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
-vi.mock("@/components/details/DetailHero.vue", () => ({
-  default: {
-    name: "DetailHero",
-    props: ["item", "backdrop", "blurBackdrop"],
-    emits: ["edit-rows"],
-    template:
-      '<div><slot name="toolbar-append" /><slot name="main" /><slot name="aside" /></div>',
-  },
+vi.mock("@/components/details/DetailHero.vue", async () => ({
+  default: (await import("../details/detailHeroStub")).detailHeroStub,
 }));
 vi.mock("@/components/details/DetailHeroFavorite.vue", () => ({
   default: { name: "DetailHeroFavorite", props: ["item"], template: "<div />" },

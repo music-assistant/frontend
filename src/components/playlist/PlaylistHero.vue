@@ -3,8 +3,6 @@
     :item="item"
     :backdrop="backdrop"
     :blur-backdrop="blurBackdrop"
-    :height="400"
-    :phone-height="360"
     @edit-rows="emit('edit-rows')"
   >
     <template #toolbar-append>
@@ -37,75 +35,51 @@
       <DetailHeroFavorite v-if="item" :item="item" />
     </template>
 
-    <template v-if="item" #main>
-      <div
-        class="flex w-full min-w-0 items-end gap-6 @max-3xl/detail-hero:flex-col @max-3xl/detail-hero:items-stretch @max-3xl/detail-hero:gap-3"
+    <template v-if="item" #cover>
+      <DetailHeroCover :item="item" />
+    </template>
+
+    <template v-if="item" #meta>
+      <DetailHeroMetaLine
+        v-if="isMusicAssistantPlaylist(item) || item.owner"
+        :icon="User"
       >
-        <div
-          class="detail-hero-cover size-[200px] flex-none overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:size-[132px]"
-        >
-          <MediaItemThumb :item="item" :rounded="false" />
-        </div>
+        <PlaylistAccessSummary
+          v-if="isMusicAssistantPlaylist(item)"
+          :playlist="item"
+        />
+        <template v-else>{{ item.owner }}</template>
+      </DetailHeroMetaLine>
+      <DetailHeroFacts :icon="ListMusic" :facts="facts" />
+    </template>
 
-        <div class="flex min-w-0 flex-1 flex-col gap-2.5 pb-1">
-          <h1
-            class="m-0 line-clamp-2 text-[44px] leading-[1.2] font-medium tracking-[-1.1px] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-[30px] @max-3xl/detail-hero:tracking-[-0.7px]"
-          >
-            {{ item.name }}
-          </h1>
-
-          <div
-            class="flex flex-col gap-1 text-[15px] text-white/85 [text-shadow:0_1px_6px_rgba(0,0,0,0.5)] @max-3xl/detail-hero:text-sm"
-          >
-            <div
-              v-if="isMusicAssistantPlaylist(item) || item.owner"
-              class="flex min-w-0 items-center gap-2"
-            >
-              <User :size="16" class="flex-none" />
-              <span class="min-w-0 truncate">
-                <PlaylistAccessSummary
-                  v-if="isMusicAssistantPlaylist(item)"
-                  :playlist="item"
-                />
-                <template v-else>{{ item.owner }}</template>
-              </span>
-            </div>
-            <DetailHeroFacts :icon="ListMusic" :facts="facts" />
-          </div>
-
-          <!-- a narrow hero has no room for every button beside play, so the row wraps there -->
-          <div
-            class="flex min-w-0 flex-nowrap items-center gap-2 @max-3xl/detail-hero:flex-wrap @max-3xl/detail-hero:gap-2.5"
-          >
-            <DetailHeroPlayButton
-              :item="item"
-              :tracks-sort-field="tracksSortField"
-              :tracks-sort-direction="tracksSortDirection"
-            />
-            <DetailHeroButton
-              :icon="Shuffle"
-              :label="$t('shuffle')"
-              :disabled="!store.activePlayer"
-              @click="api.playMedia(item, undefined, { shuffle: true })"
-            />
-            <DetailHeroButton
-              v-if="radioRelevant(item)"
-              :icon="Orbit"
-              :label="$t('playlist_radio')"
-              :disabled="!radioSupported(item)"
-              @click="gotoRadio(item)"
-            />
-            <!-- the rules are readable by everyone, editing them is a toolbar action -->
-            <DetailHeroButton
-              v-if="hasRules"
-              :icon="ListFilter"
-              :label="$t('smart_playlist.rules_dialog_title')"
-              @click="emit('show-rules')"
-            />
-            <DetailHeroSourceBadge :item="item" />
-          </div>
-        </div>
-      </div>
+    <template v-if="item" #actions>
+      <DetailHeroPlayButton
+        :item="item"
+        :tracks-sort-field="tracksSortField"
+        :tracks-sort-direction="tracksSortDirection"
+      />
+      <DetailHeroButton
+        :icon="Shuffle"
+        :label="$t('shuffle')"
+        :disabled="!store.activePlayer"
+        @click="api.playMedia(item, undefined, { shuffle: true })"
+      />
+      <DetailHeroButton
+        v-if="radioRelevant(item)"
+        :icon="Orbit"
+        :label="$t('playlist_radio')"
+        :disabled="!radioSupported(item)"
+        @click="gotoRadio(item)"
+      />
+      <!-- the rules are readable by everyone, editing them is a toolbar action -->
+      <DetailHeroButton
+        v-if="hasRules"
+        :icon="ListFilter"
+        :label="$t('smart_playlist.rules_dialog_title')"
+        @click="emit('show-rules')"
+      />
+      <DetailHeroSourceBadge :item="item" />
     </template>
 
     <template v-if="item" #aside>
@@ -117,12 +91,13 @@
 <script setup lang="ts">
 import DetailHero from "@/components/details/DetailHero.vue";
 import DetailHeroButton from "@/components/details/DetailHeroButton.vue";
+import DetailHeroCover from "@/components/details/DetailHeroCover.vue";
 import DetailHeroFacts from "@/components/details/DetailHeroFacts.vue";
 import DetailHeroFavorite from "@/components/details/DetailHeroFavorite.vue";
 import DetailHeroGenres from "@/components/details/DetailHeroGenres.vue";
+import DetailHeroMetaLine from "@/components/details/DetailHeroMetaLine.vue";
 import DetailHeroPlayButton from "@/components/details/DetailHeroPlayButton.vue";
 import DetailHeroSourceBadge from "@/components/details/DetailHeroSourceBadge.vue";
-import MediaItemThumb from "@/components/MediaItemThumb.vue";
 import PlaylistAccessSummary from "@/components/PlaylistAccessSummary.vue";
 import { Button } from "@/components/ui/button";
 import { isMusicAssistantPlaylist } from "@/helpers/playlist_access";

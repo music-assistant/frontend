@@ -1,268 +1,208 @@
 <template>
-  <!-- list view: a horizontal row -->
+  <!-- list view: a row that stacks beside its icon, and takes the columns of
+       the list once the list is wide enough (its @container) -->
   <Item
     v-if="variant === 'list'"
     v-hold="onManageableHold"
-    variant="outline"
-    class="rounded-(--radius-xl)"
-    :class="{ 'cursor-pointer': manageable, 'opacity-60': !config.enabled }"
+    :class="listRowClass"
     data-testid="provider-row"
     @click.capture="swallowClickAfterHold"
     @click="onRootClick"
     @click.right="onContextMenu"
     @touchstart.passive="onTouchStart"
   >
-    <ItemMedia>
-      <ProviderIcon :domain="config.domain" :size="40" />
-    </ItemMedia>
-    <ItemContent>
-      <ItemTitle class="flex flex-wrap items-center gap-2">
-        <!-- the name is the focusable control; the row itself only follows the pointer -->
-        <button
-          v-if="manageable"
-          type="button"
-          class="cursor-pointer text-left"
-          data-testid="provider-open"
-          @click.stop="emit('open')"
+    <div class="flex min-w-0 flex-1 flex-col @4xl:contents">
+      <div class="flex min-w-0 items-start gap-3 @4xl:items-center">
+        <CatalogIconTile :src="iconSrc" :size="36" :on-dark="onDark" />
+        <div class="min-w-0 flex-1">
+          <div
+            class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 @4xl:flex-nowrap"
+          >
+            <!-- the name is the focusable control; the row itself only follows the pointer -->
+            <button
+              v-if="manageable"
+              type="button"
+              :class="NAME_CLASS"
+              class="cursor-pointer text-left"
+              data-testid="provider-open"
+              @click.stop="emit('open')"
+            >
+              {{ name }}
+            </button>
+            <span v-else :class="NAME_CLASS">{{ name }}</span>
+            <TooltipIcon
+              v-if="statusIcon"
+              :label="statusLabel ?? ''"
+              data-testid="provider-status-icon"
+            >
+              <Spinner
+                v-if="statusIcon === 'loading'"
+                class="size-3.5"
+                aria-hidden="true"
+              />
+              <Ban v-else class="size-3.5" aria-hidden="true" />
+            </TooltipIcon>
+            <Badge
+              v-if="statusVariant"
+              :variant="statusVariant"
+              :class="statusBadgeClass"
+              data-testid="provider-status"
+            >
+              <TriangleAlert aria-hidden="true" />
+              {{ statusLabel }}
+            </Badge>
+            <ProviderMaintainerMarker v-if="community" variant="icon" />
+          </div>
+          <p
+            v-if="isError"
+            :class="LINE_CLASS"
+            class="text-destructive"
+            data-testid="provider-error"
+          >
+            {{ errorText }}
+          </p>
+          <p
+            v-else-if="description"
+            :class="LINE_CLASS"
+            class="text-muted-foreground"
+          >
+            {{ description }}
+          </p>
+          <slot name="details" />
+        </div>
+      </div>
+      <!-- one line under the description, or a column each -->
+      <p
+        v-if="columns.offers || columns.access"
+        class="m-0 mt-1 pl-12 text-xs leading-4 text-muted-foreground @4xl:contents"
+        :class="{ '@max-4xl:hidden': !offersShown && !accessSummary }"
+      >
+        <span v-if="columns.offers" :class="CELL_CLASS">
+          <ProviderLabels :labels="labels ?? []" />
+        </span>
+        <span
+          v-if="offersShown && accessSummary"
+          class="mx-1 @4xl:hidden"
+          aria-hidden="true"
+          >·</span
         >
-          {{ name }}
-        </button>
-        <span v-else>{{ name }}</span>
-        <TooltipIcon
-          v-if="statusIcon"
-          :label="statusLabel ?? ''"
-          data-testid="provider-status-icon"
+        <span
+          v-if="columns.access"
+          :class="CELL_CLASS"
+          :data-testid="accessSummary ? 'provider-access' : undefined"
         >
-          <Spinner
-            v-if="statusIcon === 'loading'"
-            class="size-3.5"
-            aria-hidden="true"
-          />
-          <Ban v-else class="size-3.5" aria-hidden="true" />
-        </TooltipIcon>
-        <Badge
-          v-if="statusVariant"
-          :variant="statusVariant"
-          data-testid="provider-status"
-        >
-          {{ statusLabel }}
-        </Badge>
-        <ProviderMaintainerMarker v-if="community" variant="icon" />
-      </ItemTitle>
-      <ItemDescription v-if="isError" class="text-destructive">
-        {{ errorText }}
-      </ItemDescription>
-      <ItemDescription v-else-if="description">
-        {{ description }}
-      </ItemDescription>
-      <slot name="details" />
-      <ProviderLabels v-if="labels?.length" :labels="labels" />
-      <ItemDescription v-if="accessSummary" data-testid="provider-access">
-        {{ accessSummary }}
-      </ItemDescription>
-    </ItemContent>
-    <ItemActions>
+          {{ accessSummary }}
+        </span>
+      </p>
+      <!-- the stacked spacing only applies while stacked: Vuetify's own mt-2
+           and pl-12 would outrank @4xl:mt-0 and @4xl:pl-0 -->
+      <div
+        v-if="showReconfigure || removable"
+        class="flex flex-wrap gap-2 @max-4xl:mt-2 @max-4xl:pl-12 @4xl:-col-end-2 @4xl:justify-end"
+      >
+        <ProviderRowButtons
+          :reconfigure="showReconfigure"
+          :remove="!!removable"
+          @reconfigure="emit('reconfigure')"
+          @remove="emit('remove')"
+        />
+      </div>
+    </div>
+    <div class="flex shrink-0 items-center @4xl:-col-end-1">
       <span
         v-if="syncing"
         role="status"
-        :aria-label="t('settings.sync_running')"
-        :title="t('settings.sync_running')"
+        class="inline-flex size-8 items-center justify-center"
+        :aria-label="$t('settings.sync_running')"
+        :title="$t('settings.sync_running')"
       >
-        <RefreshCw class="text-muted-foreground size-4 animate-spin" />
+        <RefreshCw class="size-4 animate-spin text-muted-foreground" />
       </span>
-      <Button
-        v-if="isError && reconfigurable"
-        size="sm"
-        variant="destructive"
-        data-testid="provider-action"
-        @click.stop="emit('reconfigure')"
-      >
-        {{ t("settings.reconfigure") }}
-      </Button>
-      <Button
-        v-if="removable"
-        size="sm"
-        variant="outline"
-        data-testid="provider-remove"
-        @click.stop="emit('remove')"
-      >
-        <Trash2 class="size-4" aria-hidden="true" />
-        {{ t("settings.remove_provider") }}
-      </Button>
+      <!-- a finger needs the bigger target while the row stacks -->
       <Button
         v-if="manageable"
         variant="ghost"
         size="icon-sm"
+        class="@max-4xl:-my-1.5 @max-4xl:-mr-2 @max-4xl:size-11"
         data-testid="provider-menu"
         :aria-label="menuLabel"
+        :title="menuLabel"
         @click.stop="emit('menu', $event)"
       >
         <MoreVertical class="size-4" />
       </Button>
-    </ItemActions>
+    </div>
   </Item>
 
-  <!-- card view: a vertical card carrying the same information -->
-  <Card
+  <!-- card view: the Marketplace card, with the status on its banner -->
+  <ProviderCard
     v-else
     v-hold="onManageableHold"
-    class="provider-card flex h-full min-h-[200px] flex-col gap-3 rounded-(--radius-xl) py-4"
-    :class="{
-      'card-hover': manageable,
-      'opacity-60': !config.enabled,
-    }"
+    :config="config"
+    :name="name"
+    :manageable="manageable"
+    :reconfigure="showReconfigure"
+    :removable="removable"
+    :syncing="syncing"
+    :description="description"
+    :labels="labels"
+    :access-summary="accessSummary"
+    :status-variant="statusVariant"
+    :status-icon="statusIcon"
+    :status-label="statusLabel"
+    :is-error="isError"
+    :error-text="errorText"
+    :community="community"
     data-testid="provider-row"
     @click.capture="swallowClickAfterHold"
     @click="onRootClick"
     @click.right="onContextMenu"
     @touchstart.passive="onTouchStart"
+    @open="emit('open')"
+    @menu="emit('menu', $event)"
+    @reconfigure="emit('reconfigure')"
+    @remove="emit('remove')"
   >
-    <div class="flex items-start gap-3 px-4">
-      <ProviderIcon :domain="config.domain" :size="50" />
-      <div class="min-w-0 flex-1">
-        <div class="flex flex-wrap items-center gap-2">
-          <button
-            v-if="manageable"
-            type="button"
-            class="cursor-pointer text-left text-base font-semibold"
-            data-testid="provider-open"
-            @click.stop="emit('open')"
-          >
-            {{ name }}
-          </button>
-          <span v-else class="text-base font-semibold">{{ name }}</span>
-          <TooltipIcon
-            v-if="statusIcon"
-            :label="statusLabel ?? ''"
-            data-testid="provider-status-icon"
-          >
-            <Spinner
-              v-if="statusIcon === 'loading'"
-              class="size-3.5"
-              aria-hidden="true"
-            />
-            <Ban v-else class="size-3.5" aria-hidden="true" />
-          </TooltipIcon>
-          <Badge
-            v-if="statusVariant"
-            :variant="statusVariant"
-            data-testid="provider-status"
-          >
-            {{ statusLabel }}
-          </Badge>
-          <ProviderMaintainerMarker v-if="community" variant="icon" />
-        </div>
-      </div>
-      <div class="flex shrink-0 items-center gap-1">
-        <span
-          v-if="syncing"
-          role="status"
-          :aria-label="t('settings.sync_running')"
-          :title="t('settings.sync_running')"
-        >
-          <RefreshCw class="text-muted-foreground size-4 animate-spin" />
-        </span>
-        <Button
-          v-if="manageable"
-          variant="ghost"
-          size="icon-sm"
-          data-testid="provider-menu"
-          :aria-label="menuLabel"
-          :title="menuLabel"
-          @click.stop="emit('menu', $event)"
-        >
-          <MoreVertical class="size-4" />
-        </Button>
-      </div>
-    </div>
-
-    <div class="flex flex-1 flex-col gap-3 px-4">
-      <div
-        v-if="isError"
-        class="bg-destructive/8 rounded-(--radius-lg) px-3 py-2"
-        data-testid="provider-error"
-      >
-        <!-- the status shows in the badge by the name; the panel adds the reason -->
-        <div class="text-destructive flex items-start gap-1.5 text-sm">
-          <TriangleAlert class="mt-0.5 size-4 shrink-0" />
-          <span class="line-clamp-2">{{ errorText }}</span>
-        </div>
-        <Button
-          v-if="reconfigurable"
-          size="sm"
-          variant="destructive"
-          class="mt-2 w-full"
-          data-testid="provider-action"
-          @click.stop="emit('reconfigure')"
-        >
-          {{ t("settings.reconfigure") }}
-        </Button>
-        <Button
-          v-if="removable"
-          size="sm"
-          variant="outline"
-          class="mt-2 w-full"
-          data-testid="provider-remove"
-          @click.stop="emit('remove')"
-        >
-          <Trash2 class="size-4" aria-hidden="true" />
-          {{ t("settings.remove_provider") }}
-        </Button>
-      </div>
-      <p
-        v-else-if="description"
-        class="text-muted-foreground m-0 line-clamp-3 text-sm leading-normal"
-      >
-        {{ description }}
-      </p>
+    <template v-if="$slots.details" #details>
       <slot name="details" />
-      <!-- at the bottom, so the labels line up across the cards of a row -->
-      <ProviderLabels v-if="labels?.length" :labels="labels" class="mt-auto" />
-    </div>
-
-    <div
-      v-if="accessSummary"
-      class="text-muted-foreground px-4 text-xs"
-      data-testid="provider-access"
-    >
-      {{ accessSummary }}
-    </div>
-  </Card>
+    </template>
+  </ProviderCard>
 </template>
 
+<script lang="ts">
+/** The columns a wide list gives beside the names of its providers. */
+export interface ProviderListColumns {
+  // what the providers offer
+  offers: boolean;
+  // who may use each source
+  access: boolean;
+}
+</script>
+
 <script setup lang="ts">
-import ProviderIcon from "@/components/ProviderIcon.vue";
+import CatalogIconTile from "@/components/settings/catalog/CatalogIconTile.vue";
+import ProviderCard from "@/components/settings/providers/ProviderCard.vue";
 import ProviderLabels from "@/components/settings/providers/ProviderLabels.vue";
 import ProviderMaintainerMarker from "@/components/settings/providers/ProviderMaintainerMarker.vue";
+import ProviderRowButtons from "@/components/settings/providers/ProviderRowButtons.vue";
 import TooltipIcon from "@/components/TooltipIcon.vue";
 import { Badge, type BadgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
+import { Item } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
+import { useCatalogIcon } from "@/composables/settings/catalog/useCatalogIcon";
 import { useHoldToOpenMenu } from "@/composables/useHoldToOpenMenu";
-import type { ProviderLabel } from "@/helpers/provider_labels";
+import { getShownLabels, type ProviderLabel } from "@/helpers/provider_labels";
 import type { ProviderConfig } from "@/plugins/api/interfaces";
-import {
-  Ban,
-  MoreVertical,
-  RefreshCw,
-  Trash2,
-  TriangleAlert,
-} from "@lucide/vue";
+import { $t } from "@/plugins/i18n";
+import { Ban, MoreVertical, RefreshCw, TriangleAlert } from "@lucide/vue";
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 
 interface Props {
   config: ProviderConfig;
   variant: "list" | "card";
+  // the columns of the list the row is in
+  columns: ProviderListColumns;
   // whether the viewer may open, reconfigure and manage the source
   manageable: boolean;
   // whether an error state offers a reconfigure action
@@ -307,9 +247,42 @@ defineSlots<{
   details?(): unknown;
 }>();
 
-const { t } = useI18n();
+const NAME_CLASS = "min-w-0 truncate text-[15px] leading-5 font-semibold";
+// two lines while the row stacks, one in the columns
+const LINE_CLASS =
+  "m-0 mt-0.5 line-clamp-2 text-[13px] leading-[18px] @4xl:line-clamp-1";
+const CELL_CLASS =
+  "@4xl:line-clamp-2 @4xl:text-[13px] @4xl:leading-[18px] @4xl:text-foreground/80";
 
-const menuLabel = computed(() => `${t("more_options")}: ${props.name}`);
+const { src: iconSrc, onDark } = useCatalogIcon(
+  () => props.config.domain,
+  null,
+);
+
+const menuLabel = computed(() => `${$t("more_options")}: ${props.name}`);
+
+const offersShown = computed(
+  () => getShownLabels(props.labels ?? []).length > 0,
+);
+
+const showReconfigure = computed(() => !!props.isError && props.reconfigurable);
+
+const listRowClass = computed(() => [
+  "flex-nowrap items-start gap-3 rounded-none border-0 p-3 @4xl:col-span-full @4xl:grid @4xl:min-h-[68px] @4xl:grid-cols-subgrid @4xl:items-center @4xl:gap-x-4 @4xl:px-4 @4xl:py-2.5",
+  {
+    "bg-destructive/5": props.isError,
+    "cursor-pointer hover:bg-muted/50": props.manageable && !props.isError,
+    "cursor-pointer hover:bg-destructive/8": props.manageable && props.isError,
+    "opacity-60": !props.config.enabled,
+  },
+]);
+
+// the badge only ever says a source needs attention, softly
+const statusBadgeClass = computed(() => [
+  "h-5 gap-1 rounded-md border-0 px-1.5 text-[11px] font-semibold",
+  props.statusVariant === "destructive" &&
+    "bg-destructive/10 text-destructive dark:bg-destructive/20",
+]);
 
 const onRootClick = function (evt: MouseEvent) {
   // a tap on an info icon opens its popover, not the provider

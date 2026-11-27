@@ -131,6 +131,16 @@ const PLAYER_SETTINGS_ROUTES = [
     params: { playerId: "player-1" },
   },
   {
+    name: "editplayeroutputs",
+    path: "/settings/editplayer/player-1/outputs",
+    params: { playerId: "player-1" },
+  },
+  {
+    name: "editplayercontrols",
+    path: "/settings/editplayer/player-1/controls",
+    params: { playerId: "player-1" },
+  },
+  {
     name: "editqueue",
     path: "/settings/editqueue/player-1",
     params: { queueId: "player-1" },
@@ -347,6 +357,12 @@ describe("player settings routes", () => {
       expect(route.params).toMatchObject(params);
     },
   );
+
+  it("has no page to add a group, a dialog adds it", () => {
+    expect(resolveRoute("/settings/addgroup/sync_group").name).toBe(
+      "not-found",
+    );
+  });
 });
 
 describe("settings pages", () => {
@@ -370,6 +386,7 @@ describe("settings pages", () => {
     ["/settings/music/metadata", "metadataproviders"],
     ["/settings/music/audio-analysis", "audioanalysisproviders"],
     ["/settings/players/playback", "playbacksettings"],
+    ["/settings/players/tap-and-play", "tapandplaysettings"],
     ["/settings/players/support", "playerproviders"],
     ["/settings/plugins", "pluginproviders"],
     ["/settings/system/network", "networksettings"],
@@ -421,7 +438,7 @@ describe("settings pages", () => {
     expect(route.meta.requiresScope).toBe(Scope.CONFIG_PROVIDERS_WRITE);
   });
 
-  it.each(["library", "playback"] as const)(
+  it.each(["library", "playback", "tap_and_play"] as const)(
     "hands the %s page to the view showing its form",
     (id) => {
       if (!mocks.router) {
@@ -743,13 +760,15 @@ describe("scope-gated routes", () => {
     ["/settings/players", ["admin"]],
     ["/settings/editplayer/player-1", ["admin"]],
     ["/settings/editplayer/player-1/dsp", ["admin"]],
+    ["/settings/editplayer/player-1/outputs", ["admin"]],
+    ["/settings/editplayer/player-1/controls", ["admin"]],
     ["/settings/editqueue/player-1", ["admin"]],
-    ["/settings/addgroup/sonos--abc", ["admin"]],
     [
       "/settings/editplayer/player-1/options",
       ["admin", "user", "guest", "own_sources", "reads_sources"],
     ],
     ["/settings/players/playback", ["admin"]],
+    ["/settings/players/tap-and-play", ["admin"]],
     ["/settings/system", ["admin"]],
     ["/settings/system/network", ["admin"]],
     ["/settings/music/library", ["admin"]],

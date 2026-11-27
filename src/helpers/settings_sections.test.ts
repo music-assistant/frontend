@@ -137,9 +137,10 @@ describe("sectionPages", () => {
     ]);
   });
 
-  it("leads the players to the playback defaults and the player support for an admin", () => {
+  it("leads the players to the playback defaults, Tap & play and the player support for an admin", () => {
     expect(pageKeys("players", BUILTIN_ROLE_SCOPES.admin)).toEqual([
       "playback",
+      "tap_and_play",
       "player_support",
     ]);
   });
@@ -182,7 +183,7 @@ describe("sectionPages", () => {
     );
   });
 
-  it("leaves the playback defaults out for a role that may not change server settings", () => {
+  it("leaves the playback defaults and Tap & play out for a role that may not change server settings", () => {
     expect(pageKeys("players", [Scope.CONFIG_PLAYERS_WRITE])).toEqual([]);
   });
 
@@ -202,6 +203,7 @@ describe("settingsTrail", () => {
     ["library", ["music", "library"]],
     ["metadata", ["music", "metadata"]],
     ["audio_analysis", ["music", "audio_analysis"]],
+    ["tap_and_play", ["players", "tap_and_play"]],
     ["player_support", ["players", "player_support"]],
     ["remote_access", ["system", "network", "remote_access"]],
     ["background_tasks", ["system", "background_tasks"]],
@@ -220,6 +222,7 @@ describe("routeSettingsPage", () => {
   it.each([
     ["musicsettings", "music"],
     ["pluginproviders", "plugin_providers"],
+    ["tapandplaysettings", "tap_and_play"],
     ["playerproviders", "player_support"],
     ["audioanalysisproviders", "audio_analysis"],
     ["remoteaccesssettings", "remote_access"],
@@ -237,6 +240,7 @@ describe("routeSettingsPage", () => {
 describe("settingsPageRoute", () => {
   it.each([
     ["playback", "playbacksettings"],
+    ["tap_and_play", "tapandplaysettings"],
     ["network", "networksettings"],
     ["users", "usersettings"],
   ] as const)("opens the %s settings on their own route", (id, name) => {
@@ -357,6 +361,11 @@ describe("settingsHeading", () => {
   it.each([
     ["music", "settings.music", "settings.music_description"],
     ["players", "settings.players", "settings.players_description"],
+    [
+      "tap_and_play",
+      "settings.tap_and_play.title",
+      "settings.tap_and_play.description",
+    ],
     ["system", "settings.system", "settings.system_description"],
     ["metadata", "metadata", "settings.metadata_description"],
     [

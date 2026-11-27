@@ -74,7 +74,7 @@ async function mountHero() {
   document.body.appendChild(scroller);
   const wrapper = mount(DetailHero, {
     props: { item: track({ name: "Happy Hits" }) },
-    slots: { main: "<h1>Happy Hits</h1>" },
+    slots: { title: "<h1>Happy Hits</h1>" },
     attachTo: scroller,
     global: { mocks: { $t: (key: string) => key } },
   });
@@ -173,7 +173,7 @@ describe("DetailHero on a phone", () => {
   const heroFor = (item: MediaItemType) =>
     mount(DetailHero, {
       props: { item, backdrop: "fanart.jpg" },
-      slots: { main: '<div class="detail-hero-cover" /><h1>{{ name }}</h1>' },
+      slots: { cover: '<img class="hero-cover" />' },
       global: { mocks: { $t: (key: string) => key } },
     });
 
@@ -183,6 +183,8 @@ describe("DetailHero on a phone", () => {
 
     expect(backdrop.attributes("style")).toContain("cover.jpg");
     expect(backdrop.classes()).toContain("aspect-square");
+    // the cover is mounted in the wrapper the artwork layout hides
+    expect(hero.find(".detail-hero-cover .hero-cover").exists()).toBe(true);
     expect(hero.get(".detail-hero__main").classes()).toContain(
       "[&_.detail-hero-cover]:hidden",
     );

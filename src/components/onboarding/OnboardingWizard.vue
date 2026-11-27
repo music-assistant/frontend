@@ -30,7 +30,7 @@
       />
       <span
         v-if="ready && progressIndex >= 0"
-        class="sr-only"
+        class="text-muted-foreground shrink-0 text-xs tabular-nums max-sm:sr-only"
         data-testid="onboarding-step-counter"
       >
         {{
@@ -42,76 +42,39 @@
       </span>
     </header>
 
-    <!-- only the step scrolls; keyed so each step starts at the top. The header
-         and the step sit as one group a little above the middle (2 : 3), and
-         start at the top once they no longer fit -->
-    <ScrollFade
-      :key="currentId ?? undefined"
-      class="-mx-1 mt-4 flex flex-col px-1 pb-1"
+    <div
+      v-if="!ready"
+      class="flex min-h-40 flex-1 items-center justify-center"
+      data-testid="onboarding-loading"
     >
-      <div
-        v-if="!ready"
-        class="flex min-h-40 items-center justify-center"
-        data-testid="onboarding-loading"
+      <Spinner class="size-6" />
+    </div>
+
+    <template v-else-if="stepView">
+      <!-- the header stays put on every step and only the step under it
+           scrolls, keyed so each step starts at the top -->
+      <OnboardingStepHeader
+        ref="stepHeader"
+        class="mt-10 shrink-0"
+        :icon="stepView.icon"
+        :title="stepTitle"
+        :lead="stepLead"
+        :set-up="stepSetUp"
+      />
+      <ScrollFade
+        :key="currentId ?? undefined"
+        class="-mx-1 mt-5 px-1 pt-1 pb-1"
       >
-        <Spinner class="size-6" />
-      </div>
-
-      <template v-else-if="stepView">
-        <div class="grow-[2] basis-0" aria-hidden="true"></div>
-        <div class="flex shrink-0 flex-col gap-6">
-          <div class="flex flex-col items-center gap-3 text-center">
-            <span
-              class="bg-primary/10 text-primary relative grid size-10 shrink-0 place-items-center rounded-xl"
-              aria-hidden="true"
-              data-testid="onboarding-step-icon"
-            >
-              <img
-                v-if="stepView.icon === 'logo'"
-                src="@/assets/icon.svg"
-                alt=""
-                class="size-6"
-              />
-              <component :is="stepView.icon" v-else class="size-5" />
-              <span
-                v-if="stepSetUp"
-                class="bg-primary text-primary-foreground ring-background absolute -right-1 -bottom-1 grid size-4 place-items-center rounded-full ring-2"
-                data-testid="onboarding-step-done"
-              >
-                <Check class="size-2.5" :stroke-width="3.5" />
-              </span>
-            </span>
-            <div class="flex flex-col gap-1">
-              <h1
-                ref="stepHeading"
-                class="text-lg leading-7 font-semibold text-balance outline-none sm:text-xl"
-                tabindex="-1"
-                data-testid="onboarding-heading"
-              >
-                {{ stepTitle }}
-              </h1>
-              <p
-                :id="STEP_LEAD_ID"
-                class="text-muted-foreground text-sm text-pretty"
-                data-testid="onboarding-lead"
-              >
-                {{ stepLead }}
-              </p>
-            </div>
-          </div>
-
-          <component
-            :is="stepView.component"
-            ref="stepRef"
-            v-bind="stepView.props"
-            @advance="next"
-            @navigate="goTo"
-            @finish="finishOnboarding()"
-          />
-        </div>
-        <div class="grow-[3] basis-0" aria-hidden="true"></div>
-      </template>
-    </ScrollFade>
+        <component
+          :is="stepView.component"
+          ref="stepRef"
+          v-bind="stepView.props"
+          @advance="next"
+          @navigate="goTo"
+          @finish="finishOnboarding()"
+        />
+      </ScrollFade>
+    </template>
 
     <!-- one main button, always the last; on a phone the buttons stack with
          the main one on top -->
@@ -186,6 +149,7 @@
 
 <script setup lang="ts">
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress.vue";
+import OnboardingStepHeader from "@/components/onboarding/OnboardingStepHeader.vue";
 import ScrollFade from "@/components/onboarding/ScrollFade.vue";
 import AccountStep from "@/components/onboarding/steps/AccountStep.vue";
 import AIStep from "@/components/onboarding/steps/AIStep.vue";
@@ -207,7 +171,6 @@ import { useOnboarding } from "@/composables/useOnboarding";
 import { useTour } from "@/composables/useTour";
 import {
   firstStep,
-  STEP_LEAD_ID,
   stepLeadKey,
   stepTitleKey,
   type OnboardingStepId,
@@ -222,7 +185,6 @@ import { store } from "@/plugins/store";
 import {
   Armchair,
   ArrowLeft,
-  Check,
   Compass,
   Globe,
   Headphones,
@@ -335,7 +297,7 @@ const FORWARD_LABEL_KEYS: Partial<Record<OnboardingStepId, string>> = {
 // stays unresolved until the onboarding data lands, so the wizard never opens
 // on a step that turns out to be done already.
 const currentId = ref<OnboardingStepId | null>(null);
-const stepHeading = ref<HTMLHeadingElement | null>(null);
+const stepHeader = ref<InstanceType<typeof OnboardingStepHeader> | null>(null);
 const finishing = ref(false);
 // whether this open's data is in and its opening step is settled
 const ready = ref(false);
@@ -514,7 +476,7 @@ const finishOnboarding = async function (tour = false) {
 
 const focusStepHeading = async function () {
   await nextTick();
-  stepHeading.value?.focus();
+  stepHeader.value?.focus();
 };
 
 // The setup decides everything off the provider configurations, the players

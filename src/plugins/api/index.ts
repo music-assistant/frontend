@@ -2905,12 +2905,12 @@ export class MusicAssistantApi {
     dynamic = false,
   ): Promise<Player> {
     // Create a new Sync playergroup
-    return this.sendCommand("players/create_group_player", {
-      provider,
-      name,
-      members,
-      dynamic,
-    });
+    // The dialog shows a refused group itself, so opt out of the global error toast.
+    return this.sendCommand(
+      "players/create_group_player",
+      { provider, name, members, dynamic },
+      { suppressGlobalError: true },
+    );
   }
 
   /**
