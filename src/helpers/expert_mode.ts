@@ -1,12 +1,18 @@
+import type { OnboardingIntent } from "@/helpers/onboarding";
+import {
+  isAdminTrack,
+  ONBOARDING_INTENT_PREFERENCE,
+} from "@/helpers/onboarding_access";
 import { store } from "@/plugins/store";
 
 /**
  * The expert experience, as the one setting the welcome asks for.
  *
- * The app starts out simple: whoever never answered gets the standard
- * experience, and so does a guest or a dashboard session with no account of
- * its own. The display settings that come with the expert experience follow
- * this flag until the user sets them by hand.
+ * Whoever never answered gets the experience that fits their account: the
+ * expert one for an admin, unless their setup was for the phone apps alone,
+ * and the standard one for everyone else, a guest or a dashboard session with
+ * no account of its own included. The display settings that come with the
+ * expert experience follow this flag until the user sets them by hand.
  */
 
 /** User preference holding whether this user asked for the expert experience. */
@@ -31,16 +37,27 @@ export function expertModeOf(
 }
 
 /**
- * Whether the signed-in user asked for the expert experience; off until they
- * did. Reads reactive store state, so it stays reactive inside a computed.
+ * Whether the signed-in user is on the expert experience: the flag when they
+ * set it, else their default. Reads reactive store state, so it stays reactive
+ * inside a computed.
  */
 export function expertMode(): boolean {
+  const flag = store.currentUser?.preferences?.[EXPERT_MODE_PREFERENCE];
+  return flag == null ? defaultExpertMode() : Boolean(flag);
+}
+
+/**
+ * The expert mode the signed-in user is on until they set the flag: what an
+ * earlier welcome answered, else on for an admin whose setup was not for the
+ * phone apps alone.
+ */
+export function defaultExpertMode(): boolean {
   const preferences = store.currentUser?.preferences;
+  const intent = preferences?.[ONBOARDING_INTENT_PREFERENCE] as
+    OnboardingIntent | undefined;
   return (
-    expertModeOf(
-      preferences?.[EXPERT_MODE_PREFERENCE],
-      preferences?.[LEGACY_PERSONA_PREFERENCE],
-    ) ?? false
+    expertModeOf(undefined, preferences?.[LEGACY_PERSONA_PREFERENCE]) ??
+    (isAdminTrack() && intent !== "phone_apps")
   );
 }
 

@@ -991,6 +991,10 @@
         "protocol_multi_info": "This player supports multiple output protocols. Music Assistant combines them into a single player. Select a protocol below to configure how it is used.",
         "protocol_configure_title": "Configure {name}",
         "protocol_configure_title_via": "Configure {name} (over {base})",
+        "expert_mode": {
+            "label": "Expert mode",
+            "description": "Show every option and technical detail, such as the full play menu, the audio details of each source and the advanced settings. Turn it off for a clean interface with just the essentials."
+        },
         "show_waveform": {
             "label": "Prefer waveform progress bar",
             "description": "Show a waveform-style progress bar in the fullscreen player when audio analysis data is available for the playing track."
