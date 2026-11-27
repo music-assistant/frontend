@@ -35,13 +35,12 @@
       >
         <!-- Generic settings section -->
         <section
-          v-for="panel of regularPanels.filter(
-            (p) => p === 'generic' && entriesForCategory(p).length > 0,
-          )"
+          v-for="panel of visibleRegularPanels.filter((p) => p === 'generic')"
           :key="panel"
           class="pt-7 first:pt-5"
         >
           <h4
+            v-if="showSectionHeadings"
             class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
           >
             <span>{{ getCategoryTranslation(panel) }}</span>
@@ -65,6 +64,7 @@
              categories. No set-entry-value handler: its only emitter is the Home Assistant entity
              picker, which sits with the player controls on the parent player. -->
         <ProtocolConfigSection
+          v-if="hasProtocolSection"
           :entries="entries || []"
           :protocol-panels="protocolPanels"
           :visible-entries-by-category="visibleEntriesByCategory"
@@ -73,6 +73,7 @@
           :output-protocols="outputProtocols"
           :output-menu-items="outputMenuItems"
           :multi-channel="multiChannel"
+          :show-heading="showSectionHeadings"
           @update:value="onValueUpdate"
           @action="onEntryAction"
           @toggle-password="showPasswordValues = !showPasswordValues"
@@ -80,13 +81,12 @@
 
         <!-- Other regular settings sections -->
         <section
-          v-for="panel of regularPanels.filter(
-            (p) => p !== 'generic' && entriesForCategory(p).length > 0,
-          )"
+          v-for="panel of visibleRegularPanels.filter((p) => p !== 'generic')"
           :key="panel"
           class="pt-7 first:pt-5"
         >
           <h4
+            v-if="showSectionHeadings"
             class="mb-5 flex items-center gap-3 text-xs font-medium tracking-wider text-primary uppercase"
           >
             <span>{{ getCategoryTranslation(panel) }}</span>
@@ -234,6 +234,8 @@ export interface Props {
   // Whether the advanced entries show, for a host that decides it; without one, the choice
   // the user made with the advanced toggle applies.
   showAdvancedSettings?: boolean;
+  // The host names the sections itself, so a lone section keeps its heading too.
+  keepSectionHeadings?: boolean;
 }
 
 defineSlots<{
@@ -315,6 +317,23 @@ const regularPanels = computed(() => {
 const protocolPanels = computed(() => {
   return panels.value.filter((p) => isProtocolCategory(p));
 });
+
+const visibleRegularPanels = computed(() =>
+  regularPanels.value.filter((p) => entriesForCategory(p).length > 0),
+);
+
+const hasProtocolSection = computed(
+  () =>
+    protocolPanels.value.length > 0 ||
+    entriesForCategory("protocol_general").length > 0,
+);
+
+// a lone section is already named by the page or the card it is on
+const showSectionHeadings = computed(
+  () =>
+    props.keepSectionHeadings ||
+    visibleRegularPanels.value.length + (hasProtocolSection.value ? 1 : 0) > 1,
+);
 
 // a disabled form cannot be edited, so there is nothing to reveal; without the
 // header there is no place for the toggle, and a host that decides what shows

@@ -8,6 +8,7 @@
       :config-entries="entries"
       :disabled="false"
       :provider-domain="settingsPageProviderDomain(page)"
+      :keep-section-headings="settingsPageTitlesSections(page)"
       :flat="flat"
       :inline-save="inlineSave"
       @submit="onSubmit"
@@ -50,6 +51,7 @@ import { useSettingsPageMenu } from "@/composables/useSettingsPageMenu";
 import type { SettingsField } from "@/helpers/settings_form";
 import {
   settingsPageProviderDomain,
+  settingsPageTitlesSections,
   type SettingsPageId,
 } from "@/helpers/settings_pages";
 import type { ConfigEntry, ConfigValueType } from "@/plugins/api/interfaces";

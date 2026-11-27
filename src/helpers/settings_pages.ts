@@ -318,6 +318,17 @@ export function settingsPageProviderDomain(
 }
 
 /**
+ * Whether a page heads the entries of its sources with their titles, which
+ * name the sections of its form.
+ *
+ * @param pageId - The settings page.
+ */
+export function settingsPageTitlesSections(pageId: SettingsPageId): boolean {
+  const { sources } = SETTINGS_PAGES[pageId];
+  return sources.length > 1 && sources.some((source) => source.title);
+}
+
+/**
  * Whether two owners are the same.
  */
 export function isSameOwner(a: SettingsOwner, b: SettingsOwner): boolean {
