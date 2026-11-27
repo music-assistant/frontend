@@ -62,36 +62,60 @@ describe("SettingsListPanel", () => {
     expect(wrapper.emitted("toggle-view-mode")).toHaveLength(1);
   });
 
-  it("ends the row of the search and filters with the switch of the view on a wide screen", () => {
+  it("ends the row of the search and filters with the switch of the view", () => {
     const wrapper = mountPanel(
       { title: "Music sources", viewMode: "list", actions: [action()] },
       { filters: '<input data-testid="search" />', default: "<ul />" },
     );
 
-    const tabs = wrapper.getComponent(SettingsViewModeTabs);
-    // by the title on a phone, under the buttons at the end of the filters wider
-    expect(tabs.classes()).toEqual(
-      expect.arrayContaining([
-        "row-start-1",
-        "md:row-start-2",
-        "md:col-start-3",
-      ]),
-    );
-    expect(
-      wrapper.get('[data-testid="search"]').element.parentElement!.className,
-    ).toContain("row-start-2");
+    const row = wrapper.get('[data-testid="panel-filter-row"]');
+    expect(row.find('[data-testid="search"]').exists()).toBe(true);
+    expect(row.classes()).not.toContain("md:hidden");
+    const tabs = wrapper.findAllComponents(SettingsViewModeTabs);
+    expect(tabs).toHaveLength(1);
+    expect(row.element.lastElementChild).toBe(tabs[0].element);
   });
 
-  it("puts the switch before the buttons of a list without filters", () => {
+  it("switches the view from the end of the row of the search and filters", async () => {
+    const wrapper = mountPanel(
+      { title: "Players", viewMode: "list" },
+      { filters: '<input data-testid="search" />', default: "<ul />" },
+    );
+
+    await wrapper
+      .get('[data-testid="panel-filter-row"] [data-view="card"]')
+      .trigger("click");
+
+    expect(wrapper.emitted("toggle-view-mode")).toHaveLength(1);
+  });
+
+  it("puts the switch before the buttons of a list without filters, and under them on a phone", () => {
     const wrapper = mountPanel({
       title: "Player providers",
       viewMode: "list",
       actions: [action()],
     });
 
-    const tabs = wrapper.getComponent(SettingsViewModeTabs);
-    expect(tabs.classes()).toContain("row-start-1");
-    expect(tabs.classes()).not.toContain("md:row-start-2");
+    const [wide, phone] = wrapper.findAllComponents(SettingsViewModeTabs);
+    const titleRow = wrapper.get('[data-testid="panel-title-row"]');
+    expect(wide.element.parentElement).toBe(titleRow.element);
+    expect(wide.classes()).toContain("max-md:hidden");
+    expect(
+      wide.element.nextElementSibling!.querySelector(
+        '[data-testid="add-provider"]',
+      ),
+    ).not.toBeNull();
+    const row = wrapper.get('[data-testid="panel-filter-row"]');
+    expect(row.classes()).toContain("md:hidden");
+    expect(phone.element.parentElement).toBe(row.element);
+  });
+
+  it("has no row under the title for a list without filters or views", () => {
+    const wrapper = mountPanel({ title: "Players", actions: [action()] });
+
+    expect(wrapper.find('[data-testid="panel-filter-row"]').exists()).toBe(
+      false,
+    );
   });
 
   it("has no switch for a list without views", () => {
@@ -111,20 +135,12 @@ describe("SettingsListPanel", () => {
     expect(add.onSelect).toHaveBeenCalledOnce();
   });
 
-  it("moves the actions into a menu on a phone", () => {
+  it("keeps the actions as buttons on a phone", () => {
     const wrapper = mountPanel({ title: "Music sources", actions: [action()] });
 
-    expect(wrapper.get('[data-testid="add-provider"]').classes()).toContain(
+    expect(wrapper.get('[data-testid="add-provider"]').classes()).not.toContain(
       "max-md:hidden",
     );
-    const menu = wrapper.get('[data-testid="panel-menu"]');
-    expect(menu.classes()).toContain("md:hidden");
-    expect(menu.attributes("aria-label")).toBe("more_options");
-  });
-
-  it("has no menu without actions", () => {
-    const wrapper = mountPanel({ title: "Music sources" });
-
     expect(wrapper.find('[data-testid="panel-menu"]').exists()).toBe(false);
   });
 });
