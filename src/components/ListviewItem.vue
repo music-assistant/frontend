@@ -342,6 +342,7 @@ import FavouriteButton from "@/components/FavoriteButton.vue";
 import ListItem from "@/components/ListItem.vue";
 import NowPlayingBadge from "@/components/NowPlayingBadge.vue";
 import { podcastEpisodeNumber } from "@/components/podcast/podcastEpisodeData";
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { useResolvingItems } from "@/composables/useResolvingItems";
 import { isDark } from "@/composables/useThemePreference";
 import { canHoldFavorite } from "@/helpers/favorites";
@@ -533,11 +534,11 @@ const emit = defineEmits<{
 }>();
 
 const onMenu = function (evt: Event) {
-  const mouseEvt = evt as MouseEvent;
+  const { x, y } = getEventPosition(evt);
   handleMenuBtnClick(
     compProps.item,
-    mouseEvt.clientX,
-    mouseEvt.clientY,
+    x,
+    y,
     compProps.parentItem,
     true,
     compProps.sortBy,

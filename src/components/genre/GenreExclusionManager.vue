@@ -44,6 +44,7 @@ import GenreIcon from "@/components/icons/GenreIcon.vue";
 import ListItem from "@/components/ListItem.vue";
 import Toolbar, { ToolBarMenuItem } from "@/components/Toolbar.vue";
 import { useSectionBodyPadding } from "@/composables/useDetailAdminCard";
+import { getEventPosition } from "@/composables/useHoldToOpenMenu";
 import { api } from "@/plugins/api";
 import { Genre, MediaType, Scope } from "@/plugins/api/interfaces";
 import { authManager } from "@/plugins/auth";
@@ -110,7 +111,7 @@ const removeExclusion = async (genre: Genre) => {
 };
 
 const onMenu = (evt: Event, genre: Genre) => {
-  const mouseEvt = evt as MouseEvent;
+  const { x, y } = getEventPosition(evt);
   eventbus.emit("contextmenu", {
     items: [
       {
@@ -120,8 +121,8 @@ const onMenu = (evt: Event, genre: Genre) => {
         disabled: operationInProgress.value,
       },
     ],
-    posX: mouseEvt.clientX,
-    posY: mouseEvt.clientY,
+    posX: x,
+    posY: y,
   });
 };
 
