@@ -87,7 +87,7 @@ describe("getQueueItemMenuItems", () => {
       items: 5,
       current_index: 0,
       index_in_buffer: 1,
-      extra_attributes: { last_locked_index: 1 },
+      last_locked_index: 1,
     });
     const items = getQueueItemMenuItems(queueItem(), 1);
     expect(items.find((i) => i.label === "queue_delete")?.disabled).toBe(true);
@@ -98,7 +98,7 @@ describe("getQueueItemMenuItems", () => {
       items: 5,
       current_index: 0,
       index_in_buffer: 1,
-      extra_attributes: { last_locked_index: 0 },
+      last_locked_index: 0,
     });
     const items = getQueueItemMenuItems(queueItem(), 1);
     expect(items.find((i) => i.label === "queue_delete")?.disabled).toBe(false);

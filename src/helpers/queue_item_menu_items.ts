@@ -7,7 +7,6 @@ import {
 import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
 import { openExternalItem } from "@/helpers/open_external_item";
-import { lastLockedIndex } from "@/helpers/queue_locked_index";
 import api from "@/plugins/api";
 import { isExternalItem } from "@/plugins/api/helpers";
 import { MediaType, QueueItem } from "@/plugins/api/interfaces";
@@ -25,11 +24,8 @@ export const getQueueItemMenuItems = (
   const queue = store.activePlayerQueue;
   if (!queue) return [];
   const queueId = queue.queue_id;
-  const lockedIndex = lastLockedIndex(queue);
+  const lockedIndex = queue.last_locked_index;
   const locked = index <= (lockedIndex ?? 0);
-  // a player can only replace the buffered item with an item that follows it
-  const lastBuffered =
-    index === queue.index_in_buffer && index === queue.items - 1;
 
   const menuItems: ContextMenuItem[] = [
     {
@@ -78,7 +74,7 @@ export const getQueueItemMenuItems = (
       labelArgs: [],
       action: () => api.queueCommandDelete(queueId, item.queue_item_id),
       icon: "mdi-delete",
-      disabled: locked || lastBuffered,
+      disabled: locked,
     },
   );
 
