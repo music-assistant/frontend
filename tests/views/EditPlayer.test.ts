@@ -1,12 +1,6 @@
 import type { ContextMenuItem } from "@/helpers/context_menu_item";
-import {
-  isHassControlPickerEntry,
-  type ConfigEntryUI,
-} from "@/helpers/config_entry_ui";
-import type {
-  getOutputMenuItems as buildOutputMenuItems,
-  getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems,
-} from "@/helpers/player_settings_actions";
+import type { ConfigEntryUI } from "@/helpers/config_entry_ui";
+import type { getPlayerSettingsMenuItems as buildPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import {
   ChannelLayout,
   ConfigEntryType,
@@ -17,12 +11,12 @@ import {
   ProviderType,
   SpeakerChannel,
   type ConfigEntry,
-  type OutputProtocol,
   type PlayerConfig,
   type ProviderInstance,
 } from "@/plugins/api/interfaces";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { ApiCommandError } from "@/plugins/api/errors";
+import EditConfig from "@/views/settings/EditConfig.vue";
 import EditPlayer from "@/views/settings/EditPlayer.vue";
 import {
   enableAutoUnmount,
@@ -31,7 +25,11 @@ import {
   type VueWrapper,
 } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { outputProtocol } from "../fixtures/outputProtocol";
+import {
+  groupSettingsConfig,
+  groupSettingsOutputs,
+  playerSettingsConfig,
+} from "../fixtures/playerSettingsConfig";
 import { providerManifest } from "../fixtures/providerManifest";
 
 const {
@@ -39,7 +37,6 @@ const {
   editConfigDiscardMock,
   editConfigResetMock,
   emitEvent,
-  getOutputMenuItems,
   getPlayerSettingsMenuItems,
   isPlayerBeingRemoved,
   routerMock,
@@ -63,7 +60,6 @@ const {
   editConfigDiscardMock: vi.fn(),
   editConfigResetMock: vi.fn(),
   emitEvent: vi.fn(),
-  getOutputMenuItems: vi.fn<typeof buildOutputMenuItems>(),
   getPlayerSettingsMenuItems: vi.fn<typeof buildPlayerSettingsMenuItems>(),
   isPlayerBeingRemoved: vi.fn<(playerId: string) => boolean>(),
   routerMock: {
@@ -93,8 +89,6 @@ const playerDetailsStubs = {
     props: [
       "configEntries",
       "disabled",
-      "multiChannel",
-      "outputMenuItems",
       "outputProtocols",
       "showAdvancedSettings",
     ],
@@ -129,9 +123,17 @@ vi.mock("@/helpers/player_config", async (importOriginal) => ({
 
 // the shared menus are covered where they are built
 vi.mock("@/helpers/player_settings_actions", () => ({
-  getOutputMenuItems,
   getPlayerSettingsMenuItems,
   isPlayerBeingRemoved,
+}));
+
+vi.mock("@/plugins/store", () => ({
+  store: {
+    frameless: false,
+    mobileLayout: false,
+    roleScopes: {},
+    currentUser: undefined,
+  },
 }));
 
 vi.mock("vue-sonner", () => ({
@@ -143,7 +145,15 @@ vi.mock("vue-router", async (importOriginal) => {
   return { ...actual, useRouter: () => routerMock };
 });
 
-const CONTROL_KEYS = ["power_control", "volume_control", "mute_control"];
+// the entries of the player itself in the config of a Chromecast
+const PLAYER_KEYS = [
+  "hide_in_ui",
+  "expose_player_to_ha",
+  "play_media_overrides_group",
+  "tts_pre_announce",
+  "pre_announcement_chime_url",
+];
+
 // the layouts of the Sendspin provider, as the server lists them
 const LAYOUTS = {
   [ChannelLayout.STEREO]: [
@@ -183,7 +193,6 @@ describe("EditPlayer", () => {
     getPlayerSettingsMenuItems.mockImplementation(() => [
       { label: "settings.delete" },
     ]);
-    getOutputMenuItems.mockReturnValue([]);
     isPlayerBeingRemoved.mockReturnValue(false);
   });
 
@@ -202,6 +211,90 @@ describe("EditPlayer", () => {
     expect(
       wrapper.findComponent({ name: "AdvancedSettingsToggle" }).exists(),
     ).toBe(false);
+  });
+
+  it("leaves the outputs and the player controls to their own pages", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerSettingsConfig({ player_id: "player-1" }),
+    );
+
+    const wrapper = await mountPlayerPage();
+
+    expect(formKeys(wrapper)).toEqual(PLAYER_KEYS);
+    expect(linkProps(wrapper)).toMatchObject({
+      hasOutputs: true,
+      hasControls: true,
+    });
+  });
+
+  it("keeps the settings of a group, its members among them, on its own page", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      groupSettingsConfig({ player_id: "player-1" }),
+    );
+    apiMock.players = {
+      "player-1": {
+        ...playerState(),
+        output_protocols: groupSettingsOutputs(),
+        type: PlayerType.GROUP,
+      },
+    };
+
+    const wrapper = await mountPlayerPage();
+
+    expect(formKeys(wrapper)).toEqual([
+      "hide_in_ui",
+      "expose_player_to_ha",
+      "preferred_output_protocol",
+      "sgp_note",
+      "group_members",
+      "dynamic_members",
+      "allowed_members",
+      "dsp_note_multi_device_group_unsupported",
+    ]);
+    expect(
+      wrapper.findComponent({ name: "EditConfig" }).props("outputProtocols"),
+    ).toEqual(groupSettingsOutputs());
+    expect(linkProps(wrapper)).toMatchObject({
+      hasOutputs: false,
+      hasControls: true,
+    });
+  });
+
+  it("offers no row for a page that would only hold hidden entries", async () => {
+    // a single output whose protocol is away leaves only the preferred output, hidden
+    const config = playerSettingsConfig({ player_id: "player-1" });
+    config.values = Object.fromEntries(
+      Object.entries(config.values).filter(
+        ([key, entry]) =>
+          !entry.category.startsWith("protocol_") ||
+          key === "preferred_output_protocol",
+      ),
+    );
+    config.values.preferred_output_protocol.hidden = true;
+    apiMock.getPlayerConfig.mockResolvedValue(config);
+
+    const wrapper = await mountPlayerPage();
+
+    expect(linkProps(wrapper)).toMatchObject({
+      hasOutputs: false,
+      hasControls: true,
+    });
+  });
+
+  it("saves the entries of this page only, with whether the player is enabled", async () => {
+    apiMock.getPlayerConfig.mockResolvedValue(
+      playerSettingsConfig({ player_id: "player-1" }),
+    );
+    const wrapper = await mountPlayerPage({ realForm: true });
+    const form = wrapper.findComponent(EditConfig);
+
+    await form.vm.submit();
+    await flushPromises();
+
+    const [playerId, values] = apiMock.savePlayerConfig.mock.lastCall!;
+    expect(playerId).toBe("player-1");
+    expect(Object.keys(values)).toEqual([...PLAYER_KEYS, "enabled"]);
+    expect(values.enabled).toBe(true);
   });
 
   it("leaves whether advanced settings show to the user's choice in the form", async () => {
@@ -407,21 +500,7 @@ describe("EditPlayer", () => {
     expect(editConfigDiscardMock).toHaveBeenCalled();
   });
 
-  it("offers the menu of each output in the form", async () => {
-    const splitOffItem = { label: "settings.split_off_output" };
-    getOutputMenuItems.mockReturnValue([splitOffItem]);
-    const output = outputProtocol();
-    const wrapper = await mountPlayerPage();
-
-    expect(outputMenuItems(wrapper, output)).toEqual([splitOffItem]);
-    expect(getOutputMenuItems).toHaveBeenCalledWith(
-      expect.objectContaining({ player_id: "player-1" }),
-      output,
-      expect.objectContaining({ onSplitOff: expect.any(Function) }),
-    );
-  });
-
-  it("hands the speakers the server lists to the output menus", async () => {
+  it("hands the layouts the server lists to the page menu", async () => {
     apiMock.players = {
       "player-1": {
         ...playerState(),
@@ -445,36 +524,12 @@ describe("EditPlayer", () => {
     apiMock.getMultiChannelLayouts.mockResolvedValue(LAYOUTS);
     const wrapper = await mountPlayerPage();
 
-    outputMenuItems(wrapper, outputProtocol());
     await wrapper.get('[data-testid="player-menu"]').trigger("click");
 
-    expect(apiMock.getMultiChannelCandidates).toHaveBeenCalledWith("sendspin", {
-      suppressGlobalError: true,
-    });
-    expect(apiMock.getMultiChannelLayouts).toHaveBeenCalledWith("sendspin", {
-      suppressGlobalError: true,
-    });
-    expect(getOutputMenuItems.mock.lastCall?.[2]).toMatchObject({
-      multiChannelCandidates: { sendspin: ["player-1"] },
-      multiChannelLayouts: { sendspin: LAYOUTS },
-    });
     // the menu of the page decides from them whether a subwoofer can join or go
     expect(getPlayerSettingsMenuItems.mock.lastCall?.[1]).toMatchObject({
       multiChannelLayouts: { sendspin: LAYOUTS },
     });
-  });
-
-  it("goes to the multi-channel player an output moved into", async () => {
-    const wrapper = await mountPlayerPage();
-    outputMenuItems(wrapper, outputProtocol());
-
-    getOutputMenuItems.mock.calls[0][2]!.onMultiChannelCreated!("studio");
-
-    // this player may be gone, so its pending edits have nothing to go to
-    expect(editConfigDiscardMock).toHaveBeenCalledOnce();
-    expect(routerMock.replace).toHaveBeenCalledWith(
-      "/settings/editplayer/studio",
-    );
   });
 
   it("asks no config of a player a command of this app is removing", async () => {
@@ -550,19 +605,6 @@ describe("EditPlayer", () => {
     expect(toastMock.error).toHaveBeenCalledWith("Error: Server error");
   });
 
-  it("starts the form over from what is stored once an output is split off", async () => {
-    const wrapper = await mountPlayerPage();
-    outputMenuItems(wrapper, outputProtocol());
-
-    getOutputMenuItems.mock.calls[0][2]!.onSplitOff!();
-    await flushPromises();
-
-    // the server reset the choices that named the output, so pending edits go
-    expect(editConfigDiscardMock).toHaveBeenCalledOnce();
-    expect(apiMock.getPlayerConfig).toHaveBeenCalledTimes(2);
-    expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
-  });
-
   it("starts the form over from what is stored once a speaker joined or left", async () => {
     const wrapper = await mountPlayerPage();
     await wrapper.get('[data-testid="player-menu"]').trigger("click");
@@ -611,77 +653,6 @@ describe("EditPlayer", () => {
     ).toBe(false);
   });
 
-  it("keeps the channels swapped but not saved when an output delay applies at once", async () => {
-    apiMock.getPlayerConfig.mockResolvedValue(stereoPairConfig());
-    const wrapper = await mountPlayerPage();
-    const editConfig = wrapper.findComponent({ name: "EditConfig" });
-    // the form holds the swap as a draft, and saves the delay at once
-    formEntry(editConfig, "speaker_1_channel_setting").value = "front_right";
-    formEntry(editConfig, "speaker_2_channel_setting").value = "front_left";
-    formEntry(editConfig, "speaker_1_output_delay").value = 40;
-    apiMock.savePlayerConfig.mockResolvedValueOnce(
-      stereoPairConfig({ delay: 40 }),
-    );
-
-    editConfig.vm.$emit("immediateApply", { speaker_1_output_delay: 40 });
-    await flushPromises();
-
-    expect(apiMock.savePlayerConfig).toHaveBeenCalledWith("player-1", {
-      speaker_1_output_delay: 40,
-    });
-    expect(formValues(editConfig)).toMatchObject({
-      speaker_1_channel_setting: "front_right",
-      speaker_2_channel_setting: "front_left",
-      speaker_1_output_delay: 40,
-    });
-
-    // the save that follows still holds the swap, and the delay
-    editConfig.vm.$emit("submit", formValues(editConfig));
-    await flushPromises();
-    expect(apiMock.savePlayerConfig).toHaveBeenLastCalledWith(
-      "player-1",
-      expect.objectContaining({
-        speaker_1_channel_setting: "front_right",
-        speaker_2_channel_setting: "front_left",
-        speaker_1_output_delay: 40,
-      }),
-    );
-  });
-
-  it("shows the speakers of a multi-channel player as rows", async () => {
-    apiMock.getPlayerConfig.mockResolvedValue(stereoPairConfig());
-    apiMock.players = {
-      "player-1": { ...playerState(), type: PlayerType.MULTI_CHANNEL },
-    };
-    const wrapper = await mountPlayerPage();
-    expect(
-      wrapper.findComponent({ name: "EditConfig" }).props("multiChannel"),
-    ).toBe(true);
-  });
-
-  it("shows no speaker rows for any other player", async () => {
-    const wrapper = await mountPlayerPage();
-
-    expect(
-      wrapper.findComponent({ name: "EditConfig" }).props("multiChannel"),
-    ).toBe(false);
-  });
-
-  it("shows the state of a speaker the server reports on a refresh", async () => {
-    apiMock.getPlayerConfig.mockResolvedValueOnce(stereoPairConfig());
-    const wrapper = await mountPlayerPage();
-    const editConfig = wrapper.findComponent({ name: "EditConfig" });
-    expect(formEntry(editConfig, "speaker_2_state").value).toBe("online");
-    apiMock.getPlayerConfig.mockResolvedValueOnce(
-      stereoPairConfig({ state: "offline" }),
-    );
-
-    providersUpdated();
-    await flushPromises();
-
-    expect(formEntry(editConfig, "speaker_2_state").value).toBe("offline");
-  });
-
   it("follows the player being disabled around the form", async () => {
     const wrapper = await mountPlayerPage();
     const editConfig = wrapper.findComponent({ name: "EditConfig" });
@@ -722,65 +693,7 @@ describe("EditPlayer", () => {
 
     expect(editConfig.props("disabled")).toBe(false);
   });
-
-  it("offers the entity picker under every player control entry", async () => {
-    const keys = (await mountEditPlayer()).map((entry) => entry.key);
-
-    for (const controlKey of CONTROL_KEYS) {
-      expect(keys[keys.indexOf(controlKey) + 1]).toBe(
-        `${controlKey}_hass_control_picker`,
-      );
-    }
-  });
-
-  it("points each picker at the control list that registers its entity", async () => {
-    const entries = await mountEditPlayer();
-    const pickers = entries.filter(isHassControlPickerEntry);
-
-    expect(
-      pickers.map((picker) => [
-        picker.target_key,
-        picker.hass_control_key,
-        picker.hass_instance_id,
-      ]),
-    ).toEqual([
-      ["power_control", "power_controls", "hass--1"],
-      ["volume_control", "volume_controls", "hass--1"],
-      ["mute_control", "mute_controls", "hass--1"],
-    ]);
-  });
-
-  it("leaves the picker out while Home Assistant is unavailable", async () => {
-    apiMock.providers = {
-      "hass--1": { instance_id: "hass--1", domain: "hass", available: false },
-    };
-
-    const entries = await mountEditPlayer();
-
-    expect(entries.some(isHassControlPickerEntry)).toBe(false);
-  });
-
-  it("leaves the picker out without a Home Assistant provider", async () => {
-    apiMock.providers = {};
-
-    const entries = await mountEditPlayer();
-
-    expect(entries.some(isHassControlPickerEntry)).toBe(false);
-  });
 });
-
-function controlEntry(key: string): ConfigEntry {
-  return {
-    key,
-    type: ConfigEntryType.STRING,
-    label: key,
-    category: "player_controls",
-    required: false,
-    default_value: "none",
-    value: "none",
-    options: [{ title: "none", value: "none" }],
-  };
-}
 
 function providerInstance(): ProviderInstance {
   return {
@@ -831,89 +744,8 @@ function playerConfig({
         default_value: 44100,
         value: 44100,
       },
-      ...Object.fromEntries(
-        CONTROL_KEYS.map((key) => [key, controlEntry(key)]),
-      ),
     },
   };
-}
-
-/**
- * The config of a stereo pair: the entries of its speakers on its Sendspin protocol,
- * with the given state of its second speaker and output delay of its first one.
- */
-function stereoPairConfig({
-  state = "online",
-  delay = 0,
-}: { state?: string; delay?: number } = {}): PlayerConfig {
-  const category = "protocol_sendspin";
-  const speakerEntry = (
-    key: string,
-    overrides: Partial<ConfigEntry>,
-  ): [string, ConfigEntry] => [
-    key,
-    {
-      key,
-      type: ConfigEntryType.STRING,
-      label: key,
-      category,
-      options: [],
-      required: false,
-      default_value: null,
-      ...overrides,
-    },
-  ];
-  const config = playerConfig();
-  return {
-    ...config,
-    player_type: PlayerType.MULTI_CHANNEL,
-    values: {
-      ...config.values,
-      ...Object.fromEntries(
-        [1, 2].flatMap((number) => [
-          speakerEntry(`speaker_${number}_state`, {
-            type: ConfigEntryType.LABEL,
-            value: number === 2 ? state : "online",
-          }),
-          speakerEntry(`speaker_${number}_display_name`, {
-            type: ConfigEntryType.LABEL,
-            label: "Speaker",
-            value: number === 1 ? "Studio left" : "Studio right",
-          }),
-          speakerEntry(`speaker_${number}_channel_setting`, {
-            value: number === 1 ? "front_left" : "front_right",
-          }),
-          speakerEntry(`speaker_${number}_output_delay`, {
-            type: ConfigEntryType.INTEGER,
-            immediate_apply: true,
-            value: number === 1 ? delay : 0,
-          }),
-        ]),
-      ),
-    },
-  };
-}
-
-// the stub of the form, whose entries the page hands it
-interface FormStub {
-  props(name: "configEntries"): unknown;
-}
-
-function formEntry(editConfig: FormStub, key: string): ConfigEntry {
-  const found = (editConfig.props("configEntries") as ConfigEntry[]).find(
-    (entry) => entry.key === key,
-  );
-  if (!found) throw new Error(`The form has no ${key} entry`);
-  return found;
-}
-
-/** The values of the form, as it hands them to a save. */
-function formValues(editConfig: FormStub): Record<string, unknown> {
-  return Object.fromEntries(
-    (editConfig.props("configEntries") as ConfigEntryUI[])
-      .filter((entry) => !entry.injected)
-      .map((entry) => [entry.key, entry.value]),
-  );
 }
 
 function playerState({
@@ -956,19 +788,6 @@ function resetMenuItem(): ContextMenuItem | undefined {
 }
 
 /**
- * The menu the page offers for an output, through the form that shows it.
- */
-function outputMenuItems(
-  wrapper: VueWrapper,
-  output: OutputProtocol,
-): ContextMenuItem[] {
-  const getMenuItems = wrapper
-    .findComponent({ name: "EditConfig" })
-    .props("outputMenuItems") as (output: OutputProtocol) => ContextMenuItem[];
-  return getMenuItems(output);
-}
-
-/**
  * Deliver the event the screen reloads its config on.
  */
 function providersUpdated() {
@@ -996,21 +815,35 @@ function playerConfigUpdated(playerId: string) {
   }
 }
 
-async function mountPlayerPage(playerId: string = "player-1") {
+async function mountPlayerPage({ realForm = false } = {}) {
   const wrapper = shallowMount(EditPlayer, {
-    props: { playerId },
+    props: { playerId: "player-1" },
     global: {
       mocks: { $t: (key: string) => key },
-      stubs: playerDetailsStubs,
+      stubs: {
+        ...playerDetailsStubs,
+        EditConfig: realForm ? false : playerDetailsStubs.EditConfig,
+      },
     },
   });
   await flushPromises();
   return wrapper;
 }
 
-async function mountEditPlayer(): Promise<ConfigEntryUI[]> {
-  const wrapper = await mountPlayerPage();
-  return wrapper
-    .findComponent({ name: "EditConfig" })
-    .props("configEntries") as ConfigEntryUI[];
+/**
+ * What the page tells its rows of the pages of their own.
+ */
+function linkProps(wrapper: VueWrapper) {
+  return wrapper.findComponent({ name: "PlayerSettingsLinks" }).props();
+}
+
+/**
+ * The keys of the entries the page hands its form, in order.
+ */
+function formKeys(wrapper: VueWrapper): string[] {
+  return (
+    wrapper
+      .findComponent({ name: "EditConfig" })
+      .props("configEntries") as ConfigEntryUI[]
+  ).map((entry) => entry.key);
 }

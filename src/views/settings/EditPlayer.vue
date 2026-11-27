@@ -182,17 +182,18 @@
     <PlayerSettingsLinks
       v-if="config"
       :player-id="config.player_id"
+      :has-outputs="configPages.has('outputs')"
+      :has-controls="configPages.has('controls')"
       class="mb-4"
     />
 
+    <!-- the outputs of a group show on this page -->
     <edit-config
       v-if="config"
       ref="editConfig"
       :disabled="!config?.enabled"
       :config-entries="config_entries"
-      :output-protocols="api.players[config.player_id]?.output_protocols || []"
-      :output-menu-items="getOutputMenu"
-      :multi-channel="isMultiChannel"
+      :output-protocols="player?.output_protocols || []"
       @submit="onSubmit"
       @action="onAction"
       @immediate-apply="onImmediateApply"
@@ -210,9 +211,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, markRaw, onBeforeUnmount, ref, watch } from "vue";
+import { computed, markRaw, ref } from "vue";
 import { useRouter } from "vue-router";
-import { toast } from "vue-sonner";
 import ProtocolChip from "@/components/ProtocolChip.vue";
 import PlayerIcon from "@/components/PlayerIcon.vue";
 import { Button } from "@/components/ui/button";
@@ -221,36 +221,23 @@ import { api } from "@/plugins/api";
 import {
   ConfigEntryType,
   ConfigValueType,
-  EventMessage,
-  EventType,
-  OutputProtocol,
-  PlayerConfig,
   PlayerFeature,
   PlayerType,
   IdentifierType,
 } from "@/plugins/api/interfaces";
-import {
-  ConfigEntryUI,
-  HASS_CONTROL_KEY_BY_PLAYER_KEY,
-  HassControlPickerEntry,
-  HassControlPlayerKey,
-  UI_ENTRY_TYPE,
-  isInjected,
-  mergeConfigEntries,
-} from "@/helpers/config_entry_ui";
-import { getPlayerActionProvider } from "@/helpers/action_result";
-import { getHassProviderInstance } from "@/helpers/hass_controls";
+import { ConfigEntryUI, isInjected } from "@/helpers/config_entry_ui";
 import { goBack } from "@/helpers/navigation";
-import { getPlayerName, getPlayerSetupLabel } from "@/helpers/player_config";
 import {
-  getOutputMenuItems,
-  getPlayerSettingsMenuItems,
-  isPlayerBeingRemoved,
-} from "@/helpers/player_settings_actions";
+  getPlayerConfigPage,
+  getPlayerName,
+  getPlayerSetupLabel,
+  type PlayerConfigPage,
+} from "@/helpers/player_config";
+import { getPlayerSettingsMenuItems } from "@/helpers/player_settings_actions";
 import { getPlayerSetupReason, getPlayerTypeLabel } from "@/helpers/players";
 import { getExternalLinkUrl } from "@/helpers/utils";
-import { useConfigAction } from "@/composables/useConfigAction";
 import { useMultiChannelCandidates } from "@/composables/settings/players/useMultiChannelCandidates";
+import { usePlayerConfig } from "@/composables/settings/players/usePlayerConfig";
 import { eventbus } from "@/plugins/eventbus";
 import { $t } from "@/plugins/i18n";
 import {
@@ -268,57 +255,27 @@ const PLAYER_DOCS_URL =
 
 // global refs
 const router = useRouter();
-const config = ref<PlayerConfig>();
 const editConfig = ref<InstanceType<typeof EditConfig>>();
-const loading = ref(false);
-const enabling = ref(false);
-let configLoadRequestId = 0;
-let configRefreshRequestId = 0;
-let enableRequestId = 0;
 
 // props
 const props = defineProps<{
   playerId?: string;
 }>();
 
-const unsubProvidersUpdated = api.subscribe(EventType.PROVIDERS_UPDATED, () => {
-  if (props.playerId) void refreshPlayerConfig(props.playerId);
-});
-onBeforeUnmount(unsubProvidersUpdated);
-
-// renaming, enabling and deleting all happen through the shared menu, so pick the
-// change up from the server rather than from whoever made it
-const unsubConfigUpdated = api.subscribe(
-  EventType.PLAYER_CONFIG_UPDATED,
-  (evt: EventMessage) => {
-    if (evt.object_id && evt.object_id === props.playerId) {
-      void refreshPlayerConfig(evt.object_id);
-    }
-  },
-);
-onBeforeUnmount(unsubConfigUpdated);
-
-// the players the server removed while this page was open, which have no config to fetch
-const removedPlayerIds = new Set<string>();
-const unsubPlayerRemoved = api.subscribe(
-  EventType.PLAYER_REMOVED,
-  (evt: EventMessage) => {
-    if (evt.object_id) removedPlayerIds.add(evt.object_id);
-  },
-);
-onBeforeUnmount(unsubPlayerRemoved);
+const {
+  config,
+  player,
+  loading,
+  enabling,
+  enablePlayer,
+  reloadConfig,
+  save,
+  onImmediateApply,
+  onAction,
+} = usePlayerConfig(() => props.playerId, editConfig);
 
 // computed properties
-const player = computed(() =>
-  config.value ? api.players[config.value.player_id] : undefined,
-);
-
-const { candidates: multiChannelCandidates, layouts: multiChannelLayouts } =
-  useMultiChannelCandidates(player);
-
-const isMultiChannel = computed(
-  () => player.value?.type === PlayerType.MULTI_CHANNEL,
-);
+const { layouts: multiChannelLayouts } = useMultiChannelCandidates(player);
 
 const playerSetupLabel = computed(() =>
   config.value?.enabled ? getPlayerSetupLabel(player.value) : undefined,
@@ -329,41 +286,15 @@ const setupReason = computed(() => getPlayerSetupReason(player.value));
 // the docs of a beta server live on the beta site
 const documentationUrl = computed(() => getExternalLinkUrl(PLAYER_DOCS_URL));
 
+// the outputs (but for those of a group) and the player controls have pages of their own
 const config_entries = computed(() => {
   if (!config.value) return [];
   const player = api.players[config.value.player_id];
   if (!player) return [];
 
-  // offer the Home Assistant entity picker beneath each player control entry, but only
-  // while there is a Home Assistant provider to register the picked entity with
-  const hassInstance = getHassProviderInstance();
-  const entries: ConfigEntryUI[] = [];
-  for (const entry of Object.values(config.value.values)) {
-    entries.push(entry);
-    const hassControlKey =
-      HASS_CONTROL_KEY_BY_PLAYER_KEY[entry.key as HassControlPlayerKey];
-    if (!hassInstance || !hassControlKey) continue;
-    const pickerEntry: HassControlPickerEntry = {
-      injected: true,
-      key: `${entry.key}_${UI_ENTRY_TYPE.HASS_CONTROL_PICKER}`,
-      type: UI_ENTRY_TYPE.HASS_CONTROL_PICKER,
-      category: entry.category,
-      // stay with the entry it fills in when the form hides, folds away or gates that one
-      advanced: entry.advanced,
-      hidden: entry.hidden,
-      depends_on: entry.depends_on,
-      depends_on_value: entry.depends_on_value,
-      depends_on_value_not: entry.depends_on_value_not,
-      label: "",
-      required: false,
-      options: [],
-      default_value: null,
-      hass_instance_id: hassInstance.instance_id,
-      hass_control_key: hassControlKey,
-      target_key: entry.key as HassControlPlayerKey,
-    };
-    entries.push(pickerEntry);
-  }
+  const entries: ConfigEntryUI[] = Object.values(config.value.values).filter(
+    (entry) => getPlayerConfigPage(entry, player) === "player",
+  );
 
   if (
     player.type === PlayerType.GROUP &&
@@ -404,16 +335,15 @@ const config_entries = computed(() => {
   return entries;
 });
 
-// watchers
-
-watch(
-  () => props.playerId,
-  (val) => {
-    resetPlayerState(val);
-    if (val) void loadConfig(val);
-  },
-  { immediate: true },
-);
+// the pages that show an entry of the config, so no row leads to an empty page
+const configPages = computed(() => {
+  const pages = new Set<PlayerConfigPage>();
+  if (!config.value || !player.value) return pages;
+  for (const entry of Object.values(config.value.values)) {
+    if (!entry.hidden) pages.add(getPlayerConfigPage(entry, player.value));
+  }
+  return pages;
+});
 
 // methods
 const resetToDefaults = function () {
@@ -459,22 +389,6 @@ const openPlayerMenu = function (evt: MouseEvent) {
   });
 };
 
-const getOutputMenu = function (output: OutputProtocol) {
-  if (!config.value) return [];
-  return getOutputMenuItems(config.value, output, {
-    multiChannelCandidates: multiChannelCandidates.value,
-    multiChannelLayouts: multiChannelLayouts.value,
-    // the server reset the choices that named the output that went, so the
-    // form starts over from what is stored
-    onSplitOff: reloadConfig,
-    // the output moved into the new player, and this player may be gone with it
-    onMultiChannelCreated: (playerId) => {
-      editConfig.value?.discardChanges();
-      router.replace(`/settings/editplayer/${playerId}`);
-    },
-  });
-};
-
 const renamePlayer = function () {
   if (!config.value) return;
   eventbus.emit("playerRenameDialog", {
@@ -482,30 +396,6 @@ const renamePlayer = function () {
     name: config.value.name,
     defaultName: config.value.default_name,
   });
-};
-
-const enablePlayer = async function () {
-  if (!config.value || enabling.value) return;
-
-  const playerId = config.value.player_id;
-  const requestId = ++enableRequestId;
-  enabling.value = true;
-  try {
-    const updatedConfig = await api.savePlayerConfig(playerId, {
-      enabled: true,
-    });
-    if (!isCurrentPlayer(playerId)) return;
-
-    applyPlayerConfig(updatedConfig);
-    toast.success($t("settings.player_saved"));
-  } catch {
-    // the api reports the failure itself; the page shows what the server kept
-    if (!isCurrentPlayer(playerId)) return;
-
-    await refreshPlayerConfig(playerId);
-  } finally {
-    if (requestId === enableRequestId) enabling.value = false;
-  }
 };
 
 const startPlayerSetup = function () {
@@ -518,129 +408,8 @@ const startPlayerSetup = function () {
 
 const onSubmit = async function (values: Record<string, ConfigValueType>) {
   values["enabled"] = config.value!.enabled;
-  loading.value = true;
-  try {
-    await api.savePlayerConfig(props.playerId!, values);
-    goBack(router, { name: "playersettings" });
-  } catch {
-    // Error toast is already shown by the API layer (handleResultMessage).
-    // We just prevent navigation so the user can correct values.
-    editConfig.value?.saveFailed();
-  } finally {
-    loading.value = false;
-  }
+  if (await save(values)) goBack(router, { name: "playersettings" });
 };
-
-const onImmediateApply = async function (
-  values: Record<string, ConfigValueType>,
-) {
-  // Immediately apply a config value change to the backend
-  // and refresh the local config with the server response
-  loading.value = true;
-  api
-    .savePlayerConfig(props.playerId!, values)
-    .then((updatedConfig) => {
-      // the other values the user changed are still waiting for a save
-      applyPlayerConfig(updatedConfig, Object.keys(values));
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-};
-
-const { onAction } = useConfigAction({
-  config,
-  loading,
-  invokeAction: (action) =>
-    api.invokePlayerConfigAction(config.value!.player_id, action),
-  saveValues: (values) => api.savePlayerConfig(props.playerId!, values),
-  answeredBy: (action) =>
-    getPlayerActionProvider(api.players[config.value!.player_id], action),
-});
-
-// drop what the form holds and show the config as the server stores it now
-function reloadConfig() {
-  if (!config.value) return;
-  const playerId = config.value.player_id;
-  editConfig.value?.discardChanges();
-  config.value = undefined;
-  void loadConfig(playerId);
-}
-
-async function loadConfig(playerId: string) {
-  const requestId = ++configLoadRequestId;
-  try {
-    const updatedConfig = await api.getPlayerConfig(playerId);
-    if (requestId === configLoadRequestId && props.playerId === playerId) {
-      config.value = updatedConfig;
-    }
-  } catch (err) {
-    if (requestId === configLoadRequestId && props.playerId === playerId) {
-      toast.error(String(err));
-    }
-  }
-}
-
-async function refreshPlayerConfig(playerId: string) {
-  if (config.value?.player_id !== playerId || isPlayerGoing(playerId)) return;
-  const requestId = ++configRefreshRequestId;
-  // a player can go with its config while the refresh is on its way, such as a speaker
-  // that went up in a multi-channel player; the page leaves it then, so that is no error
-  const wasLive = playerId in api.players;
-  const isGone = () => wasLive && !(playerId in api.players);
-  try {
-    const updatedConfig = await api.getPlayerConfig(playerId, {
-      suppressGlobalError: isGone,
-    });
-    if (
-      requestId === configRefreshRequestId &&
-      props.playerId === playerId &&
-      config.value?.player_id === playerId
-    ) {
-      applyPlayerConfig(updatedConfig);
-    }
-  } catch (err) {
-    if (
-      requestId === configRefreshRequestId &&
-      props.playerId === playerId &&
-      config.value?.player_id === playerId &&
-      !isGone()
-    ) {
-      toast.error(String(err));
-    }
-  }
-}
-
-function applyPlayerConfig(updatedConfig: PlayerConfig, saved: string[] = []) {
-  if (!config.value) return;
-  config.value = {
-    ...updatedConfig,
-    values: mergeConfigEntries(
-      config.value.values,
-      updatedConfig.values,
-      saved,
-    ),
-  };
-}
-
-function isCurrentPlayer(playerId: string) {
-  return props.playerId === playerId && config.value?.player_id === playerId;
-}
-
-// a player that is being removed, or that is gone, has no config left to fetch
-function isPlayerGoing(playerId: string): boolean {
-  return (
-    isPlayerBeingRemoved(playerId) ||
-    (removedPlayerIds.has(playerId) && !(playerId in api.players))
-  );
-}
-
-function resetPlayerState(playerId?: string) {
-  if (config.value?.player_id === playerId) return;
-  config.value = undefined;
-  enabling.value = false;
-  enableRequestId++;
-}
 </script>
 
 <style scoped>
