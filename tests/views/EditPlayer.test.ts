@@ -588,6 +588,25 @@ describe("EditPlayer", () => {
     expect(wrapper.findComponent({ name: "EditConfig" }).exists()).toBe(true);
   });
 
+  it("starts with nothing unsaved on the page of another player", async () => {
+    const otherConfig = playerConfig({ playerId: "player-2" });
+    otherConfig.values.volume_normalization.value = false;
+    apiMock.getPlayerConfig
+      .mockResolvedValueOnce(playerConfig())
+      .mockResolvedValueOnce(otherConfig);
+    apiMock.players["player-2"] = playerState({ playerId: "player-2" });
+    const wrapper = await mountPlayerPage({ realForm: true });
+
+    await wrapper.setProps({ playerId: "player-2" });
+    await flushPromises();
+
+    expect(
+      wrapper
+        .findComponent({ name: "SettingsSaveBar" })
+        .props("unsavedChanges"),
+    ).toBe(false);
+  });
+
   it("renames the player from the header", async () => {
     const wrapper = await mountPlayerPage();
 

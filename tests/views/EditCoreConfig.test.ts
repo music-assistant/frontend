@@ -425,6 +425,24 @@ describe("EditCoreConfig", () => {
       wrapper.findComponent({ name: "SettingsHeaderCard" }).props("title"),
     ).toBe("Radio tuner");
   });
+
+  it("starts with nothing unsaved on the page of another module", async () => {
+    apiMock.getCoreConfig
+      .mockResolvedValueOnce(coreConfig())
+      .mockResolvedValueOnce(radioTunerConfig());
+    const wrapper = mountWithForm("cache");
+    await flushPromises();
+
+    await wrapper.setProps({ domain: "radio_tuner" });
+    await flushPromises();
+
+    expect(renderedKeys(wrapper)).toEqual(["band"]);
+    expect(
+      wrapper
+        .findComponent({ name: "SettingsSaveBar" })
+        .props("unsavedChanges"),
+    ).toBe(false);
+  });
 });
 
 // with the real form, so what it saves and guards can be read
