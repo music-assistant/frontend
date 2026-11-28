@@ -29,7 +29,12 @@ const { apiMock, emittedMenus, hasScope, routerMock, storeMock, toastMock } =
     },
     hasScope: vi.fn(),
     routerMock: { push: vi.fn() },
-    toastMock: { success: vi.fn(), error: vi.fn() },
+    toastMock: {
+      success: vi.fn(),
+      error: vi.fn(),
+      loading: vi.fn(() => "searching"),
+      dismiss: vi.fn(),
+    },
     storeMock: {
       activePlayer: undefined,
       activePlayerId: undefined,
@@ -91,6 +96,35 @@ describe("the context menu of an unavailable library item", () => {
       ?.action?.();
 
     expect(apiMock.refreshItem).toHaveBeenCalledWith(gone);
+  });
+
+  it("shows a spinner while the music services are searched", async () => {
+    await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
+
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "find_on_music_services")
+      ?.action?.();
+
+    expect(toastMock.loading).toHaveBeenCalledWith(
+      "finding_on_music_services",
+      {
+        duration: Infinity,
+      },
+    );
+    expect(toastMock.dismiss).toHaveBeenCalledWith("searching");
+  });
+
+  it("removes the spinner when the search fails", async () => {
+    apiMock.refreshItem.mockRejectedValue(new Error("not found"));
+    await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
+
+    await expect(
+      emittedMenus[0].items
+        .find((entry) => entry.label === "find_on_music_services")
+        ?.action?.(),
+    ).rejects.toThrow("not found");
+
+    expect(toastMock.dismiss).toHaveBeenCalledWith("searching");
   });
 
   it("opens the copy another music service has", async () => {
