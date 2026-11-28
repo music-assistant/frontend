@@ -1328,6 +1328,23 @@ export const getContextMenuItems = async function (
       labelArgs: [],
       action: async () => {
         const updatedInfo = await api.refreshItem(items[0]);
+        // an item its own service can't play may come back from another
+        // service, which no open view shows, so open its page instead
+        if (updatedInfo && updatedInfo.uri !== items[0].uri) {
+          toast.success(
+            $t("found_on_provider", [
+              api.getProviderName(updatedInfo.provider),
+            ]),
+          );
+          router.push({
+            name: updatedInfo.media_type,
+            params: {
+              itemId: updatedInfo.item_id,
+              provider: updatedInfo.provider,
+            },
+          });
+          return;
+        }
         if (updatedInfo) {
           // Emit synthetic MEDIA_ITEM_UPDATED event to trigger UI refresh
           // This ensures child components (like track listings) also refresh
