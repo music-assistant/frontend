@@ -1801,6 +1801,20 @@ export class MusicAssistantApi {
     });
   }
 
+  public setGenreImage(item_id: string | number, data: string): Promise<Genre> {
+    return this.sendCommand(
+      "music/genres/set_image",
+      { item_id, data },
+      // the server explains why an upload is rejected (size, format);
+      // that message is surfaced inline in the dialog instead of a toast
+      { suppressGlobalError: true },
+    );
+  }
+
+  public removeGenreImage(item_id: string | number): Promise<Genre> {
+    return this.sendCommand("music/genres/remove_image", { item_id });
+  }
+
   public getGenresForMediaItem(
     media_type: string,
     media_id: string,
