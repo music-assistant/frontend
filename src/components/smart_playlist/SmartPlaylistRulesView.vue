@@ -2,28 +2,39 @@
   <div class="flex flex-col gap-4">
     <div class="flex items-center gap-2">
       <component
-        :is="isSeed ? Sparkles : Library"
+        :is="isSeed ? Sparkles : isSources ? ListMusic : Library"
         class="h-4 w-4 text-primary"
       />
       <span class="text-sm font-medium">
         {{
           isSeed
             ? $t("smart_playlist.type_seed")
-            : $t("smart_playlist.type_library")
+            : isSources
+              ? $t("smart_playlist.type_sources")
+              : $t("smart_playlist.type_library")
         }}
       </span>
+      <Badge v-if="isSources && rules.preserve_source_order" variant="outline">
+        {{ $t("smart_playlist.preserve_source_order") }}
+      </Badge>
     </div>
 
     <div
-      v-if="seedLabels.length"
+      v-if="itemLabels.length"
       class="rounded-md border bg-card px-3 py-2 flex flex-col gap-1"
     >
       <span class="text-xs text-muted-foreground uppercase tracking-wide">
-        {{ $t("smart_playlist.seed_heading") }}
+        {{
+          $t(
+            isSources
+              ? "smart_playlist.sources_heading"
+              : "smart_playlist.seed_heading",
+          )
+        }}
       </span>
       <div class="flex flex-wrap gap-1">
         <Badge
-          v-for="(label, i) in seedLabels"
+          v-for="(label, i) in itemLabels"
           :key="i"
           variant="default"
           class="text-xs"
@@ -74,7 +85,7 @@
       </div>
     </div>
     <div
-      v-else-if="!seedLabels.length"
+      v-else-if="!itemLabels.length"
       class="rounded-md border bg-card/40 px-3 py-3 flex items-start gap-2"
     >
       <Library class="h-3.5 w-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
@@ -95,7 +106,7 @@ import { Badge } from "@/components/ui/badge";
 import { folderName } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
-import { Ban, Library, Sparkles } from "@lucide/vue";
+import { Ban, Library, ListMusic, Sparkles } from "@lucide/vue";
 import { computed, type Component } from "vue";
 import { fieldIcon } from "./fieldIcon";
 
@@ -120,10 +131,15 @@ const allSeedUris = computed<string[]>(() => [
 ]);
 
 const isSeed = computed(() => allSeedUris.value.length > 0);
+const isSources = computed(() => !!props.rules.source_uris?.length);
 
-const seedLabels = computed<string[]>(() =>
-  allSeedUris.value.map((uri) => props.rules.seed_names?.[uri] ?? uri),
-);
+const itemLabels = computed<string[]>(() => {
+  const uris = isSources.value ? props.rules.source_uris! : allSeedUris.value;
+  const names = isSources.value
+    ? props.rules.source_names
+    : props.rules.seed_names;
+  return uris.map((uri) => names?.[uri] ?? uri);
+});
 
 function namesFor(
   ids: number[] | undefined,

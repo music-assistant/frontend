@@ -117,6 +117,48 @@ describe("smart playlist favorite rules", () => {
 });
 
 describe("selected smart playlist sources", () => {
+  it("round-trips ordered sources and keeps the flag out of other modes", async () => {
+    const form = createForm({
+      ...baseRules,
+      source_uris: ["library://track/1", "service://album/2"],
+      preserve_source_order: true,
+    });
+    await flushPromises();
+    expect(form.preserveSourceOrder.value).toBe(true);
+    expect(form.getFinalRules()).toMatchObject({
+      source_uris: ["library://track/1", "service://album/2"],
+      preserve_source_order: true,
+    });
+    expect(form.hasChanges.value).toBe(false);
+    form.preserveSourceOrder.value = false;
+    expect(form.hasChanges.value).toBe(true);
+    expect(form.getFinalRules().preserve_source_order).toBe(false);
+    form.setMode("library");
+    expect(form.getFinalRules().preserve_source_order).toBeUndefined();
+  });
+
+  it("rejects a known dynamic source when order preservation is enabled", () => {
+    const form = createForm();
+    form.setMode("sources");
+    form.sourceItems.addSeed({
+      uri: "library://playlist/1",
+      kind: "playlist",
+      name: "Dynamic",
+      isDynamic: true,
+    });
+    expect(form.validate()).toEqual([]);
+    form.preserveSourceOrder.value = true;
+    expect(form.validate()).toHaveLength(1);
+    expect(form.seedInvalid.value).toBe(true);
+    form.sourceItems.removeSeed("library://playlist/1");
+    form.sourceItems.addSeed({
+      uri: "library://track/2",
+      kind: "track",
+      name: "Track",
+    });
+    expect(form.validate()).toEqual([]);
+  });
+
   it("uses library filters without requiring a similar-tracks provider", () => {
     const form = createForm();
     form.setMode("sources");

@@ -8,7 +8,7 @@ import api from "@/plugins/api";
 import type { SearchResults } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { effectScope, nextTick, type EffectScope } from "vue";
+import { effectScope, nextTick, ref, type EffectScope } from "vue";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
 import { playlist } from "../../fixtures/playlist";
@@ -193,6 +193,33 @@ describe("SmartPlaylistItemsSection", () => {
       ["library"],
     );
     expect(picker.props("results")).toEqual([items.playlist]);
+  });
+
+  it("removes dynamic playlists from ordered-source results without another search", async () => {
+    scope = effectScope();
+    const preserveOrder = ref(false);
+    const sourceItems = scope.run(() =>
+      useSmartPlaylistSeedItems(false, preserveOrder),
+    )!;
+    const wrapper = mount(SmartPlaylistItemsSection, {
+      props: { seedItems: sourceItems, sourceMode: true },
+      global: { stubs: { SmartPlaylistItemsPicker: true } },
+    });
+    const picker = wrapper.findComponent(SmartPlaylistItemsPicker);
+    const dynamic = playlist({ item_id: "dynamic", is_dynamic: true });
+    vi.mocked(api.search).mockResolvedValueOnce(
+      searchResults({ playlists: [items.playlist, dynamic] }),
+    );
+    picker.vm.$emit("update:kind", "playlist");
+    picker.vm.$emit("update:searchQuery", "gold");
+    await nextTick();
+    picker.vm.$emit("submit");
+    await flushPromises();
+    expect(picker.props("results")).toEqual([items.playlist, dynamic]);
+    preserveOrder.value = true;
+    await nextTick();
+    expect(picker.props("results")).toEqual([items.playlist]);
+    expect(api.search).toHaveBeenCalledTimes(1);
   });
 
   it.each(kinds)("keeps the %s search to its own kind", async (kind) => {

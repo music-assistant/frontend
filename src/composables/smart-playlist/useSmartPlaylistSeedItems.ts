@@ -1,4 +1,4 @@
-import { computed, ref } from "vue";
+import { computed, ref, toValue, type MaybeRefOrGetter } from "vue";
 import api from "@/plugins/api";
 import { buildItemUri } from "@/helpers/utils";
 import type {
@@ -26,6 +26,7 @@ export interface SeedItem {
   kind: SeedKind;
   name: string;
   subtitle?: string;
+  isDynamic?: boolean;
 }
 
 type SearchableItem = Track | Artist | Album | Playlist;
@@ -65,10 +66,21 @@ function buildSeedItem(
     subtitle = primaryArtistName((item as Track).artists) || undefined;
   else if (kind === "album")
     subtitle = primaryArtistName((item as Album).artists) || undefined;
-  return { uri, kind, name: item.name, subtitle };
+  return {
+    uri,
+    kind,
+    name: item.name,
+    subtitle,
+    ...(!similarOnly && kind === "playlist"
+      ? { isDynamic: (item as Playlist).is_dynamic }
+      : {}),
+  };
 }
 
-export function useSmartPlaylistSeedItems(similarOnly = true) {
+export function useSmartPlaylistSeedItems(
+  similarOnly = true,
+  preserveSourceOrder: MaybeRefOrGetter<boolean> = false,
+) {
   const activeKind = ref<SeedKind>("track");
   const seeds = ref<SeedItem[]>([]);
 
@@ -125,7 +137,17 @@ export function useSmartPlaylistSeedItems(similarOnly = true) {
       activeSearch.value.query.value = query;
     },
   });
-  const searchResults = computed(() => activeSearch.value.results.value);
+  const searchResults = computed(() => {
+    const results = activeSearch.value.results.value;
+    if (
+      !similarOnly &&
+      toValue(preserveSourceOrder) &&
+      activeKind.value === "playlist"
+    ) {
+      return results.filter((item) => !(item as Playlist).is_dynamic);
+    }
+    return results;
+  });
   const isSearching = computed(() => activeSearch.value.isSearching.value);
   const isSearchSubmitted = computed(
     () => activeSearch.value.isSubmitted.value,

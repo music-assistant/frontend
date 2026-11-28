@@ -113,6 +113,7 @@ export function useSmartPlaylistRulesForm(
 ) {
   const mode = ref<SmartPlaylistMode>("library");
   const logic = ref<"AND" | "OR">("AND");
+  const preserveSourceOrder = ref(false);
 
   const libraryRules = ref<RuleRow[]>([]);
   const seedRules = ref<RuleRow[]>([]);
@@ -127,7 +128,7 @@ export function useSmartPlaylistRulesForm(
 
   const genresComposable = useSmartPlaylistGenres();
   const seedItems = useSmartPlaylistSeedItems();
-  const sourceItems = useSmartPlaylistSeedItems(false);
+  const sourceItems = useSmartPlaylistSeedItems(false, preserveSourceOrder);
 
   function setMode(next: SmartPlaylistMode) {
     if (next === mode.value) return;
@@ -450,6 +451,7 @@ export function useSmartPlaylistRulesForm(
           ? "sources"
           : "library";
       logic.value = initial.logic ?? "AND";
+      preserveSourceOrder.value = initial.preserve_source_order ?? false;
 
       rules.value = buildRulesFromInitial(initial, isSeed);
 
@@ -592,6 +594,7 @@ export function useSmartPlaylistRulesForm(
       final.seed_playlist_uris = playlistUris;
       final.seed_names = names;
     } else if (mode.value === "sources") {
+      final.preserve_source_order = preserveSourceOrder.value;
       final.source_uris = sourceItems.seeds.value.map((item) => item.uri);
       final.source_names = Object.fromEntries(
         sourceItems.seeds.value.map((item) => [item.uri, item.name]),
@@ -672,6 +675,13 @@ export function useSmartPlaylistRulesForm(
     if (mode.value === "sources") {
       seedInvalid.value = !sourceItems.hasSeed.value;
       if (seedInvalid.value) errors.push($t("smart_playlist.sources_required"));
+      if (
+        preserveSourceOrder.value &&
+        sourceItems.seeds.value.some((item) => item.isDynamic)
+      ) {
+        seedInvalid.value = true;
+        errors.push($t("smart_playlist.source_order_dynamic_error"));
+      }
     } else if (mode.value === "seed") {
       if (!seedItems.hasSeed.value) {
         errors.push(
@@ -728,6 +738,7 @@ export function useSmartPlaylistRulesForm(
   watch(sourceItems.seeds, (sources) => {
     if (sources.length > 0) clearSeedValidation();
   });
+  watch(preserveSourceOrder, clearSeedValidation);
 
   return {
     mode,
@@ -742,6 +753,7 @@ export function useSmartPlaylistRulesForm(
     albumTypeOptions,
     seedItems,
     sourceItems,
+    preserveSourceOrder,
     setMode,
     addRule,
     removeRule,

@@ -27,8 +27,28 @@
         :invalid="form.seedInvalid.value"
         source-mode
       />
+      <div v-if="form.mode.value === 'sources'" class="flex flex-col gap-2">
+        <div class="flex items-center gap-2">
+          <Checkbox
+            :id="orderCheckboxId"
+            :model-value="form.preserveSourceOrder.value"
+            @update:model-value="
+              (value) => (form.preserveSourceOrder.value = value === true)
+            "
+          />
+          <Label :for="orderCheckboxId">
+            {{ $t("smart_playlist.preserve_source_order") }}
+          </Label>
+        </div>
+        <p
+          v-if="form.preserveSourceOrder.value"
+          class="text-xs text-muted-foreground"
+        >
+          {{ $t("smart_playlist.source_order_hint") }}
+        </p>
+      </div>
       <p
-        v-if="form.mode.value === 'sources'"
+        v-if="form.mode.value === 'sources' && !form.preserveSourceOrder.value"
         class="text-xs text-muted-foreground"
       >
         {{ $t("smart_playlist.sources_limit_hint") }}
@@ -54,6 +74,8 @@
 </template>
 
 <script setup lang="ts">
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -64,7 +86,7 @@ import {
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Library, ListMusic, Sparkles } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, useId } from "vue";
 import SmartPlaylistRulesList from "./SmartPlaylistRulesList.vue";
 import SmartPlaylistItemsSection from "./SmartPlaylistItemsSection.vue";
 import SmartPlaylistTypeSelector from "./SmartPlaylistTypeSelector.vue";
@@ -94,6 +116,7 @@ const emit = defineEmits<{
 const form = useSmartPlaylistRulesForm(props, (count, duration, counting) => {
   emit("trackCountUpdate", count, duration, counting);
 });
+const orderCheckboxId = useId();
 
 const modeIcon = computed(
   () =>
