@@ -1,4 +1,4 @@
-import { computed, ref } from "vue";
+import { computed, ref, toValue, type MaybeRefOrGetter } from "vue";
 import api from "@/plugins/api";
 import { buildItemUri } from "@/helpers/utils";
 import type {
@@ -26,6 +26,7 @@ export interface SeedItem {
   kind: SeedKind;
   name: string;
   subtitle?: string;
+  isDynamic?: boolean;
 }
 
 type SearchableItem = Track | Artist | Album | Playlist;
@@ -40,6 +41,7 @@ function buildSeedItem(
   item: SearchableItem,
   kind: SeedKind,
   similarTracksProviderIds: string[],
+  similarOnly: boolean,
 ): SeedItem {
   // Prefer a SIMILAR_TRACKS-capable provider mapping so the seed URI resolves
   // through the same provider that will produce the similar-tracks output.
@@ -56,16 +58,29 @@ function buildSeedItem(
         : kind === "album"
           ? MediaType.ALBUM
           : MediaType.PLAYLIST;
-  const uri = buildItemUri(mediaType, mapping, item.item_id);
+  const uri = similarOnly
+    ? buildItemUri(mediaType, mapping, item.item_id)
+    : item.uri;
   let subtitle: string | undefined;
   if (kind === "track")
     subtitle = primaryArtistName((item as Track).artists) || undefined;
   else if (kind === "album")
     subtitle = primaryArtistName((item as Album).artists) || undefined;
-  return { uri, kind, name: item.name, subtitle };
+  return {
+    uri,
+    kind,
+    name: item.name,
+    subtitle,
+    ...(!similarOnly && kind === "playlist"
+      ? { isDynamic: (item as Playlist).is_dynamic }
+      : {}),
+  };
 }
 
-export function useSmartPlaylistSeedItems() {
+export function useSmartPlaylistSeedItems(
+  similarOnly = true,
+  preserveSourceOrder: MaybeRefOrGetter<boolean> = false,
+) {
   const activeKind = ref<SeedKind>("track");
   const seeds = ref<SeedItem[]>([]);
 
@@ -95,7 +110,12 @@ export function useSmartPlaylistSeedItems() {
       results,
       isSearching,
       searchFn: async (q) => {
-        if (!hasSimilarTracksProvider.value) return [];
+        if (similarOnly && !hasSimilarTracksProvider.value) return [];
+        if (!similarOnly && mediaType === MediaType.PLAYLIST) {
+          return itemsOf(
+            await api.search(q, [mediaType], SEARCH_LIMIT, ["library"]),
+          );
+        }
         return itemsOf(await api.search(q, [mediaType], SEARCH_LIMIT));
       },
     });
@@ -117,7 +137,17 @@ export function useSmartPlaylistSeedItems() {
       activeSearch.value.query.value = query;
     },
   });
-  const searchResults = computed(() => activeSearch.value.results.value);
+  const searchResults = computed(() => {
+    const results = activeSearch.value.results.value;
+    if (
+      !similarOnly &&
+      toValue(preserveSourceOrder) &&
+      activeKind.value === "playlist"
+    ) {
+      return results.filter((item) => !(item as Playlist).is_dynamic);
+    }
+    return results;
+  });
   const isSearching = computed(() => activeSearch.value.isSearching.value);
   const isSearchSubmitted = computed(
     () => activeSearch.value.isSubmitted.value,
@@ -127,7 +157,7 @@ export function useSmartPlaylistSeedItems() {
     return activeSearch.value.submit();
   }
 
-  const isFull = computed(() => seeds.value.length >= SEED_MAX);
+  const isFull = computed(() => similarOnly && seeds.value.length >= SEED_MAX);
   const hasSeed = computed(() => seeds.value.length > 0);
 
   function addSeed(item: SeedItem): boolean {
@@ -138,7 +168,12 @@ export function useSmartPlaylistSeedItems() {
   }
 
   function addSeedFromSearch(item: SearchableItem, kind: SeedKind): boolean {
-    const seed = buildSeedItem(item, kind, similarTracksProviderIds.value);
+    const seed = buildSeedItem(
+      item,
+      kind,
+      similarTracksProviderIds.value,
+      similarOnly,
+    );
     const added = addSeed(seed);
     if (added) {
       searches[kind].query.value = "";

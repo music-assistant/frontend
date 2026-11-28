@@ -8,10 +8,17 @@
             : 'text-sm font-medium'
         "
       >
-        {{ $t("smart_playlist.seed_heading") }}
+        {{
+          $t(
+            sourceMode
+              ? "smart_playlist.source_heading"
+              : "smart_playlist.seed_heading",
+          )
+        }}
       </Label>
       <span class="text-xs text-muted-foreground">
-        {{ seedItems.seeds.value.length }} / {{ SEED_MAX }}
+        {{ seedItems.seeds.value.length
+        }}<template v-if="!sourceMode"> / {{ SEED_MAX }}</template>
       </span>
     </div>
 
@@ -25,7 +32,13 @@
     >
       <div class="flex items-center gap-1 px-2 text-xs font-medium">
         <Sparkles class="h-3.5 w-3.5 text-muted-foreground" />
-        <span>{{ $t("smart_playlist.seed_label") }}</span>
+        <span>{{
+          $t(
+            sourceMode
+              ? "smart_playlist.source_label"
+              : "smart_playlist.seed_label",
+          )
+        }}</span>
       </div>
 
       <div class="flex-1 min-w-0 flex items-center gap-1 flex-wrap">
@@ -48,19 +61,21 @@
           <button
             type="button"
             class="hover:bg-primary-foreground/20 rounded-full p-0.5 pt-1 flex-shrink-0 transition-colors"
+            :aria-label="`${$t('remove')}: ${s.name}`"
             @click.stop="seedItems.removeSeed(s.uri)"
           >
             <X class="h-2.5 w-2.5" />
           </button>
         </Badge>
 
-        <SmartPlaylistSeedPicker
+        <SmartPlaylistItemsPicker
           :kind="kind"
           :search-query="seedItems.searchQuery.value"
           :results="seedItems.searchResults.value"
           :is-searching="seedItems.isSearching.value"
           :is-submitted="seedItems.isSearchSubmitted.value"
-          :has-provider="seedItems.hasSimilarTracksProvider.value"
+          :has-provider="sourceMode || seedItems.hasSimilarTracksProvider.value"
+          :source-mode="sourceMode"
           :is-full="seedItems.isFull.value"
           :invalid="invalid && !seedItems.hasSeed.value"
           @update:kind="onChangeKind"
@@ -78,7 +93,7 @@
               }}
             </span>
           </template>
-        </SmartPlaylistSeedPicker>
+        </SmartPlaylistItemsPicker>
       </div>
     </div>
   </div>
@@ -96,11 +111,12 @@ import type { Album, Artist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Disc3, ListMusic, Mic2, Music, Sparkles, X } from "@lucide/vue";
 import { computed, toRef, type Component } from "vue";
-import SmartPlaylistSeedPicker from "./SmartPlaylistSeedPicker.vue";
+import SmartPlaylistItemsPicker from "./SmartPlaylistItemsPicker.vue";
 
 const props = defineProps<{
   seedItems: ReturnType<typeof useSmartPlaylistSeedItems>;
   invalid?: boolean;
+  sourceMode?: boolean;
 }>();
 
 const seedItems = toRef(props, "seedItems");

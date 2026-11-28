@@ -1,8 +1,9 @@
 <template>
-  <div class="grid grid-cols-2 gap-2">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
     <button
       type="button"
       :class="cardClass('library')"
+      :aria-pressed="modelValue === 'library'"
       @click="emit('update:modelValue', 'library')"
     >
       <div :class="headerClass('library')">
@@ -21,7 +22,28 @@
     </button>
     <button
       type="button"
+      :class="cardClass('sources')"
+      :aria-pressed="modelValue === 'sources'"
+      @click="emit('update:modelValue', 'sources')"
+    >
+      <div :class="headerClass('sources')">
+        <ListMusic class="h-4 w-4" />
+        <span class="text-sm font-semibold">
+          {{ $t("smart_playlist.type_sources") }}
+        </span>
+        <Check
+          v-if="modelValue === 'sources'"
+          class="h-3.5 w-3.5 ml-auto text-primary"
+        />
+      </div>
+      <p class="text-xs text-muted-foreground text-left leading-snug">
+        {{ $t("smart_playlist.type_sources_desc") }}
+      </p>
+    </button>
+    <button
+      type="button"
       :class="cardClass('seed')"
+      :aria-pressed="modelValue === 'seed'"
       @click="emit('update:modelValue', 'seed')"
     >
       <div :class="headerClass('seed')">
@@ -44,7 +66,7 @@
 <script setup lang="ts">
 import type { SmartPlaylistMode } from "@/composables/smart-playlist/useSmartPlaylistRulesForm";
 import { $t } from "@/plugins/i18n";
-import { Check, Library, Sparkles } from "@lucide/vue";
+import { Check, Library, ListMusic, Sparkles } from "@lucide/vue";
 
 const props = defineProps<{
   modelValue: SmartPlaylistMode;

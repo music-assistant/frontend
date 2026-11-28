@@ -1,5 +1,5 @@
-import SmartPlaylistSeedPicker from "@/components/smart_playlist/SmartPlaylistSeedPicker.vue";
-import SmartPlaylistSeedSection from "@/components/smart_playlist/SmartPlaylistSeedSection.vue";
+import SmartPlaylistItemsPicker from "@/components/smart_playlist/SmartPlaylistItemsPicker.vue";
+import SmartPlaylistItemsSection from "@/components/smart_playlist/SmartPlaylistItemsSection.vue";
 import {
   useSmartPlaylistSeedItems,
   type SeedKind,
@@ -8,7 +8,7 @@ import api from "@/plugins/api";
 import type { SearchResults } from "@/plugins/api/interfaces";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { effectScope, nextTick, type EffectScope } from "vue";
+import { effectScope, nextTick, ref, type EffectScope } from "vue";
 import { album } from "../../fixtures/album";
 import { artist } from "../../fixtures/artist";
 import { playlist } from "../../fixtures/playlist";
@@ -56,19 +56,19 @@ const kinds = Object.keys(items) as SeedKind[];
 
 enableAutoUnmount(afterEach);
 
-describe("SmartPlaylistSeedSection", () => {
+describe("SmartPlaylistItemsSection", () => {
   let scope: EffectScope;
 
   // the picker is stubbed with its real props, so no popover has to open
   function mountSection() {
     scope = effectScope();
     const seedItems = scope.run(() => useSmartPlaylistSeedItems())!;
-    const wrapper = mount(SmartPlaylistSeedSection, {
+    const wrapper = mount(SmartPlaylistItemsSection, {
       props: { seedItems },
-      global: { stubs: { SmartPlaylistSeedPicker: true } },
+      global: { stubs: { SmartPlaylistItemsPicker: true } },
     });
     return {
-      picker: wrapper.findComponent(SmartPlaylistSeedPicker),
+      picker: wrapper.findComponent(SmartPlaylistItemsPicker),
       seedItems,
     };
   }
@@ -136,6 +136,90 @@ describe("SmartPlaylistSeedSection", () => {
     ]);
     expect(picker.props("searchQuery")).toBe("");
     expect(picker.props("results")).toEqual([]);
+  });
+
+  it("allows selected sources without a similar-tracks provider and removes them", async () => {
+    const features = api.providers.spotify_instance.supported_features;
+    api.providers.spotify_instance.supported_features = [];
+    try {
+      scope = effectScope();
+      const sourceItems = scope.run(() => useSmartPlaylistSeedItems(false))!;
+      const wrapper = mount(SmartPlaylistItemsSection, {
+        props: { seedItems: sourceItems, sourceMode: true },
+        global: { stubs: { SmartPlaylistItemsPicker: true } },
+      });
+      const picker = wrapper.findComponent(SmartPlaylistItemsPicker);
+      expect(picker.props("hasProvider")).toBe(true);
+      expect(picker.props("sourceMode")).toBe(true);
+      vi.mocked(api.search).mockResolvedValueOnce(everyKind);
+
+      picker.vm.$emit("update:kind", "album");
+      picker.vm.$emit("update:searchQuery", "arrival");
+      await nextTick();
+      picker.vm.$emit("submit");
+      await flushPromises();
+      expect(picker.props("results")).toEqual([items.album]);
+      picker.vm.$emit("select", items.album);
+      await nextTick();
+      expect(sourceItems.seeds.value).toEqual([
+        expect.objectContaining({ kind: "album", uri: items.album.uri }),
+      ]);
+
+      await wrapper.find("button[aria-label]").trigger("click");
+      expect(sourceItems.seeds.value).toEqual([]);
+    } finally {
+      api.providers.spotify_instance.supported_features = features;
+    }
+  });
+
+  it("searches only saved playlists in source mode", async () => {
+    scope = effectScope();
+    const sourceItems = scope.run(() => useSmartPlaylistSeedItems(false))!;
+    const wrapper = mount(SmartPlaylistItemsSection, {
+      props: { seedItems: sourceItems, sourceMode: true },
+      global: { stubs: { SmartPlaylistItemsPicker: true } },
+    });
+    const picker = wrapper.findComponent(SmartPlaylistItemsPicker);
+    vi.mocked(api.search).mockResolvedValueOnce(everyKind);
+    picker.vm.$emit("update:kind", "playlist");
+    picker.vm.$emit("update:searchQuery", "gold");
+    await nextTick();
+    picker.vm.$emit("submit");
+    await flushPromises();
+    expect(api.search).toHaveBeenCalledExactlyOnceWith(
+      "gold",
+      ["playlist"],
+      20,
+      ["library"],
+    );
+    expect(picker.props("results")).toEqual([items.playlist]);
+  });
+
+  it("removes dynamic playlists from ordered-source results without another search", async () => {
+    scope = effectScope();
+    const preserveOrder = ref(false);
+    const sourceItems = scope.run(() =>
+      useSmartPlaylistSeedItems(false, preserveOrder),
+    )!;
+    const wrapper = mount(SmartPlaylistItemsSection, {
+      props: { seedItems: sourceItems, sourceMode: true },
+      global: { stubs: { SmartPlaylistItemsPicker: true } },
+    });
+    const picker = wrapper.findComponent(SmartPlaylistItemsPicker);
+    const dynamic = playlist({ item_id: "dynamic", is_dynamic: true });
+    vi.mocked(api.search).mockResolvedValueOnce(
+      searchResults({ playlists: [items.playlist, dynamic] }),
+    );
+    picker.vm.$emit("update:kind", "playlist");
+    picker.vm.$emit("update:searchQuery", "gold");
+    await nextTick();
+    picker.vm.$emit("submit");
+    await flushPromises();
+    expect(picker.props("results")).toEqual([items.playlist, dynamic]);
+    preserveOrder.value = true;
+    await nextTick();
+    expect(picker.props("results")).toEqual([items.playlist]);
+    expect(api.search).toHaveBeenCalledTimes(1);
   });
 
   it.each(kinds)("keeps the %s search to its own kind", async (kind) => {

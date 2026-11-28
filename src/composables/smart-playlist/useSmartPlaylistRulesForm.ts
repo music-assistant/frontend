@@ -11,7 +11,7 @@ import {
   type SeedKind,
 } from "./useSmartPlaylistSeedItems";
 
-export type SmartPlaylistMode = "library" | "seed";
+export type SmartPlaylistMode = "library" | "seed" | "sources";
 export type RuleField =
   | "genre"
   | "artist"
@@ -113,6 +113,7 @@ export function useSmartPlaylistRulesForm(
 ) {
   const mode = ref<SmartPlaylistMode>("library");
   const logic = ref<"AND" | "OR">("AND");
+  const preserveSourceOrder = ref(false);
 
   const libraryRules = ref<RuleRow[]>([]);
   const seedRules = ref<RuleRow[]>([]);
@@ -127,6 +128,7 @@ export function useSmartPlaylistRulesForm(
 
   const genresComposable = useSmartPlaylistGenres();
   const seedItems = useSmartPlaylistSeedItems();
+  const sourceItems = useSmartPlaylistSeedItems(false, preserveSourceOrder);
 
   function setMode(next: SmartPlaylistMode) {
     if (next === mode.value) return;
@@ -184,7 +186,7 @@ export function useSmartPlaylistRulesForm(
   const _updateTrackCount = useDebounceFn(async () => {
     const requestId = ++trackCountRequestId.value;
 
-    if (mode.value === "seed") {
+    if (mode.value !== "library") {
       // Backend doesn't currently expose a "count via streaming similar" query.
       // Show an estimate based on the limit instead (handled in the display component).
       if (requestId === trackCountRequestId.value) {
@@ -218,7 +220,7 @@ export function useSmartPlaylistRulesForm(
   }, 600);
 
   watch(
-    [libraryRules, seedRules, mode, logic, seedItems.seeds],
+    [libraryRules, seedRules, mode, logic, seedItems.seeds, sourceItems.seeds],
     () => {
       _updateTrackCount();
     },
@@ -434,14 +436,31 @@ export function useSmartPlaylistRulesForm(
         })),
       ];
       const isSeed = seedEntries.length > 0;
-      mode.value = isSeed ? "seed" : "library";
+      const sourceEntries: { uri: string; kind: SeedKind }[] = (
+        initial.source_uris ?? []
+      ).map((uri) => {
+        const type = uri.includes("://")
+          ? uri.split("://")[1]?.split("/")[0]
+          : uri.split(":")[1];
+        const kind = type === "album" || type === "playlist" ? type : "track";
+        return { uri, kind };
+      });
+      mode.value = isSeed
+        ? "seed"
+        : sourceEntries.length
+          ? "sources"
+          : "library";
       logic.value = initial.logic ?? "AND";
+      preserveSourceOrder.value = initial.preserve_source_order ?? false;
 
       rules.value = buildRulesFromInitial(initial, isSeed);
 
       seedItems.clearSeeds();
+      sourceItems.clearSeeds();
       if (isSeed) {
         await hydrateSeedItems(seedEntries, initial.seed_names);
+      } else if (sourceEntries.length) {
+        sourceItems.loadSeedsFromUris(sourceEntries, initial.source_names);
       }
 
       await nextTick();
@@ -574,6 +593,12 @@ export function useSmartPlaylistRulesForm(
       final.seed_album_uris = albumUris;
       final.seed_playlist_uris = playlistUris;
       final.seed_names = names;
+    } else if (mode.value === "sources") {
+      final.preserve_source_order = preserveSourceOrder.value;
+      final.source_uris = sourceItems.seeds.value.map((item) => item.uri);
+      final.source_names = Object.fromEntries(
+        sourceItems.seeds.value.map((item) => [item.uri, item.name]),
+      );
     }
 
     return final;
@@ -647,7 +672,17 @@ export function useSmartPlaylistRulesForm(
     const errors: string[] = [];
     const invalid = new Set<string>();
 
-    if (mode.value === "seed") {
+    if (mode.value === "sources") {
+      seedInvalid.value = !sourceItems.hasSeed.value;
+      if (seedInvalid.value) errors.push($t("smart_playlist.sources_required"));
+      if (
+        preserveSourceOrder.value &&
+        sourceItems.seeds.value.some((item) => item.isDynamic)
+      ) {
+        seedInvalid.value = true;
+        errors.push($t("smart_playlist.source_order_dynamic_error"));
+      }
+    } else if (mode.value === "seed") {
       if (!seedItems.hasSeed.value) {
         errors.push(
           "Pick at least one track, artist, album, or playlist to seed the playlist from.",
@@ -700,6 +735,10 @@ export function useSmartPlaylistRulesForm(
     },
     { deep: true },
   );
+  watch(sourceItems.seeds, (sources) => {
+    if (sources.length > 0) clearSeedValidation();
+  });
+  watch(preserveSourceOrder, clearSeedValidation);
 
   return {
     mode,
@@ -713,6 +752,8 @@ export function useSmartPlaylistRulesForm(
     genreName: genresComposable.genreName,
     albumTypeOptions,
     seedItems,
+    sourceItems,
+    preserveSourceOrder,
     setMode,
     addRule,
     removeRule,

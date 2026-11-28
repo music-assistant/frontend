@@ -3,6 +3,9 @@
     <p v-if="mode === 'seed'" class="text-sm text-muted-foreground">
       {{ $t("smart_playlist.seed_count_hint") }}
     </p>
+    <p v-else-if="mode === 'sources'" class="text-sm text-muted-foreground">
+      {{ $t("smart_playlist.sources_count_hint") }}
+    </p>
     <template v-else>
       <p v-if="isCountingTracks" class="text-sm text-muted-foreground">…</p>
       <p

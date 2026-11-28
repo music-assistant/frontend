@@ -1,5 +1,5 @@
+import SmartPlaylistItemsPicker from "@/components/smart_playlist/SmartPlaylistItemsPicker.vue";
 import SmartPlaylistRuleValuePicker from "@/components/smart_playlist/SmartPlaylistRuleValuePicker.vue";
-import SmartPlaylistSeedPicker from "@/components/smart_playlist/SmartPlaylistSeedPicker.vue";
 import { $t } from "@/plugins/i18n";
 import {
   enableAutoUnmount,
@@ -53,7 +53,7 @@ const searchField = (content: Element) =>
 // assertion fails
 enableAutoUnmount(afterEach);
 
-// the seed picker puts its kind tabs above the search field, so the default
+// the items picker puts its kind tabs above the search field, so the default
 // focus of the two pickers lands on a different control. Its tabs are roving,
 // so the one that takes focus is the active one rather than the first.
 const pickers: Array<
@@ -72,8 +72,8 @@ const pickers: Array<
     "Search genre",
   ],
   [
-    "SmartPlaylistSeedPicker",
-    SmartPlaylistSeedPicker,
+    "SmartPlaylistItemsPicker",
+    SmartPlaylistItemsPicker,
     {
       kind: "album",
       searchQuery: "",
@@ -133,7 +133,7 @@ describe.each(pickers)(
   },
 );
 
-describe("SmartPlaylistSeedPicker search", () => {
+describe("SmartPlaylistItemsPicker search", () => {
   const seedProps = {
     kind: "album" as const,
     searchQuery: "blue",
@@ -153,7 +153,7 @@ describe("SmartPlaylistSeedPicker search", () => {
   });
 
   it("emits submit on enter in the search field", async () => {
-    const wrapper = mount(SmartPlaylistSeedPicker, {
+    const wrapper = mount(SmartPlaylistItemsPicker, {
       props: seedProps,
       attachTo: document.body,
     });
@@ -167,7 +167,7 @@ describe("SmartPlaylistSeedPicker search", () => {
   });
 
   it("ignores the enter that commits an IME composition", async () => {
-    const wrapper = mount(SmartPlaylistSeedPicker, {
+    const wrapper = mount(SmartPlaylistItemsPicker, {
       props: seedProps,
       attachTo: document.body,
     });
@@ -193,7 +193,7 @@ describe("SmartPlaylistSeedPicker search", () => {
 
   it("asks to type while the query is too short to submit", async () => {
     const content = await openPopover(
-      mount(SmartPlaylistSeedPicker, {
+      mount(SmartPlaylistItemsPicker, {
         props: { ...seedProps, searchQuery: " b " },
         attachTo: document.body,
       }),
@@ -206,7 +206,7 @@ describe("SmartPlaylistSeedPicker search", () => {
 
   it("prompts to press enter for a typed but unsubmitted query", async () => {
     const content = await openPopover(
-      mount(SmartPlaylistSeedPicker, {
+      mount(SmartPlaylistItemsPicker, {
         props: seedProps,
         attachTo: document.body,
       }),
@@ -217,7 +217,7 @@ describe("SmartPlaylistSeedPicker search", () => {
 
   it("reports no match once the query is submitted", async () => {
     const content = await openPopover(
-      mount(SmartPlaylistSeedPicker, {
+      mount(SmartPlaylistItemsPicker, {
         props: { ...seedProps, isSubmitted: true },
         attachTo: document.body,
       }),

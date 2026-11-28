@@ -2509,6 +2509,9 @@ export interface SmartPlaylistRules {
   seed_album_uris?: string[];
   seed_playlist_uris?: string[];
   seed_names?: Record<string, string>;
+  source_uris?: string[];
+  source_names?: Record<string, string>;
+  preserve_source_order?: boolean;
   min_popularity?: number | null;
   logic: "AND" | "OR";
   limit: number;

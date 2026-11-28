@@ -53,6 +53,7 @@ describe("smart playlist favorite rules", () => {
       favorites_only: false,
       exclude_favorites: false,
     });
+
     expect(form.hasChanges.value).toBe(false);
   });
 
@@ -112,5 +113,88 @@ describe("smart playlist favorite rules", () => {
       favorites_only: false,
       exclude_favorites: true,
     });
+  });
+});
+
+describe("selected smart playlist sources", () => {
+  it("round-trips ordered sources and keeps the flag out of other modes", async () => {
+    const form = createForm({
+      ...baseRules,
+      source_uris: ["library://track/1", "service://album/2"],
+      preserve_source_order: true,
+    });
+    await flushPromises();
+    expect(form.preserveSourceOrder.value).toBe(true);
+    expect(form.getFinalRules()).toMatchObject({
+      source_uris: ["library://track/1", "service://album/2"],
+      preserve_source_order: true,
+    });
+    expect(form.hasChanges.value).toBe(false);
+    form.preserveSourceOrder.value = false;
+    expect(form.hasChanges.value).toBe(true);
+    expect(form.getFinalRules().preserve_source_order).toBe(false);
+    form.setMode("library");
+    expect(form.getFinalRules().preserve_source_order).toBeUndefined();
+  });
+
+  it("rejects a known dynamic source when order preservation is enabled", () => {
+    const form = createForm();
+    form.setMode("sources");
+    form.sourceItems.addSeed({
+      uri: "library://playlist/1",
+      kind: "playlist",
+      name: "Dynamic",
+      isDynamic: true,
+    });
+    expect(form.validate()).toEqual([]);
+    form.preserveSourceOrder.value = true;
+    expect(form.validate()).toHaveLength(1);
+    expect(form.seedInvalid.value).toBe(true);
+    form.sourceItems.removeSeed("library://playlist/1");
+    form.sourceItems.addSeed({
+      uri: "library://track/2",
+      kind: "track",
+      name: "Track",
+    });
+    expect(form.validate()).toEqual([]);
+  });
+
+  it("uses library filters without requiring a similar-tracks provider", () => {
+    const form = createForm();
+    form.setMode("sources");
+    expect(form.validate()).toHaveLength(1);
+    form.sourceItems.addSeed({
+      uri: "service--one://playlist/123",
+      kind: "playlist",
+      name: "Mix",
+    });
+    form.addRule("favorite");
+    expect(form.availableFields.value).toContain("artist");
+    expect(form.getFinalRules()).toMatchObject({
+      source_uris: ["service--one://playlist/123"],
+      source_names: { "service--one://playlist/123": "Mix" },
+      favorites_only: true,
+    });
+    expect(form.validate()).toEqual([]);
+    form.setMode("library");
+    expect(form.getFinalRules().source_uris).toBeUndefined();
+    form.setMode("sources");
+    expect(form.getFinalRules().source_uris).toEqual([
+      "service--one://playlist/123",
+    ]);
+  });
+
+  it("restores selected sources without resolving every item again", async () => {
+    const form = createForm({
+      ...baseRules,
+      source_uris: ["service--one://album/123"],
+      source_names: { "service--one://album/123": "Album" },
+    });
+    await flushPromises();
+    expect(form.mode.value).toBe("sources");
+    expect(form.sourceItems.seeds.value).toEqual([
+      { uri: "service--one://album/123", kind: "album", name: "Album" },
+    ]);
+    expect(form.hasChanges.value).toBe(false);
   });
 });

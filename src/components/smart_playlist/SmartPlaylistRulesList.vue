@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-3">
     <div
-      v-if="mode === 'library'"
+      v-if="mode !== 'seed'"
       class="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground"
     >
       <span>{{ $t("smart_playlist.match") }}</span>
@@ -40,7 +40,7 @@
         :available-fields="availableFields"
         :genre-options="genreOptions"
         :album-type-options="albumTypeOptions"
-        :allow-favorites-only="mode === 'library'"
+        :allow-favorites-only="mode !== 'seed'"
         :invalid="invalidRuleUids.has(rule.uid)"
         @change-field="(field) => onChangeField(rule, field)"
         @change-operator="(op) => onChangeOperator(rule, op)"
@@ -143,7 +143,7 @@ import { fieldIcon } from "./fieldIcon";
 import SmartPlaylistRuleRow from "./SmartPlaylistRuleRow.vue";
 
 const props = defineProps<{
-  mode: "library" | "seed";
+  mode: "library" | "seed" | "sources";
   rules: RuleRow[];
   logic: "AND" | "OR";
   availableFields: RuleField[];
