@@ -29,7 +29,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playerQueue } from "../../fixtures/playerQueue";
 import { playlist } from "../../fixtures/playlist";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../../fixtures/scopes";
-import { userSummary } from "../../fixtures/user";
+import { user, userSummary } from "../../fixtures/user";
 
 const { hasScope, mockToastError, mockToastInfo, routerMock, storeMock } =
   vi.hoisted(() => ({
@@ -982,6 +982,55 @@ describe("MusicAssistantApi error handling", () => {
     },
   );
 
+  it("sends allow_explicit for a new user", async () => {
+    const result = api.createUser(
+      "kid",
+      "hunter22",
+      UserRole.USER,
+      undefined,
+      undefined,
+      false,
+    );
+
+    expect(transport.lastCommand.command).toBe("auth/user/create");
+    expect(transport.lastCommand.args).toMatchObject({
+      allow_explicit: false,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: user({ allow_explicit: false }),
+      partial: false,
+    });
+    await expect(result).resolves.toMatchObject({
+      allow_explicit: false,
+    });
+  });
+
+  it("sends a changed allow_explicit, and leaves it out otherwise", async () => {
+    const changed = api.updateUser("user-1", {
+      allow_explicit: false,
+    });
+    expect(transport.lastCommand.args).toEqual({
+      user_id: "user-1",
+      allow_explicit: false,
+    });
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: user(),
+      partial: false,
+    });
+    await changed;
+
+    const renamed = api.updateUser("user-1", { username: "renamed" });
+    expect(transport.lastCommand.args).not.toHaveProperty("allow_explicit");
+    transport.receive({
+      message_id: transport.lastCommand.message_id!,
+      result: user(),
+      partial: false,
+    });
+    await renamed;
+  });
+
   it("lets updateUser suppress the global error toast for the caller", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const result = api.updateUser(
@@ -1009,6 +1058,7 @@ describe("MusicAssistantApi error handling", () => {
       "bob",
       "hunter2",
       UserRole.USER,
+      undefined,
       undefined,
       undefined,
       { suppressGlobalError: true },
