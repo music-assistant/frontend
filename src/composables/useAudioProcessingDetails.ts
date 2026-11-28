@@ -894,8 +894,8 @@ function formatStage(
 
 /**
  * The title and subtitle of a format step: the quality level of its codec,
- * with the codec and its technical details under it in expert mode. A lossy
- * source is not called high quality, as it can be a low bit rate stream.
+ * with what tells its quality under it in expert mode. A lossy source is not
+ * called high quality, as it can be a low bit rate stream.
  */
 function formatStageText(
   format: AudioFormat,
@@ -904,23 +904,27 @@ function formatStageText(
 ): Pick<AudioProcessingDisplayStage, "title" | "subtitleParts"> {
   const { translate, locale } = dependencies;
   const codecLabel = audioFormatTitle(format, translate);
-  const technicalParts = audioFormatTechnicalParts(format, translate, locale);
+  const sampleParts = audioFormatSampleParts(format, translate, locale);
+  const bitRateParts = audioFormatBitRateParts(format, translate, locale);
   const quality = playbackQualityOf(audioFormatCodec(format));
   if (!quality) {
     return {
       title: codecLabel,
-      subtitleParts: dependencies.expertMode ? technicalParts : undefined,
+      subtitleParts: dependencies.expertMode
+        ? [...sampleParts, ...bitRateParts]
+        : undefined,
     };
   }
   const qualityKey =
     isSource && quality === "compressed" ? "compressed_source" : quality;
+  // a lossy format is as good as its codec and bit rate, a lossless one as its samples
+  const technicalParts =
+    quality === "compressed" ? [codecLabel, ...bitRateParts] : sampleParts;
   return {
     title: translate(
       `streamdetails.audio_processing.playback_quality.${qualityKey}`,
     ),
-    subtitleParts: dependencies.expertMode
-      ? [codecLabel, ...technicalParts]
-      : undefined,
+    subtitleParts: dependencies.expertMode ? technicalParts : undefined,
   };
 }
 
@@ -1043,7 +1047,7 @@ function audioFormatTitle(format: AudioFormat, translate: Translate): string {
   return contentTypeLabel(audioFormatCodec(format), translate);
 }
 
-function audioFormatTechnicalParts(
+function audioFormatSampleParts(
   format: AudioFormat,
   translate: Translate,
   locale: string,
@@ -1065,14 +1069,22 @@ function audioFormatTechnicalParts(
   if (format.channels > 0) {
     parts.push(audioChannelCountLabel(format.channels, translate));
   }
-  if (format.bit_rate > 0 && !PCM_CONTENT_TYPES.has(codec)) {
-    parts.push(
-      translate("streamdetails.audio_processing.bit_rate", [
-        formatNumber(format.bit_rate, 1, locale),
-      ]),
-    );
-  }
   return parts;
+}
+
+function audioFormatBitRateParts(
+  format: AudioFormat,
+  translate: Translate,
+  locale: string,
+): string[] {
+  if (format.bit_rate <= 0 || PCM_CONTENT_TYPES.has(audioFormatCodec(format))) {
+    return [];
+  }
+  return [
+    translate("streamdetails.audio_processing.bit_rate", [
+      formatNumber(format.bit_rate, 1, locale),
+    ]),
+  ];
 }
 
 function internalFormatPrimaryLabel(

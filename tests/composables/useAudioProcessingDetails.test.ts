@@ -1130,13 +1130,15 @@ describe("buildAudioProcessingDetailsDisplay", () => {
             input_gain: -1.5,
             output_gain: 2.25,
           }),
-          output_format: format,
+          output_format: makeFormat({ sample_rate: 44100 }),
         }),
       ],
     };
 
     const english = buildDisplay(chain, format);
-    expect(english.inputStages[1].subtitleParts).toContain("44.1 kHz");
+    expect(english.outputPaths[0].stages.at(-1)?.subtitleParts).toContain(
+      "44.1 kHz",
+    );
     expect(english.inputStages[1].subtitleParts).toContain("1,234 kbps");
     expect(english.processingStages[0].details).toContain(
       "Measured loudness: -12.5 LUFS",
@@ -1147,7 +1149,9 @@ describe("buildAudioProcessingDetailsDisplay", () => {
 
     dependencies.locale = "de-DE";
     const german = buildDisplay(chain, format);
-    expect(german.inputStages[1].subtitleParts).toContain("44,1 kHz");
+    expect(german.outputPaths[0].stages.at(-1)?.subtitleParts).toContain(
+      "44,1 kHz",
+    );
     expect(german.inputStages[1].subtitleParts).toContain("1.234 kbps");
     expect(german.processingStages[0].details).toContain(
       "Measured loudness: -12,5 LUFS",
@@ -1261,9 +1265,9 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     }
   });
 
-  it("shows the codec and technical details under the level in expert mode", () => {
+  it("shows the samples of a lossless format under the level in expert mode", () => {
     dependencies.expertMode = true;
-    const format = makeFormat({ sample_rate: 44100 });
+    const format = makeFormat({ sample_rate: 44100, bit_rate: 1411 });
 
     const display = buildDisplay(
       { outputs: [audioOutputDetails({ output_format: format })] },
@@ -1276,9 +1280,46 @@ describe("buildAudioProcessingDetailsDisplay", () => {
     ]) {
       expect(stage).toMatchObject({
         title: "Lossless, compressed",
-        subtitleParts: ["FLAC", "44.1 kHz", "16-bit", "Stereo"],
+        subtitleParts: ["44.1 kHz", "16-bit", "Stereo"],
       });
     }
+  });
+
+  it("shows the codec and bit rate of a lossy format under the level in expert mode", () => {
+    dependencies.expertMode = true;
+    const format = makeFormat({
+      content_type: ContentType.MP3,
+      codec_type: ContentType.MP3,
+      sample_rate: 44100,
+      bit_rate: 320,
+    });
+
+    const display = buildDisplay(
+      { outputs: [audioOutputDetails({ output_format: format })] },
+      format,
+    );
+
+    expect(display.inputStages[1]).toMatchObject({
+      title: "Compressed",
+      subtitleParts: ["MP3", "320 kbps"],
+    });
+    expect(display.outputPaths[0].stages.at(-1)).toMatchObject({
+      title: "High quality, compressed",
+      subtitleParts: ["MP3", "320 kbps"],
+    });
+  });
+
+  it("names a lossy format without a bit rate by its codec alone in expert mode", () => {
+    dependencies.expertMode = true;
+    const format = makeFormat({
+      content_type: ContentType.M4A,
+      codec_type: ContentType.AAC,
+    });
+
+    expect(buildDisplay({}, format).inputStages[1]).toMatchObject({
+      title: "Compressed",
+      subtitleParts: ["AAC"],
+    });
   });
 
   it("keeps the codec as the title without a level in expert mode", () => {

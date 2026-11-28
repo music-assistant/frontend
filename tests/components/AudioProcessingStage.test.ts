@@ -48,8 +48,8 @@ describe("AudioProcessingStage", () => {
     expect(
       wrapper
         .findAll(".audio-processing-stage-subtitle-part")
-        .map((part) => part.text()),
-    ).toEqual(["44.1 kHz", "· 16-bit", "· Stereo"]);
+        .map((part) => part.element.textContent),
+    ).toEqual(["44.1 kHz", " · 16-bit", " · Stereo"]);
     expect(wrapper.find('[data-testid="stage-icon"]').exists()).toBe(true);
     expect(wrapper.find(".audio-processing-stage-connector").exists()).toBe(
       true,
