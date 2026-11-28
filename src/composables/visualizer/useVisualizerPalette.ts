@@ -8,7 +8,7 @@
 
 import { computed, toValue, type MaybeRefOrGetter, type Ref } from "vue";
 import { isDark } from "@/composables/useThemePreference";
-import { useUserPreferences } from "@/composables/userPreferences";
+import { visualizerPreference } from "@/composables/visualizer/useVisualizer";
 import {
   VISUALIZER_PALETTE_COLORS_DEFAULT,
   VISUALIZER_PALETTE_RAMP_DEFAULT,
@@ -28,12 +28,11 @@ export interface VisualizerPaletteOptions {
 }
 
 export function useVisualizerPalette(options: VisualizerPaletteOptions) {
-  const { getPreference } = useUserPreferences();
-  const paletteColorsPref = getPreference<boolean>(
+  const paletteColorsPref = visualizerPreference<boolean>(
     "visualizer_palette_colors",
     VISUALIZER_PALETTE_COLORS_DEFAULT,
   );
-  const paletteRampPref = getPreference<number>(
+  const paletteRampPref = visualizerPreference<number>(
     "visualizer_palette_ramp",
     VISUALIZER_PALETTE_RAMP_DEFAULT,
   );

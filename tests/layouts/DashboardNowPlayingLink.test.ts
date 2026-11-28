@@ -24,12 +24,24 @@ const { authState, preferenceState } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/plugins/api", async () => {
-  const { reactive } = await import("vue");
+  const { reactive, ref } = await import("vue");
   const api = {
     players: reactive({}) as Record<string, Player>,
     providers: {},
+    // what the dashboard's visualizer reads
+    isRemoteConnection: ref(false),
+    sendCommand: vi.fn(async () => ({})),
+    state: ref("authenticated"),
+    subscribe: vi.fn(() => () => {}),
   };
-  return { default: api, api };
+  return {
+    api,
+    ConnectionState: {
+      AUTHENTICATED: "authenticated",
+      INITIALIZED: "initialized",
+    },
+    default: api,
+  };
 });
 
 vi.mock("@/plugins/store", async () => {

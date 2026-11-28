@@ -33,8 +33,15 @@ vi.mock("@/plugins/visualizer-relay", () => ({
     currentFrame() {
       return null;
     }
-    reportError() {}
   },
+  reportVisualizerCapability: vi.fn(async () => {}),
+  visualizerCanRender: () => true,
+  visualizerProviderAvailable: () => true,
+  visualizerShownOnDashboards: vi.fn(async () => true),
+}));
+
+vi.mock("@/plugins/auth", () => ({
+  authManager: { isDashboardViewer: () => false },
 }));
 
 const setPaused = vi.hoisted(() => vi.fn());
