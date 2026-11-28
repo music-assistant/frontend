@@ -16,12 +16,12 @@
         </span>
       </div>
 
-      <SmartPlaylistSeedSection
+      <SmartPlaylistItemsSection
         v-if="form.mode.value === 'seed'"
         :seed-items="form.seedItems"
         :invalid="form.seedInvalid.value"
       />
-      <SmartPlaylistSeedSection
+      <SmartPlaylistItemsSection
         v-if="form.mode.value === 'sources'"
         :seed-items="form.sourceItems"
         :invalid="form.seedInvalid.value"
@@ -66,7 +66,7 @@ import { $t } from "@/plugins/i18n";
 import { Library, ListMusic, Sparkles } from "@lucide/vue";
 import { computed } from "vue";
 import SmartPlaylistRulesList from "./SmartPlaylistRulesList.vue";
-import SmartPlaylistSeedSection from "./SmartPlaylistSeedSection.vue";
+import SmartPlaylistItemsSection from "./SmartPlaylistItemsSection.vue";
 import SmartPlaylistTypeSelector from "./SmartPlaylistTypeSelector.vue";
 
 type Props = SmartPlaylistRulesFormInit & {

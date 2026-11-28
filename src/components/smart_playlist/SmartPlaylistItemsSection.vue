@@ -68,7 +68,7 @@
           </button>
         </Badge>
 
-        <SmartPlaylistSeedPicker
+        <SmartPlaylistItemsPicker
           :kind="kind"
           :search-query="seedItems.searchQuery.value"
           :results="seedItems.searchResults.value"
@@ -93,7 +93,7 @@
               }}
             </span>
           </template>
-        </SmartPlaylistSeedPicker>
+        </SmartPlaylistItemsPicker>
       </div>
     </div>
   </div>
@@ -111,7 +111,7 @@ import type { Album, Artist, Track } from "@/plugins/api/interfaces";
 import { $t } from "@/plugins/i18n";
 import { Disc3, ListMusic, Mic2, Music, Sparkles, X } from "@lucide/vue";
 import { computed, toRef, type Component } from "vue";
-import SmartPlaylistSeedPicker from "./SmartPlaylistSeedPicker.vue";
+import SmartPlaylistItemsPicker from "./SmartPlaylistItemsPicker.vue";
 
 const props = defineProps<{
   seedItems: ReturnType<typeof useSmartPlaylistSeedItems>;

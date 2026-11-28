@@ -1,5 +1,5 @@
-import SmartPlaylistSeedPicker from "@/components/smart_playlist/SmartPlaylistSeedPicker.vue";
-import SmartPlaylistSeedSection from "@/components/smart_playlist/SmartPlaylistSeedSection.vue";
+import SmartPlaylistItemsPicker from "@/components/smart_playlist/SmartPlaylistItemsPicker.vue";
+import SmartPlaylistItemsSection from "@/components/smart_playlist/SmartPlaylistItemsSection.vue";
 import {
   useSmartPlaylistSeedItems,
   type SeedKind,
@@ -56,19 +56,19 @@ const kinds = Object.keys(items) as SeedKind[];
 
 enableAutoUnmount(afterEach);
 
-describe("SmartPlaylistSeedSection", () => {
+describe("SmartPlaylistItemsSection", () => {
   let scope: EffectScope;
 
   // the picker is stubbed with its real props, so no popover has to open
   function mountSection() {
     scope = effectScope();
     const seedItems = scope.run(() => useSmartPlaylistSeedItems())!;
-    const wrapper = mount(SmartPlaylistSeedSection, {
+    const wrapper = mount(SmartPlaylistItemsSection, {
       props: { seedItems },
-      global: { stubs: { SmartPlaylistSeedPicker: true } },
+      global: { stubs: { SmartPlaylistItemsPicker: true } },
     });
     return {
-      picker: wrapper.findComponent(SmartPlaylistSeedPicker),
+      picker: wrapper.findComponent(SmartPlaylistItemsPicker),
       seedItems,
     };
   }
@@ -144,11 +144,11 @@ describe("SmartPlaylistSeedSection", () => {
     try {
       scope = effectScope();
       const sourceItems = scope.run(() => useSmartPlaylistSeedItems(false))!;
-      const wrapper = mount(SmartPlaylistSeedSection, {
+      const wrapper = mount(SmartPlaylistItemsSection, {
         props: { seedItems: sourceItems, sourceMode: true },
-        global: { stubs: { SmartPlaylistSeedPicker: true } },
+        global: { stubs: { SmartPlaylistItemsPicker: true } },
       });
-      const picker = wrapper.findComponent(SmartPlaylistSeedPicker);
+      const picker = wrapper.findComponent(SmartPlaylistItemsPicker);
       expect(picker.props("hasProvider")).toBe(true);
       expect(picker.props("sourceMode")).toBe(true);
       vi.mocked(api.search).mockResolvedValueOnce(everyKind);
@@ -175,11 +175,11 @@ describe("SmartPlaylistSeedSection", () => {
   it("searches only saved playlists in source mode", async () => {
     scope = effectScope();
     const sourceItems = scope.run(() => useSmartPlaylistSeedItems(false))!;
-    const wrapper = mount(SmartPlaylistSeedSection, {
+    const wrapper = mount(SmartPlaylistItemsSection, {
       props: { seedItems: sourceItems, sourceMode: true },
-      global: { stubs: { SmartPlaylistSeedPicker: true } },
+      global: { stubs: { SmartPlaylistItemsPicker: true } },
     });
-    const picker = wrapper.findComponent(SmartPlaylistSeedPicker);
+    const picker = wrapper.findComponent(SmartPlaylistItemsPicker);
     vi.mocked(api.search).mockResolvedValueOnce(everyKind);
     picker.vm.$emit("update:kind", "playlist");
     picker.vm.$emit("update:searchQuery", "gold");
