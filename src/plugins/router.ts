@@ -260,6 +260,47 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: "/sendspin-sync",
+        name: "sendspin-sync",
+        component: () =>
+          import(
+            /* webpackChunkName: "sendspin-sync" */ "@/views/SendspinSyncView.vue"
+          ),
+        beforeEnter: async () => {
+          if (api.state.value !== ConnectionState.INITIALIZED) {
+            // Wait for the connection, but never block navigation forever.
+            await new Promise<void>((resolve) => {
+              const timeout = setTimeout(() => {
+                unwatch();
+                resolve();
+              }, 10000);
+              const unwatch = watch(
+                () => api.state.value,
+                (newState) => {
+                  if (newState === ConnectionState.INITIALIZED) {
+                    clearTimeout(timeout);
+                    unwatch();
+                    resolve();
+                  }
+                },
+                { immediate: true },
+              );
+            });
+          }
+          // A non-admin is told this is an administrator tool. The server is
+          // what actually refuses the calibration commands.
+          // Only judged once the connection is up: a wait that timed out
+          // leaves no user to read, and that is not a non-admin.
+          if (
+            api.state.value === ConnectionState.INITIALIZED &&
+            !authManager.hasScope(Scope.CONFIG_PLAYERS_WRITE)
+          ) {
+            toast.error($t("providers.sendspin.calibration.admin_only"));
+            return { name: "discover" };
+          }
+        },
+      },
+      {
         path: "/visualizer",
         name: "visualizer",
         component: () =>

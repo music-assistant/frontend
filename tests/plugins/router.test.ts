@@ -112,6 +112,7 @@ vi.mock("vue-router", async () => {
 
 const partyGuard = beforeEnterGuard("party");
 const aiRadioGuard = beforeEnterGuard("ai-radio");
+const sendspinSyncGuard = beforeEnterGuard("sendspin-sync");
 const globalGuard = globalNavigationGuard();
 
 const PLAYER_SETTINGS_ROUTES = [
@@ -325,6 +326,95 @@ describe("AI Radio guard", () => {
     await expect(pending.result).resolves.toEqual({ name: "discover" });
     expect(mocks.toastError).toHaveBeenCalledWith(
       "providers.ai_radio.toast.unavailable",
+    );
+  });
+});
+
+describe("Sendspin Sync guard", () => {
+  const admin = { role: "admin", username: "owner" };
+
+  beforeEach(() => {
+    // Grants the scopes of the role of the mocked user, read at the time of the
+    // check, so a test sets the role in one place and may set it late.
+    mocks.hasScope.mockImplementation((scope) =>
+      scopeChecker(
+        mocks.store.currentUser?.role === "admin"
+          ? BUILTIN_ROLE_SCOPES.admin
+          : BUILTIN_ROLE_SCOPES.user,
+      )(scope),
+    );
+  });
+
+  it("lets an admin through", async () => {
+    mocks.store.currentUser = admin;
+
+    await expect(
+      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
+    ).resolves.toBeUndefined();
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
+  it("turns a non-admin away from the calibration walk", async () => {
+    mocks.store.currentUser = { role: "user", username: "listener" };
+
+    await expect(
+      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
+    ).resolves.toEqual({ name: "discover" });
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "providers.sendspin.calibration.admin_only",
+    );
+  });
+
+  it("reads the role only once the server connection is ready", async () => {
+    vi.useFakeTimers();
+    mocks.apiState.value = ConnectionState.AUTHENTICATED;
+    const pending = trackGuard(
+      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
+    );
+
+    await vi.advanceTimersByTimeAsync(9999);
+    expect(pending.isSettled()).toBe(false);
+
+    // The user lands with the connection: a guard that read the role too early
+    // would have turned this admin away as a non-admin.
+    mocks.store.currentUser = admin;
+    mocks.apiState.value = ConnectionState.INITIALIZED;
+
+    await expect(pending.result).resolves.toBeUndefined();
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
+  it("stops waiting for the server connection after ten seconds", async () => {
+    vi.useFakeTimers();
+    mocks.apiState.value = ConnectionState.AUTHENTICATED;
+    const pending = trackGuard(
+      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
+    );
+
+    await vi.advanceTimersByTimeAsync(9999);
+    expect(pending.isSettled()).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+
+    // The page opens and says for itself that the server can not be reached:
+    // there is no plugin whose absence a missing connection could be read as.
+    await expect(pending.result).resolves.toBeUndefined();
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
+  it("does not read a connection that never arrived as a non-admin", async () => {
+    vi.useFakeTimers();
+    mocks.apiState.value = ConnectionState.AUTHENTICATED;
+    const pending = trackGuard(
+      invokeGuard(sendspinSyncGuard, resolveRoute("/sendspin-sync")),
+    );
+
+    // The wait gives up with no user loaded, which says nothing about the role.
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await pending.result;
+    expect(mocks.toastError).not.toHaveBeenCalledWith(
+      "providers.sendspin.calibration.admin_only",
     );
   });
 });
