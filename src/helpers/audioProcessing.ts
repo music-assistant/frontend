@@ -15,6 +15,7 @@ import {
   Waves,
 } from "@lucide/vue";
 import {
+  ContentType,
   DSPFilterType,
   HighLowPassMode,
   type BalanceFilter,
@@ -32,6 +33,35 @@ import {
   type ToneControlFilter,
   type TransposeFilter,
 } from "@/plugins/api/interfaces";
+
+// the codecs the server counts as lossless (ContentType.is_lossless there)
+export const LOSSLESS_CODECS = new Set<string>([
+  ContentType.FLAC,
+  ContentType.ALAC,
+  ContentType.WAV,
+  ContentType.AIFF,
+  ContentType.DSF,
+  ContentType.WAVPACK,
+  ContentType.TAK,
+  ContentType.APE,
+  ContentType.TRUEHD,
+  ContentType.RA_144,
+  ContentType.PCM,
+  ContentType.PCM_S16LE,
+  ContentType.PCM_S24LE,
+  ContentType.PCM_S32LE,
+  ContentType.PCM_F32LE,
+  ContentType.PCM_F64LE,
+  ContentType.PCM_S16BE,
+  ContentType.PCM_S24BE,
+  ContentType.PCM_S32BE,
+  ContentType.PCM_BLURAY,
+  ContentType.PCM_DVD,
+  ContentType.DSD_LSBF,
+  ContentType.DSD_MSBF,
+  ContentType.DSD_LSBF_PLANAR,
+  ContentType.DSD_MSBF_PLANAR,
+]);
 
 export function sanitizeDSPPresetConfig(config: DSPConfig): DSPConfig {
   return {

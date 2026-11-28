@@ -5,6 +5,7 @@ import AudioProcessingDetails from "@/components/AudioProcessingDetails.vue";
 import type { AudioProcessingDisplayPlayer } from "@/composables/useAudioProcessingDetails";
 import type { MusicAssistantApi } from "@/plugins/api";
 import { i18n } from "@/plugins/i18n";
+import { store } from "@/plugins/store";
 import {
   AudioChannel,
   AudioNormalizationMeasurementSource,
@@ -31,6 +32,7 @@ import { audioFormat } from "../fixtures/audioFormat";
 import { itemMapping } from "../fixtures/itemMapping";
 import { providerManifest } from "../fixtures/providerManifest";
 import { streamDetails } from "../fixtures/streamDetails";
+import { user } from "../fixtures/user";
 
 const apiMock = vi.hoisted(() => ({
   getProviderName: vi.fn<MusicAssistantApi["getProviderName"]>(
@@ -65,6 +67,7 @@ vi.mock("@/composables/useDSPPresets", async () => {
 
 beforeEach(() => {
   i18n.global.locale.value = "en";
+  store.currentUser = undefined;
   // the provider icon domain strips the instance suffix, e.g. "squeezelite--main" -> "squeezelite"
   apiMock.getProviderManifest.mockImplementation((providerId: string) =>
     providerManifest({ domain: providerId.split("--", 1)[0] }),
@@ -399,7 +402,8 @@ describe("AudioProcessingDetails", () => {
     );
   });
 
-  it("renders audio formats as titles with atomic technical details", () => {
+  it("shows format steps as quality levels with atomic technical details in expert mode", () => {
+    store.currentUser = user({ preferences: { expert_mode: true } });
     const sourceFormat = makeFormat({
       content_type: ContentType.OGG,
       codec_type: ContentType.VORBIS,
@@ -439,13 +443,13 @@ describe("AudioProcessingDetails", () => {
 
     const sourceStage = wrapper.find('[data-stage="source-format"]');
     expect(sourceStage.find(".audio-processing-stage-title").text()).toBe(
-      "VORBIS",
+      "Compressed",
     );
     expect(
       sourceStage
         .findAll(".audio-processing-stage-subtitle-part")
         .map((part) => part.text()),
-    ).toEqual(["44.1 kHz", "· 16-bit", "· Stereo", "· 320 kbps"]);
+    ).toEqual(["VORBIS", "· 44.1 kHz", "· 16-bit", "· Stereo", "· 320 kbps"]);
     expect(
       sourceStage
         .findAll(".audio-processing-stage-subtitle-part")
@@ -468,13 +472,13 @@ describe("AudioProcessingDetails", () => {
     ]);
     const finalOutput = wrapper.find('[data-stage="output-format-0"]');
     expect(finalOutput.find(".audio-processing-stage-title").text()).toBe(
-      "FLAC",
+      "Lossless, compressed",
     );
     expect(
       finalOutput
         .findAll(".audio-processing-stage-subtitle-part")
         .map((part) => part.text()),
-    ).toEqual(["48 kHz", "· 16-bit", "· Stereo"]);
+    ).toEqual(["FLAC", "· 48 kHz", "· 16-bit", "· Stereo"]);
     expect(wrapper.text()).not.toContain("DSP disabled");
     expect(wrapper.find('[data-stage="dsp-state-0"]').exists()).toBe(false);
     expect(wrapper.text()).not.toContain("Processed output");
@@ -489,6 +493,39 @@ describe("AudioProcessingDetails", () => {
         .find('[data-stage="destination"]')
         .classes("audio-processing-stage--terminal"),
     ).toBe(true);
+  });
+
+  it("shows only the quality level on format steps outside expert mode", () => {
+    const wrapper = mountDetails({
+      outputs: [
+        audioOutputDetails({
+          player_ids: ["player-1"],
+          output_format: makeFormat({
+            content_type: ContentType.MP3,
+            codec_type: ContentType.MP3,
+            bit_rate: 320,
+          }),
+        }),
+      ],
+    });
+
+    for (const [key, title] of [
+      ["source-format", "Lossless, compressed"],
+      ["output-format-0", "High quality, compressed"],
+    ]) {
+      const stage = wrapper.find(`[data-stage="${key}"]`);
+      expect(stage.find(".audio-processing-stage-title").text()).toBe(title);
+      expect(stage.find(".audio-processing-stage-subtitle").exists()).toBe(
+        false,
+      );
+    }
+    expect(
+      wrapper
+        .find('[data-stage="output-format-0"]')
+        .findAll("li")
+        .map((detail) => detail.text())
+        .slice(0, 2),
+    ).toEqual(["Codec: MP3", "Container: MP3"]);
   });
 
   it.each([

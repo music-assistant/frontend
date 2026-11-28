@@ -1,3 +1,4 @@
+import { LOSSLESS_CODECS } from "@/helpers/audioProcessing";
 import { parseLrcLine } from "@/helpers/lrcParser";
 import { getArtistsString, getImageThumbForItem } from "@/helpers/utils";
 import { api } from "@/plugins/api";
@@ -15,35 +16,6 @@ import { $t } from "@/plugins/i18n";
 
 // a line holding only an LRC ID tag, like "[ar: Artist]" or "[offset: 500]"
 const LRC_ID_TAG = /^\[[a-z]+:[^\]]*\]$/i;
-
-// the codecs the server counts as lossless (ContentType.is_lossless there)
-const LOSSLESS_CODECS = new Set<ContentType>([
-  ContentType.FLAC,
-  ContentType.ALAC,
-  ContentType.WAV,
-  ContentType.AIFF,
-  ContentType.DSF,
-  ContentType.WAVPACK,
-  ContentType.TAK,
-  ContentType.APE,
-  ContentType.TRUEHD,
-  ContentType.RA_144,
-  ContentType.PCM,
-  ContentType.PCM_S16LE,
-  ContentType.PCM_S24LE,
-  ContentType.PCM_S32LE,
-  ContentType.PCM_F32LE,
-  ContentType.PCM_F64LE,
-  ContentType.PCM_S16BE,
-  ContentType.PCM_S24BE,
-  ContentType.PCM_S32BE,
-  ContentType.PCM_BLURAY,
-  ContentType.PCM_DVD,
-  ContentType.DSD_LSBF,
-  ContentType.DSD_MSBF,
-  ContentType.DSD_LSBF_PLANAR,
-  ContentType.DSD_MSBF_PLANAR,
-]);
 
 /** All the albums the track appears on. */
 export async function loadTrackAlbums(track: Track): Promise<Album[]> {
