@@ -9,6 +9,7 @@ import {
   type Album,
   type Artist,
   type ItemMapping,
+  type Playlist,
   type SortDirection,
   type SortField,
   type Track,
@@ -99,6 +100,16 @@ export async function artistAlbumsBySource(
         )
       : api.getArtistAlbums(itemId, provider, undefined, undefined, 0);
   return await getAlbums(target.itemId, target.provider);
+}
+
+/** Public playlists created by the artist on one of its mapped music sources. */
+export async function loadArtistPlaylists(
+  artist: Artist,
+  source: RowSource,
+): Promise<Playlist[]> {
+  const target = artistListingSource(artist, source);
+  if (!target) return [];
+  return await api.getArtistPlaylists(target.itemId, target.provider);
 }
 
 /**
