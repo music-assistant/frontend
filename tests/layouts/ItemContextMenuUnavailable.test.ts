@@ -6,30 +6,41 @@
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ArtistType } from "@/plugins/api/interfaces";
 import { album } from "../fixtures/album";
+import { artist } from "../fixtures/artist";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
-const { apiMock, emittedMenus, hasScope, storeMock } = vi.hoisted(() => ({
-  emittedMenus: [] as ContextMenuDialogEvent[],
-  apiMock: {
-    getItem: vi.fn(),
-    getLibraryItem: vi.fn(),
-    getProvider: vi.fn(),
-    getCoreConfigValue: vi.fn(),
-    refreshItem: vi.fn(),
-    signalEvent: vi.fn(),
-    playMedia: vi.fn(),
-    providers: {},
-    players: {},
-  },
-  hasScope: vi.fn(),
-  storeMock: {
-    activePlayer: undefined,
-    activePlayerId: undefined,
-    enabledPlugins: new Set<string>(),
-  },
-}));
+const { apiMock, emittedMenus, hasScope, routerMock, storeMock, toastMock } =
+  vi.hoisted(() => ({
+    emittedMenus: [] as ContextMenuDialogEvent[],
+    apiMock: {
+      getItem: vi.fn(),
+      getLibraryItem: vi.fn(),
+      getProvider: vi.fn(),
+      getCoreConfigValue: vi.fn(),
+      refreshItem: vi.fn(),
+      signalEvent: vi.fn(),
+      getProviderName: vi.fn(),
+      playMedia: vi.fn(),
+      providers: {},
+      players: {},
+    },
+    hasScope: vi.fn(),
+    routerMock: { push: vi.fn() },
+    toastMock: {
+      success: vi.fn(),
+      error: vi.fn(),
+      loading: vi.fn(() => "searching"),
+      dismiss: vi.fn(),
+    },
+    storeMock: {
+      activePlayer: undefined,
+      activePlayerId: undefined,
+      enabledPlugins: new Set<string>(),
+    },
+  }));
 
 vi.mock("@/plugins/api", () => ({ default: apiMock, api: apiMock }));
 vi.mock("@/plugins/store", () => ({ store: storeMock }));
@@ -44,6 +55,8 @@ vi.mock("@/plugins/eventbus", () => ({
   },
 }));
 vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/plugins/router", () => ({ default: routerMock }));
+vi.mock("vue-sonner", () => ({ toast: toastMock }));
 
 // a library album whose only source is gone: the mapping's provider is not loaded
 const gone = album({
@@ -83,6 +96,110 @@ describe("the context menu of an unavailable library item", () => {
       ?.action?.();
 
     expect(apiMock.refreshItem).toHaveBeenCalledWith(gone);
+  });
+
+  it("shows a spinner while the music services are searched", async () => {
+    await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
+
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "find_on_music_services")
+      ?.action?.();
+
+    expect(toastMock.loading).toHaveBeenCalledWith(
+      "finding_on_music_services",
+      {
+        duration: Infinity,
+      },
+    );
+    expect(toastMock.dismiss).toHaveBeenCalledWith("searching");
+  });
+
+  it("removes the spinner when the search fails", async () => {
+    apiMock.refreshItem.mockRejectedValue(new Error("not found"));
+    await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
+
+    await expect(
+      emittedMenus[0].items
+        .find((entry) => entry.label === "find_on_music_services")
+        ?.action?.(),
+    ).rejects.toThrow("not found");
+
+    expect(toastMock.dismiss).toHaveBeenCalledWith("searching");
+  });
+
+  it("opens the copy another music service has", async () => {
+    const copy = album({ item_id: "abc", provider: "spotify--1" });
+    apiMock.refreshItem.mockResolvedValue(copy);
+    apiMock.getProviderName.mockReturnValue("Spotify");
+    await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
+
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "find_on_music_services")
+      ?.action?.();
+
+    expect(apiMock.getProviderName).toHaveBeenCalledWith("spotify--1");
+    expect(toastMock.success).toHaveBeenCalledWith("found_on_provider");
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "album",
+      params: { itemId: "abc", provider: "spotify--1" },
+    });
+    expect(apiMock.signalEvent).not.toHaveBeenCalled();
+  });
+
+  it("opens an author found on another service on the author's page", async () => {
+    const goneAuthor = artist({
+      artist_type: ArtistType.AUTHOR,
+      provider_mappings: [
+        providerMapping({ provider_instance: "tidal--gone", in_library: true }),
+      ],
+    });
+    const copy = artist({
+      item_id: "abc",
+      provider: "audible--1",
+      artist_type: ArtistType.AUTHOR,
+    });
+    apiMock.getLibraryItem.mockResolvedValue(goneAuthor);
+    apiMock.refreshItem.mockResolvedValue(copy);
+    await showContextMenuForMediaItem(goneAuthor, undefined, 0, 0, true, true);
+
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "find_on_music_services")
+      ?.action?.();
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "audiobookartist",
+      params: { itemId: "abc", provider: "audible--1", role: "authors" },
+    });
+  });
+
+  it("updates the open views when a library merge returns another item", async () => {
+    const merged = album({ item_id: "2" });
+    apiMock.refreshItem.mockResolvedValue(merged);
+    await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
+
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "find_on_music_services")
+      ?.action?.();
+
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(apiMock.signalEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ object_id: merged.uri, data: merged }),
+    );
+  });
+
+  it("updates the open views when the item itself comes back", async () => {
+    apiMock.refreshItem.mockResolvedValue(gone);
+    await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
+
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "find_on_music_services")
+      ?.action?.();
+
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(apiMock.signalEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ object_id: gone.uri, data: gone }),
+    );
   });
 
   it("lets an admin look it up as well", async () => {

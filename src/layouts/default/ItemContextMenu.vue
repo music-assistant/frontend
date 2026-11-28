@@ -362,6 +362,7 @@ import {
   favoriteState,
   setFavoriteState,
 } from "@/helpers/favorites";
+import { detailRoute } from "@/helpers/author_narrator";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
@@ -1327,7 +1328,30 @@ export const getContextMenuItems = async function (
       label: unavailable ? "find_on_music_services" : "refresh_item",
       labelArgs: [],
       action: async () => {
-        const updatedInfo = await api.refreshItem(items[0]);
+        // the search on the other music services can take a while
+        const searchingToastId = unavailable
+          ? toast.loading($t("finding_on_music_services"), {
+              duration: Infinity,
+            })
+          : undefined;
+        const updatedInfo = await api.refreshItem(items[0]).finally(() => {
+          if (searchingToastId !== undefined) toast.dismiss(searchingToastId);
+        });
+        // an item its own service can't play may come back from another
+        // service, which no open view shows, so open its page instead
+        if (
+          updatedInfo &&
+          updatedInfo.provider !== "library" &&
+          updatedInfo.uri !== items[0].uri
+        ) {
+          toast.success(
+            $t("found_on_provider", [
+              api.getProviderName(updatedInfo.provider),
+            ]),
+          );
+          router.push(detailRoute(updatedInfo));
+          return;
+        }
         if (updatedInfo) {
           // Emit synthetic MEDIA_ITEM_UPDATED event to trigger UI refresh
           // This ensures child components (like track listings) also refresh
