@@ -1,12 +1,22 @@
 import SmartPlaylistRulesView from "@/components/smart_playlist/SmartPlaylistRulesView.vue";
 import type { SmartPlaylistRules } from "@/plugins/api/interfaces";
+import { $t } from "@/plugins/i18n";
 import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/plugins/api", () => ({
   default: { providers: {} },
 }));
-vi.mock("@/plugins/i18n", () => ({ $t: (key: string) => key }));
+vi.mock("@/plugins/i18n", async () => {
+  const { createI18n } = await import("vue-i18n");
+  const { default: messages } = await import("@/translations/en.json");
+  const i18n = createI18n({
+    legacy: false,
+    locale: "en",
+    messages: { en: messages },
+  });
+  return { $t: i18n.global.t };
+});
 
 enableAutoUnmount(afterEach);
 
@@ -37,15 +47,15 @@ describe("SmartPlaylistRulesView sources", () => {
         },
       });
       const text = wrapper.text();
-      expect(text).toContain("smart_playlist.type_sources");
-      expect(text).toContain("smart_playlist.sources_heading");
+      expect(text).toContain($t("smart_playlist.type_sources"));
+      expect(text).toContain($t("smart_playlist.source_heading"));
       expect(text.indexOf("First album")).toBeLessThan(
         text.indexOf("Second playlist"),
       );
-      expect(text.includes("smart_playlist.preserve_source_order")).toBe(
+      expect(text.includes($t("smart_playlist.preserve_source_order"))).toBe(
         preserve,
       );
-      expect(text).not.toContain("smart_playlist.no_rules_title");
+      expect(text).not.toContain($t("smart_playlist.no_rules_title"));
     },
   );
 });

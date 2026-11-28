@@ -27,7 +27,7 @@
         {{
           $t(
             isSources
-              ? "smart_playlist.sources_heading"
+              ? "smart_playlist.source_heading"
               : "smart_playlist.seed_heading",
           )
         }}
