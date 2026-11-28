@@ -362,6 +362,7 @@ import {
   favoriteState,
   setFavoriteState,
 } from "@/helpers/favorites";
+import { detailRoute } from "@/helpers/author_narrator";
 import { genresShareTaxonomy } from "@/helpers/genreTaxonomy";
 import { backFromMediaDetails } from "@/helpers/navigation";
 import { useShareLinkPreviewMenuItem } from "@/composables/useShareLinkPreviewMenuItem";
@@ -1330,19 +1331,17 @@ export const getContextMenuItems = async function (
         const updatedInfo = await api.refreshItem(items[0]);
         // an item its own service can't play may come back from another
         // service, which no open view shows, so open its page instead
-        if (updatedInfo && updatedInfo.uri !== items[0].uri) {
+        if (
+          updatedInfo &&
+          updatedInfo.provider !== "library" &&
+          updatedInfo.uri !== items[0].uri
+        ) {
           toast.success(
             $t("found_on_provider", [
               api.getProviderName(updatedInfo.provider),
             ]),
           );
-          router.push({
-            name: updatedInfo.media_type,
-            params: {
-              itemId: updatedInfo.item_id,
-              provider: updatedInfo.provider,
-            },
-          });
+          router.push(detailRoute(updatedInfo));
           return;
         }
         if (updatedInfo) {

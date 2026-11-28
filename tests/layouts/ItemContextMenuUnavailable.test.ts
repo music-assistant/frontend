@@ -6,7 +6,9 @@
 import { showContextMenuForMediaItem } from "@/layouts/default/ItemContextMenu.vue";
 import type { ContextMenuDialogEvent } from "@/plugins/eventbus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ArtistType } from "@/plugins/api/interfaces";
 import { album } from "../fixtures/album";
+import { artist } from "../fixtures/artist";
 import { providerMapping } from "../fixtures/providerMapping";
 import { BUILTIN_ROLE_SCOPES, scopeChecker } from "../fixtures/scopes";
 
@@ -108,6 +110,48 @@ describe("the context menu of an unavailable library item", () => {
       params: { itemId: "abc", provider: "spotify--1" },
     });
     expect(apiMock.signalEvent).not.toHaveBeenCalled();
+  });
+
+  it("opens an author found on another service on the author's page", async () => {
+    const goneAuthor = artist({
+      artist_type: ArtistType.AUTHOR,
+      provider_mappings: [
+        providerMapping({ provider_instance: "tidal--gone", in_library: true }),
+      ],
+    });
+    const copy = artist({
+      item_id: "abc",
+      provider: "audible--1",
+      artist_type: ArtistType.AUTHOR,
+    });
+    apiMock.getLibraryItem.mockResolvedValue(goneAuthor);
+    apiMock.refreshItem.mockResolvedValue(copy);
+    await showContextMenuForMediaItem(goneAuthor, undefined, 0, 0, true, true);
+
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "find_on_music_services")
+      ?.action?.();
+
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: "audiobookartist",
+      params: { itemId: "abc", provider: "audible--1", role: "authors" },
+    });
+  });
+
+  it("updates the open views when a library merge returns another item", async () => {
+    const merged = album({ item_id: "2" });
+    apiMock.refreshItem.mockResolvedValue(merged);
+    await showContextMenuForMediaItem(gone, undefined, 0, 0, true, true);
+
+    await emittedMenus[0].items
+      .find((entry) => entry.label === "find_on_music_services")
+      ?.action?.();
+
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(apiMock.signalEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ object_id: merged.uri, data: merged }),
+    );
   });
 
   it("updates the open views when the item itself comes back", async () => {
