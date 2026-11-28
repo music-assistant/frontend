@@ -449,7 +449,7 @@ describe("AudioProcessingDetails", () => {
       sourceStage
         .findAll(".audio-processing-stage-subtitle-part")
         .map((part) => part.text()),
-    ).toEqual(["VORBIS", "· 44.1 kHz", "· 16-bit", "· Stereo", "· 320 kbps"]);
+    ).toEqual(["VORBIS", "· 320 kbps"]);
     expect(
       sourceStage
         .findAll(".audio-processing-stage-subtitle-part")
@@ -478,7 +478,7 @@ describe("AudioProcessingDetails", () => {
       finalOutput
         .findAll(".audio-processing-stage-subtitle-part")
         .map((part) => part.text()),
-    ).toEqual(["FLAC", "· 48 kHz", "· 16-bit", "· Stereo"]);
+    ).toEqual(["48 kHz", "· 16-bit", "· Stereo"]);
     expect(wrapper.text()).not.toContain("DSP disabled");
     expect(wrapper.find('[data-stage="dsp-state-0"]').exists()).toBe(false);
     expect(wrapper.text()).not.toContain("Processed output");

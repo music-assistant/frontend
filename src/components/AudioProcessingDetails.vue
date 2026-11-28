@@ -371,7 +371,8 @@ const {
 
 .audio-processing-details .audio-processing-stage-subtitle-part--atomic {
   display: inline-block;
-  white-space: nowrap;
+  /* an inline block drops the space in front of its separator unless it is kept */
+  white-space: pre;
 }
 
 .audio-processing-details .audio-processing-stage-info {
