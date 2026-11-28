@@ -210,6 +210,37 @@
                   />
                 </div>
 
+                <div
+                  v-if="hasDesktopSavedLogin() && savedLoginContext"
+                  class="mb-4"
+                >
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      id="remember-desktop-password"
+                      v-model="rememberPassword"
+                      :disabled="isAuthenticating || forgetPending"
+                      @update:model-value="rememberPasswordTouched = true"
+                    />
+                    <Label
+                      for="remember-desktop-password"
+                      class="cursor-pointer"
+                    >
+                      {{ $t("login.remember_password") }}
+                    </Label>
+                  </div>
+                  <Button
+                    v-if="savedPasswordExists"
+                    type="button"
+                    variant="link"
+                    data-testid="forget-desktop-password"
+                    class="mt-2 h-auto p-0"
+                    :disabled="isAuthenticating || forgetPending"
+                    @click="forgetSavedPassword"
+                  >
+                    {{ $t("login.forget_saved_password") }}
+                  </Button>
+                </div>
+
                 <!-- Sign In Button -->
                 <v-btn
                   color="primary"
@@ -218,7 +249,9 @@
                   rounded="lg"
                   class="mb-6 text-none"
                   :loading="isAuthenticating"
-                  :disabled="!username.trim() || !password.trim()"
+                  :disabled="
+                    forgetPending || !username.trim() || !password.trim()
+                  "
                   @click="login"
                 >
                   {{ $t("login.sign_in", "Sign In") }}
@@ -472,6 +505,11 @@ import {
 } from "@/helpers/ingress";
 import type { ITransport } from "@/plugins/remote/transport";
 import { authManager } from "@/plugins/auth";
+import { hasDesktopSavedLogin } from "@/plugins/companion";
+import { useDesktopSavedLogin } from "@/composables/useDesktopSavedLogin";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { remoteConnectionManager } from "@/plugins/remote";
 import SegmentedCodeInput from "@/components/SegmentedCodeInput.vue";
 import { REMOTE_ID_GROUPS, splitCode } from "@/helpers/segmented_code";
@@ -495,6 +533,7 @@ const emit = defineEmits<{
     credentials: {
       username?: string;
       password?: string;
+      savedLogin?: { context: string; remember: boolean; connection: string };
       token?: string;
       user?: User;
     },
@@ -612,6 +651,30 @@ const password = ref("");
 const showPassword = ref(false);
 const isAuthenticating = ref(false);
 const loginError = ref<string | null>(null);
+const {
+  forgetPending,
+  rememberPassword,
+  rememberPasswordTouched,
+  savedPasswordExists,
+  savedLoginContext,
+  savedLoginConnection,
+  forgetSavedPassword,
+} = useDesktopSavedLogin({
+  username,
+  password,
+  isAuthenticating,
+  step,
+  translate: t,
+  getConnection: () => {
+    const serverId = api.serverInfo?.value?.server_id;
+    const connection = api.isRemoteConnection?.value
+      ? createRemoteConnectionIdentity(
+          remoteConnectionManager.currentRemoteId.value,
+        )
+      : createLocalConnectionIdentity(api.baseUrl);
+    return serverId && connection ? `${connection}:${serverId}` : null;
+  },
+});
 
 // Auth providers state
 const authProviders = ref<AuthProvider[]>([]);
@@ -1901,7 +1964,8 @@ function getPendingGuestConnectionIdentity() {
 }
 
 const login = async () => {
-  if (!username.value.trim() || !password.value.trim()) return;
+  if (forgetPending.value || !username.value.trim() || !password.value.trim())
+    return;
 
   isAuthenticating.value = true;
   loginError.value = null;
@@ -1909,6 +1973,15 @@ const login = async () => {
   emit("authenticated", {
     username: username.value.trim(),
     password: password.value,
+    ...(savedLoginContext.value && savedLoginConnection.value
+      ? {
+          savedLogin: {
+            context: savedLoginContext.value,
+            connection: savedLoginConnection.value,
+            remember: rememberPassword.value,
+          },
+        }
+      : {}),
   });
 };
 
@@ -1917,8 +1990,6 @@ const login = async () => {
  * This is called when the actual authentication fails in App.vue
  */
 const handleAuthenticationError = (error: unknown) => {
-  console.error("[Login] Authentication failed:", error);
-
   // Extract error message from different error types
   let errorMessage: string;
   if (error instanceof Error) {
