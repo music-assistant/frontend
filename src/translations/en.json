@@ -2826,6 +2826,8 @@
         "field_genre_is": "Genre is",
         "field_genre_is_not": "Genre is not",
         "field_year": "Year",
+        "field_track_year": "Track release year",
+        "track_year_hint": "Many music sources do not provide a track release date. Tracks without one are excluded by this filter.",
         "rules_dialog_title": "Smart playlist rules",
         "match": "Match",
         "match_all": "all",

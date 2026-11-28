@@ -2517,6 +2517,8 @@ export interface SmartPlaylistRules {
   album_names?: Record<number, string>;
   year_from?: number | null;
   year_to?: number | null;
+  track_year_from?: number | null;
+  track_year_to?: number | null;
   excluded_artist_ids?: number[];
   excluded_album_ids?: number[];
   excluded_genre_ids?: number[];

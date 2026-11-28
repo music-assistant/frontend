@@ -27,9 +27,17 @@
       class="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200"
     >
       <Info class="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-      <p class="leading-relaxed">
-        {{ $t("smart_playlist.seed_filters_hint") }}
-      </p>
+      <div class="space-y-1">
+        <p class="leading-relaxed">
+          {{ $t("smart_playlist.seed_filters_hint") }}
+        </p>
+        <p
+          v-if="rules.some((rule) => rule.field === 'track_year')"
+          class="leading-relaxed"
+        >
+          {{ $t("smart_playlist.track_year_hint") }}
+        </p>
+      </div>
     </div>
 
     <div v-if="rules.length" class="flex flex-col gap-1.5">
@@ -95,7 +103,10 @@
             }}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" class="w-[160px] z-[10001]">
+        <DropdownMenuContent
+          align="start"
+          class="w-max max-w-[calc(100vw-2rem)] z-[10001]"
+        >
           <DropdownMenuItem
             v-for="field in availableFields"
             :key="field"
@@ -169,6 +180,7 @@ function fieldLabel(field: RuleField): string {
     .with("favorite", () => $t("smart_playlist.field_favorite"))
     .with("explicit", () => $t("smart_playlist.field_explicit"))
     .with("year", () => $t("smart_playlist.field_year"))
+    .with("track_year", () => $t("smart_playlist.field_track_year"))
     .with("duration", () => $t("smart_playlist.field_duration"))
     .with("last_played", () => $t("smart_playlist.field_last_played"))
     .exhaustive();
